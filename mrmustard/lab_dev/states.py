@@ -33,7 +33,8 @@ class State(CircuitComponent):
     r"""
     Base class for all states.
     """
-    def __init__(name, modes
+    def __init__(self, name, **modes):
+        super().__init__(name, **modes)
 
     def __rshift__(self, other: CircuitComponent):
         r"""
@@ -44,7 +45,8 @@ class State(CircuitComponent):
 
 class Ket(State):
     r"""
-    Base class for all pure states.
+    Base class for all pure states. When called directly, it creates
+    the N-mode vacuum ket on the specified modes. [TODO]
 
     Arguments:
         name: The name of this pure state.
@@ -55,7 +57,17 @@ class Ket(State):
         super().__init__(name, modes_out_ket=modes)
 
 class DM(State):
+    r"""
+    Base class for all density matrices. When called directly, it creates
+    the N-mode vacuum density matrix on the specified modes. [TODO]
 
+    Arguments:
+        name: The name of this density matrix.
+        modes: The modes of this density matrix.
+    """
+
+    def __init__(self, name: str, modes: Sequence[Mode]):
+        super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
 
 
 class Vacuum(Ket):
@@ -66,11 +78,8 @@ class Vacuum(Ket):
         num_modes (int): the number of modes.
     """
 
-    def __init__(
-        self,
-        num_modes: int,
-    ) -> None:
-        super().__init__("Vacuum", modes=list(range(num_modes)))
+    def __init__(self, modes: list[int]) -> None:
+        super().__init__("Vacuum", modes=modes)
 
     @property
     def representation(self) -> Bargmann:
