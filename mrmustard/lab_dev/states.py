@@ -33,13 +33,15 @@ class State(CircuitComponent):
     r"""
     Base class for all states.
     """
-    def __init__(self, name, **modes):
-        super().__init__(name, **modes)
+    def __init__(self, name, representation, **modes):
+        super().__init__(name, representation, **modes)
 
-    def __rshift__(self, other: CircuitComponent):
+    def __rshift__(self, other: Circuit | CircuitComponent):
         r"""
         Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
         """
+        if isinstance(other, Circuit):
+            return Circuit([self, *other.components])
         return Circuit([self, other])
 
 
@@ -53,8 +55,10 @@ class Ket(State):
         modes: The modes of this pure states.
     """
 
-    def __init__(self, name: str, modes: Sequence[Mode]):
-        super().__init__(name, modes_out_ket=modes)
+    def __init__(self, name: str, representation, modes: Sequence[Mode]):
+        M = len(modes)
+        representation = representation or Bargmann(math.zeros((M, M)), math.zeros((M,)), 1)
+        super().__init__(name, representation, modes_out_ket=modes)
 
 class DM(State):
     r"""
@@ -66,8 +70,10 @@ class DM(State):
         modes: The modes of this density matrix.
     """
 
-    def __init__(self, name: str, modes: Sequence[Mode]):
-        super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
+    def __init__(self, name: str, representation, modes: Sequence[Mode]):
+        M = len(modes)
+        representation = representation or Bargmann(math.zeros((2*M, 2*M)), math.zeros((2*M,)), 1)
+        super().__init__(name, representation, modes_out_bra=modes, modes_out_ket=modes)
 
 
 class Vacuum(Ket):
@@ -79,12 +85,6 @@ class Vacuum(Ket):
     """
 
     def __init__(self, modes: list[int]) -> None:
-        super().__init__("Vacuum", modes=modes)
+        super().__init__("Vacuum", None, modes=modes)
 
-    @property
-    def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-        A = math.zeros(shape=(2 * num_modes, 2 * num_modes))
-        B = math.zeros(shape=(2 * num_modes))
-        C = 1
-        return Bargmann(A, B, C)
+
