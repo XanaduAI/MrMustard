@@ -97,8 +97,8 @@ class Circuit:
             einsum[s] = c.representation
         return einsum
 
-    def _contract_bargmann(self, components: Sequence[CircuitComponent]):
-        r"""Contracts the circuit assuming it is made of CV (Bargmann) stuff."""
+    def _contract(self, components: Sequence[CircuitComponent]):
+        r"""Contracts the circuit."""
         # 0. create the einsum dict and the char-id and id-char dicts
         einsum_dict = self._create_einsum_dict(self.components)
         char_id_dict = {char:self.components[i].wires.ids[j] for i,string in enumerate(einsum_dict) for j,char in enumerate(string)}
