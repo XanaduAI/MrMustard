@@ -116,7 +116,7 @@ class Circuit:
 
         # 2. use einsum string in path_info to get pair-wise contractions
         import opt_einsum as oe
-        shapes = [(2,)*len(s) for s in self.einsum_dict.keys()]
+        shapes = [(2,)*len(s) for s in einsum_dict.keys()]
         path_info = oe.contract_path(einsum_string, *shapes, shapes=True, optimize='auto')
 
         # 3. update the dict as path_info indicates until the whole circuit is contracted
