@@ -23,18 +23,14 @@ from mrmustard import settings
 class Wires:
     r"""A class with wire functionality for tensor network applications.
     Anything that wants wires should use an object of this class.
-    For the time being, wires are tuples of type (int, Optional[int]), where
-    the first int is the id of the wire of self, and the second int is the id
-    of the wire the first is attached to, if any. The second int is None if
-    the wire is not attached to anything.
-    The Wires class is an orchestrator of the individual wires.
-
-    Wires are arranged into four sets (each of the four sets can span multiple modes):
+    
+    Wires are arranged into four groups, and each of the four groups can span multiple modes.
 
     input bra --->|   |---> output bra
     input ket --->|   |---> output ket
     
-    A ``Wires`` object can return a subset ``Wires`` object. Available subsets are:
+    A ``Wires`` object can return sub-``Wires`` objects.
+    Available subsets are:
     - input/output
     - bra/ket
     - modes
@@ -42,12 +38,17 @@ class Wires:
     E.g. ``wires.input`` returns a Wires object with only the input wires
     (on bra/ket side and all modes). Or ``wires.bra[(1,2)] returns a Wires
     object with only the bra wires on modes 1 and 2 (on input/output side).
+    Note these are views of the original Wires object, i.e. if they are modified
+    the original will change.
 
     Args:
         modes_out_bra (Iterable[int]): The output modes on the bra side.
         modes_in_bra (Iterable[int]): The input modes on the bra side.
         modes_out_ket (Iterable[int]): The output modes on the ket side.
         modes_in_ket (Iterable[int]): The input modes on the ket side.
+
+    Note that the order of the modes passed to initialize the object doesn't matter,
+    as they are sorted.
     """
 
     def __init__(
@@ -69,7 +70,8 @@ class Wires:
         self.mask = np.ones_like(self._id_array)  # multiplicative mask
 
     def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
-        "A disconnected soft copy of self with optional custom id_array."
+        r"""A copy of self with optional custom id_array. If id_array is passed,
+        the copy will hold a reference to it (not a copy)."""
         ob_modes = np.where(self._id_array[:, 0] > 0)[0]
         ib_modes = np.where(self._id_array[:, 1] > 0)[0]
         ok_modes = np.where(self._id_array[:, 2] > 0)[0]
@@ -82,7 +84,7 @@ class Wires:
         return w
 
     def view(self, masked_rows: list[int] = [], masked_cols: list[int] = []) -> Wires:
-        r"""An masked view of this Wires object."""
+        r"""A masked view of this Wires object."""
         w = self.copy(self._id_array)
         w.mask[masked_rows, :] = -1
         w.mask[:, masked_cols] = -1
@@ -109,7 +111,7 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self.modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other.modes.index(m)] if m in other.modes else np.zeros(4)
-            assert all(self_row[self_row > 0] != other_row[other_row > 0]), "duplicate wires"
+            assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
             modes_rows[m] = [s if s > 0 else o for s,o in zip(self_row, other_row)]
         w = Wires()
         w._id_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
