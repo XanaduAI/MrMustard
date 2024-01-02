@@ -110,7 +110,7 @@ class Wires:
             self_row = self.id_array[self.modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other.modes.index(m)] if m in other.modes else np.zeros(4)
             assert all(self_row[self_row > 0] != other_row[other_row > 0]), "duplicate wires"
-            modes_rows[m] = self_row + other_row
+            modes_rows[m] = [s if s > 0 else o for s,o in zip(self_row, other_row)]
         w = Wires()
         w._id_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
         w.mask = np.ones_like(w._id_array)
