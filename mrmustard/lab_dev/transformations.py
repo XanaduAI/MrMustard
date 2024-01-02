@@ -32,29 +32,38 @@ __all__ = ["Dgate", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
-    r"""
-    Base class for all transformations.
-    """
-
-    def __rshift__(self, other: CircuitComponent):
-        r"""
-        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
-        """
-        return Circuit([self, other])
+        def __init__(self, name, representation, **modes):
+            super().__init__(name, representation, **modes)
 
 
 class Unitary(Transformation):
     r"""
-    Base class for all unitary transformations.
+    Base class for all unitary transformations. When called directly, it creates
+    the unitary identity on the specified modes. [TODO]
 
     Arguments:
-        name: The name of this unitary.
-        modes: The modes that this unitary acts on.
+        name: The name of this unitary transformation.
+        modes: The modes of this unitary transformation.
     """
 
-    def __init__(self, name, modes):
-        super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
+    def __init__(self, name: str, representation, modes: Sequence[Mode]):
+        M = len(modes)
+        representation = representation or Bargmann(math.Xmat(M), math.zeros((M,)), 1)
+        super().__init__(name, representation, modes_in_ket=modes, modes_out_ket=modes)
 
+class Channel(Transformation):
+    r"""
+    Base class for all channels. When called directly, it creates
+    the identity channel on the specified modes. [TODO]
+
+    Arguments:
+        name: The name of this channel.
+        modes: The modes of this channel.
+    """
+    def __init__(self, name: str, representation, modes: Sequence[Mode]):
+        M = len(modes)
+        representation = representation or Bargmann(math.block_diag(math.Xmat(M),math.Xmat(M)), math.zeros((2*M,)), 1)
+        super().__init__(name, representation, modes_in_bra=modes, modes_out_bra=modes, modes_in_ket=modes, modes_out_ket=modes)
 
 class Dgate(Unitary):
     r"""
@@ -78,16 +87,16 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        x: Union[float, Sequence[float]] = 0.0,
-        y: Union[float, Sequence[float]] = 0.0,
+        x: Union[float, List[float]] = 0.0,
+        y: Union[float, List[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = None,
-    ) -> None:
+        modes: Optional[List[int]] = None,
+    ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        super().__init__("Dgate", modes=modes or list(range(m)))
+        super().__init__("Dgate", None, modes=modes or list(range(m)))
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -106,23 +115,8 @@ class Dgate(Unitary):
         C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
 
         return Bargmann(A, B, C)
-    
 
-class Channel(Transformation):
-    r"""
-    Base class for all non-unitary transformations.
 
-    Arguments:
-        name: The name of this channel.
-        modes: The modes that this channel acts on.
-    """
-
-    def __init__(self, name, modes):
-        super().__init__(
-            name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
-        )
-    
-    
 class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
@@ -156,23 +150,7 @@ class Attenuator(Channel):
         self,
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
         nbar: float = 0.0,
-        transmissivity_trainable: bool = False,
-        nbar_trainable: bool = False,
-        transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
-    ):
-        super().__init__(
-            modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
-            name="Att",
-        )
-        self._add_parameter(
-            make_parameter(
-                transmissivity_trainable,
-                transmissivity,
-                "transmissivity",
-                transmissivity_bounds,
-                None,
-            )
-        )
-        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
+    ):  
+        m = max(len(math.atleast_1d(transmissivity)), 1)
+        super().__init__("Attenuator", None, modes=modes or list(range(m)))
