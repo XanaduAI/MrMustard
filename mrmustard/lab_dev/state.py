@@ -29,8 +29,7 @@ import numpy as np
 
 from mrmustard import math, physics, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.math.tensor_networks.wires import Wires
-from mrmustard.lab.abstract.wired import Wired
+from mrmustard.lab_dev.wires import Wires
 from mrmustard.lab.utils import trainable_property
 
 if TYPE_CHECKING:
