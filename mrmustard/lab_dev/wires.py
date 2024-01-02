@@ -70,8 +70,11 @@ class Wires:
 
     def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
         "A disconnected soft copy of self with optional custom id_array."
-        w = Wires(self.output.bra.modes, self.input.bra.modes, self.output.ket.modes,
-                  self.input.ket.modes)
+        ob_modes = np.where(self._id_array[:, 0] > 0)[0]
+        ib_modes = np.where(self._id_array[:, 1] > 0)[0]
+        ok_modes = np.where(self._id_array[:, 2] > 0)[0]
+        ik_modes = np.where(self._id_array[:, 3] > 0)[0]
+        w = Wires(ob_modes, ib_modes, ok_modes, ik_modes)
         w.mask = self.mask.copy()
         if id_array is not None:
             assert id_array.shape == self._id_array.shape, "incompatible id_array"
@@ -87,7 +90,7 @@ class Wires:
     
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids]
+        subset = [self.ids.index(i) for i in ids if i in self.ids]
         _id_array = self._id_array[subset]
         w = Wires()
         w._id_array = _id_array
@@ -104,8 +107,8 @@ class Wires:
         modes_rows = {}
         all_modes = sorted(set(self.modes) | set(other.modes))
         for m in all_modes:
-            self_row = self.id_array[self.modes.index(m)]
-            other_row = other.id_array[other.modes.index(m)]
+            self_row = self.id_array[self.modes.index(m)] if m in self.modes else np.zeros(4)
+            other_row = other.id_array[other.modes.index(m)] if m in other.modes else np.zeros(4)
             assert all(self_row[self_row > 0] != other_row[other_row > 0]), "duplicate wires"
             modes_rows[m] = self_row + other_row
         w = Wires()
