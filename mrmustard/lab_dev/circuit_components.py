@@ -54,7 +54,21 @@ class CircuitComponent:
         self.name = name
         self.wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self.parameter_set = ParameterSet()
-        self.representation = representation
+        self._representation = representation
+
+    @property
+    def representation(self) -> Representation:
+        r"""
+        The representation of this component.
+        """
+        return self._representation
+    
+    @property
+    def modes(self) -> Sequence[Mode]:
+        r"""
+        The modes of this component.
+        """
+        return self.wires.modes
 
     @classmethod
     def from_ABC(
