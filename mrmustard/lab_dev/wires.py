@@ -53,11 +53,15 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Iterable[int] = [],
-        modes_in_bra: Iterable[int] = [],
-        modes_out_ket: Iterable[int] = [],
-        modes_in_ket: Iterable[int] = [],
+        modes_out_bra: Optional[Iterable[int]] = None,
+        modes_in_bra: Optional[Iterable[int]] = None,
+        modes_out_ket: Optional[Iterable[int]] = None,
+        modes_in_ket: Optional[Iterable[int]] = None,
     ) -> None:
+        modes_out_bra = [] if not modes_out_bra else modes_out_bra
+        modes_in_bra = [] if not modes_in_bra else modes_in_bra
+        modes_out_ket = [] if not modes_out_ket else modes_out_ket
+        modes_in_ket = [] if not modes_in_ket else modes_in_ket
         self._modes = sorted(
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
