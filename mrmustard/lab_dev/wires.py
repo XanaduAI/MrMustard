@@ -17,7 +17,6 @@
 from __future__ import annotations
 from typing import Iterable, Optional
 import numpy as np
-from IPython.display import display, HTML
 from mrmustard import settings
 
 # pylint: disable=protected-access
@@ -212,4 +211,8 @@ class Wires:
             html += "</tr>"
 
         html += "</table>"
-        display(HTML(html))
+        try:
+            from IPython.display import display, HTML
+            display(HTML(html))
+        except ImportError:
+            raise ImportError("To display the wires in a jupyter notebook you need to `pip install IPython`")
