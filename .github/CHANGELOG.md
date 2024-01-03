@@ -9,6 +9,10 @@
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
+* Added a `Wires` class to handle wire connections in a tensor network or in a circuit.
+  [(#321)](https://github.com/XanaduAI/MrMustard/pull/321)
+
+
 ### Breaking changes
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
