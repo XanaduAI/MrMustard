@@ -218,7 +218,9 @@ class Wires:
             html += "<tr>"
             html += f'<td style="border: 1px solid black; padding: 5px;">{row_label}</td>'
             for value in row:
-                color = "white" if np.isclose(value, 0) else ("red" if np.isclose(value, 1) else "pink")
+                color = (
+                    "white" if np.isclose(value, 0) else ("red" if np.isclose(value, 1) else "pink")
+                )
                 html += f'<td style="border: 1px solid black; padding: 5px; width: {box_size}; height: {box_size}; background-color: {color}; box-sizing: border-box;'
                 if color == "red":
                     html += f' text-align: center; vertical-align: middle; box-sizing: border-box;">{str(next(idxs))}</td>'
@@ -228,4 +230,3 @@ class Wires:
 
         html += "</table>"
         display(HTML(html))
-
