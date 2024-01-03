@@ -190,7 +190,7 @@ class Wires:
 
         # Add column headers
         html += "<tr>"
-        for col_label in ["", "bra-in", "bra-out", "ket-in", "ket-out"]:
+        for col_label in ["", "bra-out", "bra-in", "ket-out", "ket-in"]:
             html += f'<th style="border: 1px solid black; padding: 5px;">{col_label}</th>'
         html += "</tr>"
 
