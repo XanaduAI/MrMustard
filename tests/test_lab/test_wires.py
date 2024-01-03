@@ -36,7 +36,7 @@ def test_copy_doesnt_change_original():
     assert w.ids != [9, 99, 999, 9999]
 
 
-def test_view_edits_original():
+def test_view_changes_original():
     w = Wires([0], [0], [0], [0])
     w.view().ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
@@ -50,7 +50,7 @@ def test_wire_subsets():
     assert w.input.ket.modes == [3]
 
 
-def test_wire_mode_subsets():
+def test_wire_mode_equivalent_subsets():
     w = Wires([10], [11], [12], [13])
     assert w[10].ids == w.output.bra.ids
     assert w[11].ids == w.input.bra.ids
@@ -58,24 +58,29 @@ def test_wire_mode_subsets():
     assert w[13].ids == w.input.ket.ids
 
 
-def test_indices():
-    w = Wires([0, 10, 20], [30, 40, 50], [60, 70], [80])
+def test_indices_with_modes_anywhere():
+    w = Wires([5, 10, 20], [30, 40, 50], [60, 70], [80])
     assert w.output.indices == [0, 1, 2, 6, 7]
     assert w.bra.indices == [0, 1, 2, 3, 4, 5]
     assert w.input.indices == [3, 4, 5, 8]
     assert w.ket.indices == [6, 7, 8]
 
 
-def test_adjoint():
-    w = Wires([0, 1], [2, 3])
-    assert set(w.adjoint.ids) == set(w.ids)
-    # is this what we want?
+def test_args():
+    w = Wires([0], [1, 2], [2, 3, 4], [3, 4, 5, 6])
+    assert w.args == ([0], [1, 2], [2, 3, 4], [3, 4, 5, 6])
 
 
 def test_dual():
+    w = Wires([0, 1], [2, 3])
+    assert set(w.input.ids) == set(w.dual.output.ids)
+    assert set(w.output.ids) == set(w.dual.input.ids)
+
+
+def test_adjoint():
     w = Wires([0, 1], [], [2, 3], [])
-    assert set(w.dual.ids) == set(w.ids)
-    # is this what we want?
+    assert set(w.ket.ids) == set(w.adjoint.bra.ids)
+    assert set(w.bra.ids) == set(w.adjoint.ket.ids)
 
 
 def test_setting_ids():
@@ -107,9 +112,9 @@ def test_cant_add_overlapping_wires():
     with pytest.raises(Exception):
         w = w1 + w2  # pylint: disable=unused-variable
 
+
 def test_set_ids_with_other_ids():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     w1.bra.output.ids = w2.bra.output.ids
     assert w1.bra.output.ids == w2.output.bra.ids
-
