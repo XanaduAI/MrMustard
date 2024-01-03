@@ -56,10 +56,10 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Iterable[int] = tuple(),
-        modes_in_bra: Iterable[int] = tuple(),
-        modes_out_ket: Iterable[int] = tuple(),
-        modes_in_ket: Iterable[int] = tuple(),
+        modes_out_bra: Iterable[int] = (),
+        modes_in_bra: Iterable[int] = (),
+        modes_out_ket: Iterable[int] = (),
+        modes_in_ket: Iterable[int] = (),
     ) -> None:
         self._modes = sorted(
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
@@ -74,6 +74,7 @@ class Wires:
 
     @property
     def args(self):
+        r"returns the same args one needs to initialize this object."
         ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
         ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
@@ -90,7 +91,7 @@ class Wires:
             w._id_array = id_array
         return w
 
-    def view(self, masked_rows: list[int] = tuple(), masked_cols: list[int] = tuple()) -> Wires:
+    def view(self, masked_rows: tuple[int,...] = (), masked_cols: tuple[int,...] = ()) -> Wires:
         r"""A masked view of this Wires object."""
         w = self.copy(self._id_array)
         w.mask[masked_rows, :] = -1
@@ -106,11 +107,11 @@ class Wires:
         return w
 
     def __bool__(self) -> bool:
-        "True if this Wires object contains any wires."
-        return len(self.ids) > 0
+        "True if self contains any wires."
+        return bool(self.ids)
 
     def __add__(self, other: Wires) -> Wires:
-        "A new Wires object with the wires of self and other."
+        "A new Wires object with the wires of self and other combined."
         modes_rows = {}
         all_modes = sorted(set(self.modes) | set(other.modes))
         for m in all_modes:
