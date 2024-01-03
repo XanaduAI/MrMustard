@@ -19,7 +19,7 @@ from typing import Iterable, Optional
 import numpy as np
 from mrmustard import settings
 
-# pylint disable=protected-access
+# pylint: disable=protected-access
 
 class Wires:
     r"""A class with wire functionality for tensor network applications.
