@@ -101,4 +101,4 @@ def test_cant_add_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
-        w1 + w2
+        w = w1 + w2
