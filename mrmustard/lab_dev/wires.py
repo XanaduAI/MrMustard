@@ -214,7 +214,7 @@ class Wires:
 
         html += "</table>"
         try:
-            from IPython.display import display, HTML
+            from IPython.display import display, HTML  # pylint: disable=import-outside-toplevel
 
             display(HTML(html))
         except ImportError as e:
