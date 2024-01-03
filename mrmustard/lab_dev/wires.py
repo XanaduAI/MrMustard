@@ -204,7 +204,7 @@ class Wires:
         "A matrix plot of the id_array."
         data = np.abs(self.id_array) / (self.id_array + 1e-15)
         box_size = "60px"  # Set the size of the squares
-        html = f'<table style="border-collapse: collapse; border: 1px solid black;">'
+        html = '<table style="border-collapse: collapse; border: 1px solid black;">'
 
         # Add column headers
         html += "<tr>"
