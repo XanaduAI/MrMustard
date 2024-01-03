@@ -59,7 +59,7 @@ def test_wire_mode_subsets():
 
 
 def test_indices():
-    w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
+    w = Wires([0, 10, 20], [30, 40, 50], [60, 70], [80])
     assert w.output.indices == [0, 1, 2, 6, 7]
     assert w.bra.indices == [0, 1, 2, 3, 4, 5]
     assert w.input.indices == [3, 4, 5, 8]
@@ -106,3 +106,10 @@ def test_cant_add_overlapping_wires():
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
         w = w1 + w2  # pylint: disable=unused-variable
+
+def test_set_ids_with_other_ids():
+    w1 = Wires([0], [1], [2], [3])
+    w2 = Wires([0], [2], [3], [4])
+    w1.bra.output.ids = w2.bra.output.ids
+    assert w1.bra.output.ids == w2.output.bra.ids
+
