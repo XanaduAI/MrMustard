@@ -71,32 +71,10 @@ def test_args():
     assert w.args == ([0], [1, 2], [2, 3, 4], [3, 4, 5, 6])
 
 
-def test_dual():
-    w = Wires([0, 1], [2, 3])
-    assert set(w.input.ids) == set(w.dual.output.ids)
-    assert set(w.output.ids) == set(w.dual.input.ids)
-
-
-def test_adjoint():
-    w = Wires([0, 1], [], [2, 3], [])
-    assert set(w.ket.ids) == set(w.adjoint.bra.ids)
-    assert set(w.bra.ids) == set(w.adjoint.ket.ids)
-
-
 def test_setting_ids():
     w = Wires([0], [0], [0], [0])
     w.ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
-
-
-def test_bool():
-    w = Wires([0], [0], [0], [0])
-    assert w.bra
-    assert w.ket
-    assert w.input
-    assert w.output
-    assert w[0]
-    assert not w[1]
 
 
 def test_add_wires():

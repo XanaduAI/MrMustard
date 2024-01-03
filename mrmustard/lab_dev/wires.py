@@ -106,10 +106,6 @@ class Wires:
         w._modes = [self._modes[i] for i in subset]
         return w
 
-    def __bool__(self) -> bool:
-        "True if self contains any wires."
-        return bool(self.ids)
-
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
         modes_rows = {}
@@ -181,20 +177,6 @@ class Wires:
         modes = [modes] if isinstance(modes, int) else modes
         idxs = [list(self._modes).index(m) for m in set(self._modes).difference(modes)]
         return self.view(masked_rows=idxs)
-
-    @property
-    def dual(self) -> Wires:
-        "A new Wires object with ket <-> bra."
-        w = self.copy(self._id_array[:, [1, 0, 3, 2]])
-        w.mask = self.mask[:, [1, 0, 3, 2]]
-        return w
-
-    @property
-    def adjoint(self) -> Wires:
-        "A new Wires object with input <-> output."
-        w = self.copy(self._id_array[:, [2, 3, 0, 1]])
-        w.mask = self.mask[:, [2, 3, 0, 1]]
-        return w
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self.args
