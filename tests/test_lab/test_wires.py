@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"tests for the Wires class"
+
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
@@ -103,4 +105,4 @@ def test_cant_add_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
-        w = w1 + w2
+        w = w1 + w2  # pylint: disable=unused-variable
