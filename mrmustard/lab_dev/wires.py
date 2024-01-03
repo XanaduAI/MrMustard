@@ -201,7 +201,9 @@ class Wires:
             html += f'<td style="border: 1px solid black; padding: 5px;">{row_label}</td>'
             for value in row:
                 color = (
-                    "white" if np.isclose(value, 0) else ("#5b9bd5" if np.isclose(value, 1) else "#d6e8f7")
+                    "white"
+                    if np.isclose(value, 0)
+                    else ("#5b9bd5" if np.isclose(value, 1) else "#d6e8f7")
                 )
                 html += f'<td style="border: 1px solid black; padding: 5px; width: {box_size}; height: {box_size}; background-color: {color}; box-sizing: border-box;'
                 if color == "#5b9bd5":
@@ -213,6 +215,9 @@ class Wires:
         html += "</table>"
         try:
             from IPython.display import display, HTML
+
             display(HTML(html))
         except ImportError as e:
-            raise ImportError("To display the wires in a jupyter notebook you need to `pip install IPython`") from e
+            raise ImportError(
+                "To display the wires in a jupyter notebook you need to `pip install IPython`"
+            ) from e
