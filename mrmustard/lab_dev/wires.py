@@ -91,7 +91,7 @@ class Wires:
             w._id_array = id_array
         return w
 
-    def view(self, masked_rows: tuple[int,...] = (), masked_cols: tuple[int,...] = ()) -> Wires:
+    def view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
         r"""A masked view of this Wires object."""
         w = self.copy(self._id_array)
         w.mask[masked_rows, :] = -1
