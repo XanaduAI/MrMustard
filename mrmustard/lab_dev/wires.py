@@ -93,9 +93,7 @@ class Wires:
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
         subset = [self.ids.index(i) for i in ids if i in self.ids]
-        _id_array = self._id_array[subset]
-        w = Wires()
-        w._id_array = _id_array
+        w = Wires(self._id_array[subset])
         w.mask = self.mask[subset]
         w._modes = [self._modes[i] for i in subset]
         return w
