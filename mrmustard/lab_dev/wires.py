@@ -19,6 +19,7 @@ from typing import Iterable, Optional
 import numpy as np
 from mrmustard import settings
 
+# pylint disable=protected-access
 
 class Wires:
     r"""A class with wire functionality for tensor network applications.
@@ -83,7 +84,7 @@ class Wires:
             w._id_array = id_array
         return w
 
-    def view(self, masked_rows: list[int] = [], masked_cols: list[int] = []) -> Wires:
+    def view(self, masked_rows: list[int] = tuple(), masked_cols: list[int] = tuple()) -> Wires:
         r"""A masked view of this Wires object."""
         w = self.copy(self._id_array)
         w.mask[masked_rows, :] = -1
