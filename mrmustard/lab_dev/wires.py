@@ -201,10 +201,10 @@ class Wires:
             html += f'<td style="border: 1px solid black; padding: 5px;">{row_label}</td>'
             for value in row:
                 color = (
-                    "white" if np.isclose(value, 0) else ("red" if np.isclose(value, 1) else "pink")
+                    "white" if np.isclose(value, 0) else ("#5b9bd5" if np.isclose(value, 1) else "#d6e8f7")
                 )
                 html += f'<td style="border: 1px solid black; padding: 5px; width: {box_size}; height: {box_size}; background-color: {color}; box-sizing: border-box;'
-                if color == "red":
+                if color == "#5b9bd5":
                     html += f' text-align: center; vertical-align: middle; box-sizing: border-box;">{str(next(idxs))}</td>'
                 else:
                     html += '"></td>'
@@ -214,5 +214,5 @@ class Wires:
         try:
             from IPython.display import display, HTML
             display(HTML(html))
-        except ImportError:
-            raise ImportError("To display the wires in a jupyter notebook you need to `pip install IPython`")
+        except ImportError as e:
+            raise ImportError("To display the wires in a jupyter notebook you need to `pip install IPython`") from e
