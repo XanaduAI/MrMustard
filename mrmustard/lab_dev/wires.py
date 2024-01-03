@@ -23,12 +23,12 @@ from mrmustard import settings
 class Wires:
     r"""A class with wire functionality for tensor network applications.
     Anything that wants wires should use an object of this class.
-    
+
     Wires are arranged into four groups, and each of the four groups can span multiple modes.
 
     input bra --->|   |---> output bra
     input ket --->|   |---> output ket
-    
+
     A ``Wires`` object can return sub-``Wires`` objects.
     Available subsets are:
     - input/output
@@ -89,7 +89,7 @@ class Wires:
         w.mask[masked_rows, :] = -1
         w.mask[:, masked_cols] = -1
         return w
-    
+
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
         subset = [self.ids.index(i) for i in ids if i in self.ids]
@@ -103,7 +103,7 @@ class Wires:
     def __bool__(self) -> bool:
         "True if this Wires object contains any wires."
         return len(self.ids) > 0
-    
+
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other."
         modes_rows = {}
@@ -112,7 +112,7 @@ class Wires:
             self_row = self.id_array[self.modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other.modes.index(m)] if m in other.modes else np.zeros(4)
             assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
-            modes_rows[m] = [s if s > 0 else o for s,o in zip(self_row, other_row)]
+            modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         w = Wires()
         w._id_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
         w.mask = np.ones_like(w._id_array)
@@ -123,13 +123,13 @@ class Wires:
     def id_array(self) -> np.ndarray:
         "The id_array of the available wires in the standard order (bra/ket x out/in x mode)."
         return self._id_array * self.mask
-    
+
     @property
     def ids(self) -> list[int]:
         "The list of ids of the available wires in the standard order."
         flat = self.id_array.T.ravel()
         return flat[flat > 0].tolist()
-    
+
     @ids.setter
     def ids(self, ids: list[int]):
         "Sets the ids of the available wires."
@@ -189,4 +189,3 @@ class Wires:
         w = self.copy(self._id_array[:, [2, 3, 0, 1]])
         w.mask = self.mask[:, [2, 3, 0, 1]]
         return w
-
