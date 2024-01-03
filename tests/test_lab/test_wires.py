@@ -15,6 +15,8 @@
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
+# pylint: disable=missing-function-docstring
+
 
 def test_wires_copy_has_new_ids():
     w = Wires([0], [0], [0], [0])
