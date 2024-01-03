@@ -17,6 +17,7 @@
 from __future__ import annotations
 from typing import Iterable, Optional
 import numpy as np
+from IPython.display import display, HTML
 from mrmustard import settings
 
 # pylint: disable=protected-access
@@ -71,14 +72,18 @@ class Wires:
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
         self.mask = np.ones_like(self._id_array)  # multiplicative mask
 
+    @property
+    def args(self):
+        ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
+        ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
+        ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
+        ik_modes = np.array(self._modes)[self._id_array[:, 3] > 0].tolist()
+        return ob_modes, ib_modes, ok_modes, ik_modes
+
     def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
         r"""A copy of self with optional custom id_array. If id_array is passed,
         the copy will hold a reference to it (not a copy)."""
-        ob_modes = np.where(self._id_array[:, 0] > 0)[0]
-        ib_modes = np.where(self._id_array[:, 1] > 0)[0]
-        ok_modes = np.where(self._id_array[:, 2] > 0)[0]
-        ik_modes = np.where(self._id_array[:, 3] > 0)[0]
-        w = Wires(ob_modes, ib_modes, ok_modes, ik_modes)
+        w = Wires(*self.args)
         w.mask = self.mask.copy()
         if id_array is not None:
             assert id_array.shape == self._id_array.shape, "incompatible id_array"
@@ -177,15 +182,50 @@ class Wires:
         return self.view(masked_rows=idxs)
 
     @property
-    def adjoint(self) -> Wires:
+    def dual(self) -> Wires:
         "A new Wires object with ket <-> bra."
         w = self.copy(self._id_array[:, [1, 0, 3, 2]])
         w.mask = self.mask[:, [1, 0, 3, 2]]
         return w
 
     @property
-    def dual(self) -> Wires:
+    def adjoint(self) -> Wires:
         "A new Wires object with input <-> output."
         w = self.copy(self._id_array[:, [2, 3, 0, 1]])
         w.mask = self.mask[:, [2, 3, 0, 1]]
         return w
+
+    def __repr__(self) -> str:
+        ob_modes, ib_modes, ok_modes, ik_modes = self.args
+        return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
+
+    def _repr_html_(self):
+        "A matrix plot of the id_array."
+        data = np.abs(self.id_array) / (self.id_array + 1e-15)
+        box_size = "60px"  # Set the size of the squares
+        html = f'<table style="border-collapse: collapse; border: 1px solid black;">'
+
+        # Add column headers
+        html += "<tr>"
+        for col_label in ["", "bra-in", "bra-out", "ket-in", "ket-out"]:
+            html += f'<th style="border: 1px solid black; padding: 5px;">{col_label}</th>'
+        html += "</tr>"
+
+        idxs = (i for i in self.indices)
+
+        # Add rows
+        for row_label, row in zip(self._modes, data):
+            html += "<tr>"
+            html += f'<td style="border: 1px solid black; padding: 5px;">{row_label}</td>'
+            for value in row:
+                color = "white" if np.isclose(value, 0) else ("red" if np.isclose(value, 1) else "pink")
+                html += f'<td style="border: 1px solid black; padding: 5px; width: {box_size}; height: {box_size}; background-color: {color}; box-sizing: border-box;'
+                if color == "red":
+                    html += f' text-align: center; vertical-align: middle; box-sizing: border-box;">{str(next(idxs))}</td>'
+                else:
+                    html += '"></td>'
+            html += "</tr>"
+
+        html += "</table>"
+        display(HTML(html))
+
