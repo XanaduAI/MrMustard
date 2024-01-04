@@ -26,22 +26,33 @@ class Wires:
     r"""A class with wire functionality for tensor network applications.
     Anything that wants wires should use an object of this class.
 
-    Wires are arranged into four groups, and each of the four groups can span multiple modes.
+    Wires are arranged into four groups, where each of the four groups can
+    span multiple modes:
 
-    input bra --->|   |---> output bra
-    input ket --->|   |---> output ket
+    input bra modes --->| object with |---> output bra modes
+    input ket modes --->|    wires    |---> output ket modes
 
-    A ``Wires`` object can return sub-``Wires`` objects.
-    Available subsets are:
-    - input/output
-    - bra/ket
-    - modes
+    The "standard order" mentioned below is output_bra for all modes,
+    input_bra for all modes, output_ket for all modes, input_ket for all modes.
+    We use this order when we inline the ids into a list, or when we reproduce the
+    init args from the ids.
 
-    E.g. ``wires.input`` returns a Wires object with only the input wires
-    (on bra/ket side and all modes). Or ``wires.bra[(1,2)] returns a Wires
-    object with only the bra wires on modes 1 and 2 (on input/output side).
-    Note these are views of the original Wires object, i.e. if they are modified
-    the original will change.
+    A ``Wires`` object can return subsets (views) of itself. Available subsets are:
+
+    - input/output  (wires on input/output side)
+    - bra/ket       (wires on bra/ket side)
+    - modes         (wires on the given modes)
+    - id_subset     (wires with the given ids)
+
+    For example, ``wires.input`` returns a ``Wires`` object with only the input wires
+    (on bra and ket sides and on all the modes). Or ``wires.input.bra[(1,2)] returns a
+    ``Wires`` object with only the input bra wires on modes 1 and 2.
+    Note these are views of the original ``Wires`` object, i.e. we can set the ``ids``
+    on the views and it will be set on the original, e.g. ``wires1.output.ids = wires2.input.ids``.
+    (this is used to create tensor networks / circuits in MrMustard).
+
+    ``Wires`` can also be added to one another, which returns a new ``Wires`` object with
+    the wires of both objects combined (if there are duplicates, an error is raised).
 
     Args:
         modes_out_bra (Iterable[int]): The output modes on the bra side.
@@ -50,7 +61,7 @@ class Wires:
         modes_in_ket (Iterable[int]): The input modes on the ket side.
 
     Note that the order of the modes passed to initialize the object doesn't matter,
-    as they are sorted.
+    as they get sorted at init time.
     """
 
     def __init__(
@@ -135,7 +146,8 @@ class Wires:
     @ids.setter
     def ids(self, ids: list[int]):
         "Sets the ids of the available wires."
-        assert len(ids) == len(self.ids), "incompatible ids"
+        if len(ids) != len(self.ids):
+            raise ValueError(f"wrong number of ids (expected {len(self.ids)}, got {len(ids)})")
         self._id_array.flat[self.id_array.flatten() > 0] = ids
 
     @property
@@ -184,19 +196,16 @@ class Wires:
 
     def _repr_html_(self):
         "A matrix plot of the id_array."
-        row_labels = map(str,self._modes)
+        row_labels = map(str, self._modes)
         col_labels = ["bra-out", "bra-in", "ket-out", "ket-in"]
         array = np.abs(self.id_array) / (self.id_array + 1e-15)
         idxs = (i for i in self.indices)
         box_size = "60px"  # Set the size of the squares
         html = '<table style="border-collapse: collapse; border: 1px solid black;">'
 
-        # Define colors
+        # colors
         active = "#5b9bd5"
         inactive = "#d6e8f7"
-
-        # Start the HTML table
-        html = "<table>"
 
         # Add column headers
         html += "<tr>"
@@ -205,7 +214,10 @@ class Wires:
         html += "</tr>"
 
         # Initialize rows with row labels
-        rows_html = [f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>' for label in row_labels]
+        rows_html = [
+            f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>'
+            for label in row_labels
+        ]
 
         # Add table cells (column by column)
         for label, col in zip(col_labels, array.T):
@@ -215,9 +227,13 @@ class Wires:
                     if np.isclose(value, 0)
                     else (active if np.isclose(value, 1) else inactive)
                 )
-                cell_html = f'<td style="border: 1px solid black; padding: 5px; width: {box_size}px; height: {box_size}px; background-color: {color}; box-sizing: border-box;'
+                cell_html = f'<td style="border: 1px solid black; padding: 5px;\
+                      width: {box_size}px; height: {box_size}px; background-color:\
+                          {color}; box-sizing: border-box;'
                 if color == active:
-                    cell_html += f' text-align: center; vertical-align: middle;">{str(next(idxs))}</td>'
+                    cell_html += (
+                        f' text-align: center; vertical-align: middle;">{str(next(idxs))}</td>'
+                    )
                 else:
                     cell_html += '"></td>'
                 rows_html[row_idx] += cell_html
@@ -228,7 +244,7 @@ class Wires:
             html += row_html
 
         html += "</table>"
-        # return html
+
         try:
             from IPython.display import display, HTML  # pylint: disable=import-outside-toplevel
 
