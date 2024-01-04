@@ -80,7 +80,7 @@ class Wires:
         ok = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
         ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
-        self.mask = np.ones_like(self._id_array)  # multiplicative mask
+        self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
     @property
     def args(self):
@@ -90,32 +90,27 @@ class Wires:
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
         ik_modes = np.array(self._modes)[self._id_array[:, 3] > 0].tolist()
         return tuple(ob_modes), tuple(ib_modes), tuple(ok_modes), tuple(ik_modes)
-
-    def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
-        r"""A copy of self with optional custom id_array. If id_array is passed,
-        the copy will hold a reference to it (not a copy)."""
-        w = Wires(*self.args)
-        w.mask = self.mask.copy()
-        if id_array is not None:
-            assert id_array.shape == self._id_array.shape, "incompatible id_array"
-            w._id_array = id_array
+    
+    @classmethod
+    def _from_data(cls, id_array = None, modes = None, mask = None):
+        r"""Private class method to initialize Wires object from the given data."""
+        w = cls()
+        w._id_array = id_array if id_array is not None else w._id_array
+        w._modes = modes if modes is not None else w._modes
+        w._mask = mask if mask is not None else w._mask
         return w
 
     def view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
         r"""A masked view of this Wires object."""
-        w = self.copy(self._id_array)
-        w.mask[masked_rows, :] = -1
-        w.mask[:, masked_cols] = -1
+        w = self._from_data(self._id_array, self._modes, self._mask.copy())
+        w._mask[masked_rows, :] = -1
+        w._mask[:, masked_cols] = -1
         return w
 
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
         subset = [self.ids.index(i) for i in ids if i in self.ids]
-        w = Wires()
-        w._id_array = self.id_array[subset]
-        w.mask = self.mask[subset]
-        w._modes = [self._modes[i] for i in subset]
-        return w
+        return self._from_data(self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset])
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
@@ -126,16 +121,12 @@ class Wires:
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
             assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
-        w = Wires()
-        w._id_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        w.mask = np.ones_like(w._id_array)
-        w._modes = sorted(modes_rows)
-        return w
+        return self._from_data(np.array([modes_rows[m] for m in sorted(modes_rows)]), sorted(modes_rows))
 
     @property
     def id_array(self) -> np.ndarray:
         "The id_array of the available wires in the standard order (bra/ket x out/in x mode)."
-        return self._id_array * self.mask
+        return self._id_array * self._mask
 
     @property
     def ids(self) -> list[int]:
