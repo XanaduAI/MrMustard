@@ -71,10 +71,10 @@ class Wires:
         )
 
         keys = self._modes or self._set_modes
-        self._out_ket = {m: uuid.uuid4() if m in modes_out_ket else None for m in keys}
-        self._in_bra = {m: uuid.uuid4() if m in modes_in_bra else None for m in keys}
-        self._out_bra = {m: uuid.uuid4() if m in modes_out_bra else None for m in keys}
-        self._in_ket = {m: uuid.uuid4() if m in modes_in_ket else None for m in keys}
+        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
+        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
+        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
+        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
 
     @property
     def in_ket(self) -> dict[Mode, Optional[Wire]]:

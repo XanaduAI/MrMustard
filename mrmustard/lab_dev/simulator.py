@@ -48,43 +48,4 @@ class SimulatorBargmann(Simulator):
     r"""
     A simulator for circuits whose components are in the Bargmann representation.
     """
-
-    @staticmethod
-    def _validate(c: CircuitComponent):
-        r"""
-        Checks that given components is has ``Bargmann`` representation.
-        """
-        rep = c.representation
-        if not isinstance(rep, Bargmann):
-            msg = f"Expected `Bargmann`, found {rep.__class__}"
-            raise ValueError(msg)
-
-    def run(self, circuit: Circuit) -> CircuitComponent:
-        c = circuit.components[0]
-        self._validate(c[0])
-        ret = CircuitComponent.from_ABC(
-            "",
-            c[0].representation.A,
-            c[0].representation.b,
-            c[0].representation.c,
-            list(c[0].wires.in_ket.keys()),  # write convenience methods
-            list(c[0].wires.out_ket.keys()),
-            list(c[0].wires.in_bra.keys()),
-            list(c[0].wires.out_bra.keys()),
-        )
-
-        for c in circuit.components[1:]:
-            self._validate(c)
-            rep = ret.representation[..] @ c.representation[..]
-            ret = CircuitComponent.from_ABC(
-                "",
-                c[0].representation.A,
-                c[0].representation.b,
-                c[0].representation.c,
-                list(c[0].wires.in_ket.keys()),  # write convenience methods
-                list(c[0].wires.out_ket.keys()),
-                list(c[0].wires.in_bra.keys()),
-                list(c[0].wires.out_bra.keys()),
-            )
-
-        return ret
+    ...

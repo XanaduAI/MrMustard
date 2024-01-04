@@ -107,7 +107,7 @@ class Dgate(Unitary):
         C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
 
         return Bargmann(A, B, C)
-    
+
 
 class Channel(Transformation):
     r"""
@@ -122,8 +122,8 @@ class Channel(Transformation):
         super().__init__(
             name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
-    
-    
+
+
 class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
@@ -153,6 +153,7 @@ class Attenuator(Channel):
         nbar_bounds (float, float): bounds for the average number of photons in the thermal state
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     def __init__(
         self,
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
