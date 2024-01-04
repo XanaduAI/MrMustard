@@ -111,8 +111,8 @@ class Wires:
         modes_rows = {}
         all_modes = sorted(set(self.modes) | set(other.modes))
         for m in all_modes:
-            self_row = self.id_array[self.modes.index(m)] if m in self.modes else np.zeros(4)
-            other_row = other.id_array[other.modes.index(m)] if m in other.modes else np.zeros(4)
+            self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
+            other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
             assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         w = Wires()
@@ -184,36 +184,51 @@ class Wires:
 
     def _repr_html_(self):
         "A matrix plot of the id_array."
-        data = np.abs(self.id_array) / (self.id_array + 1e-15)
+        row_labels = map(str,self._modes)
+        col_labels = ["bra-out", "bra-in", "ket-out", "ket-in"]
+        array = np.abs(self.id_array) / (self.id_array + 1e-15)
+        idxs = (i for i in self.indices)
         box_size = "60px"  # Set the size of the squares
         html = '<table style="border-collapse: collapse; border: 1px solid black;">'
 
+        # Define colors
+        active = "#5b9bd5"
+        inactive = "#d6e8f7"
+
+        # Start the HTML table
+        html = "<table>"
+
         # Add column headers
         html += "<tr>"
-        for col_label in ["", "bra-out", "bra-in", "ket-out", "ket-in"]:
-            html += f'<th style="border: 1px solid black; padding: 5px;">{col_label}</th>'
+        for label in [""] + col_labels:  # Add an empty string for the top-left cell
+            html += f'<th style="border: 1px solid black; padding: 5px;">{label}</th>'
         html += "</tr>"
 
-        idxs = (i for i in self.indices)
+        # Initialize rows with row labels
+        rows_html = [f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>' for label in row_labels]
 
-        # Add rows
-        for row_label, row in zip(self._modes, data):
-            html += "<tr>"
-            html += f'<td style="border: 1px solid black; padding: 5px;">{row_label}</td>'
-            for value in row:
+        # Add table cells (column by column)
+        for label, col in zip(col_labels, array.T):
+            for row_idx, value in enumerate(col):
                 color = (
                     "white"
                     if np.isclose(value, 0)
-                    else ("#5b9bd5" if np.isclose(value, 1) else "#d6e8f7")
+                    else (active if np.isclose(value, 1) else inactive)
                 )
-                html += f'<td style="border: 1px solid black; padding: 5px; width: {box_size}; height: {box_size}; background-color: {color}; box-sizing: border-box;'
-                if color == "#5b9bd5":
-                    html += f' text-align: center; vertical-align: middle; box-sizing: border-box;">{str(next(idxs))}</td>'
+                cell_html = f'<td style="border: 1px solid black; padding: 5px; width: {box_size}px; height: {box_size}px; background-color: {color}; box-sizing: border-box;'
+                if color == active:
+                    cell_html += f' text-align: center; vertical-align: middle;">{str(next(idxs))}</td>'
                 else:
-                    html += '"></td>'
-            html += "</tr>"
+                    cell_html += '"></td>'
+                rows_html[row_idx] += cell_html
+
+        # Close the rows and add them to the HTML table
+        for row_html in rows_html:
+            row_html += "</tr>"
+            html += row_html
 
         html += "</table>"
+        # return html
         try:
             from IPython.display import display, HTML  # pylint: disable=import-outside-toplevel
 
