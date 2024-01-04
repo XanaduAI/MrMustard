@@ -32,8 +32,8 @@ __all__ = ["Dgate", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
-        def __init__(self, name, representation, **modes):
-            super().__init__(name, representation, **modes)
+    def __init__(self, name, representation, **modes):
+        super().__init__(name, representation, **modes)
 
 
 class Unitary(Transformation):
@@ -51,6 +51,7 @@ class Unitary(Transformation):
         representation = representation or Bargmann(math.Xmat(M), math.zeros((M,)), 1)
         super().__init__(name, representation, modes_in_ket=modes, modes_out_ket=modes)
 
+
 class Channel(Transformation):
     r"""
     Base class for all channels. When called directly, it creates
@@ -60,10 +61,21 @@ class Channel(Transformation):
         name: The name of this channel.
         modes: The modes of this channel.
     """
+
     def __init__(self, name: str, representation, modes: Sequence[Mode]):
         M = len(modes)
-        representation = representation or Bargmann(math.block_diag(math.Xmat(M),math.Xmat(M)), math.zeros((2*M,)), 1)
-        super().__init__(name, representation, modes_in_bra=modes, modes_out_bra=modes, modes_in_ket=modes, modes_out_ket=modes)
+        representation = representation or Bargmann(
+            math.block_diag(math.Xmat(M), math.Xmat(M)), math.zeros((2 * M,)), 1
+        )
+        super().__init__(
+            name,
+            representation,
+            modes_in_bra=modes,
+            modes_out_bra=modes,
+            modes_in_ket=modes,
+            modes_out_ket=modes,
+        )
+
 
 class Dgate(Unitary):
     r"""
@@ -146,11 +158,12 @@ class Attenuator(Channel):
         nbar_bounds (float, float): bounds for the average number of photons in the thermal state
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     def __init__(
         self,
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
         nbar: float = 0.0,
         modes: Optional[list[int]] = None,
-    ):  
+    ):
         m = max(len(math.atleast_1d(transmissivity)), 1)
         super().__init__("Attenuator", None, modes=modes or list(range(m)))

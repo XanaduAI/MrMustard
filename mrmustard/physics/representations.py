@@ -157,7 +157,12 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], idx_out: Optional[tuple[int,...]]=None) -> Bargmann:
+    def trace(
+        self,
+        idx_z: tuple[int, ...],
+        idx_zconj: tuple[int, ...],
+        idx_out: Optional[tuple[int, ...]] = None,
+    ) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
 
         Args:
@@ -181,11 +186,12 @@ class Bargmann(Representation):
             c.append(cij)
         result = self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
         if idx_out is not None:
-            assert set(idx_out).isdisjoint(set(idx_z + idx_zconj)), "idx_out must be disjoint from idx_z and idx_zconj"
+            assert set(idx_out).isdisjoint(
+                set(idx_z + idx_zconj)
+            ), "idx_out must be disjoint from idx_z and idx_zconj"
             leftover = [i for i in range(self.ansatz.dim) if i not in idx_z + idx_zconj]
             result = result.reorder([leftover.index(i) for i in idx_out])
         return result
-
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""

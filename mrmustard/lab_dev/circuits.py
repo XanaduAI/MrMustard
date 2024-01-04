@@ -72,10 +72,10 @@ class Circuit:
     def _connect(components: Sequence[CircuitComponent]):
         r"""Connects all components (sets the same id of connected wire pairs).
         Supports mode reinitialization."""
-        for i,c in enumerate(components):
+        for i, c in enumerate(components):
             ket_modes = set(c.wires.output.ket.modes)
             bra_modes = set(c.wires.output.bra.modes)
-            for c_ in components[i+1:]:
+            for c_ in components[i + 1 :]:
                 common_ket = ket_modes.intersection(c_.wires.input.ket.modes)
                 common_bra = bra_modes.intersection(c_.wires.input.bra.modes)
                 c.wires[common_ket].output.ket.ids = c_.wires[common_ket].input.ket.ids
@@ -84,16 +84,16 @@ class Circuit:
                 bra_modes -= common_bra
                 if not ket_modes and not bra_modes:
                     break
-    
+
     @staticmethod
     def _create_einsum_dict(components: Sequence[CircuitComponent]) -> dict[str, Representation]:
         r"""Creates the einsum dict from the components."""
-        einsum: dict[str, Representation] = {}  
-        ids = {id:None for c in components for id in c.wires.ids}
-        ids_map = {id:i for i,id in enumerate(ids.keys())}  # remap to 0,1,2...
+        einsum: dict[str, Representation] = {}
+        ids = {id: None for c in components for id in c.wires.ids}
+        ids_map = {id: i for i, id in enumerate(ids.keys())}  # remap to 0,1,2...
         strings_ints = [[ids_map[id] for id in c.wires.ids] for c in components]
-        strings = ["".join([chr(i+97) for i in s]) for s in strings_ints]
-        for s,c in zip(strings, components):
+        strings = ["".join([chr(i + 97) for i in s]) for s in strings_ints]
+        for s, c in zip(strings, components):
             einsum[s] = c.representation
         return einsum
 
@@ -101,8 +101,12 @@ class Circuit:
         r"""Contracts the circuit."""
         # 0. create the einsum dict and the char-id and id-char dicts
         einsum_dict = self._create_einsum_dict(self.components)
-        char_id_dict = {char:self.components[i].wires.ids[j] for i,string in enumerate(einsum_dict) for j,char in enumerate(string)}
-        id_char_dict = {id:char for char,id in char_id_dict.items()}
+        char_id_dict = {
+            char: self.components[i].wires.ids[j]
+            for i, string in enumerate(einsum_dict)
+            for j, char in enumerate(string)
+        }
+        id_char_dict = {id: char for char, id in char_id_dict.items()}
 
         # 1. create the einsum string for the whole contraction
         all_chars = [char for s in einsum_dict for char in s]
@@ -111,13 +115,16 @@ class Circuit:
         in_bra = reduce(add, [c.wires.bra.input.subset(ids) for c in components])
         out_ket = reduce(add, [c.wires.ket.output.subset(ids) for c in components])
         in_ket = reduce(add, [c.wires.ket.input.subset(ids) for c in components])
-        out_string = "".join([id_char_dict[id] for id in out_bra.ids + in_bra.ids + out_ket.ids + in_ket.ids])
+        out_string = "".join(
+            [id_char_dict[id] for id in out_bra.ids + in_bra.ids + out_ket.ids + in_ket.ids]
+        )
         einsum_string = ",".join(einsum_dict.keys()) + "->" + out_string
 
         # 2. use einsum string in path_info to get pair-wise contractions
         import opt_einsum as oe
-        shapes = [(2,)*len(s) for s in einsum_dict.keys()]
-        path_info = oe.contract_path(einsum_string, *shapes, shapes=True, optimize='auto')
+
+        shapes = [(2,) * len(s) for s in einsum_dict.keys()]
+        path_info = oe.contract_path(einsum_string, *shapes, shapes=True, optimize="auto")
 
         # 3. update the dict as path_info indicates until the whole circuit is contracted
         for _, _, current, _, _ in path_info[1].contraction_list:
@@ -128,16 +135,26 @@ class Circuit:
             einsum_dict[out] = new_r
 
         # 4. return the result
-        return CircuitComponent("", einsum_dict[out_string], modes_out_bra=out_bra.modes, modes_in_bra=in_bra.modes, modes_out_ket=out_ket.modes, modes_in_ket=in_ket.modes)
+        return CircuitComponent(
+            "",
+            einsum_dict[out_string],
+            modes_out_bra=out_bra.modes,
+            modes_in_bra=in_bra.modes,
+            modes_out_ket=out_ket.modes,
+            modes_in_ket=in_ket.modes,
+        )
 
     @staticmethod
     def parse_einsum(string: str):
-        parts, result = string.split('->')
-        parts = parts.split(',')
+        parts, result = string.split("->")
+        parts = parts.split(",")
         repeated = set(parts[0]).intersection(parts[1])
         remaining = set(parts[0]).union(parts[1]) - repeated
-        return [parts[0].index(i) for i in repeated], [parts[1].index(i) for i in repeated], [result.index(i) for i in remaining]
-
+        return (
+            [parts[0].index(i) for i in repeated],
+            [parts[1].index(i) for i in repeated],
+            [result.index(i) for i in remaining],
+        )
 
     def __rshift__(self, other: Circuit | CircuitComponent) -> Circuit:
         r"""

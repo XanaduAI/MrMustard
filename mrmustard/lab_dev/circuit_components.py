@@ -62,7 +62,7 @@ class CircuitComponent:
         The representation of this component.
         """
         return self._representation
-    
+
     @property
     def modes(self) -> Sequence[Mode]:
         r"""
@@ -86,7 +86,12 @@ class CircuitComponent:
         Initializes a circuit component from Bargmann's A, B, and c.
         """
         return cls(
-            name,  Bargmann(A, b, c), modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra,
+            name,
+            Bargmann(A, b, c),
+            modes_in_ket,
+            modes_out_ket,
+            modes_in_bra,
+            modes_out_bra,
         )
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):

@@ -61,7 +61,7 @@ class State(CircuitComponent):
     def is_pure(self):
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
-    
+
     @property
     def purity(self) -> float:
         r"""Returns the purity of the state."""
@@ -76,12 +76,12 @@ class State(CircuitComponent):
     def num_modes(self) -> int:
         r"""Returns the number of modes of the state."""
         return len(self.modes)
-    
+
     @property
     def dual(self) -> State:
         r"""Returns the dual of the state."""
         return self.__class__(self._representation.dual, modes=self.modes)
-    
+
     @property
     def adjoint(self) -> State:
         r"""Returns the adjoint of the state."""
@@ -129,22 +129,34 @@ class State(CircuitComponent):
         TN = {}
         try:
             TN = connect(
-                self.wires[common_modes].output.ket or self.adjoint.wires[common_modes].output.ket,  # or... because self might be defined on the bra side only
-                other.wires[common_modes].input.ket or other.wires.adjoint[common_modes].input.ket,  # or... because other might be defined on the bra side only
+                self.wires[common_modes].output.ket
+                or self.adjoint.wires[
+                    common_modes
+                ].output.ket,  # or... because self might be defined on the bra side only
+                other.wires[common_modes].input.ket
+                or other.wires.adjoint[
+                    common_modes
+                ].input.ket,  # or... because other might be defined on the bra side only
                 TN,
             )
         except AttributeError:
             pass
         try:
             TN = connect(
-                self.wires[common_modes].output.bra or self.adjoint.wires[common_modes].output.bra,  # or... because self might be defined on the ket side only
-                other.wires[common_modes].input.bra or other.wires.adjoint[common_modes].input.bra,  # or... because other might be defined on the ket side only
+                self.wires[common_modes].output.bra
+                or self.adjoint.wires[
+                    common_modes
+                ].output.bra,  # or... because self might be defined on the ket side only
+                other.wires[common_modes].input.bra
+                or other.wires.adjoint[
+                    common_modes
+                ].input.bra,  # or... because other might be defined on the ket side only
                 TN,
             )
         except AttributeError:
             pass
         new = contract([self, other], TN)  # ??
-        return self.__class__(representation=new._representation, modes=new.modes)   # ??
+        return self.__class__(representation=new._representation, modes=new.modes)  # ??
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
@@ -308,10 +320,9 @@ class Ket(State):
         contracted = contract([self, other], TN)
         return self.__class__(representation=contracted._representation, modes=contracted.modes)
 
-
     @classmethod
     def from_phase_space(
-        cls, cov, mean, coeff = 1.0, s=1, characteristic=True, pure_check=True, modes=None, name="Ket"
+        cls, cov, mean, coeff=1.0, s=1, characteristic=True, pure_check=True, modes=None, name="Ket"
     ):
         r"""General constructor for kets from phase space representation.
         Warning: kets do not really exist in phase space, but given that we use bargmann under the hood, we can do this.
@@ -325,7 +336,10 @@ class Ket(State):
             name (str): the name of the state
             pure_check (bool): whether to check if the state is pure (default: True)
         """
-        if pure_check and physics.phase_space.purity(cov, s, characteristic) < 1.0 - settings.PURITY_ATOL:
+        if (
+            pure_check
+            and physics.phase_space.purity(cov, s, characteristic) < 1.0 - settings.PURITY_ATOL
+        ):
             raise ValueError("Initializing a Ket using a mixed cov matrix is not allowed")
         A, b, c = physics.bargmann.from_phase_space_ket(cov, mean, s, characteristic)
         return cls(Bargmann(A, b, c * coeff), modes, name=name)
@@ -369,10 +383,19 @@ class Ket(State):
         """
         assert s in [1, 0, -1]
         d = self._representation.dimension
-        Abc = physics.bargmann.siegel_weil([s] * d) if not characteristic else physics.bargmann.s_displacement([s] * d)
+        Abc = (
+            physics.bargmann.siegel_weil([s] * d)
+            if not characteristic
+            else physics.bargmann.s_displacement([s] * d)
+        )
         kernel = DM(Bargmann(*Abc).conj, modes=self.modes).dual
         new = self >> kernel
-        return new._representation.A, new._representation.b, new._representation.c, new._representation.poly
+        return (
+            new._representation.A,
+            new._representation.b,
+            new._representation.c,
+            new._representation.poly,
+        )
 
     def quadrature(self, angle: float):
         r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.

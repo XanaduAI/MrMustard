@@ -24,6 +24,7 @@ from mrmustard.lab_dev.simulator import SimulatorBargmann
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.states import Vacuum
 
+
 class TestSimulatorBargmann:
     r"""
     Tests for the ``SimulatorBargmann`` class.
@@ -34,7 +35,7 @@ class TestSimulatorBargmann:
         simulator = SimulatorBargmann()
         state1 = Vacuum(1)
         state2 = Vacuum(3)
-        circuit = state1 >> state2 # TODO: This needs to have a warning or Error somehow.
+        circuit = state1 >> state2  # TODO: This needs to have a warning or Error somehow.
         new_component = simulator.run(circuit)
         assert len(new_component.modes) == 3
 
@@ -47,24 +48,26 @@ class TestSimulatorBargmann:
         new_component = simulator.run(circuit)
         assert len(new_component.modes) == 1
         assert np.allclose(new_component.representation.A, np.array([[0, 1], [1, 0]]))
-        assert np.allclose(new_component.representation.b, np.array([-0.1-0.5, 0.1+0.5])) # Note that the order is 'out' first.
-    
+        assert np.allclose(
+            new_component.representation.b, np.array([-0.1 - 0.5, 0.1 + 0.5])
+        )  # Note that the order is 'out' first.
+
     def test_run_function_with_a_series_of_gates_on_several_modes(self):
         r"""Tests that the simulator works correctly to contract a series of gates on several modes."""
         simulator = SimulatorBargmann()
-        dgate1 = Dgate(x=[0.1,0.2], modes=[0,7])
-        dgate2 = Dgate(x=[0.5,-0.5], modes=[0,88])
+        dgate1 = Dgate(x=[0.1, 0.2], modes=[0, 7])
+        dgate2 = Dgate(x=[0.5, -0.5], modes=[0, 88])
         circuit = dgate1 >> dgate2
         new_component = simulator.run(circuit)
         assert len(new_component.modes) == 3
-        #TODO: after discuss the reordering inside complex_integral
+        # TODO: after discuss the reordering inside complex_integral
         # assert np.allclose(new_component.representation.A, np.kron(np.array([[0, 1], [1, 0]]), np.eye(3)))
         # assert np.allclose(new_component.representation.b, np.array([-0.1-0.5, 0.1+0.5, 0.2, -0.2, 0.5, -0.5])) # Note that the order is 'out' first.
-    
+
     def test_run_function_with_a_series_of_channels(self):
         r"""Tests that the simulator works correctly to contract a series of channels."""
         assert True
-    
+
     def test_run_function_with_states_and_gates(self):
         r"""Tests that the simulator works correctly to contract a series of gates."""
         assert True
@@ -80,7 +83,7 @@ class TestSimulatorBargmann:
     def test_run_function_with_states_and_measurements(self):
         r"""Tests that the simulator works correctly to contract a series of gates."""
         assert True
-    
+
     def test_run_function_with_states_and_gates_and_channels(self):
         r"""Tests that the simulator works correctly to contract a series of gates."""
         assert True

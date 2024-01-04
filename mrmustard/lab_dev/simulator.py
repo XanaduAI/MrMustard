@@ -63,22 +63,22 @@ class SimulatorBargmann(Simulator):
     def run(self, circuit: Circuit) -> CircuitComponent:
         r"""Bargmann simulator
 
-            [Code Block]
-            from mrmustard.lab_dev.transformations import Dgate
-            from mrmustard.lab_dev.simulator import SimulatorBargmann
+        [Code Block]
+        from mrmustard.lab_dev.transformations import Dgate
+        from mrmustard.lab_dev.simulator import SimulatorBargmann
 
-            dgate1 = Dgate(x=[0.2,0.3,0.1], modes=[0,2,3])
-            dgate2 = Dgate(x=[0.2,0.1,-0.2,-0.3], modes=[2,3, 6,101])
-            dgate3 = Dgate(x=[0.5], modes=[1])
-            circuit = dgate1>>dgate2>>dgate3
-            circuit.draw()
+        dgate1 = Dgate(x=[0.2,0.3,0.1], modes=[0,2,3])
+        dgate2 = Dgate(x=[0.2,0.1,-0.2,-0.3], modes=[2,3, 6,101])
+        dgate3 = Dgate(x=[0.5], modes=[1])
+        circuit = dgate1>>dgate2>>dgate3
+        circuit.draw()
 
-            simulator = SimulatorBargmann()
-            output = simulator.run(circuit=circuit)
-            output.wires.list_of_types_and_modes_of_wires()
-            
-        """  
-        #_preparecomponent()
+        simulator = SimulatorBargmann()
+        output = simulator.run(circuit=circuit)
+        output.wires.list_of_types_and_modes_of_wires()
+
+        """
+        # _preparecomponent()
         component1 = circuit.components[0]
         for component2 in circuit.components[1:]:
             modes_out_ket_component1 = component1.wires.modes_out_ket
@@ -94,19 +94,59 @@ class SimulatorBargmann(Simulator):
             index_A_matrix_component2 = []
 
             for mode in intersection_ket:
-                index_A_matrix_component1 += [component1.wires.calculate_index_for_a_wire_on_given_mode_and_type('out_ket', mode)]
-                index_A_matrix_component2 += [component2.wires.calculate_index_for_a_wire_on_given_mode_and_type('in_ket', mode)]
+                index_A_matrix_component1 += [
+                    component1.wires.calculate_index_for_a_wire_on_given_mode_and_type(
+                        "out_ket", mode
+                    )
+                ]
+                index_A_matrix_component2 += [
+                    component2.wires.calculate_index_for_a_wire_on_given_mode_and_type(
+                        "in_ket", mode
+                    )
+                ]
 
             for mode in intersection_bra:
-                index_A_matrix_component1 += [component1.wires.calculate_index_for_a_wire_on_given_mode_and_type('out_bra', mode)]
-                index_A_matrix_component2 += [component2.wires.calculate_index_for_a_wire_on_given_mode_and_type('in_bra', mode)]
-            
-            new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
+                index_A_matrix_component1 += [
+                    component1.wires.calculate_index_for_a_wire_on_given_mode_and_type(
+                        "out_bra", mode
+                    )
+                ]
+                index_A_matrix_component2 += [
+                    component2.wires.calculate_index_for_a_wire_on_given_mode_and_type(
+                        "in_bra", mode
+                    )
+                ]
 
-            modes_in_ket_new = list(set(np.concatenate([component1.wires.modes_in_ket, component2.wires.modes_in_ket])))
-            modes_in_bra_new = list(set(np.concatenate([component1.wires.modes_in_bra, component2.wires.modes_in_bra])))
-            modes_out_ket_new = list(set(np.concatenate([component1.wires.modes_out_ket, component2.wires.modes_out_ket])))
-            modes_out_bra_new = list(set(np.concatenate([component1.wires.modes_out_bra, component2.wires.modes_out_bra])))
+            new_Bargmann = (
+                component1.representation[index_A_matrix_component1]
+                @ component2.representation[index_A_matrix_component2]
+            )
 
-            component1 = CircuitComponent.from_ABC('test', A=new_Bargmann.A, B=new_Bargmann.b, c=new_Bargmann.c, modes_in_bra=modes_in_bra_new, modes_out_bra=modes_out_bra_new, modes_in_ket=modes_in_ket_new, modes_out_ket=modes_out_ket_new)    
+            modes_in_ket_new = list(
+                set(np.concatenate([component1.wires.modes_in_ket, component2.wires.modes_in_ket]))
+            )
+            modes_in_bra_new = list(
+                set(np.concatenate([component1.wires.modes_in_bra, component2.wires.modes_in_bra]))
+            )
+            modes_out_ket_new = list(
+                set(
+                    np.concatenate([component1.wires.modes_out_ket, component2.wires.modes_out_ket])
+                )
+            )
+            modes_out_bra_new = list(
+                set(
+                    np.concatenate([component1.wires.modes_out_bra, component2.wires.modes_out_bra])
+                )
+            )
+
+            component1 = CircuitComponent.from_ABC(
+                "test",
+                A=new_Bargmann.A,
+                B=new_Bargmann.b,
+                c=new_Bargmann.c,
+                modes_in_bra=modes_in_bra_new,
+                modes_out_bra=modes_out_bra_new,
+                modes_in_ket=modes_in_ket_new,
+                modes_out_ket=modes_out_ket_new,
+            )
         return component1

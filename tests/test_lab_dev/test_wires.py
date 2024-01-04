@@ -161,9 +161,9 @@ class TestWires:
         list_types, list_modes = wires.list_of_types_and_modes_of_wires()
         assert len(list_types) == len(list_modes)
         assert len(list_types) == 2
-        assert list_types[0] == 'out_ket'
+        assert list_types[0] == "out_ket"
         assert list_modes[0] == 5
-        assert list_types[1] == 'out_ket'
+        assert list_types[1] == "out_ket"
         assert list_modes[1] == 15
 
     def test_list_of_types_and_modes_of_wires_for_single_wire_object_inside(self):
@@ -173,9 +173,9 @@ class TestWires:
         list_types, list_modes = wires.list_of_types_and_modes_of_wires()
         assert len(list_types) == len(list_modes)
         assert len(list_types) == 2
-        assert list_types[0] == 'in_ket'
+        assert list_types[0] == "in_ket"
         assert list_modes[0] == 5
-        assert list_types[1] == 'in_ket'
+        assert list_types[1] == "in_ket"
         assert list_modes[1] == 15
 
     def test_list_of_types_and_modes_of_wires_for_2_wire_object_same_outside(self):
@@ -185,13 +185,13 @@ class TestWires:
         list_types, list_modes = wires.list_of_types_and_modes_of_wires()
         assert len(list_types) == len(list_modes)
         assert len(list_types) == 4
-        assert list_types[0] == 'out_bra'
+        assert list_types[0] == "out_bra"
         assert list_modes[0] == 0
-        assert list_types[1] == 'out_bra'
+        assert list_types[1] == "out_bra"
         assert list_modes[1] == 2
-        assert list_types[2] == 'out_ket'
+        assert list_types[2] == "out_ket"
         assert list_modes[2] == 0
-        assert list_types[3] == 'out_ket'
+        assert list_types[3] == "out_ket"
         assert list_modes[3] == 2
 
     def test_list_of_types_and_modes_of_wires_for_2_wire_object_oppo_side(self):
@@ -201,51 +201,53 @@ class TestWires:
         list_types, list_modes = wires.list_of_types_and_modes_of_wires()
         assert len(list_types) == len(list_modes)
         assert len(list_types) == 6
-        assert list_types[0] == 'out_ket'
+        assert list_types[0] == "out_ket"
         assert list_modes[0] == 1
-        assert list_types[1] == 'out_ket'
+        assert list_types[1] == "out_ket"
         assert list_modes[1] == 8
-        assert list_types[2] == 'out_ket'
+        assert list_types[2] == "out_ket"
         assert list_modes[2] == 10
-        assert list_types[3] == 'in_ket'
+        assert list_types[3] == "in_ket"
         assert list_modes[3] == 1
-        assert list_types[4] == 'in_ket'
+        assert list_types[4] == "in_ket"
         assert list_modes[4] == 8
-        assert list_types[5] == 'in_ket'
+        assert list_types[5] == "in_ket"
         assert list_modes[5] == 10
 
     def test_list_of_types_and_modes_of_wires_for_4_wire_object(self):
         r"""Tests that we can get the correct list of types and modes from wires for a 4-wire object."""
-        wires = Wires(modes_out_bra=[0, 2], modes_out_ket=[0, 2], modes_in_bra=[0, 2], modes_in_ket=[0, 2])
+        wires = Wires(
+            modes_out_bra=[0, 2], modes_out_ket=[0, 2], modes_in_bra=[0, 2], modes_in_ket=[0, 2]
+        )
         assert wires.modes is not None
         list_types, list_modes = wires.list_of_types_and_modes_of_wires()
         assert len(list_types) == len(list_modes)
         assert len(list_types) == 8
-        assert list_types[0] == 'out_bra'
+        assert list_types[0] == "out_bra"
         assert list_modes[0] == 0
-        assert list_types[2] == 'in_bra'
+        assert list_types[2] == "in_bra"
         assert list_modes[2] == 0
-        assert list_types[4] == 'out_ket'
+        assert list_types[4] == "out_ket"
         assert list_modes[4] == 0
-        assert list_types[6] == 'in_ket'
+        assert list_types[6] == "in_ket"
         assert list_modes[6] == 0
 
-        assert list_types[1] == 'out_bra'
+        assert list_types[1] == "out_bra"
         assert list_modes[1] == 2
-        assert list_types[3] == 'in_bra'
+        assert list_types[3] == "in_bra"
         assert list_modes[3] == 2
-        assert list_types[5] == 'out_ket'
+        assert list_types[5] == "out_ket"
         assert list_modes[5] == 2
-        assert list_types[7] == 'in_ket'
+        assert list_types[7] == "in_ket"
         assert list_modes[7] == 2
-    
+
     def test_calculate_index_for_a_wire_on_given_mode_and_type(self):
         r"""Tests that the index of a given wire on a given mode is correctly calculated"""
         wires = Wires(modes_out_ket=[0, 4], modes_in_ket=[0, 4])
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('out_ket', 0) == 0
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('out_ket', 4) == 1
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('in_ket', 0) == 2
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('in_ket', 4) == 3
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("out_ket", 0) == 0
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("out_ket", 4) == 1
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("in_ket", 0) == 2
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("in_ket", 4) == 3
 
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('in_bra', 4) is None
-        assert wires.calculate_index_for_a_wire_on_given_mode_and_type('out_bra', 1007) is None
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("in_bra", 4) is None
+        assert wires.calculate_index_for_a_wire_on_given_mode_and_type("out_bra", 1007) is None
