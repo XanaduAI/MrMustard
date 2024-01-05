@@ -15,11 +15,20 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
-from typing import Iterable
+from typing import Iterable, Optional
 import numpy as np
 from mrmustard import settings
 
 # pylint: disable=protected-access
+
+__all__ = ["Wire", "Wires"]
+
+Wire = int
+r"""
+An integer representing a wire in a tensor network.
+TODO: Leaving this because it's used in other files for type-hinting,
+    but let's decide whether we want this (and ``Mode``) or not.
+"""
 
 
 class Wires:
@@ -67,12 +76,17 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Iterable[int] = (),
-        modes_in_bra: Iterable[int] = (),
-        modes_out_ket: Iterable[int] = (),
-        modes_in_ket: Iterable[int] = (),
+        modes_out_bra: Optional[Iterable[int]] = None,
+        modes_in_bra: Optional[Iterable[int]] = None,
+        modes_out_ket: Optional[Iterable[int]] = None,
+        modes_in_ket: Optional[Iterable[int]] = None,
     ) -> None:
-        self._modes = sorted(
+        modes_out_bra = modes_out_bra or []
+        modes_in_bra = modes_in_bra or []
+        modes_out_ket = modes_out_ket or []
+        modes_in_ket = modes_in_ket or []
+
+        self._modes = list(
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
         randint = settings.rng.integers  # MM random number generator
@@ -106,26 +120,6 @@ class Wires:
         w._mask[masked_rows, :] = -1
         w._mask[:, masked_cols] = -1
         return w
-
-    def subset(self, ids: Iterable[int]) -> Wires:
-        "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(
-            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
-        )
-
-    def __add__(self, other: Wires) -> Wires:
-        "A new Wires object with the wires of self and other combined."
-        modes_rows = {}
-        all_modes = sorted(set(self.modes) | set(other.modes))
-        for m in all_modes:
-            self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
-            other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
-                raise ValueError(f"wires overlap on mode {m}")
-            modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
-        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     @property
     def id_array(self) -> np.ndarray:
@@ -178,6 +172,39 @@ class Wires:
     def bra(self) -> Wires:
         "A view of this Wires object without ket wires"
         return self._view(masked_cols=(2, 3))
+
+    def adjoint(self) -> Wires:
+        r"""
+        The adjoint of this wires object, with new ids.
+        """
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
+        return Wires(ok_modes, ik_modes, ob_modes, ib_modes)
+    
+    def copy(self) -> Wires:
+        r"""A copy of this wire with new ids."""
+        w = Wires(*self._args())
+        w._mask = self._mask.copy()
+        return w
+
+    def subset(self, ids: Iterable[int]) -> Wires:
+        "A subset of this Wires object with only the given ids."
+        subset = [self.ids.index(i) for i in ids if i in self.ids]
+        return self._from_data(
+            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
+        )
+
+    def __add__(self, other: Wires) -> Wires:
+        "A new Wires object with the wires of self and other combined."
+        modes_rows = {}
+        all_modes = sorted(set(self.modes) | set(other.modes))
+        for m in all_modes:
+            self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
+            other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
+            modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
+        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
+        return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
