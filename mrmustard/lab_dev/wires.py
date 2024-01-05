@@ -83,8 +83,7 @@ class Wires:
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
-    @property
-    def args(self):
+    def _args(self):
         r"returns the same args one needs to initialize this object."
         ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
         ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
@@ -101,7 +100,7 @@ class Wires:
         w._mask = mask if mask is not None else w._mask
         return w
 
-    def view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
+    def _view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
         r"""A masked view of this Wires object."""
         w = self._from_data(self._id_array, self._modes, self._mask.copy())
         w._mask[masked_rows, :] = -1
@@ -120,7 +119,7 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            if np.all(np.where(self_row > 0) != np.where(other_row > 0)):
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
                 raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
@@ -161,31 +160,31 @@ class Wires:
     @property
     def input(self) -> Wires:
         "A view of this Wires object without output wires"
-        return self.view(masked_cols=(0, 2))
+        return self._view(masked_cols=(0, 2))
 
     @property
     def output(self) -> Wires:
         "A view of this Wires object without input wires"
-        return self.view(masked_cols=(1, 3))
+        return self._view(masked_cols=(1, 3))
 
     @property
     def ket(self) -> Wires:
         "A view of this Wires object without bra wires"
-        return self.view(masked_cols=(0, 1))
+        return self._view(masked_cols=(0, 1))
 
     @property
     def bra(self) -> Wires:
         "A view of this Wires object without ket wires"
-        return self.view(masked_cols=(2, 3))
+        return self._view(masked_cols=(2, 3))
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
-        return self.view(masked_rows=idxs)
+        return self._view(masked_rows=idxs)
 
     def __repr__(self) -> str:
-        ob_modes, ib_modes, ok_modes, ik_modes = self.args
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
 
     def _repr_html_(self):
