@@ -131,16 +131,17 @@ class Circuit:
             node_size.append(150)
             node_color.append("red")
 
+            wires = component.wires
             wires_in = [
                 (m, w)
-                for m, w in list(component.wires.in_ket.items())
-                + list(component.wires.in_bra.items())
+                for m, w in list(zip(wires.modes, wires.input.ket.ids))
+                + list(zip(wires.modes, wires.input.bra.ids))
                 if w
             ]
             wires_out = [
                 (m, w)
-                for m, w in list(component.wires.out_ket.items())
-                + list(component.wires.out_bra.items())
+                for m, w in list(zip(wires.modes, wires.output.ket.ids))
+                + list(zip(wires.modes, wires.output.bra.ids))
                 if w
             ]
             wires = wires_in + wires_out

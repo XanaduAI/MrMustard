@@ -18,7 +18,7 @@ Tests for circuit components.
 
 from mrmustard.lab_dev.circuit_components import connect
 from mrmustard.lab_dev.states import Vacuum
-from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.lab_dev.transformations import Dgate, Attenuator
 
 
 class TestCircuitComponent:
@@ -38,36 +38,55 @@ class TestCircuitComponent:
         assert d.wires is not d_copy.wires
 
 
-def test_connect():
+class TestConnect:
     r"""
-    Tests the ``connect`` function.
+    Tests the `connect` function.
     """
-    vacuum = Vacuum(3)
-    d1 = Dgate(1, modes=[0, 8, 9])
-    d2 = Dgate(1, modes=[0, 1, 2])
 
-    circ = vacuum >> d1 >> d1 >> d2
-    components = connect(circ.components)
+    def test_ket_only(self):
+        r"""
+        Tests the ``connect`` function with ket-only components.
+        """
+        vacuum = Vacuum(3)
+        d1 = Dgate(1, modes=[0, 8, 9])
+        d2 = Dgate(1, modes=[0, 1, 2])
 
-    # check that all the modes are still there and no new modes are added
-    assert list(components[0].wires.modes) == [0, 1, 2]
-    assert list(components[1].wires.modes) == [0, 8, 9]
-    assert list(components[2].wires.modes) == [0, 8, 9]
-    assert list(components[3].wires.modes) == [0, 1, 2]
+        circ = vacuum >> d1 >> d1 >> d2
+        components = connect(circ.components)
 
-    # check connections on mode 0
-    assert components[0].wires.output.ket[0].ids == components[1].wires.input.ket[0].ids
-    assert components[1].wires.output.ket[0].ids == components[2].wires.input.ket[0].ids
-    assert components[2].wires.output.ket[0].ids == components[3].wires.input.ket[0].ids
+        # check that all the modes are still there and no new modes are added
+        assert list(components[0].wires.modes) == [0, 1, 2]
+        assert list(components[1].wires.modes) == [0, 8, 9]
+        assert list(components[2].wires.modes) == [0, 8, 9]
+        assert list(components[3].wires.modes) == [0, 1, 2]
 
-    # check connections on mode 1
-    assert components[0].wires.output.ket[1].ids == components[3].wires.input.ket[1].ids
+        # check connections on mode 0
+        assert components[0].wires.output.ket[0].ids == components[1].wires.input.ket[0].ids
+        assert components[1].wires.output.ket[0].ids == components[2].wires.input.ket[0].ids
+        assert components[2].wires.output.ket[0].ids == components[3].wires.input.ket[0].ids
 
-    # check connections on mode 2
-    assert components[0].wires.output.ket[2].ids == components[3].wires.input.ket[2].ids
+        # check connections on mode 1
+        assert components[0].wires.output.ket[1].ids == components[3].wires.input.ket[1].ids
 
-    # check connections on mode 8
-    assert components[1].wires.output.ket[8].ids == components[2].wires.input.ket[8].ids
+        # check connections on mode 2
+        assert components[0].wires.output.ket[2].ids == components[3].wires.input.ket[2].ids
 
-    # check connections on mode 9
-    assert components[1].wires.output.ket[9].ids == components[2].wires.input.ket[9].ids
+        # check connections on mode 8
+        assert components[1].wires.output.ket[8].ids == components[2].wires.input.ket[8].ids
+
+        # check connections on mode 9
+        assert components[1].wires.output.ket[9].ids == components[2].wires.input.ket[9].ids
+
+    def test_ket_and_bra(self):
+        r"""
+        Tests the ``connect`` function with components with kets and bras.
+        """
+        d1 = Dgate(1, modes=[0, 8, 9])
+        d1_adj = d1.adjoint()
+        a1 = Attenuator(0.1, modes=[8])
+
+        components = connect([d1, d1_adj, a1])
+
+        # check connections on mode 8
+        assert components[0].wires.output.ket[8].ids == components[2].wires.input.ket[8].ids
+        assert components[1].wires.output.bra[8].ids == components[2].wires.input.bra[8].ids

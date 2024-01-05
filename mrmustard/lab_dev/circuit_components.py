@@ -160,24 +160,20 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     """
     ret = [component.light_copy() for component in components]
 
-    # TODO: This has quadratic runtime. The reason is that every component checks
-    # all the subsequent components, till it finds one with the common mode.
-    # Can we do it in linear time, by (1) initializing a dictionary `{m: i}` that
-    # stores the index `i` of the last component with mode `m` and (2) connect
-    # in time O(1) every component to as indicated by the dictionary?
-    for i, c in enumerate(ret):
-        ket_modes = set(c.wires.output.ket.modes)
-        bra_modes = set(c.wires.output.bra.modes)
-        for c_ in ret[i + 1 :]:
-            common_ket = ket_modes.intersection(c_.wires.input.ket.modes)
-            common_bra = bra_modes.intersection(c_.wires.input.bra.modes)
-            c.wires[common_ket].output.ket.ids = c_.wires[common_ket].input.ket.ids
-            c.wires[common_bra].output.bra.ids = c_.wires[common_bra].input.bra.ids
-            ket_modes -= common_ket
-            bra_modes -= common_bra
-            if not ket_modes and not bra_modes:
-                break
+    output_ket = {m: None for c in components for m in c.modes}
+    output_bra = {m: None for c in components for m in c.modes}
 
+    for component in ret:
+        for mode in component.modes:
+            if component.wires[mode].ket.ids:
+                if output_ket[mode]:
+                    component.wires[mode].input.ket.ids = output_ket[mode].output.ket.ids
+                output_ket[mode] = component.wires[mode]
+
+            if component.wires[mode].bra.ids:
+                if output_bra[mode]:
+                    component.wires[mode].input.bra.ids = output_bra[mode].output.bra.ids
+                output_bra[mode] = component.wires[mode]
     return ret
 
     # a dictionary mapping the each mode in ``components`` to the latest output wire on that

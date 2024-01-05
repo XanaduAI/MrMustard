@@ -142,6 +142,13 @@ class Wires:
     def ket(self) -> Wires:
         "A view of this Wires object without bra wires"
         return self.view(masked_cols=[0, 1])
+    
+    def adjoint(self) -> Wires:
+        r"""
+        The adjoint of this wires object, with new ids.
+        """
+        ob_modes, ib_modes, ok_modes, ik_modes = self.args
+        return Wires(ok_modes, ik_modes, ob_modes, ib_modes)
 
     def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
         r"""A copy of self with optional custom id_array. If id_array is passed,
