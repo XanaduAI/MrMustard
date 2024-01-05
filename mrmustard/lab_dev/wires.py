@@ -24,13 +24,15 @@ from mrmustard import settings
 
 class Wires:
     r"""A class with wire functionality for tensor network applications.
-    Anything that wants wires should use an object of this class.
+    In MrMustard, ``CircuitComponent``s have a ``Wires`` object as attribute
+    to handle the wires of the component and to connect components together.
 
-    Wires are arranged into four groups, where each of the four groups can
+    Wires are arranged into four groups, and each of the groups can
     span multiple modes:
-
-    input bra modes --->| object with |---> output bra modes
-    input ket modes --->|    wires    |---> output ket modes
+                        _______________
+    input bra modes --->|   circuit   |---> output bra modes
+    input ket modes --->|  component  |---> output ket modes
+                        ---------------
 
     The "standard order" mentioned below is output_bra for all modes,
     input_bra for all modes, output_ket for all modes, input_ket for all modes.
@@ -49,7 +51,6 @@ class Wires:
     ``Wires`` object with only the input bra wires on modes 1 and 2.
     Note these are views of the original ``Wires`` object, i.e. we can set the ``ids``
     on the views and it will be set on the original, e.g. ``wires1.output.ids = wires2.input.ids``.
-    (this is used to create tensor networks / circuits in MrMustard).
 
     ``Wires`` can also be added to one another, which returns a new ``Wires`` object with
     the wires of both objects combined (if there are duplicates, an error is raised).
@@ -121,7 +122,8 @@ class Wires:
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
             assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
-        return self._from_data(np.array([modes_rows[m] for m in sorted(modes_rows)]), sorted(modes_rows))
+        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
+        return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     @property
     def id_array(self) -> np.ndarray:
