@@ -120,6 +120,16 @@ class CircuitComponent:
         """
         return self._wires
 
+    def adjoint(self) -> CircuitComponent:
+        r"""
+        Light-copies this component, then returns the adjoint of it, obtained by switching
+        ket and bra wires.
+        """
+        ret = self.light_copy()
+        ret._name += "_adj"
+        ret._wires = ret.wires.adjoint()
+        return ret
+
     def light_copy(self) -> CircuitComponent:
         r"""
         Creates a copy of this component by copying every data stored in memory for
