@@ -12,16 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests for Wires class."""
+
+# pylint: disable=missing-function-docstring
+
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
 def test_wires_view_has_same_ids():
     w = Wires([0], [0], [0], [0])
-    assert set(w.ids) == set(w._view().ids)
+    assert set(w.ids) == set(w._view().ids)  # pylint: disable=protected-access
 
 def test_view_can_edit_original():
     w = Wires([0], [0], [0], [0])
-    w._view().ids = [9, 99, 999, 9999]
+    w._view().ids = [9, 99, 999, 9999]  # pylint: disable=protected-access
     assert w.ids == [9, 99, 999, 9999]
 
 
@@ -66,4 +70,4 @@ def test_cant_add_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
-        w1 + w2
+        w = w1 + w2  # pylint: disable=unused-variable
