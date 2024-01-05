@@ -15,7 +15,7 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
-from typing import Iterable, Optional
+from typing import Iterable
 import numpy as np
 from mrmustard import settings
 
@@ -90,7 +90,7 @@ class Wires:
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
         ik_modes = np.array(self._modes)[self._id_array[:, 3] > 0].tolist()
         return tuple(ob_modes), tuple(ib_modes), tuple(ok_modes), tuple(ik_modes)
-    
+
     @classmethod
     def _from_data(cls, id_array = None, modes = None, mask = None):
         r"""Private class method to initialize Wires object from the given data."""
