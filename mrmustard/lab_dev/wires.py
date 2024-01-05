@@ -92,7 +92,7 @@ class Wires:
         return tuple(ob_modes), tuple(ib_modes), tuple(ok_modes), tuple(ik_modes)
 
     @classmethod
-    def _from_data(cls, id_array = None, modes = None, mask = None):
+    def _from_data(cls, id_array=None, modes=None, mask=None):
         r"""Private class method to initialize Wires object from the given data."""
         w = cls()
         w._id_array = id_array if id_array is not None else w._id_array
@@ -110,7 +110,9 @@ class Wires:
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
         subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset])
+        return self._from_data(
+            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
+        )
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."

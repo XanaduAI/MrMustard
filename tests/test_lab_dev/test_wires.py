@@ -19,9 +19,11 @@
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
+
 def test_wires_view_has_same_ids():
     w = Wires([0], [0], [0], [0])
     assert set(w.ids) == set(w._view().ids)  # pylint: disable=protected-access
+
 
 def test_view_can_edit_original():
     w = Wires([0], [0], [0], [0])
