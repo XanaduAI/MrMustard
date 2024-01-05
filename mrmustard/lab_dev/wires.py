@@ -142,7 +142,7 @@ class Wires:
     def ket(self) -> Wires:
         "A view of this Wires object without bra wires"
         return self.view(masked_cols=[0, 1])
-    
+
     def adjoint(self) -> Wires:
         r"""
         The adjoint of this wires object, with new ids.
