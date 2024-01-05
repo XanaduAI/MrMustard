@@ -7,6 +7,7 @@ from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate
 from hypothesis import given
 
+
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
