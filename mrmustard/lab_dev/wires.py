@@ -120,7 +120,8 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            assert np.all(np.where(self_row > 0) != np.where(other_row > 0)), "duplicate wires!"
+            if np.all(np.where(self_row > 0) != np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
