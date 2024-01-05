@@ -47,13 +47,13 @@ class CircuitComponent:
     def __init__(
         self,
         name: str,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
         modes_out_bra: Optional[Sequence[Mode]] = None,
+        modes_in_bra: Optional[Sequence[Mode]] = None,
+        modes_out_ket: Optional[Sequence[Mode]] = None,
+        modes_in_ket: Optional[Sequence[Mode]] = None,
     ) -> None:
         self._name = name
-        self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
 
     @classmethod
@@ -127,7 +127,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
-        instance.__dict__["_wires"] = self.wires.new()
+        instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
     def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
@@ -148,15 +148,37 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
     copies, leaving the input list unchanged.
     """
-    # a dictionary mapping the each mode in ``components`` to the latest output wire on that
-    # mode, or ``None`` if no wires have acted on that mode yet.
-    output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
-
     ret = [component.light_copy() for component in components]
 
-    for component in ret:
-        for mode in component.modes:
-            if output_ket[mode]:
-                component.wires.in_ket[mode] = output_ket[mode]
-            output_ket[mode] = component.wires.out_ket[mode]
+    # TODO: This has quadratic runtime. The reason is that every component checks
+    # all the subsequent components, till it finds one with the common mode.
+    # Can we do it in linear time, by (1) initializing a dictionary `{m: i}` that
+    # stores the index `i` of the last component with mode `m` and (2) connect
+    # in time O(1) every component to as indicated by the dictionary?
+    for i, c in enumerate(ret):
+        ket_modes = set(c.wires.output.ket.modes)
+        bra_modes = set(c.wires.output.bra.modes)
+        for c_ in ret[i + 1 :]:
+            common_ket = ket_modes.intersection(c_.wires.input.ket.modes)
+            common_bra = bra_modes.intersection(c_.wires.input.bra.modes)
+            c.wires[common_ket].output.ket.ids = c_.wires[common_ket].input.ket.ids
+            c.wires[common_bra].output.bra.ids = c_.wires[common_bra].input.bra.ids
+            ket_modes -= common_ket
+            bra_modes -= common_bra
+            if not ket_modes and not bra_modes:
+                break
+
     return ret
+
+    # a dictionary mapping the each mode in ``components`` to the latest output wire on that
+    # mode, or ``None`` if no wires have acted on that mode yet.
+    # output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
+
+    # ret = [component.light_copy() for component in components]
+
+    # for component in ret:
+    #     for mode in component.modes:
+    #         if output_ket[mode]:
+    #             component.wires.in_ket[mode] = output_ket[mode]
+    #         output_ket[mode] = component.wires.output.ket[mode]
+    # return ret
