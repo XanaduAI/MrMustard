@@ -25,7 +25,7 @@ def test_wires_view_has_same_ids():
     Tests that wires views have the same ids.
     """
     w = Wires([0], [0], [0], [0])
-    assert set(w.ids) == set(w.view().ids)
+    assert set(w.ids) == set(w._view().ids)
 
 
 def test_view_can_edit_original():
@@ -33,7 +33,7 @@ def test_view_can_edit_original():
     Tests that by editing wire views we also edit the original wires.
     """
     w = Wires([0], [0], [0], [0])
-    w.view().ids = [9, 99, 999, 9999]
+    w._view().ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
 
 
