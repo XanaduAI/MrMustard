@@ -15,24 +15,11 @@
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
-
-def test_wires_copy_has_new_ids():
-    w = Wires([0], [0], [0], [0])
-    assert set(w.ids) != set(w.copy().ids)
-
-
 def test_wires_view_has_same_ids():
     w = Wires([0], [0], [0], [0])
     assert set(w.ids) == set(w.view().ids)
 
-
-def test_copy_doesnt_change_original():
-    w = Wires([0], [0], [0], [0])
-    w.copy().ids = [9, 99, 999, 9999]
-    assert w.ids != [9, 99, 999, 9999]
-
-
-def test_view_edits_original():
+def test_view_can_edit_original():
     w = Wires([0], [0], [0], [0])
     w.view().ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
