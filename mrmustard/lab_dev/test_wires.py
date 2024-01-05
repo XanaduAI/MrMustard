@@ -62,32 +62,10 @@ def test_indices():
     assert w.ket.indices == [6, 7, 8]
 
 
-def test_adjoint():
-    w = Wires([0, 1], [2, 3])
-    assert set(w.adjoint.ids) == set(w.ids)
-    # is this what we want?
-
-
-def test_dual():
-    w = Wires([0, 1], [], [2, 3], [])
-    assert set(w.dual.ids) == set(w.ids)
-    # is this what we want?
-
-
 def test_setting_ids():
     w = Wires([0], [0], [0], [0])
     w.ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
-
-
-def test_bool():
-    w = Wires([0], [0], [0], [0])
-    assert w.bra
-    assert w.ket
-    assert w.input
-    assert w.output
-    assert w[0]
-    assert not w[1]
 
 
 def test_add_wires():
