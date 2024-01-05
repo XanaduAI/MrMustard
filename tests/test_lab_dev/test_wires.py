@@ -73,3 +73,7 @@ def test_cant_add_overlapping_wires():
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
         w = w1 + w2  # pylint: disable=unused-variable
+
+def test_args():
+    w = Wires([0], [1], [2], [3])
+    assert w._args() == ((0,), (1,), (2,), (3,))  # pylint: disable=protected-accesss

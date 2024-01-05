@@ -189,7 +189,7 @@ class Wires:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
 
-    def _repr_html_(self):
+    def _repr_html_(self):  # pragma: no cover
         "A matrix plot of the id_array."
         row_labels = map(str, self._modes)
         col_labels = ["bra-out", "bra-in", "ket-out", "ket-in"]
