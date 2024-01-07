@@ -32,19 +32,10 @@ def test_PolyExpAnsatz(Abc):
     assert np.allclose(ansatz.array[0], c)
 
 
-@st.composite
-def AbcAbc(draw, size: int):
-    n = draw(size)
-    Abc1 = draw(Abc_triple(n))
-    Abc2 = draw(Abc_triple(n))
-    return Abc1, Abc2
-
-
 # test adding two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc(5))
-def test_PolyExpAnsatz_add(Abc1_Abc2):
+@given(Abc1=Abc_triple(5),Abc2=Abc_triple(5))
+def test_PolyExpAnsatz_add(Abc1, Abc2):
     """Test that we can add two PolyExpAnsatz objects"""
-    Abc1, Abc2 = Abc1_Abc2
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
     ansatz = PolyExpAnsatz(A1, b1, c1)
@@ -59,10 +50,9 @@ def test_PolyExpAnsatz_add(Abc1_Abc2):
 
 
 # test multiplying two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc(4))
-def test_PolyExpAnsatz_mul(Abc1_Abc2):
+@given(Abc1=Abc_triple(4), Abc2=Abc_triple(4))
+def test_PolyExpAnsatz_mul(Abc1, Abc2):
     """Test that we can multiply two PolyExpAnsatz objects"""
-    Abc1, Abc2 = Abc1_Abc2
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
     ansatz = PolyExpAnsatz(A1, b1, c1)
@@ -95,10 +85,9 @@ def test_PolyExpAnsatz_call(Abc):
 
 
 # test tensor product of two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc(6))
-def test_PolyExpAnsatz_kron(Abc1_Abc2):
+@given(Abc1=Abc_triple(6), Abc2=Abc_triple(6))
+def test_PolyExpAnsatz_kron(Abc1, Abc2):
     """Test that we can tensor product two PolyExpAnsatz objects"""
-    Abc1, Abc2 = Abc1_Abc2
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
     ansatz = PolyExpAnsatz(A1, b1, c1)
