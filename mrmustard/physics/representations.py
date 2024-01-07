@@ -255,7 +255,7 @@ class Bargmann(Representation):
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
         **kwargs,
-    ):
+    ):  # pragma: no cover
         r"""Plots the Bargmann function F(z) on the complex plane. Phase is represented by color,
         magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
         the Bargmann function times the measure function (for integration).
