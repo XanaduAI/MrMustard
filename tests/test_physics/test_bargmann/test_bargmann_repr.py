@@ -1,12 +1,17 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
+from mrmustard.lab import Attenuator, Coherent, Gaussian, Ggate
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc, wigner_to_bargmann_rho
 from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state
 from hypothesis import given
 
+
+def test_make_cat():
+    cat = Bargmann(*Coherent(1.0).bargmann()) + Bargmann(*Coherent(-1.0).bargmann())
+    assert np.allclose(cat.A[0], cat.A[1])
+    assert np.allclose(cat.b[0], -cat.b[1])
 
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
