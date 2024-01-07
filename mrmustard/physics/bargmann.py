@@ -138,7 +138,8 @@ def complex_gaussian_integral(
         The ``(A,b,c)`` triple of the result of the integral
     """
     A, b, c = Abc
-    assert len(idx_z) == len(idx_zconj)
+    if len(idx_z) == len(idx_zconj):
+        raise ValueError("idx_z and idx_zconj must have the same length")
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
