@@ -28,6 +28,15 @@ def test_muldiv():
     assert np.allclose(s2.c , Coherent(1.0).bargmann()[2]/3.0)
     assert np.allclose(s3.c , Coherent(1.0).bargmann()[2]*4.0)
 
+@given(Abc=Abc_triple(3))
+def test_reorder(Abc):
+    barg = Bargmann(*Abc)
+    barg.reorder((0, 2, 1))
+    assert np.allclose(barg.A[0], Abc[0][[0, 2, 1],:][:, [0, 2, 1]])
+    assert np.allclose(barg.b[0], Abc[1][[0, 2, 1]])
+
+
+
 @given(Abc=Abc_triple())
 def test_call(Abc):
     """Test that we can call the PolyExpAnsatz object"""
