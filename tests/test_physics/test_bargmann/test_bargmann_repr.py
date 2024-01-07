@@ -13,6 +13,15 @@ def test_make_cat():
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
 
+def test_mul():
+    something = Bargmann(*Coherent(1.0).bargmann()) * Bargmann(*Coherent(-1.0).bargmann())
+    assert something is not None
+
+def test_sub():
+    cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
+    assert np.allclose(cat.A[0], cat.A[1])
+    assert np.allclose(cat.b[0], -cat.b[1])
+
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
