@@ -14,27 +14,29 @@ def test_make_cat():
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
 
+
 def test_muldiv():
     s1 = Bargmann(*Coherent(1.0).bargmann()) * Bargmann(*Coherent(-1.0).bargmann())
     s2 = Bargmann(*Coherent(1.0).bargmann()) / Bargmann(*Coherent(-1.0).bargmann())
     assert s1 is not None
     assert s2 is not None
 
+
 def test_muldiv():
     s1 = Bargmann(*Coherent(1.0).bargmann()) * 2.0
     s2 = Bargmann(*Coherent(1.0).bargmann()) / 3.0
     s3 = 4.0 * Bargmann(*Coherent(1.0).bargmann())
-    assert np.allclose(s1.c , Coherent(1.0).bargmann()[2]*2.0)
-    assert np.allclose(s2.c , Coherent(1.0).bargmann()[2]/3.0)
-    assert np.allclose(s3.c , Coherent(1.0).bargmann()[2]*4.0)
+    assert np.allclose(s1.c, Coherent(1.0).bargmann()[2] * 2.0)
+    assert np.allclose(s2.c, Coherent(1.0).bargmann()[2] / 3.0)
+    assert np.allclose(s3.c, Coherent(1.0).bargmann()[2] * 4.0)
+
 
 @given(Abc=Abc_triple(3))
 def test_reorder(Abc):
     barg = Bargmann(*Abc)
     barg.reorder((0, 2, 1))
-    assert np.allclose(barg.A[0], Abc[0][[0, 2, 1],:][:, [0, 2, 1]])
+    assert np.allclose(barg.A[0], Abc[0][[0, 2, 1], :][:, [0, 2, 1]])
     assert np.allclose(barg.b[0], Abc[1][[0, 2, 1]])
-
 
 
 @given(Abc=Abc_triple())
@@ -44,10 +46,12 @@ def test_call(Abc):
     barg = Bargmann(A, b, c)
     assert np.allclose(barg(z=math.zeros_like(b)), c)
 
+
 def test_sub():
     cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
+
 
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"

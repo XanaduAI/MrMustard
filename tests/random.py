@@ -84,6 +84,7 @@ def Abc_triple(draw, n=None):
 
     return A, b, c
 
+
 @st.composite
 def vector(draw, length):
     r"""Return a vector of length `length`."""
