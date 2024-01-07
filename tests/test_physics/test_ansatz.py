@@ -33,7 +33,7 @@ def test_PolyExpAnsatz(Abc):
 
 
 # test adding two PolyExpAnsatz objects
-@given(Abc1=Abc_triple(5),Abc2=Abc_triple(5))
+@given(Abc1=Abc_triple(5), Abc2=Abc_triple(5))
 def test_PolyExpAnsatz_add(Abc1, Abc2):
     """Test that we can add two PolyExpAnsatz objects"""
     A1, b1, c1 = Abc1
