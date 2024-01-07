@@ -2,9 +2,9 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
-from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
+from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc, wigner_to_bargmann_rho
 from mrmustard.physics.representations import Bargmann
-from tests.random import random_Ggate, single_mode_unitary_gate
+from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state
 from hypothesis import given
 
 def test_abc_contraction_2mode_psi_U():
@@ -107,3 +107,22 @@ def test_composition_all(G1, G2):
     assert np.allclose(composed.A[0], a12)
     assert np.allclose(composed.b[0], b12)
     assert np.allclose(np.abs(composed.c[0]), np.abs(c12))
+
+
+@given(rho=n_mode_mixed_state(num_modes=2))
+def test_partial_trace2(rho):
+    rho01 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
+    rho1 = rho01.trace([0],[2])
+    rho0 = rho01.trace([1],[3])
+    assert rho1 == Bargmann(*rho.get_modes(1).bargmann())
+    assert rho0 == Bargmann(*rho.get_modes(0).bargmann())
+
+
+@given(rho=n_mode_mixed_state(num_modes=3))
+def test_partial_trace3(rho):
+    rho = rho >> Attenuator([0.9,0.9,0.9])
+    rho012 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
+    rho12 = rho012.trace([0],[3])
+    rho2 = rho012.trace([0,1],[3,4])
+    assert np.allclose(rho12.b, Bargmann(*rho.get_modes([1,2]).bargmann()).b)
+    assert rho2 == Bargmann(*rho.get_modes(2).bargmann())
