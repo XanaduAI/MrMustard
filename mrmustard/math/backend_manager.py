@@ -93,13 +93,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # whether or not the backend can be changed
     _is_immutable = False
 
-    # backend types
-    int32: Any
-    float32: Any
-    float64: Any
-    complex64: Any
-    complex128: Any
-
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
