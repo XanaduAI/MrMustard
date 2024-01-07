@@ -2,9 +2,10 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, Coherent, Gaussian, Ggate
+from mrmustard.physics import representations
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc, wigner_to_bargmann_rho
 from mrmustard.physics.representations import Bargmann
-from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state
+from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state, Abc_triple
 from hypothesis import given
 
 
@@ -27,6 +28,12 @@ def test_muldiv():
     assert np.allclose(s2.c , Coherent(1.0).bargmann()[2]/3.0)
     assert np.allclose(s3.c , Coherent(1.0).bargmann()[2]*4.0)
 
+@given(Abc=Abc_triple())
+def test_call(Abc):
+    """Test that we can call the PolyExpAnsatz object"""
+    A, b, c = Abc
+    barg = Bargmann(A, b, c)
+    assert np.allclose(barg(z=math.zeros_like(b)), c)
 
 def test_sub():
     cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
