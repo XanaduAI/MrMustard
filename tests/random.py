@@ -59,6 +59,30 @@ r = st.floats(min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False
 prob = st.floats(min_value=0, max_value=1, allow_infinity=False, allow_nan=False)
 gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False)
 
+# Complex number strategy
+complex_number = st.complex_numbers(
+    min_magnitude=1e-9, max_magnitude=1, allow_infinity=False, allow_nan=False
+)
+
+# Size strategy
+size = st.integers(min_value=1, max_value=9)
+
+
+@st.composite
+def Abc_triple(draw, n=None):
+    n = n or draw(size)
+
+    # Complex symmetric matrix A
+    A = draw(arrays(dtype=complex, shape=(n, n), elements=complex_number))
+    A = 0.5 * (A + A.T)  # Make it symmetric
+
+    # Complex vector b
+    b = draw(arrays(dtype=complex, shape=n, elements=complex_number))
+
+    # Complex scalar c
+    c = draw(complex_number)
+
+    return A, b, c
 
 @st.composite
 def vector(draw, length):
