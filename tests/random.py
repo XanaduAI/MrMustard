@@ -410,7 +410,8 @@ def n_mode_pure_state(draw, num_modes=1):
 
 @st.composite
 def n_mode_mixed_state(draw, num_modes=1):
-    r"""Return a random n mode mixed state."""
-    state = draw(n_mode_pure_state(num_modes))
-    attenuator = Attenuator(draw(st.floats(min_value=0.5, max_value=0.9)))
-    return state >> attenuator
+    r"""Return a random n mode pure state."""
+    S = draw(random_Sgate(num_modes))
+    I = draw(random_Interferometer(num_modes))
+    D = draw(random_Dgate(num_modes))
+    return Thermal([0.5]*num_modes) >> S >> I >> D
