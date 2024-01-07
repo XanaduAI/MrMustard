@@ -13,9 +13,20 @@ def test_make_cat():
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
 
-def test_mul():
-    something = Bargmann(*Coherent(1.0).bargmann()) * Bargmann(*Coherent(-1.0).bargmann())
-    assert something is not None
+def test_muldiv():
+    s1 = Bargmann(*Coherent(1.0).bargmann()) * Bargmann(*Coherent(-1.0).bargmann())
+    s2 = Bargmann(*Coherent(1.0).bargmann()) / Bargmann(*Coherent(-1.0).bargmann())
+    assert s1 is not None
+    assert s2 is not None
+
+def test_muldiv():
+    s1 = Bargmann(*Coherent(1.0).bargmann()) * 2.0
+    s2 = Bargmann(*Coherent(1.0).bargmann()) / 3.0
+    s3 = 4.0 * Bargmann(*Coherent(1.0).bargmann())
+    assert np.allclose(s1.c , Coherent(1.0).bargmann()[2]*2.0)
+    assert np.allclose(s2.c , Coherent(1.0).bargmann()[2]/3.0)
+    assert np.allclose(s3.c , Coherent(1.0).bargmann()[2]*4.0)
+
 
 def test_sub():
     cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
