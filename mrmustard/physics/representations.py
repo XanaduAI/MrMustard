@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from mrmustard import math
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 
 class Representation:
@@ -30,43 +30,65 @@ class Representation:
     _contract_idxs: tuple[int, ...] = ()
     ansatz: Ansatz
 
-    def from_ansatz(self, ansatz: Ansatz) -> Ansatz:
+    def from_ansatz(self, ansatz: Ansatz) -> Representation:
+        r"""
+        Returns a representation object from an ansatz object.
+        To be implemented by subclasses.
+        """
         raise NotImplementedError
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Representation) -> bool:
         r"""
         Whether this representation is equal to another.
         """
         return self.ansatz == other.ansatz
 
-    def __add__(self, other) -> Ansatz:
+    def __add__(self, other: Representation) -> Representation:
         r"""
         Adds this representation to another.
         """
         return self.from_ansatz(self.ansatz + other.ansatz)
 
-    def __sub__(self, other) -> Ansatz:
+    def __sub__(self, other) -> Representation:
+        r"""
+        Subtracts another representation from this one.
+        """
         return self.from_ansatz(self.ansatz - other.ansatz)
 
-    def __mul__(self, other):
+    def __mul__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Multiplies this representation by another or by a scalar.
+        """
         try:
             return self.from_ansatz(self.ansatz * other.ansatz)
         except AttributeError:
             return self.from_ansatz(self.ansatz * other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Multiplies this representation by another or by a scalar on the right.
+        """
         return self.__mul__(other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Divides this representation by another or by a scalar.
+        """
         try:
             return self.from_ansatz(self.ansatz / other.ansatz)
         except AttributeError:
             return self.from_ansatz(self.ansatz / other)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Divides this representation by another or by a scalar on the right.
+        """
         return self.from_ansatz(other / self.ansatz)
 
-    def __and__(self, other):
+    def __and__(self, other: Representation) -> Representation:
+        r"""
+        Takes the outer product of this representation with another.
+        """
         return self.from_ansatz(self.ansatz & other.ansatz)
 
 
@@ -85,7 +107,7 @@ class Bargmann(Representation):
     linear combinations, outer product, and inner product.
     The inner product is defined as the contraction of two Bargmann objects across
     marked indices. This can also be used to contract existing indices
-    in one Bargmann object, e.g. to implement the partial trace.
+    in a single Bargmann object, e.g. to implement the partial trace.
     
     Examples:
     >>> A = math.astensor([[[1.0]]])  # 1x1x1
@@ -115,10 +137,18 @@ class Bargmann(Representation):
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = [1.0],
     ):
+        r"""Initializes the Bargmann representation. Args can be passed non-batched,
+        they will be automatically broadcasted to the correct batch shape.
+
+        Args:
+            A: batch of quadratic coefficient :math:`A_i`
+            b: batch of linear coefficients :math:`b_i`
+            c: batch of arrays :math:`c_i` (default: [1.0])
+        """
         self.ansatz = PolyExpAnsatz(A, b, c)
 
     def __call__(self, z: ComplexTensor) -> ComplexTensor:
-        r"""Evaluates the Bargmann function at the given points."""
+        r"""Evaluates the Bargmann function at the given array of points."""
         return self.ansatz(z)
 
     def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
@@ -148,13 +178,14 @@ class Bargmann(Representation):
 
     def conj(self):
         r"""
-        The conjugate of this Bargmann.
+        The conjugate of this Bargmann object.
         """
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+        r"""Returns a copy of self with the given indices marked for contraction."""
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.ansatz.dim:
@@ -197,7 +228,7 @@ class Bargmann(Representation):
         """
         if self.ansatz.degree > 0:
             raise NotImplementedError(
-                "Partial trace is only supported for ansatzs with polynomial of degree ``0``."
+                "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
         if len(idx_z) != len(idx_zconj):
             msg = "The number of indices to trace over must be the same for ``z`` and ``z*``."
@@ -221,17 +252,20 @@ class Bargmann(Representation):
     def plot(
         self,
         just_phase: bool = False,
-        with_measure: bool = True,
+        with_measure: bool = False,
         log_scale: bool = False,
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
         **kwargs,
     ):
-        r"""Plots the Bargmann function.
+        r"""Plots the Bargmann function F(z) on the complex plane. Phase is represented by color,
+        magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
+        the Bargmann function times the measure function (for integration). 
+        
         
         Args:
             just_phase (bool): whether to plot only the phase of the Bargmann function
-            with_measure (bool): whether to plot the measure function
+            with_measure (bool): whether to plot the bargmann function times the measure function exp(-|z|^2)
             log_scale (bool): whether to plot the log of the Bargmann function
             xlim (tuple[float, float]): x limits of the plot
             ylim (tuple[float, float]): y limits of the plot
