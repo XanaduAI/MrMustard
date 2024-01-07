@@ -176,7 +176,7 @@ def real_gaussian_integral(
 
     :math:`d\mu(x) = \textrm{exp}(\textrm{measure} * |x|^2) d^mx`
 
-    By choosing the measure argument, we can express different inner products 
+    By choosing the measure argument, we can express different inner products
 
     Arguments:
         A,b,c: the ``(A,b,c)`` triple
