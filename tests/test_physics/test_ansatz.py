@@ -95,7 +95,7 @@ def test_PolyExpAnsatz_call(Abc):
 
 
 # test tensor product of two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc())
+@given(Abc1_Abc2=AbcAbc(6))
 def test_PolyExpAnsatz_kron(Abc1_Abc2):
     """Test that we can tensor product two PolyExpAnsatz objects"""
     Abc1, Abc2 = Abc1_Abc2
