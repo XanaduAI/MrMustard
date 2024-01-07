@@ -19,6 +19,7 @@ from hypothesis.extra.numpy import arrays
 
 from mrmustard import math
 from mrmustard.physics.ansatze import PolyExpAnsatz
+from tests.random import Abc_triple, complex_number
 
 
 @given(Abc=Abc_triple())
@@ -32,7 +33,7 @@ def test_PolyExpAnsatz(Abc):
 
 
 @st.composite
-def AbcAbc(draw):
+def AbcAbc(draw, size: int):
     n = draw(size)
     Abc1 = draw(Abc_triple(n))
     Abc2 = draw(Abc_triple(n))
@@ -40,7 +41,7 @@ def AbcAbc(draw):
 
 
 # test adding two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc())
+@given(Abc1_Abc2=AbcAbc(5))
 def test_PolyExpAnsatz_add(Abc1_Abc2):
     """Test that we can add two PolyExpAnsatz objects"""
     Abc1, Abc2 = Abc1_Abc2
@@ -58,7 +59,7 @@ def test_PolyExpAnsatz_add(Abc1_Abc2):
 
 
 # test multiplying two PolyExpAnsatz objects
-@given(Abc1_Abc2=AbcAbc())
+@given(Abc1_Abc2=AbcAbc(4))
 def test_PolyExpAnsatz_mul(Abc1_Abc2):
     """Test that we can multiply two PolyExpAnsatz objects"""
     Abc1, Abc2 = Abc1_Abc2
