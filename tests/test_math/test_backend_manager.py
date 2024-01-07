@@ -169,9 +169,9 @@ class TestBackendManager:
         res = math.asnumpy(math.atleast_3d(arr, dtype=dtype))
 
         if arr.ndim == 1:
-            exp_shape = (1,1) + arr.shape
+            exp_shape = (1, 1) + arr.shape
         elif arr.ndim == 2:
-            exp_shape = (1,)+arr.shape
+            exp_shape = (1,) + arr.shape
         else:
             exp_shape = arr.shape
         assert res.shape == exp_shape

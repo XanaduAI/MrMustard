@@ -92,7 +92,6 @@ class Representation:
         return self.from_ansatz(self.ansatz & other.ansatz)
 
 
-
 class Bargmann(Representation):
     r"""This class is the Fock-Bargmann representation of a broad class of quantum states,
     transformations, measurements, channels, etc.
@@ -108,7 +107,7 @@ class Bargmann(Representation):
     The inner product is defined as the contraction of two Bargmann objects across
     marked indices. This can also be used to contract existing indices
     in a single Bargmann object, e.g. to implement the partial trace.
-    
+
     Examples:
     >>> A = math.astensor([[[1.0]]])  # 1x1x1
     >>> b = math.astensor([[0.0]])    # 1x1
@@ -123,7 +122,7 @@ class Bargmann(Representation):
     >>> rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
     >>> assert rho.A.shape == (1, 2, 2)  # we have two wires now
     >>> assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
-    
+
 
     Args:
         A: batch of quadratic coefficient :math:`A_i`
@@ -247,7 +246,7 @@ class Bargmann(Representation):
         new = self.__class__(A, b, c)
         new._contract_idxs = self._contract_idxs
         return new
-    
+
     def plot(
         self,
         just_phase: bool = False,
@@ -259,9 +258,9 @@ class Bargmann(Representation):
     ):
         r"""Plots the Bargmann function F(z) on the complex plane. Phase is represented by color,
         magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
-        the Bargmann function times the measure function (for integration). 
+        the Bargmann function times the measure function (for integration).
 
-        
+
         Args:
             just_phase (bool): whether to plot only the phase of the Bargmann function
             with_measure (bool): whether to plot the bargmann function times the measure function exp(-|z|^2)

@@ -414,4 +414,4 @@ def n_mode_mixed_state(draw, num_modes=1):
     S = draw(random_Sgate(num_modes))
     I = draw(random_Interferometer(num_modes))
     D = draw(random_Dgate(num_modes))
-    return Thermal([0.5]*num_modes) >> S >> I >> D
+    return Thermal([0.5] * num_modes) >> S >> I >> D

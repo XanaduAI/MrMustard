@@ -7,6 +7,7 @@ from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state
 from hypothesis import given
 
+
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
@@ -112,17 +113,17 @@ def test_composition_all(G1, G2):
 @given(rho=n_mode_mixed_state(num_modes=2))
 def test_partial_trace2(rho):
     rho01 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
-    rho1 = rho01.trace([0],[2])
-    rho0 = rho01.trace([1],[3])
+    rho1 = rho01.trace([0], [2])
+    rho0 = rho01.trace([1], [3])
     assert rho1 == Bargmann(*rho.get_modes(1).bargmann())
     assert rho0 == Bargmann(*rho.get_modes(0).bargmann())
 
 
 @given(rho=n_mode_mixed_state(num_modes=3))
 def test_partial_trace3(rho):
-    rho = rho >> Attenuator([0.9,0.9,0.9])
+    rho = rho >> Attenuator([0.9, 0.9, 0.9])
     rho012 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
-    rho12 = rho012.trace([0],[3])
-    rho2 = rho012.trace([0,1],[3,4])
-    assert np.allclose(rho12.b, Bargmann(*rho.get_modes([1,2]).bargmann()).b)
+    rho12 = rho012.trace([0], [3])
+    rho2 = rho012.trace([0, 1], [3, 4])
+    assert np.allclose(rho12.b, Bargmann(*rho.get_modes([1, 2]).bargmann()).b)
     assert rho2 == Bargmann(*rho.get_modes(2).bargmann())
