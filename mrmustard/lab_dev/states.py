@@ -35,10 +35,7 @@ class State(CircuitComponent):
     """
 
     def __rshift__(self, other: CircuitComponent):
-        r"""
-        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
-        """
-        return Circuit([self, other])
+        raise NotImplementedError
 
 
 class Pure(State):
@@ -59,7 +56,7 @@ class Vacuum(Pure):
     The N-mode vacuum state.
 
     Args:
-        num_modes (int): the number of modes.
+        num_modes: the number of modes.
     """
 
     def __init__(

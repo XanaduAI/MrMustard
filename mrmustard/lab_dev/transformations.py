@@ -37,10 +37,7 @@ class Transformation(CircuitComponent):
     """
 
     def __rshift__(self, other: CircuitComponent):
-        r"""
-        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
-        """
-        return Circuit([self, other])
+        raise NotImplementedError
 
 
 class Unitary(Transformation):

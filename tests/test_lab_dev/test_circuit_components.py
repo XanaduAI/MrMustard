@@ -16,6 +16,7 @@ r"""
 Tests for circuit components.
 """
 
+from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.circuit_components import connect
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
@@ -51,8 +52,8 @@ class TestConnect:
         d1 = Dgate(1, modes=[0, 8, 9])
         d2 = Dgate(1, modes=[0, 1, 2])
 
-        circ = vacuum >> d1 >> d1 >> d2
-        components = connect(circ.components)
+        components = [vacuum, d1, d1, d2]
+        components = connect(components)
 
         # check that all the modes are still there and no new modes are added
         assert list(components[0].wires.modes) == [0, 1, 2]
