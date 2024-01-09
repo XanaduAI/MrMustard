@@ -176,15 +176,25 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
                 output_bra[mode] = component.wires[mode]
     return ret
 
-    # a dictionary mapping the each mode in ``components`` to the latest output wire on that
-    # mode, or ``None`` if no wires have acted on that mode yet.
-    # output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
 
-    # ret = [component.light_copy() for component in components]
+def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+    r"""
+    Takes as input a sequence of circuit components and adds the adjoint of every component that
+    has no wires on the bra side.
 
-    # for component in ret:
-    #     for mode in component.modes:
-    #         if output_ket[mode]:
-    #             component.wires.in_ket[mode] = output_ket[mode]
-    #         output_ket[mode] = component.wires.output.ket[mode]
-    # return ret
+    It works on light copies of the given components, so the input list is not mutatd.
+    
+    Args:
+        components: A sequence of circuit components.
+
+    Returns:
+        The new components.
+    """
+    ret = []
+
+    for component in components:
+        ret.append(component.light_copy())
+        if not component.wires.bra:
+            ret.append(component.adjoint())
+
+    return ret

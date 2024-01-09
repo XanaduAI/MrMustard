@@ -17,7 +17,7 @@ Tests for circuit components.
 """
 
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.circuit_components import connect
+from mrmustard.lab_dev.circuit_components import connect, add_bra
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 
@@ -91,3 +91,49 @@ class TestConnect:
         # check connections on mode 8
         assert components[0].wires.output.ket[8].ids == components[2].wires.input.ket[8].ids
         assert components[1].wires.output.bra[8].ids == components[2].wires.input.bra[8].ids
+
+
+class TestAddBra:
+    r"""
+    Tests the `add_bra` function.
+    """
+
+    def test_ket_only(self):
+        r"""
+        Tests the ``add_bra`` function with ket-only components.
+        """
+        vacuum = Vacuum(3)
+        d1 = Dgate(1, modes=[0, 8, 9])
+
+        components = add_bra([vacuum, d1])
+
+        assert len(components) == 4
+
+        assert isinstance(components[0], Vacuum)
+        assert components[0].wires.ket and not components[0].wires.bra
+        assert isinstance(components[1], Vacuum)
+        assert not components[1].wires.ket and components[1].wires.bra
+
+        assert isinstance(components[2], Dgate)
+        assert components[2].wires.ket and not components[2].wires.bra
+        assert isinstance(components[3], Dgate)
+        assert not components[3].wires.ket and components[3].wires.bra
+
+    def test_ket_and_bra(self):
+        r"""
+        Tests the ``add_bra`` function with components with kets and bras.
+        """
+        vacuum = Vacuum(3)
+        a1 = Attenuator(1, modes=[0, 8, 9])
+
+        components = add_bra([vacuum, a1])
+
+        assert len(components) == 3
+
+        assert isinstance(components[0], Vacuum)
+        assert components[0].wires.ket and not components[0].wires.bra
+        assert isinstance(components[1], Vacuum)
+        assert not components[1].wires.ket and components[1].wires.bra
+
+        assert isinstance(components[2], Attenuator)
+        assert components[2].wires.ket and components[2].wires.bra

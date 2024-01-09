@@ -205,6 +205,9 @@ class Wires:
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
+    
+    def __bool__(self) -> bool:
+        return True if self.ids else False
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
