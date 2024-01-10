@@ -39,7 +39,7 @@ def test_muldiv_with_scalar():
 @given(Abc=Abc_triple(3))
 def test_reorder_indices(Abc):
     barg = Bargmann(*Abc)
-    barg.reorder((0, 2, 1))
+    barg = barg.reorder((0, 2, 1))
     assert np.allclose(barg.A[0], Abc[0][[0, 2, 1], :][:, [0, 2, 1]])
     assert np.allclose(barg.b[0], Abc[1][[0, 2, 1]])
 
