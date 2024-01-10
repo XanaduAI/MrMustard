@@ -9,12 +9,14 @@ from hypothesis import given
 
 
 def test_make_cat():
+    r"test adding two coherent states via the Bargmann representation"
     cat = Bargmann(*Coherent(1.0).bargmann()) + Bargmann(*Coherent(-1.0).bargmann())
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
 
 
 def test_muldiv_with_another_Bargmann():
+    r"test multiplying and dividing two Bargmann representations"
     Abc1 = Bargmann(*(Gaussian(1) >> Dgate(0.1, 0.2)).bargmann())
     Abc2 = Bargmann(*(Gaussian(1) >> Dgate(0.4, 0.1)).bargmann())
     s1 = Abc1 * Abc2
@@ -28,6 +30,7 @@ def test_muldiv_with_another_Bargmann():
 
 
 def test_muldiv_with_scalar():
+    r"test multiplying and dividing a Bargmann representation with a scalar"
     s1 = Bargmann(*Coherent(1.0).bargmann()) * 2.0
     s2 = Bargmann(*Coherent(1.0).bargmann()) / 3.0
     s3 = 4.0 * Bargmann(*Coherent(1.0).bargmann())
@@ -38,6 +41,7 @@ def test_muldiv_with_scalar():
 
 @given(Abc=Abc_triple(3))
 def test_reorder_indices(Abc):
+    r"""Test that we can reorder the indices of the A matrix and b vector of an (A,b,c) triple"""
     barg = Bargmann(*Abc)
     barg = barg.reorder((0, 2, 1))
     assert np.allclose(barg.A[0], Abc[0][[0, 2, 1], :][:, [0, 2, 1]])
@@ -46,13 +50,14 @@ def test_reorder_indices(Abc):
 
 @given(Abc=Abc_triple())
 def test_call(Abc):
-    """Test that we can call the PolyExpAnsatz object"""
+    r"""Test that we can call the PolyExpAnsatz object"""
     A, b, c = Abc
     barg = Bargmann(A, b, c)
     assert np.allclose(barg(z=math.zeros_like(b)), c)
 
 
 def test_subtract():
+    r"test subtracting two coherent states via the Bargmann representation"
     cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
@@ -62,13 +67,10 @@ def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
     U = Ggate(2)
-
     A1, b1, c1 = psi.bargmann()  # out1ket, out2ket
     A2, b2, c2 = U.bargmann()  # out1ket, out2ket, in1ket, in2ket
-
     A_abc, b_abc, c_abc = contract_two_Abc((A1, b1, c1), (A2, b2, c2), (0, 1), (2, 3))
     A_mm, b_mm, c_mm = (psi >> U).bargmann()
-
     assert np.allclose(A_abc, A_mm)
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(abs(c_abc), abs(c_mm))
@@ -96,27 +98,21 @@ def test_abc_contraction_3mode_rho_2mode_U():
     "tests that the abc contraction works for U rho U_dagger"
     rho = Gaussian(3) >> Attenuator([0.1, 0.2, 0.4]) >> Ggate(3) >> Attenuator([0.4, 0.5, 0.9])
     U = Ggate(2)
-
     # out1bra, out2bra, out3bra, out1ket, out2ket, out3ket
     A1, b1, c1 = rho.bargmann()
     # out1ket, out2ket, in1ket, in2ket
     A2, b2, c2 = U.bargmann()
-
     A_abc, b_abc, c_abc = contract_two_Abc(
         (A2, b2, c2), (A1, b1, c1), (2, 3), (4, 5)
     )  # left in out1ket_U, out2ket_U, out1bra_rho, out2bra_rho, out3bra_rho, out1ket_rho
-
     A_abc, b_abc, c_abc = contract_two_Abc(
         (A_abc, b_abc, c_abc),
         (math.conj(A2), math.conj(b2), math.conj(c2)),
         (3, 4),
         (2, 3),
     )  # left in out1ket_U, out2ket_U, out1bra_rho, out1ket_rho, out1bra_U, out2bra_U
-
     A_abc, b_abc, c_abc = reorder_abc((A_abc, b_abc, c_abc), (2, 4, 5, 3, 0, 1))
-
     A_mm, b_mm, c_mm = (rho >> U[1, 2]).bargmann()
-
     assert np.allclose(A_abc, A_mm)
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(c_abc, c_mm)
@@ -126,18 +122,13 @@ def test_Bargmann_2mode_psi_U():
     "tests that the Bargmann representation works for U|psi>"
     psi = Gaussian(2)
     U = Ggate(2)
-
     A1, b1, c1 = psi.bargmann()  # out1ket, out2ket
     A2, b2, c2 = U.bargmann()  # out1ket, out2ket, in1ket, in2ket
-
     Abc1 = Bargmann(A1, b1, c1)
     Abc2 = Bargmann(A2, b2, c2)
-
     psiU = Abc1[0, 1] @ Abc2[2, 3]
-
     A_abc, b_abc, c_abc = psiU.A[0], psiU.b[0], psiU.c[0]
     A_mm, b_mm, c_mm = (psi >> U).bargmann()
-
     assert np.allclose(A_abc, A_mm)
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(abs(c_abc), abs(c_mm))
@@ -145,6 +136,8 @@ def test_Bargmann_2mode_psi_U():
 
 @given(G1=random_Ggate(num_modes=1), G2=random_Ggate(num_modes=1))
 def test_composition_GG(G1, G2):
+    r"""Test that the composition of two G gates is the same
+    as the composition of their Bargmann representations"""
     a12, b12, c12 = (G1 >> G2).bargmann()
     composed = Bargmann(*G2.bargmann())[1] @ Bargmann(*G1.bargmann())[0]
     assert np.allclose(composed.A[0], a12)
@@ -154,6 +147,8 @@ def test_composition_GG(G1, G2):
 
 @given(G1=single_mode_unitary_gate(), G2=single_mode_unitary_gate())
 def test_composition_all(G1, G2):
+    r"""Test that the composition of any two gates is the same
+    as the composition of their Bargmann representations"""
     a12, b12, c12 = (G1 >> G2).bargmann()
     composed = Bargmann(*G2.bargmann())[1] @ Bargmann(*G1.bargmann())[0]
     assert np.allclose(composed.A[0], a12)
@@ -162,7 +157,8 @@ def test_composition_all(G1, G2):
 
 
 @given(rho=n_mode_mixed_state(num_modes=2))
-def test_partial_trace2(rho):
+def test_partial_trace_2mode_state(rho):
+    r"""Test that the partial trace of a 2-mode state works"""
     rho01 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
     rho1 = rho01.trace([0], [2])
     rho0 = rho01.trace([1], [3])
@@ -171,7 +167,8 @@ def test_partial_trace2(rho):
 
 
 @given(rho=n_mode_mixed_state(num_modes=3))
-def test_partial_trace3(rho):
+def test_partial_trace_3mode_state(rho):
+    r"""Test that the partial trace of a 3-mode state works"""
     rho = rho >> Attenuator([0.9, 0.9, 0.9])
     rho012 = Bargmann(*wigner_to_bargmann_rho(rho.cov, rho.means))
     rho12 = rho012.trace([0], [3])
