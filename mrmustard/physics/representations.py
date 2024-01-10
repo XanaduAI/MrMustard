@@ -23,7 +23,6 @@ from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 import numpy as np
 from mrmustard import math
-from mrmustard.physics.representations import Bargmann
 
 
 class Representation:
