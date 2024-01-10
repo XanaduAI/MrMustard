@@ -21,6 +21,9 @@ from mrmustard import math
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
+import numpy as np
+from mrmustard import math
+from mrmustard.physics.representations import Bargmann
 
 
 class Representation:
@@ -107,19 +110,21 @@ class Bargmann(Representation):
     in a single Bargmann object, e.g. to implement the partial trace.
 
     Examples:
-    >>> A = math.astensor([[[1.0]]])  # 1x1x1
-    >>> b = math.astensor([[0.0]])    # 1x1
-    >>> c = math.astensor([0.9])      # 1
-    >>> psi1 = Bargmann(A, b, c)
-    >>> psi2 = Bargmann(A, b, c)
-    >>> psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
-    >>> assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
-    >>> psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
-    >>> assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
-    >>> psi5 = psi1 & psi2  # outer product (tensor product)
-    >>> rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
-    >>> assert rho.A.shape == (1, 2, 2)  # we have two wires now
-    >>> assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+        .. code-block:: python
+
+            A = math.astensor([[[1.0]]])  # 1x1x1
+            b = math.astensor([[0.0]])    # 1x1
+            c = math.astensor([0.9])      # 1
+            psi1 = Bargmann(A, b, c)
+            psi2 = Bargmann(A, b, c)
+            psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
+            assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
+            psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
+            assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
+            psi5 = psi1 & psi2  # outer product (tensor product)
+            rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
+            assert rho.A.shape == (1, 2, 2)  # we have two wires now
+            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
 
 
     Args:
