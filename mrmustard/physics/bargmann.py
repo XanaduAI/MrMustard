@@ -164,24 +164,20 @@ def complex_gaussian_integral(
 
 def real_gaussian_integral(
     Abc: tuple, idx: tuple[int, ...], measure: float = 0
-):  # TODO: fix factors of pi and stuff
-    # TODO: move to math
-    r"""Computes the Gaussian integral of the exponential of a real quadratic form.
-    The integral is defined as (note that in general we integrate over a subset of ``m``\
-    dimensions):
+):  # TODO not yet tested
+    r"""Computes the m-dimensional Gaussian integral of the exponential of a real
+    quadratic form on R^{m+d}, leaving the exponential of a real quadratic form on R^d:
 
-    :math:`\int_{R^m} F(x) d\mu(x)`.
+    :math:`\int_{R^m} \textrm{exp}(0.5 x^T A x + b^T x) d\mu(x)`.
 
-    where
-
-    :math:`F(x) = \textrm{exp}(0.5 x^T A x + b^T x)`
-
-    Here, ``z`` is an ``n``-dim real vector, ``A`` is an ``n x n`` real matrix,
-    ``b`` is an ``n``-dim real vector, ``c`` is a real scalar, and :math:`d\mu(x)` is a real measure over a
-    subset of ``m`` variables. These are specified by ``idx``.
-    The `measure` parameter is the exponent of the measure:
+    Here, ``x`` is an ``(m+d)``-dim real vector, ``A`` is an ``(m+d) x (m+d)`` real matrix,
+    ``b`` is an ``(m+d)``-dim real vector, ``c`` is a real scalar, and :math:`d\mu(x)` is a real
+    measure over a subset of ``m`` variables. These are specified by ``idx``.
+    The `measure` parameter is the exponent of the integration measure:
 
     :math:`d\mu(x) = \textrm{exp}(\textrm{measure} * |x|^2) d^mx`
+
+    By choosing the measure argument, we can express different inner products
 
     Arguments:
         A,b,c: the ``(A,b,c)`` triple
