@@ -15,8 +15,8 @@ def test_make_cat():
 
 
 def test_muldiv_with_another_Bargmann():
-    Abc1 = Bargmann(*(Gaussian(1) >> Dgate(0.1,0.2)).bargmann())
-    Abc2 = Bargmann(*(Gaussian(1) >> Dgate(0.4,0.1)).bargmann())
+    Abc1 = Bargmann(*(Gaussian(1) >> Dgate(0.1, 0.2)).bargmann())
+    Abc2 = Bargmann(*(Gaussian(1) >> Dgate(0.4, 0.1)).bargmann())
     s1 = Abc1 * Abc2
     s2 = Abc1 / Abc2
     assert np.allclose(s1.A[0], Abc1.A[0] + Abc2.A[0])

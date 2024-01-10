@@ -159,7 +159,7 @@ class PolyExpBase(Ansatz):
         combined_arrays = math.concat([self.array, other.array], axis=0)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
-    
+
     @property
     def degree(self) -> int:
         if self.array.ndim == 1:
@@ -335,7 +335,7 @@ class PolyExpAnsatz(PolyExpBase):
                 return self.__class__(self.A, self.b, other * self.c)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-            
+
     def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Divides this ansatz by a scalar or another ansatz or a plain scalar.
 
