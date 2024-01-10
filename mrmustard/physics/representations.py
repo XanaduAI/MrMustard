@@ -27,8 +27,6 @@ class Representation:
     r"""
     A base class for representations.
     """
-    _contract_idxs: tuple[int, ...] = ()
-    ansatz: Ansatz
 
     def from_ansatz(self, ansatz: Ansatz) -> Representation:
         r"""
@@ -144,6 +142,7 @@ class Bargmann(Representation):
             b: batch of linear coefficients :math:`b_i`
             c: batch of arrays :math:`c_i` (default: [1.0])
         """
+        self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = PolyExpAnsatz(A, b, c)
 
     def __call__(self, z: ComplexTensor) -> ComplexTensor:
@@ -241,11 +240,10 @@ class Bargmann(Representation):
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
+        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
+        Returns a new Bargmann object."""
         A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
-        new = self.__class__(A, b, c)
-        new._contract_idxs = self._contract_idxs
-        return new
+        return self.__class__(A, b, c)
 
     def plot(
         self,
