@@ -1,8 +1,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab import Attenuator, Coherent, Gaussian, Ggate
-from mrmustard.physics import representations
+from mrmustard.lab import Attenuator, Coherent, Gaussian, Ggate, Dgate
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc, wigner_to_bargmann_rho
 from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state, Abc_triple
@@ -15,14 +14,20 @@ def test_make_cat():
     assert np.allclose(cat.b[0], -cat.b[1])
 
 
-def test_muldiv():
-    s1 = Bargmann(*Coherent(1.0).bargmann()) * Bargmann(*Coherent(-1.0).bargmann())
-    s2 = Bargmann(*Coherent(1.0).bargmann()) / Bargmann(*Coherent(-1.0).bargmann())
-    assert s1 is not None
-    assert s2 is not None
+def test_muldiv_with_another_Bargmann():
+    Abc1 = Bargmann(*(Gaussian(1) >> Dgate(0.1,0.2)).bargmann())
+    Abc2 = Bargmann(*(Gaussian(1) >> Dgate(0.4,0.1)).bargmann())
+    s1 = Abc1 * Abc2
+    s2 = Abc1 / Abc2
+    assert np.allclose(s1.A[0], Abc1.A[0] + Abc2.A[0])
+    assert np.allclose(s1.b[0], Abc1.b[0] + Abc2.b[0])
+    assert np.allclose(s1.c[0], Abc1.c[0] * Abc2.c[0])
+    assert np.allclose(s2.A[0], Abc1.A[0] - Abc2.A[0])
+    assert np.allclose(s2.b[0], Abc1.b[0] - Abc2.b[0])
+    assert np.allclose(s2.c[0], Abc1.c[0] / Abc2.c[0])
 
 
-def test_muldiv():
+def test_muldiv_with_scalar():
     s1 = Bargmann(*Coherent(1.0).bargmann()) * 2.0
     s2 = Bargmann(*Coherent(1.0).bargmann()) / 3.0
     s3 = 4.0 * Bargmann(*Coherent(1.0).bargmann())
@@ -32,7 +37,7 @@ def test_muldiv():
 
 
 @given(Abc=Abc_triple(3))
-def test_reorder(Abc):
+def test_reorder_indices(Abc):
     barg = Bargmann(*Abc)
     barg.reorder((0, 2, 1))
     assert np.allclose(barg.A[0], Abc[0][[0, 2, 1], :][:, [0, 2, 1]])
@@ -47,7 +52,7 @@ def test_call(Abc):
     assert np.allclose(barg(z=math.zeros_like(b)), c)
 
 
-def test_sub():
+def test_subtract():
     cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
     assert np.allclose(cat.A[0], cat.A[1])
     assert np.allclose(cat.b[0], -cat.b[1])
@@ -118,6 +123,7 @@ def test_abc_contraction_3mode_rho_2mode_U():
 
 
 def test_Bargmann_2mode_psi_U():
+    "tests that the Bargmann representation works for U|psi>"
     psi = Gaussian(2)
     U = Ggate(2)
 
