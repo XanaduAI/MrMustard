@@ -159,12 +159,12 @@ class PolyExpBase(Ansatz):
         combined_arrays = math.concat([self.array, other.array], axis=0)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
-
-    def __truediv__(self, x: Scalar) -> PolyExpBase:
-        if not isinstance(x, (int, float, complex)):
-            raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        new_array = self.array / x
-        return self.__class__(self.mat, self.vec, new_array)
+    
+    @property
+    def degree(self) -> int:
+        if self.array.ndim == 1:
+            return 0
+        return self.array.shape[-1] - 1
 
     def simplify(self) -> None:
         r"""
@@ -292,12 +292,6 @@ class PolyExpAnsatz(PolyExpBase):
         """
         return self.array
 
-    @property
-    def degree(self) -> int:
-        if self.array.ndim == 1:
-            return 0
-        return self.array.shape[-1] - 1
-
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
         Value of this ansatz at ``z``.
@@ -341,6 +335,29 @@ class PolyExpAnsatz(PolyExpBase):
                 return self.__class__(self.A, self.b, other * self.c)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            
+    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+        r"""Divides this ansatz by a scalar or another ansatz or a plain scalar.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            TypeError: If other is neither a scalar nor an ansatz.
+
+        Returns:
+            PolyExpAnsatz: The division of this ansatz by other.
+        """
+        if isinstance(other, PolyExpAnsatz):
+            new_a = [A1 - A2 for A1, A2 in itertools.product(self.A, other.A)]
+            new_b = [b1 - b2 for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [c1 / c2 for c1, c2 in itertools.product(self.c, other.c)]
+            return self.__class__(A=new_a, b=new_b, c=new_c)
+        else:
+            try:
+                return self.__class__(self.A, self.b, self.c / other)
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
