@@ -161,50 +161,6 @@ def complex_gaussian_integral(
     return A_post, b_post, c_post
 
 
-def real_gaussian_integral(
-    Abc: tuple, idx: tuple[int, ...], measure: float = 0
-):  # TODO not yet tested
-    r"""Computes the m-dimensional Gaussian integral of the exponential of a real
-    quadratic form on R^{m+d}, leaving the exponential of a real quadratic form on R^d:
-
-    :math:`\int_{R^m} \textrm{exp}(0.5 x^T A x + b^T x) d\mu(x)`.
-
-    Here, ``x`` is an ``(m+d)``-dim real vector, ``A`` is an ``(m+d) x (m+d)`` real matrix,
-    ``b`` is an ``(m+d)``-dim real vector, ``c`` is a real scalar, and :math:`d\mu(x)` is a real
-    measure over a subset of ``m`` variables. These are specified by ``idx``.
-    The `measure` parameter is the exponent of the integration measure:
-
-    :math:`d\mu(x) = \textrm{exp}(\textrm{measure} * |x|^2) d^mx`
-
-    By choosing the measure argument, we can express different inner products
-
-    Arguments:
-        A,b,c: the ``(A,b,c)`` triple
-        idx: the tuple of indices of the integration variables
-        measure: the exponent of the measure (default is 0, which is the Lebesgue measure)
-
-    Returns:
-        The ``(A,b,c)`` triple of the result of the integral
-    """
-    m = len(idx)
-    A, b, c = Abc
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
-
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + np.eye(m, dtype=A.dtype) * measure
-    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-
-    bM = math.gather(b, idx, axis=-1)
-    bR = math.gather(b, not_idx, axis=-1)
-
-    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.matvec(D, math.solve(M, bM))
-    c_post = (
-        c * math.sqrt((-1) ** m / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
-    return A_post, b_post, c_post
-
-
 def join_Abc(Abc1, Abc2):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.

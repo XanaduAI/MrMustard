@@ -7,6 +7,61 @@ from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state, Abc_triple
 from hypothesis import given
 
+def test_make_cat():
+    r"test adding two coherent states via the Bargmann representation"
+    cat = Bargmann(*Coherent(1.0).bargmann()) + Bargmann(*Coherent(-1.0).bargmann())
+    assert np.allclose(cat.A[0], cat.A[1])
+    assert np.allclose(cat.b[0], -cat.b[1])
+
+
+def test_muldiv_with_another_Bargmann():
+    r"test multiplying and dividing two Bargmann representations"
+    Abc1 = Bargmann(*(Gaussian(1) >> Dgate(0.1, 0.2)).bargmann())
+    Abc2 = Bargmann(*(Gaussian(1) >> Dgate(0.4, 0.1)).bargmann())
+    s1 = Abc1 * Abc2
+    s2 = Abc1 / Abc2
+    assert np.allclose(s1.A[0], Abc1.A[0] + Abc2.A[0])
+    assert np.allclose(s1.b[0], Abc1.b[0] + Abc2.b[0])
+    assert np.allclose(s1.c[0], Abc1.c[0] * Abc2.c[0])
+    assert np.allclose(s2.A[0], Abc1.A[0] - Abc2.A[0])
+    assert np.allclose(s2.b[0], Abc1.b[0] - Abc2.b[0])
+    assert np.allclose(s2.c[0], Abc1.c[0] / Abc2.c[0])
+
+
+def test_muldiv_with_scalar():
+    r"test multiplying and dividing a Bargmann representation with a scalar"
+    s1 = Bargmann(*Coherent(1.0).bargmann()) * 2.0
+    s2 = Bargmann(*Coherent(1.0).bargmann()) / 3.0
+    s3 = 4.0 * Bargmann(*Coherent(1.0).bargmann())
+    assert np.allclose(s1.c, Coherent(1.0).bargmann()[2] * 2.0)
+    assert np.allclose(s2.c, Coherent(1.0).bargmann()[2] / 3.0)
+    assert np.allclose(s3.c, Coherent(1.0).bargmann()[2] * 4.0)
+
+
+@given(Abc=Abc_triple(3))
+def test_reorder_indices(Abc):
+    r"""Test that we can reorder the indices of the A matrix and b vector of an (A,b,c) triple"""
+    barg = Bargmann(*Abc)
+    barg = barg.reorder((0, 2, 1))
+    assert np.allclose(barg.A[0], Abc[0][[0, 2, 1], :][:, [0, 2, 1]])
+    assert np.allclose(barg.b[0], Abc[1][[0, 2, 1]])
+
+
+@given(Abc=Abc_triple())
+def test_call(Abc):
+    r"""Test that we can call the PolyExpAnsatz object"""
+    A, b, c = Abc
+    barg = Bargmann(A, b, c)
+    assert np.allclose(barg(z=math.zeros_like(b)), c)
+
+
+def test_subtract():
+    r"test subtracting two coherent states via the Bargmann representation"
+    cat = Bargmann(*Coherent(1.0).bargmann()) - Bargmann(*Coherent(-1.0).bargmann())
+    assert np.allclose(cat.A[0], cat.A[1])
+    assert np.allclose(cat.b[0], -cat.b[1])
+
+
 def test_abc_contraction_2mode_psi_U():
     "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
