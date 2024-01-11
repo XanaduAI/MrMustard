@@ -19,8 +19,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Union, Optional
 
 import numpy as np
-from matplotlib import colors
-from matplotlib import pyplot as plt
 
 from mrmustard import math
 from mrmustard.utils.argsort import argsort_gen
@@ -73,7 +71,7 @@ class Ansatz(ABC):
 
     def __sub__(self, other: Ansatz) -> Ansatz:
         r"""
-        Subtracts this ansatz to another ansatz.
+        Subtracts other from this ansatz.
         """
         try:
             return self.__add__(-other)
@@ -162,11 +160,11 @@ class PolyExpBase(Ansatz):
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
-    def __truediv__(self, x: Scalar) -> PolyExpBase:
-        if not isinstance(x, (int, float, complex)):
-            raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        new_array = self.array / x
-        return self.__class__(self.mat, self.vec, new_array)
+    @property
+    def degree(self) -> int:
+        if self.array.ndim == 1:
+            return 0
+        return self.array.shape[-1] - 1
 
     def simplify(self) -> None:
         r"""
@@ -215,6 +213,10 @@ class PolyExpBase(Ansatz):
         self._simplified = True
 
     def _order_batch(self):
+        r"""This method orders the batch dimension by the lexicographical order of the
+        flattened arrays (mat, vec, array). This is a very cheap way to enforce
+        an ordering of the batch dimension, which is useful for simplification and for
+        determining (in)equality between two Bargmann representations."""
         generators = [
             itertools.chain(
                 math.asnumpy(self.vec[i]).flat,
@@ -239,9 +241,7 @@ class PolyExpAnsatz(PolyExpBase):
 
         :math:`\textrm{poly}_i(z) = \sum_k c^(i)_k z^k`,
 
-    with ``k`` being a multi-index. The batch of arrays :math:`c^{(i)}` are not
-    just array values but can be polynomials of varying order, defined by the terms
-    :math:`arr_k z^k` for each ``i``. The matrices :math:`A_i` and vectors :math:`b_i` are
+    with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
 
     Args:
@@ -268,7 +268,8 @@ class PolyExpAnsatz(PolyExpBase):
         name: str = "",
     ):
         self.name = name
-        assert A is not None or b is not None, "Please provide either A or b."
+        if A is None and b is None:
+            raise ValueError("Please provide either A or b.")
         dim = b[0].shape[-1] if A is None else A[0].shape[-1]
         A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
         b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
@@ -295,31 +296,25 @@ class PolyExpAnsatz(PolyExpBase):
         """
         return self.array
 
-    @property
-    def degree(self) -> int:
-        if self.array.ndim == 1:
-            return 0
-        return self.array.shape[-1] - 1
-
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
         Value of this ansatz at ``z``.
 
         Args:
-            z: point at which the function is evaluated
+            z: point in C^n where the function is evaluated
 
         Returns:
             The value of the function.
         """
-        z = np.atleast_2d(z)  # shape (Z, n)
-        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
+        z = np.atleast_2d(z)  # shape (..., n)
+        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (..., 1, n, n))
         A_part = 0.5 * math.sum(
             zz * self.A, axes=[-1, -2]
-        )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
-        b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
-        exp_sum = np.exp(A_part + b_part)  # (Z, b)
-        result = exp_sum * self.c  # (Z, b)
-        val = np.sum(result, axis=-1)  # (Z)
+        )  # sum((...,1,n,n) * (b,n,n), [-1,-2]) ~ (...,b)
+        b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((...,1,n) * (b,n), -1) ~ (...,b)
+        exp_sum = np.exp(A_part + b_part)  # (..., b)
+        result = exp_sum * self.c  # (..., b)
+        val = np.sum(result, axis=-1)  # (...)
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
@@ -344,6 +339,29 @@ class PolyExpAnsatz(PolyExpBase):
                 return self.__class__(self.A, self.b, other * self.c)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+        r"""Divides this ansatz by a scalar or another ansatz or a plain scalar.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            TypeError: If other is neither a scalar nor an ansatz.
+
+        Returns:
+            PolyExpAnsatz: The division of this ansatz by other.
+        """
+        if isinstance(other, PolyExpAnsatz):
+            new_a = [A1 - A2 for A1, A2 in itertools.product(self.A, other.A)]
+            new_b = [b1 - b2 for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [c1 / c2 for c1, c2 in itertools.product(self.c, other.c)]
+            return self.__class__(A=new_a, b=new_b, c=new_c)
+        else:
+            try:
+                return self.__class__(self.A, self.b, self.c / other)
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.

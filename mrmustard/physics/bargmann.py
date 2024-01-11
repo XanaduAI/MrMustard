@@ -108,8 +108,7 @@ def wigner_to_bargmann_U(X, d):
 
 def complex_gaussian_integral(
     Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
-):  # TODO: fix factors of pi and stuff
-    # TODO: move to math
+):
     r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
     The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
 
@@ -125,8 +124,7 @@ def complex_gaussian_integral(
     are specified by the indices ``idx_z`` and ``idx_zconj``. The ``measure`` parameter is
     the exponent of the measure:
 
-    # TODO: fix factors of pi and stuff (also this is for m=1)
-    dmu(z) = exp(measure * |z|^2) d^2z = exp(measure * |z|^2) dRe(z) dIm(z)
+    :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
     Arguments:
         A,b,c: the ``(A,b,c)`` triple
@@ -138,7 +136,8 @@ def complex_gaussian_integral(
         The ``(A,b,c)`` triple of the result of the integral
     """
     A, b, c = Abc
-    assert len(idx_z) == len(idx_zconj)
+    if len(idx_z) != len(idx_zconj):
+        raise ValueError("idx_z and idx_zconj must have the same length")
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
@@ -159,50 +158,6 @@ def complex_gaussian_integral(
         c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
-    return A_post, b_post, c_post
-
-
-def real_gaussian_integral(
-    Abc: tuple, idx: tuple[int, ...], measure: float = 0
-):  # TODO not yet tested
-    r"""Computes the m-dimensional Gaussian integral of the exponential of a real
-    quadratic form on R^{m+d}, leaving the exponential of a real quadratic form on R^d:
-
-    :math:`\int_{R^m} \textrm{exp}(0.5 x^T A x + b^T x) d\mu(x)`.
-
-    Here, ``x`` is an ``(m+d)``-dim real vector, ``A`` is an ``(m+d) x (m+d)`` real matrix,
-    ``b`` is an ``(m+d)``-dim real vector, ``c`` is a real scalar, and :math:`d\mu(x)` is a real
-    measure over a subset of ``m`` variables. These are specified by ``idx``.
-    The `measure` parameter is the exponent of the integration measure:
-
-    :math:`d\mu(x) = \textrm{exp}(\textrm{measure} * |x|^2) d^mx`
-
-    By choosing the measure argument, we can express different inner products
-
-    Arguments:
-        A,b,c: the ``(A,b,c)`` triple
-        idx: the tuple of indices of the integration variables
-        measure: the exponent of the measure (default is 0, which is the Lebesgue measure)
-
-    Returns:
-        The ``(A,b,c)`` triple of the result of the integral
-    """
-    m = len(idx)
-    A, b, c = Abc
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
-
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + np.eye(m, dtype=A.dtype) * measure
-    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-
-    bM = math.gather(b, idx, axis=-1)
-    bR = math.gather(b, not_idx, axis=-1)
-
-    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.matvec(D, math.solve(M, bM))
-    c_post = (
-        c * math.sqrt((-1) ** m / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
     return A_post, b_post, c_post
 
 
@@ -266,18 +221,3 @@ def contract_two_Abc(
     return complex_gaussian_integral(
         Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
     )
-
-
-def trace_Abc(A, b, c, idx_z, idx_zconj):
-    r"""Returns the partial trace of an ``(A,b,c)`` triple.
-
-    Arguments:
-        A,b,c: the ``(A,b,c)`` triple
-        idx_z: the tuple of indices of the z variables
-        idx_zconj: the tuple of indices of the ``z*`` variables
-
-    Returns:
-        The partial trace of the ``(A,b,c)`` triple
-    """
-    Abc = A, b, c
-    return complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
