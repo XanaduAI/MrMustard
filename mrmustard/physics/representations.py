@@ -109,7 +109,7 @@ class Bargmann(Representation):
     in a single Bargmann object, e.g. to implement the partial trace.
 
     Note that the operations that change the shape of the ansatz (outer product (``&``)
-    and inner product (``@``)) do not automatically modify the ordering of the 
+    and inner product (``@``)) do not automatically modify the ordering of the
     combined or leftover indices.
 
     Examples:
