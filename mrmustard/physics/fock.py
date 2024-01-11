@@ -976,3 +976,7 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return ret, vjp
+
+def contract_two_array(array1, contract_idxs1, array2, contract_idxs2):
+    #TODO: generate einsum char and do the contraction
+    return new_array
