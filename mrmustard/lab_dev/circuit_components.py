@@ -42,6 +42,7 @@ class CircuitComponent:
         modes_out_ket: The output modes on the ket side.
         modes_in_bra: The input modes on the bra side.
         modes_out_bra: The output modes on the bra side.
+        representation: A representation of this circuit component.
     """
 
     def __init__(
@@ -51,10 +52,14 @@ class CircuitComponent:
         modes_in_bra: Optional[Sequence[Mode]] = None,
         modes_out_ket: Optional[Sequence[Mode]] = None,
         modes_in_ket: Optional[Sequence[Mode]] = None,
+        representation: Optional[Representation] = None,
     ) -> None:
+        # TODO: Add validation to check that wires and representation are compatible (e.g.,
+        # that wires have as many modes as has the representation).
         self._name = name
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
+        self._representation = representation
 
     @classmethod
     def from_ABC(
@@ -71,8 +76,9 @@ class CircuitComponent:
         r"""
         Initializes a circuit component from Bargmann's A, B, and c.
         """
-        ret = CircuitComponent(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
-        ret.representation = Bargmann(A, B, c)
+        ret = CircuitComponent(
+            name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c)
+        )
         return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
@@ -90,7 +96,7 @@ class CircuitComponent:
         r"""
         A representation of this circuit component.
         """
-        raise NotImplementedError
+        return self._representation
 
     @property
     def modes(self) -> set(Mode):
