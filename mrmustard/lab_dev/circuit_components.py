@@ -183,7 +183,7 @@ def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     has no wires on the bra side.
 
     It works on light copies of the given components, so the input list is not mutatd.
-    
+
     Args:
         components: A sequence of circuit components.
 
