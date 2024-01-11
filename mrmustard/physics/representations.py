@@ -262,14 +262,15 @@ class Bargmann(Representation):
         magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
         the Bargmann function times the measure function (for integration).
 
-
         Args:
             just_phase (bool): whether to plot only the phase of the Bargmann function
             with_measure (bool): whether to plot the bargmann function times the measure function exp(-|z|^2)
             log_scale (bool): whether to plot the log of the Bargmann function
             xlim (tuple[float, float]): x limits of the plot
             ylim (tuple[float, float]): y limits of the plot
-            kwargs: other keyword arguments to be passed to the plot function
+
+        Returns:
+            tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]: the figure and axes of the plot
         """
         # eval F(z) on a grid of complex numbers
         X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
@@ -293,7 +294,7 @@ class Bargmann(Representation):
         rgb_values = colors.hsv_to_rgb(hsv_values)
 
         # Plot the image
-        im, ax = plt.subplots()
+        fig, ax = plt.subplots()
         ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
@@ -303,5 +304,5 @@ class Bargmann(Representation):
         title = name + "e^{-|z|^2}" if with_measure else name
         title = f"\\arg({name})" if just_phase else title
         ax.set_title(f"${title}$")
-        plt.show(block=False, **kwargs)
-        return im, ax
+        plt.show(block=False)
+        return fig, ax
