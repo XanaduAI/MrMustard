@@ -294,7 +294,7 @@ class PolyExpAnsatz(PolyExpBase):
         r"""
         The array of coefficients for the polynomial terms in the ansatz.
         """
-        return self.array
+        return self.c
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
@@ -385,6 +385,7 @@ class ArrayAnsatz(Ansatz):
     r"""Represents the ansatz as a multidimensional array.
     """
     def __init__(self, array: Batch[Tensor]):
+        r"""Note that the array is batched."""
         self.array = array
     
     @property

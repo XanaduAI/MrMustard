@@ -337,18 +337,16 @@ class Fock(Representation):
         self,
         array: Batch[Tensor]
     ):
-        r"""Initializes the Bargmann representation. Args can be passed non-batched,
-        they will be automatically broadcasted to the correct batch shape.
+        r"""Initializes the Fock representation.
+        Note that args needs to flag is batched or not, if it is non-batched, add the batch 1.
 
         Args:
-            A: batch of quadratic coefficient :math:`A_i`
-            b: batch of linear coefficients :math:`b_i`
-            c: batch of arrays :math:`c_i` (default: [1.0])
+            array: batch of the object array
         """
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = ArrayAnsatz(array=array)
 
-    def from_ansatz(self, ansatz: ArrayAnsatz) -> Fock:
+    def from_ansatz(self, ansatz: ArrayAnsatz, batched: bool) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
         return self.__class__(ansatz.array)
 
@@ -363,7 +361,7 @@ class Fock(Representation):
         r"""
         The conjugate of this Fock object.
         """
-        new = self.__class__(np.conj(self.array))
+        new = self.__class__(np.conj(self.array[1:]))
         new._contract_idxs = self._contract_idxs
         return new
 
@@ -380,23 +378,69 @@ class Fock(Representation):
         return new
 
     def __matmul__(self, other: Fock) -> Fock:
-        r"""Implements the inner product of ansatze across the marked indices."""
-        return self.__class__(array = fock.contract_two_array(self.array, self._contract_idxs, other.array, other._contract_idxs))
+        r"""Implements the inner product of ansatze across the marked indices.
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+            Batch:
+            The new Fock will hold the tensor product batch of them.
+            For example:
+                if we have self.array = [batch1,...] and other.array = [batch2,...]
+                the new self.array = [batch1*batch2, ...]
+
+            Order of index:
+            The new Fock's order is arranged as uncontracted elements in self and then other.
+
+        """
+        array1 = self.array
+        array2 = other.array
+        idxs1 = self._contract_idxs
+        idxs2 = other._contract_idxs
+
+        #initial the character list for both objects
+        char1 = np.arange(0,len(array1.shape))
+        char2 = np.arange(len(array1.shape),len(array1.shape)+len(array2.shape))
+
+        #initial the character list for the output object
+        output = [0,len(char1),]
+
+        #update output character list by adding the unused in char1
+        for i,c in enumerate(char1):
+            if i != 0:
+                if not (c in idxs1):
+                    print(c)
+                    output += (c,)
+
+        flag=0
+        for i,c in enumerate(char2):
+            print(i,c)
+            if i in idxs2:
+                #replace the character list in char2 by finding the corresponding in char1
+                char2[i] = char1[idxs1[flag]]
+                flag += 1
+            else:
+                if i!=0:
+                    #update output character list by adding the unused in char2
+                    output += (c,)
+
+        new_array = np.einsum(array1, char1, array2, char2, output)
+        #Rearrange the batch dimension
+        new_shape = [new_array.shape[0] * new_array.shape[1]] + [*new_array.shape[2:]]
+        return self.__class__(array = new_array.reshape(new_shape))
+
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
 
         Args:
-            idx_z: indices to trace over
-            idx_zconj: indices to trace over
+            idxs1: indices part1 to trace over
+            idxs2: indices part2 to trace over
 
         Returns:
-            Bargmann: the ansatz with the given indices traced over
+            Fock: the ansatz with the given indices traced over
         """
-        #TODO
+        #TODO: conditions on this idxs1 and idxs2?
+        return np.trace(self.array, axis1=idxs1, axis2=idxs2)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
         Returns a new Bargmann object."""
-        A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
-        return self.__class__(A, b, c)
+        new_array = fock.reorder_array((self.array), order)
+        return self.__class__(array = new_array)

@@ -977,6 +977,12 @@ def squeezed(r, phi, shape):
 
     return ret, vjp
 
-def contract_two_array(array1, contract_idxs1, array2, contract_idxs2):
-    #TODO: generate einsum char and do the contraction
-    return new_array
+def reorder_array(array, order):
+    r"""Reorders the array with the given order for all batches.
+    """
+    if not len(order) == len(array.shape) - 1:
+        raise ValueError("The order is not the same shape as array.")
+    new_tuple=()
+    for i in order:
+        new_tuple += (array.shape[i+1],)
+    return array.reshape((array.shape[0],) + new_tuple)

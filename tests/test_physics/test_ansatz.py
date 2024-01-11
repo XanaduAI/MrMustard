@@ -155,3 +155,7 @@ def test_PolyExpAnsatz_simplify_v2(Abc):
     assert len(ansatz.A) == 1
     assert len(ansatz.b) == 1
     assert np.allclose(ansatz.c, 2 * c)
+
+class TestArrayAnsatz:
+    def test_AnrrayAnsatz_init_(self):
+        pass
