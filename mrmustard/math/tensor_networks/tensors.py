@@ -53,6 +53,7 @@ class Wire:
         is_ket: Whether this wire is on the ket or on the bra side.
 
     """
+
     id: int
     mode: int
     is_input: bool
@@ -108,6 +109,7 @@ class WireGroup:
         bra: A dictionary containing the wires on the bra side.
 
     """
+
     ket: dict = field(default_factory=dict)
     bra: dict = field(default_factory=dict)
 
@@ -135,6 +137,7 @@ class Tensor(ABC):
         modes_in_bra: The input modes on the bra side.
         modes_out_bra: The output modes on the bra side.
     """
+
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(

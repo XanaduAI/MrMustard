@@ -9,6 +9,18 @@
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
+* Added functions in physics.bargmann to join and contract (A,b,c) triples.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
+  [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
+
 ### Breaking changes
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
@@ -88,6 +100,10 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Jan Provaznik](https://github.com/jan-provaznik),
 [Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
 
 # Release 0.6.0 (current release)
 
@@ -257,6 +273,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf)
+
 
 ---
 
@@ -530,6 +547,7 @@ This release contains contributions from (in alphabetical order):
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Yuan Yao](https://github.com/sylviemonet)
 
+
 ---
 
 # Release 0.3.0
@@ -685,7 +703,6 @@ This release contains contributions from (in alphabetical order):
 [Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
-
 ---
 
 # Release 0.2.0
@@ -736,6 +753,8 @@ This release contains contributions from (in alphabetical order):
 [Filippo Miatto](https://github.com/ziofil)
 
 
+---
+
 # Release 0.1.1
 
 ### New features since last release
@@ -783,6 +802,8 @@ This release contains contributions from (in alphabetical order):
 
 [Sebastián Duque](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
+
+---
 
 # Release 0.1.0
 

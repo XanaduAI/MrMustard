@@ -48,6 +48,9 @@ negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_
 real_not_zero = st.one_of(negative, positive)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
+complex_nonzero = st.complex_numbers(
+    allow_infinity=False, allow_nan=False, min_magnitude=1e-9, max_magnitude=1e2
+)
 
 # physical parameters
 nmodes = st.integers(min_value=1, max_value=10)
@@ -55,6 +58,31 @@ angle = st.floats(min_value=0, max_value=2 * np.pi)
 r = st.floats(min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False)
 prob = st.floats(min_value=0, max_value=1, allow_infinity=False, allow_nan=False)
 gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False)
+
+# Complex number strategy
+complex_number = st.complex_numbers(
+    min_magnitude=1e-9, max_magnitude=1, allow_infinity=False, allow_nan=False
+)
+
+# Size strategy
+size = st.integers(min_value=1, max_value=9)
+
+
+@st.composite
+def Abc_triple(draw, n=None):
+    n = n or draw(size)
+
+    # Complex symmetric matrix A
+    A = draw(arrays(dtype=complex, shape=(n, n), elements=complex_number))
+    A = 0.5 * (A + A.T)  # Make it symmetric
+
+    # Complex vector b
+    b = draw(arrays(dtype=complex, shape=n, elements=complex_number))
+
+    # Complex scalar c
+    c = draw(complex_number)
+
+    return A, b, c
 
 
 @st.composite
@@ -69,6 +97,34 @@ def list_of_ints(draw, N):
     return draw(
         st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True)
     )
+
+
+@st.composite
+def matrix(draw, rows, cols):
+    """Return a strategy for generating matrices of shape `rows` x `cols`."""
+    elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
+    return draw(arrays(np.float, (rows, cols), elements=elements))
+
+
+@st.composite
+def complex_matrix(draw, rows, cols):
+    """Return a strategy for generating matrices of shape `rows` x `cols` with complex numbers."""
+    max_abs_value = 1e10
+    elements = st.complex_numbers(
+        min_magnitude=0, max_magnitude=max_abs_value, allow_infinity=False, allow_nan=False
+    )
+    return draw(arrays(np.complex, (rows, cols), elements=elements))
+
+
+@st.composite
+def complex_vector(draw, length=None):
+    """Return a strategy for generating vectors of length `length` with complex numbers."""
+    elements = st.complex_numbers(
+        min_magnitude=0, max_magnitude=1, allow_infinity=False, allow_nan=False
+    )
+    if length is None:
+        length = draw(st.integers(min_value=1, max_value=10))
+    return draw(arrays(np.complex, (length,), elements=elements))
 
 
 def array_of_(strategy, minlen=0, maxlen=100):
@@ -379,7 +435,8 @@ def n_mode_pure_state(draw, num_modes=1):
 
 @st.composite
 def n_mode_mixed_state(draw, num_modes=1):
-    r"""Return a random n mode mixed state."""
-    state = draw(n_mode_pure_state(num_modes))
-    attenuator = Attenuator(draw(st.floats(min_value=0.5, max_value=0.9)))
-    return state >> attenuator
+    r"""Return a random n mode pure state."""
+    S = draw(random_Sgate(num_modes))
+    I = draw(random_Interferometer(num_modes))
+    D = draw(random_Dgate(num_modes))
+    return Thermal([0.5] * num_modes) >> S >> I >> D
