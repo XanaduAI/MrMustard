@@ -21,7 +21,7 @@ import numpy as np
 
 
 def argsort_gen(generators: list[Generator[float, None, None]]) -> list[int]:
-    """
+    r"""
     Sorts a list of generator objects based on their yielded values.
 
     This function takes a list of generator objects, each yielding a sequence of numbers.

@@ -213,6 +213,10 @@ class PolyExpBase(Ansatz):
         self._simplified = True
 
     def _order_batch(self):
+        r"""This method orders the batch dimension by the lexicographical order of the
+        flattened arrays (mat, vec, array). This is a very cheap way to enforce
+        an ordering of the batch dimension, which is useful for simplification and for
+        determining (in)equality between two Bargmann representations."""
         generators = [
             itertools.chain(
                 math.asnumpy(self.vec[i]).flat,
