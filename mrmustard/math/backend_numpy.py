@@ -17,18 +17,19 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme
 
 
-from copy import deepcopy
 from math import lgamma as mlgamma
 from typing import List, Optional, Sequence, Tuple, Union
-from scipy.linalg import expm as scipy_expm, sqrtm as scipy_sqrtm
+
+import numpy as np
+import scipy as sp
+from scipy.linalg import expm as scipy_expm
+from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
-import numpy as np
-
+from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from ..utils.settings import settings
 from .lattice.strategies import binomial, vanilla, vanilla_batch
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -76,15 +77,27 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return tensor
 
     def astensor(self, array: Union[np.ndarray, np.ndarray], dtype=None) -> np.ndarray:
-        dtype = dtype or np.float64
-        return self.cast(np.array(array), dtype=dtype)
+        array = np.array(array)
+        return self.cast(array, dtype=dtype or array.dtype)
 
     def atleast_1d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return self.cast(np.reshape(array, [-1]), dtype)
+        return np.atleast_1d(self.astensor(array, dtype))
+
+    def atleast_2d(self, array: np.ndarray, dtype=None) -> np.ndarray:
+        return np.atleast_2d(self.astensor(array, dtype))
+
+    def atleast_3d(self, array: np.ndarray, dtype=None) -> np.ndarray:
+        array = self.atleast_2d(self.atleast_1d(array))
+        if len(array.shape) == 2:
+            array = array[None, ...]
+        return array
 
     def block(self, blocks: List[List[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
+
+    def block_diag(self, *blocks: List[np.ndarray]) -> np.ndarray:
+        return sp.linalg.block_diag(*blocks)
 
     def boolean_mask(self, tensor: np.ndarray, mask: np.ndarray) -> np.ndarray:
         return np.array([t for i, t in enumerate(tensor) if mask[i]])
@@ -92,7 +105,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def cast(self, array: np.ndarray, dtype=None) -> np.ndarray:
         if dtype is None:
             return array
-
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
         return np.array(array, dtype=dtype)
@@ -201,30 +213,19 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def log(self, x: np.ndarray) -> np.ndarray:
         return np.log(x)
 
-    @Autocast()
-    def matmul(
-        self,
-        a: np.ndarray,
-        b: np.ndarray,
-        transpose_a=False,
-        transpose_b=False,
-        adjoint_a=False,
-        adjoint_b=False,
-    ) -> np.ndarray:
-        a = a.T if transpose_a else a
-        b = b.T if transpose_b else b
-        a = np.conj(a) if adjoint_a else a
-        b = np.conj(b) if adjoint_b else b
-        return np.matmul(a, b)
-
     def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
         return real + 1j * imag
 
     @Autocast()
-    def matvec(
-        self, a: np.ndarray, b: np.ndarray, transpose_a=False, adjoint_a=False
-    ) -> np.ndarray:
-        return self.matmul(a, b, transpose_a, adjoint_a)
+    def matmul(self, *matrices: np.ndarray) -> np.ndarray:
+        mat = matrices[0]
+        for matrix in matrices[1:]:
+            mat = np.matmul(mat, matrix)
+        return mat
+
+    @Autocast()
+    def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return self.matmul(a, b[:, None])[:, 0]
 
     @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -284,6 +285,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
 
+    def round(self, array: np.ndarray, decimals: int = 0) -> np.ndarray:
+        return np.round(array, decimals)
+
     def sin(self, array: np.ndarray) -> np.ndarray:
         return np.sin(array)
 
@@ -324,20 +328,22 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.transpose(a, axes=perm)
 
     @Autocast()
-    def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
-        ret = deepcopy(tensor)
-        for n_index, index in enumerate(indices):
-            ret[tuple(index)] = values[n_index]
-        return ret
+    def update_tensor(
+        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+    ) -> np.ndarray:
+        indices = self.atleast_2d(indices)
+        for i, v in zip(indices, values):
+            tensor[tuple(i)] = v
+        return tensor
 
     @Autocast()
-    def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
-        # https://stackoverflow.com/questions/65734836/numpy-equivalent-to-tf-tensor-scatter-nd-add-method
-        indices = np.array(indices)  # figure out why we need this
-        indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
-        ret = deepcopy(tensor)
-        np.add.at(ret, indices, values)
-        return ret
+    def update_add_tensor(
+        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+    ) -> np.ndarray:
+        indices = self.atleast_2d(indices)
+        for i, v in zip(indices, values):
+            tensor[tuple(i)] += v
+        return tensor
 
     def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
         return np.zeros(shape, dtype=dtype)
@@ -435,9 +441,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             A, B, C = (
-                A.astype(np.complex128),
-                B.astype(np.complex128),
-                C.astype(np.complex128),
+                np.array(A).astype(np.complex128),
+                np.array(B).astype(np.complex128),
+                np.array(C).astype(np.complex128),
             )
             G = Main_julia.Vanilla.vanilla(
                 A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
