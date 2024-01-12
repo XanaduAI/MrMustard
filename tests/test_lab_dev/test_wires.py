@@ -12,35 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-Tests for wires.
-"""
+"""Tests for Wires class."""
+
+# pylint: disable=missing-function-docstring
+# pylint: disable=protected-access
 
 import pytest
 from mrmustard.lab_dev.wires import Wires
 
 
 def test_wires_view_has_same_ids():
-    r"""
-    Tests that wires views have the same ids.
-    """
     w = Wires([0], [0], [0], [0])
     assert set(w.ids) == set(w._view().ids)
 
 
 def test_view_can_edit_original():
-    r"""
-    Tests that by editing wire views we also edit the original wires.
-    """
     w = Wires([0], [0], [0], [0])
     w._view().ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
 
 
 def test_wire_subsets():
-    r"""
-    Tests wires' subsets.
-    """
     w = Wires([0], [1], [2], [3])
     assert w.output.bra.modes == [0]
     assert w.input.bra.modes == [1]
@@ -49,9 +41,6 @@ def test_wire_subsets():
 
 
 def test_wire_mode_subsets():
-    r"""
-    Tests wires' subsets with modes.
-    """
     w = Wires([10], [11], [12], [13])
     assert w[10].ids == w.output.bra.ids
     assert w[11].ids == w.input.bra.ids
@@ -60,9 +49,6 @@ def test_wire_mode_subsets():
 
 
 def test_indices():
-    r"""
-    Tests the indices.
-    """
     w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
     assert w.output.indices == [0, 1, 2, 6, 7]
     assert w.bra.indices == [0, 1, 2, 3, 4, 5]
@@ -71,18 +57,12 @@ def test_indices():
 
 
 def test_setting_ids():
-    r"""
-    Tests the ids setter.
-    """
     w = Wires([0], [0], [0], [0])
     w.ids = [9, 99, 999, 9999]
     assert w.ids == [9, 99, 999, 9999]
 
 
 def test_add_wires():
-    r"""
-    Tests the add function for wires.
-    """
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([1], [2], [3], [4])
     w12 = Wires([0, 1], [1, 2], [2, 3], [3, 4])
@@ -90,10 +70,12 @@ def test_add_wires():
 
 
 def test_cant_add_overlapping_wires():
-    r"""
-    Tests that wires with overlapping modes cannot be added together.
-    """
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(Exception):
         w1 + w2
+
+
+def test_args():
+    w = Wires([0], [1], [2], [3])
+    assert w._args() == ((0,), (1,), (2,), (3,))
