@@ -21,6 +21,12 @@
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
   [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
 
+* Added an ArrayAnsatz class. This is used in the Fock representation.
+  [(#322)](https://github.com/XanaduAI/MrMustard/pull/322)
+
+* Added `Fock` representation (parametrized by an array). Supports all algebraic operations.
+  [(#322)](https://github.com/XanaduAI/MrMustard/pull/322)
+
 ### Breaking changes
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
