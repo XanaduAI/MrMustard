@@ -381,9 +381,10 @@ class PolyExpAnsatz(PolyExpBase):
         cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
         return self.__class__(As, bs, cs)
 
+
 class ArrayAnsatz(Ansatz):
-    r"""Represents the ansatz as a multidimensional array.
-    """
+    r"""Represents the ansatz as a multidimensional array."""
+
     def __init__(self, array: Batch[Tensor]):
         r"""Note that the array is batched."""
         self.array = array
@@ -422,7 +423,7 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The addition of this ansatz and other.
         """
         try:
-            return self.__class__(array = self.array + other.array)
+            return self.__class__(array=self.array + other.array)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
@@ -446,11 +447,11 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The division of this ansatz and other.
         """
         if isinstance(other, Scalar):
-            return self.__class__(array = self.array / other)
-        
+            return self.__class__(array=self.array / other)
+
         if isinstance(other, ArrayAnsatz):
             try:
-                return self.__class__(array = self.array / other.array)
+                return self.__class__(array=self.array / other.array)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
@@ -468,10 +469,10 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The product of this ansatz and other.
         """
         try:
-            return self.__class__(array = self.array * other.array)
+            return self.__class__(array=self.array * other.array)
         except Exception as e:
             raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-    
+
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
 
@@ -481,4 +482,4 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The tensor product of this ansatz and other.
         """
-        return self.__class__(array = np.outer(self.array, other.array))
+        return self.__class__(array=np.outer(self.array, other.array))

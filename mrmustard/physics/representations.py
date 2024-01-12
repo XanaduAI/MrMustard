@@ -20,7 +20,14 @@ import matplotlib.pyplot as plt
 from mrmustard import math
 from mrmustard.physics import bargmann, fock
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar, Tensor
+from mrmustard.utils.typing import (
+    Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    Scalar,
+    Tensor,
+)
 
 
 class Representation:
@@ -309,6 +316,7 @@ class Bargmann(Representation):
         plt.show(block=False)
         return fig, ax
 
+
 class Fock(Representation):
     r"""The Fock representation of a broad class of quantum states,
     transformations, measurements, channels, etc.
@@ -337,10 +345,7 @@ class Fock(Representation):
 
     """
 
-    def __init__(
-        self,
-        array: Batch[Tensor]
-    ):
+    def __init__(self, array: Batch[Tensor]):
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = ArrayAnsatz(array=array)
 
@@ -378,50 +383,21 @@ class Fock(Representation):
     def __matmul__(self, other: Fock) -> Fock:
         r"""Implements the inner product of ansatze across the marked indices.
 
-            Batch:
-            The new Fock will hold the tensor product batch of them.
-            For example:
-                if we have self.array = [batch1,...] and other.array = [batch2,...]
-                the new self.array = [batch1*batch2, ...]
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        For example:
+            if we have self.array = [batch1,...] and other.array = [batch2,...]
+            the new self.array = [batch1*batch2, ...]
 
-            Order of index:
-            The new Fock's order is arranged as uncontracted elements in self and then other.
+        Order of index:
+        The new Fock's order is arranged as uncontracted elements in self and then other.
 
         """
-        array1 = self.array
-        array2 = other.array
-        idxs1 = self._contract_idxs
-        idxs2 = other._contract_idxs
-
-        #initial the character list for both objects
-        char1 = np.arange(0,len(array1.shape))
-        char2 = np.arange(len(array1.shape),len(array1.shape)+len(array2.shape))
-
-        #initial the character list for the output object
-        output = [0,len(char1),]
-
-        #update output character list by adding the unused in char1
-        for i,c in enumerate(char1):
-            if i != 0:
-                if not (c in idxs1):
-                    output += (c,)
-
-        flag=0
-        for i,c in enumerate(char2):
-            print(i,c)
-            if i in idxs2:
-                #replace the character list in char2 by finding the corresponding in char1
-                char2[i] = char1[idxs1[flag]]
-                flag += 1
-            else:
-                if i!=0:
-                    #update output character list by adding the unused in char2
-                    output += (c,)
-
-        new_array = np.einsum(array1, char1, array2, char2, output)
-        #Rearrange the batch dimension
-        new_shape = [new_array.shape[0] * new_array.shape[1]] + [*new_array.shape[2:]]
-        return self.__class__(array = new_array.reshape(new_shape))
+        return self.__class__(
+            array=math.tensordot(
+                self.array, other.array, [[self._contract_idxs], [other._contract_idxs]]
+            )
+        )
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
@@ -435,11 +411,14 @@ class Fock(Representation):
         """
         new_array = self.array
         for id1, id2 in zip(idxs1, idxs2):
-            list_transposed = [x for x in range(len(self.array.shape)) if x not in [id1, id2]] + [id1, id2]
+            list_transposed = [x for x in range(len(self.array.shape)) if x not in [id1, id2]] + [
+                id1,
+                id2,
+            ]
             new_array = np.trace(math.transpose(self.array, list_transposed))
         return new_array
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""Reorders the indices of the array with the given order.
         Returns a new Fock object."""
-        return self.__class__(array = math.transpose(self.array, order))
+        return self.__class__(array=math.transpose(self.array, order))
