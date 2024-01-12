@@ -310,7 +310,7 @@ class Bargmann(Representation):
         return fig, ax
 
 class Fock(Representation):
-    r"""This class is the Fock representation of a broad class of quantum states,
+    r"""The Fock representation of a broad class of quantum states,
     transformations, measurements, channels, etc.
 
     The ansatz available in this representation is the multidimensional Tensor.
