@@ -69,6 +69,8 @@ ComplexTensor = np.ndarray[Tuple[int, ...], C]
 IntTensor = np.ndarray[Tuple[int, ...], Z]
 UIntTensor = np.ndarray[Tuple[int, ...], N]
 
+
+# Revisit when requiring python 3.12 (see PEP 695)
 T_co = TypeVar(
     "T_co",
     RealVector,
@@ -90,6 +92,8 @@ Trainable = TypeVar("Trainable")
 
 
 @runtime_checkable
-class Batch(Protocol[T_co]):  # pylint: disable=missing-class-docstring
+class Batch(Protocol[T_co]):
+    r"""Anything that can iterate over objects of type T_co."""
+
     def __iter__(self) -> Iterator[T_co]:
         ...

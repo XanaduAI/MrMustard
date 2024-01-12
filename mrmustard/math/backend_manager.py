@@ -15,26 +15,26 @@
 """This module contains the backend manager."""
 
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
-
-from functools import lru_cache
-from itertools import product
 import importlib.util
 import sys
-import numpy as np
+from functools import lru_cache
+from itertools import product
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
+import numpy as np
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
-from .backend_base import BackendBase
-from .backend_numpy import BackendNumpy
 from ..utils.settings import settings
 from ..utils.typing import (
+    Batch,
     Matrix,
     Tensor,
     Trainable,
     Vector,
 )
+from .backend_base import BackendBase
+from .backend_numpy import BackendNumpy
 
 __all__ = [
     "BackendManager",
@@ -71,7 +71,11 @@ module_tf, loader_tf = lazy_import(module_name_tf)
 
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
-    "tensorflow": {"module": module_tf, "loader": loader_tf, "object": "BackendTensorflow"},
+    "tensorflow": {
+        "module": module_tf,
+        "loader": loader_tf,
+        "object": "BackendTensorflow",
+    },
 }
 
 
@@ -79,11 +83,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
+
     # the backend in use, which is numpy by default
     _backend = BackendNumpy()
 
     # the configured Euclidean optimizer.
-    _euclidean_opt: type = None
+    _euclidean_opt: Optional[type] = None
 
     # whether or not the backend can be changed
     _is_immutable = False
@@ -92,7 +97,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Optional[Sequence[any]] = ()) -> any:
+    def _apply(self, fn: str, args: Optional[Sequence[Any]] = ()) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
@@ -269,6 +274,46 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least one dimension.
         """
         return self._apply("atleast_1d", (array, dtype))
+
+    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least two dimensions.
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least two dimensions.
+        """
+        return self._apply("atleast_2d", (array, dtype))
+
+    def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least three dimensions by eventually inserting
+        new axes at the beginning. Note this is not the way atleast_3d works in numpy
+        and tensorflow, where it adds at the beginning and/or end.
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least three dimensions.
+        """
+        return self._apply("atleast_3d", (array, dtype))
+
+    def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
+        r"""Returns a block diagonal matrix from the given matrices.
+
+        Args:
+            mat1: A matrix.
+            mat2: A matrix.
+
+        Returns:
+            A block diagonal matrix from the given matrices.
+        """
+        return self._apply("block_diag", (mat1, mat2))
 
     def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
         """
@@ -545,7 +590,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Tensor, axis: Optional[int] = None) -> Tensor:
+    def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -664,30 +709,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("log", (x,))
 
-    def matmul(
-        self,
-        a: Tensor,
-        b: Tensor,
-        transpose_a=False,
-        transpose_b=False,
-        adjoint_a=False,
-        adjoint_b=False,
-    ) -> Tensor:
-        r"""The matrix product of ``a`` and ``b``.
-
-        Args:
-            a: The first matrix to multiply
-            b: The second matrix to multiply
-            transpose_a (bool): whether to transpose ``a``
-            transpose_b (bool): whether to transpose ``b``
-            adjoint_a (bool): whether to adjoint ``a``
-            adjoint_b (bool): whether to adjoint ``b``
-
-        Returns:
-            The matrix product of ``a`` and ``b``
-        """
-        return self._apply("matmul", (a, b, transpose_a, transpose_b, adjoint_a, adjoint_b))
-
     def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
         """Given two real tensors representing the real and imaginary part of a complex number,
         this operation returns a complex tensor. The input tensors must have the same shape.
@@ -701,19 +722,28 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("make_complex", (real, imag))
 
-    def matvec(self, a: Matrix, b: Vector, transpose_a=False, adjoint_a=False) -> Tensor:
+    def matmul(self, *matrices: Matrix) -> Tensor:
+        r"""The matrix product of the given matrices.
+
+        Args:
+            matrices: The matrices to multiply.
+
+        Returns:
+            The matrix product
+        """
+        return self._apply("matmul", matrices)
+
+    def matvec(self, a: Matrix, b: Vector) -> Tensor:
         r"""The matrix vector product of ``a`` (matrix) and ``b`` (vector).
 
         Args:
             a: The matrix to multiply
             b: The vector to multiply
-            transpose_a (bool): whether to transpose ``a``
-            adjoint_a (bool): whether to adjoint ``a``
 
         Returns:
             The matrix vector product of ``a`` and ``b``
         """
-        return self._apply("matvec", (a, b, transpose_a, adjoint_a))
+        return self._apply("matvec", (a, b))
 
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""The element-wise maximum of ``a`` and ``b``.
@@ -752,7 +782,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def new_variable(
-        self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=None
+        self,
+        value: Tensor,
+        bounds: Tuple[Optional[float], Optional[float]],
+        name: str,
+        dtype=None,
     ) -> Tensor:
         r"""Returns a new variable with the given value and bounds.
 
@@ -828,7 +862,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("outer", (array1, array2))
 
     def pad(
-        self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0
+        self,
+        array: Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="CONSTANT",
+        constant_values=0,
     ) -> Tensor:
         r"""The padded array.
 
@@ -887,6 +925,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The reshaped array
         """
         return self._apply("reshape", (array, shape))
+
+    def round(self, array: Tensor, decimals: int) -> Tensor:
+        r"""The array rounded to the nearest integer.
+
+        Args:
+            array: The array to round
+            decimals: number of decimals to round to
+
+        Returns:
+            The array rounded to the nearest integer
+        """
+        return self._apply("round", (array, decimals))
 
     def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
         r"""The array with the diagonal set to ``diag``.
@@ -961,6 +1011,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The sum of array
         """
+        if axes is not None:
+            neg = [a for a in axes if a < 0]
+            pos = [a for a in axes if a >= 0]
+            axes = sorted(neg) + sorted(pos)[::-1]
         return self._apply("sum", (array, axes))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
@@ -1019,6 +1073,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             tensor: The tensor to update
             indices: The indices to update
             values: The values to update
+
+        Returns:
+            The updated tensor
         """
         return self._apply("update_tensor", (tensor, indices, values))
 
@@ -1029,6 +1086,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             tensor: The tensor to update
             indices: The indices to update
             values: The values to add
+
+        Returns:
+            The updated tensor
         """
         return self._apply("update_add_tensor", (tensor, indices, values))
 

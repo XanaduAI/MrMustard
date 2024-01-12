@@ -16,6 +16,7 @@
 Unit tests for the :class:`BackendManager`.
 """
 import math
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -131,12 +132,49 @@ class TestBackendManager:
 
         res = math.asnumpy(math.atleast_1d(arr, dtype=dtype))
 
-        exp = np.reshape(arr, [-1])
+        exp = np.atleast_1d(arr)
         if dtype:
             np_dtype = getattr(np, t, None)
             exp = exp.astype(np_dtype)
 
         assert np.allclose(res, exp)
+
+    @pytest.mark.parametrize("t", types)
+    @pytest.mark.parametrize("l", [l1, l3])
+    def test_atleast_2d(self, t, l):
+        r"""
+        Tests the ``atleast_2d`` method.
+        """
+        dtype = getattr(math, t, None)
+        arr = np.array(l)
+
+        res = math.asnumpy(math.atleast_2d(arr, dtype=dtype))
+
+        exp = np.atleast_2d(arr)
+        if dtype:
+            np_dtype = getattr(np, t, None)
+            exp = exp.astype(np_dtype)
+
+        assert np.allclose(res, exp)
+
+    @pytest.mark.parametrize("t", types)
+    @pytest.mark.parametrize("l", [l1, l3, l5])
+    def test_atleast_3d(self, t, l):
+        r"""
+        Tests the ``atleast_3d`` method.
+        """
+        dtype = getattr(math, t, None)
+        arr = np.array(l)
+
+        res = math.asnumpy(math.atleast_3d(arr, dtype=dtype))
+
+        if arr.ndim == 1:
+            exp_shape = (1, 1) + arr.shape
+        elif arr.ndim == 2:
+            exp_shape = (1,) + arr.shape
+        else:
+            exp_shape = arr.shape
+        assert res.shape == exp_shape
 
     def test_boolean_mask(self):
         r"""
@@ -158,6 +196,16 @@ class TestBackendManager:
             [[I, 1j * I, O, O], [O, O, I, -1j * I], [I, -1j * I, O, O], [O, O, I, 1j * I]]
         )
         assert R.shape == (16, 16)
+
+    def test_block_diag(self):
+        r"""
+        Tests the ``block_diag`` method.
+        """
+        I = math.ones(shape=(4, 4), dtype=math.complex128)
+        O = math.zeros(shape=(4, 4), dtype=math.complex128)
+        R = math.block_diag(I, 1j * I)
+        assert R.shape == (8, 8)
+        assert np.allclose(math.block([[I, O], [O, 1j * I]]), R)
 
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):
