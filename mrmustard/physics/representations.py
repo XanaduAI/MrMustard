@@ -313,7 +313,7 @@ class Fock(Representation):
     r"""The Fock representation of a broad class of quantum states,
     transformations, measurements, channels, etc.
 
-    The ansatz available in this representation is the multidimensional Tensor.
+    The ansatz available in this representation is ArrayAnsatz.
 
     This class allows for operations of Fock tensors.
 
@@ -341,12 +341,6 @@ class Fock(Representation):
         self,
         array: Batch[Tensor]
     ):
-        r"""Initializes the Fock representation.
-        Note that args needs to flag is batched or not, if it is non-batched, add the batch 1.
-
-        Args:
-            array: batch of the object array
-        """
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = ArrayAnsatz(array=array)
 
@@ -410,7 +404,6 @@ class Fock(Representation):
         for i,c in enumerate(char1):
             if i != 0:
                 if not (c in idxs1):
-                    print(c)
                     output += (c,)
 
         flag=0
