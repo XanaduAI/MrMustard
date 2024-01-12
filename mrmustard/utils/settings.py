@@ -50,6 +50,8 @@ class ImmutableSetting:
 
     @value.setter
     def value(self, value):
+        if np.isclose(value, self._value):
+            return
         if self._is_immutable:
             raise ValueError(f"Cannot change the value of `settings.{self.name}`.")
         self._value = value
