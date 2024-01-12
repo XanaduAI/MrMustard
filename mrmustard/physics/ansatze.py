@@ -446,14 +446,13 @@ class ArrayAnsatz(Ansatz):
         Returns:
             ArrayAnsatz: The division of this ansatz and other.
         """
-        if isinstance(other, Scalar):
-            return self.__class__(array=self.array / other)
-
         if isinstance(other, ArrayAnsatz):
             try:
                 return self.__class__(array=self.array / other.array)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array / other)
 
     def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
         r"""
@@ -468,10 +467,13 @@ class ArrayAnsatz(Ansatz):
         Returns:
             ArrayAnsatz: The product of this ansatz and other.
         """
-        try:
-            return self.__class__(array=self.array * other.array)
-        except Exception as e:
-            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        if isinstance(other, ArrayAnsatz):
+            try:
+                return self.__class__(array=self.array * other.array)
+            except Exception as e:
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array * other)
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
@@ -481,5 +483,10 @@ class ArrayAnsatz(Ansatz):
 
         Returns:
             The tensor product of this ansatz and other.
+            Batch size is the product of two batches.
         """
-        return self.__class__(array=np.outer(self.array, other.array))
+        new_array = []
+        for a in self.array:
+            for b in other.array:
+                new_array.append(math.outer(a, b))
+        return self.__class__(array=math.astensor(new_array))

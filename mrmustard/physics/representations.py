@@ -327,20 +327,27 @@ class Fock(Representation):
 
     Examples:
         .. code-block:: python
-            #TODO
-            A = math.astensor([[[1.0]]])  # 1x1x1
-            b = math.astensor([[0.0]])    # 1x1
-            c = math.astensor([0.9])      # 1
-            psi1 = Bargmann(A, b, c)
-            psi2 = Bargmann(A, b, c)
-            psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
-            assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
-            psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
-            assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
-            psi5 = psi1 & psi2  # outer product (tensor product)
-            rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
-            assert rho.A.shape == (1, 2, 2)  # we have two wires now
-            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+            array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+            array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+            array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+            fock1 = Fock(array1)
+            fock2 = Fock(array2)
+            fock3 = Fock(array3)
+
+            fock4 = 1.3 * fock1 - fock2 * 2.1  # linear combination can be done with the same batch dimension
+            assert fock4.ansatz.array.shape == (1,5,7,8)
+
+            fock5 = fock1 / 1.3  # support divide on a scalar
+            assert fock5.ansatz.array.shape == (1,5,7,8)
+
+            fock6 = fock1[2] @ fock3[2]  # contract wires 2 on each (inner product)
+            assert fock6.array.shape == (3, 5, 7, 5, 7) # note that the batch is 1 * 3
+
+            fock7 = fock1 & fock3  # outer product (tensor product)
+            assert fock7.array.shape == (3, 5, 7, 8, 5, 7, 8) # the batch is 1*3
+
+            fock8 = fock1.conj() # conjugate of it
+            assert fock8.array.shape == (1,5,7,8)
     Args:
 
     """
@@ -356,7 +363,7 @@ class Fock(Representation):
     @property
     def array(self) -> Batch[Tensor]:
         r"""
-        The array.
+        The array from the ansatz.
         """
         return self.ansatz.array
 
@@ -364,19 +371,19 @@ class Fock(Representation):
         r"""
         The conjugate of this Fock object.
         """
-        new = self.__class__(np.conj(self.array[1:]))
+        new = self.__class__(np.conj(self.array))
         new._contract_idxs = self._contract_idxs
         return new
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
         r"""Returns a copy of self with the given indices marked for contraction."""
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
-            if i >= self.ansatz.array.dim:
+            if i >= len(self.array.shape):
                 raise IndexError(
                     f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
                 )
-        new = self.__class__(self.array[idx])
+        new = self.__class__(self.array)
         new._contract_idxs = idx
         return new
 
@@ -385,19 +392,17 @@ class Fock(Representation):
 
         Batch:
         The new Fock will hold the tensor product batch of them.
-        For example:
-            if we have self.array = [batch1,...] and other.array = [batch2,...]
-            the new self.array = [batch1*batch2, ...]
 
         Order of index:
         The new Fock's order is arranged as uncontracted elements in self and then other.
-
         """
-        return self.__class__(
-            array=math.tensordot(
-                self.array, other.array, [[self._contract_idxs], [other._contract_idxs]]
-            )
-        )
+        axes = [list(self._contract_idxs), list(other._contract_idxs)]
+        new_array = []
+        for a in self.array:
+            for b in other.array:
+                print("count")
+                new_array.append(math.tensordot(a, b, axes))
+        return self.__class__(array=math.astensor(new_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
@@ -416,7 +421,7 @@ class Fock(Representation):
                 id2,
             ]
             new_array = np.trace(math.transpose(self.array, list_transposed))
-        return new_array
+        return self.__class__(array=new_array)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""Reorders the indices of the array with the given order.
