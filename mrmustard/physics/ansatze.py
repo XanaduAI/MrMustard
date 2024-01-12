@@ -387,13 +387,6 @@ class ArrayAnsatz(Ansatz):
     def __init__(self, array: Batch[Tensor]):
         r"""Note that the array is batched."""
         self.array = array
-    
-    @property
-    def array(self) -> Batch[Tensor]:
-        r"""
-        The array.
-        """
-        return self.array
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
