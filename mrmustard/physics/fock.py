@@ -976,13 +976,3 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return ret, vjp
-
-def reorder_array(array, order):
-    r"""Reorders the array with the given order for all batches.
-    """
-    if not len(order) == len(array.shape) - 1:
-        raise ValueError("The order is not the same shape as array.")
-    new_tuple=()
-    for i in order:
-        new_tuple += (array.shape[i+1],)
-    return array.reshape((array.shape[0],) + new_tuple)

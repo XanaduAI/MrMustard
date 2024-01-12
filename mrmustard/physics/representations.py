@@ -443,8 +443,7 @@ class Fock(Representation):
         #TODO: conditions on this idxs1 and idxs2?
         return np.trace(self.array, axis1=idxs1, axis2=idxs2)
 
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
-        Returns a new Bargmann object."""
-        new_array = fock.reorder_array((self.array), order)
-        return self.__class__(array = new_array)
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
+        r"""Reorders the indices of the array with the given order.
+        Returns a new Fock object."""
+        return self.__class__(array = math.transpose(self.array, order))
