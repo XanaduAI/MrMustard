@@ -344,7 +344,7 @@ class Fock(Representation):
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = ArrayAnsatz(array=array)
 
-    def from_ansatz(self, ansatz: ArrayAnsatz, batched: bool) -> Fock:
+    def from_ansatz(self, ansatz: ArrayAnsatz) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
         return self.__class__(ansatz.array)
 
@@ -433,8 +433,11 @@ class Fock(Representation):
         Returns:
             Fock: the ansatz with the given indices traced over
         """
-        #TODO: conditions on this idxs1 and idxs2?
-        return np.trace(self.array, axis1=idxs1, axis2=idxs2)
+        new_array = self.array
+        for id1, id2 in zip(idxs1, idxs2):
+            list_transposed = [x for x in range(len(self.array.shape)) if x not in [id1, id2]] + [id1, id2]
+            new_array = np.trace(math.transpose(self.array, list_transposed))
+        return new_array
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""Reorders the indices of the array with the given order.
