@@ -2,7 +2,7 @@
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
 import importlib
-import pytest
+
 import numpy as np
 import pytest
 from hypothesis import given
@@ -14,18 +14,13 @@ from mrmustard.physics import fidelity, normalize
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
+
 from ..conftest import skip_np
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 do_julia = True if importlib.util.find_spec("julia") else False
-precisions = (
-    [128, 256, 384, 512]
-    if do_julia
-    else [
-        128,
-    ]
-)
+precisions = [128, 256, 384, 512] if do_julia else [128]
 
 
 @st.composite

@@ -19,14 +19,13 @@ This module implements the quantum states upon which a quantum circuits acts on.
 from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import math, settings
-from mrmustard.math.parameters import update_symplectic
 from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
 from .utils import make_parameter
-
 
 __all__ = [
     "Vacuum",
@@ -56,7 +55,7 @@ class Coherent(State):
 
     .. code-block::
 
-        Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.3)    # True
+        Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.2)    # True
 
     Parallelizable over x and y:
 
