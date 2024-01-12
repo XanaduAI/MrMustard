@@ -407,7 +407,7 @@ class ArrayAnsatz(Ansatz):
         try:
             return np.allclose(self.array, other.array)
         except Exception as e:
-            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""
