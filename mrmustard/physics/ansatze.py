@@ -400,7 +400,8 @@ class ArrayAnsatz(Ansatz):
 
         Note that the comparaison is done by numpy allclose with numpy's default rtol and atol.
 
-        #TODO: make sure this is the correct type of the wrong shape
+        Raises:
+            ValueError: If both of array don't have the same shape.
         """
         try:
             return np.allclose(self.array, other.array)
@@ -415,8 +416,7 @@ class ArrayAnsatz(Ansatz):
             other: Another ansatz.
 
         Raises:
-        #TODO: make sure this is the correct type of the wrong shape
-            TypeError: If both of array don't have the same shape.
+            ValueError: If both of array don't have the same shape.
 
         Returns:
             ArrayAnsatz: The addition of this ansatz and other.
@@ -440,8 +440,7 @@ class ArrayAnsatz(Ansatz):
             other: A scalar or another ansatz.
 
         Raises:
-        #TODO: make sure this is the correct type of the wrong shape
-            TypeError: If both of array don't have the same shape.
+            ValueError: If both of array don't have the same shape.
 
         Returns:
             ArrayAnsatz: The division of this ansatz and other.
@@ -463,8 +462,7 @@ class ArrayAnsatz(Ansatz):
             other: A scalar or another ansatz.
 
         Raises:
-        #TODO: make sure this is the correct type of the wrong shape
-            TypeError: If both of array don't have the same shape.
+            ValueError: If both of array don't have the same shape.
 
         Returns:
             ArrayAnsatz: The product of this ansatz and other.
