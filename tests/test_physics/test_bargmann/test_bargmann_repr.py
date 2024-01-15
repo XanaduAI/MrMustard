@@ -7,6 +7,7 @@ from mrmustard.physics.representations import Bargmann
 from tests.random import random_Ggate, single_mode_unitary_gate, n_mode_mixed_state, Abc_triple
 from hypothesis import given
 
+
 def test_make_cat():
     r"test adding two coherent states via the Bargmann representation"
     cat = Bargmann(*Coherent(1.0).bargmann()) + Bargmann(*Coherent(-1.0).bargmann())

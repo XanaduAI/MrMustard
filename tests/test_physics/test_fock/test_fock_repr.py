@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+
 class TestFockRepresentation:
     def test_init(self):
         pass
@@ -10,7 +11,7 @@ class TestFockRepresentation:
 
     def test_conj(self):
         pass
-    
+
     def test_matmul(self):
         pass
 
