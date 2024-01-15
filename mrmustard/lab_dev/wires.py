@@ -90,15 +90,17 @@ class Wires:
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
         randint = settings.rng.integers  # MM random number generator
-        ob = {m: randint(1, 2**62) if m in modes_out_bra else 0 for m in self._modes}
-        ib = {m: randint(1, 2**62) if m in modes_in_bra else 0 for m in self._modes}
-        ok = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
-        ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
+        pow = 50
+        ob = {m: randint(1, 2**pow) if m in modes_out_bra else 0 for m in self._modes}
+        ib = {m: randint(1, 2**pow) if m in modes_in_bra else 0 for m in self._modes}
+        ok = {m: randint(1, 2**pow) if m in modes_out_ket else 0 for m in self._modes}
+        ik = {m: randint(1, 2**pow) if m in modes_in_ket else 0 for m in self._modes}
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
     def _args(self):
         r"returns the same args one needs to initialize this object."
+        self._id_array[:, 0]
         ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
         ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
@@ -111,7 +113,7 @@ class Wires:
         w = cls()
         w._id_array = id_array if id_array is not None else w._id_array
         w._modes = modes if modes is not None else w._modes
-        w._mask = mask if mask is not None else w._mask
+        w._mask = mask if mask is not None else np.ones_like(w._id_array)
         return w
 
     def _view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
@@ -180,6 +182,13 @@ class Wires:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return Wires(ok_modes, ik_modes, ob_modes, ib_modes)
 
+    def dual(self) -> Wires:
+        r"""
+        The dual of this wires object, with new ids.
+        """
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
+        return Wires(ib_modes, ob_modes, ik_modes, ok_modes)
+
     def copy(self) -> Wires:
         r"""A copy of this wire with new ids."""
         w = Wires(*self._args())
@@ -188,10 +197,10 @@ class Wires:
 
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(
-            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
-        )
+        _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
+        modes = [self._modes[i] for i,row in enumerate(_id_array) if np.any(row != 0)]
+        rows = [self._modes.index(m) for m in modes]
+        return self._from_data(_id_array[rows], modes, self._mask[rows])
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
@@ -203,8 +212,7 @@ class Wires:
             # if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
             #     raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
-        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        return self._from_data(None, sorted(modes_rows), np.ones_like(combined_array))
+        combined_array = [modes_rows[m] for m in sorted(modes_rows)]
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
@@ -279,3 +287,40 @@ class Wires:
             raise ImportError(
                 "To display the wires in a jupyter notebook you need to `pip install IPython`"
             ) from e
+        
+
+    def add_connected(self, other):
+        "A new Wires object with the wires of self and other combined."
+        all_modes = sorted(set(self.modes) | set(other.modes))
+
+        ob = {m: 0 if m not in self.output.bra.modes else self.output.bra[m].ids[0] for m in all_modes}
+        ib = {m: 0 if m not in self.input.bra.modes else self.input.bra[m].ids[0] for m in all_modes}
+        ok = {m: 0 if m not in self.output.ket.modes else self.output.ket[m].ids[0] for m in all_modes}
+        ik = {m: 0 if m not in self.input.ket.modes else self.input.ket[m].ids[0] for m in all_modes}
+
+        msg = "Found wires that are not connected."
+        for m in other.input.bra.modes:
+            if ob[m]:
+                if ob[m] == other.input.bra[m].ids[0]:
+                    ob[m] = 0
+                else:
+                    raise ValueError(msg)
+            else:
+                ib[m] = other.input.bra[m].ids[0]
+        for m in other.input.ket.modes:
+            if ok[m]:
+                if ok[m] == other.input.ket[m].ids[0]:
+                    ok[m] = 0
+                else:
+                    raise ValueError(msg)
+            else:
+                ik[m] = other.input.ket[m].ids[0]
+
+        for m in other.output.bra.modes:
+            ob[m] = other.output.bra[m].ids[0]
+        for m in other.output.ket.modes:
+            ok[m] = other.output.ket[m].ids[0]
+
+        combined_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in all_modes])
+
+        return self._from_data(combined_array, all_modes)
