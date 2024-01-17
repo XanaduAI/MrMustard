@@ -93,27 +93,25 @@ class TestSimulator:
         assert (rep.b == b).all()
 
 
-# class TestSimulatorBroken:
-#     r"""
-#     Tests for the simulator class that currently do not pass.
-#     """
-#     @pytest.mark.parametrize("modes", [[0, 1],])
-#     def test_simulate_multi_mode_components_in_series(self, modes):
-#         r"""
-#         Simulates a circuit with multi-mode Dgates applied in series.
-#         """
-#         d1 = Dgate(1, modes=modes)
-#         d2 = Dgate(2, modes=modes)
-#         circuit = Circuit([d1, d1, d2])
+class TestSimulatorBroken:
+    r"""
+    Tests for the simulator class that currently do not pass.
+    """
+    @pytest.mark.parametrize("modes", [[0, 1],])
+    def test_simulate_multi_mode_components_in_series(self, modes):
+        r"""
+        Simulates a circuit with multi-mode Dgates applied in series.
+        """
+        d1 = Dgate(1, modes=modes)
+        d2 = Dgate(2, modes=modes)
+        circuit = Circuit([d1, d1, d2])
 
-#         result = Simulator().run(circuit)
+        result = Simulator().run(circuit)
+        rep = result.representation
+        A = [[0, 1], [1, 0]]
+        b = [4, -4]
         
-#         assert result.modes == modes
-#         assert result.name == ""
-
-#         rep = result.representation
-#         A = [[0, 1], [1, 0]]
-#         b = [4, -4]
-
-#         assert (rep.A == A).all()
-#         assert (rep.b == b).all()
+        assert result.modes == modes
+        assert result.name == ""
+        assert (rep.A == A).all()
+        assert (rep.b == b).all()
