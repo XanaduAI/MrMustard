@@ -100,7 +100,6 @@ class Wires:
 
     def _args(self):
         r"returns the same args one needs to initialize this object."
-        self._id_array[:, 0]
         ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
         ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
