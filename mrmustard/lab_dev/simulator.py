@@ -24,7 +24,7 @@ from typing import Sequence
 
 from mrmustard import math
 from ..physics.representations import Representation
-from .circuit_components import CircuitComponent, connect
+from .circuit_components import CircuitComponent, add_bra, connect
 from .circuits import Circuit
 
 __all__ = [
@@ -141,7 +141,7 @@ class Simulator:
 
         return ret
 
-    def run(self, circuit: Circuit) -> CircuitComponent:
+    def run(self, circuit: Circuit, add_bras: bool = True) -> CircuitComponent:
         r"""
         Simulates the given circuit.
 
@@ -149,13 +149,17 @@ class Simulator:
 
         Arguments:
             circuit: The circuit to simulate.
+            add_bras: If ``True``, adds the conjugate of every component that
+                has wires only on the ket side.
 
         Returns:
             A circuit component representing the entire circuit.
         """
-        components = circuit.components
-        if len(components) == 1:
+        if len(circuit.components) == 1:
             return components[0].light_copy()
 
-        components = connect(circuit.components)
+        components = circuit.components
+        if add_bras:
+            components = add_bra(components)
+        components = connect(components)
         return self._contract(components)
