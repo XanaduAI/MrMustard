@@ -54,30 +54,10 @@ class TestSimulator:
         r"""
         Simulates a circuit with one-mode Dgates applied in parallel.
         """
-        d1 = Dgate(
-            1,
-            modes=[
-                1,
-            ],
-        )
-        d2 = Dgate(
-            2,
-            modes=[
-                2,
-            ],
-        )
-        d3 = Dgate(
-            3,
-            modes=[
-                3,
-            ],
-        )
-        d4 = Dgate(
-            4,
-            modes=[
-                4,
-            ],
-        )
+        d1 = Dgate(1, modes=[1])
+        d2 = Dgate(2, modes=[2])
+        d3 = Dgate(3, modes=[3])
+        d4 = Dgate(4, modes=[4])
 
         circuit = Circuit([d3, d1, d4, d2])
         result = Simulator().run(circuit, add_bras)
@@ -96,30 +76,10 @@ class TestSimulator:
         r"""
         Simulates a circuit with one-mode Dgates applied in parallel and in series.
         """
-        d1 = Dgate(
-            1,
-            modes=[
-                1,
-            ],
-        )
-        d2 = Dgate(
-            2,
-            modes=[
-                2,
-            ],
-        )
-        d3 = Dgate(
-            3,
-            modes=[
-                3,
-            ],
-        )
-        d4 = Dgate(
-            4,
-            modes=[
-                4,
-            ],
-        )
+        d1 = Dgate(1, modes=[1])
+        d2 = Dgate(2, modes=[2])
+        d3 = Dgate(3, modes=[3])
+        d4 = Dgate(4, modes=[4])
 
         circuit = Circuit([d1, d1, d2, d1, d3, d1, d4, d2, d1])
         result = Simulator().run(circuit, add_bras)
@@ -139,12 +99,7 @@ class TestSimulatorBroken:
     Tests for the simulator class that currently do not pass.
     """
 
-    @pytest.mark.parametrize(
-        "modes",
-        [
-            [0, 1],
-        ],
-    )
+    @pytest.mark.parametrize("modes", [[0, 1]])
     def test_simulate_multi_mode_components_in_series(self, modes):
         r"""
         Simulates a circuit with multi-mode Dgates applied in series.
