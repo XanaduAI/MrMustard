@@ -198,7 +198,7 @@ class Wires:
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
         _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
-        modes = [self._modes[i] for i,row in enumerate(_id_array) if np.any(row != 0)]
+        modes = [self._modes[i] for i, row in enumerate(_id_array) if np.any(row != 0)]
         rows = [self._modes.index(m) for m in modes]
         return self._from_data(_id_array[rows], modes, self._mask[rows])
 
@@ -287,16 +287,23 @@ class Wires:
             raise ImportError(
                 "To display the wires in a jupyter notebook you need to `pip install IPython`"
             ) from e
-        
 
     def add_connected(self, other) -> Wires:
         "A new Wires object with the wires of self and other combined."
         all_modes = sorted(set(self.modes) | set(other.modes))
 
-        ob = {m: 0 if m not in self.output.bra.modes else self.output.bra[m].ids[0] for m in all_modes}
-        ib = {m: 0 if m not in self.input.bra.modes else self.input.bra[m].ids[0] for m in all_modes}
-        ok = {m: 0 if m not in self.output.ket.modes else self.output.ket[m].ids[0] for m in all_modes}
-        ik = {m: 0 if m not in self.input.ket.modes else self.input.ket[m].ids[0] for m in all_modes}
+        ob = {
+            m: 0 if m not in self.output.bra.modes else self.output.bra[m].ids[0] for m in all_modes
+        }
+        ib = {
+            m: 0 if m not in self.input.bra.modes else self.input.bra[m].ids[0] for m in all_modes
+        }
+        ok = {
+            m: 0 if m not in self.output.ket.modes else self.output.ket[m].ids[0] for m in all_modes
+        }
+        ik = {
+            m: 0 if m not in self.input.ket.modes else self.input.ket[m].ids[0] for m in all_modes
+        }
 
         msg = "Found wires that are not connected."
         for m in other.input.bra.modes:

@@ -18,14 +18,18 @@ Simulators for quantum circuits.
 
 from __future__ import annotations
 
+from opt_einsum import contract_path
+from opt_einsum.parser import get_symbol
 from typing import Sequence
 
-from ..physics.representations import Bargmann, Representation
-from .circuit_components import CircuitComponent
+from mrmustard import math
+from ..physics.representations import Representation
+from .circuit_components import CircuitComponent, connect
 from .circuits import Circuit
-from .wires import Wire, Wires
 
-__all__ = ["Simulator", "SimulatorBargmann"]
+__all__ = [
+    "Simulator",
+]
 
 
 class Simulator:
@@ -33,98 +37,125 @@ class Simulator:
     A simulator for ``Circuit`` objects.
     """
 
-    def _contract_bargmann(self, components: Sequence[CircuitComponent]) -> CircuitComponent:
+    @staticmethod
+    def _get_oe_subscripts(components: Sequence[CircuitComponent]) -> dict[str, Representation]:
+        r"""
+        Returns a list of subscripts for every component, together with a dictionary that maps
+        each wire id to the corresponding subscript.
+        """
+        all_ids = set([id for c in components for id in c.wires.ids])
+        ids_to_subs = {id: get_symbol(i) for i, id in enumerate(all_ids)}
+        subs = ["".join([ids_to_subs[id] for id in c.wires.ids]) for c in components]
+        return subs, ids_to_subs
+
+    def _contract(self, components: Sequence[CircuitComponent]) -> CircuitComponent:
         r"""
         Contracts a sequence of Bargmann components.
+
+        Arguments:
+            components: The components to contract.
+
+        Returns:
+            The resulting circuit component.
         """
-        # 0. create the einsum dict and the char-id and id-char dicts
-        einsum_dict = self._create_einsum_dict(self.components)
-        char_id_dict = {
-            char: self.components[i].wires.ids[j]
-            for i, string in enumerate(einsum_dict)
-            for j, char in enumerate(string)
-        }
-        id_char_dict = {id: char for char, id in char_id_dict.items()}
+        # get a list of subscripts for every component
+        subs, ids_to_subs = self._get_oe_subscripts(components)
+        subs_to_component = {sub: c for (sub, c) in zip(subs, components)}
+
+        # get the path for opt_einsum
+        path = ",".join(subs)
+
+        # use opt_einsum to get a list of pair-wise contractions
+        shapes = [(2,) * len(sub) for sub in subs]
+        path_info = contract_path(path, *shapes, shapes=True, optimize="auto")
+        contractions = [ctr for _, _, ctr, _, _, in path_info[1].contraction_list]
+
+        # initialize a dictionary mapping the unsorted subscripts (i.e., those received from
+        # opt_einsum) to othe sorted ones (i.e., those with output subscripts on the left and with
+        # input subscripts on the right)
+        u_to_s_subscripts = {}
+        for contraction in contractions:
+            terms, result_u = contraction.split("->")
+            term1, term2 = terms.split(",")
+            u_to_s_subscripts[term1] = term1
+            u_to_s_subscripts[term2] = term2
+            u_to_s_subscripts[result_u] = result_u
+
+        # perform the contractions in the order given by opt_einsum
+        for contraction in contractions:
+            terms_u, result_u = contraction.split("->")
+            term1_u, term2_u = terms_u.split(",")
+
+            # pop the sorted term1 and term2
+            term1_s = u_to_s_subscripts.pop(term1_u)
+            term2_s = u_to_s_subscripts.pop(term2_u)
+
+            # store the "repeated" indices (those that appear in both terms)
+            repeated = [s for s in term1_s if s in term2_s]
+
+            # ensure that term1 is the term whose contracted subscripts are on the input side,
+            # swapping term1 and term2 if needed
+            if repeated and term1_s.index(repeated[0]) > term2_s.index(repeated[0]):
+                term1_s, term2_s = term2_s, term1_s
+
+            # pop the two circuit components involved in the contraction
+            component1 = subs_to_component.pop(term1_s)
+            component2 = subs_to_component.pop(term2_s)
+
+            # calculate the ``Wires`` of the circuit component resulting from the contraction
+            wires_out = component1.wires.add_connected(component2.wires)
+
+            # calculate the ``Representation`` of the circuit component resulting from the contraction
+            idx1 = [term1_s.index(i) for i in repeated]
+            idx2 = [term2_s.index(i) for i in repeated]
+            representation = component2.representation[idx2] @ component1.representation[idx1]
+
+            # reorder the representation
+            all_modes = component2.modes + component1.modes
+            modes = list(set(all_modes))
+            idx_reorder = math.concat(
+                [[2 * all_modes.index(m), 2 * all_modes.index(m) + 1] for m in modes], axis=-1
+            )
+            representation = representation.reorder(idx_reorder)
+
+            # initialize the circuit component resulting from the contraction
+            component_out = CircuitComponent.from_attributes(
+                name="", wires=wires_out, representation=representation
+            )
+
+            # store ``result_s`` and ``component_out`` in the relevant dictionaries
+            result_s = "".join(
+                [
+                    ids_to_subs[i]
+                    for i in wires_out.output.bra.ids
+                    + wires_out.input.bra.ids
+                    + wires_out.output.ket.ids
+                    + wires_out.input.ket.ids
+                ]
+            )
+            u_to_s_subscripts[result_u] = result_s
+            subs_to_component[result_s] = component_out
+
+        # return the remaining value of ``subs_to_component``
+        ret = list(subs_to_component.values())[0]
+
+        return ret
 
     def run(self, circuit: Circuit) -> CircuitComponent:
         r"""
         Simulates the given circuit.
 
+        Note: This does not yet support measurements.
+
         Arguments:
             circuit: The circuit to simulate.
+
+        Returns:
+            A circuit component representing the entire circuit.
         """
-        ...
+        components = circuit.components
+        if len(components) == 1:
+            return components[0].light_copy()
 
-
-@staticmethod
-def _create_einsum_dict(components: Sequence[CircuitComponent]) -> dict[str, Representation]:
-    r"""Creates the einsum dict from the components."""
-    einsum: dict[str, Representation] = {}
-    ids = {id: None for c in components for id in c.wires.ids}
-    ids_map = {id: i for i, id in enumerate(ids.keys())}  # remap to 0,1,2...
-    strings_ints = [[ids_map[id] for id in c.wires.ids] for c in components]
-    strings = ["".join([chr(i + 97) for i in s]) for s in strings_ints]
-    for s, c in zip(strings, components):
-        einsum[s] = c.representation
-    return einsum
-
-
-def _contract(self, components: Sequence[CircuitComponent]):
-    r"""Contracts the circuit."""
-    # 0. create the einsum dict and the char-id and id-char dicts
-    einsum_dict = self._create_einsum_dict(self.components)
-    char_id_dict = {
-        char: self.components[i].wires.ids[j]
-        for i, string in enumerate(einsum_dict)
-        for j, char in enumerate(string)
-    }
-    id_char_dict = {id: char for char, id in char_id_dict.items()}
-
-    # 1. create the einsum string for the whole contraction
-    all_chars = [char for s in einsum_dict for char in s]
-    ids = [char_id_dict[char] for char in set(all_chars) if all_chars.count(char) == 1]
-    out_bra = reduce(add, [c.wires.bra.output.subset(ids) for c in components])
-    in_bra = reduce(add, [c.wires.bra.input.subset(ids) for c in components])
-    out_ket = reduce(add, [c.wires.ket.output.subset(ids) for c in components])
-    in_ket = reduce(add, [c.wires.ket.input.subset(ids) for c in components])
-    out_string = "".join(
-        [id_char_dict[id] for id in out_bra.ids + in_bra.ids + out_ket.ids + in_ket.ids]
-    )
-    einsum_string = ",".join(einsum_dict.keys()) + "->" + out_string
-
-    # 2. use einsum string in path_info to get pair-wise contractions
-    import opt_einsum as oe
-
-    shapes = [(2,) * len(s) for s in einsum_dict.keys()]
-    path_info = oe.contract_path(einsum_string, *shapes, shapes=True, optimize="auto")
-
-    # 3. update the dict as path_info indicates until the whole circuit is contracted
-    for _, _, current, _, _ in path_info[1].contraction_list:
-        idx_A, idx_B, idx_reorder = self.parse_einsum(current)
-        A, (B, out) = current.split(",")[0], current.split(",")[1].split("->")
-        new_r = einsum_dict[A][idx_A] @ einsum_dict[B][idx_B]
-        new_r = new_r.reorder(idx_reorder)
-        einsum_dict[out] = new_r
-
-    # 4. return the result
-    return CircuitComponent(
-        "",
-        einsum_dict[out_string],
-        modes_out_bra=out_bra.modes,
-        modes_in_bra=in_bra.modes,
-        modes_out_ket=out_ket.modes,
-        modes_in_ket=in_ket.modes,
-    )
-
-
-@staticmethod
-def parse_einsum(string: str):
-    parts, result = string.split("->")
-    parts = parts.split(",")
-    repeated = set(parts[0]).intersection(parts[1])
-    remaining = set(parts[0]).union(parts[1]) - repeated
-    return (
-        [parts[0].index(i) for i in repeated],
-        [parts[1].index(i) for i in repeated],
-        [result.index(i) for i in remaining],
-    )
+        components = connect(circuit.components)
+        return self._contract(components)

@@ -80,7 +80,7 @@ class CircuitComponent:
             name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c)
         )
         return ret
-    
+
     @classmethod
     def from_attributes(
         cls,
