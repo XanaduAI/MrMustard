@@ -80,6 +80,22 @@ class CircuitComponent:
             name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c)
         )
         return ret
+    
+    @classmethod
+    def from_attributes(
+        cls,
+        name: str,
+        wires: Wires,
+        representation: Representation,
+    ):
+        r"""
+        Initializes a circuit component from its attributes (a name, a ``Wires``,
+        and a ``Representation``).
+        """
+        ret = CircuitComponent(name)
+        ret._wires = wires
+        ret._representation = representation
+        return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
