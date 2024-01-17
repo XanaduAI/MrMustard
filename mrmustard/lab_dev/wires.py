@@ -289,7 +289,17 @@ class Wires:
             ) from e
 
     def add_connected(self, other) -> Wires:
-        "A new Wires object with the wires of self and other combined."
+        """
+        Returns a new ``Wires`` that contains all the wires of ``self`` and ``other``, except for all
+        the output wires of ``self`` that are also input wires of ``other``.
+
+        The returned ``Wires`` corresponds to the ``Wires`` obtained by contracting the wires in common
+        between ``self`` and ``other``.
+
+        Raises:
+            ValueError: If one or more of the output wires of ``self`` that are also input wires of
+            ``other`` have different ids that the corresponding output wire of ``other``.
+        """
         all_modes = sorted(set(self.modes) | set(other.modes))
 
         ob = {
@@ -305,7 +315,7 @@ class Wires:
             m: 0 if m not in self.input.ket.modes else self.input.ket[m].ids[0] for m in all_modes
         }
 
-        msg = "Found wires that are not connected."
+        msg = "Found the same wire with different ids."
         for m in other.input.bra.modes:
             if ob[m]:
                 if ob[m] == other.input.bra[m].ids[0]:
