@@ -129,7 +129,7 @@ class Wires:
     @property
     def ids(self) -> list[int]:
         "The list of ids of the available wires in the standard order."
-        flat = self.id_array.T.ravel()
+        flat = self.id_array.ravel()
         return flat[flat > 0].tolist()
 
     @ids.setter
@@ -149,7 +149,7 @@ class Wires:
         r"""Returns the array of indices of this subset in the standard order.
         (bra/ket x out/in x mode). Use this to get the indices for bargmann contractions.
         """
-        flat = self.id_array.T.ravel()
+        flat = self.id_array.ravel()
         flat = flat[flat != 0]
         return np.where(flat > 0)[0].tolist()
 
@@ -188,10 +188,10 @@ class Wires:
 
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(
-            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
-        )
+        _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
+        modes = [self._modes[i] for i, row in enumerate(_id_array) if np.any(row != 0)]
+        rows = [self._modes.index(m) for m in modes]
+        return self._from_data(_id_array[rows], modes, self._mask[rows])
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
@@ -200,11 +200,10 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            # if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
-            #     raise ValueError(f"wires overlap on mode {m}")
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        return self._from_data(None, sorted(modes_rows), np.ones_like(combined_array))
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
@@ -235,19 +234,19 @@ class Wires:
 
         # Add column headers
         html += "<tr>"
-        for label in [""] + col_labels:  # Add an empty string for the top-left cell
-            html += f'<th style="border: 1px solid black; padding: 5px;">{label}</th>'
+        for label in [""] + list(row_labels):  # Add an empty string for the top-left cell
+            html += f'<th style="border: 1px solid black; padding: 20px;">{label}</th>'
         html += "</tr>"
 
         # Initialize rows with row labels
         rows_html = [
             f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>'
-            for label in row_labels
+            for label in col_labels
         ]
 
         # Add table cells (column by column)
-        for label, col in zip(col_labels, array.T):
-            for row_idx, value in enumerate(col):
+        for row in array:
+            for col_idx, value in enumerate(row):
                 color = (
                     "white"
                     if np.isclose(value, 0)
@@ -262,7 +261,7 @@ class Wires:
                     )
                 else:
                     cell_html += '"></td>'
-                rows_html[row_idx] += cell_html
+                rows_html[col_idx] += cell_html
 
         # Close the rows and add them to the HTML table
         for row_html in rows_html:
