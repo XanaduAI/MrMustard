@@ -64,6 +64,7 @@ class Simulator:
 
         # get the path for opt_einsum
         path = ",".join(subs)
+        # print(path)
 
         # use opt_einsum to get a list of pair-wise contractions
         shapes = [(2,) * len(sub) for sub in subs]
@@ -135,6 +136,8 @@ class Simulator:
             )
             u_to_s_subscripts[result_u] = result_s
             subs_to_component[result_s] = component_out
+
+            # print(contraction, "-", term2_s, term1_s, result_s)
 
         # return the remaining value of ``subs_to_component``
         ret = list(subs_to_component.values())[0]
