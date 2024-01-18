@@ -22,14 +22,11 @@ from opt_einsum import contract_path
 from opt_einsum.parser import get_symbol
 from typing import Sequence
 
-from mrmustard import math
 from ..physics.representations import Representation
 from .circuit_components import CircuitComponent, add_bra, connect
 from .circuits import Circuit
 
-__all__ = [
-    "Simulator",
-]
+__all__ = ["Simulator"]
 
 
 class Simulator:
@@ -64,7 +61,6 @@ class Simulator:
 
         # get the path for opt_einsum
         path = ",".join(subs)
-        # print(path)
 
         # use opt_einsum to get a list of pair-wise contractions
         shapes = [(2,) * len(sub) for sub in subs]
@@ -94,17 +90,24 @@ class Simulator:
             # store the "repeated" indices (those that appear in both terms)
             repeated = [s for s in term1_s if s in term2_s]
 
-            # ensure that term1 is the term whose contracted subscripts are on the input side,
-            # swapping term1 and term2 if needed
-            if repeated and term1_s.index(repeated[0]) > term2_s.index(repeated[0]):
-                term1_s, term2_s = term2_s, term1_s
-
             # pop the two circuit components involved in the contraction
             component1 = subs_to_component.pop(term1_s)
             component2 = subs_to_component.pop(term2_s)
 
+            # ensure that component1 is the component whose contracted indices are on the output side,
+            # swapping component1 with component2 if needed
+            ids1 = component1.wires.input.ids
+            ids2 = component2.wires.output.ids
+            overlap = [i for i in ids1 if i in ids2]
+            if overlap:
+                term1_s, term2_s = term2_s, term1_s
+                component1, component2 = component2, component1
+
             # calculate the ``Wires`` of the circuit component resulting from the contraction
             wires_out = component1.wires.add_connected(component2.wires)
+
+            # get the string of sorted subscripts for the result of the contraction
+            result_s = "".join(ids_to_subs[i] for i in wires_out.ids)
 
             # calculate the ``Representation`` of the circuit component resulting from the contraction
             idx1 = [term1_s.index(i) for i in repeated]
@@ -112,11 +115,10 @@ class Simulator:
             representation = component2.representation[idx2] @ component1.representation[idx1]
 
             # reorder the representation
-            all_modes = component2.modes + component1.modes
-            modes = list(set(all_modes))
-            idx_reorder = math.concat(
-                [[2 * all_modes.index(m), 2 * all_modes.index(m) + 1] for m in modes], axis=-1
-            )
+            all_subs = term2_s + term1_s
+            for s in repeated:
+                all_subs = all_subs.replace(s, "")
+            idx_reorder = [all_subs.index(s) for s in result_s]
             representation = representation.reorder(idx_reorder)
 
             # initialize the circuit component resulting from the contraction
@@ -125,19 +127,8 @@ class Simulator:
             )
 
             # store ``result_s`` and ``component_out`` in the relevant dictionaries
-            result_s = "".join(
-                [
-                    ids_to_subs[i]
-                    for i in wires_out.output.bra.ids
-                    + wires_out.input.bra.ids
-                    + wires_out.output.ket.ids
-                    + wires_out.input.ket.ids
-                ]
-            )
             u_to_s_subscripts[result_u] = result_s
             subs_to_component[result_s] = component_out
-
-            # print(contraction, "-", term2_s, term1_s, result_s)
 
         # return the remaining value of ``subs_to_component``
         ret = list(subs_to_component.values())[0]
@@ -158,10 +149,10 @@ class Simulator:
         Returns:
             A circuit component representing the entire circuit.
         """
-        if len(circuit.components) == 1:
+        components = circuit.components
+        if len(components) == 1:
             return components[0].light_copy()
 
-        components = circuit.components
         if add_bras:
             components = add_bra(components)
         components = connect(components)

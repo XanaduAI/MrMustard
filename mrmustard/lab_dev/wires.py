@@ -301,41 +301,63 @@ class Wires:
         """
         all_modes = sorted(set(self.modes) | set(other.modes))
 
-        ob = {
-            m: 0 if m not in self.output.bra.modes else self.output.bra[m].ids[0] for m in all_modes
-        }
-        ib = {
-            m: 0 if m not in self.input.bra.modes else self.input.bra[m].ids[0] for m in all_modes
-        }
-        ok = {
-            m: 0 if m not in self.output.ket.modes else self.output.ket[m].ids[0] for m in all_modes
-        }
-        ik = {
-            m: 0 if m not in self.input.ket.modes else self.input.ket[m].ids[0] for m in all_modes
-        }
+        ob = {m: 0 for m in all_modes}
+        ib = {m: 0 for m in all_modes}
+        ok = {m: 0 for m in all_modes}
+        ik = {m: 0 for m in all_modes}
 
         msg = "Found the same wire with different ids."
-        for m in other.input.bra.modes:
-            if ob[m]:
-                if ob[m] == other.input.bra[m].ids[0]:
-                    ob[m] = 0
-                else:
-                    raise ValueError(msg)
-            else:
-                ib[m] = other.input.bra[m].ids[0]
-        for m in other.input.ket.modes:
-            if ok[m]:
-                if ok[m] == other.input.ket[m].ids[0]:
-                    ok[m] = 0
-                else:
-                    raise ValueError(msg)
-            else:
-                ik[m] = other.input.ket[m].ids[0]
 
+        # for m in self.input.bra.modes:
+        #     ib[m] = self.input.bra[m].ids[0]
+        # for m in self.output.bra.modes:
+        #     ob[m] = self.output.bra[m].ids[0]
+        # for m in other.input.bra.modes:
+        #     if ob[m] == 0:
+        #         ib[m] = other.input.bra[m].ids[0]
+        #     elif ob[m] == other.input.bra[m].ids[0]:
+        #         ob[m] = 0
+        #     else:
+        #         raise ValueError(msg)
+        # for m in other.output.bra.modes:
+        #     if ob[m] == 0:
+        #         ob[m] = other.output.bra[m].ids[0]
+        #     else:
+        #         raise ValueError(msg)
+
+        for m in self.input.bra.modes:
+            ib[m] = self.input.bra[m].ids[0]
+        for m in self.output.bra.modes:
+            ob[m] = self.output.bra[m].ids[0]
+        for m in other.input.bra.modes:
+            if ob[m] == 0:
+                ib[m] = other.input.bra[m].ids[0]
+            elif ob[m] == other.input.bra[m].ids[0]:
+                ob[m] = 0
+            else:
+                raise ValueError(msg)
         for m in other.output.bra.modes:
-            ob[m] = other.output.bra[m].ids[0]
+            if ob[m] == 0:
+                ob[m] = other.output.bra[m].ids[0]
+            else:
+                raise ValueError(msg)
+
+        for m in self.input.ket.modes:
+            ik[m] = self.input.ket[m].ids[0]
+        for m in self.output.ket.modes:
+            ok[m] = self.output.ket[m].ids[0]
+        for m in other.input.ket.modes:
+            if ok[m] == 0:
+                ik[m] = other.input.ket[m].ids[0]
+            elif ok[m] == other.input.ket[m].ids[0]:
+                ok[m] = 0
+            else:
+                raise ValueError(msg)
         for m in other.output.ket.modes:
-            ok[m] = other.output.ket[m].ids[0]
+            if ok[m] == 0:
+                ok[m] = other.output.ket[m].ids[0]
+            else:
+                raise ValueError(msg)
 
         combined_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in all_modes])
 

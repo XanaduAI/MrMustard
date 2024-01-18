@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.simulator import Simulator
 from mrmustard.lab_dev.states import Vacuum
@@ -28,53 +29,52 @@ class TestSimulator:
     Tests for the simulator class.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [1], [2]])
-    @pytest.mark.parametrize("add_bras", [True, False])
-    def test_simulate_one_mode_components_in_series(self, modes, add_bras):
+    def test_state_plus_gates(self):
         r"""
-        Simulates a circuit with one-mode Dgates applied in series.
+        Simulates a circuit with a three-mode vacuum state undergoing one- and two-mode Dgates.
         """
-        d1 = Dgate(1, modes=modes)
-        d2 = Dgate(2, modes=modes)
+        vac = Vacuum(3)
+        d0 = Dgate(1, modes=[0])
+        d01 = Dgate([2, 3], modes=[0, 1])
+        d1 = Dgate(4, modes=[1])
+        d2 = Dgate(5, modes=[2])
 
-        circuit = Circuit([d1, d1, d2])
-        result = Simulator().run(circuit, add_bras)
+        circuit = Circuit([vac, d1, d01, d0, d2, d0])
+        result = Simulator().run(circuit, add_bras=False)
 
         rep = result.representation
-        A = [[0, 1], [1, 0]]
-        b = [4, -4]
+        A = [[0, 0, 0]] * 3
+        b = [4, 7, 5]
 
-        assert result.modes == modes
+        assert result.modes == [0, 1, 2]
         assert result.name == ""
         assert (rep.A == A).all()
         assert (rep.b == b).all()
 
-    @pytest.mark.parametrize("add_bras", [True, False])
-    def test_simulate_one_mode_components_in_parallel(self, add_bras):
+    def test_gates_only(self):
         r"""
-        Simulates a circuit with one-mode Dgates applied in parallel.
+        Simulates a circuit with a sequence of one- and two-mode Dgates.
         """
-        d1 = Dgate(1, modes=[1])
-        d2 = Dgate(2, modes=[2])
-        d3 = Dgate(3, modes=[3])
-        d4 = Dgate(4, modes=[4])
+        d0 = Dgate(1, modes=[0])
+        d1 = Dgate(2, modes=[1])
+        d01 = Dgate(3, modes=[0, 1])
+        d02 = Dgate(4, modes=[0, 2])
 
-        circuit = Circuit([d3, d1, d4, d2])
-        result = Simulator().run(circuit, add_bras)
+        circuit = Circuit([d1, d0, d02, d01, d01])
+        result = Simulator().run(circuit, add_bras=False)
 
         rep = result.representation
-        A = np.kron(np.eye(4), [[0, 1], [1, 0]])
-        b = [1, -1, 2, -2, 3, -3, 4, -4]
+        A = np.kron(np.eye(3), [[0, 1], [1, 0]])
+        b = [11, -11, 8, -8, 4, -4]
 
-        assert result.modes == [1, 2, 3, 4]
+        assert result.modes == [0, 1, 2]
         assert result.name == ""
         assert (rep.A == A).all()
         assert (rep.b == b).all()
 
-    @pytest.mark.parametrize("add_bras", [True, False])
-    def test_simulate_one_mode_components_in_parallel_and_series(self, add_bras):
+    def test_add_bras(self):
         r"""
-        Simulates a circuit with one-mode Dgates applied in parallel and in series.
+        Simulates a circuit with one-mode Dgates applied in parallel and in series, with ``add_bras=True``.
         """
         d1 = Dgate(1, modes=[1])
         d2 = Dgate(2, modes=[2])
@@ -82,38 +82,15 @@ class TestSimulator:
         d4 = Dgate(4, modes=[4])
 
         circuit = Circuit([d1, d1, d2, d1, d3, d1, d4, d2, d1])
-        result = Simulator().run(circuit, add_bras)
+        result = Simulator().run(circuit, add_bras=True)
+
+        n_modes = 4
 
         rep = result.representation
-        A = np.kron(np.eye(4), [[0, 1], [1, 0]])
-        b = [5, -5, 4, -4, 3, -3, 4, -4]
+        A = np.kron(np.eye(8), [[0, 1], [1, 0]])
+        b = [5, -5, 5, -5, 4, -4, 4, -4, 3, -3, 3, -3, 4, -4, 4, -4]
 
         assert result.modes == [1, 2, 3, 4]
-        assert result.name == ""
-        assert (rep.A == A).all()
-        assert (rep.b == b).all()
-
-
-class TestSimulatorBroken:
-    r"""
-    Tests for the simulator class that currently do not pass.
-    """
-
-    @pytest.mark.parametrize("modes", [[0, 1]])
-    def test_simulate_multi_mode_components_in_series(self, modes):
-        r"""
-        Simulates a circuit with multi-mode Dgates applied in series.
-        """
-        d1 = Dgate(1, modes=modes)
-        d2 = Dgate(2, modes=modes)
-        circuit = Circuit([d1, d1, d2])
-
-        result = Simulator().run(circuit)
-        rep = result.representation
-        A = [[0, 1], [1, 0]]
-        b = [4, -4]
-
-        assert result.modes == modes
         assert result.name == ""
         assert (rep.A == A).all()
         assert (rep.b == b).all()

@@ -106,7 +106,7 @@ class Circuit:
         components = self.components
         for component in components:
             if component.wires.bra:
-                components = add_bra(components)            
+                components = add_bra(components)
         components = connect(components)
 
         try:
