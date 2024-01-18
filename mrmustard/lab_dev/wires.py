@@ -130,7 +130,7 @@ class Wires:
     @property
     def ids(self) -> list[int]:
         "The list of ids of the available wires in the standard order."
-        flat = self.id_array.T.ravel()
+        flat = self.id_array.ravel()
         return flat[flat > 0].tolist()
 
     @ids.setter
@@ -150,7 +150,7 @@ class Wires:
         r"""Returns the array of indices of this subset in the standard order.
         (bra/ket x out/in x mode). Use this to get the indices for bargmann contractions.
         """
-        flat = self.id_array.T.ravel()
+        flat = self.id_array.ravel()
         flat = flat[flat != 0]
         return np.where(flat > 0)[0].tolist()
 
@@ -211,7 +211,7 @@ class Wires:
             if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
                 raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
-        combined_array = [modes_rows[m] for m in sorted(modes_rows)]
+        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
@@ -242,19 +242,19 @@ class Wires:
 
         # Add column headers
         html += "<tr>"
-        for label in [""] + col_labels:  # Add an empty string for the top-left cell
-            html += f'<th style="border: 1px solid black; padding: 5px;">{label}</th>'
+        for label in [""] + list(row_labels):  # Add an empty string for the top-left cell
+            html += f'<th style="border: 1px solid black; padding: 20px;">{label}</th>'
         html += "</tr>"
 
         # Initialize rows with row labels
         rows_html = [
             f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>'
-            for label in row_labels
+            for label in col_labels
         ]
 
         # Add table cells (column by column)
-        for label, col in zip(col_labels, array.T):
-            for row_idx, value in enumerate(col):
+        for row in array:
+            for col_idx, value in enumerate(row):
                 color = (
                     "white"
                     if np.isclose(value, 0)
@@ -269,7 +269,7 @@ class Wires:
                     )
                 else:
                     cell_html += '"></td>'
-                rows_html[row_idx] += cell_html
+                rows_html[col_idx] += cell_html
 
         # Close the rows and add them to the HTML table
         for row_html in rows_html:
