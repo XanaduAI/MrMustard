@@ -423,7 +423,8 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The addition of this ansatz and other.
         """
         try:
-            return self.__class__(array=self.array + other.array)
+            new_array = [a+b for a in self.array for b in other.array]
+            return self.__class__(array=math.astensor(new_array))
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
@@ -448,7 +449,8 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                return self.__class__(array=self.array / other.array)
+                new_array = [a/b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
@@ -469,7 +471,8 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                return self.__class__(array=self.array * other.array)
+                new_array = [a*b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
@@ -485,8 +488,5 @@ class ArrayAnsatz(Ansatz):
             The tensor product of this ansatz and other.
             Batch size is the product of two batches.
         """
-        new_array = []
-        for a in self.array:
-            for b in other.array:
-                new_array.append(math.outer(a, b))
+        new_array = [math.outer(a, b) for a in self.array for b in other.array]
         return self.__class__(array=math.astensor(new_array))
