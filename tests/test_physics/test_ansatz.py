@@ -14,11 +14,10 @@
 
 import numpy as np
 from hypothesis import given
-from hypothesis import strategies as st
-from hypothesis.extra.numpy import arrays
+import pytest
 
 from mrmustard import math
-from mrmustard.physics.ansatze import PolyExpAnsatz
+from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz
 from tests.random import Abc_triple, complex_number
 
 
@@ -158,5 +157,75 @@ def test_PolyExpAnsatz_simplify_v2(Abc):
 
 
 class TestArrayAnsatz:
-    def test_AnrrayAnsatz_init_(self):
-        pass
+    r"""Tests all algebra related to ArrayAnsatz."""
+    def test_ArrayAnsatz_init_(self):
+        r"""Tests that an ArrayAnstaz can be initialized."""
+        array = np.random.random((2,4,5))
+        aa = ArrayAnsatz(array=array)
+        assert isinstance(aa, ArrayAnsatz)
+        assert np.allclose(aa.array, array)
+    
+    def test_ArrayAnsatz_neg(self):
+        r"""Negates the array inside ArrayAnsatz."""
+        array = np.random.random((2,4,5))
+        aa = ArrayAnsatz(array=array)
+        minusaa = -aa
+        assert isinstance(minusaa, ArrayAnsatz)
+        assert np.allclose(minusaa.array, -array)
+    
+    def test_ArrayAnsatz_equal(self):
+        r"""Tests the equation of two ArrayAnsatzs."""
+        array = np.random.random((2,4,5))
+        aa1 = ArrayAnsatz(array=array)
+        aa2 = ArrayAnsatz(array=array)
+        assert aa1 == aa2
+    
+    def test_ArrayAnsatz_addition(self):
+        r"""Tests the correctness of adding two ArrayAnsatzs."""
+        array = np.random.random((2,4,5))
+        aa1 = ArrayAnsatz(array=array)
+        aa2 = ArrayAnsatz(array=array)
+        aa1_add_aa2 = aa1 + aa2
+        assert isinstance(aa1_add_aa2, ArrayAnsatz)
+        assert np.allclose(aa1_add_aa2.array, array+array)
+    
+    def test_ArrayAnsatz_multiply_with_a_scalar(self):
+        r"""Tests the correctness of multiplying an ArrayAnsatz with a scalar."""
+        array = np.random.random((2,4,5))
+        aa1 = ArrayAnsatz(array=array)
+        aa1_scalar = aa1 * 8
+        assert isinstance(aa1_scalar, ArrayAnsatz)
+        assert np.allclose(aa1_scalar.array, array * 8)
+    
+    def test_ArrayAnsatz_mul(self):
+        r"""Tests the correctness of multiplying two ArrayAnsatzs."""
+        array = np.random.random((2,4,5))
+        array2 = np.random.random((2,4,5))
+        aa1 = ArrayAnsatz(array=array)
+        aa2 = ArrayAnsatz(array=array2)
+        assert np.allclose(aa1.array * aa2.array, array * array2)
+    
+    def test_ArrayAnsatz_divide_by_a_scalar(self):
+        r"""Tests the correctness of dividing an ArrayAnsatz with a scalar."""
+        array = np.random.random((2,4,5))
+        aa1 = ArrayAnsatz(array=array)
+        aa1_scalar = aa1 / 6
+        assert isinstance(aa1_scalar, ArrayAnsatz)
+        assert np.allclose(aa1_scalar.array, array / 6)
+    
+    def test_Array_Ansatz_algebra_with_different_shape_of_array_raise_errors(self):
+        r"""Tests the errors are raised correctly."""
+        array = np.random.random((2,4,5))
+        array2 = np.random.random((3,4,8,9))
+        aa1 = ArrayAnsatz(array=array)
+        aa2 = ArrayAnsatz(array=array2)
+        with pytest.raises(Exception):
+            aa1 + aa2
+        with pytest.raises(Exception):
+            aa1 - aa2
+        with pytest.raises(Exception):
+            aa1 * aa2
+        with pytest.raises(Exception):
+            aa1 / aa2
+        with pytest.raises(Exception):
+            aa1 == aa2

@@ -81,6 +81,7 @@ class TestFockRepresentation:
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(np.ndarray.flatten(fock_test.array), np.ndarray.flatten(np.einsum("bcde, pfgeh -> bpcdfgh", array1, array2)))
 
+
     def test_trace(self):
         pass
 
