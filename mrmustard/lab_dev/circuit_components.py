@@ -154,8 +154,8 @@ class CircuitComponent:
 
     def dual(self) -> CircuitComponent:
         r"""
-        Light-copies this component, then returns the adjoint of it, obtained by switching
-        ket and bra wires.
+        Light-copies this component, then returns the dual of it, obtained by switching
+        input and output wires.
         """
         ret = self.light_copy()
         ret._name += "_dual"
