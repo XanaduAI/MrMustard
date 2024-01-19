@@ -350,16 +350,22 @@ class Fock(Representation):
             assert fock8.array.shape == (1,5,7,8)
     Args:
         array (Batch[Tensor]): the array in Fock representation.
+        batch_flag (bool): if the array input has a batch dimension. False by default.
 
     """
 
-    def __init__(self, array: Batch[Tensor]):
+    def __init__(self, array: Batch[Tensor], batch_flag = False):
         self._contract_idxs: tuple[int, ...] = ()
+        if not batch_flag:
+            array = np.expand_dim(array, axis=0) #TODO: add expand dim in two backends
         self.ansatz = ArrayAnsatz(array=array)
 
-    def from_ansatz(self, ansatz: ArrayAnsatz) -> Fock:
+    @classmethod
+    def from_ansatz(cls, ansatz: ArrayAnsatz, batch_flag = False) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
-        return self.__class__(ansatz.array)
+        if not batch_flag:
+            array = np.expand_dim(array, axis=0)
+        return cls(ansatz.array)
 
     @property
     def array(self) -> Batch[Tensor]:
