@@ -356,14 +356,15 @@ class Fock(Representation):
 
     def __init__(self, array: Batch[Tensor], batch_flag = False):
         self._contract_idxs: tuple[int, ...] = ()
-        if not batch_flag:
+        if batch_flag is False:
             array = array[None, ...]
         self.ansatz = ArrayAnsatz(array=array)
+        self.batch_flag = batch_flag
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz, batch_flag = False) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
-        return cls(ansatz.array)
+        return cls(ansatz.array, batch_flag = batch_flag)
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -388,10 +389,10 @@ class Fock(Representation):
                 raise IndexError(
                     f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
                 )
-        new = self.__class__(self.array)
+        new = self.__class__(self.array, batch_flag=self.batch_flag)
         new._contract_idxs = idx
         return new
-
+    
     def __matmul__(self, other: Fock) -> Fock:
         r"""Implements the inner product of ansatze across the marked indices.
 
@@ -403,10 +404,10 @@ class Fock(Representation):
         """
         axes = [list(self._contract_idxs), list(other._contract_idxs)]
         new_array = []
-        for a in self.array:
-            for b in other.array:
-                new_array.append(math.tensordot(a, b, axes))
-        return self.__class__(array=math.astensor(new_array))
+        for i in range(self.array.shape[0]):
+            for j in range(other.array.shape[0]):
+                new_array.append(math.tensordot(self.array[i], other.array[j], axes))
+        return self.__class__(array=math.astensor(new_array), batch_flag = True)
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.

@@ -73,13 +73,13 @@ class TestFockRepresentation:
 
     def test_matmul(self):
         r"""Tests the matmul can return the correct array."""
-        array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-        array2 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+        array1 = math.astensor(np.random.random((2,5,7,8)))
+        array2 = math.astensor(np.random.random((5,6,7,8,10)))
         fock1 = Fock(array1, batch_flag = True)
         fock2 = Fock(array2, batch_flag = True)
-        fock_test = fock1[2] @ fock2[2]  # contract wires 2 on each (inner product)
-        assert fock_test.array.shape == (3, 5, 7, 5, 7) # note that the batch is 1 * 3
-        assert np.allclose(fock_test, np.einsum("bcde, bfge -> bcdfg",array1, array2))
+        fock_test = fock1[2] @ fock2[2]
+        assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
+        assert np.allclose(np.ndarray.flatten(fock_test.array), np.ndarray.flatten(np.einsum("bcde, pfgeh -> bpcdfgh", array1, array2)))
 
     def test_trace(self):
         pass
