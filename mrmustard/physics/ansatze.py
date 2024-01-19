@@ -423,7 +423,7 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The addition of this ansatz and other.
         """
         try:
-            new_array = [a+b for a in self.array for b in other.array]
+            new_array = [a + b for a in self.array for b in other.array]
             return self.__class__(array=math.astensor(new_array))
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
@@ -449,7 +449,7 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                new_array = [a/b for a in self.array for b in other.array]
+                new_array = [a / b for a in self.array for b in other.array]
                 return self.__class__(array=math.astensor(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
@@ -471,7 +471,7 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                new_array = [a*b for a in self.array for b in other.array]
+                new_array = [a * b for a in self.array for b in other.array]
                 return self.__class__(array=math.astensor(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e

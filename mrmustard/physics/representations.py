@@ -354,7 +354,7 @@ class Fock(Representation):
 
     """
 
-    def __init__(self, array: Batch[Tensor], batch_flag = False):
+    def __init__(self, array: Batch[Tensor], batch_flag=False):
         self._contract_idxs: tuple[int, ...] = ()
         if batch_flag is False:
             array = array[None, ...]
@@ -362,9 +362,9 @@ class Fock(Representation):
         self.batch_flag = batch_flag
 
     @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz, batch_flag = False) -> Fock:
+    def from_ansatz(cls, ansatz: ArrayAnsatz, batch_flag=False) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
-        return cls(ansatz.array, batch_flag = batch_flag)
+        return cls(ansatz.array, batch_flag=batch_flag)
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -392,7 +392,7 @@ class Fock(Representation):
         new = self.__class__(self.array, batch_flag=self.batch_flag)
         new._contract_idxs = idx
         return new
-    
+
     def __matmul__(self, other: Fock) -> Fock:
         r"""Implements the inner product of ansatze across the marked indices.
 
@@ -407,7 +407,7 @@ class Fock(Representation):
         for i in range(self.array.shape[0]):
             for j in range(other.array.shape[0]):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
-        return self.__class__(array=math.astensor(new_array), batch_flag = True)
+        return self.__class__(array=math.astensor(new_array), batch_flag=True)
 
     def __add__(self, other: Fock) -> Fock:
         r"""
@@ -416,8 +416,8 @@ class Fock(Representation):
         Batch:
         The new Fock will hold the tensor product batch of them.
         """
-        return self.from_ansatz(self.ansatz + other.ansatz, batch_flag = True)
-    
+        return self.from_ansatz(self.ansatz + other.ansatz, batch_flag=True)
+
     def __sub__(self, other: Fock) -> Fock:
         r"""
         Subtracts two Fock representations.
@@ -425,8 +425,8 @@ class Fock(Representation):
         Batch:
         The new Fock will hold the tensor product batch of them.
         """
-        return self.from_ansatz(self.ansatz - other.ansatz, batch_flag = True)
-    
+        return self.from_ansatz(self.ansatz - other.ansatz, batch_flag=True)
+
     def __mul__(self, other: Fock | Scalar) -> Fock:
         r"""
         Multiplies two Fock representations.
@@ -435,9 +435,9 @@ class Fock(Representation):
         The new Fock will hold the tensor product batch of them.
         """
         if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz * other.ansatz, batch_flag = True)
+            return self.from_ansatz(self.ansatz * other.ansatz, batch_flag=True)
         else:
-            return self.from_ansatz(self.ansatz * other, batch_flag = True)
+            return self.from_ansatz(self.ansatz * other, batch_flag=True)
 
     def __truediv__(self, other: Fock) -> Fock:
         r"""
@@ -447,9 +447,9 @@ class Fock(Representation):
         The new Fock will hold the tensor product batch of them.
         """
         if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz / other.ansatz, batch_flag = True)
+            return self.from_ansatz(self.ansatz / other.ansatz, batch_flag=True)
         else:
-            return self.from_ansatz(self.ansatz / other, batch_flag = True)
+            return self.from_ansatz(self.ansatz / other, batch_flag=True)
 
     def __and__(self, other: Fock) -> Fock:
         r"""
@@ -458,7 +458,7 @@ class Fock(Representation):
         Batch:
         The new Fock will hold the tensor product batch of them.
         """
-        return self.from_ansatz(self.ansatz & other.ansatz, batch_flag = True)
+        return self.from_ansatz(self.ansatz & other.ansatz, batch_flag=True)
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
@@ -481,7 +481,7 @@ class Fock(Representation):
         new_array = math.transpose(new_array, list_transposed)
         for _ in range(len(idxs1)):
             new_array = np.trace(new_array)
-        return self.__class__(array=new_array, batch_flag = True)
+        return self.__class__(array=new_array, batch_flag=True)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""Reorders the indices of the array with the given order.
@@ -489,4 +489,4 @@ class Fock(Representation):
             order: contains the batch dimension.
 
         Returns a new Fock object."""
-        return self.__class__(array=math.transpose(self.array, order), batch_flag = True)
+        return self.__class__(array=math.transpose(self.array, order), batch_flag=True)
