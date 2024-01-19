@@ -67,28 +67,21 @@ class Simulator:
         path_info = contract_path(path, *shapes, shapes=True, optimize="auto")
         contractions = [ctr for _, _, ctr, _, _, in path_info[1].contraction_list]
 
-        # initialize a dictionary mapping the unsorted subscripts (i.e., those received from
-        # opt_einsum) to othe sorted ones (i.e., those with output subscripts on the left and with
-        # input subscripts on the right)
+        # initialize a dictionary mapping the "unsorted" subscripts (i.e., those received from
+        # opt_einsum, which are not guaranteed to respect MrMustard's indexing convention) to the
+        # "sorted" ones (i.e., the same subscripts, reordered to respect MrMustard's indexing
+        # convention)
         u_to_s_subscripts = {}
-        for contraction in contractions:
-            terms, result_u = contraction.split("->")
-            term1, term2 = terms.split(",")
-            u_to_s_subscripts[term1] = term1
-            u_to_s_subscripts[term2] = term2
-            u_to_s_subscripts[result_u] = result_u
 
         # perform the contractions in the order given by opt_einsum
         for contraction in contractions:
+            # split `contraction` into unsorted subscripts
             terms_u, result_u = contraction.split("->")
             term1_u, term2_u = terms_u.split(",")
 
             # pop the sorted term1 and term2
-            term1_s = u_to_s_subscripts.pop(term1_u)
-            term2_s = u_to_s_subscripts.pop(term2_u)
-
-            # store the "repeated" indices (those that appear in both terms)
-            repeated = [s for s in term1_s if s in term2_s]
+            term1_s = u_to_s_subscripts.pop(term1_u, term1_u)
+            term2_s = u_to_s_subscripts.pop(term2_u, term2_u)
 
             # pop the two circuit components involved in the contraction
             component1 = subs_to_component.pop(term1_s)
@@ -108,6 +101,9 @@ class Simulator:
 
             # get the string of sorted subscripts for the result of the contraction
             result_s = "".join(ids_to_subs[i] for i in wires_out.ids)
+
+            # store the "repeated" indices (those that appear in both term1_s and term2_s)
+            repeated = [s for s in term1_s if s in term2_s]
 
             # calculate the ``Representation`` of the circuit component resulting from the contraction
             idx1 = [term1_s.index(i) for i in repeated]
