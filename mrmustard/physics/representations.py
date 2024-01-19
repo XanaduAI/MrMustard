@@ -417,6 +417,39 @@ class Fock(Representation):
         The new Fock will hold the tensor product batch of them.
         """
         return self.from_ansatz(self.ansatz + other.ansatz, batch_flag = True)
+    
+    def __sub__(self, other: Fock) -> Fock:
+        r"""
+        Subtracts two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz - other.ansatz, batch_flag = True)
+    
+    def __mul__(self, other: Fock | Scalar) -> Fock:
+        r"""
+        Multiplies two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        if isinstance(other, Fock):
+            return self.from_ansatz(self.ansatz * other.ansatz, batch_flag = True)
+        else:
+            return self.from_ansatz(self.ansatz * other, batch_flag = True)
+
+    def __truediv__(self, other: Fock) -> Fock:
+        r"""
+        Divides two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        if isinstance(other, Fock):
+            return self.from_ansatz(self.ansatz / other.ansatz, batch_flag = True)
+        else:
+            return self.from_ansatz(self.ansatz / other, batch_flag = True)
 
     def __and__(self, other: Fock) -> Fock:
         r"""
@@ -438,15 +471,22 @@ class Fock(Representation):
             Fock: the ansatz with the given indices traced over
         """
         new_array = self.array
+        list_transposed = []
         for id1, id2 in zip(idxs1, idxs2):
-            list_transposed = [x for x in range(len(self.array.shape)) if x not in [id1, id2]] + [
-                id1,
-                id2,
-            ]
-            new_array = np.trace(math.transpose(self.array, list_transposed))
-        return self.__class__(array=new_array)
+            list_transposed.append(id1)
+            list_transposed.append(id2)
+        for x in range(len(new_array.shape)):
+            if not (x in (idxs1 + idxs2)):
+                list_transposed.append(x)
+        new_array = math.transpose(new_array, list_transposed)
+        for _ in range(len(idxs1)):
+            new_array = np.trace(new_array)
+        return self.__class__(array=new_array, batch_flag = True)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""Reorders the indices of the array with the given order.
+        Args:
+            order: contains the batch dimension.
+
         Returns a new Fock object."""
-        return self.__class__(array=math.transpose(self.array, order))
+        return self.__class__(array=math.transpose(self.array, order), batch_flag = True)

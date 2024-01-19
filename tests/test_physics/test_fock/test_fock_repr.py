@@ -50,19 +50,35 @@ class TestFockRepresentation:
     
     def test_multiply_a_scaler(self):
         r"""Tests the muplication with a scaler."""
-        array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-        array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        array1 = math.astensor(np.random.random((1,5,7,8)))
+        fock1 = Fock(array1, batch_flag = True)
+        fock_test = 1.3 * fock1
+        assert np.allclose(fock_test.array, 1.3*array1)
+    
+    def test_mul(self):
+        r"""Tests the muplication of two Fock representations."""
+        array1 = math.astensor(np.random.random((1,5,7,8)))
+        array2 = math.astensor(np.random.random((5,5,7,8)))
         fock1 = Fock(array1, batch_flag = True)
         fock2 = Fock(array2, batch_flag = True)
-        fock_test = 1.3 * fock1 - fock2 * 2.1
-        assert np.allclose(fock_test.array, 1.3*array1 - 2.1*array2)
+        fock1_mul_fock2 = fock1 * fock2
+        assert fock1_mul_fock2.array.shape == (5,5,7,8)
     
     def test_divide_on_a_scaler(self):
         r"""Tests the divide on a scaler."""
-        array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        array1 = math.astensor(np.random.random((1,5,7,8)))
         fock1 = Fock(array1, batch_flag = True)
         fock_test = fock1/1.5
         assert np.allclose(fock_test.array, array1/1.5)
+    
+    def test_truedive(self):
+        r"""Tests the division of two Fock representations."""
+        array1 = math.astensor(np.random.random((1,5,7,8)))
+        array2 = math.astensor(np.random.random((5,5,7,8)))
+        fock1 = Fock(array1, batch_flag = True)
+        fock2 = Fock(array2, batch_flag = True)
+        fock1_mul_fock2 = fock1 / fock2
+        assert fock1_mul_fock2.array.shape == (5,5,7,8)
 
     def test_conj(self):
         r"""Tests the conjugate of a Fock reprsentation has the correct array."""
@@ -81,7 +97,7 @@ class TestFockRepresentation:
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(np.ndarray.flatten(fock_test.array), np.ndarray.flatten(np.einsum("bcde, pfgeh -> bpcdfgh", array1, array2)))
 
-    def test_addition(self):
+    def test_add(self):
         r"""Tests the addition function can return the correct array."""
         array1 = math.astensor(np.random.random((2,5,7,8)))
         array2 = math.astensor(np.random.random((5,5,7,8)))
@@ -89,9 +105,26 @@ class TestFockRepresentation:
         fock2 = Fock(array2, batch_flag = True)
         fock1_add_fock2 = fock1 + fock2
         assert fock1_add_fock2.array.shape == (10,5,7,8)
+    
+    def test_sub(self):
+        r"""Tests the subtraction function can return the correct array."""
+        array1 = math.astensor(np.random.random((2,5,7,8)))
+        array2 = math.astensor(np.random.random((5,5,7,8)))
+        fock1 = Fock(array1, batch_flag = True)
+        fock2 = Fock(array2, batch_flag = True)
+        fock1_add_fock2 = fock1 - fock2
+        assert fock1_add_fock2.array.shape == (10,5,7,8)
 
     def test_trace(self):
-        pass
+        r"""Tests the traceo of given indices."""
+        array1 = math.astensor(np.random.random((2,6,5,8,7,6,8,7,9)))
+        fock1 = Fock(array1, batch_flag = True)
+        fock2 = fock1.trace(idxs1=[2,4], idxs2=[1,7])
+        assert fock2.array.shape == (2,8,6,8,9)
 
     def test_reorder(self):
-        pass
+        r"""Tests the reorder of the array."""
+        array1 = math.astensor(np.random.random((2,5,7,8)))
+        fock1 = Fock(array1, batch_flag = True)
+        fock2 = fock1.reorder(order=(0,3,2,1))
+        assert fock2.array.shape == (2,8,7,5)
