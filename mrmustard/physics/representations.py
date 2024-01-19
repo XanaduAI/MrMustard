@@ -357,14 +357,12 @@ class Fock(Representation):
     def __init__(self, array: Batch[Tensor], batch_flag = False):
         self._contract_idxs: tuple[int, ...] = ()
         if not batch_flag:
-            array = np.expand_dim(array, axis=0) #TODO: add expand dim in two backends
+            array = array[None, ...]
         self.ansatz = ArrayAnsatz(array=array)
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz, batch_flag = False) -> Fock:
         r"""Returns a Fock object from an ansatz object."""
-        if not batch_flag:
-            array = np.expand_dim(array, axis=0)
         return cls(ansatz.array)
 
     @property

@@ -8,19 +8,35 @@ from mrmustard.physics.ansatze import ArrayAnsatz
 
 class TestFockRepresentation:
     r"""Tests the init and other algebras related to Fock Representation."""
-    def test_init(self):
-        r"""Tests one can initilize a Fock representation."""
+    def test_init_batched(self):
+        r"""Tests one can initilize a Fock representation with a batched array."""
         array = math.astensor(np.random.random((1,5,7,8)))
         fock = Fock(array, batch_flag=True)
         assert isinstance(fock, Fock)
         assert np.allclose(fock.array, array)
+    
+    def test_init_non_batched(self):
+        r"""Tests one can initilize a Fock representation with an array non batch, and the batch is added after init."""
+        array = math.astensor(np.random.random((5,7,8)))
+        fock = Fock(array, batch_flag=False)
+        assert isinstance(fock, Fock)
+        assert fock.array.shape == (1,5,7,8)
+        assert np.allclose(fock.array[0,:,:,:], array)
 
-    def test_init_from_ansatz(self):
-        r"""Tests one can initilize a Fock representation from ArrayAnsatz."""
-        array = math.astensor(np.random.random((1,5,7,8)))
+    def test_init_from_ansatz_batched(self):
+        r"""Tests one can initilize a Fock representation from ArrayAnsatz with a batched array."""
+        array = math.astensor(np.random.random((4,5,7,8)))
         fock = Fock.from_ansatz(ArrayAnsatz(array=array), batch_flag=True)
         assert isinstance(fock, Fock)
         assert np.allclose(fock.array, array)
+    
+    def test_init_from_ansatz_non_batched(self):
+        r"""Tests one can initilize a Fock representation from ArrayAnsatz with an array non batch, and the batch is added after init."""
+        array = math.astensor(np.random.random((5,7,8)))
+        fock = Fock.from_ansatz(ArrayAnsatz(array=array), batch_flag=False)
+        assert isinstance(fock, Fock)
+        assert fock.array.shape == (1,5,7,8)
+        assert np.allclose(fock.array[0,:,:,:], array)
 
     def test_outer_product(self):
         r"""Tests the outer product of two Fock reprensentations."""
