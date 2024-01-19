@@ -409,6 +409,24 @@ class Fock(Representation):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.__class__(array=math.astensor(new_array), batch_flag = True)
 
+    def __add__(self, other: Fock) -> Fock:
+        r"""
+        Adds two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz + other.ansatz, batch_flag = True)
+
+    def __and__(self, other: Fock) -> Fock:
+        r"""
+        Outer product two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz & other.ansatz, batch_flag = True)
+
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
 
