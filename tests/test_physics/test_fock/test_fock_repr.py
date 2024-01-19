@@ -8,20 +8,6 @@ from mrmustard.physics.ansatze import ArrayAnsatz
 
 class TestFockRepresentation:
     r"""Tests the init and other algebras related to Fock Representation."""
-    # array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-    # array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-    # array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
-    # fock1 = Fock(array1)
-    # fock2 = Fock(array2)
-    # fock3 = Fock(array3)
-
-    #         fock4 = 1.3 * fock1 - fock2 * 2.1  # linear combination can be done with the same batch dimension
-    #         assert fock4.ansatz.array.shape == (1,5,7,8)
-
-    #         fock5 = fock1 / 1.3  # support divide on a scalar
-    #         assert fock5.ansatz.array.shape == (1,5,7,8)
-
-
     def test_init(self):
         r"""Tests one can initilize a Fock representation."""
         array = math.astensor(np.random.random((1,5,7,8)))
