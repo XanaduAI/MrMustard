@@ -349,6 +349,7 @@ class Fock(Representation):
             fock8 = fock1.conj() # conjugate of it
             assert fock8.array.shape == (1,5,7,8)
     Args:
+        array (Batch[Tensor]): the array in Fock representation.
 
     """
 
@@ -400,7 +401,6 @@ class Fock(Representation):
         new_array = []
         for a in self.array:
             for b in other.array:
-                print("count")
                 new_array.append(math.tensordot(a, b, axes))
         return self.__class__(array=math.astensor(new_array))
 
