@@ -127,7 +127,7 @@ class Bargmann(Representation):
             psi5 = psi1 & psi2  # outer product (tensor product)
             rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
             assert rho.A.shape == (1, 2, 2)  # we have two wires now
-            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)  
 
 
     Args:
@@ -224,13 +224,15 @@ class Bargmann(Representation):
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
+        Example: ``myobj.trace((0, 1), (7, 3))`` traces 0 with 7 and 1 with 3.
+        The remaining indices are kept in the same order: 2,4,5,6,8,...
 
         Args:
             idx_z: indices to trace over
             idx_zconj: indices to trace over
 
         Returns:
-            Bargmann: the ansatz with the given indices traced over
+            Bargmann: A new Bargmann object with the remaining indices.
         """
         if self.ansatz.degree > 0:
             raise NotImplementedError(
