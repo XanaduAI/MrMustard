@@ -130,7 +130,7 @@ class Wires:
     @property
     def ids(self) -> list[int]:
         "The list of ids of the available wires in the standard order."
-        flat = self.id_array.ravel()
+        flat = self.id_array.T.ravel()
         return flat[flat > 0].tolist()
 
     @ids.setter
@@ -150,7 +150,7 @@ class Wires:
         r"""Returns the array of indices of this subset in the standard order.
         (bra/ket x out/in x mode). Use this to get the indices for bargmann contractions.
         """
-        flat = self.id_array.ravel()
+        flat = self.id_array.T.ravel()
         flat = flat[flat != 0]
         return np.where(flat > 0)[0].tolist()
 
@@ -227,6 +227,10 @@ class Wires:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
 
+    def __repr__(self) -> str:
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
+        return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
+    
     def _repr_html_(self):  # pragma: no cover
         "A matrix plot of the id_array."
         row_labels = map(str, self._modes)
@@ -235,26 +239,25 @@ class Wires:
         idxs = (i for i in self.indices)
         box_size = "60px"  # Set the size of the squares
         html = '<table style="border-collapse: collapse; border: 1px solid black;">'
-
         # colors
         active = "#5b9bd5"
         inactive = "#d6e8f7"
 
         # Add column headers
         html += "<tr>"
-        for label in [""] + list(row_labels):  # Add an empty string for the top-left cell
-            html += f'<th style="border: 1px solid black; padding: 20px;">{label}</th>'
+        for label in [""] + col_labels:  # Add an empty string for the top-left cell
+            html += f'<th style="border: 1px solid black; padding: 5px;">{label}</th>'
         html += "</tr>"
 
         # Initialize rows with row labels
         rows_html = [
             f'<tr><td style="border: 1px solid black; padding: 5px;">{label}</td>'
-            for label in col_labels
+            for label in row_labels
         ]
 
         # Add table cells (column by column)
-        for row in array:
-            for col_idx, value in enumerate(row):
+        for label, col in zip(col_labels, array.T):
+            for row_idx, value in enumerate(col):
                 color = (
                     "white"
                     if np.isclose(value, 0)
@@ -269,7 +272,7 @@ class Wires:
                     )
                 else:
                     cell_html += '"></td>'
-                rows_html[col_idx] += cell_html
+                rows_html[row_idx] += cell_html
 
         # Close the rows and add them to the HTML table
         for row_html in rows_html:
@@ -286,79 +289,3 @@ class Wires:
             raise ImportError(
                 "To display the wires in a jupyter notebook you need to `pip install IPython`"
             ) from e
-
-    def add_connected(self, other) -> Wires:
-        """
-        Returns a new ``Wires`` that contains all the wires of ``self`` and ``other``, except for all
-        the output wires of ``self`` that are also input wires of ``other``.
-
-        The returned ``Wires`` corresponds to the ``Wires`` obtained by contracting the wires in common
-        between ``self`` and ``other``.
-
-        Raises:
-            ValueError: If one or more of the output wires of ``self`` that are also input wires of
-            ``other`` have different ids that the corresponding output wire of ``other``.
-        """
-        all_modes = sorted(set(self.modes) | set(other.modes))
-
-        ob = {m: 0 for m in all_modes}
-        ib = {m: 0 for m in all_modes}
-        ok = {m: 0 for m in all_modes}
-        ik = {m: 0 for m in all_modes}
-
-        msg = "Found the same wire with different ids."
-
-        # for m in self.input.bra.modes:
-        #     ib[m] = self.input.bra[m].ids[0]
-        # for m in self.output.bra.modes:
-        #     ob[m] = self.output.bra[m].ids[0]
-        # for m in other.input.bra.modes:
-        #     if ob[m] == 0:
-        #         ib[m] = other.input.bra[m].ids[0]
-        #     elif ob[m] == other.input.bra[m].ids[0]:
-        #         ob[m] = 0
-        #     else:
-        #         raise ValueError(msg)
-        # for m in other.output.bra.modes:
-        #     if ob[m] == 0:
-        #         ob[m] = other.output.bra[m].ids[0]
-        #     else:
-        #         raise ValueError(msg)
-
-        for m in self.input.bra.modes:
-            ib[m] = self.input.bra[m].ids[0]
-        for m in self.output.bra.modes:
-            ob[m] = self.output.bra[m].ids[0]
-        for m in other.input.bra.modes:
-            if ob[m] == 0:
-                ib[m] = other.input.bra[m].ids[0]
-            elif ob[m] == other.input.bra[m].ids[0]:
-                ob[m] = 0
-            else:
-                raise ValueError(msg)
-        for m in other.output.bra.modes:
-            if ob[m] == 0:
-                ob[m] = other.output.bra[m].ids[0]
-            else:
-                raise ValueError(msg)
-
-        for m in self.input.ket.modes:
-            ik[m] = self.input.ket[m].ids[0]
-        for m in self.output.ket.modes:
-            ok[m] = self.output.ket[m].ids[0]
-        for m in other.input.ket.modes:
-            if ok[m] == 0:
-                ik[m] = other.input.ket[m].ids[0]
-            elif ok[m] == other.input.ket[m].ids[0]:
-                ok[m] = 0
-            else:
-                raise ValueError(msg)
-        for m in other.output.ket.modes:
-            if ok[m] == 0:
-                ok[m] = other.output.ket[m].ids[0]
-            else:
-                raise ValueError(msg)
-
-        combined_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in all_modes])
-
-        return self._from_data(combined_array, all_modes)
