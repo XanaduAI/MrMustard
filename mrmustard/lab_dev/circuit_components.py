@@ -24,7 +24,7 @@ from ..physics.representations import Bargmann, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .wires import Wire, Wires
+from .wires import Wires
 
 __all__ = [
     "CircuitComponent",
@@ -104,6 +104,13 @@ class CircuitComponent:
         A set with all the modes in this component.
         """
         return self.wires.modes
+    
+    @property
+    def num_modes(self) -> int:
+        r"""
+        The number of modes in this component.
+        """
+        return len(self.modes)
 
     @property
     def name(self) -> str:
@@ -166,31 +173,31 @@ class CircuitComponent:
         return ret
 
 
-def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
-    r"""
-    Takes as input a sequence of circuit components and connects their wires.
+# def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+#     r"""
+#     Takes as input a sequence of circuit components and connects their wires.
 
-    In particular, it generates a list of light copies of the given components, then it modifies
-    the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
-    copies, leaving the input list unchanged.
-    """
-    ret = [component.light_copy() for component in components]
+#     In particular, it generates a list of light copies of the given components, then it modifies
+#     the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
+#     copies, leaving the input list unchanged.
+#     """
+#     ret = [component.light_copy() for component in components]
 
-    output_ket = {m: None for c in components for m in c.modes}
-    output_bra = {m: None for c in components for m in c.modes}
+#     output_ket = {m: None for c in components for m in c.modes}
+#     output_bra = {m: None for c in components for m in c.modes}
 
-    for component in ret:
-        for mode in component.modes:
-            if component.wires[mode].ket:
-                if output_ket[mode]:
-                    component.wires[mode].input.ket.ids = output_ket[mode].output.ket.ids
-                output_ket[mode] = component.wires[mode]
+#     for component in ret:
+#         for mode in component.modes:
+#             if component.wires[mode].ket:
+#                 if output_ket[mode]:
+#                     component.wires[mode].input.ket.ids = output_ket[mode].output.ket.ids
+#                 output_ket[mode] = component.wires[mode]
 
-            if component.wires[mode].bra.ids:
-                if output_bra[mode]:
-                    component.wires[mode].input.bra.ids = output_bra[mode].output.bra.ids
-                output_bra[mode] = component.wires[mode]
-    return ret
+#             if component.wires[mode].bra.ids:
+#                 if output_bra[mode]:
+#                     component.wires[mode].input.bra.ids = output_bra[mode].output.bra.ids
+#                 output_bra[mode] = component.wires[mode]
+#     return ret
 
 
 def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:

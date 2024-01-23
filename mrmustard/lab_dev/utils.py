@@ -17,7 +17,7 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
-from typing import Callable, Optional, Tuple, Any
+from typing import Callable, Optional, Tuple, Any, Protocol
 from functools import wraps
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
 from mrmustard import settings
@@ -92,3 +92,26 @@ def trainable_lazy_property(func):
         raise ValueError(f"Unknown backend {settings.BACKEND}.")
 
     return _trainable_lazy_property
+
+
+class HasWires(Protocol):
+    r"""A protocol for objects that have wires."""
+    @property
+    def wires(self) -> Wires:
+        ...
+
+def connect(components: Sequence[HasWires]):
+    r"""Connects all components (sets the same id of connected wire pairs).
+    Supports mode reinitialization."""
+    for i, c in enumerate(components):
+        ket_modes = set(c.wires.output.ket.modes)
+        bra_modes = set(c.wires.output.bra.modes)
+        for c_ in components[i + 1 :]:
+            common_ket = ket_modes.intersection(c_.wires.input.ket.modes)
+            common_bra = bra_modes.intersection(c_.wires.input.bra.modes)
+            c.wires[common_ket].output.ket.ids = c_.wires[common_ket].input.ket.ids
+            c.wires[common_bra].output.bra.ids = c_.wires[common_bra].input.bra.ids
+            ket_modes -= common_ket
+            bra_modes -= common_bra
+            if not ket_modes and not bra_modes:
+                break
