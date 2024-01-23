@@ -48,8 +48,8 @@ class TestFockRepresentation:
         fock_test = fock1 & fock2
         assert fock_test.array.shape == (3, 5, 7, 8, 5, 7, 8)
         assert np.allclose(
-            np.ndarray.flatten(fock_test.array),
-            np.ndarray.flatten(np.einsum("bcde, pfgh -> bpcdefgh", array1, array2)),
+            math.reshape(fock_test.array, -1),
+            math.reshape(np.einsum("bcde, pfgh -> bpcdefgh", array1, array2), -1),
         )
 
     def test_multiply_a_scaler(self):
@@ -100,8 +100,8 @@ class TestFockRepresentation:
         fock_test = fock1[2] @ fock2[2]
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(
-            np.ndarray.flatten(fock_test.array),
-            np.ndarray.flatten(np.einsum("bcde, pfgeh -> bpcdfgh", array1, array2)),
+            math.reshape(fock_test.array, -1),
+            math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", array1, array2), -1),
         )
 
     def test_add(self):
