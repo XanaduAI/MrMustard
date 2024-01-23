@@ -54,23 +54,13 @@ class Simulator:
 
         Returns:
             The resulting circuit component.
-        """      
+        """
         # get a list of subscripts for every component
         subs, ids_to_subs = self._get_oe_subscripts(components)
         subs_to_rep = {sub: c.representation for (sub, c) in zip(subs, components)}
 
-        # initialize a dictionary mapping the subscripts provided by opt_einsum to the subscripts
-        # obtained when contracting
-        opt_to_ctr_subscripts = {sub: sub for sub in subs}
-
         # get the path for opt_einsum
         path = ",".join(subs)
-
-        # calculate the ``Wires`` of the returned component, alongside its substrings
-        wires_out = components[0].wires
-        for c in components[1:]:
-            wires_out = wires_out.add_connected(c.wires)
-        subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
 
         # use opt_einsum to get a list of pair-wise contractions
         shapes = [(2,) * len(sub) for sub in subs]
@@ -79,13 +69,8 @@ class Simulator:
 
         for ctr in contractions:
             # split `contraction` into subscripts, in the order provided by opt_einsum
-            terms, result_opt = ctr.split("->")
-            term1_opt, term2_opt = terms.split(",")
+            terms, _ = ctr.split("->")
             term1, term2 = terms.split(",")
-
-            # pop the subscripts of the terms undergoing the contraction
-            term1 = opt_to_ctr_subscripts.pop(term1_opt)
-            term2 = opt_to_ctr_subscripts.pop(term2_opt)
 
             # pop the two circuit components involved in the contraction
             rep1 = subs_to_rep.pop(term1)
@@ -103,8 +88,13 @@ class Simulator:
             result = "".join([s for s in term1 + term2 if s not in repeated])
 
             # store ``result`` and ``representation`` in the relevant dictionaries
-            opt_to_ctr_subscripts[result_opt] = result
             subs_to_rep[result] = representation
+
+        # calculate the ``Wires`` of the returned component, alongside its substrings
+        wires_out = components[0].wires
+        for c in components[1:]:
+            wires_out = wires_out.add_connected(c.wires)
+        subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
 
         # grab the representation that remains in ``subs_to_rep``
         subs_out_u, representation_out = list(subs_to_rep.items())[0]

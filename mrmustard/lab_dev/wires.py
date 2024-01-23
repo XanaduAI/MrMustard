@@ -173,7 +173,7 @@ class Wires:
     def bra(self) -> Wires:
         "A view of this Wires object without ket wires"
         return self._view(masked_cols=(2, 3))
-    
+
     def add_connected(self, other) -> Wires:
         """
         Returns a new ``Wires`` that contains all the wires of ``self`` and ``other``, except for all
@@ -181,7 +181,7 @@ class Wires:
 
         The returned ``Wires`` corresponds to the ``Wires`` obtained by contracting the wires in common
         between ``self`` and ``other``.
-        
+
         Raises:
             ValueError: If one or more of the output wires of ``self`` that are also input wires of
             ``other`` have different ids that the corresponding output wire of ``other``.
@@ -288,7 +288,7 @@ class Wires:
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
-    
+
     def _repr_html_(self):  # pragma: no cover
         "A matrix plot of the id_array."
         row_labels = map(str, self._modes)
