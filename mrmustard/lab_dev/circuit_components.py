@@ -135,6 +135,16 @@ class CircuitComponent:
         ret._name += "_adj"
         ret._wires = ret.wires.adjoint()
         return ret
+    
+    def dual(self) -> CircuitComponent:
+        r"""
+        Light-copies this component, then returns the dual of it, obtained by switching
+        in and out wires.
+        """
+        ret = self.light_copy()
+        ret._name += "_dual"
+        ret._wires = ret.wires.dual()
+        return ret
 
     def light_copy(self) -> CircuitComponent:
         r"""
@@ -171,7 +181,7 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
 
     for component in ret:
         for mode in component.modes:
-            if component.wires[mode].ket.ids:
+            if component.wires[mode].ket:
                 if output_ket[mode]:
                     component.wires[mode].input.ket.ids = output_ket[mode].output.ket.ids
                 output_ket[mode] = component.wires[mode]
