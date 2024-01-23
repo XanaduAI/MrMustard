@@ -17,14 +17,14 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
-from typing import Callable, Optional, Tuple
-
+from typing import Callable, Optional, Tuple, Any
+from functools import wraps
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
-
+from mrmustard import settings
 
 def make_parameter(
     is_trainable: bool,
-    value: any,
+    value: Any,
     name: str,
     bounds: Tuple[Optional[float], Optional[float]],
     update_fn: Callable = update_euclidean,
@@ -51,3 +51,44 @@ def light_copy(obj, duplicate: list[str]):
     instance = object.__new__(type(obj))
     instance.__dict__.update({k: v for k, v in obj.__dict__.items() if k in duplicate})
     return instance
+
+
+def trainable_lazy_property(func):
+    r"""
+    Decorator that makes a property lazily evaluated or not depending on the settings.BACKEND flag.
+    If settings.BACKEND is tensorflow, we need the property to be re-evaluated every time it is accessed
+    for the computation of the gradient. If settings.BACKEND is numpy, we want to avoid re-computing
+    the property every time it is accessed, so we make it lazy.
+
+    Arguments:
+        func (callable): The function to be made into a trainable property.
+
+    Returns:
+        callable: The decorated function.
+    """
+    attr_name = "_" + func.__name__
+
+    if settings.BACKEND == "numpy":
+        import functools  # pylint: disable=import-outside-toplevel
+
+        @wraps(func)
+        @property
+        def _trainable_lazy_property(self):
+            r"""
+            Property getter that lazily evaluates its value. Computes the value only on the first
+            call and caches the result in a private attribute for future access.
+
+            Returns:
+                any: The value of the lazy property.
+            """
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, func(self))
+            return getattr(self, attr_name)
+
+    elif settings.BACKEND == "tensorflow":
+        _trainable_lazy_property = property(func)
+
+    else:
+        raise ValueError(f"Unknown backend {settings.BACKEND}.")
+
+    return _trainable_lazy_property
