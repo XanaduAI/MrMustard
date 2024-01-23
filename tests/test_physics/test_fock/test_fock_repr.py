@@ -89,7 +89,7 @@ class TestFockRepresentation:
         assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
         assert np.allclose(
             math.reshape(fock1_mul_fock2.array, -1),
-            math.reshape(np.einsum("bcde, pcde -> bpcde", array1, 1/array2), -1),
+            math.reshape(np.einsum("bcde, pcde -> bpcde", array1, 1 / array2), -1),
         )
 
     def test_conj(self):
@@ -120,9 +120,9 @@ class TestFockRepresentation:
         fock2 = Fock(array2, batch_flag=True)
         fock1_add_fock2 = fock1 + fock2
         assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_add_fock2.array[0], array1[0]+array2[0])
-        assert np.allclose(fock1_add_fock2.array[4], array1[0]+array2[4])
-        assert np.allclose(fock1_add_fock2.array[5], array1[1]+array2[0])
+        assert np.allclose(fock1_add_fock2.array[0], array1[0] + array2[0])
+        assert np.allclose(fock1_add_fock2.array[4], array1[0] + array2[4])
+        assert np.allclose(fock1_add_fock2.array[5], array1[1] + array2[0])
 
     def test_sub(self):
         r"""Tests the subtraction function can return the correct array."""
@@ -132,9 +132,9 @@ class TestFockRepresentation:
         fock2 = Fock(array2, batch_flag=True)
         fock1_sub_fock2 = fock1 - fock2
         assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_sub_fock2.array[0], array1[0]-array2[0])
-        assert np.allclose(fock1_sub_fock2.array[4], array1[0]-array2[4])
-        assert np.allclose(fock1_sub_fock2.array[9], array1[1]-array2[4])
+        assert np.allclose(fock1_sub_fock2.array[0], array1[0] - array2[0])
+        assert np.allclose(fock1_sub_fock2.array[4], array1[0] - array2[4])
+        assert np.allclose(fock1_sub_fock2.array[9], array1[1] - array2[4])
 
     def test_trace(self):
         r"""Tests the traceo of given indices."""
