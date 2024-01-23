@@ -20,7 +20,8 @@
 				"eamodio.gitlens",
 				"dbaeumer.vscode-eslint",
 				"GitHub.vscode-pull-request-github",
-				"mutantdino.resourcemonitor"
+				"mutantdino.resourcemonitor",
+				"ms-toolsai.jupyter"
 			],
 			"settings": {
                 "python.testing.pytestArgs": [
