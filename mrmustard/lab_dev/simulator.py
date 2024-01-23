@@ -66,6 +66,12 @@ class Simulator:
         # get the path for opt_einsum
         path = ",".join(subs)
 
+        # calculate the ``Wires`` of the returned component, alongside its substrings
+        wires_out = components[0].wires
+        for c in components[1:]:
+            wires_out = wires_out.add_connected(c.wires)
+        subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
+
         # use opt_einsum to get a list of pair-wise contractions
         shapes = [(2,) * len(sub) for sub in subs]
         path_info = contract_path(path, *shapes, shapes=True, optimize="auto")
@@ -75,6 +81,7 @@ class Simulator:
             # split `contraction` into subscripts, in the order provided by opt_einsum
             terms, result_opt = ctr.split("->")
             term1_opt, term2_opt = terms.split(",")
+            term1, term2 = terms.split(",")
 
             # pop the subscripts of the terms undergoing the contraction
             term1 = opt_to_ctr_subscripts.pop(term1_opt)
@@ -98,12 +105,6 @@ class Simulator:
             # store ``result`` and ``representation`` in the relevant dictionaries
             opt_to_ctr_subscripts[result_opt] = result
             subs_to_rep[result] = representation
-
-        # calculate the ``Wires`` of the returned component, alongside its substrings
-        wires_out = components[0].wires
-        for c in components[1:]:
-            wires_out = wires_out.add_connected(c.wires)
-        subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
 
         # grab the representation that remains in ``subs_to_rep``
         subs_out_u, representation_out = list(subs_to_rep.items())[0]

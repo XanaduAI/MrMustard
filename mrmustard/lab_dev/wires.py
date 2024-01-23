@@ -178,8 +178,10 @@ class Wires:
         """
         Returns a new ``Wires`` that contains all the wires of ``self`` and ``other``, except for all
         the output wires of ``self`` that are also input wires of ``other``.
+
         The returned ``Wires`` corresponds to the ``Wires`` obtained by contracting the wires in common
         between ``self`` and ``other``.
+        
         Raises:
             ValueError: If one or more of the output wires of ``self`` that are also input wires of
             ``other`` have different ids that the corresponding output wire of ``other``.
