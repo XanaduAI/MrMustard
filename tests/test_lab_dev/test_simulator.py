@@ -15,9 +15,7 @@
 """Tests for the Simulator class."""
 
 import numpy as np
-import pytest
 
-from mrmustard import math
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.simulator import Simulator
 from mrmustard.lab_dev.states import Vacuum
@@ -64,8 +62,8 @@ class TestSimulator:
         result = Simulator().run(circuit, add_bras=False)
 
         rep = result.representation
-        A = np.kron(np.eye(3), [[0, 1], [1, 0]])
-        b = [11, -11, 8, -8, 4, -4]
+        A = np.kron([[0, 1], [1, 0]], np.eye(3))
+        b = [11, 8, 4, -11, -8, -4]
 
         assert result.modes == [0, 1, 2]
         assert result.name == ""
@@ -84,11 +82,9 @@ class TestSimulator:
         circuit = Circuit([d1, d1, d2, d1, d3, d1, d4, d2, d1])
         result = Simulator().run(circuit, add_bras=True)
 
-        n_modes = 4
-
         rep = result.representation
-        A = np.kron(np.eye(8), [[0, 1], [1, 0]])
-        b = [5, -5, 5, -5, 4, -4, 4, -4, 3, -3, 3, -3, 4, -4, 4, -4]
+        A = np.kron(np.eye(2), np.kron([[0, 1], [1, 0]], np.eye(4)))
+        b = [5, 4, 3, 4, -5, -4, -3, -4] * 2
 
         assert result.modes == [1, 2, 3, 4]
         assert result.name == ""

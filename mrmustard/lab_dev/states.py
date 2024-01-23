@@ -68,7 +68,7 @@ class Vacuum(Pure):
     @property
     def representation(self) -> Bargmann:
         num_modes = len(self.modes)
-        A = math.zeros(shape=(2 * num_modes, 2 * num_modes), dtype=math.complex128)
-        B = math.zeros(shape=(2 * num_modes), dtype=math.complex128)
+        A = math.zeros(shape=(num_modes, num_modes), dtype=math.complex128)
+        B = math.zeros(shape=(num_modes), dtype=math.complex128)
         C = 1
         return Bargmann(A, B, C)

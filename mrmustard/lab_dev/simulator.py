@@ -54,10 +54,14 @@ class Simulator:
 
         Returns:
             The resulting circuit component.
-        """
+        """      
         # get a list of subscripts for every component
         subs, ids_to_subs = self._get_oe_subscripts(components)
-        subs_to_component = {sub: c for (sub, c) in zip(subs, components)}
+        subs_to_rep = {sub: c.representation for (sub, c) in zip(subs, components)}
+
+        # initialize a dictionary mapping the subscripts provided by opt_einsum to the subscripts
+        # obtained when contracting
+        opt_to_ctr_subscripts = {sub: sub for sub in subs}
 
         # get the path for opt_einsum
         path = ",".join(subs)
@@ -67,67 +71,52 @@ class Simulator:
         path_info = contract_path(path, *shapes, shapes=True, optimize="auto")
         contractions = [ctr for _, _, ctr, _, _, in path_info[1].contraction_list]
 
-        # initialize a dictionary mapping the "unsorted" subscripts (i.e., those received from
-        # opt_einsum, which are not guaranteed to respect MrMustard's indexing convention) to the
-        # "sorted" ones (i.e., the same subscripts, reordered to respect MrMustard's indexing
-        # convention)
-        u_to_s_subscripts = {}
+        for ctr in contractions:
+            # split `contraction` into subscripts, in the order provided by opt_einsum
+            terms, result_opt = ctr.split("->")
+            term1_opt, term2_opt = terms.split(",")
 
-        # perform the contractions in the order given by opt_einsum
-        for contraction in contractions:
-            # split `contraction` into unsorted subscripts
-            terms_u, result_u = contraction.split("->")
-            term1_u, term2_u = terms_u.split(",")
-
-            # pop the sorted term1 and term2
-            term1_s = u_to_s_subscripts.pop(term1_u, term1_u)
-            term2_s = u_to_s_subscripts.pop(term2_u, term2_u)
+            # pop the subscripts of the terms undergoing the contraction
+            term1 = opt_to_ctr_subscripts.pop(term1_opt)
+            term2 = opt_to_ctr_subscripts.pop(term2_opt)
 
             # pop the two circuit components involved in the contraction
-            component1 = subs_to_component.pop(term1_s)
-            component2 = subs_to_component.pop(term2_s)
+            rep1 = subs_to_rep.pop(term1)
+            rep2 = subs_to_rep.pop(term2)
 
-            # ensure that component1 is the component whose contracted indices are on the output side,
-            # swapping component1 with component2 if needed
-            ids1 = component1.wires.input.ids
-            ids2 = component2.wires.output.ids
-            overlap = [i for i in ids1 if i in ids2]
-            if overlap:
-                term1_s, term2_s = term2_s, term1_s
-                component1, component2 = component2, component1
+            # store the "repeated" indices that appear in both term1 and term2
+            repeated = [s for s in term1 if s in term2]
 
-            # calculate the ``Wires`` of the circuit component resulting from the contraction
-            wires_out = component1.wires.add_connected(component2.wires)
+            # multiply the two representations
+            idx1 = [term1.index(i) for i in repeated]
+            idx2 = [term2.index(i) for i in repeated]
+            representation = rep1[idx1] @ rep2[idx2]
 
-            # get the string of sorted subscripts for the result of the contraction
-            result_s = "".join(ids_to_subs[i] for i in wires_out.ids)
+            # get the subscripts of the resulting representation
+            result = "".join([s for s in term1 + term2 if s not in repeated])
 
-            # store the "repeated" indices (those that appear in both term1_s and term2_s)
-            repeated = [s for s in term1_s if s in term2_s]
+            # store ``result`` and ``representation`` in the relevant dictionaries
+            opt_to_ctr_subscripts[result_opt] = result
+            subs_to_rep[result] = representation
 
-            # calculate the ``Representation`` of the circuit component resulting from the contraction
-            idx1 = [term1_s.index(i) for i in repeated]
-            idx2 = [term2_s.index(i) for i in repeated]
-            representation = component2.representation[idx2] @ component1.representation[idx1]
+        # calculate the ``Wires`` of the returned component, alongside its substrings
+        wires_out = components[0].wires
+        for c in components[1:]:
+            wires_out = wires_out.add_connected(c.wires)
+        subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
 
-            # reorder the representation
-            all_subs = term2_s + term1_s
-            for s in repeated:
-                all_subs = all_subs.replace(s, "")
-            idx_reorder = [all_subs.index(s) for s in result_s]
-            representation = representation.reorder(idx_reorder)
+        # grab the representation that remains in ``subs_to_rep``
+        subs_out_u, representation_out = list(subs_to_rep.items())[0]
 
-            # initialize the circuit component resulting from the contraction
-            component_out = CircuitComponent.from_attributes(
-                name="", wires=wires_out, representation=representation
-            )
+        # reorder the representation
+        reorder_idx = [subs_out_u.index(i) for i in subs_out]
+        representation_out = representation_out.reorder(reorder_idx)
 
-            # store ``result_s`` and ``component_out`` in the relevant dictionaries
-            u_to_s_subscripts[result_u] = result_s
-            subs_to_component[result_s] = component_out
-
-        # return the remaining value of ``subs_to_component``
-        ret = list(subs_to_component.values())[0]
+        ret = CircuitComponent.from_attributes(
+            name="",
+            wires=wires_out,
+            representation=representation_out,
+        )
 
         return ret
 
