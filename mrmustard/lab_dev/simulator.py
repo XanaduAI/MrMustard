@@ -68,7 +68,7 @@ class Simulator:
         contractions = [ctr for _, _, ctr, _, _, in path_info[1].contraction_list]
 
         for ctr in contractions:
-            # split `contraction` into subscripts, in the order provided by opt_einsum
+            # split `contraction` into subscripts
             terms, _ = ctr.split("->")
             term1, term2 = terms.split(",")
 
@@ -76,19 +76,18 @@ class Simulator:
             rep1 = subs_to_rep.pop(term1)
             rep2 = subs_to_rep.pop(term2)
 
-            # store the "repeated" indices that appear in both term1 and term2
+            # store the repeated indices that appear in both term1 and term2, as well as the
+            # terms that remain after the contraction
             repeated = [s for s in term1 if s in term2]
+            remaining = "".join([s for s in term1 + term2 if s not in repeated])
 
             # multiply the two representations
             idx1 = [term1.index(i) for i in repeated]
             idx2 = [term2.index(i) for i in repeated]
             representation = rep1[idx1] @ rep2[idx2]
 
-            # get the subscripts of the resulting representation
-            result = "".join([s for s in term1 + term2 if s not in repeated])
-
             # store ``result`` and ``representation`` in the relevant dictionaries
-            subs_to_rep[result] = representation
+            subs_to_rep[remaining] = representation
 
         # calculate the ``Wires`` of the returned component, alongside its substrings
         wires_out = components[0].wires
