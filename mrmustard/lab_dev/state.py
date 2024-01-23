@@ -19,10 +19,7 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Iterable,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -30,20 +27,13 @@ import numpy as np
 
 from mrmustard import physics
 from mrmustard import settings
-from mrmustard.lab.utils import trainable_property
-from mrmustard.math.tensor_networks.networks import connect, contract
-from mrmustard.physics.bargmann_repr import BargmannExp
-from mrmustard.math.tensor_networks import Tensor
-from mrmustard.math import Math
-from mrmustard.utils import graphics
-
-if TYPE_CHECKING:
-    from .transformation import Transformation
-
-math = Math()
+from mrmustard.lab_dev.utils import trainable_lazy_property
+from mrmustard import math
+from mrmustard.physics.representations import Representation
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 
-class State:
+class State(CircuitComponent):
     r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
     Note that Ket and DM implement their own ``from_foo`` methods.
 
@@ -72,8 +62,10 @@ class State:
     and RepresentationDV is a parent of the Fock representation, but also of the discretization of the continuous representations.
     """
 
-    def __getattr__(self, name):
-        r"""Searches for the attribute in the representation if it is not found in self (Ket or DM)."""
+    def __getattr__(self, name):  # TODO: do we want this?
+        r"""Searches for the attribute in the representation, if it is not found in self (Ket or DM).
+        Useful to expose the attributes of the representation without additional code.
+        """
         try:
             return getattr(self.representation, name)
         except AttributeError as e:
@@ -91,54 +83,44 @@ class State:
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
 
-    @trainable_property
+    @trainable_lazy_property
     def L2_norm(self) -> float:
-        r"""Returns the L2 norm of the Hilbert space vector or Hilbert-Schmidt norm of a density matrix."""
+        r"""Returns the L2 norm of the Hilbert space vector or the Hilbert-Schmidt norm of a density matrix."""
         return self >> self.dual
 
     def __and__(self, other: State) -> State:
         r"""Tensor product of two states."""
-        if not set(self.modes).isdisjoint(other.modes):
+        if not set(self.wires).isdisjoint(other.wires):
             raise ValueError("Modes must be disjoint")
         return self.__class__(
             self.representation & other.representation, modes=self.modes + other.modes
         )
 
-    def __matmul__(self, other: BargmannExp) -> BargmannExp:
-        r"""Inner product with a generic Tensor object.
-        It assumes that the _contract_idxs attribute has already been set.
-        """
-        return self.__class__(self.representation @ other, modes=self.modes)
-
-    def __getitem__(self, item: int | Iterable) -> State:
-        r"""Re-initializes the state on an alternative set of modes"""
-        if isinstance(item, int):
-            item = [item]
-        elif isinstance(item, Iterable):
-            item = list(item)
-        else:
-            raise TypeError("item must be int or iterable")
-        if len(item) != self.num_modes:
-            raise ValueError(f"item must have length {self.num_modes}, got {len(item)} instead")
-        return self.__class__(self.representation, modes=item)
-
-    def get_modes(self, modes: int | Iterable) -> State:
-        # TODO: write partial_trace in the representation
-        self.__class__(self.representation.partial_trace(keep=modes), modes=modes)
+    # TODO: do we want/need this?
+    # def __getitem__(self, item: int | Iterable) -> State:
+    #     r"""Re-initializes the state on an alternative set of modes"""
+    #     if isinstance(item, int):
+    #         item = [item]
+    #     elif isinstance(item, Iterable):
+    #         item = list(item)
+    #     else:
+    #         raise TypeError("item must be int or iterable")
+    #     if len(item) != self.num_modes:
+    #         raise ValueError(f"item must have length {self.num_modes}, got {len(item)} instead")
+    #     return self.__class__(self.representation, modes=item)
+    def substate(self, modes: int | Iterable) -> State:
+        return self.__class__(self.representation.trace(keep=modes), modes=modes)
 
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal. Modes and all."""
         return self.representation == other.representation and self.modes == other.modes
 
-    def __rshift__(self, other: Transformation | State) -> State | complex:
-        r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
-        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
-        """
-        common_modes = set(self.modes_out).intersection(other.modes_in)
-        self_out = self.output[common_modes]
-        other_in = other.input[common_modes]
-        connect(self_out, other_in)
-        return self.__class__(representation=contract([self, other]), modes=self.modes)
+    # def __rshift__(self, other: Transformation | State) -> State | complex:
+    #     r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
+    #     If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
+    #     """
+    #     connect([self, other])
+    #     return self.__class__(representation=contract([self, other]), modes=self.modes)
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
