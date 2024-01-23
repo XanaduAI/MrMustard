@@ -92,16 +92,16 @@ class Dgate(Unitary):
     def representation(self) -> Bargmann:
         num_modes = len(self.modes)
 
-        xs = math.atleast_1d(self.x.value)
+        xs = math.atleast_1d(math.cast(self.x.value))
         if len(xs) == 1:
             xs = np.array([xs[0] for _ in range(num_modes)])
-        ys = math.atleast_1d(self.y.value)
+        ys = math.atleast_1d(math.cast(self.y.value))
         if len(ys) == 1:
             ys = np.array([ys[0] for _ in range(num_modes)])
 
-        A = np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes))
-        B = math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0)
-        C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
+        A = math.cast(np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
+        B = math.cast(math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0), math.complex128)
+        C = math.cast(np.prod(math.exp(-abs(xs + 1j * ys) ** 2 / 2)), math.complex128)
 
         return Bargmann(A, B, C)
 
