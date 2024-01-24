@@ -240,8 +240,8 @@ class Wires:
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
         for i, m in enumerate(all_modes):
             if m in intersection:
-                new_id_array[i] = np.maximum(self._id_array[self.modes.index(m)], 0) + np.maximum(
-                    other._id_array[other.modes.index(m)], 0)
+                new_id_array[i] = np.maximum(self.input._id_array[self.modes.index(m)], 0) + np.maximum(
+                    other.output._id_array[other.modes.index(m)], 0)
             elif m in self.modes:
                 new_id_array[i] = self.id_array[self.modes.index(m)]
             else:
