@@ -146,7 +146,8 @@ class TestFockRepresentation:
 
     def test_reorder(self):
         r"""Tests the reorder of the array."""
-        array1 = math.astensor(np.random.random((2, 5, 7, 8)))
+        array1 = math.astensor(np.arange(8).reshape((1, 2, 2, 2)))
         fock1 = Fock(array1, batch_flag=True)
         fock2 = fock1.reorder(order=(0, 3, 2, 1))
-        assert fock2.array.shape == (2, 8, 7, 5)
+        assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
+        assert np.allclose(fock2.array, np.arange(8).reshape((1,2,2,2), order="F"))

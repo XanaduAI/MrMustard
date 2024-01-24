@@ -210,15 +210,24 @@ class TestArrayAnsatz:
         )
         assert np.allclose(
             aa1_and_aa2.array[1],
-            np.array([[[[0, 0], [0, 0]], [[4, 5], [6, 7]]], [[[8, 10], [12, 14]], [[12, 15], [18, 21]]]]),
+            np.array(
+                [[[[0, 0], [0, 0]], [[4, 5], [6, 7]]], [[[8, 10], [12, 14]], [[12, 15], [18, 21]]]]
+            ),
         )
         assert np.allclose(
             aa1_and_aa2.array[2],
-            np.array([[[[0, 4], [8, 12]], [[0, 5], [10, 15]]], [[[0, 6], [12, 18]], [[0, 7], [14, 21]]]]),
+            np.array(
+                [[[[0, 4], [8, 12]], [[0, 5], [10, 15]]], [[[0, 6], [12, 18]], [[0, 7], [14, 21]]]]
+            ),
         )
         assert np.allclose(
             aa1_and_aa2.array[3],
-            np.array([[[[16, 20], [24, 28]], [[20, 25], [30, 35]]], [[[24, 30], [36, 42]], [[28, 35], [42, 49]]]]),
+            np.array(
+                [
+                    [[[16, 20], [24, 28]], [[20, 25], [30, 35]]],
+                    [[[24, 30], [36, 42]], [[28, 35], [42, 49]]],
+                ]
+            ),
         )
 
     def test_mul_a_scalar(self):
@@ -238,10 +247,10 @@ class TestArrayAnsatz:
         aa1_mul_aa2 = aa1 * aa2
         assert isinstance(aa1_mul_aa2, ArrayAnsatz)
         assert aa1_mul_aa2.array.shape == (4, 2, 2)
-        assert np.allclose(aa1_mul_aa2.array[0], np.array([[0, 1],[4, 9]]))
-        assert np.allclose(aa1_mul_aa2.array[1], np.array([[0, 5],[12, 21]]))
-        assert np.allclose(aa1_mul_aa2.array[2], np.array([[0, 5],[12, 21]]))
-        assert np.allclose(aa1_mul_aa2.array[3], np.array([[16, 25],[36, 49]]))
+        assert np.allclose(aa1_mul_aa2.array[0], np.array([[0, 1], [4, 9]]))
+        assert np.allclose(aa1_mul_aa2.array[1], np.array([[0, 5], [12, 21]]))
+        assert np.allclose(aa1_mul_aa2.array[2], np.array([[0, 5], [12, 21]]))
+        assert np.allclose(aa1_mul_aa2.array[3], np.array([[16, 25], [36, 49]]))
 
     def test_truediv_a_scalar(self):
         r"""Tests the correctness of dividing an ArrayAnsatz with a scalar."""
@@ -260,10 +269,10 @@ class TestArrayAnsatz:
         aa1_div_aa2 = aa1 / aa2
         assert isinstance(aa1_div_aa2, ArrayAnsatz)
         assert aa1_div_aa2.array.shape == (4, 2, 2)
-        assert np.allclose(aa1_div_aa2.array[0], np.array([[1., 1.],[1., 1.]]))
-        assert np.allclose(aa1_div_aa2.array[1], np.array([[0.2, 0.33333],[0.42857143, 0.5]]))
-        assert np.allclose(aa1_div_aa2.array[2], np.array([[5., 3.],[2.33333333, 2.]]))
-        assert np.allclose(aa1_div_aa2.array[3], np.array([[1., 1.],[1., 1.]]))
+        assert np.allclose(aa1_div_aa2.array[0], np.array([[1.0, 1.0], [1.0, 1.0]]))
+        assert np.allclose(aa1_div_aa2.array[1], np.array([[0.2, 0.33333], [0.42857143, 0.5]]))
+        assert np.allclose(aa1_div_aa2.array[2], np.array([[5.0, 3.0], [2.33333333, 2.0]]))
+        assert np.allclose(aa1_div_aa2.array[3], np.array([[1.0, 1.0], [1.0, 1.0]]))
 
     def test_algebra_with_different_shape_of_array_raise_errors(self):
         r"""Tests the errors are raised correctly."""
