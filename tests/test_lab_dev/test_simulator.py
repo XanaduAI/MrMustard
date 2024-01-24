@@ -74,10 +74,10 @@ class TestSimulator:
         r"""
         Simulates a circuit with one-mode Dgates applied in parallel and in series, with ``add_bras=True``.
         """
-        d1 = Dgate(1., modes=[1])
-        d2 = Dgate(2., modes=[2])
-        d3 = Dgate(3., modes=[3])
-        d4 = Dgate(4., modes=[4])
+        d1 = Dgate(1.0, modes=[1])
+        d2 = Dgate(2.0, modes=[2])
+        d3 = Dgate(3.0, modes=[3])
+        d4 = Dgate(4.0, modes=[4])
 
         circuit = Circuit([d1, d1, d2, d1, d3, d1, d4, d2, d1])
         result = Simulator().run(circuit, add_bras=True)
