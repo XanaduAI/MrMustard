@@ -150,4 +150,4 @@ class TestFockRepresentation:
         fock1 = Fock(array1, batch_flag=True)
         fock2 = fock1.reorder(order=(0, 3, 2, 1))
         assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
-        assert np.allclose(fock2.array, np.arange(8).reshape((1,2,2,2), order="F"))
+        assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
