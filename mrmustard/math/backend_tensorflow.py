@@ -542,7 +542,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            (poly0, poly2, poly1010, poly1001, poly1,) = Main_julia.DiagonalAmps.fock_diagonal_amps(
+            (poly0, poly2, poly1010, poly1001, poly1) = Main_julia.DiagonalAmps.fock_diagonal_amps(
                 A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
