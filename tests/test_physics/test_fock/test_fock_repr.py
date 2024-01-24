@@ -17,7 +17,7 @@ class TestFockRepresentation:
         assert np.allclose(fock.array, array)
 
     def test_init_non_batched(self):
-        r"""Tests one can initilize a Fock representation with an array non batch, and the batch is added after init."""
+        r"""Tests one can initilize a Fock representation with a non-batched array, and the batch is added after init."""
         array = math.astensor(np.random.random((5, 7, 8)))
         fock = Fock(array, batch_flag=False)
         assert isinstance(fock, Fock)
