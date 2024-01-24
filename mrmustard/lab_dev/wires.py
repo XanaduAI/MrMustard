@@ -15,6 +15,7 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
+
 from typing import Iterable, Optional
 import numpy as np
 from mrmustard import settings
@@ -111,7 +112,7 @@ class Wires:
         w = cls()
         w._id_array = id_array if id_array is not None else w._id_array
         w._modes = modes if modes is not None else w._modes
-        w._mask = mask if mask is not None else w._mask
+        w._mask = mask if mask is not None else np.ones_like(w._id_array)
         return w
 
     def _view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
@@ -173,15 +174,22 @@ class Wires:
         "A view of this Wires object without ket wires"
         return self._view(masked_cols=(2, 3))
 
+    @property
     def adjoint(self) -> Wires:
         r"""
-        The adjoint of this wires object, with new ids.
+        The adjoint (ket <-> bra) of this wires object.
         """
-        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
-        return Wires(ok_modes, ik_modes, ob_modes, ib_modes)
+        return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
+
+    @property
+    def dual(self) -> Wires:
+        r"""
+        The dual (in <-> out) of this wires object.
+        """
+        return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
 
     def copy(self) -> Wires:
-        r"""A copy of this wire with new ids."""
+        r"""A copy of this Wires object with new ids."""
         w = Wires(*self._args())
         w._mask = self._mask.copy()
         return w
@@ -200,21 +208,45 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            # if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
-            #     raise ValueError(f"wires overlap on mode {m}")
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        return self._from_data(None, sorted(modes_rows), np.ones_like(combined_array))
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
-        return True if self.ids else False
+        return True if len(self.ids) > 0 else False
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
+
+    def __lshift__(self, other: Wires) -> Wires:
+        return (other.dual >> self.dual).dual  # how cool is this
+
+    def __rshift__(self, other: Wires) -> Wires:
+        r"""Returns a new Wires object with the wires of self and other combined as two
+        components in a circuit: the output of self connects to the input of other wherever
+        they match.
+        """
+        intersection = sorted(set(self.output.modes).intersection(other.input.modes))
+        if len(self.output[intersection].ket.ids) != len(other.input[intersection].ket.ids):
+            raise ValueError(f"ket wires don't match on modes {intersection}")
+        if len(self.output[intersection].ids) != len(other.input[intersection].ids):
+            raise ValueError(f"bra wires don't match on modes {intersection}")
+        all_modes = sorted(set(self.modes) | set(other.modes))
+        new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
+        for i, m in enumerate(all_modes):
+            if m in intersection:
+                new_id_array[i] = np.maximum(self.input._id_array[self.modes.index(m)], 0) + np.maximum(
+                    other.output._id_array[other.modes.index(m)], 0)
+            elif m in self.modes:
+                new_id_array[i] = self.id_array[self.modes.index(m)]
+            else:
+                new_id_array[i] = other.id_array[other.modes.index(m)]
+        return self._from_data(new_id_array, all_modes, np.ones_like(new_id_array))
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
