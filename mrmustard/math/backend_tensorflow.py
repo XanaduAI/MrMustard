@@ -658,7 +658,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
             else:  # julia (higher precision than complex128)
                 dpoly_dC = poly0 / C.item()
-                (dpoly_dA, dpoly_dB,) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                (dpoly_dA, dpoly_dB) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 
