@@ -52,8 +52,8 @@ class TestFockRepresentation:
             math.reshape(np.einsum("bcde, pfgh -> bpcdefgh", array1, array2), -1),
         )
 
-    def test_multiply_a_scaler(self):
-        r"""Tests the muplication with a scaler."""
+    def test_multiply_a_scalar(self):
+        r"""Tests the muplication with a scalar."""
         array1 = math.astensor(np.random.random((1, 5, 7, 8)))
         fock1 = Fock(array1, batch_flag=True)
         fock_test = 1.3 * fock1
@@ -72,8 +72,8 @@ class TestFockRepresentation:
             math.reshape(np.einsum("bcde, pcde -> bpcde", array1, array2), -1),
         )
 
-    def test_divide_on_a_scaler(self):
-        r"""Tests the divide on a scaler."""
+    def test_divide_on_a_scalar(self):
+        r"""Tests the divide on a scalar."""
         array1 = math.astensor(np.random.random((1, 5, 7, 8)))
         fock1 = Fock(array1, batch_flag=True)
         fock_test = fock1 / 1.5
