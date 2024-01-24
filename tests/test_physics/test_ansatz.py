@@ -159,14 +159,14 @@ def test_PolyExpAnsatz_simplify_v2(Abc):
 class TestArrayAnsatz:
     r"""Tests all algebra related to ArrayAnsatz."""
 
-    def test_ArrayAnsatz_init_(self):
+    def test_init_(self):
         r"""Tests that an ArrayAnstaz can be initialized."""
         array = np.random.random((2, 4, 5))
         aa = ArrayAnsatz(array=array)
         assert isinstance(aa, ArrayAnsatz)
         assert np.allclose(aa.array, array)
 
-    def test_ArrayAnsatz_neg(self):
+    def test_neg(self):
         r"""Negates the array inside ArrayAnsatz."""
         array = np.random.random((2, 4, 5))
         aa = ArrayAnsatz(array=array)
@@ -174,34 +174,54 @@ class TestArrayAnsatz:
         assert isinstance(minusaa, ArrayAnsatz)
         assert np.allclose(minusaa.array, -array)
 
-    def test_ArrayAnsatz_equal(self):
+    def test_equal(self):
         r"""Tests the equation of two ArrayAnsatzs."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
 
-    def test_ArrayAnsatz_addition(self):
+    def test_add(self):
         r"""Tests the correctness of adding two ArrayAnsatzs."""
-        array = np.random.random((2, 4, 5))
-        array2 = np.random.random((4, 4, 5))
+        array = np.arange(8).reshape(2, 2, 2)
+        array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_add_aa2 = aa1 + aa2
         assert isinstance(aa1_add_aa2, ArrayAnsatz)
-        assert aa1_add_aa2.array.shape == (8, 4, 5)
+        assert aa1_add_aa2.array.shape == (4, 2, 2)
+        assert np.allclose(aa1_add_aa2.array[0], np.array([[0, 2], [4, 6]]))
+        assert np.allclose(aa1_add_aa2.array[1], np.array([[4, 6], [8, 10]]))
+        assert np.allclose(aa1_add_aa2.array[2], np.array([[4, 6], [8, 10]]))
+        assert np.allclose(aa1_add_aa2.array[3], np.array([[8, 10], [12, 14]]))
 
-    def test_ArrayAnsatz_and(self):
+    def test_and(self):
         r"""Tests the correctness of adding two ArrayAnsatzs."""
-        array = np.random.random((2, 4, 5))
-        array2 = np.random.random((7, 4, 5))
+        array = np.arange(8).reshape(2, 2, 2)
+        array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_and_aa2 = aa1 & aa2
         assert isinstance(aa1_and_aa2, ArrayAnsatz)
-        assert aa1_and_aa2.array.shape == (14, 4, 5, 4, 5)
+        assert aa1_and_aa2.array.shape == (4, 2, 2, 2, 2)
+        assert np.allclose(
+            aa1_and_aa2.array[0],
+            np.array([[[[0, 0], [0, 0]], [[0, 1], [2, 3]]], [[[0, 2], [4, 6]], [[0, 3], [6, 9]]]]),
+        )
+        assert np.allclose(
+            aa1_and_aa2.array[1],
+            np.array([[[[0, 0], [0, 0]], [[4, 5], [6, 7]]], [[[8, 10], [12, 14]], [[12, 15], [18, 21]]]]),
+        )
+        assert np.allclose(
+            aa1_and_aa2.array[2],
+            np.array([[[[0, 4], [8, 12]], [[0, 5], [10, 15]]], [[[0, 6], [12, 18]], [[0, 7], [14, 21]]]]),
+        )
+        assert np.allclose(
+            aa1_and_aa2.array[3],
+            np.array([[[[16, 20], [24, 28]], [[20, 25], [30, 35]]], [[[24, 30], [36, 42]], [[28, 35], [42, 49]]]]),
+        )
 
-    def test_ArrayAnsatz_multiply_with_a_scalar(self):
+    def test_mul_a_scalar(self):
         r"""Tests the correctness of multiplying an ArrayAnsatz with a scalar."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
@@ -209,17 +229,21 @@ class TestArrayAnsatz:
         assert isinstance(aa1_scalar, ArrayAnsatz)
         assert np.allclose(aa1_scalar.array, array * 8)
 
-    def test_ArrayAnsatz_mul(self):
+    def test_mul(self):
         r"""Tests the correctness of multiplying two ArrayAnsatzs."""
-        array = np.random.random((2, 4, 5))
-        array2 = np.random.random((3, 4, 5))
+        array = np.arange(8).reshape(2, 2, 2)
+        array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_mul_aa2 = aa1 * aa2
         assert isinstance(aa1_mul_aa2, ArrayAnsatz)
-        assert aa1_mul_aa2.array.shape == (6, 4, 5)
+        assert aa1_mul_aa2.array.shape == (4, 2, 2)
+        assert np.allclose(aa1_mul_aa2.array[0], np.array([[0, 1],[4, 9]]))
+        assert np.allclose(aa1_mul_aa2.array[1], np.array([[0, 5],[12, 21]]))
+        assert np.allclose(aa1_mul_aa2.array[2], np.array([[0, 5],[12, 21]]))
+        assert np.allclose(aa1_mul_aa2.array[3], np.array([[16, 25],[36, 49]]))
 
-    def test_ArrayAnsatz_divide_by_a_scalar(self):
+    def test_truediv_a_scalar(self):
         r"""Tests the correctness of dividing an ArrayAnsatz with a scalar."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
@@ -227,17 +251,21 @@ class TestArrayAnsatz:
         assert isinstance(aa1_scalar, ArrayAnsatz)
         assert np.allclose(aa1_scalar.array, array / 6)
 
-    def test_ArrayAnsatz_div(self):
+    def test_div(self):
         r"""Tests the correctness of multiplying two ArrayAnsatzs."""
-        array = np.random.random((2, 4, 5))
-        array2 = np.random.random((3, 4, 5))
+        array = np.arange(9)[1:].reshape(2, 2, 2)
+        array2 = np.arange(9)[1:].reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_div_aa2 = aa1 / aa2
         assert isinstance(aa1_div_aa2, ArrayAnsatz)
-        assert aa1_div_aa2.array.shape == (6, 4, 5)
+        assert aa1_div_aa2.array.shape == (4, 2, 2)
+        assert np.allclose(aa1_div_aa2.array[0], np.array([[1., 1.],[1., 1.]]))
+        assert np.allclose(aa1_div_aa2.array[1], np.array([[0.2, 0.33333],[0.42857143, 0.5]]))
+        assert np.allclose(aa1_div_aa2.array[2], np.array([[5., 3.],[2.33333333, 2.]]))
+        assert np.allclose(aa1_div_aa2.array[3], np.array([[1., 1.],[1., 1.]]))
 
-    def test_Array_Ansatz_algebra_with_different_shape_of_array_raise_errors(self):
+    def test_algebra_with_different_shape_of_array_raise_errors(self):
         r"""Tests the errors are raised correctly."""
         array = np.random.random((2, 4, 5))
         array2 = np.random.random((3, 4, 8, 9))
