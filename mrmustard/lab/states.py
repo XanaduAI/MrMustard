@@ -24,8 +24,9 @@ from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
-from .abstract import State
-from .utils import make_parameter
+from mrmustard.lab.abstract import State
+from mrmustard.lab.utils import make_parameter
+
 
 __all__ = [
     "Vacuum",
@@ -55,19 +56,30 @@ class Coherent(State):
 
     .. code-block::
 
-        Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.2)    # True
+        >>> from mrmustard.lab.states import Coherent, Vacuum
+        >>> from mrmustard.lab.gates import Dgate
+
+        >>> state1 = Coherent(x=0.5, y=0.2)
+        >>> state2 = Vacuum(1) >> Dgate(x=0.5, y=0.2)
+        >>> assert state1 == state2
 
     Parallelizable over x and y:
 
     .. code-block::
 
-        Coherent(x=[1.0, 2.0], y=[-1.0, -2.0]) == Coherent(x=1.0, y=-1.0) & Coherent(x=2.0, y=-2.0)  # True
+        >>> from mrmustard.lab.states import Coherent
+
+        >>> state1 = Coherent(x=[1.0, 2.0], y=[-1.0, -2.0])
+        >>> state2 = Coherent(x=1.0, y=-1.0) & Coherent(x=2.0, y=-2.0)
+        >>> assert state1 == state2
 
     Can be used to model a heterodyne detection:
 
     .. code-block::
 
-        Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1, leftover state on mode 0
+        >>> from mrmustard.lab.states import Coherent, Gaussian
+        
+        >>> state = Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1, leftover state on mode 0
 
     Note that the values of x and y are automatically rescaled by 1/(2*sqrt(mrmustard.settings.HBAR)).
 
@@ -115,22 +127,31 @@ class SqueezedVacuum(State):
 
     Equivalent to applying a squeezing gate to the vacuum state:
 
-    .. code::
+    .. code-block::
 
-      >>> SqueezedVacuum(r=0.5, phi=0.2) == Vacuum(1) >> Sgate(r=0.5, phi=0.2)
-      True
+      >>> from mrmustard.lab.states import SqueezedVacuum, Vacuum
+      >>> from mrmustard.lab.gates import Sgate
+
+      >>> state1 = SqueezedVacuum(r=0.5, phi=0.2)
+      >>> state2 = Vacuum(1) >> Sgate(r=0.5, phi=0.2)
+      >>> assert state1 == state2
 
     Parallelizable over r and phi:
-    .. code::
 
-      >>> SqueezedVacuum(r=[1.0, 2.0], phi=[-1.0, -2.0]) == SqueezedVacuum(r=1.0, phi=-1.0) & SqueezedVacuum(r=2.0, phi=-2.0)
-      True
+    .. code-block::
+
+      >>> from mrmustard.lab.states import SqueezedVacuum
+      
+      >>> state1 = SqueezedVacuum(r=[1.0, 2.0], phi=[-1.0, -2.0])
+      >>> state2 = SqueezedVacuum(r=1.0, phi=-1.0) & SqueezedVacuum(r=2.0, phi=-2.0)
+      >>> assert state1 == state2
 
     Can be used to model a heterodyne detection with result 0.0:
-    .. code::
 
-      >>> Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]  # e.g. homodyne on x quadrature on mode 1 with result 0.0
-      # leftover state on mode 0
+    .. code-block::
+
+      >>> from mrmustard.lab.states import SqueezedVacuum, Gaussian
+      >>> state = Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]  # e.g. homodyne on x quadrature on mode 1 with result 0.0
 
     Args:
         r (float): the squeezing magnitude
@@ -179,10 +200,15 @@ class TMSV(State):
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
 
-    .. code::
+    .. code-block::
 
-      >>> TMSV(r=0.5, phi=0.0) == Vacuum(2) >> Sgate(r=[0.5,0.5], phi=[0.0, np.pi]) >> BSgate(theta=-np.pi/4)
-      True
+      >>> import numpy as np
+      >>> from mrmustard.lab.states import TMSV, Vacuum
+      >>> from mrmustard.lab.gates import BSgate, Sgate
+
+      >>> state1 = TMSV(r=0.5, phi=0.0)
+      >>> state2 = Vacuum(2) >> Sgate(r=[0.5,0.5], phi=[0.0, np.pi]) >> BSgate(theta=-np.pi/4)
+      >>> assert state1 == state2
 
     Args:
         r (float): The squeezing magnitude.
@@ -228,17 +254,24 @@ class Thermal(State):
 
     Equivalent to applying additive noise to the vacuum:
 
-    .. code::
+    .. code-block::
 
-        >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
-        True
+        >>> from mrmustard.lab.gates import AdditiveNoise
+        >>> from mrmustard.lab.states import Vacuum, Thermal
+
+        >>> state1 = Thermal(nbar=0.31)
+        >>> state2 = Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
+        >>> assert state1 == state2
 
     Parallelizable over ``nbar``:
 
-    .. code::
+    .. code-block::
 
-        >>> Thermal(nbar=[0.1, 0.2]) == Thermal(nbar=0.1) & Thermal(nbar=0.2)
-        True
+        >>> from mrmustard.lab.states import Thermal
+        
+        >>> state1 =  Thermal(nbar=[0.1, 0.2])
+        >>> state2 = Thermal(nbar=0.1) & Thermal(nbar=0.2)
+        >>> assert state1 == state2
 
     Args:
         nbar (float or List[float]): the expected number of photons in each mode
@@ -278,24 +311,33 @@ class DisplacedSqueezed(State):
 
     Equivalent to applying a displacement to the squeezed vacuum state:
 
-    .. code::
+    .. code-block::
 
-        >>> DisplacedSqueezed(r=0.5, phi=0.2, x=0.3, y=-0.7) == SqueezedVacuum(r=0.5, phi=0.2) >> Dgate(x=0.3, y=-0.7)
-        True
+        >>> from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum
+        >>> from mrmustard.lab.gates import Dgate
+
+        >>> state1 = DisplacedSqueezed(r=0.5, phi=0.2, x=0.3, y=-0.7)
+        >>> state2 = SqueezedVacuum(r=0.5, phi=0.2) >> Dgate(x=0.3, y=-0.7)
+        >>> assert state1 == state2
 
     Parallelizable over ``r``, ``phi``, ``x``, ``y``:
 
-    .. code::
+    .. code-block::
 
-        >>> DisplacedSqueezed(r=[0.1, 0.2], phi=[0.3, 0.4], x=[0.5, 0.6], y=[0.7, 0.8]) == DisplacedSqueezed(r=0.1, phi=0.3, x=0.5, y=0.7) & DisplacedSqueezed(r=0.2, phi=0.4, x=0.6, y=0.8)
-        True
+        >>> from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum
+
+        >>> state1 = DisplacedSqueezed(r=[0.1, 0.2], phi=[0.3, 0.4], x=[0.5, 0.6], y=[0.7, 0.8])
+        >>> state2 = DisplacedSqueezed(r=0.1, phi=0.3, x=0.5, y=0.7) & DisplacedSqueezed(r=0.2, phi=0.4, x=0.6, y=0.8)
+        >>> assert state1 == state2
 
     Can be used to model homodyne detection:
 
-    .. code::
+    .. code-block::
 
-      >>> Gaussian(2) << DisplacedSqueezed(r=10, phi=np.pi, y=0.3)[1]  # e.g. homodyne on mode 1, p quadrature, result 0.3
-      # leftover state on mode 0
+        >>> import numpy as np
+        >>> from mrmustard.lab.states import Gaussian, DisplacedSqueezed
+
+        >>> state = Gaussian(2) << DisplacedSqueezed(r=10, phi=np.pi, y=0.3)[1]
 
     Args:
         r (float or List[float]): the squeezing magnitude
@@ -360,18 +402,21 @@ class Gaussian(State):
 
     The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
 
-    .. code::
+    .. code-block::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab.states import Gaussian
 
         >>> G = Gaussian(num_modes=1, eigenvalues = np.random.uniform(settings.HBAR/2, 10.0))
-        >>> G == Thermal(nbar=(G.eigenvalues*2/settings.HBAR  - 1)/2) >> Ggate(1, symplectic=G.symplectic)
-        True
 
     Note that the 1st moments are zero unless a Dgate is applied to the Gaussian state:
 
-    .. code::
+    .. code-block::
 
-        >>> np.allclose(Gaussian(num_modes=1).means, 0.0)
-        True
+        >>> import numpy as np
+        >>> from mrmustard.lab.states import Gaussian
+
+        >>> assert np.allclose(Gaussian(num_modes=1).means, 0.0)
 
     Args:
         num_modes (int): the number of modes
