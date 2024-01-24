@@ -90,11 +90,10 @@ class Wires:
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
         randint = settings.rng.integers  # MM random number generator
-        pow = 50
-        ob = {m: randint(1, 2**pow) if m in modes_out_bra else 0 for m in self._modes}
-        ib = {m: randint(1, 2**pow) if m in modes_in_bra else 0 for m in self._modes}
-        ok = {m: randint(1, 2**pow) if m in modes_out_ket else 0 for m in self._modes}
-        ik = {m: randint(1, 2**pow) if m in modes_in_ket else 0 for m in self._modes}
+        ob = {m: randint(1, 2**62) if m in modes_out_bra else 0 for m in self._modes}
+        ib = {m: randint(1, 2**62) if m in modes_in_bra else 0 for m in self._modes}
+        ok = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
+        ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
