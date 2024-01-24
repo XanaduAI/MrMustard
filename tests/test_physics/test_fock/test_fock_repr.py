@@ -79,7 +79,7 @@ class TestFockRepresentation:
         fock_test = fock1 / 1.5
         assert np.allclose(fock_test.array, array1 / 1.5)
 
-    def test_truedive(self):
+    def test_truediv(self):
         r"""Tests the division of two Fock representations."""
         array1 = math.astensor(np.random.random((1, 5, 7, 8)))
         array2 = math.astensor(np.random.random((5, 5, 7, 8)))
