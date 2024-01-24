@@ -92,10 +92,10 @@ class Dgate(Unitary):
     def representation(self) -> Bargmann:
         num_modes = len(self.modes)
 
-        xs = math.atleast_1d(math.cast(self.x.value))
+        xs = math.atleast_1d(self.x.value)
         if len(xs) == 1:
             xs = np.array([xs[0] for _ in range(num_modes)])
-        ys = math.atleast_1d(math.cast(self.y.value))
+        ys = math.atleast_1d(self.y.value)
         if len(ys) == 1:
             ys = np.array([ys[0] for _ in range(num_modes)])
 
