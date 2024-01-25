@@ -22,6 +22,7 @@ from functools import wraps
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
 from mrmustard import settings
 
+
 def make_parameter(
     is_trainable: bool,
     value: Any,
@@ -96,9 +97,11 @@ def trainable_lazy_property(func):
 
 class HasWires(Protocol):
     r"""A protocol for objects that have wires."""
+
     @property
     def wires(self) -> Wires:
         ...
+
 
 def connect(components: Sequence[HasWires]):
     r"""Connects all components (sets the same id of connected wire pairs).

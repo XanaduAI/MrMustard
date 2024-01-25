@@ -17,6 +17,7 @@ A base class for the components of quantum circuits.
 """
 
 from __future__ import annotations
+from ast import Not
 
 from typing import Optional, Sequence, Union
 
@@ -104,7 +105,7 @@ class CircuitComponent:
         A set with all the modes in this component.
         """
         return self.wires.modes
-    
+
     @property
     def num_modes(self) -> int:
         r"""
@@ -133,6 +134,7 @@ class CircuitComponent:
         """
         return self._wires
 
+    @property
     def adjoint(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the adjoint of it, obtained by switching
@@ -140,9 +142,11 @@ class CircuitComponent:
         """
         ret = self.light_copy()
         ret._name += "_adj"
-        ret._wires = ret.wires.adjoint()
+        ret._wires = ret.wires.adjoint
+        ret._representation = ret._representation.conj
         return ret
-    
+
+    @property
     def dual(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the dual of it, obtained by switching
@@ -150,7 +154,8 @@ class CircuitComponent:
         """
         ret = self.light_copy()
         ret._name += "_dual"
-        ret._wires = ret.wires.dual()
+        ret._wires = ret.wires.dual
+        ret._representation = ret._representation.conj
         return ret
 
     def light_copy(self) -> CircuitComponent:
@@ -162,15 +167,22 @@ class CircuitComponent:
         instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
-
-    def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
+    
+    def __and__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Returns a slice of this component for the given modes.
+        Returns a light copy of this component with the wires of ``other`` appended to
+        its own wires.
         """
-        ret = self.light_copy()
-        ret._wires = self._wires[idx]
-        ret._parameter_set = self.parameter_set
-        return ret
+        raise NotImplementedError
+
+    # def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
+    #     r"""
+    #     Returns a slice of this component for the given modes.
+    #     """
+    #     ret = self.light_copy()
+    #     ret._wires = self._wires[idx]
+    #     ret._parameter_set = self.parameter_set
+    #     return ret
 
 
 # def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:

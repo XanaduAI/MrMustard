@@ -161,10 +161,8 @@ class PolyExpBase(Ansatz):
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
     @property
-    def degree(self) -> int:
-        if self.array.ndim == 1:
-            return 0
-        return self.array.shape[-1] - 1
+    def degree(self) -> tuple[int,...]:
+        return self.array.shape[1:]  # 1st dim is batch
 
     def simplify(self) -> None:
         r"""

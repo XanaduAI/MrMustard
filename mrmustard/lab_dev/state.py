@@ -15,6 +15,7 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
+from hmac import new
 
 from typing import (
     TYPE_CHECKING,
@@ -34,44 +35,18 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 
 class State(CircuitComponent):
-    r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
-    Note that Ket and DM implement their own ``from_foo`` methods.
+    r"""Mixin class for quantum states. It supplies common functionalities and properties of all states."""
 
-    The State class is a coordinator between the indices of the representation (in self.representation)
-    and the wires/modes, which is handled by self as well, because State inherits from Tensor.
-
-    When using a State object we can think of it as the mathematical symbol, e.g. a Hilbert space vector
-
-    .. code-block:: python
-        psi0 = Ket.from_abc(A0, b0, c0, modes=[0, 1, 2])
-        psi1 = Ket.from_abc(A1, b1, c1, modes=[0, 1, 2])
-
-        psi = a * psi0 + b * psi1
-
-    A State object also supports the tensor network operations, e.g. contraction, tensor product, etc.
-
-    .. code-block:: python
-        connect(rho.output[0], channel0.input)
-        contract([rho, channel0])
-
-    A State object also supports the wire-wise matmul functionality:
-
-    The actual implementation of the algebraic functionality is beyond the representation interface.
-    Representation objects come in two types: there is RepresentationCV and RepresentationDV.
-    RepresentationCV is a parent of the Bargmann representation (which includes all the other continous ones that we know of)
-    and RepresentationDV is a parent of the Fock representation, but also of the discretization of the continuous representations.
-    """
-
-    def __getattr__(self, name):  # TODO: do we want this?
-        r"""Searches for the attribute in the representation, if it is not found in self (Ket or DM).
-        Useful to expose the attributes of the representation without additional code.
-        """
-        try:
-            return getattr(self.representation, name)
-        except AttributeError as e:
-            raise AttributeError(
-                f"Attribute {name} not found in {self.__class__.__qualname__} or its representation"
-            ) from e
+    # def __getattr__(self, name):  # TODO: do we want this?
+    #     r"""Searches for the attribute in the representation, if it is not found in self (Ket or DM).
+    #     Useful to expose the attributes of the representation without additional code.
+    #     """
+    #     try:
+    #         return getattr(self.representation, name)
+    #     except AttributeError as e:
+    #         raise AttributeError(
+    #             f"Attribute {name} not found in {self.__class__.__qualname__} or its representation"
+    #         ) from e
 
     @property
     def is_mixed(self):
@@ -88,39 +63,16 @@ class State(CircuitComponent):
         r"""Returns the L2 norm of the Hilbert space vector or the Hilbert-Schmidt norm of a density matrix."""
         return self >> self.dual
 
-    def __and__(self, other: State) -> State:
-        r"""Tensor product of two states."""
-        if not set(self.wires).isdisjoint(other.wires):
-            raise ValueError("Modes must be disjoint")
-        return self.__class__(
-            self.representation & other.representation, modes=self.modes + other.modes
-        )
-
-    # TODO: do we want/need this?
-    # def __getitem__(self, item: int | Iterable) -> State:
-    #     r"""Re-initializes the state on an alternative set of modes"""
-    #     if isinstance(item, int):
-    #         item = [item]
-    #     elif isinstance(item, Iterable):
-    #         item = list(item)
-    #     else:
-    #         raise TypeError("item must be int or iterable")
-    #     if len(item) != self.num_modes:
-    #         raise ValueError(f"item must have length {self.num_modes}, got {len(item)} instead")
-    #     return self.__class__(self.representation, modes=item)
-    def substate(self, modes: int | Iterable) -> State:
-        return self.__class__(self.representation.trace(keep=modes), modes=modes)
+    def __getitem__(self, modes: int | Iterable) -> State:
+        r"""Re-initializes the state on an alternative set of modes"""
+        modes = [modes] if isinstance(modes, int) else [i for i in modes]
+        if len(modes) != self.num_modes:
+            raise ValueError(f"modes must have length {self.num_modes}, got {len(modes)} instead")
+        return self.__class__(self.representation, modes=modes)
 
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal. Modes and all."""
         return self.representation == other.representation and self.modes == other.modes
-
-    # def __rshift__(self, other: Transformation | State) -> State | complex:
-    #     r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
-    #     If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
-    #     """
-    #     connect([self, other])
-    #     return self.__class__(representation=contract([self, other]), modes=self.modes)
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
@@ -128,7 +80,8 @@ class State(CircuitComponent):
 
     def __add__(self, other: State):
         r"""Implements addition of states."""
-        assert self.modes == other.modes
+        if self.modes != other.modes:
+            raise ValueError("Modes must be the same")
         return self.__class__(self.representation + other.representation, modes=self.modes)
 
     def __rmul__(self, other: Union[int, float, complex]):
@@ -144,7 +97,9 @@ class State(CircuitComponent):
         r"""Implements multiplication of two objects."""
         if isinstance(other, (int, float, complex)):
             return other * self
-        modes = list(set(self.modes).union(set(other.modes)))
+        modes = [m for m in self.modes if m not in other.modes] + [
+            m for m in other.modes if m not in self.modes
+        ]
         return self.__class__(self.representation * other.representation, modes=modes)
 
     def __truediv__(self, other: Union[int, float, complex]):
@@ -235,43 +190,90 @@ class DM(State):
         super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes)
 
     @classmethod
-    def from_abc(cls, A, b, c, modes, name="DM"):
-        return cls(BargmannExp(A, b, c), modes, name=name)
+    def from_bargmann(cls, A, b, c, modes):
+        return cls(Bargmann(A, b, c), modes)
 
     @classmethod
-    def from_phase_space(cls, cov, mean, modes, s=1, characteristic=False, name="DM"):
-        r"""General constructor for density matrices in phase space representation.
+    def from_phase_space(cls, cov, means, modes, s=1, characteristic=False, name="DM"):
+        r"""General constructor for density matrices from phase space representation.
 
         Args:
             cov (Batch[ComplexMatrix]): the covariance matrix
-            mean (Batch[ComplexVector]): the vector of means
+            means (Batch[ComplexVector]): the vector of means
             modes (Sequence[int]): the modes of the state
             s (float): the parameter of the phase space representation
             characteristic (bool): whether from the characteristic function
             name (str): the name of the state
         """
-        A, b, c = physics.bargmann.from_phase_space_dm(cov, mean, s, characteristic)
-        return cls(
-            BargmannExp(A, b, c), modes, name=name
-        )  # TODO replace with more general Bargmann repr (e.g. poly x exp) when ready
+        A, b, c = physics.bargmann.dm_from_phase_space(cov, means, s, characteristic)
+        # TODO replace with more general Bargmann repr (e.g. poly x exp) when ready
+        return cls(Bargmann(A, b, c), modes, name=name)
 
     @classmethod
     def from_fock(cls, fock_array, modes, name="DM"):
         return cls(FockArray(fock_array), modes, name=name)
 
-    @classmethod  # NOTE DO we really want this?
-    def from_wf(cls, coords, wf_array):
-        return cls(WaveFunctionDM(coords, wf_array))
+    @classmethod
+    def from_quadrature(cls, cov, means, modes, name="DM"):
+        r"""General constructor for density matrices from quadrature representation."""
+        A, b, c = physics.bargmann.dm_from_quadrature(cov, means)
+        return cls(Bargmann(A, b, c), modes, name=name)
 
-    @trainable_property
-    def probability(self) -> float:  # TODO: make lazy if backend is not TF?
-        connect(self.output.ket, self.output.bra)  # TODO they remain connected though
-        return math.real(contract([self]))
+    def __rshift__(self, other: CircuitComponent) -> DM | CircuitComponent:
+        r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
+        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
+        """
+        # 1) check if rshift is possible
+        common = set(self.wires.output.modes).intersection(other.wires.input.modes)
+        if not (set(self.wires.output.modes) - common).isdisjoint(other.wires.output.modes):
+            raise ValueError("Output modes must be disjoint")
+        if not set(self.wires.input.modes).isdisjoint(set(other.wires.input.modes) - common):
+            raise ValueError("Input modes must be disjoint")
+        # 2) add bra/ket if needed
+        if not other.wires[common].input.bra:  # we want to check common to avoid unnecessary adjoints
+            return self >> (other & other.adjoint)
+        if not other.wires[common].input.ket:  # rarer case, but possible
+            return self >> (other.adjoint & other)
+        self = self.light_copy()  # new wires
+        other = other.light_copy()  # new wires
+        self.wires[common].output.ids = other.wires[common].input.ids
+        self_idx = self.wires[common].output.indices
+        other_idx = other.wires[common].input.indices
+        # 3) convert bargmann->fock if needed
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
+            shape = [s if i in self_idx else None for i, s in enumerate(other.representation.shape)]
+            self.representation = self.representation.to_fock(shape=shape)
+        if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+            shape = [s if i in other_idx else None for i, s in enumerate(self.representation.shape)]
+            other.representation = other.representation.to_fock(shape=shape)
+        # 4) apply rshift
+        new_repr = self.representation[self_idx] @ other.representation[other_idx]
+        before_ids = [id for id in self.wires.ids+other.wires.ids if id not in self.wires[common].output.ids]
+        after_ids = (self.wires >> other.wires).ids  # automatically yields the right order of ids
+        order = [before_ids.index(id) for id in after_ids]
+        new_repr = new_repr.reorder(order)
+        return self.__class__(representation=new_repr, modes=self.modes)
 
-    @trainable_property
+    def substate(self, modes: list[int]) -> State:
+        return self.__class__(self.representation.trace(keep=modes), modes=modes)
+
+    def __and__(self, other: State) -> State:
+        r"""Tensor product of two states."""
+        if not set(self.wires.modes).isdisjoint(other.wires.modes):
+            raise ValueError("Wires must be disjoint")
+        representation = self.representation & other.representation
+        ids = (self.wires >> other.wires).ids
+        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
+        return self.__class__(representation, modes=self.modes + other.modes)
+
+    @trainable_lazy_property
+    def probability(self) -> float:  
+        return self.representation.trace(self.wires.output.ket.indices, self.wires.output.bra.indices)
+
+    @trainable_lazy_property
     def purity(self) -> float:
         normalized = self / self.probability
-        return normalized.L2_norm  # NOTE: for density matrices it's the purity
+        return normalized.L2_norm
 
     def to_phase_space(self, s=1, characteristic=False):
         r"""Returns the density matrix converted to s-parametrized phase space representation.
@@ -292,7 +294,7 @@ class DM(State):
 
 
 class Ket(State):
-    def __init__(self, representation, modes, name):
+    def __init__(self, representation: Representation, modes, name):
         self.representation = representation
         super().__init__(name=name, modes_out_ket=modes)  # Tensor init
 
@@ -343,7 +345,7 @@ class Ket(State):
 
     def from_fock(self, fock_array):  # TODO check if code already exists
         return self.__class__(FockKet(fock_array), self.modes, name=self.name)
-    
+
     def to_fock(
         self,
         max_prob: Optional[float] = None,
@@ -372,8 +374,19 @@ class Ket(State):
         )
         return self.__class__(representation=fock_repr, modes=self.modes)
 
-    def from_wf(self, qs, wf_q_array): # TODO check if code already exists
+    def from_wf(self, qs, wf_q_array):  # TODO check if code already exists
         return self.__class__(WaveFunctionKet(qs, wf_q_array), self.modes, name=self.name)
+
+    def substate(self, modes: int | Iterable) -> State:
+        return self.__class__(self.representation.trace(keep=modes), modes=modes)
+
+    def __and__(self, other: State) -> State:  # TODO: needs to be in Ket and DM
+        r"""Tensor product of two states."""
+        if not set(self.wires).isdisjoint(other.wires):
+            raise ValueError("Modes must be disjoint")
+        representation = self.representation & other.representation
+        representation = representation.reorder()  # see? needs to be in Ket and DM
+        return self.__class__(representation, modes=self.modes + other.modes)
 
     @property
     def purity(self) -> float:

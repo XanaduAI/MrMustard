@@ -224,7 +224,7 @@ class Wires:
         return self._view(masked_rows=idxs)
 
     def __lshift__(self, other: Wires) -> Wires:
-        return (other.dual >> self.dual).dual
+        return (other.dual >> self.dual).dual  # how cool is this
 
     def __rshift__(self, other: Wires) -> Wires:
         r"""Returns a new Wires object with the wires of self and other combined as two

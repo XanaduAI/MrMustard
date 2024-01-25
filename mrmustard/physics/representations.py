@@ -90,6 +90,12 @@ class Representation:
         Takes the outer product of this representation with another.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
+    
+    def trace(self, idx1: list[int], idx2: list[int]) -> complex:
+        r"""
+        Computes the partial trace of this representation across the given indices.
+        """
+        raise NotImplementedError
 
 
 class Bargmann(Representation):
@@ -127,7 +133,7 @@ class Bargmann(Representation):
             psi5 = psi1 & psi2  # outer product (tensor product)
             rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
             assert rho.A.shape == (1, 2, 2)  # we have two wires now
-            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)  
+            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
 
 
     Args:
@@ -224,26 +230,26 @@ class Bargmann(Representation):
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
-        Example: ``myobj.trace((0, 1), (7, 3))`` traces 0 with 7 and 1 with 3.
-        The remaining indices are kept in the same order: 2,4,5,6,8,...
+        Example: self has indices from 0 to 8 and ``myobj.trace((0, 1), (7, 3))`` traces 0 with 7 and 1 with 3.
+        The leftover indices are kept in the same order: 2,4,5,6,8.
 
         Args:
             idx_z: indices to trace over
             idx_zconj: indices to trace over
 
         Returns:
-            Bargmann: A new Bargmann object with the remaining indices.
+            Bargmann: A new Bargmann object with the leftover indices.
         """
-        if self.ansatz.degree > 0:
+        if sum(self.ansatz.degree) > 0:
             raise NotImplementedError(
-                "Partial trace is only supported for ansatze with polynomial of degree ``0``."
+                "Partial trace is only supported for ansatze with polynomial of degree ``0`` (scalar)."
             )
         if len(idx_z) != len(idx_zconj):
             msg = f"The number of indices to trace over must be the same for ``z`` and ``z*`` (got {len(idx_z)} and {len(idx_zconj)})."
             raise ValueError(msg)
         A, b, c = [], [], []
-        for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+        for Abc in zip(self.A, self.b, self.c):
+            Aij, bij, cij = bargmann.complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
