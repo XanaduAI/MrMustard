@@ -16,11 +16,36 @@
 
 import numpy as np
 
+from mrmustard import math
+from mrmustard.physics.representations import Bargmann
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.simulator import Simulator
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.lab_dev.wires import Wires
 
+
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+def identity(mode: int):
+    r"""
+    A trivial one-mode component with wires on ket and bra sides and on input and
+    output sides that applies the identity.
+    """
+    wires = Wires([mode], [mode], [mode], [mode])
+    A = np.zeros_like(shape=(2, 2), dtype=math.complex128)
+    B = np.zeros_like(shape=(2,), dtype=math.complex128)
+    C = 1.0 + 0j
+    representation = Bargmann(A, B, C)
+    CircuitComponent.from_attributes("id", wires, representation)
+
+
+# ~~~~~
+# Tests
+# ~~~~~
 
 class TestSimulator:
     r"""
