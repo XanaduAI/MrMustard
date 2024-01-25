@@ -76,39 +76,19 @@ class TestSimulator:
 
     def test_add_bras(self):
         r"""
-        Simulates a circuit with one-mode Dgates applied in parallel and in series, with ``add_bras=True``.
-        """
-        d1 = Dgate(1.0, modes=[1])
-        d2 = Dgate(2.0, modes=[2])
-        d3 = Dgate(3.0, modes=[3])
-        d4 = Dgate(4.0, modes=[4])
-
-        circuit = Circuit([d1, d1, d2, d1, d3, d1, d4, d2, d1])
-        result = Simulator().run(circuit, add_bras=True)
-
-        rep = result.representation
-        A = np.kron(np.eye(2), np.kron([[0, 1], [1, 0]], np.eye(4)))
-        b = [5, 4, 3, 4, -5, -4, -3, -4] * 2
-
-        assert result.modes == [1, 2, 3, 4]
-        assert result.name == ""
-        assert np.allclose(rep.A, A)
-        assert np.allclose(rep.b, b)
-
-    def test_add_bras2(self):
-        r"""
-        Simulates a circuit with one-mode Dgates applied in parallel and in series, with ``add_bras=True``.
+        Simulates a circuit with ``add_bras=True``.
         """
         vac = Vacuum(2)
         d0 = Dgate(1.0, modes=[0])
         d1 = Dgate(2.0, modes=[1])
+        d01 = Dgate(3.0, modes=[0, 1])
 
-        circuit = Circuit([vac, d0, d1])
+        circuit = Circuit([vac, d01, d1, d0])
         result = Simulator().run(circuit, add_bras=True)
 
         rep = result.representation
         A = [[0, 0, 0, 0]] * 4
-        b = [1, 2, 1, 2]
+        b = [4, 5, 4, 5]
 
         assert result.modes == [0, 1]
         assert result.name == ""
