@@ -15,7 +15,6 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
-from hmac import new
 
 from typing import (
     TYPE_CHECKING,
@@ -28,25 +27,15 @@ import numpy as np
 
 from mrmustard import physics
 from mrmustard import settings
-from mrmustard.lab_dev.utils import trainable_lazy_property
+from mrmustard.lab_dev.transformations import Transformation
+from mrmustard.lab_dev.utils import lazy_if_numpy
 from mrmustard import math
-from mrmustard.physics.representations import Representation
+from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 
 class State(CircuitComponent):
     r"""Mixin class for quantum states. It supplies common functionalities and properties of all states."""
-
-    # def __getattr__(self, name):  # TODO: do we want this?
-    #     r"""Searches for the attribute in the representation, if it is not found in self (Ket or DM).
-    #     Useful to expose the attributes of the representation without additional code.
-    #     """
-    #     try:
-    #         return getattr(self.representation, name)
-    #     except AttributeError as e:
-    #         raise AttributeError(
-    #             f"Attribute {name} not found in {self.__class__.__qualname__} or its representation"
-    #         ) from e
 
     @property
     def is_mixed(self):
@@ -58,7 +47,7 @@ class State(CircuitComponent):
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
 
-    @trainable_lazy_property
+    @lazy_if_numpy
     def L2_norm(self) -> float:
         r"""Returns the L2 norm of the Hilbert space vector or the Hilbert-Schmidt norm of a density matrix."""
         return self >> self.dual
@@ -76,12 +65,12 @@ class State(CircuitComponent):
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
-        return (other.dual >> self.dual).dual
+        return (other.dual >> self.dual).dual  # >> is implemented in DM and Ket
 
     def __add__(self, other: State):
         r"""Implements addition of states."""
         if self.modes != other.modes:
-            raise ValueError("Modes must be the same")
+            raise ValueError(f"Can't add states on different modes (got {self.modes} and {other.modes})")
         return self.__class__(self.representation + other.representation, modes=self.modes)
 
     def __rmul__(self, other: Union[int, float, complex]):
@@ -110,33 +99,13 @@ class State(CircuitComponent):
         assert isinstance(other, (int, float, complex))
         return self.__class__(self.representation / other, modes=self.modes)
 
-    def to_bargmann(self):
-        r"""Converts the representation of the state to Bargmann Representation and returns self.
+    def bargmann(self):
+        r"""Returns the bargmann parameters.
 
         Returns:
-            State: the converted state with the target Bargmann Representation
+            tuple[np.ndarray, np.ndarray, complex]: the bargmann parameters
         """
-        return self.__class__(self.representation.to_bargmann(), modes=self.modes)
-
-    def to_quadrature(self, angle: float):
-        r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
-        Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
-
-        Args:
-            angle (optional float): The quadrature angle.
-
-        Returns:
-            State: the converted state with the target quadrature representation
-        """
-        kernel = physics.bargmann.quadrature_kernel(angle, dim=self.representation.dimension)
-        kernel_adj = kernel.input.ket.adjoint
-        connect(self.output.ket, kernel.input.ket)
-        connect(self.output.bra, kernel_adj)
-        self.representation._contract_idxs = self.connected_idxs
-        kernel.representation._contract_idxs = kernel.connected_idxs
-        kernel_adj.representation._contract_idxs = kernel_adj.connected_idxs
-
-        return self.__class__(self.representation @ kernel @ kernel_adj, modes=self.modes)
+        return self.representation.A, self.representation.b, self.representation.c
 
     @staticmethod  # TODO: move away from here?
     def _format_probability(prob: Optional[float]) -> str:
@@ -167,34 +136,39 @@ class State(CircuitComponent):
             graphics.mikkel_plot(math.asnumpy(self.to_Fock(0.999).representation))
 
         return table
-
-    @trainable_property
+    
+    @lazy_if_numpy
     def cov(self):
         r"""Covariance matrix of the Gaussian distribution. Available only if the representation is continuous."""
-        cov_complex = self.to_phase_space(s=1, characteristic=True).representation.A
-        R = math.Rmat(self.representation.dimension)
-        return math.matmul(math.dagger(R), cov_complex, R) * settings.HBAR
+        return Abc_to_sigmamu(*self.phasespace(1, False))[0]
 
-    @trainable_property
+    @lazy_if_numpy
     def mean(self):  # TODO check if this is correct
         r"""Mean of the Gaussian distribution. Available only if the representation is continuous."""
-        wigner = self.to_phase_space(s=1, characteristic=False).representation
-        mean_complex = -math.matvec(wigner.A, wigner.b)
-        R = math.Rmat(self.representation.dimension)
-        return math.matmul(math.dagger(R), mean_complex) * math.sqrt(settings.HBAR)
+        return Abc_to_sigmamu(*self.phasespace(1, False))[1]
+
 
 
 class DM(State):
-    def __init__(self, representation, modes, name):
-        self.representation = representation
+    def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "DM"):
+        self._representation = representation
         super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes)
 
+    @lazy_if_numpy
+    def probability(self) -> float:  
+        return self.representation.trace(self.wires.output.ket.indices, self.wires.output.bra.indices)
+
+    @lazy_if_numpy
+    def purity(self) -> float:
+        normalized = self / self.probability
+        return normalized.L2_norm
+    
     @classmethod
     def from_bargmann(cls, A, b, c, modes):
         return cls(Bargmann(A, b, c), modes)
 
     @classmethod
-    def from_phase_space(cls, cov, means, modes, s=1, characteristic=False, name="DM"):
+    def from_phasespace(cls, cov, means, modes, s=1, characteristic=False, name="DM"):
         r"""General constructor for density matrices from phase space representation.
 
         Args:
@@ -209,73 +183,8 @@ class DM(State):
         # TODO replace with more general Bargmann repr (e.g. poly x exp) when ready
         return cls(Bargmann(A, b, c), modes, name=name)
 
-    @classmethod
-    def from_fock(cls, fock_array, modes, name="DM"):
-        return cls(FockArray(fock_array), modes, name=name)
-
-    @classmethod
-    def from_quadrature(cls, cov, means, modes, name="DM"):
-        r"""General constructor for density matrices from quadrature representation."""
-        A, b, c = physics.bargmann.dm_from_quadrature(cov, means)
-        return cls(Bargmann(A, b, c), modes, name=name)
-
-    def __rshift__(self, other: CircuitComponent) -> DM | CircuitComponent:
-        r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
-        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
-        """
-        # 1) check if rshift is possible
-        common = set(self.wires.output.modes).intersection(other.wires.input.modes)
-        if not (set(self.wires.output.modes) - common).isdisjoint(other.wires.output.modes):
-            raise ValueError("Output modes must be disjoint")
-        if not set(self.wires.input.modes).isdisjoint(set(other.wires.input.modes) - common):
-            raise ValueError("Input modes must be disjoint")
-        # 2) add bra/ket if needed
-        if not other.wires[common].input.bra:  # we want to check common to avoid unnecessary adjoints
-            return self >> (other & other.adjoint)
-        if not other.wires[common].input.ket:  # rarer case, but possible
-            return self >> (other.adjoint & other)
-        self = self.light_copy()  # new wires
-        other = other.light_copy()  # new wires
-        self.wires[common].output.ids = other.wires[common].input.ids
-        self_idx = self.wires[common].output.indices
-        other_idx = other.wires[common].input.indices
-        # 3) convert bargmann->fock if needed
-        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
-            shape = [s if i in self_idx else None for i, s in enumerate(other.representation.shape)]
-            self.representation = self.representation.to_fock(shape=shape)
-        if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
-            shape = [s if i in other_idx else None for i, s in enumerate(self.representation.shape)]
-            other.representation = other.representation.to_fock(shape=shape)
-        # 4) apply rshift
-        new_repr = self.representation[self_idx] @ other.representation[other_idx]
-        before_ids = [id for id in self.wires.ids+other.wires.ids if id not in self.wires[common].output.ids]
-        after_ids = (self.wires >> other.wires).ids  # automatically yields the right order of ids
-        order = [before_ids.index(id) for id in after_ids]
-        new_repr = new_repr.reorder(order)
-        return self.__class__(representation=new_repr, modes=self.modes)
-
-    def substate(self, modes: list[int]) -> State:
-        return self.__class__(self.representation.trace(keep=modes), modes=modes)
-
-    def __and__(self, other: State) -> State:
-        r"""Tensor product of two states."""
-        if not set(self.wires.modes).isdisjoint(other.wires.modes):
-            raise ValueError("Wires must be disjoint")
-        representation = self.representation & other.representation
-        ids = (self.wires >> other.wires).ids
-        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
-        return self.__class__(representation, modes=self.modes + other.modes)
-
-    @trainable_lazy_property
-    def probability(self) -> float:  
-        return self.representation.trace(self.wires.output.ket.indices, self.wires.output.bra.indices)
-
-    @trainable_lazy_property
-    def purity(self) -> float:
-        normalized = self / self.probability
-        return normalized.L2_norm
-
-    def to_phase_space(self, s=1, characteristic=False):
+    @lazy_if_numpy
+    def phasespace(self, s=1, characteristic=False):
         r"""Returns the density matrix converted to s-parametrized phase space representation.
 
         Args:
@@ -286,24 +195,127 @@ class DM(State):
         Returns:
             DM: the converted DM in the phase space representation
         """
-        assert s in [1, 0, -1]
-        Delta = physics.bargmann.siegel_weil_kernel(s, dim=self.representation.dimension)
-        connect(self.output.ket, Delta.input.ket)
-        connect(self.output.bra, Delta.input.bra)
-        return self.__class__(contract([self, Delta]), modes=self.modes)
+        Abc = (self >> SWKernel(s, characteristic, modes=self.modes)).bargmann()
+        return Abc_to_sigmamu(Abc)
+    
+    @classmethod
+    def from_quadrature(cls, cov, means, modes, name="DM"):
+        r"""General constructor for density matrices from quadrature representation."""
+        A, b, c = physics.bargmann.dm_from_quadrature(cov, means)
+        return cls(Bargmann(A, b, c), modes, name=name)
+    
+    @lazy_if_numpy
+    def quadrature(self, angle: float) -> tuple[Matrix, Vector]:
+        r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
+        Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
+
+        Args:
+            angle (optional float): The quadrature angle.
+
+        Returns:
+            tuple[Matrix, Vector]: the quadrature representation of the state
+        """
+        # transform Abc as in Yuan's notes
+        # call physics.bargmann.real_gaussian_integral (get it back from previous commits)
+        # Abc -> sigma,mu
+        raise NotImplementedError
+
+    @classmethod
+    def from_fock(cls, fock_array, modes, name="DM"):
+        return cls(Fock(fock_array), modes, name=name)
+    
+    @lazy_if_numpy
+    def fock(self, shape: Optional[List[int]] = None):
+        r"""Converts the representation of the DM to Fock representation.
+
+        Args:
+            shape (optional List[int]): The shape of the desired Fock tensor. If None it is guessed automatically.
+
+        Returns:
+            State: the converted state with the target Fock Representation
+        """
+        if isinstance(self.representation, Fock):
+            return self.array
+        if shape is None:
+            cutoffs = physics.fock.autocutoffs(*self.phasespace(1,False), 0.9999)
+            shape = cutoffs + cutoffs
+        return math.hermite_renormalized(self.representation.A, self.representation.b, self.representation.c, shape)
+
+    def substate(self, modes: list[int]) -> State:
+        return DM((self & self.adjoint).representation.trace(keep=modes), modes=modes)
+
+    def __and__(self, other: State) -> State:
+        r"""Tensor product of two states."""
+        if not set(self.wires.modes).isdisjoint(other.wires.modes):
+            raise ValueError("Wires must be disjoint")
+        representation = self.representation & other.representation
+        ids = (self.wires + other.wires).ids
+        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
+        return self.__class__(representation, modes=sorted(self.modes + other.modes))
+
+    def __rshift__(self, other: CircuitComponent) -> DM | CircuitComponent:
+        r"""If `other` is a transformation, it is applied to self, e.g. ``Thermal(0.5) >> Sgate(r=0.1)``.
+        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
+        """
+        # 1) check if rshift is possible
+        common = set(self.wires.output.modes).intersection(other.wires.input.modes)
+        if not (set(self.wires.output.modes) - common).isdisjoint(other.wires.output.modes):
+            raise ValueError("Output modes must be disjoint")
+        if not set(self.wires.input.modes).isdisjoint(set(other.wires.input.modes) - common):
+            raise ValueError("Input modes must be disjoint")
+        # 2) add bra/ket if needed
+        if other.wires[common].input.bra:  # we want to check common to avoid unnecessary adjoints
+            return (self & self.adjoint) >> other
+        if other.wires[common].input.ket:  # rarer case, but possible
+            return self >> (other.adjoint & other)
+        self = self.light_copy()  # new wires
+        other = other.light_copy()  # new wires
+        self.wires[common].output.ids = other.wires[common].input.ids
+        self_idx = self.wires[common].output.indices
+        other_idx = other.wires[common].input.indices
+        # 3) convert bargmann->fock if needed
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
+            shape = [s if i in self_idx else None for i, s in enumerate(other.representation.shape)]
+            self._representation = self.representation.to_fock(shape=shape)
+        if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+            shape = [s if i in other_idx else None for i, s in enumerate(self.representation.shape)]
+            other._representation = other.representation.to_fock(shape=shape)
+        # 4) apply rshift
+        new_repr = self.representation[self_idx] @ other.representation[other_idx]
+        before_ids = [id for id in self.wires.ids+other.wires.ids if id not in self.wires[common].output.ids]
+        after_ids = (self.wires >> other.wires).ids  # automatically yields the right order of ids
+        order = [before_ids.index(id) for id in after_ids]
+        new_repr = new_repr.reorder(order)
+        return self.__class__(representation=new_repr, modes=self.modes)
+
+
+
+
 
 
 class Ket(State):
-    def __init__(self, representation: Representation, modes, name):
-        self.representation = representation
-        super().__init__(name=name, modes_out_ket=modes)  # Tensor init
+    def __init__(self, representation: Bargmann | Fock, modes, name):
+        self._representation = representation
+        super().__init__(name=name, modes_out_ket=modes)
+
+    @lazy_if_numpy
+    def probability(self) -> float:
+        return self.L2_norm()
+
+    @property
+    def purity(self) -> float:
+        return 1.0
 
     @classmethod
-    def from_abc(cls, A, b, c, modes, name="Ket"):
-        return cls(BargmannExp(A, b, c), modes, name=name)
+    def from_bargmann(cls, A, b, c, modes, name="Ket"):
+        B = Bargmann(A, b, c)
+        n = B.A.shape[-1]
+        if n // 2 != len(modes) or n % 2 == 1:
+            raise ValueError(f"A matrix and/or modes are wrong")
+        return cls(B, modes, name=name)
 
     @classmethod
-    def from_phase_space(
+    def from_phasespace(
         cls, cov, mean, modes, s=1, characteristic=True, name="Ket", pure_check=True
     ):
         r"""General constructor for kets in phase space representation.
@@ -319,10 +331,11 @@ class Ket(State):
         """
         if pure_check and physics.gaussian.purity(cov) < 1.0 - settings.PURITY_ATOL:
             raise ValueError("Initializing a Ket using a mixed state is not allowed")
-        A, b, c = physics.bargmann.from_phase_space_ket(cov, mean, s, characteristic)
-        return cls(BargmannExp(A, b, c), modes, name=name)
+        A, b, c = physics.bargmann.ket_from_phase_space(cov, mean, s, characteristic)
+        return cls(Bargmann(A, b, c), modes, name=name)
 
-    def to_phase_space(self, s=1, characteristic=False):
+    @lazy_if_numpy
+    def phasespace(self, s=1, characteristic=False):
         r"""Returns the density matrix converted to s-parametrized phase space representation.
         Note that this actually is the s-parametrized phase space representation of the
         pure density matrix |self><self|.
@@ -335,18 +348,13 @@ class Ket(State):
         Returns:
             DM: the converted DM in the phase space representation
         """
-        assert s in [1, 0, -1]
-        # TODO: write SW kernel
-        Delta = physics.bargmann.siegel_weil_kernel(s, dim=self.representation.dimension)
-        self_bra = self.adjoint
-        connect(self.output.ket, Delta.input.ket)
-        connect(self_bra.output.bra, Delta.input.bra)
-        return self.__class__(contract([self, self_bra, Delta]), modes=self.modes)
+        Abc = ((self & self.adjoint) >> SWKernel(s, characteristic, modes=self.modes)).bargmann()
 
     def from_fock(self, fock_array):  # TODO check if code already exists
         return self.__class__(FockKet(fock_array), self.modes, name=self.name)
 
-    def to_fock(
+    @lazy_if_numpy
+    def fock(
         self,
         max_prob: Optional[float] = None,
         max_photons: Optional[int] = None,
@@ -364,34 +372,84 @@ class Ket(State):
         Returns:
             State: the converted state with the target Fock Representation
         """
-        bargmann = self.to_bargmann().representation
-        math.hermite_renormalized(bargmann.A, bargmann.b, bargmann.c, shape)
-        fock_repr = FockKet.from_bargmann(bargmann, max_prob, max_photons, shape)
-        fock_repr = self.representation.to_fock(
-            max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
-            max_photons=max_photons,
-            shape=shape,
-        )
-        return self.__class__(representation=fock_repr, modes=self.modes)
+        if isinstance(self.representation, Fock):
+            return self.array
+        if shape is None:
+            shape = physics.fock.autocutoffs(*self.phasespace(1,False), max_prob or settings.AUTOCUTOFF_PROBABILITY)
+        return math.hermite_renormalized(self.representation.A, self.representation.b, self.representation.c, shape)
 
-    def from_wf(self, qs, wf_q_array):  # TODO check if code already exists
-        return self.__class__(WaveFunctionKet(qs, wf_q_array), self.modes, name=self.name)
+    def from_quadrature(self, cov, means, modes, name="Ket"):
+        r"""General constructor for kets in quadrature representation."""
+        A, b, c = physics.bargmann.ket_from_quadrature(cov, means)
+        return self.__class__(Bargmann(A, b, c), modes, name=name)
+    
+    @lazy_if_numpy
+    def quadrature(self, angle: float) -> tuple[Matrix, Vector]:
+        r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
+        Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
+
+        Args:
+            angle (optional float): The quadrature angle.
+
+        Returns:
+            tuple[Matrix, Vector]: the quadrature representation of the state
+        """
+        # transform Abc as in Yuan's notes
+        # call physics.bargmann.real_gaussian_integral (get it back from previous commits)
+        # Abc -> sigma,mu
+        raise NotImplementedError
 
     def substate(self, modes: int | Iterable) -> State:
         return self.__class__(self.representation.trace(keep=modes), modes=modes)
 
-    def __and__(self, other: State) -> State:  # TODO: needs to be in Ket and DM
+    def __and__(self, other: Ket) -> Ket:  # TODO: needs to be in Ket and DM
         r"""Tensor product of two states."""
-        if not set(self.wires).isdisjoint(other.wires):
+        if not isinstance(other, Ket):
+            raise ValueError("Can only tensor with other Kets")
+        if not set(self.wires.modes).isdisjoint(other.wires.modes):
             raise ValueError("Modes must be disjoint")
         representation = self.representation & other.representation
-        representation = representation.reorder()  # see? needs to be in Ket and DM
-        return self.__class__(representation, modes=self.modes + other.modes)
+        ids = (self.wires >> other.wires).ids
+        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
+        return self.__class__(representation, modes=sorted(self.modes + other.modes))
 
-    @property
-    def purity(self) -> float:
-        return 1.0
-
-    @trainable_property
-    def probability(self) -> float:
-        return self.L2_norm
+    def __rshift__(self, other: State | Transformation) -> Ket | DM | CircuitComponent:
+        r"""If `other` is a transformation, it is applied to self, e.g. ``Thermal(0.5) >> Sgate(r=0.1)``.
+        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
+        """
+        # 1) check if rshift is possible
+        common = set(self.wires.output.modes).intersection(other.wires.input.modes)
+        if not (set(self.wires.output.modes) - common).isdisjoint(other.wires.output.modes):
+            raise ValueError("Output modes must be disjoint")
+        if not set(self.wires.input.modes).isdisjoint(set(other.wires.input.modes) - common):
+            raise ValueError("Input modes must be disjoint")
+        # 2) add bra/ket if needed
+        if other.wires[common].input.ket and other.wires[common].input.bra:  # we want to check common to avoid unnecessary adjoints
+            return (self.adjoint & self) >> other
+        new_repr = self._safe_rshift(self, other)
+        if not other.wires[common].input.bra:
+            return Ket(representation=new_repr, modes=self.modes)
+        return DM(representation=new_repr, modes=self.modes)
+        
+    
+    def _safe_rshift(self, other: State | Transformation) -> Matrix:
+        r"""like rshift but it has already checked that it is safe to apply rshift"""
+        self = self.light_copy()  # new wires
+        other = other.light_copy()  # new wires
+        self.wires[common].output.ids = other.wires[common].input.ids
+        self_idx = self.wires[common].output.indices
+        other_idx = other.wires[common].input.indices
+        # 3) convert bargmann->fock if needed
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
+            shape = [s if i in self_idx else None for i, s in enumerate(other.representation.shape)]
+            self._representation = self.representation.to_fock(shape=shape)
+        if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+            shape = [s if i in other_idx else None for i, s in enumerate(self.representation.shape)]
+            other._representation = other.representation.to_fock(shape=shape)
+        # 4) apply rshift
+        new_repr = self.representation[self_idx] @ other.representation[other_idx]
+        before_ids = [id for id in self.wires.ids+other.wires.ids if id not in self.wires[common].output.ids]
+        after_ids = (self.wires >> other.wires).ids  # automatically yields the right order of ids
+        order = [before_ids.index(id) for id in after_ids]
+        return new_repr.reorder(order)
+        
