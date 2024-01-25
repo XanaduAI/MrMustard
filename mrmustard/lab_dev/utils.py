@@ -54,7 +54,7 @@ def light_copy(obj, duplicate: list[str]):
     return instance
 
 
-def trainable_lazy_property(func):
+def lazy_if_numpy(func):
     r"""
     Decorator that makes a property lazily evaluated or not depending on the settings.BACKEND flag.
     If settings.BACKEND is tensorflow, we need the property to be re-evaluated every time it is accessed
@@ -74,7 +74,7 @@ def trainable_lazy_property(func):
 
         @wraps(func)
         @property
-        def _trainable_lazy_property(self):
+        def _lazy_if_numpy(self):
             r"""
             Property getter that lazily evaluates its value. Computes the value only on the first
             call and caches the result in a private attribute for future access.
@@ -87,12 +87,12 @@ def trainable_lazy_property(func):
             return getattr(self, attr_name)
 
     elif settings.BACKEND == "tensorflow":
-        _trainable_lazy_property = property(func)
+        _lazy_if_numpy = property(func)
 
     else:
         raise ValueError(f"Unknown backend {settings.BACKEND}.")
 
-    return _trainable_lazy_property
+    return _lazy_if_numpy
 
 
 class HasWires(Protocol):
