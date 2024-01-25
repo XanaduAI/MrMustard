@@ -16,7 +16,6 @@ r"""
 Tests for circuit components.
 """
 
-from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.circuit_components import connect, add_bra
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator

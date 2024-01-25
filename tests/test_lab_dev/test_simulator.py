@@ -22,30 +22,9 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.simulator import Simulator
 from mrmustard.lab_dev.states import Vacuum
-from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.lab_dev.wires import Wires
 
-
-# ~~~~~~~
-# Helpers
-# ~~~~~~~
-
-def identity(mode: int):
-    r"""
-    A trivial one-mode component with wires on ket and bra sides and on input and
-    output sides that applies the identity.
-    """
-    wires = Wires([mode], [mode], [mode], [mode])
-    A = np.zeros_like(shape=(2, 2), dtype=math.complex128)
-    B = np.zeros_like(shape=(2,), dtype=math.complex128)
-    C = 1.0 + 0j
-    representation = Bargmann(A, B, C)
-    CircuitComponent.from_attributes("id", wires, representation)
-
-
-# ~~~~~
-# Tests
-# ~~~~~
 
 class TestSimulator:
     r"""
@@ -112,6 +91,26 @@ class TestSimulator:
         b = [5, 4, 3, 4, -5, -4, -3, -4] * 2
 
         assert result.modes == [1, 2, 3, 4]
+        assert result.name == ""
+        assert np.allclose(rep.A, A)
+        assert np.allclose(rep.b, b)
+
+    def test_attenuator(self):
+        r"""
+        Simulates a circuit with a ket-only component (a Dgate) and a component with kets and bras
+        (an Attenuator).
+        """
+        d1 = Dgate(1.0, modes=[1])
+        att = Attenuator(1.0, modes=[1])
+
+        circuit = Circuit([d1, att])
+        result = Simulator().run(circuit)
+
+        rep = result.representation
+        A = np.kron(np.eye(2), d1.representation.A)
+        b = list(d1.representation.b[0]) * 2
+
+        assert result.modes == [1]
         assert result.name == ""
         assert np.allclose(rep.A, A)
         assert np.allclose(rep.b, b)
