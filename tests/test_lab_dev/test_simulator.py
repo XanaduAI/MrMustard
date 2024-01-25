@@ -95,6 +95,26 @@ class TestSimulator:
         assert np.allclose(rep.A, A)
         assert np.allclose(rep.b, b)
 
+    def test_add_bras2(self):
+        r"""
+        Simulates a circuit with one-mode Dgates applied in parallel and in series, with ``add_bras=True``.
+        """
+        vac = Vacuum(2)
+        d0 = Dgate(1.0, modes=[0])
+        d1 = Dgate(2.0, modes=[1])
+
+        circuit = Circuit([vac, d0, d1])
+        result = Simulator().run(circuit, add_bras=True)
+
+        rep = result.representation
+        A = [[0, 0, 0, 0]] * 4
+        b = [1, 2, 1, 2]
+
+        assert result.modes == [0, 1]
+        assert result.name == ""
+        assert np.allclose(rep.A, A)
+        assert np.allclose(rep.b, b)
+
     def test_attenuator(self):
         r"""
         Simulates a circuit with a ket-only component (a Dgate) and a component with kets and bras
