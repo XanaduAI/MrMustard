@@ -250,7 +250,7 @@ class Wires:
                 new_id_array[i] += self._mode(m)
             elif m in other.modes:
                 new_id_array[i] += other._mode(m)
-        return self._from_data(np.abs(new_id_array), sorted(all_modes), np.ones_like(new_id_array))
+        return self._from_data(np.abs(new_id_array), all_modes)
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
