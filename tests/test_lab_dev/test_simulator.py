@@ -108,7 +108,7 @@ class TestSimulator:
 
         rep = result.representation
         A = np.kron(np.eye(2), d1.representation.A)
-        b = [1.-2.j, -1.-2.j,  1.+2.j, -1.+2.j]
+        b = [1.0 - 2.0j, -1.0 - 2.0j, 1.0 + 2.0j, -1.0 + 2.0j]
 
         assert result.modes == [1]
         assert result.name == ""
