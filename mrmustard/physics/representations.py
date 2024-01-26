@@ -474,13 +474,13 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape)-1) if i not in idxs1 + idxs2]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idxs2) :])
-        new_array = math.reshape(new_array, new_array.shape[:-2 * len(idxs1)] + (n, n))
+        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
         return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
