@@ -144,22 +144,24 @@ class CircuitComponent:
 
     def adjoint(self) -> CircuitComponent:
         r"""
-        Light-copies this component, then returns the adjoint of it, obtained by switching
-        ket and bra wires.
+        Light-copies this component, then returns the adjoint of it, obtained by taking the
+        conjugate of the representation and switching ket and bra wires.
         """
         ret = self.light_copy()
         ret._name += "_adj"
         ret._wires = ret.wires.adjoint()
+        ret._representation = ret.representation.conj()
         return ret
 
     def dual(self) -> CircuitComponent:
         r"""
-        Light-copies this component, then returns the dual of it, obtained by switching
-        input and output wires.
+        Light-copies this component, then returns the dual of it, obtained by taking the
+        conjugate of the representation and switching input and output wires.
         """
         ret = self.light_copy()
         ret._name += "_dual"
         ret._wires = ret.wires.dual()
+        ret._representation = ret.representation.conj()
         return ret
 
     def light_copy(self) -> CircuitComponent:
