@@ -111,7 +111,7 @@ class Wires:
         w = cls()
         w._id_array = id_array if id_array is not None else w._id_array
         w._modes = modes if modes is not None else w._modes
-        w._mask = mask if mask is not None else w._mask
+        w._mask = mask if mask is not None else np.ones_like(w._id_array)
         return w
 
     def _view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
@@ -173,12 +173,77 @@ class Wires:
         "A view of this Wires object without ket wires"
         return self._view(masked_cols=(2, 3))
 
+    def add_connected(self, other) -> Wires:
+        """
+        Returns a new ``Wires`` that contains all the wires of ``self`` and ``other``, except for all
+        the output wires of ``self`` that are also input wires of ``other``.
+
+        The returned ``Wires`` corresponds to the ``Wires`` obtained by contracting the wires in common
+        between ``self`` and ``other``.
+
+        Raises:
+            ValueError: If one or more of the output wires of ``self`` that are also input wires of
+            ``other`` have different ids that the corresponding output wire of ``other``.
+        """
+        all_modes = sorted(set(self.modes) | set(other.modes))
+
+        ob = {m: 0 for m in all_modes}
+        ib = {m: 0 for m in all_modes}
+        ok = {m: 0 for m in all_modes}
+        ik = {m: 0 for m in all_modes}
+
+        msg = "Found the same wire with different ids."
+        for m in self.input.bra.modes:
+            ib[m] = self.input.bra[m].ids[0]
+        for m in self.output.bra.modes:
+            ob[m] = self.output.bra[m].ids[0]
+        for m in other.input.bra.modes:
+            if ob[m] == 0:
+                ib[m] = other.input.bra[m].ids[0]
+            elif ob[m] == other.input.bra[m].ids[0]:
+                ob[m] = 0
+            else:
+                raise ValueError(msg)
+        for m in other.output.bra.modes:
+            if ob[m] == 0:
+                ob[m] = other.output.bra[m].ids[0]
+            else:
+                raise ValueError(msg)
+
+        for m in self.input.ket.modes:
+            ik[m] = self.input.ket[m].ids[0]
+        for m in self.output.ket.modes:
+            ok[m] = self.output.ket[m].ids[0]
+        for m in other.input.ket.modes:
+            if ok[m] == 0:
+                ik[m] = other.input.ket[m].ids[0]
+            elif ok[m] == other.input.ket[m].ids[0]:
+                ok[m] = 0
+            else:
+                raise ValueError(msg)
+        for m in other.output.ket.modes:
+            if ok[m] == 0:
+                ok[m] = other.output.ket[m].ids[0]
+            else:
+                raise ValueError(msg)
+
+        combined_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in all_modes])
+
+        return self._from_data(combined_array, all_modes)
+
     def adjoint(self) -> Wires:
         r"""
         The adjoint of this wires object, with new ids.
         """
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return Wires(ok_modes, ik_modes, ob_modes, ib_modes)
+
+    def dual(self) -> Wires:
+        r"""
+        The dual of this wires object, with new ids.
+        """
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
+        return Wires(ib_modes, ob_modes, ik_modes, ok_modes)
 
     def copy(self) -> Wires:
         r"""A copy of this wire with new ids."""
@@ -188,10 +253,10 @@ class Wires:
 
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(
-            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
-        )
+        _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
+        modes = [self._modes[i] for i, row in enumerate(_id_array) if np.any(row != 0)]
+        rows = [self._modes.index(m) for m in modes]
+        return self._from_data(_id_array[rows], modes, self._mask[rows])
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
@@ -200,11 +265,10 @@ class Wires:
         for m in all_modes:
             self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
             other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
-            # if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
-            #     raise ValueError(f"wires overlap on mode {m}")
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
             modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
         combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
-        return self._from_data(None, sorted(modes_rows), np.ones_like(combined_array))
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
@@ -220,6 +284,10 @@ class Wires:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
         return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
 
+    def __repr__(self) -> str:
+        ob_modes, ib_modes, ok_modes, ik_modes = self._args()
+        return f"Wires({ob_modes}, {ib_modes}, {ok_modes}, {ik_modes})"
+
     def _repr_html_(self):  # pragma: no cover
         "A matrix plot of the id_array."
         row_labels = map(str, self._modes)
@@ -228,7 +296,6 @@ class Wires:
         idxs = (i for i in self.indices)
         box_size = "60px"  # Set the size of the squares
         html = '<table style="border-collapse: collapse; border: 1px solid black;">'
-
         # colors
         active = "#5b9bd5"
         inactive = "#d6e8f7"

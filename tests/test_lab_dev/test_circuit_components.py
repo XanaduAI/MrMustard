@@ -16,8 +16,7 @@ r"""
 Tests for circuit components.
 """
 
-from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.circuit_components import connect, add_bra
+from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 
@@ -111,12 +110,12 @@ class TestAddBra:
 
         assert isinstance(components[0], Vacuum)
         assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], Vacuum)
+        assert isinstance(components[1], CircuitComponent)
         assert not components[1].wires.ket and components[1].wires.bra
 
         assert isinstance(components[2], Dgate)
         assert components[2].wires.ket and not components[2].wires.bra
-        assert isinstance(components[3], Dgate)
+        assert isinstance(components[3], CircuitComponent)
         assert not components[3].wires.ket and components[3].wires.bra
 
     def test_ket_and_bra(self):
@@ -132,7 +131,7 @@ class TestAddBra:
 
         assert isinstance(components[0], Vacuum)
         assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], Vacuum)
+        assert isinstance(components[1], CircuitComponent)
         assert not components[1].wires.ket and components[1].wires.bra
 
         assert isinstance(components[2], Attenuator)
