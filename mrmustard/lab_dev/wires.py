@@ -222,7 +222,7 @@ class Wires:
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
-    
+
     def _mode(self, mode: int) -> np.array:
         "A slice of the id_array matrix at the given mode."
         return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
@@ -237,11 +237,15 @@ class Wires:
         """
         all_modes = set(self.modes) | set(other.modes)
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
-        for i,m in enumerate(sorted(all_modes)):
+        for i, m in enumerate(sorted(all_modes)):
             if m in self.modes and m in other.modes:
-                if bool(self[m].output.ket) != bool(other[m].input.ket) or bool(self[m].output.bra) != bool(other[m].input.bra):
+                if bool(self[m].output.ket) != bool(other[m].input.ket) or bool(
+                    self[m].output.bra
+                ) != bool(other[m].input.bra):
                     raise ValueError(f"wire mismatch on mode {m}")
-                new_id_array[i] += np.array([other._mode(m)[0], self._mode(m)[1], other._mode(m)[2], self._mode(m)[3]])
+                new_id_array[i] += np.array(
+                    [other._mode(m)[0], self._mode(m)[1], other._mode(m)[2], self._mode(m)[3]]
+                )
             elif m in self.modes:
                 new_id_array[i] += self._mode(m)
             elif m in other.modes:
