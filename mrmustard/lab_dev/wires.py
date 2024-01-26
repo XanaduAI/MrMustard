@@ -223,7 +223,7 @@ class Wires:
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
 
-    def _mode(self, mode: int) -> np.array:
+    def _mode(self, mode: int) -> np.ndarray:
         "A slice of the id_array matrix at the given mode."
         return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
 
