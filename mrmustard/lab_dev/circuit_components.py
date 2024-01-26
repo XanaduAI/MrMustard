@@ -81,6 +81,22 @@ class CircuitComponent:
         )
         return ret
 
+    @classmethod
+    def from_attributes(
+        cls,
+        name: str,
+        wires: Wires,
+        representation: Representation,
+    ):
+        r"""
+        Initializes a circuit component from its attributes (a name, a ``Wires``,
+        and a ``Representation``).
+        """
+        ret = CircuitComponent(name)
+        ret._wires = wires
+        ret._representation = representation
+        return ret
+
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
         Adds a parameter to this circuit component.
@@ -128,12 +144,24 @@ class CircuitComponent:
 
     def adjoint(self) -> CircuitComponent:
         r"""
-        Light-copies this component, then returns the adjoint of it, obtained by switching
-        ket and bra wires.
+        Light-copies this component, then returns the adjoint of it, obtained by taking the
+        conjugate of the representation and switching ket and bra wires.
         """
         ret = self.light_copy()
-        ret._name += "_adj"
-        ret._wires = ret.wires.adjoint
+        name = ret.name + "_adj"
+        wires = ret.wires.adjoint
+        representation = ret.representation.conj()
+        return CircuitComponent.from_attributes(name, wires, representation)
+
+    def dual(self) -> CircuitComponent:
+        r"""
+        Light-copies this component, then returns the dual of it, obtained by taking the
+        conjugate of the representation and switching input and output wires.
+        """
+        ret = self.light_copy()
+        ret._name += "_dual"
+        ret._wires = ret.wires.dual
+        ret._representation = ret.representation.conj()
         return ret
 
     def light_copy(self) -> CircuitComponent:

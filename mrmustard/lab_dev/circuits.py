@@ -24,7 +24,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .circuit_components import CircuitComponent, connect
+from .circuit_components import CircuitComponent, add_bra, connect
 
 __all__ = [
     "Circuit",
@@ -103,7 +103,12 @@ class Circuit:
         Returns:
             A figure showing the tensor network.
         """
-        components = connect(self.components)
+        components = self.components
+        for component in components:
+            if component.wires.bra:
+                components = add_bra(components)
+                break
+        components = connect(components)
 
         try:
             fn_layout = getattr(nx.drawing.layout, layout)

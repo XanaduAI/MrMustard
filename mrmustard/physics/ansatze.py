@@ -380,3 +380,117 @@ class PolyExpAnsatz(PolyExpBase):
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
         return self.__class__(As, bs, cs)
+
+
+class ArrayAnsatz(Ansatz):
+    r"""Represents the ansatz as a multidimensional array."""
+
+    def __init__(self, array: Batch[Tensor]):
+        r"""Note that the array is batched."""
+        self.array = math.astensor(array)
+
+    def __neg__(self) -> ArrayAnsatz:
+        r"""
+        Negates the values in the array.
+        """
+        return self.__class__(array=-self.array)
+
+    def __eq__(self, other: Ansatz) -> bool:
+        r"""
+        Whether this ansatz's array is equal to another ansatz's array.
+
+        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+        """
+        try:
+            return np.allclose(self.array, other.array)
+        except Exception as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+
+    def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+        r"""
+        Adds the array of this ansatz and the array of another ansatz.
+
+        Args:
+            other: Another ansatz.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The addition of this ansatz and other.
+        """
+        try:
+            new_array = [a + b for a in self.array for b in other.array]
+            return self.__class__(array=math.astensor(new_array))
+        except Exception as e:
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+
+    def __call__(self, point: Any) -> Scalar:
+        r"""
+        Evaluates this ansatz at a given point in the domain.
+        """
+        raise AttributeError("Cannot plot ArrayAnsatz.")
+
+    def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+        r"""
+        Divides this ansatz by another ansatz.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The division of this ansatz and other.
+        """
+        if isinstance(other, ArrayAnsatz):
+            try:
+                new_array = [a / b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array / other)
+
+    def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+        r"""
+        Multiplies this ansatz by another ansatz.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            ValueError: If both of array don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The product of this ansatz and other.
+        """
+        if isinstance(other, ArrayAnsatz):
+            try:
+                new_array = [a * b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
+            except Exception as e:
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array * other)
+
+    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+        r"""Tensor product of this ansatz with another ansatz.
+
+        Args:
+            other: Another ansatz.
+
+        Returns:
+            The tensor product of this ansatz and other.
+            Batch size is the product of two batches.
+        """
+        new_array = [math.outer(a, b) for a in self.array for b in other.array]
+        return self.__class__(array=math.astensor(new_array))
+
+    @property
+    def conj(self):
+        return self.__class__(math.conj(self.array))

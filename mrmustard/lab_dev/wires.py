@@ -121,6 +121,10 @@ class Wires:
         w._mask[masked_rows, :] = -1
         w._mask[:, masked_cols] = -1
         return w
+      
+    def _mode(self, mode: int) -> np.ndarray:
+        "A slice of the id_array matrix at the given mode."
+        return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
 
     @property
     def id_array(self) -> np.ndarray:
@@ -196,10 +200,10 @@ class Wires:
 
     def subset(self, ids: Iterable[int]) -> Wires:
         "A subset of this Wires object with only the given ids."
-        subset = [self.ids.index(i) for i in ids if i in self.ids]
-        return self._from_data(
-            self.id_array[subset], [self._modes[i] for i in subset], self._mask[subset]
-        )
+        _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
+        modes = [self._modes[i] for i, row in enumerate(_id_array) if np.any(row != 0)]
+        rows = [self._modes.index(m) for m in modes]
+        return self._from_data(_id_array[rows], modes, self._mask[rows])
 
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
@@ -222,10 +226,6 @@ class Wires:
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
-
-    def _mode(self, mode: int) -> np.ndarray:
-        "A slice of the id_array matrix at the given mode."
-        return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
 
     def __lshift__(self, other: Wires) -> Wires:
         return (other.dual >> self.dual).dual  # how cool is this
@@ -264,7 +264,6 @@ class Wires:
         idxs = (i for i in self.indices)
         box_size = "60px"  # Set the size of the squares
         html = '<table style="border-collapse: collapse; border: 1px solid black;">'
-
         # colors
         active = "#5b9bd5"
         inactive = "#d6e8f7"
