@@ -107,11 +107,11 @@ class Wires:
         return tuple(ob_modes), tuple(ib_modes), tuple(ok_modes), tuple(ik_modes)
 
     @classmethod
-    def _from_data(cls, id_array=None, modes=None, mask=None):
+    def _from_data(cls, id_array, modes, mask=None):
         r"""Private class method to initialize Wires object from the given data."""
         w = cls()
-        w._id_array = id_array if id_array is not None else w._id_array
-        w._modes = modes if modes is not None else w._modes
+        w._id_array = id_array
+        w._modes = modes
         w._mask = mask if mask is not None else np.ones_like(w._id_array)
         return w
 
