@@ -23,12 +23,10 @@ import numpy as np
 
 from mrmustard import math
 from ..physics.representations import Bargmann
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
 
-__all__ = ["Dgate", "Transformation", "Unitary"]
+__all__ = ["Attenuator", "Channel", "Dgate", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
@@ -99,9 +97,9 @@ class Dgate(Unitary):
         if len(ys) == 1:
             ys = np.array([ys[0] for _ in range(num_modes)])
 
-        A = np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes))
-        B = math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0)
-        C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
+        A = math.cast(np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
+        B = math.cast(math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0), math.complex128)
+        C = math.cast(np.prod(math.exp(-abs(xs + 1j * ys) ** 2 / 2)), math.complex128)
 
         return Bargmann(A, B, C)
 
@@ -175,3 +173,27 @@ class Attenuator(Channel):
             )
         )
         self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        if len(self.modes) > 1:
+            msg = "Attenuator's representation not supported for more than one mode"
+            raise ValueError(msg)
+
+        e = self.transmissivity.value
+
+        A = math.cast(
+            np.array(
+                [
+                    [0, np.sqrt(e), 1 - e, 0],
+                    [np.sqrt(e), 0, 0, 0],
+                    [1 - e, 0, 0, np.sqrt(e)],
+                    [0, 0, np.sqrt(e), 0],
+                ],
+            ),
+            math.complex128,
+        )
+        B = math.cast([0.0, 0.0, 0.0, 0.0], math.complex128)
+        C = math.cast(np.sqrt(e), math.complex128)
+
+        return Bargmann(A, B, C)
