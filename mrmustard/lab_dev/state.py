@@ -35,7 +35,8 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 
 class State(CircuitComponent):
-    r"""Mixin class for quantum states. It supplies common functionalities and properties of all states."""
+    r"""Mixin class for quantum states. It supplies common functionalities and properties of Ket and DM.
+    """
 
     @property
     def is_mixed(self):
@@ -254,37 +255,38 @@ class DM(State):
         return self.__class__(representation, modes=sorted(self.modes + other.modes))
 
     def __rshift__(self, other: CircuitComponent) -> DM | CircuitComponent:
-        r"""If `other` is a transformation, it is applied to self, e.g. ``Thermal(0.5) >> Sgate(r=0.1)``.
-        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
+        r"""self is contracted with other on matchig modes and ket/bra sides.
+        It adds a bra if needed (e.g. ket >> channel is treated as
+        (ket.adjoint & ket) >> channel). Depending on the wires of the resulting
+        component it can return a DM e.g. when dm >> channel, everything on mode 0
+        or a more generic component e.g. when dm >> channel, but channel is on two modes and dm on one.
         """
-        # 1) check if rshift is possible
+        # add bra/ket to other.input if needed (self is a DM so it has both already on self.output)
         common = set(self.wires.output.modes).intersection(other.wires.input.modes)
-        if not (set(self.wires.output.modes) - common).isdisjoint(other.wires.output.modes):
-            raise ValueError("Output modes must be disjoint")
-        if not set(self.wires.input.modes).isdisjoint(set(other.wires.input.modes) - common):
-            raise ValueError("Input modes must be disjoint")
-        # 2) add bra/ket if needed
-        if other.wires[common].input.bra:  # we want to check common to avoid unnecessary adjoints
-            return (self & self.adjoint) >> other
-        if other.wires[common].input.ket:  # rarer case, but possible
-            return self >> (other.adjoint & other)
-        self = self.light_copy()  # new wires
-        other = other.light_copy()  # new wires
-        self.wires[common].output.ids = other.wires[common].input.ids
-        self_idx = self.wires[common].output.indices
-        other_idx = other.wires[common].input.indices
+        if not other.wires[common].input.bra:  # we check only common to avoid unnecessary adjoints
+            return self >> (other.adjoint & other)  # TODO: self >> other.adjoint >> other!
+        if not other.wires[common].input.ket:  # rarer case, but possible
+            return self >> (other & other.adjoint)  # TODO: self >> other >> other.adjoint!
+        # now everything has a bra and a ket at every mode where they connect
+        self = self.light_copy()  # to avoid interfering with actual self
+        other = other.light_copy()  # to avoid interfering with actual other
+        new_wires = self.wires >> other.wires
+        # self.wires[common].output.ids = other.wires[common].input.ids
+        idx_z = self.wires[common].output.indices
+        idx_zconj = other.wires[common].input.indices
         # 3) convert bargmann->fock if needed
         if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
-            shape = [s if i in self_idx else None for i, s in enumerate(other.representation.shape)]
+            shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
             self._representation = self.representation.to_fock(shape=shape)
+            new_repr = self.representation[idx_z] @ other.representation[idx_zconj]
         if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
-            shape = [s if i in other_idx else None for i, s in enumerate(self.representation.shape)]
+            shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
             other._representation = other.representation.to_fock(shape=shape)
         # 4) apply rshift
-        new_repr = self.representation[self_idx] @ other.representation[other_idx]
+        else:
+            new_repr = self.representation[idx_z] @ other.representation[idx_zconj]
         before_ids = [id for id in self.wires.ids+other.wires.ids if id not in self.wires[common].output.ids]
-        after_ids = (self.wires >> other.wires).ids  # automatically yields the right order of ids
-        order = [before_ids.index(id) for id in after_ids]
+        order = [before_ids.index(id) for id in new_wires.ids]
         new_repr = new_repr.reorder(order)
         return self.__class__(representation=new_repr, modes=self.modes)
 
