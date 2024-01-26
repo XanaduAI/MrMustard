@@ -9,10 +9,10 @@ from mrmustard.physics.ansatze import ArrayAnsatz
 class TestFockRepresentation:
     r"""Tests the init and other algebras related to Fock Representation."""
 
-    array578 = math.astensor(np.random.random((5, 7, 8)))
-    array1578 = math.astensor(np.random.random((1, 5, 7, 8)))
-    array2578 = math.astensor(np.random.random((2, 5, 7, 8)))
-    array5578 = math.astensor(np.random.random((5, 5, 7, 8)))
+    array578 = np.random.random((5, 7, 8))
+    array1578 = np.random.random((1, 5, 7, 8))
+    array2578 = np.random.random((2, 5, 7, 8))
+    array5578 = np.random.random((5, 5, 7, 8))
 
     def test_init_batched(self):
         r"""Tests one can initilize a Fock representation with a batched array."""
