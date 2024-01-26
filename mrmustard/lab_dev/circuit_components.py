@@ -133,7 +133,7 @@ class CircuitComponent:
         """
         ret = self.light_copy()
         ret._name += "_adj"
-        ret._wires = ret.wires.adjoint()
+        ret._wires = ret.wires.adjoint
         return ret
 
     def light_copy(self) -> CircuitComponent:
