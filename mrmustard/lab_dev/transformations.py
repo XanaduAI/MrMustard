@@ -185,15 +185,15 @@ class Attenuator(Channel):
         A = math.cast(
             np.array(
                 [
-                    [0, e**0.5, 1 - e, 0],
-                    [e**0.5, 0, 0, 0],
-                    [1 - e, 0, 0, e**0.5],
-                    [0, 0, e**-0.5, 0],
+                    [0, np.sqrt(e), 1 - e, 0],
+                    [np.sqrt(e), 0, 0, 0],
+                    [1 - e, 0, 0, np.sqrt(e)],
+                    [0, 0, np.sqrt(e), 0],
                 ],
             ),
             math.complex128,
         )
         B = math.cast([0.0, 0.0, 0.0, 0.0], math.complex128)
-        C = math.cast(e**0.5, math.complex128)
+        C = math.cast(np.sqrt(e), math.complex128)
 
         return Bargmann(A, B, C)

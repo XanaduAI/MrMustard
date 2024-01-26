@@ -100,7 +100,7 @@ class TestSimulator:
         Simulates a circuit with a ket-only component (a Dgate) and a component with kets and bras
         (an Attenuator).
         """
-        d1 = Dgate(1.0, modes=[1])
+        d1 = Dgate(x=1.0, y=2.0, modes=[1])
         att = Attenuator(1.0, modes=[1])
 
         circuit = Circuit([d1, att])
@@ -108,7 +108,7 @@ class TestSimulator:
 
         rep = result.representation
         A = np.kron(np.eye(2), d1.representation.A)
-        b = list(d1.representation.b[0]) * 2
+        b = [1 + 2j, -1 + 2j, 1 + 2j, -1 + 2j]
 
         assert result.modes == [1]
         assert result.name == ""
