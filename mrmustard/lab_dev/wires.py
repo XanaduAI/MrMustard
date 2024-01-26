@@ -223,6 +223,10 @@ class Wires:
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
 
+    def _mode(self, mode: int) -> np.ndarray:
+        "A slice of the id_array matrix at the given mode."
+        return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
+
     def __lshift__(self, other: Wires) -> Wires:
         return (other.dual >> self.dual).dual  # how cool is this
 
@@ -231,22 +235,22 @@ class Wires:
         components in a circuit: the output of self connects to the input of other wherever
         they match.
         """
-        intersection = sorted(set(self.output.modes).intersection(other.input.modes))
-        if len(self.output[intersection].ket.ids) != len(other.input[intersection].ket.ids):
-            raise ValueError(f"ket wires don't match on modes {intersection}")
-        if len(self.output[intersection].ids) != len(other.input[intersection].ids):
-            raise ValueError(f"bra wires don't match on modes {intersection}")
-        all_modes = sorted(set(self.modes) | set(other.modes))
+        all_modes = set(self.modes) | set(other.modes)
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
-        for i, m in enumerate(all_modes):
-            if m in intersection:
-                new_id_array[i] = np.maximum(self.input._id_array[self.modes.index(m)], 0) + np.maximum(
-                    other.output._id_array[other.modes.index(m)], 0)
+        for i, m in enumerate(sorted(all_modes)):
+            if m in self.modes and m in other.modes:
+                if bool(self[m].output.ket) != bool(other[m].input.ket) or bool(
+                    self[m].output.bra
+                ) != bool(other[m].input.bra):
+                    raise ValueError(f"wire mismatch on mode {m}")
+                new_id_array[i] += np.array(
+                    [other._mode(m)[0], self._mode(m)[1], other._mode(m)[2], self._mode(m)[3]]
+                )
             elif m in self.modes:
-                new_id_array[i] = self.id_array[self.modes.index(m)]
-            else:
-                new_id_array[i] = other.id_array[other.modes.index(m)]
-        return self._from_data(new_id_array, all_modes, np.ones_like(new_id_array))
+                new_id_array[i] += self._mode(m)
+            elif m in other.modes:
+                new_id_array[i] += other._mode(m)
+        return self._from_data(np.abs(new_id_array), sorted(all_modes), np.ones_like(new_id_array))
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
