@@ -387,7 +387,7 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor]):
         r"""Note that the array is batched."""
-        self.array = array
+        self.array = math.astensor(array)
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -399,10 +399,10 @@ class ArrayAnsatz(Ansatz):
         r"""
         Whether this ansatz's array is equal to another ansatz's array.
 
-        Note that the comparaison is done by numpy allclose with numpy's default rtol and atol.
+        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
 
         Raises:
-            ValueError: If both of array don't have the same shape.
+            ValueError: If the arrays don't have the same shape.
         """
         try:
             return np.allclose(self.array, other.array)
@@ -417,7 +417,7 @@ class ArrayAnsatz(Ansatz):
             other: Another ansatz.
 
         Raises:
-            ValueError: If both of array don't have the same shape.
+            ValueError: If the arrays don't have the same shape.
 
         Returns:
             ArrayAnsatz: The addition of this ansatz and other.
@@ -442,7 +442,7 @@ class ArrayAnsatz(Ansatz):
             other: A scalar or another ansatz.
 
         Raises:
-            ValueError: If both of array don't have the same shape.
+            ValueError: If the arrays don't have the same shape.
 
         Returns:
             ArrayAnsatz: The division of this ansatz and other.
@@ -490,3 +490,7 @@ class ArrayAnsatz(Ansatz):
         """
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
         return self.__class__(array=math.astensor(new_array))
+
+    @property
+    def conj(self):
+        return self.__class__(math.conj(self.array))
