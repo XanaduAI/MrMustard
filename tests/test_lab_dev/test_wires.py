@@ -90,7 +90,7 @@ def test_right_shift_general_contraction():
 
 
 def test_error_if_cant_contract():
-    u = Wires([], [], [0], [0])
-    v = Wires([0], [0], [1], [1])
+    u = Wires([], [], [0], [])  # only output wire
+    v = Wires([], [], [0], [])  # only output wire
     with pytest.raises(ValueError):
         u >> v

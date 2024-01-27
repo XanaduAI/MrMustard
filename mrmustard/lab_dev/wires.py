@@ -15,8 +15,10 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
+from hmac import new
 
 from typing import Iterable, Optional
+from networkx import out_degree_centrality
 import numpy as np
 from mrmustard import settings
 
@@ -235,22 +237,37 @@ class Wires:
         components in a circuit: the output of self connects to the input of other wherever
         they match.
         """
-        all_modes = set(self.modes) | set(other.modes)
+        all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
-        for i, m in enumerate(sorted(all_modes)):
+        for i, m in enumerate(all_modes):
             if m in self.modes and m in other.modes:
-                if bool(self[m].output.ket) != bool(other[m].input.ket) or bool(
-                    self[m].output.bra
-                ) != bool(other[m].input.bra):
-                    raise ValueError(f"wire mismatch on mode {m}")
-                new_id_array[i] += np.array(
-                    [other._mode(m)[0], self._mode(m)[1], other._mode(m)[2], self._mode(m)[3]]
-                )
-            elif m in self.modes:
+                # m-th row of self and other
+                sob,sib,sok,sik = self._mode(m)
+                oob,oib,ook,oik = other._mode(m)
+                errors = {"output bra": sob and oob and not oib,
+                       "output ket": sok and ook and not oik,
+                       "input bra":  oib and sib and not sob,
+                       "input ket":  oik and sik and not sok}
+                if any(errors.values()):
+                    position = [k for k,v in errors.items() if v][0]
+                    raise ValueError(f"wire overlap at {position} of mode {m}")
+                if bool(sob) == bool(oib):  # if the inner wires are both there or both not there
+                    new_id_array[i] += np.array([oob, sib, 0, 0])
+                elif not sib and not sob:
+                    new_id_array[i] += np.array([oob, oib, 0, 0])
+                else:
+                    new_id_array[i] += np.array([sob, sib, 0, 0])
+                if bool(sok) == bool(oik):
+                    new_id_array[i] += np.array([0, 0, ook, sik])
+                elif not sik and not sok:
+                    new_id_array[i] += np.array([0, 0, ook, oik])
+                else:
+                    new_id_array[i] += np.array([0, 0, sok, sik])
+            elif m in self.modes and not m in other.modes:
                 new_id_array[i] += self._mode(m)
-            elif m in other.modes:
+            elif m in other.modes and not m in self.modes:
                 new_id_array[i] += other._mode(m)
-        return self._from_data(np.abs(new_id_array), sorted(all_modes))
+        return self._from_data(np.abs(new_id_array), all_modes)
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
