@@ -233,14 +233,16 @@ class Wires:
         for i, m in enumerate(all_modes):
             if m in self.modes and m in other.modes:
                 # m-th row of self and other (self output bra = sob, etc...)
-                sob,sib,sok,sik = self._mode(m)
-                oob,oib,ook,oik = other._mode(m)
-                errors = {"output bra": sob and oob and not oib,
-                       "output ket": sok and ook and not oik,
-                       "input bra":  oib and sib and not sob,
-                       "input ket":  oik and sik and not sok}
+                sob, sib, sok, sik = self._mode(m)
+                oob, oib, ook, oik = other._mode(m)
+                errors = {
+                    "output bra": sob and oob and not oib,
+                    "output ket": sok and ook and not oik,
+                    "input bra": oib and sib and not sob,
+                    "input ket": oik and sik and not sok,
+                }
                 if any(errors.values()):
-                    position = [k for k,v in errors.items() if v][0]
+                    position = [k for k, v in errors.items() if v][0]
                     raise ValueError(f"wire overlap at {position} of mode {m}")
                 if bool(sob) == bool(oib):  # if the inner wires are both there or both not there
                     new_id_array[i] += np.array([oob, sib, 0, 0])
