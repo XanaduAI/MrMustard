@@ -15,10 +15,8 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
-from hmac import new
 
 from typing import Iterable, Optional
-from networkx import out_degree_centrality
 import numpy as np
 from mrmustard import settings
 
@@ -123,7 +121,7 @@ class Wires:
         w._mask[masked_rows, :] = -1
         w._mask[:, masked_cols] = -1
         return w
-      
+
     def _mode(self, mode: int) -> np.ndarray:
         "A slice of the id_array matrix at the given mode."
         return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
@@ -200,13 +198,6 @@ class Wires:
         w._mask = self._mask.copy()
         return w
 
-    def subset(self, ids: Iterable[int]) -> Wires:
-        "A subset of this Wires object with only the given ids."
-        _id_array = np.where(np.isin(self._id_array, np.array(ids)), self._id_array, 0)
-        modes = [self._modes[i] for i, row in enumerate(_id_array) if np.any(row != 0)]
-        rows = [self._modes.index(m) for m in modes]
-        return self._from_data(_id_array[rows], modes, self._mask[rows])
-
     def __add__(self, other: Wires) -> Wires:
         "A new Wires object with the wires of self and other combined."
         modes_rows = {}
@@ -235,13 +226,13 @@ class Wires:
     def __rshift__(self, other: Wires) -> Wires:
         r"""Returns a new Wires object with the wires of self and other combined as two
         components in a circuit: the output of self connects to the input of other wherever
-        they match.
-        """
+        they match. All surviving wires are arranged in the standard order.
+        A ValueError is raised if there are any surviving wires that overlap."""
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
         for i, m in enumerate(all_modes):
             if m in self.modes and m in other.modes:
-                # m-th row of self and other
+                # m-th row of self and other (self output bra = sob, etc...)
                 sob,sib,sok,sik = self._mode(m)
                 oob,oib,ook,oik = other._mode(m)
                 errors = {"output bra": sob and oob and not oib,
