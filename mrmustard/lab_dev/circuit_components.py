@@ -149,7 +149,7 @@ class CircuitComponent:
         """
         ret = self.light_copy()
         name = ret.name + "_adj"
-        wires = ret.wires.adjoint()
+        wires = ret.wires.adjoint
         representation = ret.representation.conj()
         return CircuitComponent.from_attributes(name, wires, representation)
 
@@ -160,7 +160,7 @@ class CircuitComponent:
         """
         ret = self.light_copy()
         ret._name += "_dual"
-        ret._wires = ret.wires.dual()
+        ret._wires = ret.wires.dual
         ret._representation = ret.representation.conj()
         return ret
 

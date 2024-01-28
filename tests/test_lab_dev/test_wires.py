@@ -79,3 +79,18 @@ def test_cant_add_overlapping_wires():
 def test_args():
     w = Wires([0], [1], [2], [3])
     assert w._args() == ((0,), (1,), (2,), (3,))
+
+
+def test_right_shift_general_contraction():
+    # contracts 1,1 on bra side
+    # contracts 3,3 and 13,13 on ket side (note order doesn't matter)
+    u = Wires([1, 5], [2, 6, 15], [3, 7, 13], [4, 8])
+    v = Wires([0, 9, 14], [1, 10], [2, 11], [13, 3, 12])
+    assert (u >> v)._args() == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
+
+
+def test_error_if_cant_contract():
+    u = Wires([], [], [0], [])  # only output wire
+    v = Wires([], [], [0], [])  # only output wire
+    with pytest.raises(ValueError):
+        u >> v
