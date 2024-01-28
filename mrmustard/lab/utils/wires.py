@@ -241,9 +241,9 @@ class Wires:
                     raise ValueError(f"{position} wire overlap at mode {m}")
                 if bool(sob) == bool(oib):  # if the inner wires are both there or both not there
                     new_id_array[i] += np.array([oob, sib, 0, 0])
-                elif not sib and not sob:   # no wires on self
+                elif not sib and not sob:  # no wires on self
                     new_id_array[i] += np.array([oob, oib, 0, 0])
-                else:                       # no wires on other
+                else:  # no wires on other
                     new_id_array[i] += np.array([sob, sib, 0, 0])
                 if bool(sok) == bool(oik):  # same as above but on the ket side
                     new_id_array[i] += np.array([0, 0, ook, sik])
@@ -312,7 +312,10 @@ class Wires:
         html += "</table>"
 
         try:
-            from IPython.core.display import display, HTML  # pylint: disable=import-outside-toplevel
+            from IPython.core.display import (
+                display,
+                HTML,
+            )  # pylint: disable=import-outside-toplevel
 
             display(HTML(html))
         except ImportError as e:
