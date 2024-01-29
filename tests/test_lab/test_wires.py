@@ -73,7 +73,7 @@ def test_cant_add_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
     with pytest.raises(ValueError):
-        w1 >> w2
+        w1 >> w2  # pylint: disable=pointless-statement
 
 
 def test_args():
@@ -93,4 +93,4 @@ def test_error_if_cant_contract():
     u = Wires([], [], [0], [])  # only output wire
     v = Wires([], [], [0], [])  # only output wire
     with pytest.raises(ValueError):
-        u >> v
+        u >> v  # pylint: disable=pointless-statement
