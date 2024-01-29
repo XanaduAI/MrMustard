@@ -34,7 +34,7 @@ from mrmustard.lab_dev.wires import Wires  # Copyright 2023 Xanadu Quantum Techn
 
 """Tests for Wires class."""
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access, missing-function-docstring
 
 import numpy as np
 import pytest
@@ -69,16 +69,10 @@ class TestWires:
         assert w.input.ket.modes == modes_in_ket
 
     def test_args(self):
-        r"""
-        Tests the ``_args`` method.
-        """
         w = Wires([0], [1], [2], [3])
         assert w._args() == ((0,), (1,), (2,), (3,))
 
     def test_from_data(self):
-        r"""
-        Tests the ``_from_data`` method.
-        """
         id_array = [[1, 2, 0, 0], [0, 3, 4, 0], [0, 0, 5, 0], [0, 0, 0, 6]]
         modes = [5, 6, 7, 8]
         w = Wires._from_data(id_array, modes)
@@ -88,24 +82,15 @@ class TestWires:
         assert w.modes == modes
 
     def test_view(self):
-        r"""
-        Tests the ``_view`` method.
-        """
         w = Wires([0], [0], [0], [0])
         assert set(w.ids) == set(w._view().ids)
 
     def test_view_can_edit_original(self):
-        r"""
-        Tests that modifications done to the ``_view`` reflect on the original.
-        """
         w = Wires([0], [0], [0], [0])
         w._view().ids = [9, 99, 999, 9999]
         assert w.ids == [9, 99, 999, 9999]
 
     def test_wire_subsets(self):
-        r"""
-        Tests the methods to obtain subsets.
-        """
         w = Wires([0], [1], [2], [3])
         assert w.output.bra.modes == [0]
         assert w.input.bra.modes == [1]
@@ -119,16 +104,10 @@ class TestWires:
         assert w[13].ids == w.input.ket.ids
 
     def test_id_array(self):
-        r"""
-        Tests the ``id_array`` property.
-        """
         w = Wires([0, 1], [2], [3, 4, 5], [6])
         assert w.id_array.shape == (7, 4)
 
     def test_ids(self):
-        r"""
-        Tests the ``ids`` property and the standard order.
-        """
         w = Wires([0, 1], [2], [3, 4, 5], [6])
 
         assert w.output.bra.ids == w.ids[:2]
@@ -137,9 +116,6 @@ class TestWires:
         assert w.input.ket.ids == [w.ids[-1]]
 
     def test_ids_setter(self):
-        r"""
-        Tests the setter for ``ids``.
-        """
         w1 = Wires([0, 1], [2], [3, 4, 5], [6])
         w2 = Wires([0, 1], [2], [3, 4, 5], [6])
 
@@ -149,9 +125,6 @@ class TestWires:
         assert w1.ids == w2.ids
 
     def test_indices(self):
-        r"""
-        Tests the ``indices`` property and the standard order.
-        """
         w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
 
         assert w.output.indices == [0, 1, 2, 6, 7]
@@ -160,9 +133,6 @@ class TestWires:
         assert w.ket.indices == [6, 7, 8]
 
     def test_adjoint(self):
-        r"""
-        Tests the ``adjoint`` method.
-        """
         w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
         w_adj = w.adjoint
 
@@ -172,9 +142,6 @@ class TestWires:
         assert w.output.bra.modes == w_adj.output.ket.modes
 
     def test_dual(self):
-        r"""
-        Tests the ``dual`` method.
-        """
         w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
         w_d = w.dual
 
@@ -184,9 +151,6 @@ class TestWires:
         assert w.output.bra.modes == w_d.input.bra.modes
 
     def test_copy(self):
-        r"""
-        Tests the ``copy`` method.
-        """
         w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
         w_cp = w.copy()
 
@@ -196,9 +160,6 @@ class TestWires:
         assert w.output.bra.modes == w_cp.output.bra.modes
 
     def test_add(self):
-        r"""
-        Tests the ``__add__`` method.
-        """
         w1 = Wires([0], [1], [2], [3])
         w2 = Wires([1], [2], [3], [4])
         w12 = Wires([0, 1], [1, 2], [2, 3], [3, 4])
@@ -206,25 +167,16 @@ class TestWires:
         assert (w1 + w2).modes == w12.modes
 
     def test_add_error(self):
-        r"""
-        Tests the error raised by ``__add__`` method.
-        """
         w1 = Wires([0], [1], [2], [3])
         w2 = Wires([0], [2], [3], [4])
         with pytest.raises(Exception):
             w1 + w2
 
     def test_bool(self):
-        r"""
-        Tests the ``__bool__`` method.
-        """
         assert Wires([0])
         assert not Wires([0]).input
 
     def test_getitem(self):
-        r"""
-        Tests the ``__getitem__`` method.
-        """
         w = Wires([0, 1], [0, 1])
         w0 = w[0]
         w1 = w[1]
@@ -236,9 +188,6 @@ class TestWires:
         assert w1.ids == [w.ids[1], w.ids[3]]
 
     def test_rshift(self):
-        r"""
-        Tests the ``__rshift__`` method.
-        """
         # contracts 1,1 on bra side
         # contracts 3,3 and 13,13 on ket side (note order doesn't matter)
         u = Wires([1, 5], [2, 6, 15], [3, 7, 13], [4, 8])
@@ -246,9 +195,6 @@ class TestWires:
         assert (u >> v)._args() == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
 
     def test_rshift_error(self):
-        r"""
-        Tests the error of the ``__rshift__`` method.
-        """
         u = Wires([], [], [0], [])  # only output wire
         v = Wires([], [], [0], [])  # only output wire
         with pytest.raises(ValueError):
