@@ -234,21 +234,20 @@ class Wires:
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
         
-        for i, m in enumerate(all_modes):
-            if m in self.modes and m in other.modes:
-                sob, sib, sok, sik = self._mode(m)  # m-th row of self
-                oob, oib, ook, oik = other._mode(m)  # m-th row of other
+        for m in set(self.modes) & set(other.modes):
+            sob, sib, sok, sik = self._mode(m)  # m-th row of self
+            oob, oib, ook, oik = other._mode(m)  # m-th row of other
+
+            if (sob and oob and not oib) or (sok and ook and not oik):
+                raise ValueError(f"Output wire overlap at mode {m}")
+            if (oib and sib and not sob) or (oik and sik and not sok):
+                raise ValueError(f"Input wire overlap at mode {m}")
                 
-                if (sob and oob and not oib) or (sok and ook and not oik):
-                    raise ValueError(f"Output wire overlap at mode {m}")
-                elif (oib and sib and not sob) or (oik and sik and not sok):
-                    raise ValueError(f"Input wire overlap at mode {m}")
-                
-                new_id_array[i] += np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
-            elif m in self.modes:
-                new_id_array[i] += self._mode(m)
-            elif m in other.modes:
-                new_id_array[i] += other._mode(m)
+            new_id_array[all_modes.index(m)] = np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
+        for m in set(self.modes) - set(other.modes):
+            new_id_array[all_modes.index(m)] = self._mode(m)
+        for m in set(other.modes) - set(self.modes):
+            new_id_array[all_modes.index(m)] = other._mode(m)
         
         return self._from_data(new_id_array, all_modes)
 
