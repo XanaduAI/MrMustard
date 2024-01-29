@@ -215,7 +215,7 @@ class Wires:
 
     def __lshift__(self, other: Wires) -> Wires:
         return (other.dual >> self.dual).dual  # how cool is this
-    
+
     @staticmethod
     def _outin(si, so, oi, oo):
         r"""Returns the output and input wires of the composite object made by connecting
@@ -254,9 +254,9 @@ class Wires:
                     position = [k for k, v in errors.items() if v][0]
                     raise ValueError(f"{position} wire overlap at mode {m}")
                 new_id_array[i] += np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
-            elif m in self.modes and not m in other.modes:
+            elif m in self.modes and m not in other.modes:
                 new_id_array[i] += self._mode(m)
-            elif m in other.modes and not m in self.modes:
+            elif m in other.modes and m not in self.modes:
                 new_id_array[i] += other._mode(m)
         return self._from_data(np.abs(new_id_array), all_modes)
 
