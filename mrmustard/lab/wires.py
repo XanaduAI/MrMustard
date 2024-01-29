@@ -219,8 +219,7 @@ class Wires:
     @staticmethod
     def _outin(si, so, oi, oo):
         r"""Returns the output and input wires of the composite object made by connecting
-        two single-mode ket (or bra) objects:
-        --|self|--  --|other|--
+        two single-mode ket (or bra) objects like --|self|-- and --|other|--
         At this stage we are guaranteed that the configurations `|self|--  |other|--`  and 
         `--|self|  --|other|` (which would be invalid) have already been excluded.
         """
