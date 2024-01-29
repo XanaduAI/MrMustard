@@ -18,7 +18,7 @@
 # pylint: disable=protected-access
 
 import pytest
-from mrmustard.lab_dev.wires import Wires# Copyright 2023 Xanadu Quantum Technologies Inc.
+from mrmustard.lab_dev.wires import Wires  # Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,10 +41,12 @@ import pytest
 
 from mrmustard.lab_dev.wires import Wires
 
+
 class TestWires:
     r"""
     Tests for the Wires class.
     """
+
     @pytest.mark.parametrize("modes_out_bra", [[0], [1, 2]])
     @pytest.mark.parametrize("modes_in_bra", [None, [1], [2, 3]])
     @pytest.mark.parametrize("modes_out_ket", [None, [2], [3, 4]])
@@ -84,7 +86,7 @@ class TestWires:
         assert np.allclose(w.id_array, id_array)
         assert w.ids == [1, 2, 3, 4, 5, 6]
         assert w.modes == modes
-        
+
     def test_view(self):
         r"""
         Tests the ``_view`` method.
@@ -128,7 +130,7 @@ class TestWires:
         Tests the ``ids`` property and the standard order.
         """
         w = Wires([0, 1], [2], [3, 4, 5], [6])
-        
+
         assert w.output.bra.ids == w.ids[:2]
         assert w.input.bra.ids == [w.ids[2]]
         assert w.output.ket.ids == w.ids[3:6]
@@ -233,7 +235,6 @@ class TestWires:
         assert w1.modes == [1]
         assert w1.ids == [w.ids[1], w.ids[3]]
 
-
     def test_rshift(self):
         r"""
         Tests the ``__rshift__`` method.
@@ -243,7 +244,6 @@ class TestWires:
         u = Wires([1, 5], [2, 6, 15], [3, 7, 13], [4, 8])
         v = Wires([0, 9, 14], [1, 10], [2, 11], [13, 3, 12])
         assert (u >> v)._args() == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
-
 
     def test_rshift_error(self):
         r"""
