@@ -231,33 +231,26 @@ class Wires:
             return np.array([so, si], dtype=np.int64)
 
     def __rshift__(self, other: Wires) -> Wires:
-        r"""Returns a new Wires object with the wires of self and other combined as two
-        components in a circuit where the output of self connects to the input of other:
-            ``self >> other``
-        All surviving wires are arranged in the standard order.
-        A ValueError is raised if there are any surviving wires that overlap, which is the only
-        possible way two objects aren't compatible in a circuit."""
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
+        
         for i, m in enumerate(all_modes):
             if m in self.modes and m in other.modes:
                 sob, sib, sok, sik = self._mode(m)  # m-th row of self
                 oob, oib, ook, oik = other._mode(m)  # m-th row of other
-                errors = {
-                    "output bra": sob and oob and not oib, #  |s|- |o|- (bra)
-                    "output ket": sok and ook and not oik, #  |s|- |o|- (ket)
-                    "input bra": oib and sib and not sob,  # -|s| -|o|  (bra)
-                    "input ket": oik and sik and not sok,  # -|s| -|o|  (ket)
-                }
-                if any(errors.values()):
-                    position = [k for k, v in errors.items() if v][0]
-                    raise ValueError(f"{position} wire overlap at mode {m}")
+                
+                if (sob and oob and not oib) or (sok and ook and not oik):
+                    raise ValueError(f"Output wire overlap at mode {m}")
+                elif (oib and sib and not sob) or (oik and sik and not sok):
+                    raise ValueError(f"Input wire overlap at mode {m}")
+                
                 new_id_array[i] += np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
-            elif m in self.modes and m not in other.modes:
+            elif m in self.modes:
                 new_id_array[i] += self._mode(m)
-            elif m in other.modes and m not in self.modes:
+            elif m in other.modes:
                 new_id_array[i] += other._mode(m)
-        return self._from_data(new_id_array, all_modes)  # abs to turn hidden ids (negative) into visible
+        
+        return self._from_data(new_id_array, all_modes)
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
