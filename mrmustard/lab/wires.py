@@ -17,11 +17,13 @@
 from __future__ import annotations
 
 from typing import Iterable, Optional
+
 import numpy as np
+
 from mrmustard import settings
 
 # pylint: disable=protected-access
-
+# pylint: disable=import-outside-toplevel
 
 class Wires:
     r"""`Wires` class for handling the connectivity of an object in a circuit.
@@ -309,9 +311,9 @@ class Wires:
 
         try:
             from IPython.core.display import (
-                display,
                 HTML,
-            )  # pylint: disable=import-outside-toplevel
+                display,
+            )
 
             display(HTML(html))
         except ImportError as e:
