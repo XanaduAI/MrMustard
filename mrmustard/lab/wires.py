@@ -225,11 +225,11 @@ class Wires:
         `--|self|  --|other|` (which would be invalid) have already been excluded.
         """
         if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
-            return np.array([oo, si])
+            return np.array([oo, si], dtype=np.int64)
         elif not si and not so:  # no wires on self
-            return np.array([oo, oi])
+            return np.array([oo, oi], dtype=np.int64)
         else:  # no wires on other
-            return np.array([so, si])
+            return np.array([so, si], dtype=np.int64)
 
     def __rshift__(self, other: Wires) -> Wires:
         r"""Returns a new Wires object with the wires of self and other combined as two
@@ -258,7 +258,7 @@ class Wires:
                 new_id_array[i] += self._mode(m)
             elif m in other.modes and m not in self.modes:
                 new_id_array[i] += other._mode(m)
-        return self._from_data(np.abs(new_id_array), all_modes)
+        return self._from_data(new_id_array, all_modes)  # abs to turn hidden ids (negative) into visible
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
