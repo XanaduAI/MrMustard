@@ -215,6 +215,21 @@ class Wires:
 
     def __lshift__(self, other: Wires) -> Wires:
         return (other.dual >> self.dual).dual  # how cool is this
+    
+    @staticmethod
+    def _outin(si, so, oi, oo):
+        r"""Returns the output and input wires of the composite object made by connecting
+        two single-mode ket (or bra) objects:
+        --|self|--  --|other|--
+        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and 
+        `--|self|  --|other|` (which would be invalid) have already been excluded.
+        """
+        if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
+            return np.array([oo, si])
+        elif not si and not so:  # no wires on self
+            return np.array([oo, oi])
+        else:  # no wires on other
+            return np.array([so, si])
 
     def __rshift__(self, other: Wires) -> Wires:
         r"""Returns a new Wires object with the wires of self and other combined as two
@@ -227,30 +242,18 @@ class Wires:
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
         for i, m in enumerate(all_modes):
             if m in self.modes and m in other.modes:
-                # m-th row of self and other (and self output bra = sob, etc...)
-                sob, sib, sok, sik = self._mode(m)
-                oob, oib, ook, oik = other._mode(m)
+                sob, sib, sok, sik = self._mode(m)  # m-th row of self
+                oob, oib, ook, oik = other._mode(m)  # m-th row of other
                 errors = {
-                    "output bra": sob and oob and not oib,
-                    "output ket": sok and ook and not oik,
-                    "input bra": oib and sib and not sob,
-                    "input ket": oik and sik and not sok,
+                    "output bra": sob and oob and not oib, #  |s|- |o|- (bra)
+                    "output ket": sok and ook and not oik, #  |s|- |o|- (ket)
+                    "input bra": oib and sib and not sob,  # -|s| -|o|  (bra)
+                    "input ket": oik and sik and not sok,  # -|s| -|o|  (ket)
                 }
                 if any(errors.values()):
                     position = [k for k, v in errors.items() if v][0]
                     raise ValueError(f"{position} wire overlap at mode {m}")
-                if bool(sob) == bool(oib):  # if the inner wires are both there or both not there
-                    new_id_array[i] += np.array([oob, sib, 0, 0])
-                elif not sib and not sob:  # no wires on self
-                    new_id_array[i] += np.array([oob, oib, 0, 0])
-                else:  # no wires on other
-                    new_id_array[i] += np.array([sob, sib, 0, 0])
-                if bool(sok) == bool(oik):  # same as above but on the ket side
-                    new_id_array[i] += np.array([0, 0, ook, sik])
-                elif not sik and not sok:
-                    new_id_array[i] += np.array([0, 0, ook, oik])
-                else:
-                    new_id_array[i] += np.array([0, 0, sok, sik])
+                new_id_array[i] += np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
             elif m in self.modes and not m in other.modes:
                 new_id_array[i] += self._mode(m)
             elif m in other.modes and not m in self.modes:
