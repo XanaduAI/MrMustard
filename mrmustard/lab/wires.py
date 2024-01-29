@@ -220,7 +220,7 @@ class Wires:
     def _outin(si, so, oi, oo):
         r"""Returns the output and input wires of the composite object made by connecting
         two single-mode (ket or bra) objects like --|self|-- and --|other|--
-        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and 
+        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and
         `--|self|  --|other|` (which would be invalid) have already been excluded.
         """
         if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
@@ -233,7 +233,7 @@ class Wires:
     def __rshift__(self, other: Wires) -> Wires:
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
-        
+
         for m in set(self.modes) & set(other.modes):
             sob, sib, sok, sik = self._mode(m)  # m-th row of self
             oob, oib, ook, oik = other._mode(m)  # m-th row of other
@@ -242,13 +242,15 @@ class Wires:
                 raise ValueError(f"Output wire overlap at mode {m}")
             if (oib and sib and not sob) or (oik and sik and not sok):
                 raise ValueError(f"Input wire overlap at mode {m}")
-                
-            new_id_array[all_modes.index(m)] = np.hstack([self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)])
+
+            new_id_array[all_modes.index(m)] = np.hstack(
+                [self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)]
+            )
         for m in set(self.modes) - set(other.modes):
             new_id_array[all_modes.index(m)] = self._mode(m)
         for m in set(other.modes) - set(self.modes):
             new_id_array[all_modes.index(m)] = other._mode(m)
-        
+
         return self._from_data(new_id_array, all_modes)
 
     def __repr__(self) -> str:
@@ -306,7 +308,11 @@ class Wires:
         html += "</table>"
 
         try:
-            from IPython.core.display import display, HTML  # pylint: disable=import-outside-toplevel
+            from IPython.core.display import (
+                display,
+                HTML,
+            )  # pylint: disable=import-outside-toplevel
+
             display(HTML(html))
         except ImportError as e:
             raise ImportError(
