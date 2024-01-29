@@ -205,7 +205,7 @@ class Wires:
         return w
 
     def __bool__(self) -> bool:
-        return True if len(self.ids) > 0 else False
+        return len(self.ids) > 0
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
