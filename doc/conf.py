@@ -45,6 +45,7 @@ version = re.match(r"^(\d+\.\d+)", release).expand(r"\1")
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "jupyter_sphinx",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
@@ -60,7 +61,6 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "sphinx_copybutton",
     "m2r2",
-    "jupyter_sphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
