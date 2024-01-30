@@ -25,6 +25,7 @@ from mrmustard import settings
 # pylint: disable=protected-access
 # pylint: disable=import-outside-toplevel
 
+
 class Wires:
     r"""`Wires` class for handling the connectivity of an object in a circuit.
     In MrMustard, ``CircuitComponent``s have a ``Wires`` object as attribute
