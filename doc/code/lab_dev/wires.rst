@@ -1,5 +1,8 @@
-mrmustard.lab.wires
-===================
+mrmustard.lab_dev.wires
+=======================
     
-.. autoclass:: mrmustard.lab_dev.wires.Wires
-    :members:
+.. currentmodule:: mrmustard.lab_dev.wires
+
+.. automodapi:: mrmustard.lab_dev.wires
+    :no-heading:
+    :include-all-objects:

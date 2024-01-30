@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 import numpy as np
+
 from mrmustard import settings
 
 # pylint: disable=protected-access
@@ -37,37 +38,38 @@ class Wires:
     Wires are arranged into four groups, namely output bra, input bra, output ket, and input ket.
     Each of the groups can span multiple modes.
 
-    .. jupyter-execute::
+    .. code-block::
 
-        from mrmustard.lab_dev.wires import Wires
+        >>> from mrmustard.lab_dev.wires import Wires
 
-        w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
+        >>> w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
 
-        # access the modes
-        modes = w.modes
-        assert w.modes == [0, 1, 2, 3]
+        >>> # access the modes
+        >>> modes = w.modes
+        >>> assert w.modes == [0, 1, 2, 3]
 
-        # get input/output subsets
-        w_in = w.input
-        assert w_in.modes == [1, 2, 3]
+        >>> # get input/output subsets
+        >>> w_in = w.input
+        >>> assert w_in.modes == [1, 2, 3]
 
-        # get ket/bra subsets
-        w_in_bra = w_in.bra
-        assert w_in_bra.modes == [1, 2]
+        >>> # get ket/bra subsets
+        >>> w_in_bra = w_in.bra
+        >>> assert w_in_bra.modes == [1, 2]
 
     Every wire is assigned a numerical id, which is random and unique. The list of all the
     ids of a ``Wires`` can be accessed using the ``ids`` property. The standard order for this
     list is: ids for all the output bra wires, ids for all the input bra wires, ids for all the
     output ket wires, ids for all the input ket wires.
 
-    .. jupyter-execute::
+    .. code-block::
 
-        from mrmustard.lab_dev.wires import Wires
+        >>> from mrmustard.lab_dev.wires import Wires
 
-        w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
+        >>> w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
 
-        # access the ids
-        ids = w.ids
+        >>> # access the ids
+        >>> ids = w.ids
+        >>> assert len(ids) == 8
 
     Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
