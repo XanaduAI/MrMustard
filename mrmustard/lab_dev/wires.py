@@ -28,18 +28,31 @@ class Wires:
     r"""
     A class with wire functionality for tensor network applications.
 
-    Wires are arranged into four groups, namely output bra, input bra, output ket, and input ket.
-    Each of the groups can span multiple modes.
+    In Mr Mustard, we represent circuit components as tensors in a tensor network. The wires of
+    these components describe how they connect with the surrounding components. For example, an
+    `N`-mode pure state has `N` ket wires on the output side, while a `N`-mode mixed state
+    has `N` ket wires and `N` bra wires on the output side.
+
+    ``Wires`` objects store the information related to the wires of circuit components. Each wire
+    in a ``Wires`` object is specified by a numerical id, which is random and unique. When two different
+    ``Wires`` object have one or more wires with the same ids, we treat them as connected. Otherwise,
+    we treat them as disconnected.
+    
+    The list of all these ids can be accessed using the ``ids`` property.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev.wires import Wires
 
-        >>> w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
+        >>> w = Wires(modes_out_bra=[0, 1], modes_in_bra=[1, 2], modes_out_ket=[0, 3], modes_in_ket=[1, 2, 3])
 
         >>> # access the modes
         >>> modes = w.modes
         >>> assert w.modes == [0, 1, 2, 3]
+
+        >>> # access the ids
+        >>> ids = w.ids
+        >>> assert len(ids) == 9
 
         >>> # get input/output subsets
         >>> w_in = w.input
@@ -48,21 +61,27 @@ class Wires:
         >>> # get ket/bra subsets
         >>> w_in_bra = w_in.bra
         >>> assert w_in_bra.modes == [1, 2]
+     
+    The standard order for the list of ids is:
 
-    Every wire is assigned a numerical id, which is random and unique. The list of all the
-    ids of a ``Wires`` can be accessed using the ``ids`` property. The standard order for this
-    list is: ids for all the output bra wires, ids for all the input bra wires, ids for all the
-    output ket wires, ids for all the input ket wires.
+    - ids for all the output bra wires.
+    
+    - ids for all the input bra wires.
+    
+    - ids for all the output ket wires.
+    
+    - ids for all the input ket wires.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev.wires import Wires
 
-        >>> w = Wires([0, 1], [1, 2], [0,], [1, 2, 3])
+        >>> w = Wires(modes_out_bra=[0, 1], modes_in_bra=[1, 2], modes_out_ket=[0, 3], modes_in_ket=[1, 2, 3])
 
-        >>> # access the ids
-        >>> ids = w.ids
-        >>> assert len(ids) == 8
+        >>> assert w.output.bra.ids == w.ids[:2]
+        >>> assert w.input.bra.ids == w.ids[2:4]
+        >>> assert w.output.ket.ids == w.ids[4:6]
+        >>> assert w.input.ket.ids == w.ids[6:]
 
     Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
