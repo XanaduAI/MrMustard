@@ -37,7 +37,7 @@ class Wires:
     in a ``Wires`` object is specified by a numerical id, which is random and unique. When two different
     ``Wires`` object have one or more wires with the same ids, we treat them as connected. Otherwise,
     we treat them as disconnected.
-    
+
     The list of all these ids can be accessed using the ``ids`` property.
 
     .. code-block::
@@ -61,15 +61,15 @@ class Wires:
         >>> # get ket/bra subsets
         >>> w_in_bra = w_in.bra
         >>> assert w_in_bra.modes == [1, 2]
-     
+
     The standard order for the list of ids is:
 
     - ids for all the output bra wires.
-    
+
     - ids for all the input bra wires.
-    
+
     - ids for all the output ket wires.
-    
+
     - ids for all the input ket wires.
 
     .. code-block::
