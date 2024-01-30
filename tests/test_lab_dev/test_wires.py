@@ -139,6 +139,19 @@ class TestWires:
         assert w.input.bra.modes == w_cp.input.bra.modes
         assert w.output.bra.modes == w_cp.output.bra.modes
 
+    def test_add(self):
+        w1 = Wires([0], [1], [2], [3])
+        w2 = Wires([1], [2], [3], [4])
+        w12 = Wires([0, 1], [1, 2], [2, 3], [3, 4])
+
+        assert (w1 + w2).modes == w12.modes
+
+    def test_add_error(self):
+        w1 = Wires([0], [1], [2], [3])
+        w2 = Wires([0], [2], [3], [4])
+        with pytest.raises(Exception):
+            w1 + w2
+
     def test_bool(self):
         assert Wires([0])
         assert not Wires([0]).input

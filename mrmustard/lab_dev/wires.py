@@ -227,6 +227,21 @@ class Wires:
         w._mask = self._mask.copy()
         return w
 
+    def __add__(self, other: Wires) -> Wires:
+        r"""
+        A new ``Wires`` object with the wires of self and other combined.
+        """
+        modes_rows = {}
+        all_modes = sorted(set(self.modes) | set(other.modes))
+        for m in all_modes:
+            self_row = self.id_array[self._modes.index(m)] if m in self.modes else np.zeros(4)
+            other_row = other.id_array[other._modes.index(m)] if m in other.modes else np.zeros(4)
+            if np.any(np.where(self_row > 0) == np.where(other_row > 0)):
+                raise ValueError(f"wires overlap on mode {m}")
+            modes_rows[m] = [s if s > 0 else o for s, o in zip(self_row, other_row)]
+        combined_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
+        return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
+
     def __bool__(self) -> bool:
         r"""
         Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
