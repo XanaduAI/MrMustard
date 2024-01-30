@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Classes for supporting tensor network functionalities."""
+""" ``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
 
@@ -22,13 +22,11 @@ import numpy as np
 from mrmustard import settings
 
 # pylint: disable=protected-access
+# pylint: disable=import-outside-toplevel
 
-__all__ = ["Wire", "Wires"]
-
-Wire = int
-r"""
-An integer representing a wire in a tensor network.
-"""
+__all__ = [
+    "Wires",
+]
 
 
 class Wires:
@@ -95,15 +93,15 @@ class Wires:
         modes_out_ket = modes_out_ket or []
         modes_in_ket = modes_in_ket or []
 
-        self._modes = list(
+        self._modes = sorted(
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
         randint = settings.rng.integers  # MM random number generator
-        ob = {m: randint(1, 2**62) if m in modes_out_bra else 0 for m in self._modes}
-        ib = {m: randint(1, 2**62) if m in modes_in_bra else 0 for m in self._modes}
-        ok = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
-        ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
-        self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
+        outbra = {m: randint(1, 2**62) if m in modes_out_bra else 0 for m in self._modes}
+        inbra = {m: randint(1, 2**62) if m in modes_in_bra else 0 for m in self._modes}
+        outket = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
+        inket = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
+        self._id_array = np.array([[outbra[m], inbra[m], outket[m], inket[m]] for m in self._modes])
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
     def _args(self):
@@ -266,6 +264,21 @@ class Wires:
     def __lshift__(self, other: Wires) -> Wires:
         return (other.dual >> self.dual).dual  # how cool is this
 
+    @staticmethod
+    def _outin(si, so, oi, oo):
+        r"""
+        Returns the output and input wires of the composite object made by connecting
+        two single-mode (ket or bra) objects like --|self|-- and --|other|--
+        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and
+        `--|self|  --|other|` (which would be invalid) have already been excluded.
+        """
+        if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
+            return np.array([oo, si], dtype=np.int64)
+        elif not si and not so:  # no wires on self
+            return np.array([oo, oi], dtype=np.int64)
+        else:  # no wires on other
+            return np.array([so, si], dtype=np.int64)
+
     def __rshift__(self, other: Wires) -> Wires:
         r"""
         A new Wires object with the wires of ``self`` and ``other`` combined as two
@@ -275,37 +288,29 @@ class Wires:
         """
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
-        for i, m in enumerate(all_modes):
-            if m in self.modes and m in other.modes:
-                # m-th row of self and other (self output bra = sob, etc...)
-                sob, sib, sok, sik = self._mode(m)
-                oob, oib, ook, oik = other._mode(m)
-                errors = {
-                    "output bra": sob and oob and not oib,
-                    "output ket": sok and ook and not oik,
-                    "input bra": oib and sib and not sob,
-                    "input ket": oik and sik and not sok,
-                }
-                if any(errors.values()):
-                    position = [k for k, v in errors.items() if v][0]
-                    raise ValueError(f"wire overlap at {position} of mode {m}")
-                if bool(sob) == bool(oib):  # if the inner wires are both there or both not there
-                    new_id_array[i] += np.array([oob, sib, 0, 0])
-                elif not sib and not sob:
-                    new_id_array[i] += np.array([oob, oib, 0, 0])
-                else:
-                    new_id_array[i] += np.array([sob, sib, 0, 0])
-                if bool(sok) == bool(oik):
-                    new_id_array[i] += np.array([0, 0, ook, sik])
-                elif not sik and not sok:
-                    new_id_array[i] += np.array([0, 0, ook, oik])
-                else:
-                    new_id_array[i] += np.array([0, 0, sok, sik])
-            elif m in self.modes and not m in other.modes:
-                new_id_array[i] += self._mode(m)
-            elif m in other.modes and not m in self.modes:
-                new_id_array[i] += other._mode(m)
-        return self._from_data(np.abs(new_id_array), all_modes)
+
+        for m in set(self.modes) & set(other.modes):
+            sob, sib, sok, sik = self._mode(m)  # m-th row of self
+            oob, oib, ook, oik = other._mode(m)  # m-th row of other
+
+            out_bra_issue = sob and oob and not oib
+            out_ket_issue = sok and ook and not oik
+            if out_bra_issue or out_ket_issue:
+                raise ValueError(f"Output wire overlap at mode {m}")
+            in_bra_issue = oib and sib and not sob
+            in_ket_issue = oik and sik and not sok
+            if in_bra_issue or in_ket_issue:
+                raise ValueError(f"Input wire overlap at mode {m}")
+
+            new_id_array[all_modes.index(m)] = np.hstack(
+                [self._outin(sib, sob, oib, oob), self._outin(sik, sok, oik, ook)]
+            )
+        for m in set(self.modes) - set(other.modes):
+            new_id_array[all_modes.index(m)] = self._mode(m)
+        for m in set(other.modes) - set(self.modes):
+            new_id_array[all_modes.index(m)] = other._mode(m)
+
+        return self._from_data(new_id_array, all_modes)
 
     def __repr__(self) -> str:
         ob_modes, ib_modes, ok_modes, ik_modes = self._args()
@@ -362,10 +367,10 @@ class Wires:
         html += "</table>"
 
         try:
-            from IPython.display import display, HTML  # pylint: disable=import-outside-toplevel
+            from IPython.display import display, HTML
 
             display(HTML(html))
         except ImportError as e:
             raise ImportError(
-                "To display the wires in a jupyter notebook you need to `pip install IPython`"
+                "To display the wires in a jupyter notebook you need to `pip install IPython` first."
             ) from e
