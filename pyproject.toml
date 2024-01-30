@@ -87,8 +87,6 @@ sphinx-automodapi = "^0.15.0"
 sphinxcontrib-bibtex = "^2.5.0"
 mistune = "0.8.4"
 xanadu-sphinx-theme = "0.1.0"
-jupyter_sphinx = "0.4.0"
-ipykernel = "6.27.1"
 
 [build-system]
 requires = ["poetry-core"]
