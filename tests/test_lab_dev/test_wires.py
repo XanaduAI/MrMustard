@@ -18,7 +18,7 @@
 # pylint: disable=protected-access
 
 import pytest
-from mrmustard.lab.wires import Wires
+from mrmustard.lab_dev.wires import Wires
 
 
 def test_wires_view_has_same_ids():
