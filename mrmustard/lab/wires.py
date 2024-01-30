@@ -241,9 +241,13 @@ class Wires:
             sob, sib, sok, sik = self._mode(m)  # m-th row of self
             oob, oib, ook, oik = other._mode(m)  # m-th row of other
 
-            if (sob and oob and not oib) or (sok and ook and not oik):
+            out_bra_issue = sob and oob and not oib
+            out_ket_issue = sok and ook and not oik
+            if out_bra_issue or out_ket_issue:
                 raise ValueError(f"Output wire overlap at mode {m}")
-            if (oib and sib and not sob) or (oik and sik and not sok):
+            in_bra_issue = oib and sib and not sob
+            in_ket_issue = oik and sik and not sok
+            if in_bra_issue or in_ket_issue:
                 raise ValueError(f"Input wire overlap at mode {m}")
 
             new_id_array[all_modes.index(m)] = np.hstack(
