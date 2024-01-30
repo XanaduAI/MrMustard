@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Union
 
-from ..physics.representations import Bargmann, Representation
+from ..physics.representations import Bargmann, Fock
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
@@ -52,7 +52,7 @@ class CircuitComponent:
         modes_in_bra: Optional[Sequence[Mode]] = None,
         modes_out_ket: Optional[Sequence[Mode]] = None,
         modes_in_ket: Optional[Sequence[Mode]] = None,
-        representation: Optional[Representation] = None,
+        representation: Optional[Bargmann | Fock] = None,
     ) -> None:
         # TODO: Add validation to check that wires and representation are compatible (e.g.,
         # that wires have as many modes as has the representation).
@@ -86,11 +86,11 @@ class CircuitComponent:
         cls,
         name: str,
         wires: Wires,
-        representation: Representation,
+        representation: Bargmann | Fock,
     ):
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``).
+        and a ``Representation`` like ``Bargmann`` or ``Fock``).
         """
         ret = CircuitComponent(name)
         ret._wires = wires
@@ -108,7 +108,7 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
-    def representation(self) -> Representation:
+    def representation(self) -> Optional[Bargmann | Fock]:
         r"""
         A representation of this circuit component.
         """
@@ -182,6 +182,9 @@ class CircuitComponent:
         ret._wires = self._wires[idx]
         ret._parameter_set = self.parameter_set
         return ret
+    
+    def _general_rshift(self, other: CircuitComponent) -> CircuitComponent:
+        
 
 
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
