@@ -132,7 +132,7 @@ class TestSettings:
     def test_complex_warnings(self, caplog):
         """Tests that complex warnings can be correctly activated and deactivated."""
         skip_np()
-        
+
         settings = Settings()
 
         assert settings.COMPLEX_WARNING is False
@@ -143,7 +143,7 @@ class TestSettings:
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1
         assert "You are casting an input of type complex128" in caplog.records[0].msg
-        
+
         settings.COMPLEX_WARNING = False
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1

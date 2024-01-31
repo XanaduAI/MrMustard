@@ -42,12 +42,13 @@ class WarningFilters(logging.Filter):
             ``True`` if the log record should be allowed, ``False`` otherwise.
         """
         return any(w in record.getMessage() for w in self.warnings)
-    
+
 
 # ComplexWarning filter for tensorflow.
 msg = "WARNING:tensorflow:You are casting an input of type complex128 to an incompatible dtype float64."
 msg += "  This will discard the imaginary part and may not be what you intended."
 complex_warninig_filter = WarningFilters([msg])
+
 
 def add_complex_warning_filter():
     r"""
@@ -55,6 +56,7 @@ def add_complex_warning_filter():
     """
     logger = logging.getLogger("tensorflow")
     logger.addFilter(complex_warninig_filter)
+
 
 def remove_complex_warning_filter():
     r"""
