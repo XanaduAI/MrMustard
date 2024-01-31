@@ -29,6 +29,7 @@ class TestBackendManager:
     r"""
     Tests the BackendManager.
     """
+
     l1 = [1.0]
     l2 = [1.0 + 0.0j, -2.0 + 2.0j]
     l3 = [[1.0, 2.0], [-3.0, 4.0]]
