@@ -189,7 +189,7 @@ class Wires:
     @property
     def modes(self) -> list[int]:
         r"""
-        The set of modes of the populated wires.
+        The list of modes of the populated wires.
         """
         return [m for m in self._modes if any(self.id_array[self._modes.index(m)] > 0)]
 
