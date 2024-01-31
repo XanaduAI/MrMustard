@@ -246,7 +246,7 @@ class Wires:
 
     def copy(self) -> Wires:
         r"""
-        A copy of this wire with new ids.
+        A copy of this ``Wires`` object, with new ids.
         """
         w = Wires(*self._args())
         w._mask = self._mask.copy()
