@@ -54,6 +54,7 @@ class WarningFilters(logging.Filter):
     """
 
     def __init__(self, warnings: list[str]):
+        super().__init__()
         self.warnings = warnings
 
     def filter(self, record) -> bool:
