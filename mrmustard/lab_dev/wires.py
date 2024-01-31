@@ -291,19 +291,22 @@ class Wires:
         return (other.dual >> self.dual).dual  # how cool is this
 
     @staticmethod
-    def _outin(si, so, oi, oo):
+    def _outin(self_in: int, self_out: int, other_in: int, other_out: int) -> np.ndarray:
         r"""
-        Returns the output and input wires of the composite object made by connecting
-        two single-mode (ket or bra) objects like --|self|-- and --|other|--
-        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and
-        `--|self|  --|other|` (which would be invalid) have already been excluded.
+        Returns the ids of the composite object made by connecting an object self with ids
+        ``self_in`` and ``self_out`` to an object other with ids ``other_in`` and ``other_out``.
+
+        Assumes that the configurations ``--|self|  --|other|`` or ``|self|--  |other|--``,
+        which would lead to an overlap of wires, have already been excluded.
+
+        Note that the order of the returned ids is ``[out, in]``, as per standard order.
         """
-        if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
-            return np.array([oo, si], dtype=np.int64)
-        elif not si and not so:  # no wires on self
-            return np.array([oo, oi], dtype=np.int64)
+        if bool(self_out) == bool(other_in):  # if the inner wires are either both there or both not there
+            return np.array([other_out, self_in], dtype=np.int64)
+        elif not self_in and not self_out:  # no wires on self
+            return np.array([other_out, other_in], dtype=np.int64)
         else:  # no wires on other
-            return np.array([so, si], dtype=np.int64)
+            return np.array([self_out, self_in], dtype=np.int64)
 
     def __rshift__(self, other: Wires) -> Wires:
         r"""
@@ -316,8 +319,8 @@ class Wires:
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
 
         for m in set(self.modes) & set(other.modes):
-            sob, sib, sok, sik = self._mode(m)  # m-th row of self
-            oob, oib, ook, oik = other._mode(m)  # m-th row of other
+            sob, sib, sok, sik = self._mode(m)  # row of self
+            oob, oib, ook, oik = other._mode(m)  # row of other
 
             out_bra_issue = sob and oob and not oib
             out_ket_issue = sok and ook and not oik
