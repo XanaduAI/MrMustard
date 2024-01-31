@@ -277,7 +277,7 @@ class Wires:
         r"""
         Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
         """
-        return True if len(self.ids) > 0 else False
+        return len(self.ids) > 0
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         r"""
