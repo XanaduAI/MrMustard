@@ -111,9 +111,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
-
-        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
-            array = self.real(array)
         return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
