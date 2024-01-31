@@ -175,6 +175,12 @@ class Wires:
     def ids(self, ids: list[int]):
         r"""
         Sets the ids of the available wires.
+
+        Args:
+            ids: The new ids.
+
+        Raises:
+            ValueError: If the number of ids does not match the expected number.
         """
         if len(ids) != len(self.ids):
             raise ValueError(f"wrong number of ids (expected {len(self.ids)}, got {len(ids)})")
@@ -248,7 +254,13 @@ class Wires:
 
     def __add__(self, other: Wires) -> Wires:
         r"""
-        A new ``Wires`` object with the wires of self and other combined.
+        A new ``Wires`` object that combines the wires of ``self`` and those of ``other``.
+
+        Args:
+            other: The wire to add.
+
+        Raise:
+            ValueError: If the two ``Wires`` being added have an overlap that cannot be resolved.
         """
         modes_rows = {}
         all_modes = sorted(set(self.modes) | set(other.modes))
