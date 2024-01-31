@@ -28,7 +28,7 @@ class Wires:
     r"""
     A class with wire functionality for tensor network applications.
 
-    In Mr Mustard, we represent circuit components as tensors in a tensor network. The wires of
+    In MrMustard, we represent circuit components as tensors in a tensor network. The wires of
     these components describe how they connect with the surrounding components. For example, an
     `N`-mode pure state has `N` ket wires on the output side, while a `N`-mode mixed state
     has `N` ket wires and `N` bra wires on the output side.
