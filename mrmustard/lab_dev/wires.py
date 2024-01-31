@@ -240,7 +240,7 @@ class Wires:
     @property
     def dual(self) -> Wires:
         r"""
-        The dual of this wires object, obtained by swapping input and output wires, with new ids.
+        The dual of this wires object, obtained by swapping input and output wires.
         """
         return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
 
