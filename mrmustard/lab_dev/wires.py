@@ -83,6 +83,13 @@ class Wires:
         >>> assert w.output.ket.ids == w.ids[4:6]
         >>> assert w.input.ket.ids == w.ids[6:]
 
+    To access the index of a su set of wires in standard order (i.e. skipping over wires not belonging to the subset),
+    one can use the ``indices`` attribute:
+    .. code-block::
+            >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
+            >>> assert w.indices == [0,1,2,3]
+            >>> assert w.input.indices == [2,3]
+        >>> 
     Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
     Args:
@@ -243,20 +250,20 @@ class Wires:
     @property
     def adjoint(self) -> Wires:
         r"""
-        The adjoint of this wires object, obtained by swapping ket and bra wires, with new ids.
+        The adjoint of this wires object, obtained by swapping ket and bra wires.
         """
         return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
 
     @property
     def dual(self) -> Wires:
         r"""
-        The dual of this wires object, obtained by swapping input and output wires, with new ids.
+        The dual of this wires object, obtained by swapping input and output wires.
         """
         return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
 
     def copy(self) -> Wires:
         r"""
-        A copy of this wire with new ids.
+        A copy of this ``Wires`` object, with new ids.
         """
         w = Wires(*self._args())
         w._mask = self._mask.copy()
@@ -287,7 +294,7 @@ class Wires:
         r"""
         Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
         """
-        return True if len(self.ids) > 0 else False
+        return len(self.ids) > 0
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         r"""
