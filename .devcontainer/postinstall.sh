@@ -1,7 +1,8 @@
 #! /bin/sh
 
 apt-get update -y
-apt-get -y install --no-install-recommends zsh fonts-powerline locales toilet fortunes fortune-mod
+apt-get -y -o Dpkg::Options::="--force-confold" --force-yes install --no-install-recommends zsh
+apt-get -y install --no-install-recommends fonts-powerline locales toilet fortunes fortune-mod
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # install jupyter notebook widgets extension
