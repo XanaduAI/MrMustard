@@ -88,6 +88,6 @@ Filter tensorflow cast warnings.
 """
 logger = logging.getLogger("tensorflow")
 msg = "WARNING:tensorflow:You are casting an input of type complex128 to an incompatible dtype float64."
-msg +="  This will discard the imaginary part and may not be what you intended."
+msg += "  This will discard the imaginary part and may not be what you intended."
 filter = WarningFilters([msg])
 logger.addFilter(filter)

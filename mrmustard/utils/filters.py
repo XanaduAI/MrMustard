@@ -44,6 +44,7 @@ This module contains a class to filter undesired warnings.
 
 import logging
 
+
 class WarningFilters(logging.Filter):
     r"""
     A custom logging filter to selectively allow log records based on specific warnings.
@@ -51,6 +52,7 @@ class WarningFilters(logging.Filter):
     Args:
         warnings: A list of warning messages that must be filtered.
     """
+
     def __init__(self, warnings: list[str]):
         self.warnings = warnings
 
