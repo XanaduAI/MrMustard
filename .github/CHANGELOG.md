@@ -74,7 +74,7 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
-* Added suite to filter undesired warnings, and used it to filter tensorflows' ``ComplexWarning``s.
+* Added suite to filter undesired warnings, and used it to filter tensorflow's ``ComplexWarning``s.
   [(#332)](https://github.com/XanaduAI/MrMustard/pull/332)
 
 
