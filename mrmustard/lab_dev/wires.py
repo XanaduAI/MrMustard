@@ -233,7 +233,7 @@ class Wires:
     @property
     def adjoint(self) -> Wires:
         r"""
-        The adjoint of this wires object, obtained by swapping ket and bra wires, with new ids.
+        The adjoint of this wires object, obtained by swapping ket and bra wires.
         """
         return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
 
