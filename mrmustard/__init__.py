@@ -14,11 +14,13 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+import logging
 
 from rich import print
 
 from ._version import __version__
 from .utils.settings import *
+from .utils.filters import WarningFilters
 
 
 def version():
@@ -79,3 +81,13 @@ def about():
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
+
+
+r"""
+Filter tensorflow cast warnings.
+"""
+logger = logging.getLogger("tensorflow")
+msg = "WARNING:tensorflow:You are casting an input of type complex128 to an incompatible dtype float64."
+msg +="  This will discard the imaginary part and may not be what you intended."
+filter = WarningFilters([msg])
+logger.addFilter(filter)
