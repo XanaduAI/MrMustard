@@ -3,6 +3,7 @@
 	"build": {
 		"dockerfile": "../env.Dockerfile"
 	},
+	"postCreateCommand": "/bin/sh ./.devcontainer/postinstall.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -25,7 +26,13 @@
 				"python.defaultInterpreterPath": "/usr/local/bin/python",
 				"python.terminal.executeInFileDir": true,
 				"code-runner.fileDirectoryAsCwd": true,
-				"autoDocstring.docstringFormat": "google"
+				"autoDocstring.docstringFormat": "google",
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "zsh"
+					}
+				}
             }
 		}
 	},
