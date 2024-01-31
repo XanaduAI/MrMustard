@@ -62,26 +62,6 @@ class CircuitComponent:
         self._representation = representation
 
     @classmethod
-    def from_ABC(
-        cls,
-        name: str,
-        A: Batch[ComplexMatrix],
-        B: Batch[ComplexVector],
-        c: Batch[ComplexTensor],
-        modes_in_ket: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-    ):
-        r"""
-        Initializes a circuit component from Bargmann's A, B, and c.
-        """
-        ret = CircuitComponent(
-            name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c)
-        )
-        return ret
-
-    @classmethod
     def from_attributes(
         cls,
         name: str,
@@ -115,7 +95,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> set(Mode):
+    def modes(self) -> list(Mode):
         r"""
         A set with all the modes in this component.
         """
@@ -142,6 +122,7 @@ class CircuitComponent:
         """
         return self._wires
 
+    @property
     def adjoint(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the adjoint of it, obtained by taking the
@@ -153,6 +134,7 @@ class CircuitComponent:
         representation = ret.representation.conj()
         return CircuitComponent.from_attributes(name, wires, representation)
 
+    @property
     def dual(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the dual of it, obtained by taking the
@@ -183,8 +165,31 @@ class CircuitComponent:
         ret._parameter_set = self.parameter_set
         return ret
     
-    def _general_rshift(self, other: CircuitComponent) -> CircuitComponent:
-        
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""Contracts self and other (as the would in a circuit), but without adding
+        eventual missing adjoints."""
+        common = set(self.wires.output.modes).intersection(other.wires.input.modes)
+        new_wires = self.wires >> other.wires
+        idx_z = self.wires[common].output.indices
+        idx_zconj = other.wires[common].input.indices
+        # 3) convert bargmann -> fock if needed
+        LEFT = self.representation
+        RIGHT = other.representation
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
+            shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
+            LEFT = Fock(self.fock(shape=shape), batched=False)  # assumes fock method is implemented
+            RIGHT = other.representation
+        if isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+            shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
+            LEFT = self.representation
+            RIGHT = Fock(other.fock(shape=shape), batched=False)  # assumes fock method is implemented
+        # 4) apply low-level rshift
+        new_repr = LEFT[idx_z] @ RIGHT[idx_zconj]
+        before_ids = [id for id in self.wires.ids + other.wires.ids if id not in self.wires[common].output.ids]
+        order = [before_ids.index(id) for id in new_wires.ids]
+        new_repr = new_repr.reorder(order)
+        return CircuitComponent.from_attributes(self.name + " @ " + other.name, new_wires, new_repr)
+
 
 
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
