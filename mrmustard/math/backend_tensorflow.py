@@ -36,6 +36,7 @@ from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
 
+tf.get_logger().setLevel('ERROR')
 
 # pylint: disable=too-many-public-methods
 class BackendTensorflow(BackendBase):  # pragma: no cover

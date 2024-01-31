@@ -228,6 +228,22 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
+    def __complex__(self) -> complex:
+        r"""
+        Returns the complex value of the Bargmann representation if it correspond to a scalar.
+        Raises ValueError if the Bargmann representation is not a scalar.
+        """
+        if self.ansatz.degree != 0:
+            raise ValueError("Bargmann representation must be a scalar for this conversion.")
+        return math.sum(self.c)
+
+    def __float__(self) -> float:
+        r"""
+        Returns the float value of the Bargmann representation if it correspond to a scalar.
+        Raises ValueError if the Bargmann representation is not a scalar.
+        """
+        return math.real(self.__complex__())
+
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
 
@@ -373,6 +389,13 @@ class Fock(Representation):
         """
         return self.ansatz.array
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        r"""
+        The shape of the array from the ansatz.
+        """
+        return self.ansatz.array.shape
+
     def conj(self):
         r"""
         The conjugate of this Fock object.
@@ -459,6 +482,23 @@ class Fock(Representation):
         The new Fock will hold the tensor product batch of them.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
+
+    def __complex__(self) -> complex:
+        r"""
+        Returns the complex value of the Fock representation if it correspond to a scalar.
+        Raises ValueError if the Fock representation is not a scalar.
+        """
+        if self.array.shape[1:] != ():
+            raise ValueError("Fock representation must be a scalar to be converted to a scalar.")
+        return math.sum(self.array)
+
+    def __float__(self) -> float:
+        r"""
+        Returns the float value of the Fock representation if it correspond to a scalar.
+        Raises ValueError if the Fock representation is not a scalar.
+        """
+        return math.real(self.__complex__())
+
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
