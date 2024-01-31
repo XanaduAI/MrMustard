@@ -96,7 +96,7 @@ class Wires:
 
         >>> assert w.indices == [0,1,2,3]
         >>> assert w.input.indices == [2,3]
-         
+
     Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
     Args:
@@ -218,7 +218,7 @@ class Wires:
             >>> from mrmustard.lab_dev.wires import Wires
 
             >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
-            
+
             >>> assert w.indices == [0,1,2,3]
             >>> assert w.input.indices == [2,3]
         """
@@ -325,7 +325,9 @@ class Wires:
 
         Note that the order of the returned ids is ``[out, in]``, as per standard order.
         """
-        if bool(self_out) == bool(other_in):  # if the inner wires are either both there or both not there
+        if bool(self_out) == bool(
+            other_in
+        ):  # if the inner wires are either both there or both not there
             return np.array([other_out, self_in], dtype=np.int64)
         elif not self_in and not self_out:  # no wires on self
             return np.array([other_out, other_in], dtype=np.int64)
