@@ -14,7 +14,7 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
