@@ -95,7 +95,10 @@ class Wires:
         ib = {m: randint(1, 2**62) if m in modes_in_bra else 0 for m in self._modes}
         ok = {m: randint(1, 2**62) if m in modes_out_ket else 0 for m in self._modes}
         ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
-        self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
+        if len(self._modes) > 0:
+            self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
+        else:
+            self._id_array = np.zeros((0, 4), dtype=np.int64)
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
     def _args(self):
@@ -183,14 +186,18 @@ class Wires:
         r"""
         The adjoint (ket <-> bra) of this wires object.
         """
-        return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
+        if len(self.modes) > 0:
+            return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
+        return self
 
     @property
     def dual(self) -> Wires:
         r"""
         The dual (in <-> out) of this wires object.
         """
-        return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
+        if len(self.modes) > 0:
+            return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
+        return self
 
     def copy(self) -> Wires:
         r"""A copy of this Wires object with new ids."""

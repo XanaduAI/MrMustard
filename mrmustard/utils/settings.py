@@ -97,6 +97,7 @@ class Settings:
         self._pnr_internal_cutoff = 50
         self._homodyne_squeezing = 10.0
         # misc
+        self._atol_purity = 1e-9  # absolute tolerance to declare a state pure
         self._progressbar = True
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
@@ -250,6 +251,15 @@ class Settings:
     @PROGRESSBAR.setter
     def PROGRESSBAR(self, value: bool):
         self._progressbar = value
+
+    @property
+    def ATOL_PURITY(self):
+        r"""The absolute tolerance used to declare a state pure. Default is ``1e-9``."""
+        return self._atol_purity
+
+    @ATOL_PURITY.setter
+    def ATOL_PURITY(self, value: float):
+        self._atol_purity = value
 
     @property
     def SEED(self):

@@ -152,8 +152,8 @@ class CircuitComponent:
         it by reference, except for its wires, which are copied by value.
         """
         instance = super().__new__(self.__class__)
-        instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
-        instance.__dict__["_wires"] = self.wires.copy()
+        instance.__dict__ = self.__dict__.copy()
+        instance.__dict__["_wires"] = self.wires.copy() # this assigns new ids, which is what we want
         return instance
 
     def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):

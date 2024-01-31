@@ -30,9 +30,6 @@ class State(CircuitComponent):
     r"""Note: Bare-bones implementation.
     Mixin class for quantum states. It supplies common functionalities and properties of Ket and DM.
     """
-
-    
-
     @property
     def is_pure(self):
         r"""Returns whether the state is pure."""
@@ -42,6 +39,54 @@ class State(CircuitComponent):
     def L2_norm(self) -> float:
         r"""Returns the L2 norm of the Hilbert space vector or the Hilbert-Schmidt norm of a density matrix."""
         return float((self >> self.dual).representation)
+
+    def __getitem__(self, modes: int | tuple) -> State:
+        r"""Re-initializes the state on an alternative set of modes"""
+        modes = [modes] if isinstance(modes, int) else [i for i in modes]
+        if len(modes) != self.num_modes:
+            raise ValueError(f"modes must have length {self.num_modes}, got {len(modes)} instead")
+        return self.__class__(self.representation, modes=modes)
+
+    def __eq__(self, other) -> bool:
+        r"""Returns whether the states are equal. Modes and all."""
+        return self.representation == other.representation and self.modes == other.modes
+
+    def __lshift__(self, other: State) -> CircuitComponent | complex:
+        r"""dual of __rshift__"""
+        return (other.dual >> self.dual).dual
+
+    def __add__(self, other: State):
+        r"""Implements addition of states. The meaning will be superposition in Hilbert space
+        if the states are Kets and mixture in the case of Density Matrices."""
+        if self.modes != other.modes:
+            raise ValueError(f"Can't add states on different modes (got {self.modes} and {other.modes})")
+        return self.__class__(self.representation + other.representation, modes=self.modes)
+
+    def __rmul__(self, other: Union[int, float, complex]):
+        r"""Implements multiplication from the left if the object on the left
+        does not implement __mul__ for the type of self.
+
+        E.g., ``0.5 * psi``.
+        """
+        assert isinstance(other, (int, float, complex))
+        return self.__class__(other * self.representation, modes=self.modes)
+
+    def __mul__(self, other):
+        r"""Implements multiplication of two objects."""
+        if isinstance(other, (int, float, complex)):
+            return other * self
+        modes = [m for m in self.modes if m not in other.modes] + [
+            m for m in other.modes if m not in self.modes
+        ]
+        return self.__class__(self.representation * other.representation, modes=modes)
+
+    def __truediv__(self, other: Union[int, float, complex]):
+        r"""Implements division by a scalar.
+
+        E.g. ``psi / 0.5``
+        """
+        assert isinstance(other, (int, float, complex))
+        return self.__class__(self.representation / other, modes=self.modes)
 
     def bargmann(self):
         r"""Returns the bargmann parameters if available. Otherwise, the representation
@@ -87,6 +132,15 @@ class DM(State):
         """
         A, b, c = physics.bargmann.wigner_to_bargmann_rho(cov, means) # (s, characteristic) not implemented yet
         return cls(Bargmann(A, b, c), modes, name=name)
+
+    def phasespace(self):
+        r"""Returns the phase space parameters (cov, means)
+
+        Returns:
+            cov, means: the covariance matrix and the vector of means
+        """
+        raise NotImplementedError("need to calculate the siegel-weil kernel")
+
 
     @classmethod
     def from_fock(cls, fock_array, modes, batched=False, name="DM"):
@@ -163,7 +217,7 @@ class Ket(State):
             name (str): the name of the state
             pure_check (bool): whether to check if the state is pure (default: True)
         """
-        if pure_check and (purity := physics.gaussian.purity(cov)) < 1.0 - settings.PURITY_ATOL:
+        if pure_check and (purity := physics.gaussian.purity(cov)) < 1.0 - settings.ATOL_PURITY:
             raise ValueError(f"Cannot initialize a ket: purity is {purity:.3f} which is less than 1.0.")
         A, b, c = physics.bargmann.wigner_to_bargmann_psi(cov, mean)
         return cls(Bargmann(A, b, c), modes, name=name)
