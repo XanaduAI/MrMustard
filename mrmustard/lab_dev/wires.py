@@ -196,7 +196,17 @@ class Wires:
     @property
     def indices(self) -> list[int]:
         r"""
-        The array of indices of this subset in the standard order.
+        The array of indices of this ``Wires`` in the standard order. When a subset is selected, it skips
+        the indices of wires that do not belong to the subset.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev.wires import Wires
+
+            >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
+            
+            >>> assert w.indices == [0,1,2,3]
+            >>> assert w.input.indices == [2,3]
         """
         flat = self.id_array.T.ravel()
         flat = flat[flat != 0]
