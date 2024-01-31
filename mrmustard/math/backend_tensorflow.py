@@ -18,8 +18,8 @@
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import logging
+import numpy as np
 
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 import tensorflow as tf

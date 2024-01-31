@@ -76,12 +76,11 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 
-import numpy as np
 import logging
+import numpy as np
 
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 logging.getLogger("tensorflow").setLevel(logging.INFO)
 
