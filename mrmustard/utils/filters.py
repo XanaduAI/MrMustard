@@ -52,7 +52,7 @@ complex_warninig_filter = WarningFilters([msg])
 
 def add_complex_warning_filter():
     r"""
-    Adds a filter for tensorflow's ComplexWarning.
+    Adds the filter for tensorflow's ComplexWarning, or does nothing if the filter is already in place.
     """
     logger = logging.getLogger("tensorflow")
     logger.addFilter(complex_warninig_filter)
@@ -60,7 +60,7 @@ def add_complex_warning_filter():
 
 def remove_complex_warning_filter():
     r"""
-    Adds a filter for tensorflow's ComplexWarning.
+    Removes the filter for tensorflow's ComplexWarning, or does nothing if no such filter is present.
     """
     logger = logging.getLogger("tensorflow")
     logger.removeFilter(complex_warninig_filter)
