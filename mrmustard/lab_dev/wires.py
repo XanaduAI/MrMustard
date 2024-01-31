@@ -21,6 +21,8 @@ import numpy as np
 
 from mrmustard import settings
 
+__all__ = ["Wires"]
+
 # pylint: disable=import-outside-toplevel
 
 
@@ -85,11 +87,16 @@ class Wires:
 
     To access the index of a su set of wires in standard order (i.e. skipping over wires not belonging to the subset),
     one can use the ``indices`` attribute:
+
     .. code-block::
-            >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
-            >>> assert w.indices == [0,1,2,3]
-            >>> assert w.input.indices == [2,3]
-        >>> 
+
+        >>> from mrmustard.lab_dev.wires import Wires
+
+        >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
+
+        >>> assert w.indices == [0,1,2,3]
+        >>> assert w.input.indices == [2,3]
+         
     Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
     Args:
