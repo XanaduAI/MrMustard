@@ -1,4 +1,4 @@
-# Release 0.7.0 (development release)
+# Release 0.7.0 (current release)
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
@@ -105,7 +105,7 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 ---
 
-# Release 0.6.0 (current release)
+# Release 0.6.0 
 
 ### New features
 
@@ -165,7 +165,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 ---
 
-# Release 0.5.0 (current release)
+# Release 0.5.0 
 
 ### New features
 
@@ -304,7 +304,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 (current release)
+# Release 0.4.0 
 
 ### New features
 
