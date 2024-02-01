@@ -208,8 +208,9 @@ class Wires:
     @property
     def indices(self) -> list[int]:
         r"""
-        The array of indices of this ``Wires`` in the standard order. When a subset is selected, it skips
-        the indices of wires that do not belong to the subset.
+        The array of indices of this ``Wires`` in the standard order. The array of indices
+        of this ``Wires`` in the standard order. When a subset is selected, it skips the
+        indices of wires that do not belong to the subset.
 
         .. code-block::
 
