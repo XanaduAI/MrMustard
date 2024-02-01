@@ -23,7 +23,6 @@ from mrmustard import settings
 
 __all__ = ["Wires"]
 
-# pylint: disable=import-outside-toplevel
 
 
 class Wires:
