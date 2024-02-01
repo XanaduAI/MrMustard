@@ -46,7 +46,11 @@ class Wires:
 
         >>> from mrmustard.lab_dev.wires import Wires
 
-        >>> w = Wires(modes_out_bra=[0, 1], modes_in_bra=[1, 2], modes_out_ket=[0, 3], modes_in_ket=[1, 2, 3])
+        >>> modes_out_bra=[0, 1]
+        >>> modes_in_bra=[1, 2]
+        >>> modes_out_ket=[0, 3]
+        >>> modes_in_ket=[1, 2, 3]
+        >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
 
         >>> # access the modes
         >>> modes = w.modes
@@ -76,10 +80,6 @@ class Wires:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev.wires import Wires
-
-        >>> w = Wires(modes_out_bra=[0, 1], modes_in_bra=[1, 2], modes_out_ket=[0, 3], modes_in_ket=[1, 2, 3])
-
         >>> assert w.output.bra.ids == w.ids[:2]
         >>> assert w.input.bra.ids == w.ids[2:4]
         >>> assert w.output.ket.ids == w.ids[4:6]
@@ -89,8 +89,6 @@ class Wires:
     one can use the ``indices`` attribute:
 
     .. code-block::
-
-        >>> from mrmustard.lab_dev.wires import Wires
 
         >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
 
@@ -214,8 +212,6 @@ class Wires:
         the indices of wires that do not belong to the subset.
 
         .. code-block::
-
-            >>> from mrmustard.lab_dev.wires import Wires
 
             >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
 
