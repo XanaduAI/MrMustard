@@ -14,12 +14,13 @@
 
 from __future__ import annotations
 
-from typing import Iterable
 import numpy as np
 from matplotlib import colors
 import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
+
 from mrmustard import math
-from mrmustard.physics import bargmann, fock
+from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
     Batch,
@@ -31,17 +32,21 @@ from mrmustard.utils.typing import (
 )
 
 
-class Representation:
+class Representation(ABC):
     r"""
     A base class for representations.
+
+    Given an ``Ansatz``, ``Representation``s can be initialized using the ``from_ansatz``
+    method. This automatically equips them with all the functionality required to perform
+    mathematical operations, such as equality, multiplication, subtraction, etc. 
     """
 
+    @abstractmethod
     def from_ansatz(self, ansatz: Ansatz) -> Representation:
         r"""
-        Returns a representation object from an ansatz object.
-        To be implemented by subclasses.
+        Returns a representation from an ansatz.
         """
-        raise NotImplementedError
+        ...
 
     def __eq__(self, other: Representation) -> bool:
         r"""
@@ -99,8 +104,9 @@ class Representation:
 
 
 class Bargmann(Representation):
-    r"""This class is the Fock-Bargmann representation of a broad class of quantum states,
-    transformations, measurements, channels, etc.
+    r"""
+    The Fock-Bargmann representation of a broad class of quantum states, transformations,
+    measurements, channels, etc.
 
     The ansatz available in this representation is a linear combination of
     exponentials of bilinear forms with a polynomial part:
@@ -109,37 +115,59 @@ class Bargmann(Representation):
         F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on Bargmann objects including
-    linear combinations, outer product, and inner product.
+    linear combinations, outer product (``&``), and inner product (``@``).
+
     The inner product is defined as the contraction of two Bargmann objects across
-    marked indices. This can also be used to contract existing indices
-    in a single Bargmann object, e.g. to implement the partial trace.
+    marked indices.
+    (@filippo can you help me find a simple way to explain the story of the marked
+    indices?)
 
-    Note that the operations that change the shape of the ansatz (outer product (``&``)
-    and inner product (``@``)) do not automatically modify the ordering of the
-    combined or leftover indices.
+    .. code-block ::
 
-    Examples:
-        .. code-block:: python
+        >>> import numpy as np
+        >>> from mrmustard.physics.representations import Bargmann
 
-            A = math.astensor([[[1.0]]])  # 1x1x1
-            b = math.astensor([[0.0]])    # 1x1
-            c = math.astensor([0.9])      # 1
-            psi1 = Bargmann(A, b, c)
-            psi2 = Bargmann(A, b, c)
-            psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
-            assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
-            psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
-            assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
-            psi5 = psi1 & psi2  # outer product (tensor product)
-            rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
-            assert rho.A.shape == (1, 2, 2)  # we have two wires now
-            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+        >>> # bargmann representation of one-mode vacuum
+        >>> A = np.array([[0,],])
+        >>> b = np.array([0,])
+        >>> c = 1
+        >>> rep_vac = Bargmann(A, b, c)
 
+        >>> # bargmann representation of one-mode dgate with gamma=1+0j
+        >>> A = np.array([[0, 1], [1, 0]])
+        >>> b = np.array([1, -1])
+        >>> c = 0.6065306597126334
+        >>> rep_dgate = Bargmann(A, b, c)
+
+        >>> # mark indices for contraction
+        >>> idx_vac = [0]
+        >>> idx_rep = [1]
+
+        >>> # bargmann representation of coh = vacuum >> dgate
+        >>> rep_coh = rep_vac[idx_vac] @ rep_dgate[idx_rep]
+        >>> assert np.allclose(rep_coh.A, [[0,],])
+        >>> assert np.allclose(rep_coh.b, [1,])
+        >>> assert np.allclose(rep_coh.c, 0.6065306597126334)
+        
+    This can also be used to contract existing indices in a single Bargmann object, e.g.
+    to implement the partial trace.
+
+    .. code-block ::
+
+    Note that the operations that change the shape of the ansatz (outer product and inner
+    product) do not automatically modify the ordering of the combined or leftover indices.
+    However, the ``reordering`` method allows reordering the representation after the products
+    have been carried out.
+
+    (@sam @filippo @yuan explain batches).
 
     Args:
-        A: batch of quadratic coefficient :math:`A_i`
-        b: batch of linear coefficients :math:`b_i`
-        c: batch of arrays :math:`c_i` (default: [1.0])
+        A: A batch of quadratic coefficient :math:`A_i`.
+        b: A batch of linear coefficients :math:`b_i`.
+        c: A batch of arrays :math:`c_i`.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
     """
 
     def __init__(
@@ -148,14 +176,6 @@ class Bargmann(Representation):
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = [1.0],
     ):
-        r"""Initializes the Bargmann representation. Args can be passed non-batched,
-        they will be automatically broadcasted to the correct batch shape.
-
-        Args:
-            A: batch of quadratic coefficient :math:`A_i`
-            b: batch of linear coefficients :math:`b_i`
-            c: batch of arrays :math:`c_i` (default: [1.0])
-        """
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = PolyExpAnsatz(A, b, c)
 
