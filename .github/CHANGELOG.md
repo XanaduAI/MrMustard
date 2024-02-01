@@ -15,7 +15,7 @@
 * Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
-* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+* Added `complex_gaussian_integral` method.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
