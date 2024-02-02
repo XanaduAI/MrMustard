@@ -370,11 +370,16 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         return tf.math.xlogy(x, y)
 
-    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+    def sqrtm(self, tensor: tf.Tensor, dtype, rtol=1e-05, atol=1e-08) -> Tensor:
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return tf.linalg.sqrtm(tensor)
+            ret = self.zeros_like(tensor)
+        else:
+            ret = tf.linalg.sqrtm(tensor)
+
+        if dtype is None:
+            return self.cast(ret, self.complex128)
+        return self.cast(ret, dtype)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions
