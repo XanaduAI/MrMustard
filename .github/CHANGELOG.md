@@ -88,6 +88,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
 * Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
 [(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
+* Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
+[(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
 
 ### Documentation
 
