@@ -15,7 +15,7 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
-from multiprocessing import Value
+from abc import abstractmethod
 
 import numpy as np
 
@@ -27,9 +27,20 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.utils.typing import Batch, ComplexTensor
 
 class State(CircuitComponent):
-    r"""Note: Bare-bones implementation.
-    Mixin class for quantum states. It supplies common functionalities and properties of Ket and DM.
+    r"""
+    Mixin class for quantum states. It supplies a few common functionalities and properties of Ket and DM.
     """
+
+    @property
+    @abstractmethod
+    def purity(self) -> float:
+        r"""Returns the purity of the state. Must be implemented in subclasses"""
+
+    @property
+    def is_mixed(self):
+        r"""Returns whether the state is mixed."""
+        return not self.is_pure
+
     @property
     def is_pure(self):
         r"""Returns whether the state is pure."""
@@ -39,19 +50,26 @@ class State(CircuitComponent):
     def L2_norm(self) -> float:
         r"""Returns the L2 norm of the Hilbert space vector or the Hilbert-Schmidt norm of a density matrix."""
         return float((self >> self.dual).representation)
-    
+
     def __getitem__(self, modes: int | tuple) -> CircuitComponent:
         r"""Returns a shallow copy of the component on an alternative set of modes"""
         modes = [modes] if isinstance(modes, int) else [i for i in modes]
         if len(modes) != self.num_modes:
             raise ValueError(f"modes must have length {self.num_modes}, got {len(modes)} instead")
-        return self.from_attributes(self.name, self.representation, self.wires)
+        return self.__class__(self.representation, modes, self.name)  # self is either Ket or DM
+
 
 
 class DM(State):
     """Density matrix class."""
     def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "DM"):
-        super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes, representation=representation)
+        super().__init__(representation=representation, modes_out_ket=modes, modes_out_bra=modes, name=name)
+
+    @classmethod
+    def from_attributes(cls, representation, wires, name):
+        dm = cls(representation, wires.output.modes, name)
+        dm._wires = wires
+        return dm
 
     @property # will be @lazy_if_numpy
     def probability(self) -> float:
@@ -139,7 +157,13 @@ class DM(State):
 
 class Ket(State):
     def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "Ket"):
-        super().__init__(name=name, modes_out_ket=modes, representation=representation)
+        super().__init__(representation=representation, modes_out_ket=modes, name=name)
+
+    @classmethod
+    def from_attributes(cls, representation, wires, name):
+        ket = cls(representation, wires.output.modes, name)
+        ket._wires = wires
+        return ket
 
     @property # will be @lazy_if_numpy
     def probability(self) -> float:
@@ -210,7 +234,7 @@ class Ket(State):
         r"""General constructor for kets in quadrature representation."""
         A, b, c = physics.bargmann.ket_from_quadrature(cov, means)
         return self.__class__(Bargmann(A, b, c), modes, name=name)
-    
+
     # will be cached if backend is numpy
     def quadrature(self, angle: float) -> tuple[Matrix, Vector]:
         r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.

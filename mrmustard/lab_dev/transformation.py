@@ -37,47 +37,6 @@ class Transformation(CircuitComponent):
             raise ValueError(f"modes must have length {self.num_modes}, got {len(modes)} instead")
         return self.__class__(self.representation, modes=modes)
 
-    def __eq__(self, other) -> bool:
-        r"""Returns whether the states are equal. Modes and all."""
-        return self.representation == other.representation and self.modes == other.modes
-
-    def __lshift__(self, other: State) -> CircuitComponent | complex:
-        r"""dual of __rshift__"""
-        return (other.dual >> self.dual).dual
-
-    def __add__(self, other: State):
-        r"""Implements addition of states. The meaning will be superposition in Hilbert space
-        if the states are Kets and mixture in the case of Density Matrices."""
-        if self.modes != other.modes:
-            raise ValueError(f"Can't add states on different modes (got {self.modes} and {other.modes})")
-        return self.__class__(self.representation + other.representation, modes=self.modes)
-
-    def __rmul__(self, other: Union[int, float, complex]):
-        r"""Implements multiplication from the left if the object on the left
-        does not implement __mul__ for the type of self.
-
-        E.g., ``0.5 * psi``.
-        """
-        assert isinstance(other, (int, float, complex))
-        return self.__class__(other * self.representation, modes=self.modes)
-
-    def __mul__(self, other):
-        r"""Implements multiplication of two objects."""
-        if isinstance(other, (int, float, complex)):
-            return other * self
-        modes = [m for m in self.modes if m not in other.modes] + [
-            m for m in other.modes if m not in self.modes
-        ]
-        return self.__class__(self.representation * other.representation, modes=modes)
-
-    def __truediv__(self, other: Union[int, float, complex]):
-        r"""Implements division by a scalar.
-
-        E.g. ``psi / 0.5``
-        """
-        assert isinstance(other, (int, float, complex))
-        return self.__class__(self.representation / other, modes=self.modes)
-
     def bargmann(self):
         r"""Returns the bargmann parameters if available. Otherwise, the representation
         object raises an AttributeError.

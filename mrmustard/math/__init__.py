@@ -16,6 +16,7 @@ r"""
 The point of entry for the backend.
 """
 import sys
+import types
 
 from .autocast import *
 from .caching import *
@@ -28,4 +29,10 @@ from .parameter_set import *
 from .tensor_networks import *
 from .tensor_wrappers import *
 
-sys.modules[__name__] = BackendManager()
+class MathModule(types.ModuleType):
+    """The main module for the math package."""
+    def __init__(self):
+        super().__init__(__name__)
+        self.backend_manager = BackendManager()
+
+sys.modules[__name__] = MathModule()
