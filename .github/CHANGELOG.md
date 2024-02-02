@@ -107,38 +107,17 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 ---
 
-<<<<<<< HEAD
 # Release 0.6.1-post1
-=======
-# Release 0.6.1-post1 (current release)
-
-### New features
-
-
-### Breaking changes
-
->>>>>>> 00cac30cff4129f5b906420814b5eba68eaf27e6
 
 ### Improvements
 
 * Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
   [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
 
-<<<<<<< HEAD
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
 
 
-=======
-### Bug fixes
-
-
-### Documentation
-
-### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
-
->>>>>>> 00cac30cff4129f5b906420814b5eba68eaf27e6
 ---
 # Release 0.6.0
 
