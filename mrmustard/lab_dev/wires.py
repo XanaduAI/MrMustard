@@ -221,6 +221,9 @@ class Wires:
     def __bool__(self) -> bool:
         return True if len(self.ids) > 0 else False
 
+    def __eq__(self, other: Wires) -> bool:
+        return np.array_equal(self.id_array > 0, other.id_array > 0)
+
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         "A view of this Wires object with wires only on the given modes."
         modes = [modes] if isinstance(modes, int) else modes
