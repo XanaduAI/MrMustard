@@ -22,36 +22,14 @@ from typing import Sequence
 
 from mrmustard import math
 from ..physics.representations import Bargmann
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .circuits import Circuit
-from .circuit_components import CircuitComponent
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
+from .state import Ket
 
-__all__ = ["Pure", "State", "Vacuum"]
-
-
-class State(CircuitComponent):
-    r"""
-    Base class for all states.
-    """
-
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
+__all__ = ["Vacuum"]
 
 
-class Pure(State):
-    r"""
-    Base class for all pure states.
 
-    Arguments:
-        name: The name of this pure state.
-        modes: The modes of this pure states.
-    """
-
-    def __init__(self, name: str, modes: Sequence[Mode]):
-        super().__init__(name, modes_out_ket=modes)
-
-
-class Vacuum(Pure):
+class Vacuum(Ket):
     r"""
     The N-mode vacuum state.
 
