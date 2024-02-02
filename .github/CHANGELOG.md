@@ -15,7 +15,7 @@
 * Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
-* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+* Added `complex_gaussian_integral` method.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
@@ -105,7 +105,29 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 ---
 
-# Release 0.6.0 (current release)
+# Release 0.6.1-post1 (current release)
+
+### New features
+
+
+### Breaking changes
+
+
+### Improvements
+
+* Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
+  [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
+
+### Bug fixes
+
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+# Release 0.6.0
 
 ### New features
 
