@@ -26,7 +26,7 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar
 #  ~~~~~~~~~~~~
 
 
-def vacuum_ABC_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
+def vacuum_state_ABC_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the ABC triples of the pure vacuum state.
 
     Args:
@@ -38,7 +38,7 @@ def vacuum_ABC_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
     return vacuum_A_matrix(num_modes), vacuum_B_vector(num_modes), 1
 
 
-def coherent_ABC_triples(
+def coherent_state_ABC_triples(
     x: Union[Scalar, Vector], y: Union[Scalar, Vector]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the ABC triples of the pure coherent state.
@@ -64,7 +64,7 @@ def coherent_ABC_triples(
     return vacuum_A_matrix(num_modes), x + 1j * y, math.exp(-0.5 * (x**2 + y**2))
 
 
-def squeezed_vacuum_ABC_triples(
+def squeezed_vacuum_state_ABC_triples(
     r: Union[Scalar, Vector], phi: Union[Scalar, Vector]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the ABC triples of a squeezed vacuum state.
@@ -90,7 +90,7 @@ def squeezed_vacuum_ABC_triples(
     return squeezed_vacuum_A_matrix(r, phi), vacuum_B_vector(num_modes), 1 / math.sqrt(math.cosh(r))
 
 
-def displaced_squeezed_vacuum__ABC_triples(
+def displaced_squeezed_vacuum_state_ABC_triples(
     x: Union[Scalar, Vector],
     y: Union[Scalar, Vector],
     r: Union[Scalar, Vector],
@@ -126,6 +126,25 @@ def displaced_squeezed_vacuum__ABC_triples(
     )
 
 
+#  ~~~~~~~~~~~~
+#  Mixed States
+#  ~~~~~~~~~~~~
+
+
+def thermal_state_ABC_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
+    r"""Returns the ABC triples of a thermal state.
+
+    Args:
+        nbar (vector): average number of photons per mode
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the thermal state.
+    """
+    nbar = math.atleast_1d(nbar, math.float64)
+    num_modes = nbar.shape[-1]
+    return nbar / (nbar + 1) * X_matrix(), vacuum_B_vector(num_modes), 1 / (nbar + 1)
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 #  Unitary transformations
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,6 +153,11 @@ def displaced_squeezed_vacuum__ABC_triples(
 #  ~~~~~~~~~~~~
 #  Utilities
 #  ~~~~~~~~~~~~
+
+
+def X_matrix() -> Matrix:
+    r"""Returns the X matrix."""
+    return math.array([[0, 1], [1, 0]])
 
 
 def vacuum_A_matrix(num_modes: int) -> Matrix:
