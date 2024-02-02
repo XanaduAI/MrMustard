@@ -406,7 +406,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             ret = self.zeros_like(tensor)
         else:
             ret = scipy_sqrtm(tensor)
-        
+
         if dtype is None:
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
