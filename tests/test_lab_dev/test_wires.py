@@ -62,18 +62,18 @@ def test_setting_ids():
     assert w.ids == [9, 99, 999, 9999]
 
 
-def test_add_wires():
+def test_non_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([1], [2], [3], [4])
     w12 = Wires([0, 1], [1, 2], [2, 3], [3, 4])
-    assert (w1 + w2).modes == w12.modes
+    assert (w1 >> w2).modes == w12.modes
 
 
 def test_cant_add_overlapping_wires():
     w1 = Wires([0], [1], [2], [3])
     w2 = Wires([0], [2], [3], [4])
-    with pytest.raises(Exception):
-        w1 + w2
+    with pytest.raises(ValueError):
+        w1 >> w2  # pylint: disable=pointless-statement # type: ignore
 
 
 def test_args():
@@ -93,4 +93,4 @@ def test_error_if_cant_contract():
     u = Wires([], [], [0], [])  # only output wire
     v = Wires([], [], [0], [])  # only output wire
     with pytest.raises(ValueError):
-        u >> v
+        u >> v  # pylint: disable=pointless-statement  # type: ignore

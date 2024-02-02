@@ -15,11 +15,14 @@
 * Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
-* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+* Added `complex_gaussian_integral` method.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
   [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
+
+* Added a new class `Wires` in `mrmustard.lab` to handle the connectivity of objects in a circuit.
+  [(#330)](https://github.com/XanaduAI/MrMustard/pull/330)
 
 ### Breaking changes
 * Removed circular dependencies by:
