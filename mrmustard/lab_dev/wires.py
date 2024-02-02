@@ -12,73 +12,95 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""`Wires` class for handling the connectivity of an object in a circuit."""
+""" ``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
 
 from typing import Iterable, Optional
-
 import numpy as np
 
 from mrmustard import settings
 
-# pylint: disable=protected-access
-# pylint: disable=import-outside-toplevel
+__all__ = ["Wires"]
+
 
 
 class Wires:
-    r"""`Wires` class for handling the connectivity of an object in a circuit.
-    In MrMustard, ``CircuitComponent``s have a ``Wires`` object as attribute
-    to handle the wires of the component and to connect components together.
+    r"""
+    A class with wire functionality for tensor network applications.
 
-    Wires are arranged into four groups, and each of the groups can
-    span multiple modes:
-                        _______________
-    input bra modes --->|   circuit   |---> output bra modes
-    input ket modes --->|  component  |---> output ket modes
-                        ---------------
-    Each of the four groups can be empty. In particular, the wires of a state have
-    no inputs and the wires of a measurement have no outputs. Similarly,
-    a standard unitary transformation has no bra wires.
+    In MrMustard, we represent circuit components as tensors in a tensor network. The wires of
+    these components describe how they connect with the surrounding components. For example, an
+    `N`-mode pure state has `N` ket wires on the output side, while a `N`-mode mixed state
+    has `N` ket wires and `N` bra wires on the output side.
 
-    We refer to these four groups in a "standard order":
-        0. output_bra for all modes
-        1. input_bra for all modes
-        2. output_ket for all modes
-        3. input_ket for all modes
+    ``Wires`` objects store the information related to the wires of circuit components. Each wire
+    in a ``Wires`` object is specified by a numerical id, which is random and unique. When two different
+    ``Wires`` object have one or more wires with the same ids, we treat them as connected. Otherwise,
+    we treat them as disconnected.
 
-    A ``Wires`` object can return subsets (views) of itself. Available subsets are:
-    - input/output  (wires on input/output side)
-    - bra/ket       (wires on bra/ket side)
-    - modes         (wires on the given modes)
+    The list of all these ids can be accessed using the ``ids`` property.
 
-    For example, ``wires.input`` returns a ``Wires`` object with only the input wires
-    (on bra and ket sides and on all the modes).
-    Note that these can be combined together: ``wires.input.bra[(1,2)] returns a
-    ``Wires`` object with only the input bra wires on modes 1 and 2.
-    Note these are views of the original ``Wires`` object, i.e. we can set the ``ids`` on the
-    views and it will be set on the original, e.g. this is a valid way to connect two sets
-    of wires by setting their ids to be equal: ``wires1.output.ids = wires2.input.ids``.
+    .. code-block::
 
-    A very useful feature of the ``Wires`` class is the support for the right shift
-    operator ``>>``. This allows us to connect two ``Wires`` objects together as
-    ``wires1 >> wires2``. This will return the ``Wires`` object of the two
-    wires objects connected together as if they were in a circuit:
-               ____________                             ____________
-    in bra --->|  wires1  |---> out bra ---> in bra --->|  wires2  |---> out bra
-    in ket --->|          |---> out ket ---> in ket --->|          |---> out ket
-               ------------                             ------------
-    The returned ``Wires`` object will contain the surviving wires of the two
-    ``Wires`` objects and it will raise an error if there are overlaps between
-    the surviving wires. This is especially useful for handling the ordering of the
-    wires when connecting components together: we are always guaranteed that a
-    ``Wires`` object will provide the wires in the standard order.
+        >>> from mrmustard.lab_dev.wires import Wires
+
+        >>> modes_out_bra=[0, 1]
+        >>> modes_in_bra=[1, 2]
+        >>> modes_out_ket=[0, 3]
+        >>> modes_in_ket=[1, 2, 3]
+        >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+
+        >>> # access the modes
+        >>> modes = w.modes
+        >>> assert w.modes == [0, 1, 2, 3]
+
+        >>> # access the ids
+        >>> ids = w.ids
+        >>> assert len(ids) == 9
+
+        >>> # get input/output subsets
+        >>> w_in = w.input
+        >>> assert w_in.modes == [1, 2, 3]
+
+        >>> # get ket/bra subsets
+        >>> w_in_bra = w_in.bra
+        >>> assert w_in_bra.modes == [1, 2]
+
+    The standard order for the list of ids is:
+
+    - ids for all the output bra wires.
+
+    - ids for all the input bra wires.
+
+    - ids for all the output ket wires.
+
+    - ids for all the input ket wires.
+
+    .. code-block::
+
+        >>> assert w.output.bra.ids == w.ids[:2]
+        >>> assert w.input.bra.ids == w.ids[2:4]
+        >>> assert w.output.ket.ids == w.ids[4:6]
+        >>> assert w.input.ket.ids == w.ids[6:]
+
+    To access the index of a su set of wires in standard order (i.e. skipping over wires not belonging to the subset),
+    one can use the ``indices`` attribute:
+
+    .. code-block::
+
+        >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
+
+        >>> assert w.indices == [0,1,2,3]
+        >>> assert w.input.indices == [2,3]
+
+    Note that subsets return new ``Wires`` objects with the same ids as the original object.
 
     Args:
-        modes_out_bra (Iterable[int]): The output modes on the bra side.
-        modes_in_bra (Iterable[int]): The input modes on the bra side.
-        modes_out_ket (Iterable[int]): The output modes on the ket side.
-        modes_in_ket (Iterable[int]): The input modes on the ket side.
+        modes_out_bra: The output modes on the bra side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_ket: The input modes on the ket side.
 
     Note that the order of the modes passed to initialize the object doesn't matter,
     as they get sorted at init time.
@@ -108,7 +130,10 @@ class Wires:
         self._mask = np.ones_like(self._id_array)  # multiplicative mask
 
     def _args(self):
-        r"""Returns the same args one needs to initialize this object."""
+        r"""
+        Returns the input arguments needed to initialize the same ``Wires`` object
+        (with different ids).
+        """
         ob_modes = np.array(self._modes)[self._id_array[:, 0] > 0].tolist()
         ib_modes = np.array(self._modes)[self._id_array[:, 1] > 0].tolist()
         ok_modes = np.array(self._modes)[self._id_array[:, 2] > 0].tolist()
@@ -116,8 +141,10 @@ class Wires:
         return tuple(ob_modes), tuple(ib_modes), tuple(ok_modes), tuple(ik_modes)
 
     @classmethod
-    def _from_data(cls, id_array: np.ndarray, modes: list[int], mask=None):
-        r"""Private class method to initialize Wires object from the given data."""
+    def _from_data(cls, id_array, modes, mask=None):
+        r"""
+        Initializes ``Wires`` object from its private attributes.
+        """
         w = cls()
         w._id_array = id_array
         w._modes = modes
@@ -125,43 +152,71 @@ class Wires:
         return w
 
     def _view(self, masked_rows: tuple[int, ...] = (), masked_cols: tuple[int, ...] = ()) -> Wires:
-        r"""A masked view of this Wires object."""
+        r"""
+        A masked view of this Wires object.
+        """
         w = self._from_data(self._id_array, self._modes, self._mask.copy())
         w._mask[masked_rows, :] = -1
         w._mask[:, masked_cols] = -1
         return w
 
     def _mode(self, mode: int) -> np.ndarray:
-        "A slice of the id_array matrix at the given mode."
+        r"""
+        A slice of the id_array matrix at the given mode.
+        """
         return np.maximum(0, self.id_array[[self._modes.index(mode)]])[0]
 
     @property
     def id_array(self) -> np.ndarray:
-        "The id_array of the available wires in the standard order (bra/ket x out/in x mode)."
+        r"""
+        The id_array of the available wires in a two-dimensional array, where line ``j`` contains
+        the ids (in the standard order) for mode ``j``.
+        """
         return self._id_array * self._mask
 
     @property
     def ids(self) -> list[int]:
-        "The list of ids of the available wires in the standard order."
+        r"""
+        The list of ids of the available wires in the standard order.
+        """
         flat = self.id_array.T.ravel()
         return flat[flat > 0].tolist()
 
     @ids.setter
     def ids(self, ids: list[int]):
-        "Sets the ids of the available wires."
+        r"""
+        Sets the ids of the available wires.
+
+        Args:
+            ids: The new ids.
+
+        Raises:
+            ValueError: If the number of ids does not match the expected number.
+        """
         if len(ids) != len(self.ids):
             raise ValueError(f"wrong number of ids (expected {len(self.ids)}, got {len(ids)})")
         self._id_array.flat[self.id_array.flatten() > 0] = ids
 
     @property
     def modes(self) -> list[int]:
-        "The set of modes spanned by the populated wires."
+        r"""
+        The list of modes of the populated wires.
+        """
         return [m for m in self._modes if any(self.id_array[self._modes.index(m)] > 0)]
 
     @property
     def indices(self) -> list[int]:
-        r"""Returns the array of indices of this subset in the standard order.
-        (bra/ket x out/in x mode). Use this to get the indices for bargmann contractions.
+        r"""
+        The array of indices of this ``Wires`` in the standard order. The array of indices
+        of this ``Wires`` in the standard order. When a subset is selected, it skips the
+        indices of wires that do not belong to the subset.
+
+        .. code-block::
+
+            >>> w = Wires(modes_in_ket = [0,1], modes_out_ket = [0,1])
+
+            >>> assert w.indices == [0,1,2,3]
+            >>> assert w.input.indices == [2,3]
         """
         flat = self.id_array.T.ravel()
         flat = flat[flat != 0]
@@ -169,46 +224,64 @@ class Wires:
 
     @property
     def input(self) -> Wires:
-        "A view of self without output wires"
+        r"""
+        A view of this ``Wires`` object without output wires.
+        """
         return self._view(masked_cols=(0, 2))
 
     @property
     def output(self) -> Wires:
-        "A view of self without input wires"
+        r"""
+        A view of this ``Wires`` object without input wires.
+        """
         return self._view(masked_cols=(1, 3))
 
     @property
     def ket(self) -> Wires:
-        "A view of self without bra wires"
+        r"""
+        A view of this ``Wires`` object without bra wires.
+        """
         return self._view(masked_cols=(0, 1))
 
     @property
     def bra(self) -> Wires:
-        "A view of self without ket wires"
+        r"""
+        A view of this ``Wires`` object without ket wires.
+        """
         return self._view(masked_cols=(2, 3))
 
     @property
     def adjoint(self) -> Wires:
         r"""
-        The adjoint (ket <-> bra) of this wires object.
+        The adjoint of this wires object, obtained by swapping ket and bra wires.
         """
         return self._from_data(self._id_array[:, [2, 3, 0, 1]], self._modes, self._mask)
 
     @property
     def dual(self) -> Wires:
         r"""
-        The dual (in <-> out) of this wires object.
+        The dual of this wires object, obtained by swapping input and output wires.
         """
         return self._from_data(self._id_array[:, [1, 0, 3, 2]], self._modes, self._mask)
 
     def copy(self) -> Wires:
-        r"""A copy of this Wires object with new ids."""
+        r"""
+        A copy of this ``Wires`` object, with new ids.
+        """
         w = Wires(*self._args())
         w._mask = self._mask.copy()
         return w
 
     def __add__(self, other: Wires) -> Wires:
-        "A new Wires object with the wires of self and other combined."
+        r"""
+        A new ``Wires`` object that combines the wires of ``self`` and those of ``other``.
+
+        Args:
+            other: The wire to add.
+
+        Raise:
+            ValueError: If the two ``Wires`` being added have an overlap that cannot be resolved.
+        """
         modes_rows = {}
         all_modes = sorted(set(self.modes) | set(other.modes))
         for m in all_modes:
@@ -221,13 +294,18 @@ class Wires:
         return self._from_data(combined_array, sorted(modes_rows), np.ones_like(combined_array))
 
     def __bool__(self) -> bool:
+        r"""
+        Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
+        """
         return len(self.ids) > 0
 
     def __eq__(self, other: Wires) -> bool:
         return np.array_equal(self.id_array > 0, other.id_array > 0)
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
-        "A view of this Wires object with wires only on the given modes."
+        r"""
+        A view of this Wires object with wires only on the given modes.
+        """
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
@@ -236,26 +314,38 @@ class Wires:
         return (other.dual >> self.dual).dual  # how cool is this
 
     @staticmethod
-    def _outin(si, so, oi, oo):
-        r"""Returns the output and input wires of the composite object made by connecting
-        two single-mode (ket or bra) objects like --|self|-- and --|other|--
-        At this stage we are guaranteed that the configurations `|self|--  |other|--`  and
-        `--|self|  --|other|` (which would be invalid) have already been excluded.
+    def _outin(self_in: int, self_out: int, other_in: int, other_out: int) -> np.ndarray:
+        r"""
+        Returns the ids of the composite object made by connecting an object self with ids
+        ``self_in`` and ``self_out`` to an object other with ids ``other_in`` and ``other_out``.
+
+        Assumes that the configurations ``--|self|  --|other|`` or ``|self|--  |other|--``,
+        which would lead to an overlap of wires, have already been excluded.
+
+        Note that the order of the returned ids is ``[out, in]``, as per standard order.
         """
-        if bool(so) == bool(oi):  # if the inner wires are either both there or both not there
-            return np.array([oo, si], dtype=np.int64)
-        elif not si and not so:  # no wires on self
-            return np.array([oo, oi], dtype=np.int64)
+        if bool(self_out) == bool(
+            other_in
+        ):  # if the inner wires are either both there or both not there
+            return np.array([other_out, self_in], dtype=np.int64)
+        elif not self_in and not self_out:  # no wires on self
+            return np.array([other_out, other_in], dtype=np.int64)
         else:  # no wires on other
-            return np.array([so, si], dtype=np.int64)
+            return np.array([self_out, self_in], dtype=np.int64)
 
     def __rshift__(self, other: Wires) -> Wires:
+        r"""
+        A new Wires object with the wires of ``self`` and ``other`` combined as two
+        components in a circuit: the output of self connects to the input of other wherever
+        they match. All surviving wires are arranged in the standard order.
+        A ValueError is raised if there are any surviving wires that overlap.
+        """
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
 
         for m in set(self.modes) & set(other.modes):
-            sob, sib, sok, sik = self._mode(m)  # m-th row of self
-            oob, oib, ook, oik = other._mode(m)  # m-th row of other
+            sob, sib, sok, sik = self._mode(m)  # row of self
+            oob, oib, ook, oik = other._mode(m)  # row of other
 
             out_bra_issue = sob and oob and not oib
             out_ket_issue = sok and ook and not oik
@@ -331,10 +421,7 @@ class Wires:
         html += "</table>"
 
         try:
-            from IPython.core.display import (
-                HTML,
-                display,
-            )
+            from IPython.display import display, HTML
 
             display(HTML(html))
         except ImportError as e:

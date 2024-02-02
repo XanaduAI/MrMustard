@@ -21,6 +21,8 @@ from rich import print
 import rich.table
 import numpy as np
 
+from mrmustard.utils.filters import add_complex_warning_filter, remove_complex_warning_filter
+
 __all__ = ["Settings", "settings"]
 
 
@@ -106,6 +108,7 @@ class Settings:
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
+        self._complex_warning = False
 
     def _force_hbar(self, value):
         r"can set the value of HBAR at any time. use with caution."
@@ -146,6 +149,19 @@ class Settings:
     @CIRCUIT_DECIMALS.setter
     def CIRCUIT_DECIMALS(self, value: int):
         self._circuit_decimals = value
+
+    @property
+    def COMPLEX_WARNING(self):
+        r"""Whether tensorflow's ``ComplexWarning``s should be raised when a complex is casted to a float. Default is ``False``."""
+        return self._complex_warning
+
+    @COMPLEX_WARNING.setter
+    def COMPLEX_WARNING(self, value: bool):
+        self._complex_warning = value
+        if value:
+            remove_complex_warning_filter()
+        else:
+            add_complex_warning_filter()
 
     @property
     def DEBUG(self):

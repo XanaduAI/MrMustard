@@ -14,13 +14,19 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+import logging
 import numpy as np
+
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
 import tensorflow as tf
 import tensorflow_probability as tfp
+
+logging.getLogger("tensorflow").setLevel(logging.INFO)
+
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -107,9 +113,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
-
-        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
-            array = self.real(array)
         return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
