@@ -990,16 +990,24 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         Args:
             x: The array to take the square root of
-            dtype (type): ``dtype`` of the output array.
+            dtype: ``dtype`` of the output array.
 
         Returns:
             The square root of ``x``
         """
         return self._apply("sqrt", (x, dtype))
 
-    def sqrtm(self, tensor: Tensor) -> Tensor:
-        r"""The matrix square root."""
-        return self._apply("sqrtm", (tensor,))
+    def sqrtm(self, tensor: Tensor, dtype=None) -> Tensor:
+        r"""The matrix square root.
+
+        Args:
+            tensor: The tensor to take the matrix square root of.
+            dtype: The ``dtype`` of the output tensor. If ``None``, the output
+                is of type ``math.complex128``.
+
+        Returns:
+            The square root of ``x``"""
+        return self._apply("sqrtm", (tensor, dtype))
 
     def sum(self, array: Tensor, axes: Sequence[int] = None):
         r"""The sum of array.
