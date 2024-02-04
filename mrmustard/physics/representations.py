@@ -14,15 +14,21 @@
 
 from __future__ import annotations
 
+from typing import Iterable
 import numpy as np
 from matplotlib import colors
 import matplotlib.pyplot as plt
 from mrmustard import math
-from mrmustard.physics import bargmann
-from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
-import numpy as np
-from mrmustard import math
+from mrmustard.physics import bargmann, fock
+from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.utils.typing import (
+    Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    Scalar,
+    Tensor,
+)
 
 
 class Representation:
@@ -310,3 +316,179 @@ class Bargmann(Representation):
         ax.set_title(f"${title}$")
         plt.show(block=False)
         return fig, ax
+
+
+class Fock(Representation):
+    r"""The Fock representation of a broad class of quantum states,
+    transformations, measurements, channels, etc.
+
+    The ansatz available in this representation is ArrayAnsatz.
+
+    This class allows for operations of Fock tensors.
+
+    Examples:
+        .. code-block:: python
+            array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+            array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+            array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+            fock1 = Fock(array1)
+            fock2 = Fock(array2)
+            fock3 = Fock(array3)
+
+            fock4 = 1.3 * fock1 - fock2 * 2.1  # linear combination can be done with the same batch dimension
+            assert fock4.ansatz.array.shape == (1,5,7,8)
+
+            fock5 = fock1 / 1.3  # supports division by a scalar
+            assert fock5.ansatz.array.shape == (1,5,7,8)
+
+            fock6 = fock1[2] @ fock3[2]  # contract wires 2 on each (inner product)
+            assert fock6.array.shape == (3, 5, 7, 5, 7) # note that the batch is 1 * 3
+
+            fock7 = fock1 & fock3  # outer product (tensor product)
+            assert fock7.array.shape == (3, 5, 7, 8, 5, 7, 8) # the batch is 1*3
+
+            fock8 = fock1.conj() # conjugate of it
+            assert fock8.array.shape == (1,5,7,8)
+    Args:
+        array (Batch[Tensor]): the (batched) array in Fock representation.
+        batched (bool): if the array input has a batch dimension. False by default.
+
+    """
+
+    def __init__(self, array: Batch[Tensor], batched=False):
+        self._contract_idxs: tuple[int, ...] = ()
+        if not batched:
+            array = array[None, ...]
+        self.ansatz = ArrayAnsatz(array=array)
+
+    @classmethod
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:
+        r"""Returns a Fock object from an ansatz object."""
+        return cls(ansatz.array, batched=True)
+
+    @property
+    def array(self) -> Batch[Tensor]:
+        r"""
+        The array from the ansatz.
+        """
+        return self.ansatz.array
+
+    def conj(self):
+        r"""
+        The conjugate of this Fock object.
+        """
+        new = self.from_ansatz(self.ansatz.conj)
+        new._contract_idxs = self._contract_idxs
+        return new
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
+        r"""Returns a copy of self with the given indices marked for contraction."""
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i >= len(self.array.shape):
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                )
+        new = self.from_ansatz(self.ansatz)
+        new._contract_idxs = idx
+        return new
+
+    def __matmul__(self, other: Fock) -> Fock:
+        r"""Implements the inner product of ansatze across the marked indices.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+
+        Order of index:
+        The new Fock's order is arranged as uncontracted elements in self and then other.
+        """
+        axes = [list(self._contract_idxs), list(other._contract_idxs)]
+        new_array = []
+        for i in range(self.array.shape[0]):
+            for j in range(other.array.shape[0]):
+                new_array.append(math.tensordot(self.array[i], other.array[j], axes))
+        return self.from_ansatz(ArrayAnsatz(new_array))
+
+    def __add__(self, other: Fock) -> Fock:
+        r"""
+        Adds two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz + other.ansatz)
+
+    def __sub__(self, other: Fock) -> Fock:
+        r"""
+        Subtracts two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz - other.ansatz)
+
+    def __mul__(self, other: Fock | Scalar) -> Fock:
+        r"""
+        Multiplies two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        if isinstance(other, Fock):
+            return self.from_ansatz(self.ansatz * other.ansatz)
+        else:
+            return self.from_ansatz(self.ansatz * other)
+
+    def __truediv__(self, other: Fock) -> Fock:
+        r"""
+        Divides two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        if isinstance(other, Fock):
+            return self.from_ansatz(self.ansatz / other.ansatz)
+        else:
+            return self.from_ansatz(self.ansatz / other)
+
+    def __and__(self, other: Fock) -> Fock:
+        r"""
+        Outer product two Fock representations.
+
+        Batch:
+        The new Fock will hold the tensor product batch of them.
+        """
+        return self.from_ansatz(self.ansatz & other.ansatz)
+
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
+        r"""Implements the partial trace over the given index pairs.
+
+        Args:
+            idxs1 tuple(int): first part of the pairs of indices to trace over
+            idxs2 tuple(int): second part
+
+        Returns:
+            Fock: the ansatz with the given pairs of indices traced over
+        """
+        if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
+            raise ValueError("idxs must be of equal length and disjoint")
+        order = (
+            [0]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [i + 1 for i in idxs1]
+            + [i + 1 for i in idxs2]
+        )
+        new_array = math.transpose(self.array, order)
+        n = np.prod(new_array.shape[-len(idxs2) :])
+        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
+        return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
+
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
+        r"""Reorders the indices of the array with the given order.
+        Args:
+            order tuple[int]: does not need to refer to the batch dimension
+
+        Returns a new Fock object."""
+        return self.from_ansatz(
+            ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
+        )

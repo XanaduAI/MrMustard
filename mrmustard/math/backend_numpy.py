@@ -320,7 +320,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.tile(array, repeats)
 
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return self.cast(np.trace(array), dtype)
+        return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
     def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> Optional[np.ndarray]:
         if a is None:

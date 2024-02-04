@@ -140,6 +140,8 @@ def complex_gaussian_integral(
         raise ValueError("idx_z and idx_zconj must have the same length")
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
+    if not idx:
+        return A, b, c
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
     I = math.eye(n, dtype=A.dtype)
