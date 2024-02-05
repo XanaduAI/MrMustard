@@ -203,7 +203,44 @@ def rotation_gate_ABC_triples(theta: Union[Scalar, Vector]):
     """
     theta = math.atleast_1d(theta, math.float64)
     num_modes = theta.shape[-1]
-    return X_matrix_for_unitary(num_modes), vacuum_B_vector(num_modes), 1.0
+    return (
+        math.cast(
+            np.kron(math.array([[0, 1], [1, 0]]), math.exp(1j * theta) * math.eye(num_modes)),
+            math.complex128,
+        ),
+        vacuum_B_vector(num_modes),
+        1.0,
+    )
+
+
+def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of a displacement gate.
+
+    The gate is defined by
+        :math:`D(\gamma) = \exp(\gamma\hat{a}^\dagger-\gamma^*\hat{a})`,
+    where ``\gamma = x + 1j*y``.
+
+    The dimension depends on the dimensions of ``gamma``.
+
+    Args:
+        x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
+        y (scalar or vector): imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the displacement gate.
+    """
+    x = math.atleast_1d(x, math.float64)
+    y = math.atleast_1d(y, math.float64)
+    if x.shape[-1] == 1:
+        x = math.tile(x, y.shape)
+    if y.shape[-1] == 1:
+        y = math.tile(y, x.shape)
+    num_modes = x.shape
+    return (
+        X_matrix_for_unitary(num_modes),
+        math.concat([x + 1j * y, -x + 1j * y], axis=0),
+        math.sum(math.exp(-(x**2 + y**2) / 2)),
+    )
 
 
 #  ~~~~~~~~~~~~
