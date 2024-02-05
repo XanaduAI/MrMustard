@@ -14,6 +14,12 @@
 
 """
 This module contains the ABC triples for states, transformations in Bargmann representation.
+
+Note that the ABC triples follow the same standard order definition as Wires class:
+Pure states: (out_ket_1, out_ket_2, ...)
+Mixed states: (out_bra_1, out_bra_2, ...; out_ket_1, out_ket_2, ...)
+Unitaries: (out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...))
+Channels: (out_bra_1, out_bra_2, ...; in_bra_1, in_bra_2, ...; out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...)
 """
 
 from typing import Union
