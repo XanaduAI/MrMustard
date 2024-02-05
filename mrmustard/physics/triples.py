@@ -271,8 +271,41 @@ def squeezing_gate_ABC_triples(r: Union[Scalar, Vector], delta: Union[Scalar, Ve
         r = math.tile(r, delta.shape)
     if delta.shape[-1] == 1:
         delta = math.tile(delta, r.shape)
-    shape = delta.shape[-1] * 2
-    return squeezing_gate_A_matrix(r, delta), vacuum_B_vector(shape), 1 / math.sqrt(math.cosh(r))
+    num_modes = delta.shape[-1]
+    return (
+        squeezing_gate_A_matrix(r, delta),
+        vacuum_B_vector(num_modes * 2),
+        1 / math.sqrt(math.cosh(r)),
+    )
+
+
+def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of a beamsplitter gate on two modes.
+
+    The gate is defined by
+        :math:`BS(\theta, \phi) = \exp()`.
+
+    The dimension depends on the dimensions of ``theta`` and ``phi``. If one of them has dimension one, we will repete it
+    to have the same dimension as the other one. For example, if ``theta = [1,2,3], phi = [1]``, we will fill it automatically
+    like ``theta = [1,2,3], phi = [1,1,1]``.
+
+    Args:
+        theta (scalar or vector): transmissivity parameter
+        phi (scalar or vector): phase parameter
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the beamsplitter gate.
+    """
+    theta = math.atleast_1d(theta, math.float64)
+    phi = math.atleast_1d(phi, math.float64)
+    if theta.shape[-1] == 1:
+        theta = math.tile(theta, phi.shape)
+    if phi.shape[-1] == 1:
+        phi = math.tile(phi, theta.shape)
+    num_modes = phi.shape[-1]
+    O_n = math.zeros((num_modes, num_modes))
+    V = beamsplitter_gate_V_matrix(theta, phi)
+    return math.array([[O_n, V], [math.transpose(V), O_n]]), vacuum_B_vector(num_modes * 2), 1.0
 
 
 #  ~~~~~~~~~~~~
@@ -334,4 +367,13 @@ def squeezing_gate_A_matrix(r: Union[Scalar, Vector], delta: Union[Scalar, Vecto
     sechr = 1 / math.cosh(r)
     return math.array(
         [[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]]
+    )
+
+
+def beamsplitter_gate_V_matrix(theta: Union[Scalar, Vector], phi: Union[Scalar, Vector]):
+    r"""Returns the V transformation matrix of a beamsplitter."""
+    costheta = math.cos(theta)
+    sintheta = math.sin(theta)
+    return math.array(
+        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
     )
