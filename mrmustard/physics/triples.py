@@ -305,7 +305,44 @@ def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scala
     num_modes = phi.shape[-1]
     O_n = math.zeros((num_modes, num_modes))
     V = beamsplitter_gate_V_matrix(theta, phi)
-    return math.array([[O_n, V], [math.transpose(V), O_n]]), vacuum_B_vector(num_modes * 2), 1.0
+    return math.block([[O_n, V], [math.transpose(V), O_n]]), vacuum_B_vector(num_modes * 2), 1.0
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~
+#  Unitary transformations
+# ~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+def attenuator_ABC_triples(eta: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of an atternuator.
+
+    The dimension depends on the dimensions of ``eta``.
+
+    Args:
+        eta (scalar or vector): value of the transmissivity, must be between 0 and 1
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the attenuator channel.
+    """
+    eta = math.atleast_1d(eta, math.float64)
+    num_modes = eta.shape[-1]
+    return attenuator_A_matrix(eta, num_modes), vacuum_B_vector(num_modes * 2), np.prod(eta)
+
+
+def amplifier_ABC_triples(g: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of an amplifier.
+
+    The dimension depends on the dimensions of ``g``.
+
+    Args:
+        g (scalar or vector): value of the gain > 1
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the amplifier channel.
+    """
+    g = math.atleast_1d(g, math.float64)
+    num_modes = g.shape[-1]
+    return amplifier_A_matrix(g, num_modes), vacuum_B_vector(num_modes * 2), np.prod(1 / g)
 
 
 #  ~~~~~~~~~~~~
@@ -353,7 +390,7 @@ def two_mode_squeezed_vacuum_A_matrix(
 ):
     r"""Returns the A matrix of a two-mode squeezed vacuum state."""
     O_n = math.zeros((num_modes, num_modes))
-    return math.array(
+    return math.block(
         [
             [O_n, -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)],
             [-math.exp(1j * phi) * math.sinh(r) / math.cosh(r), O_n],
@@ -365,7 +402,7 @@ def squeezing_gate_A_matrix(r: Union[Scalar, Vector], delta: Union[Scalar, Vecto
     r"""Returns the A matrix of a squeezing gate."""
     tanhr = math.sinh(r) / math.cosh(r)
     sechr = 1 / math.cosh(r)
-    return math.array(
+    return math.block(
         [[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]]
     )
 
@@ -374,6 +411,32 @@ def beamsplitter_gate_V_matrix(theta: Union[Scalar, Vector], phi: Union[Scalar, 
     r"""Returns the V transformation matrix of a beamsplitter."""
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
-    return math.array(
+    return math.block(
         [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
+    )
+
+
+def attenuator_A_matrix(eta: Union[Scalar, Vector], num_modes):
+    r"""Returns the A matrix of an attenuator."""
+    O_n = math.zeros((num_modes, num_modes))
+    return math.block(
+        [
+            [O_n, math.sqrt(eta), O_n, O_n],
+            [math.sqrt(eta), O_n, O_n, 1 - eta],
+            [O_n, O_n, O_n, math.sqrt(eta)],
+            [O_n, 1 - eta, math.sqrt(eta), O_n],
+        ]
+    )
+
+
+def amplifier_A_matrix(g: Union[Scalar, Vector], num_modes):
+    r"""Returns the A matrix of an amplifier."""
+    O_n = math.zeros((num_modes, num_modes))
+    return math.block(
+        [
+            [O_n, 1 / math.sqrt(g), 1 - 1 / g, O_n],
+            [1 / math.sqrt(g), O_n, O_n, 1 - g],
+            [1 - 1 / g, O_n, O_n, 1 / math.sqrt(g)],
+            [O_n, O_n, 1 / math.sqrt(g), O_n],
+        ]
     )
