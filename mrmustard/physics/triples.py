@@ -119,7 +119,9 @@ def displaced_squeezed_vacuum_state_ABC_triples(
     phi = math.atleast_1d(phi, math.float64)
     x = math.atleast_1d(x, math.float64)
     y = math.atleast_1d(y, math.float64)
-    if not ((r.shape[-1] == phi.shape[-1]) & (x.shape[-1] == y.shape[-1]) &(r.shape[-1] == x.shape[-1])):
+    if not (
+        (r.shape[-1] == phi.shape[-1]) & (x.shape[-1] == y.shape[-1]) & (r.shape[-1] == x.shape[-1])
+    ):
         raise ValueError("The shape of them must be the same.")
     return (
         squeezed_vacuum_A_matrix(r, phi),
@@ -191,7 +193,7 @@ def rotation_gate_ABC_triples(theta: Union[Scalar, Vector]):
     r"""Returns the ABC triples of a rotation gate.
 
     The gate is defined by
-        :math:`R(\theta) = \exp(i\theta(\hat{a}-\hat{a}^\dagger))`.
+        :math:`R(\theta) = \exp(i\theta\hat{a}^\dagger\hat{a})`.
 
     The dimension depends on the dimensions of ``theta``.
 
