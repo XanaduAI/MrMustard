@@ -36,9 +36,9 @@ class Representation(ABC):
     r"""
     A base class for representations.
 
-    Given an ``Ansatz``, ``Representation``s can be initialized using the ``from_ansatz``
-    method. This automatically equips them with all the functionality required to perform
-    mathematical operations, such as equality, multiplication, subtraction, etc. 
+    Representations can be initialized using the ``from_ansatz`` method, which automatically equips
+    them with all the functionality required to perform mathematical operations, such as equality,
+    multiplication, subtraction, etc. 
     """
 
     @abstractmethod
@@ -108,19 +108,14 @@ class Bargmann(Representation):
     The Fock-Bargmann representation of a broad class of quantum states, transformations,
     measurements, channels, etc.
 
-    The ansatz available in this representation is a linear combination of
-    exponentials of bilinear forms with a polynomial part:
+    The ansatz available in this representation is a linear combination of exponentials
+    of bilinear forms with a polynomial part:
 
     .. math::
         F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on Bargmann objects including
     linear combinations, outer product (``&``), and inner product (``@``).
-
-    The inner product is defined as the contraction of two Bargmann objects across
-    marked indices.
-    (@filippo can you help me find a simple way to explain the story of the marked
-    indices?)
 
     .. code-block ::
 
@@ -138,6 +133,13 @@ class Bargmann(Representation):
         >>> b = np.array([1, -1])
         >>> c = 0.6065306597126334
         >>> rep_dgate = Bargmann(A, b, c)
+    
+    The inner product is defined as the contraction of two Bargmann objects across
+    marked indices.
+    (@filippo can you help me find a simple way to explain the story of the marked
+    indices?)
+
+    .. code-block ::
 
         >>> # mark indices for contraction
         >>> idx_vac = [0]
