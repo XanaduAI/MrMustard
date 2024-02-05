@@ -220,7 +220,9 @@ def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vec
         :math:`D(\gamma) = \exp(\gamma\hat{a}^\dagger-\gamma^*\hat{a})`,
     where ``\gamma = x + 1j*y``.
 
-    The dimension depends on the dimensions of ``gamma``.
+    The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, we will repete it
+    to have the same dimension as the other one. For example, if ``x = [1,2,3], y = [1]``, we will fill it automatically
+    like ``x = [1,2,3], y = [1,1,1]``.
 
     Args:
         x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
@@ -239,8 +241,36 @@ def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vec
     return (
         X_matrix_for_unitary(num_modes),
         math.concat([x + 1j * y, -x + 1j * y], axis=0),
-        math.sum(math.exp(-(x**2 + y**2) / 2)),
+        math.exp(-math.sum(x**2 + y**2) / 2),
     )
+
+
+def squeezing_gate_ABC_triples(r: Union[Scalar, Vector], delta: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of a squeezing gate.
+
+    The gate is defined by
+        :math:`S(\zeta) = \exp(\zeta^*\hat{a}^2 - \zeta\hat{a}^{\dagger 2})`,
+    where ``\zeta = r\exp(i\delta)``.
+
+    The dimension depends on the dimensions of ``r`` and ``\delta``. If one of them has dimension one, we will repete it
+    to have the same dimension as the other one. For example, if ``r = [1,2,3], \delta = [1]``, we will fill it automatically
+    like ``r = [1,2,3], \delta = [1,1,1]``.
+
+    Args:
+        r (scalar or vector): squeezing magnitude
+        delta (scalar or vector): squeezing angle
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the squeezing gate.
+    """
+    r = math.atleast_1d(r, math.float64)
+    delta = math.atleast_1d(delta, math.float64)
+    if r.shape[-1] == 1:
+        r = math.tile(r, delta.shape)
+    if delta.shape[-1] == 1:
+        delta = math.tile(delta, r.shape)
+    shape = delta.shape[-1] * 2
+    return squeezing_gate_A_matrix(r, delta), vacuum_B_vector(shape), 1 / math.sqrt(math.cosh(r))
 
 
 #  ~~~~~~~~~~~~
@@ -293,4 +323,13 @@ def two_mode_squeezed_vacuum_A_matrix(
             [O_n, -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)],
             [-math.exp(1j * phi) * math.sinh(r) / math.cosh(r), O_n],
         ]
+    )
+
+
+def squeezing_gate_A_matrix(r: Union[Scalar, Vector], delta: Union[Scalar, Vector]):
+    r"""Returns the A matrix of a squeezing gate."""
+    tanhr = math.sinh(r) / math.cosh(r)
+    sechr = 1 / math.cosh(r)
+    return math.array(
+        [[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]]
     )
