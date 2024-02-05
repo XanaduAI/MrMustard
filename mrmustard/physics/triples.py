@@ -21,7 +21,7 @@ Mixed states: (out_bra_1, out_bra_2, ...; out_ket_1, out_ket_2, ...)
 Unitaries: (out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...))
 Channels: (out_bra_1, out_bra_2, ...; in_bra_1, in_bra_2, ...; out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...)
 """
-
+import numpy as np
 from typing import Union
 from mrmustard import math
 from mrmustard.utils.typing import Matrix, Vector, Scalar
@@ -41,7 +41,7 @@ def vacuum_state_ABC_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
     Returns:
         (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the pure vacuum state.
     """
-    return vacuum_A_matrix(num_modes), vacuum_B_vector(num_modes), 1
+    return vacuum_A_matrix(num_modes), vacuum_B_vector(num_modes), 1.0
 
 
 def coherent_state_ABC_triples(
@@ -187,6 +187,25 @@ def thermal_state_ABC_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+def rotation_gate_ABC_triples(theta: Union[Scalar, Vector]):
+    r"""Returns the ABC triples of a rotation gate.
+
+    The gate is defined by
+        :math:`R(\theta) = \exp(i\theta(\hat{a}-\hat{a}^\dagger))`.
+
+    The dimension depends on the dimensions of ``theta``.
+
+    Args:
+        theta (scalar or vector): rotation angle
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the rotation gate.
+    """
+    theta = math.atleast_1d(theta, math.float64)
+    num_modes = theta.shape[-1]
+    return X_matrix_for_unitary(num_modes), vacuum_B_vector(num_modes), 1.0
+
+
 #  ~~~~~~~~~~~~
 #  Utilities
 #  ~~~~~~~~~~~~
@@ -195,6 +214,11 @@ def thermal_state_ABC_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
 def X_matrix() -> Matrix:
     r"""Returns the X matrix."""
     return math.array([[0, 1], [1, 0]])
+
+
+def X_matrix_for_unitary(num_modes: int) -> Matrix:
+    r"""Returns the X matrix for the order of unitaries."""
+    return math.cast(np.kron(math.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
 
 
 def vacuum_A_matrix(num_modes: int) -> Matrix:
