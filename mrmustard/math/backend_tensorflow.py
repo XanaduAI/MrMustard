@@ -18,8 +18,8 @@
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import os
+import numpy as np
 import tensorflow_probability as tfp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"

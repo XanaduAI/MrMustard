@@ -76,8 +76,8 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 
-import numpy as np
 import os
+import numpy as np
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
