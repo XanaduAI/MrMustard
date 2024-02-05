@@ -18,14 +18,14 @@
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-import logging
 import numpy as np
-
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
-import tensorflow as tf
+import os
 import tensorflow_probability as tfp
 
-logging.getLogger("tensorflow").setLevel(logging.INFO)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (

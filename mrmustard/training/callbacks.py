@@ -76,13 +76,13 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 
-import logging
 import numpy as np
+import os
 
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
-logging.getLogger("tensorflow").setLevel(logging.INFO)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 @dataclass
