@@ -15,7 +15,7 @@
 """
 This module contains the ABC triples for states, transformations in Bargmann representation.
 
-Note that the ABC triples follow the same standard order definition as Wires class:
+Note that the ABC triples in this file follow the same standard order definition as Wires class:
 Pure states: (out_ket_1, out_ket_2, ...)
 Mixed states: (out_bra_1, out_bra_2, ...; out_ket_1, out_ket_2, ...)
 Unitaries: (out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...))
@@ -132,6 +132,37 @@ def displaced_squeezed_vacuum_state_ABC_triples(
     )
 
 
+def two_mode_squeezed_vacuum_state_ABC_triples(
+    r: Union[Scalar, Vector],
+    phi: Union[Scalar, Vector],
+) -> Union[Matrix, Vector, Scalar]:
+    r"""Returns the ABC triples of a two mode squeezed vacuum state.
+
+    The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, we will repete it
+    to have the same dimension as the other one. For example, if ``r = [1,2,3], phi = [1]``, we will fill it automatically
+    like ``r = [1,2,3], phi = [1,1,1]``.
+
+    Args:
+        r (scalar or vector): squeezing magnitude
+        phi (scalar or vector): squeezing angle
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the two mode squeezed vacuum state.
+    """
+    r = math.atleast_1d(r, math.float64)
+    phi = math.atleast_1d(phi, math.float64)
+    if r.shape[-1] == 1:
+        r = math.tile(r, phi.shape)
+    if phi.shape[-1] == 1:
+        phi = math.tile(phi, r.shape)
+    num_modes = phi.shape[-1] * 2
+    return (
+        two_mode_squeezed_vacuum_A_matrix(r, phi, num_modes),
+        vacuum_B_vector(num_modes),
+        1 / math.cosh(r),
+    )
+
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
@@ -189,3 +220,16 @@ def displaced_squeezed_vacuum_B_vector(
 ) -> Vector:
     r"""Returns the B vector of a displaced squeezed vacuum state."""
     return (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+
+
+def two_mode_squeezed_vacuum_A_matrix(
+    r: Union[Scalar, Vector], phi: Union[Scalar, Vector], num_modes: int
+):
+    r"""Returns the A matrix of a two-mode squeezed vacuum state."""
+    O_n = math.zeros((num_modes, num_modes))
+    return math.array(
+        [
+            [O_n, -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)],
+            [-math.exp(1j * phi) * math.sinh(r) / math.cosh(r), O_n],
+        ]
+    )
