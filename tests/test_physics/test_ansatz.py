@@ -37,7 +37,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz.array[0], c)
 
     @given(Abc1=Abc_triple(5), Abc2=Abc_triple(5))
-    def test_add(Abc1, Abc2):
+    def test_add(self, Abc1, Abc2):
         A1, b1, c1 = Abc1
         A2, b2, c2 = Abc2
 
@@ -53,7 +53,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz3.array[1], c2)
 
     @given(Abc1=Abc_triple(4), Abc2=Abc_triple(4))
-    def test_mul(Abc1, Abc2):
+    def test_mul(self, Abc1, Abc2):
         A1, b1, c1 = Abc1
         A2, b2, c2 = Abc2
 
@@ -66,7 +66,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz3.array[0], c1 * c2)
 
     @given(Abc=Abc_triple(), d=complex_number)
-    def test_mul_scalar(Abc, d):
+    def test_mul_scalar(self, Abc, d):
         A, b, c = Abc
 
         ansatz = PolyExpAnsatz(A, b, c)
@@ -77,14 +77,14 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz2.array[0], d * c)
 
     @given(Abc=Abc_triple())
-    def test_call(Abc):
+    def test_call(self, Abc):
         A, b, c = Abc
         ansatz = PolyExpAnsatz(A, b, c)
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
     @given(Abc1=Abc_triple(6), Abc2=Abc_triple(6))
-    def test_and(Abc1, Abc2):
+    def test_and(self, Abc1, Abc2):
         A1, b1, c1 = Abc1
         A2, b2, c2 = Abc2
 
@@ -97,7 +97,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz3.array[0], c1 * c2)
 
     @given(Abc=Abc_triple())
-    def test_eq(Abc):
+    def test_eq(self, Abc):
         A, b, c = Abc
 
         ansatz = PolyExpAnsatz(A, b, c)
@@ -109,7 +109,7 @@ class TestPolyExpAnsatz:
         assert ansatz2 != ansatz
 
     @given(Abc=Abc_triple())
-    def test_simplify(Abc):
+    def test_simplify(self, Abc):
         """Test that we can simplify a PolyExpAnsatz object"""
         A, b, c = Abc
 
@@ -127,7 +127,7 @@ class TestPolyExpAnsatz:
         assert ansatz.c == 2 * c
 
     @given(Abc=Abc_triple())
-    def test_simplify_v2(Abc):
+    def test_simplify_v2(self, Abc):
         A, b, c = Abc
 
         ansatz = PolyExpAnsatz(A, b, c)
@@ -143,7 +143,7 @@ class TestPolyExpAnsatz:
         assert len(ansatz.b) == 1
         assert np.allclose(ansatz.c, 2 * c)
 
-    def test_order_batch():
+    def test_order_batch(self):
         ansatz = PolyExpAnsatz(
             A=[np.array([[0]]), np.array([[1]])], b=[np.array([1]), np.array([0])], c=[1, 2]
         )
