@@ -23,12 +23,7 @@ from typing import Optional, Sequence, Union
 from ..physics.representations import Bargmann, Fock
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .wires import Wire, Wires
-
-__all__ = [
-    "CircuitComponent",
-]
+from .wires import Wires
 
 
 class CircuitComponent:

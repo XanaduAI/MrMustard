@@ -16,8 +16,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from mrmustard import physics
 from mrmustard import settings
 from mrmustard import math
@@ -50,27 +48,17 @@ class Transformation(CircuitComponent):
 
 
 
-class DM(State):
+class Unitary(Transformation):
     """Density matrix class."""
     def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "DM"):
         super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes, representation=representation)
-
-    @property # will be @lazy_if_numpy
-    def probability(self) -> float:
-        traced = self.representation.trace(self.wires.output.ket.indices, self.wires.output.bra.indices)
-        return float(traced)
-
-    @property # will be @lazy_if_numpy
-    def purity(self) -> float:
-        normalized = self / self.probability
-        return normalized.L2_norm
 
     @classmethod
     def from_bargmann(cls, A, b, c, modes):
         return cls(Bargmann(A, b, c), modes)
 
     @classmethod
-    def from_phasespace(cls, cov, means, modes, name="DM"):
+    def from_phasespace(cls, cov, means, modes, name="Unitary"):
         r"""General constructor for density matrices from phase space representation.
 
         Args:
@@ -118,7 +106,7 @@ class DM(State):
         arrays = [math.hermite_renormalized(A, b, c, shape) for A,b,c in zip(self.bargmann)]
         return math.sum(arrays, axis=0)
 
-    def __and__(self, other: State) -> State:
+    def __and__(self, other: Transformation) -> State:
         r"""Tensor product of two states. Use sparingly: the combined DM can be a large object."""
         ids = (self.wires + other.wires).ids  # eventual exceptions are raised here
         representation = self.representation @ other.representation
