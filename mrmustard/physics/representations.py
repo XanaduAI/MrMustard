@@ -156,12 +156,35 @@ class Bargmann(Representation):
 
     .. code-block ::
 
+        >>> trace = (rep_coh @ rep_coh.conj()).trace([0], [1])
+        >>> assert np.allclose(trace.A, 0)
+        >>> assert np.allclose(trace.b, 0)
+        >>> assert trace.c == 1
+
+    The ``A``, ``b``, and ``c`` parameters can be batched to represent superpositions.
+
+    .. code-block ::
+
+        >>> # bargmann representation of one-mode coherent state with gamma=1+0j
+        >>> A_plus = np.array([[0,],])
+        >>> b_plus = np.array([1,])
+        >>> c_plus = 0.6065306597126334
+
+        >>> # bargmann representation of one-mode coherent state with gamma=-1+0j
+        >>> A_minus = np.array([[0,],])
+        >>> b_minus = np.array([-1,])
+        >>> c_minus = 0.6065306597126334
+
+        >>> # bargmann representation of a superposition of coherent states
+        >>> A = [A_plus, A_minus]
+        >>> b = [b_plus, b_minus]
+        >>> c = [c_plus, c_minus]
+        >>> rep_coh_sup = Bargmann(A, b, c)
+
     Note that the operations that change the shape of the ansatz (outer product and inner
     product) do not automatically modify the ordering of the combined or leftover indices.
     However, the ``reordering`` method allows reordering the representation after the products
     have been carried out.
-
-    (@sam @filippo @yuan explain batches).
 
     Args:
         A: A batch of quadratic coefficient :math:`A_i`.
@@ -219,7 +242,9 @@ class Bargmann(Representation):
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
-        r"""Returns a copy of self with the given indices marked for contraction."""
+        r"""
+        A copy of self with the given indices marked for contraction.
+        """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.ansatz.dim:
@@ -231,7 +256,9 @@ class Bargmann(Representation):
         return new
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
-        r"""Implements the inner product of ansatze across the marked indices."""
+        r"""
+        The inner product of ansatze across the marked indices.
+        """
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
                 "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
@@ -251,7 +278,8 @@ class Bargmann(Representation):
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
-        r"""Implements the partial trace over the given index pairs.
+        r"""
+        The partial trace over the given index pairs.
 
         Args:
             idx_z: indices to trace over
@@ -289,20 +317,22 @@ class Bargmann(Representation):
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
         **kwargs,
-    ):  # pragma: no cover
-        r"""Plots the Bargmann function F(z) on the complex plane. Phase is represented by color,
-        magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
-        the Bargmann function times the measure function (for integration).
+    ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
+        r"""
+        Plots the Bargmann function .. math::`F(z)` on the complex plane. Phase is represented by
+        color, magnitude by brightness. The function can be multiplied by .. math::`exp(-|z|^2)`
+        to represent the Bargmann function times the measure function (for integration).
 
         Args:
-            just_phase (bool): whether to plot only the phase of the Bargmann function
-            with_measure (bool): whether to plot the bargmann function times the measure function exp(-|z|^2)
-            log_scale (bool): whether to plot the log of the Bargmann function
-            xlim (tuple[float, float]): x limits of the plot
-            ylim (tuple[float, float]): y limits of the plot
+            just_phase: whether to plot only the phase of the Bargmann function
+            with_measure: whether to plot the bargmann function times the measure function
+                .. math::`exp(-|z|^2)`
+            log_scale: whether to plot the log of the Bargmann function
+            xlim: `x` limits of the plot
+            ylim: `y` limits of the plot
 
         Returns:
-            tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]: the figure and axes of the plot
+            The figure and axes of the plot
         """
         # eval F(z) on a grid of complex numbers
         X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
@@ -341,39 +371,46 @@ class Bargmann(Representation):
 
 
 class Fock(Representation):
-    r"""The Fock representation of a broad class of quantum states,
-    transformations, measurements, channels, etc.
+    r"""
+    The Fock representation of a broad class of quantum states, transformations, measurements,
+    channels, etc.
 
-    The ansatz available in this representation is ArrayAnsatz.
+    The ansatz available in this representation is ``ArrayAnsatz``.
 
-    This class allows for operations of Fock tensors.
+    This function allows for vector space operations on Fock objects including
+    linear combinations, outer product (``&``), and inner product (``@``).
 
-    Examples:
-        .. code-block:: python
-            array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-            array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-            array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
-            fock1 = Fock(array1)
-            fock2 = Fock(array2)
-            fock3 = Fock(array3)
+    .. code-block::
 
-            fock4 = 1.3 * fock1 - fock2 * 2.1  # linear combination can be done with the same batch dimension
-            assert fock4.ansatz.array.shape == (1,5,7,8)
+        >>> # initialize Fock objects
+        >>> array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        >>> array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        >>> array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+        >>> fock1 = Fock(array1)
+        >>> fock2 = Fock(array2)
+        >>> fock3 = Fock(array3)
 
-            fock5 = fock1 / 1.3  # supports division by a scalar
-            assert fock5.ansatz.array.shape == (1,5,7,8)
+        >>> # linear combination can be done with the same batch dimension
+        >>> fock4 = 1.3 * fock1 - fock2 * 2.1 
 
-            fock6 = fock1[2] @ fock3[2]  # contract wires 2 on each (inner product)
-            assert fock6.array.shape == (3, 5, 7, 5, 7) # note that the batch is 1 * 3
+        >>> # division by a scalar
+        >>> fock5 = fock1 / 1.3
 
-            fock7 = fock1 & fock3  # outer product (tensor product)
-            assert fock7.array.shape == (3, 5, 7, 8, 5, 7, 8) # the batch is 1*3
+        >>> # inner product by contracting on marked indices
+        >>> fock6 = fock1[2] @ fock3[2]  
 
-            fock8 = fock1.conj() # conjugate of it
-            assert fock8.array.shape == (1,5,7,8)
+        >>> # outer product (tensor product)
+        >>> fock7 = fock1 & fock3 
+
+        >>> conjugation
+        >>> fock8 = fock1.conj()
+
     Args:
-        array (Batch[Tensor]): the (batched) array in Fock representation.
-        batched (bool): if the array input has a batch dimension. False by default.
+        array: the (batched) array in Fock representation.
+        batched: whether the array input has a batch dimension.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
 
     """
 
@@ -385,7 +422,9 @@ class Fock(Representation):
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:
-        r"""Returns a Fock object from an ansatz object."""
+        r"""
+        Returns a Fock object from an ansatz object.
+        """
         return cls(ansatz.array, batched=True)
 
     @property
@@ -490,7 +529,7 @@ class Fock(Representation):
             idxs2 tuple(int): second part
 
         Returns:
-            Fock: the ansatz with the given pairs of indices traced over
+            The ansatz with the given pairs of indices traced over
         """
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
             raise ValueError("idxs must be of equal length and disjoint")
@@ -506,11 +545,15 @@ class Fock(Representation):
         return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
-        r"""Reorders the indices of the array with the given order.
+        r"""
+        Reorders the indices of the array with the given order.
+        
         Args:
-            order tuple[int]: does not need to refer to the batch dimension
+            order: The order. Does not need to refer to the batch dimension.
 
-        Returns a new Fock object."""
+        Returns:
+            The reordered Fock.
+        """
         return self.from_ansatz(
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
         )
