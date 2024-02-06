@@ -236,7 +236,7 @@ class PolyExpBase(Ansatz):
 class PolyExpAnsatz(PolyExpBase):
     r"""
     The ansatz of the Fock-Bargmann representation.
-    
+
     Represents the ansatz function:
 
         :math:`F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)`
@@ -258,7 +258,7 @@ class PolyExpAnsatz(PolyExpBase):
 
         >>> F = PolyExpAnsatz(A, b, c)
         >>> z = np.array([1.0, 2.0])
-        
+
         >>> # calculate the value of the function at ``z``
         >>> val = F(z)
 
@@ -394,26 +394,21 @@ class PolyExpAnsatz(PolyExpBase):
 class ArrayAnsatz(Ansatz):
     r"""
     The ansatz of the Fock-Bargmann representation.
-    
+
     Represents the ansatz as a multidimensional array.
+
+    Args:
+        array: A batched array.
 
     .. code-block ::
 
         >>> from mrmustard.physics.ansatze import PolyExpAnsatz
 
-        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
-        >>> b = np.array([1.0, 1.0])
-        >>> c = np.array(1.0)
-
-        >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
-        
-        >>> # calculate the value of the function at ``z``
-        >>> val = F(z)
+        >>> array = np.random.random((2, 4, 5))
+        >>> ansatz = ArrayAnsatz(A, b, c)
     """
 
     def __init__(self, array: Batch[Tensor]):
-        r"""Note that the array is batched."""
         self.array = math.astensor(array)
 
     def __neg__(self) -> ArrayAnsatz:
@@ -520,4 +515,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def conj(self):
+        r"""
+        The conjugate of this ansatz.
+        """
         return self.__class__(math.conj(self.array))

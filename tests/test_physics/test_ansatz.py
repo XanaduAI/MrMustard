@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable = missing-function-docstring
+
 import numpy as np
 from hypothesis import given
 import pytest
@@ -21,153 +23,150 @@ from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz
 from tests.random import Abc_triple, complex_number
 
 
-@given(Abc=Abc_triple())
-def test_PolyExpAnsatz(Abc):
-    """Test that the PolyExpAnsatz class is initialized correctly"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    assert np.allclose(ansatz.mat[0], A)
-    assert np.allclose(ansatz.vec[0], b)
-    assert np.allclose(ansatz.array[0], c)
+class TestPolyExpAnsatz:
+    r"""
+    Tests the ``PolyExpAnsatz`` class.
+    """
 
+    @given(Abc=Abc_triple())
+    def test_init(self, Abc):
+        A, b, c = Abc
+        ansatz = PolyExpAnsatz(A, b, c)
+        assert np.allclose(ansatz.mat[0], A)
+        assert np.allclose(ansatz.vec[0], b)
+        assert np.allclose(ansatz.array[0], c)
 
-# test adding two PolyExpAnsatz objects
-@given(Abc1=Abc_triple(5), Abc2=Abc_triple(5))
-def test_PolyExpAnsatz_add(Abc1, Abc2):
-    """Test that we can add two PolyExpAnsatz objects"""
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    ansatz = PolyExpAnsatz(A1, b1, c1)
-    ansatz2 = PolyExpAnsatz(A2, b2, c2)
-    ansatz3 = ansatz + ansatz2
-    assert np.allclose(ansatz3.mat[0], A1)
-    assert np.allclose(ansatz3.vec[0], b1)
-    assert np.allclose(ansatz3.array[0], c1)
-    assert np.allclose(ansatz3.mat[1], A2)
-    assert np.allclose(ansatz3.vec[1], b2)
-    assert np.allclose(ansatz3.array[1], c2)
+    @given(Abc1=Abc_triple(5), Abc2=Abc_triple(5))
+    def test_add(Abc1, Abc2):
+        A1, b1, c1 = Abc1
+        A2, b2, c2 = Abc2
 
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz3 = ansatz + ansatz2
 
-# test multiplying two PolyExpAnsatz objects
-@given(Abc1=Abc_triple(4), Abc2=Abc_triple(4))
-def test_PolyExpAnsatz_mul(Abc1, Abc2):
-    """Test that we can multiply two PolyExpAnsatz objects"""
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    ansatz = PolyExpAnsatz(A1, b1, c1)
-    ansatz2 = PolyExpAnsatz(A2, b2, c2)
-    ansatz3 = ansatz * ansatz2
-    assert np.allclose(ansatz3.mat[0], A1 + A2)
-    assert np.allclose(ansatz3.vec[0], b1 + b2)
-    assert np.allclose(ansatz3.array[0], c1 * c2)
+        assert np.allclose(ansatz3.mat[0], A1)
+        assert np.allclose(ansatz3.vec[0], b1)
+        assert np.allclose(ansatz3.array[0], c1)
+        assert np.allclose(ansatz3.mat[1], A2)
+        assert np.allclose(ansatz3.vec[1], b2)
+        assert np.allclose(ansatz3.array[1], c2)
 
+    @given(Abc1=Abc_triple(4), Abc2=Abc_triple(4))
+    def test_mul(Abc1, Abc2):
+        A1, b1, c1 = Abc1
+        A2, b2, c2 = Abc2
 
-# test multiplying a PolyExpAnsatz object by a scalar
-@given(Abc=Abc_triple(), d=complex_number)
-def test_PolyExpAnsatz_mul_scalar(Abc, d):
-    """Test that we can multiply a PolyExpAnsatz object by a scalar"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    ansatz2 = ansatz * d
-    assert np.allclose(ansatz2.mat[0], A)
-    assert np.allclose(ansatz2.vec[0], b)
-    assert np.allclose(ansatz2.array[0], d * c)
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz3 = ansatz * ansatz2
 
+        assert np.allclose(ansatz3.mat[0], A1 + A2)
+        assert np.allclose(ansatz3.vec[0], b1 + b2)
+        assert np.allclose(ansatz3.array[0], c1 * c2)
 
-# test calling the PolyExpAnsatz object
-@given(Abc=Abc_triple())
-def test_PolyExpAnsatz_call(Abc):
-    """Test that we can call the PolyExpAnsatz object"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    assert np.allclose(ansatz(z=math.zeros_like(b)), c)
+    @given(Abc=Abc_triple(), d=complex_number)
+    def test_mul_scalar(Abc, d):
+        A, b, c = Abc
 
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz2 = ansatz * d
 
-# test tensor product of two PolyExpAnsatz objects
-@given(Abc1=Abc_triple(6), Abc2=Abc_triple(6))
-def test_PolyExpAnsatz_kron(Abc1, Abc2):
-    """Test that we can tensor product two PolyExpAnsatz objects"""
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    ansatz = PolyExpAnsatz(A1, b1, c1)
-    ansatz2 = PolyExpAnsatz(A2, b2, c2)
-    ansatz3 = ansatz & ansatz2
-    assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
-    assert np.allclose(ansatz3.vec[0], math.concat([b1, b2], -1))
-    assert np.allclose(ansatz3.array[0], c1 * c2)
+        assert np.allclose(ansatz2.mat[0], A)
+        assert np.allclose(ansatz2.vec[0], b)
+        assert np.allclose(ansatz2.array[0], d * c)
 
+    @given(Abc=Abc_triple())
+    def test_call(Abc):
+        A, b, c = Abc
+        ansatz = PolyExpAnsatz(A, b, c)
 
-# test equality
-@given(Abc=Abc_triple())
-def test_PolyExpAnsatz_eq(Abc):
-    """Test that we can compare two PolyExpAnsatz objects"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
-    assert ansatz == ansatz
-    assert ansatz2 == ansatz2
-    assert ansatz != ansatz2
-    assert ansatz2 != ansatz
+        assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
+    @given(Abc1=Abc_triple(6), Abc2=Abc_triple(6))
+    def test_and(Abc1, Abc2):
+        A1, b1, c1 = Abc1
+        A2, b2, c2 = Abc2
 
-# test simplify
-@given(Abc=Abc_triple())
-def test_PolyExpAnsatz_simplify(Abc):
-    """Test that we can simplify a PolyExpAnsatz object"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    ansatz = ansatz + ansatz
-    assert np.allclose(ansatz.A[0], ansatz.A[1])
-    assert np.allclose(ansatz.A[0], A)
-    assert np.allclose(ansatz.b[0], ansatz.b[1])
-    assert np.allclose(ansatz.b[0], b)
-    ansatz.simplify()
-    assert len(ansatz.A) == 1
-    assert len(ansatz.b) == 1
-    assert ansatz.c == 2 * c
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz3 = ansatz & ansatz2
 
+        assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
+        assert np.allclose(ansatz3.vec[0], math.concat([b1, b2], -1))
+        assert np.allclose(ansatz3.array[0], c1 * c2)
 
-def test_order_batch():
-    ansatz = PolyExpAnsatz(
-        A=[np.array([[0]]), np.array([[1]])], b=[np.array([1]), np.array([0])], c=[1, 2]
-    )
-    ansatz._order_batch()
-    assert np.allclose(ansatz.A[0], np.array([[1]]))
-    assert np.allclose(ansatz.b[0], np.array([0]))
-    assert ansatz.c[0] == 2
-    assert np.allclose(ansatz.A[1], np.array([[0]]))
-    assert np.allclose(ansatz.b[1], np.array([1]))
-    assert ansatz.c[1] == 1
+    @given(Abc=Abc_triple())
+    def test_eq(Abc):
+        A, b, c = Abc
 
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
 
-@given(Abc=Abc_triple())
-def test_PolyExpAnsatz_simplify_v2(Abc):
-    """Test that we can simplify a PolyExpAnsatz object"""
-    A, b, c = Abc
-    ansatz = PolyExpAnsatz(A, b, c)
-    ansatz = ansatz + ansatz
-    assert np.allclose(ansatz.A[0], ansatz.A[1])
-    assert np.allclose(ansatz.A[0], A)
-    assert np.allclose(ansatz.b[0], ansatz.b[1])
-    assert np.allclose(ansatz.b[0], b)
-    ansatz.simplify_v2()
-    assert len(ansatz.A) == 1
-    assert len(ansatz.b) == 1
-    assert np.allclose(ansatz.c, 2 * c)
+        assert ansatz == ansatz
+        assert ansatz2 == ansatz2
+        assert ansatz != ansatz2
+        assert ansatz2 != ansatz
+
+    @given(Abc=Abc_triple())
+    def test_simplify(Abc):
+        """Test that we can simplify a PolyExpAnsatz object"""
+        A, b, c = Abc
+
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = ansatz + ansatz
+
+        assert np.allclose(ansatz.A[0], ansatz.A[1])
+        assert np.allclose(ansatz.A[0], A)
+        assert np.allclose(ansatz.b[0], ansatz.b[1])
+        assert np.allclose(ansatz.b[0], b)
+
+        ansatz.simplify()
+        assert len(ansatz.A) == 1
+        assert len(ansatz.b) == 1
+        assert ansatz.c == 2 * c
+
+    @given(Abc=Abc_triple())
+    def test_simplify_v2(Abc):
+        A, b, c = Abc
+
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = ansatz + ansatz
+
+        assert np.allclose(ansatz.A[0], ansatz.A[1])
+        assert np.allclose(ansatz.A[0], A)
+        assert np.allclose(ansatz.b[0], ansatz.b[1])
+        assert np.allclose(ansatz.b[0], b)
+
+        ansatz.simplify_v2()
+        assert len(ansatz.A) == 1
+        assert len(ansatz.b) == 1
+        assert np.allclose(ansatz.c, 2 * c)
+
+    def test_order_batch():
+        ansatz = PolyExpAnsatz(
+            A=[np.array([[0]]), np.array([[1]])], b=[np.array([1]), np.array([0])], c=[1, 2]
+        )
+        ansatz._order_batch()
+
+        assert np.allclose(ansatz.A[0], np.array([[1]]))
+        assert np.allclose(ansatz.b[0], np.array([0]))
+        assert ansatz.c[0] == 2
+        assert np.allclose(ansatz.A[1], np.array([[0]]))
+        assert np.allclose(ansatz.b[1], np.array([1]))
+        assert ansatz.c[1] == 1
 
 
 class TestArrayAnsatz:
     r"""Tests all algebra related to ArrayAnsatz."""
 
     def test_init_(self):
-        r"""Tests that an ArrayAnstaz can be initialized."""
         array = np.random.random((2, 4, 5))
         aa = ArrayAnsatz(array=array)
         assert isinstance(aa, ArrayAnsatz)
         assert np.allclose(aa.array, array)
 
     def test_neg(self):
-        r"""Negates the array inside ArrayAnsatz."""
         array = np.random.random((2, 4, 5))
         aa = ArrayAnsatz(array=array)
         minusaa = -aa
@@ -175,14 +174,12 @@ class TestArrayAnsatz:
         assert np.allclose(minusaa.array, -array)
 
     def test_equal(self):
-        r"""Tests the equation of two ArrayAnsatzs."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
 
     def test_add(self):
-        r"""Tests the correctness of adding two ArrayAnsatzs."""
         array = np.arange(8).reshape(2, 2, 2)
         array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
@@ -196,7 +193,6 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_add_aa2.array[3], np.array([[8, 10], [12, 14]]))
 
     def test_and(self):
-        r"""Tests the correctness of adding two ArrayAnsatzs."""
         array = np.arange(8).reshape(2, 2, 2)
         array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
@@ -231,7 +227,6 @@ class TestArrayAnsatz:
         )
 
     def test_mul_a_scalar(self):
-        r"""Tests the correctness of multiplying an ArrayAnsatz with a scalar."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa1_scalar = aa1 * 8
@@ -239,7 +234,6 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_scalar.array, array * 8)
 
     def test_mul(self):
-        r"""Tests the correctness of multiplying two ArrayAnsatzs."""
         array = np.arange(8).reshape(2, 2, 2)
         array2 = np.arange(8).reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
@@ -253,7 +247,6 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_mul_aa2.array[3], np.array([[16, 25], [36, 49]]))
 
     def test_truediv_a_scalar(self):
-        r"""Tests the correctness of dividing an ArrayAnsatz with a scalar."""
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa1_scalar = aa1 / 6
@@ -261,7 +254,6 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_scalar.array, array / 6)
 
     def test_div(self):
-        r"""Tests the correctness of multiplying two ArrayAnsatzs."""
         array = np.arange(9)[1:].reshape(2, 2, 2)
         array2 = np.arange(9)[1:].reshape(2, 2, 2)
         aa1 = ArrayAnsatz(array=array)
@@ -275,7 +267,6 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_div_aa2.array[3], np.array([[1.0, 1.0], [1.0, 1.0]]))
 
     def test_algebra_with_different_shape_of_array_raise_errors(self):
-        r"""Tests the errors are raised correctly."""
         array = np.random.random((2, 4, 5))
         array2 = np.random.random((3, 4, 8, 9))
         aa1 = ArrayAnsatz(array=array)

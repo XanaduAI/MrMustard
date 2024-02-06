@@ -38,7 +38,7 @@ class Representation(ABC):
 
     Representations can be initialized using the ``from_ansatz`` method, which automatically equips
     them with all the functionality required to perform mathematical operations, such as equality,
-    multiplication, subtraction, etc. 
+    multiplication, subtraction, etc.
     """
 
     @abstractmethod
@@ -133,7 +133,7 @@ class Bargmann(Representation):
         >>> b = np.array([1, -1])
         >>> c = 0.6065306597126334
         >>> rep_dgate = Bargmann(A, b, c)
-    
+
     The inner product is defined as the contraction of two Bargmann objects across
     marked indices.
     (@filippo can you help me find a simple way to explain the story of the marked
@@ -150,7 +150,7 @@ class Bargmann(Representation):
         >>> assert np.allclose(rep_coh.A, [[0,],])
         >>> assert np.allclose(rep_coh.b, [1,])
         >>> assert np.allclose(rep_coh.c, 0.6065306597126334)
-        
+
     This can also be used to contract existing indices in a single Bargmann object, e.g.
     to implement the partial trace.
 
@@ -391,16 +391,16 @@ class Fock(Representation):
         >>> fock3 = Fock(array3)
 
         >>> # linear combination can be done with the same batch dimension
-        >>> fock4 = 1.3 * fock1 - fock2 * 2.1 
+        >>> fock4 = 1.3 * fock1 - fock2 * 2.1
 
         >>> # division by a scalar
         >>> fock5 = fock1 / 1.3
 
         >>> # inner product by contracting on marked indices
-        >>> fock6 = fock1[2] @ fock3[2]  
+        >>> fock6 = fock1[2] @ fock3[2]
 
         >>> # outer product (tensor product)
-        >>> fock7 = fock1 & fock3 
+        >>> fock7 = fock1 & fock3
 
         >>> conjugation
         >>> fock8 = fock1.conj()
@@ -547,7 +547,7 @@ class Fock(Representation):
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""
         Reorders the indices of the array with the given order.
-        
+
         Args:
             order: The order. Does not need to refer to the batch dimension.
 
