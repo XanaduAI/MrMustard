@@ -42,7 +42,7 @@ jobs:
         run: julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
-        run: python -m pytest tests -p no:warnings --tb=native
+        run: python -m pytest tests -p no:warnings --tb=native --backend=tensorflow
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
