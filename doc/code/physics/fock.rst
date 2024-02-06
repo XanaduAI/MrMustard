@@ -1,5 +1,5 @@
 Fock
-=======
+====
 
 .. currentmodule:: mrmustard.physics.fock
 

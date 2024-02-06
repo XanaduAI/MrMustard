@@ -1,23 +1,122 @@
-# Release 0.6.1-post1 (current release)
+# Release 0.7.0 (current release)
 
 ### New features
+* Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
+  all the functions in the `utils`, `math`, `physics`, and `lab` with both backends, while `training`
+  requires using `tensorflow`. The `numpy` backend provides significant improvements both in import
+  time and runtime. [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
 
+* Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
+  [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
+
+* Added functions in physics.bargmann to join and contract (A,b,c) triples.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added `complex_gaussian_integral` method.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
+* Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
+  [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
 
 ### Breaking changes
+* Removed circular dependencies by:
+  * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
+  * Moving `circuit_drawer` and `wigner` to `physics`.
+  * Moving `xptensor` to `math`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
 
+* Created `settings.py` file to host `Settings`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Removed the `Math` class. To use the mathematical backend, replace
+  `from mrmustard.math import Math ; math = Math()` with `import mrmustard.math as math`
+  in your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
+* The `numpy` backend is now default. To switch to the `tensorflow`
+  backend, add the line `math.change_backend("tensorflow")` to your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
+### Improvements
+
+* Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that 
+result from repeatedly applying the recurrence relation are postponed to higher cutoff values).
+This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/MrMustard/pull/274) and for the 
+"diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
+This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+The precision is controlled by `setting settings.PRECISION_BITS_HERMITE_POLY`. The default value is ``128``, 
+which uses the old Numba code. When setting to a higher value, the new Julia code is run.
+
+* Replaced parameters in `training` with `Constant` and `Variable` classes.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
+
+* Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
+
+* Includes julia dependencies into the python packaging for downstream installation reproducibility.
+  Removes dependency on tomli to load pyproject.toml for version info, uses importlib.metadata instead.
+  [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
+  [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
+
+* Improves the algorithms implemented in `vanilla` and `vanilla_vjp` to achieve a speedup.
+  Specifically, the improved algorithms work on flattened arrays (which are reshaped before being returned) as opposed to multi-dimensional array.
+  [(#312)](https://github.com/XanaduAI/MrMustard/pull/312)
+  [(#318)](https://github.com/XanaduAI/MrMustard/pull/318)
+
+* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating 
+  Hermite polynomials over a batch of B vectors.
+  [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
+
+* Added suite to filter undesired warnings, and used it to filter tensorflow's ``ComplexWarning``s.
+  [(#332)](https://github.com/XanaduAI/MrMustard/pull/332)
+
+
+### Bug fixes
+
+* Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
+[(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
+* Fixed inconsistent use of `atol` in purity evaluation for Gaussian states.
+[(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
+* Fixed the documentations for loss_XYd and amp_XYd functions for Gaussian channels.
+[(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
+* Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
+[(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
+* Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
+[(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
+
+### Documentation
+
+### Tests
+* Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
+
+### Contributors
+[Eli Bourassa](https://github.com/elib20),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Jan Provaznik](https://github.com/jan-provaznik),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.6.1-post1
 
 ### Improvements
 
 * Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
   [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
 
-### Bug fixes
-
-
-### Documentation
-
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
 
 ---
 # Release 0.6.0
@@ -30,24 +129,35 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 `clenshaw`.
   [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
 
-* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
-  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation. It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
   [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
 
 ### Breaking changes
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
-  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
-* Certain attributes of `Settings` can no longer be changed after their value is queried for the
-  first time.
-  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the first time.
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
 ### Improvements
 
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
+This is done by representing Fock amplitudes with a higher precision than complex128 
+(which counters the accumulation of floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
+
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
+
+* Incorporated `Tensor` into `Transformation` in order to deal with modes more robustly.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
+
+* Created the classes `Unitary` and `Channel` to simplify the logic in `Transformation`.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
 
 ### Bug fixes
 
@@ -57,17 +167,19 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 * Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
   [(#283)](https://github.com/XanaduAI/MrMustard/pull/283)
 
-* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor.
-  [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
-
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+[Filippo Miatto](https://github.com/ziofil), 
+[Yuan Yao](https://github.com/sylviemonet),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
+[Zeyue Niu](https://github.com/zeyueN)
+
 
 ---
 
-# Release 0.5.0
+# Release 0.5.0 
 
 ### New features
 
@@ -88,7 +200,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
   def cost_fn():
       ...
-  
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -151,7 +262,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
-
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
@@ -177,6 +287,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf)
+
 
 ---
 
@@ -207,7 +318,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 (current release)
+# Release 0.4.0 
 
 ### New features
 
@@ -450,6 +561,7 @@ This release contains contributions from (in alphabetical order):
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Yuan Yao](https://github.com/sylviemonet)
 
+
 ---
 
 # Release 0.3.0
@@ -605,7 +717,6 @@ This release contains contributions from (in alphabetical order):
 [Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
-
 ---
 
 # Release 0.2.0
@@ -656,6 +767,8 @@ This release contains contributions from (in alphabetical order):
 [Filippo Miatto](https://github.com/ziofil)
 
 
+---
+
 # Release 0.1.1
 
 ### New features since last release
@@ -704,6 +817,8 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 
+---
+
 # Release 0.1.0
 
 ### New features since last release
@@ -717,3 +832,4 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Zhi Han](https://github.com/hanzhihua1),
 [Theodor Isacsson](https://github.com/thisac/), [Josh Izaac](https://github.com/josh146),
 [Filippo Miatto](https://github.com/ziofil), [Nicolas Quesada](https://github.com/nquesada)
+

@@ -21,20 +21,24 @@ from scipy.stats import unitary_group
 from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
-from mrmustard.math import Math
-from mrmustard.training.parameter_update import update_orthogonal, update_symplectic, update_unitary
+from mrmustard import math
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
-math = Math()
+from ..conftest import skip_np
 
 
 def is_unitary(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is unitary"""
+    skip_np()
+
     M_dagger = np.transpose(M.conj())
     return np.allclose(M @ M_dagger, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
 def is_orthogonal(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is orthogonal"""
+    skip_np()
+
     M_T = np.transpose(M)
     return np.allclose(M @ M_T, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
@@ -42,6 +46,8 @@ def is_orthogonal(M, rtol=1e-05, atol=1e-08):
 @given(n=st.integers(2, 4))
 def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
+    skip_np()
+
     S = math.new_variable(random_symplectic(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dS_euclidean = math.new_variable(
@@ -51,19 +57,26 @@ def test_update_symplectic(n):
             bounds=None,
         )
         update_symplectic([[dS_euclidean, S]], 0.01)
-        assert is_symplectic(S.numpy()), "training step does not result in a symplectic matrix"
+        assert is_symplectic(
+            math.asnumpy(S)
+        ), "training step does not result in a symplectic matrix"
 
 
 @given(n=st.integers(2, 4))
 def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
+    skip_np()
+
     U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dU_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_unitary([[dU_euclidean, U]], 0.01)
-        assert is_unitary(U.numpy()), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(U)), "training step does not result in a unitary matrix"
         sym = np.block(
-            [[np.real(U.numpy()), -np.imag(U.numpy())], [np.imag(U.numpy()), np.real(U.numpy())]]
+            [
+                [np.real(math.asnumpy(U)), -np.imag(math.asnumpy(U))],
+                [np.imag(math.asnumpy(U)), np.real(math.asnumpy(U))],
+            ]
         )
         assert is_symplectic(sym), "training step does not result in a symplectic matrix"
         assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
@@ -72,15 +85,17 @@ def test_update_unitary(n):
 @given(n=st.integers(2, 4))
 def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
+    skip_np()
+
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dO_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_orthogonal([[dO_euclidean, O]], 0.01)
-        assert is_unitary(O.numpy()), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(O)), "training step does not result in a unitary matrix"
         ortho = np.block(
             [
-                [np.real(O.numpy()), -math.zeros_like(O.numpy())],
-                [math.zeros_like(O.numpy()), np.real(O.numpy())],
+                [np.real(math.asnumpy(O)), -math.zeros_like(math.asnumpy(O))],
+                [math.zeros_like(math.asnumpy(O)), np.real(math.asnumpy(O))],
             ]
         )
         assert is_symplectic(ortho), "training step does not result in a symplectic matrix"

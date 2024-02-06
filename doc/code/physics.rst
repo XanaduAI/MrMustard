@@ -4,8 +4,11 @@ mrmustard.physics
 .. toctree::
     :maxdepth: 1
 
+    physics/ansatze
+    physics/bargmann
     physics/fock
     physics/gaussian
+    physics/representations
 
 .. currentmodule:: mrmustard.physics
 

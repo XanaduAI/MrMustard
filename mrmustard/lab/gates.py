@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=no-member
+# pylint: disable=no-member, import-outside-toplevel
 
 """
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
@@ -20,14 +20,14 @@ This module defines gates and operations that can be applied to quantum modes to
 
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
-from mrmustard import settings
-from mrmustard.lab.abstract import State, Transformation
-from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
-from mrmustard.typing import ComplexMatrix, RealMatrix
 
-math = Math()
+from mrmustard import settings
+from mrmustard.physics import gaussian, fock
+from mrmustard.utils.typing import ComplexMatrix, RealMatrix
+from mrmustard import math
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
+from .abstract import Channel, Unitary, State
+from .utils import make_parameter
 
 __all__ = [
     "Dgate",
@@ -49,7 +49,7 @@ __all__ = [
 ]
 
 
-class Dgate(Parametrized, Transformation):
+class Dgate(Unitary):
     r"""Displacement gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -69,55 +69,67 @@ class Dgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "D"
+    parallelizable = True
+
     def __init__(
         self,
-        x: Union[Optional[float], Optional[List[float]]] = 0.0,
-        y: Union[Optional[float], Optional[List[float]]] = 0.0,
+        x: Union[float, List[float]] = 0.0,
+        y: Union[float, List[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
+        m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         super().__init__(
-            x=x,
-            y=y,
-            x_trainable=x_trainable,
-            y_trainable=y_trainable,
-            x_bounds=x_bounds,
-            y_bounds=y_bounds,
+            modes=modes or list(range(m)),
+            name="Dgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "D"
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
     @property
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value)
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Arguments:
-            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
+            cutoffs: the Hilbert space dimension cutoff for each mode.
+            shape: the shape of the unitary matrix.
 
         Returns:
            Raises:
                ValueError: if the length of the cutoffs array is different from N and 2N
         """
-
         N = self.num_modes
-        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
-        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product
@@ -137,7 +149,7 @@ class Dgate(Parametrized, Transformation):
             return fock.displacement(x[0], y[0], shape=shape)
 
 
-class Sgate(Parametrized, Transformation):
+class Sgate(Unitary):
     r"""Squeezing gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -157,45 +169,58 @@ class Sgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "S"
+    parallelizable = True
+
     def __init__(
         self,
-        r: Union[Optional[float], Optional[List[float]]] = 0.0,
-        phi: Union[Optional[float], Optional[List[float]]] = 0.0,
+        r: Union[float, list[float]] = 0.0,
+        phi: Union[float, list[float]] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
+            modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
+            name="Sgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "S"
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Args:
-            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
+            cutoffs: the Hilbert space dimension cutoff for each mode.
+            shape: the shape of the unitary matrix.
 
         Returns:
             array[complex]: the unitary matrix
         """
         N = self.num_modes
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
         # this works both or scalar r/phi and vector r/phi:
         r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
         phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
@@ -221,7 +246,7 @@ class Sgate(Parametrized, Transformation):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
 
-class Rgate(Parametrized, Transformation):
+class Rgate(Unitary):
     r"""Rotation gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -239,47 +264,66 @@ class Rgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "R"
+    parallelizable = True
+
     def __init__(
         self,
-        angle: Union[Optional[float], Optional[List[float]]] = 0.0,
+        angle: Union[float, list[float]] = 0.0,
         angle_trainable: bool = False,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            angle=angle,
-            angle_trainable=angle_trainable,
-            angle_bounds=angle_bounds,
+            modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
+            name="Rgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "R"
+        self._add_parameter(make_parameter(angle_trainable, angle, "angle", angle_bounds))
 
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
 
-    def U(self, cutoffs: Sequence[int], diag_only=False):
+    def U(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        diag_only=False,
+    ):
         r"""Returns the unitary representation of the Rotation gate.
 
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Args:
-            cutoffs (Sequence[int]): cutoff dimension for each mode.
-            diag_only (bool): if True, only return the diagonal of the unitary matrix.
+            cutoffs: cutoff dimension for each mode.
+            shape: the shape of the unitary matrix
+            diag_only: if True, only return the diagonal of the unitary matrix.
 
         Returns:
             array[complex]: the unitary matrix
         """
+        N = self.num_modes
         if diag_only:
             raise NotImplementedError("Rgate does not support diag_only=True yet")
-        N = self.num_modes
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
 
         # calculate rotation unitary for each mode and concatenate with outer product
@@ -299,7 +343,7 @@ class Rgate(Parametrized, Transformation):
         )
 
 
-class Pgate(Parametrized, Transformation):
+class Pgate(Unitary):
     r"""Quadratic phase gate.
 
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
@@ -315,28 +359,31 @@ class Pgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "P"
+    parallelizable = True
+
     def __init__(
         self,
-        shearing: Union[Optional[float], Optional[List[float]]] = 0.0,
+        shearing: Union[Optional[float], Optional[list[float]]] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            shearing=shearing,
-            shearing_trainable=shearing_trainable,
-            shearing_bounds=shearing_bounds,
+            modes=modes or list(range(len(math.atleast_1d(shearing)))),
+            name="Pgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "P"
+        self._add_parameter(
+            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
+        )
 
     @property
     def X_matrix(self):
         return gaussian.quadratic_phase(self.shearing.value)
 
 
-class CXgate(Parametrized, Transformation):
+class CXgate(Unitary):
     r"""Controlled X gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -349,6 +396,10 @@ class CXgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "CX"
+    parallelizable = False
+
     def __init__(
         self,
         s: Optional[float] = 0.0,
@@ -357,20 +408,17 @@ class CXgate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            s=s,
-            s_trainable=s_trainable,
-            s_bounds=s_bounds,
+            modes=modes or [0, 1],
+            name="CXgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "CX"
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
 
     @property
     def X_matrix(self):
         return gaussian.controlled_X(self.s.value)
 
 
-class CZgate(Parametrized, Transformation):
+class CZgate(Unitary):
     r"""Controlled Z gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -383,6 +431,10 @@ class CZgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "CZ"
+    parallelizable = False
+
     def __init__(
         self,
         s: Optional[float] = 0.0,
@@ -391,20 +443,17 @@ class CZgate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            s=s,
-            s_trainable=s_trainable,
-            s_bounds=s_bounds,
+            modes=modes or [0, 1],
+            name="CZgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "CZ"
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
 
     @property
     def X_matrix(self):
         return gaussian.controlled_Z(self.s.value)
 
 
-class BSgate(Parametrized, Transformation):
+class BSgate(Unitary):
     r"""Beam splitter gate.
 
     It applies to a single pair of modes.
@@ -420,35 +469,46 @@ class BSgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "BS"
+    parallelizable = False
+
     def __init__(
         self,
-        theta: Optional[float] = 0.0,
-        phi: Optional[float] = 0.0,
+        theta: float = 0.0,
+        phi: float = 0.0,
         theta_trainable: bool = False,
         phi_trainable: bool = False,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            theta=theta,
-            phi=phi,
-            theta_trainable=theta_trainable,
-            phi_trainable=phi_trainable,
-            theta_bounds=theta_bounds,
-            phi_bounds=phi_bounds,
+            modes=modes or [0, 1],  # type: ignore
+            name="BSgate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "BS"
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
-    def U(self, cutoffs: Optional[List[int]], method=None):
-        r"""Returns the symplectic transformation matrix for the beam splitter.
+    def U(
+        self,
+        cutoffs: Optional[List[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        method=None,
+    ):
+        r"""Returns the unitary representation of the beam splitter.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
 
         Args:
-            cutoffs (List[int]): the list of cutoff dimensions for each mode
+            cutoffs: the list of cutoff dimensions for each mode
                 in the order (out_0, out_1, in_0, in_1).
-            method (str): the method used to compute the unitary matrix. Options are:
+            shape: the shape of the unitary matrix
+            method: the method used to compute the unitary matrix. Options are:
                 * 'vanilla': uses the standard method
                 * 'schwinger': slower, but numerically stable
             default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
@@ -456,12 +516,17 @@ class BSgate(Parametrized, Transformation):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        if len(cutoffs) == 4:
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == 4:
             shape = tuple(cutoffs)
         elif len(cutoffs) == 2:
             shape = tuple(cutoffs) + tuple(cutoffs)
         else:
             raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
+
+        shape = shape or cutoffs
+
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
@@ -480,7 +545,7 @@ class BSgate(Parametrized, Transformation):
             )
 
 
-class MZgate(Parametrized, Transformation):
+class MZgate(Unitary):
     r"""Mach-Zehnder gate.
 
     It supports two conventions:
@@ -500,10 +565,14 @@ class MZgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "MZ"
+    parallelizable = False
+
     def __init__(
         self,
-        phi_a: Optional[float] = 0.0,
-        phi_b: Optional[float] = 0.0,
+        phi_a: float = 0.0,
+        phi_b: float = 0.0,
         phi_a_trainable: bool = False,
         phi_b_trainable: bool = False,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -512,17 +581,12 @@ class MZgate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            phi_a=phi_a,
-            phi_b=phi_b,
-            phi_a_trainable=phi_a_trainable,
-            phi_b_trainable=phi_b_trainable,
-            phi_a_bounds=phi_a_bounds,
-            phi_b_bounds=phi_b_bounds,
+            modes=modes or [0, 1],
+            name="MZgate",
         )
+        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
+        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
         self._internal = internal
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "MZ"
 
     @property
     def X_matrix(self):
@@ -535,7 +599,7 @@ class MZgate(Parametrized, Transformation):
             )
 
 
-class S2gate(Parametrized, Transformation):
+class S2gate(Unitary):
     r"""Two-mode squeezing gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -550,10 +614,14 @@ class S2gate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "S2"
+    parallelizable = False
+
     def __init__(
         self,
-        r: Optional[float] = 0.0,
-        phi: Optional[float] = 0.0,
+        r: float = 0.0,
+        phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
@@ -561,16 +629,11 @@ class S2gate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
+            modes=modes or [0, 1],
+            name="S2gate",
         )
-        self._modes = modes
-        self.is_gaussian = True
-        self.short_name = "S2"
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def X_matrix(self):
@@ -581,7 +644,7 @@ class S2gate(Parametrized, Transformation):
             raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
-class Interferometer(Parametrized, Transformation):
+class Interferometer(Unitary):
     r"""N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
@@ -593,24 +656,28 @@ class Interferometer(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "I"
+    parallelizable = False
+
     def __init__(
         self,
         num_modes: int,
         unitary: Optional[ComplexMatrix] = None,
         unitary_trainable: bool = False,
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(
-            unitary=unitary,
-            unitary_trainable=unitary_trainable,
+            modes=modes or list(range(num_modes)),
+            name="Interferometer",
         )
-        self._modes = modes or list(range(num_modes))
-        self.is_gaussian = True
-        self.short_name = "I"
+        self._add_parameter(
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+        )
 
     @property
     def X_matrix(self):
@@ -633,7 +700,7 @@ class Interferometer(Parametrized, Transformation):
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
-class RealInterferometer(Parametrized, Transformation):
+class RealInterferometer(Unitary):
     r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
     Does not mix q's and p's.
 
@@ -642,6 +709,10 @@ class RealInterferometer(Parametrized, Transformation):
             If set to `None` a random real unitary (orthogonal) matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
+
+    is_gaussian = True
+    short_name = "RI"
+    parallelizable = False
 
     def __init__(
         self,
@@ -654,10 +725,16 @@ class RealInterferometer(Parametrized, Transformation):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
-        super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
-        self._modes = modes or list(range(num_modes))
-        self._is_gaussian = True
-        self.short_name = "RI"
+
+        super().__init__(
+            modes=modes or list(range(num_modes)),
+            name="RealInterferometer",
+        )
+        self._add_parameter(
+            make_parameter(
+                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
+            )
+        )
 
     @property
     def X_matrix(self):
@@ -680,7 +757,7 @@ class RealInterferometer(Parametrized, Transformation):
         return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
-class Ggate(Parametrized, Transformation):
+class Ggate(Unitary):
     r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
@@ -692,24 +769,31 @@ class Ggate(Parametrized, Transformation):
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
 
+    is_gaussian = True
+    short_name = "G"
+    parallelizable = False
+
     def __init__(
         self,
         num_modes: int,
         symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes)
+
         super().__init__(
-            symplectic=symplectic,
-            symplectic_trainable=symplectic_trainable,
+            modes=modes or list(range(num_modes)),
+            name="Ggate",
         )
-        self._modes = modes or list(range(num_modes))
-        self.is_gaussian = True
-        self.short_name = "G"
+        self._add_parameter(
+            make_parameter(
+                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+            )
+        )
 
     @property
     def X_matrix(self):
@@ -733,7 +817,7 @@ class Ggate(Parametrized, Transformation):
 
 
 # pylint: disable=no-member
-class Attenuator(Parametrized, Transformation):
+class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
     It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
@@ -763,6 +847,10 @@ class Attenuator(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "Att"
+    parallelizable = True
+
     def __init__(
         self,
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
@@ -774,17 +862,19 @@ class Attenuator(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            transmissivity=transmissivity,
-            nbar=nbar,
-            transmissivity_trainable=transmissivity_trainable,
-            nbar_trainable=nbar_trainable,
-            transmissivity_bounds=transmissivity_bounds,
-            nbar_bounds=nbar_bounds,
+            modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
+            name="Attenuator",
         )
-        self._modes = modes
-        self.is_unitary = False
-        self.is_gaussian = True
-        self.short_name = "Att"
+        self._add_parameter(
+            make_parameter(
+                transmissivity_trainable,
+                transmissivity,
+                "transmissivity",
+                transmissivity_bounds,
+                None,
+            )
+        )
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
     def X_matrix(self):
@@ -795,7 +885,7 @@ class Attenuator(Parametrized, Transformation):
         return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[1]
 
 
-class Amplifier(Parametrized, Transformation):
+class Amplifier(Channel):
     r"""The noisy amplifier channel.
 
     It corresponds to mixing with a thermal environment and applying a two-mode squeezing gate.
@@ -820,6 +910,10 @@ class Amplifier(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "Amp"
+    parallelizable = True
+
     def __init__(
         self,
         gain: Union[Optional[float], Optional[List[float]]] = 1.0,
@@ -828,20 +922,14 @@ class Amplifier(Parametrized, Transformation):
         nbar_trainable: bool = False,
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            gain=gain,
-            gain_trainable=gain_trainable,
-            gain_bounds=gain_bounds,
-            nbar=nbar,
-            nbar_trainable=nbar_trainable,
-            nbar_bounds=nbar_bounds,
+            modes=modes or list(range(len(math.atleast_1d(gain)))),
+            name="Amplifier",
         )
-        self._modes = modes
-        self.is_unitary = False
-        self.is_gaussian = True
-        self.short_name = "Amp"
+        self._add_parameter(make_parameter(gain_trainable, gain, "gain", gain_bounds))
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
     def X_matrix(self):
@@ -853,7 +941,7 @@ class Amplifier(Parametrized, Transformation):
 
 
 # pylint: disable=no-member
-class AdditiveNoise(Parametrized, Transformation):
+class AdditiveNoise(Channel):
     r"""The additive noise channel.
 
     Equivalent to an amplifier followed by an attenuator. E.g.,
@@ -879,29 +967,29 @@ class AdditiveNoise(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
+    is_gaussian = True
+    short_name = "Add"
+    parallelizable = True
+
     def __init__(
         self,
-        noise: Union[Optional[float], Optional[List[float]]] = 0.0,
+        noise: Union[float, list[float]] = 0.0,
         noise_trainable: bool = False,
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            noise=noise,
-            noise_trainable=noise_trainable,
-            noise_bounds=noise_bounds,
+            modes=modes or list(range(len(math.atleast_1d(noise)))),
+            name="AddNoise",
         )
-        self._modes = modes
-        self.is_unitary = False
-        self.is_gaussian = True
-        self.short_name = "Add"
+        self._add_parameter(make_parameter(noise_trainable, noise, "noise", noise_bounds))
 
     @property
     def Y_matrix(self):
         return gaussian.noise_Y(self.noise.value)
 
 
-class PhaseNoise(Parametrized, Transformation):
+class PhaseNoise(Channel):
     r"""The phase noise channel.
 
     The phase noise channel is a non-Gaussian transformation that is equivalent to
@@ -921,10 +1009,13 @@ class PhaseNoise(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            phase_stdev=phase_stdev,
-            phase_stdev_trainable=phase_stdev_trainable,
-            phase_stdev_bounds=phase_stdev_bounds,
+            modes=modes or [0],
+            name="AddNoise",
         )
+        self._add_parameter(
+            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
+        )
+
         self._modes = modes or [0]
         self.is_unitary = False
         self.is_gaussian = False
@@ -950,9 +1041,7 @@ class PhaseNoise(Parametrized, Transformation):
 
         coeff = math.cast(
             math.exp(
-                -0.5
-                * self.phase_stdev.value**2
-                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+                -0.5 * self.phase_stdev.value**2 * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
             ),
             dm.dtype,
         )

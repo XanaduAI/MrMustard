@@ -6,6 +6,11 @@
 		"context": "..",
 		"dockerfile": "Dockerfile"
 	},
+	"features": {
+    "ghcr.io/julialang/devcontainer-features/julia:1": {
+        "channel": "1.9.3"
+    }
+	},
 	"postCreateCommand": "/bin/zsh ./.devcontainer/post-install.sh",
 	"customizations": {
 		"vscode": {
