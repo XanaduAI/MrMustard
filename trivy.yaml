@@ -1,0 +1,2 @@
+vulnerability:
+  ignore: CVE-2023-1428-grpcio

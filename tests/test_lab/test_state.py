@@ -1,6 +1,8 @@
 import numpy as np
 
-from mrmustard.lab import Attenuator, Gaussian
+from mrmustard import math
+from mrmustard.lab import Attenuator, Coherent, Gaussian
+from mrmustard.lab.abstract.state import mikkel_plot
 
 
 def test_addition():
@@ -24,11 +26,11 @@ def test_multiplication_ket():
 
 def test_multiplication_dm():
     """Test that multiplication of Gaussians is correct"""
-    G = Gaussian(1) >> Attenuator(0.9)
+    G = Gaussian(1, cutoffs=[10]) >> Attenuator(0.9)
 
     scaled = 42.0 * G
 
-    assert np.allclose(scaled.dm(), 42.0 * G.dm())
+    assert np.allclose(scaled.dm(G.cutoffs), 42.0 * G.dm())
 
 
 def test_division_ket():
@@ -42,8 +44,17 @@ def test_division_ket():
 
 def test_division_dm():
     """Test that division of Gaussians is correct"""
-    G = Gaussian(1) >> Attenuator(0.9)
+    G = Gaussian(1, cutoffs=[10]) >> Attenuator(0.9)
 
     scaled = G / 42.0
 
     assert np.allclose(scaled.dm(G.cutoffs), G.dm() / 42.0)
+
+
+def test_mikkel_plot():
+    """Tests that mikkel plot returns figure and axes."""
+    dm = Coherent().dm(cutoffs=[10])
+    fig, axs = mikkel_plot(math.asnumpy(dm))
+
+    assert fig is not None
+    assert axs is not None

@@ -23,6 +23,7 @@ from thewalrus.symplectic import (
     two_mode_squeezing,
 )
 
+from mrmustard import math
 from mrmustard.lab import (
     Amplifier,
     Attenuator,
@@ -87,7 +88,7 @@ def test_CXgate(s):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
-    CX_expanded = expand(controlled_X(s).numpy(), [0, 1], 4)
+    CX_expanded = expand(math.asnumpy(controlled_X(s)), [0, 1], 4)
     expected = CX_expanded @ expected @ CX_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
 
@@ -104,7 +105,7 @@ def test_CZgate(s):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
-    CZ_expanded = expand(controlled_Z(s).numpy(), [0, 1], 4)
+    CZ_expanded = expand(math.asnumpy(controlled_Z(s)), [0, 1], 4)
     expected = CZ_expanded @ expected @ CZ_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
 

@@ -18,7 +18,7 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.abstract import State
 from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
@@ -30,11 +30,9 @@ from mrmustard.lab.states import (
     Thermal,
     Vacuum,
 )
-from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
-from tests.random import angle, force_settings, medium_float, n_mode_pure_state, nmodes, r
+from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
-math = Math()
 hbar0 = settings.HBAR
 
 
@@ -46,13 +44,13 @@ def xy_arrays(draw):
 
 @given(nmodes, st.floats(0.1, 5.0))
 def test_vacuum_state(nmodes, hbar):
-    force_settings("_hbar", hbar)
+    settings._force_hbar(hbar)
     cov, disp = gp.vacuum_cov(nmodes), gp.vacuum_means(nmodes)
     assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
 
     # restoring hbar to its original value
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 @given(x=medium_float, y=medium_float)
@@ -64,23 +62,23 @@ def test_coherent_state_single(x, y):
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
-    force_settings("_hbar", hbar)
+    settings._force_hbar(hbar)
     assert np.allclose(gp.displacement([x], [y]), np.array([x, y]) * np.sqrt(2 * hbar))
 
     # restoring hbar to its original value
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
-    force_settings("_hbar", hbar)
+    settings._force_hbar(hbar)
     assert np.allclose(
         gp.displacement(np.array([x]), np.array([y])),
         np.array([x, y]) * np.sqrt(2 * hbar),
     )
 
     # restoring hbar to its original value
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 @given(xy=xy_arrays())
@@ -92,7 +90,7 @@ def test_coherent_state_multiple(xy):
     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
     # restoring hbar to its original value
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 @given(state=n_mode_pure_state(num_modes=1))
@@ -165,11 +163,11 @@ def test_hbar():
     """Test cov matrix is linear in hbar."""
     g = Gaussian(2)
     p = g.purity
-    force_settings("_hbar", 1.234)
+    settings._force_hbar(1.234)
     assert g.purity == p
 
     # restoring hbar to its original value
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 def test_get_single_mode():
@@ -229,7 +227,7 @@ def test_random_state_is_entangled():
 
 @given(modes=st.lists(st.integers(), min_size=2, max_size=5, unique=True))
 def test_getitem_set_modes(modes):
-    """Test that using `State.__getitem__` and `modes`
+    """Test that using `super().__getitem__` and `modes`
     kwarg correctly set the modes of the state."""
 
     cutoff = len(modes) + 1
@@ -279,7 +277,7 @@ def test_ket_from_pure_dm_new_cutoffs():
     "tests that the shape of the internal fock representation reflects the new cutoffs"
     state = Vacuum(1) >> Sgate(0.1) >> Dgate(0.1, 0.1)  # weak gaussian state
     state = State(dm=state.dm(cutoffs=[20]))  # assign pure dm directly
-    assert state.ket(cutoffs=[5]).shape.as_list() == [5]  # shape should be [5]
+    assert list(state.ket(cutoffs=[5]).shape) == [5]  # shape should be [5]
 
 
 def test_ket_probability():

@@ -28,7 +28,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbors import lower_neighbors
 from mrmustard.math.lattice.pivots import first_available_pivot
-from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
@@ -53,6 +53,42 @@ def vanilla_step(
         index (Sequence): index of the amplitude to calculate
     Returns:
         complex: the value of the amplitude at the given index
+    """
+    # get pivot
+    i, pivot = first_available_pivot(index)
+
+    # pivot contribution
+    value_at_index = b[i] * G[pivot]
+
+    # neighbors contribution
+    for j, neighbor in lower_neighbors(pivot):
+        value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+
+    return value_at_index / SQRT[index[i]]
+
+
+@njit
+def vanilla_step_batch(
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexTensor,
+    index: tuple[int, ...],
+) -> complex:  # pragma: no cover
+    r"""Fock-Bargmann recurrence relation step, vanilla batched version.
+    This function returns the amplitude of the Gaussian tensor G
+    at G[index]. It does not modify G.
+    The necessary pivot and neighbours must have already been computed,
+    as this step will read those values from G.
+    Note that this function is different from vanilla_step with b is no longer a vector,
+    it becomes a bathced vector with the batch dimension on the last index.
+
+    Args:
+        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
+        index (Sequence): index of the amplitude to calculate
+    Returns:
+        array: the value of the amplitude at the given index according to each batch on the last index
     """
     # get pivot
     i, pivot = first_available_pivot(index)

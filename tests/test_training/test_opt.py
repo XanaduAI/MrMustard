@@ -19,7 +19,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
@@ -38,18 +38,20 @@ from mrmustard.lab.states import (
     SqueezedVacuum,
     Vacuum,
 )
-from mrmustard.math import Math
+from mrmustard.math.parameters import Variable, update_euclidean
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
-from mrmustard.training import Optimizer, Parametrized
+from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
-math = Math()
+from ..conftest import skip_np
 
 
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
+    skip_np()
+
     settings.SEED = 40
     S = S2gate(
         r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
@@ -62,7 +64,7 @@ def test_S2gate_coincidence_prob(n):
     def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
         return {
             "cost": cost,
-            "lr": optimizer.learning_rate["euclidean"],
+            "lr": optimizer.learning_rate[update_euclidean],
             "num_trainables": len(trainables),
         }
 
@@ -85,6 +87,8 @@ def test_hong_ou_mandel_optimizer(i, k):
     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
     which lacks a square root in the right hand side.
     """
+    skip_np()
+
     settings.SEED = 42
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
@@ -118,6 +122,8 @@ def test_hong_ou_mandel_optimizer(i, k):
 
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
+    skip_np()
+
     settings.SEED = 42
     ops = [
         Sgate(
@@ -148,6 +154,8 @@ def test_learning_two_mode_squeezing():
 
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
+    skip_np()
+
     settings.SEED = 42
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
@@ -163,6 +171,8 @@ def test_learning_two_mode_Ggate():
 
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
+    skip_np()
+
     settings.SEED = 42
     ops = [
         Sgate(
@@ -188,6 +198,8 @@ def test_learning_two_mode_Interferometer():
 
 def test_learning_two_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
+    skip_np()
+
     settings.SEED = 2
     ops = [
         Sgate(
@@ -213,6 +225,8 @@ def test_learning_two_mode_RealInterferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
+    skip_np()
+
     settings.SEED = 4
     solution_U = np.array(
         [
@@ -272,6 +286,8 @@ def test_learning_four_mode_Interferometer():
 
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
+    skip_np()
+
     settings.SEED = 6
     solution_O = np.array(
         [
@@ -316,6 +332,8 @@ def test_squeezing_hong_ou_mandel_optimizer():
     """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
+    skip_np()
+
     settings.SEED = 42
     r = np.arcsinh(1.0)
 
@@ -335,16 +353,17 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
 def test_parameter_passthrough():
     """Same as the test above, but with param passthrough"""
+    skip_np()
+
     settings.SEED = 42
     r = np.arcsinh(1.0)
-    par = Parametrized(
-        r=math.new_variable(r, (0.0, None), "r"),
-        phi=math.new_variable(settings.rng.normal(), (None, None), "phi"),
-    )
+    r_var = Variable(r, "r", (0.0, None))
+    phi_var = Variable(settings.rng.normal(), "phi", (None, None))
+
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=par.r.value, phi=par.phi.value)[1, 2],
+        S2gate(r=r_var, phi=phi_var)[1, 2],
     ]
     circ = Circuit(ops)
 
@@ -352,13 +371,15 @@ def test_parameter_passthrough():
         return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
-    opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
-    assert np.allclose(np.sinh(par.r.value) ** 2, 1, atol=1e-2)
+    opt.minimize(cost_fn, by_optimizing=[r_var, phi_var], max_steps=300)
+    assert np.allclose(np.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
 
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
     and mean photon number as a thermal state"""
+    skip_np()
+
     settings.SEED = 42
     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
 
@@ -380,13 +401,15 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-    S = G.symplectic.value.numpy()
+    S = math.asnumpy(G.symplectic.value)
     cov = S @ S.T
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
 
 def test_opt_backend_param():
     """Test the optimization of a backend parameter defined outside a gate."""
+    skip_np()
+
     # rotated displaced squeezed state
     settings.SEED = 42
     rotation_angle = np.pi / 2
@@ -404,11 +427,13 @@ def test_opt_backend_param():
     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-4)
+    assert np.allclose(math.asnumpy(r_angle), rotation_angle / 2, atol=1e-4)
 
 
 def test_dgate_optimization():
     """Test that Dgate is optimized correctly."""
+    skip_np()
+
     settings.SEED = 24
 
     dgate = Dgate(x_trainable=True, y_trainable=True)
@@ -427,6 +452,8 @@ def test_dgate_optimization():
 
 def test_sgate_optimization():
     """Test that Sgate is optimized correctly."""
+    skip_np()
+
     settings.SEED = 25
 
     sgate = Sgate(r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
@@ -446,6 +473,8 @@ def test_sgate_optimization():
 
 def test_bsgate_optimization():
     """Test that Sgate is optimized correctly."""
+    skip_np()
+
     settings.SEED = 25
 
     G = Gaussian(2)
@@ -467,6 +496,8 @@ def test_bsgate_optimization():
 
 def test_squeezing_grad_from_fock():
     """Test that the gradient of a squeezing gate is computed from the fock representation."""
+    skip_np()
+
     squeezing = Sgate(r=1, r_trainable=True)
 
     def cost_fn():
@@ -478,6 +509,8 @@ def test_squeezing_grad_from_fock():
 
 def test_displacement_grad_from_fock():
     """Test that the gradient of a displacement gate is computed from the fock representation."""
+    skip_np()
+
     disp = Dgate(x=1.0, y=1.0, x_trainable=True, y_trainable=True)
 
     def cost_fn():
@@ -489,6 +522,8 @@ def test_displacement_grad_from_fock():
 
 def test_bsgate_grad_from_fock():
     """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
+    skip_np()
+
     sq = SqueezedVacuum(r=1.0, r_trainable=True)
 
     def cost_fn():

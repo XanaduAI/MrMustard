@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=redefined-outer-name
-
 """
 This module contains functions for transforming to the Bargmann representation.
 """
+from typing import Sequence, Tuple
+
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-
-math = Math()
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
 
 def cayley(X, c):
@@ -53,7 +51,9 @@ def wigner_to_bargmann_rho(cov, means):
     Q, beta = wigner_to_husimi(cov, means)
     b = math.solve(Q, beta)
     B = math.conj(b)
-    C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
+    num_C = math.exp(-0.5 * math.sum(math.conj(beta) * b))
+    den_C = math.sqrt(math.det(Q), dtype=num_C.dtype)
+    C = num_C / den_C
     return A, B, C
 
 
@@ -63,11 +63,8 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return (
-        A[N:, N:],
-        B[N:],
-        math.sqrt(C),
-    )  # NOTE: c for th psi is to calculated from the global phase formula.
+    return A[N:, N:], B[N:], math.sqrt(C)
+    # NOTE: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
@@ -107,3 +104,120 @@ def wigner_to_bargmann_U(X, d):
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+
+
+def complex_gaussian_integral(
+    Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
+):
+    r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
+    The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
+
+    :math:`\int_{C^m} F(z) d\mu(z)`
+
+    where
+
+    :math:`F(z) = \textrm{exp}(-0.5 z^T A z + b^T z)`
+
+    Here, ``z`` is an ``n``-dim complex vector, ``A`` is an ``n x n`` complex matrix,
+    ``b`` is an ``n``-dim complex vector, ``c`` is a complex scalar, and :math:`d\mu(z)`
+    is a non-holomorphic complex measure over a subset of m pairs of z,z* variables. These
+    are specified by the indices ``idx_z`` and ``idx_zconj``. The ``measure`` parameter is
+    the exponent of the measure:
+
+    :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
+
+    Arguments:
+        A,b,c: the ``(A,b,c)`` triple
+        idx_z: the tuple of indices of the z variables
+        idx_zconj: the tuple of indices of the z* variables
+        measure: the exponent of the measure (default is -1: Bargmann measure)
+
+    Returns:
+        The ``(A,b,c)`` triple of the result of the integral
+    """
+    A, b, c = Abc
+    if len(idx_z) != len(idx_zconj):
+        raise ValueError("idx_z and idx_zconj must have the same length")
+    n = len(idx_z)
+    idx = tuple(idx_z) + tuple(idx_zconj)
+    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
+
+    I = math.eye(n, dtype=A.dtype)
+    Z = math.zeros((n, n), dtype=A.dtype)
+    X = math.block([[Z, I], [I, Z]])
+    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
+    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
+    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
+
+    bM = math.gather(b, idx, axis=-1)
+    bR = math.gather(b, not_idx, axis=-1)
+
+    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
+    b_post = bR - math.matvec(D, math.solve(M, bM))
+    c_post = (
+        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+    )
+
+    return A_post, b_post, c_post
+
+
+def join_Abc(Abc1, Abc2):
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
+    matrices and concatenating the ``b`` vectors.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+
+    Returns:
+        The joined ``(A,b,c)`` triple
+    """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    A12 = math.block_diag(A1, A2)
+    b12 = math.concat([b1, b2], axis=-1)
+    c12 = math.outer(c1, c2)
+    return A12, b12, c12
+
+
+def reorder_abc(Abc: tuple, order: Sequence[int]):
+    r"""
+    Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
+
+    Arguments:
+        Abc: the ``(A,b,c)`` triple
+        order: the new order of the indices
+
+    Returns:
+        The reordered ``(A,b,c)`` triple
+    """
+    A, b, c = Abc
+    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
+    b = math.gather(b, order, axis=-1)
+    if len(c.shape) == len(order):
+        c = math.transpose(c, order)
+    return A, b, c
+
+
+def contract_two_Abc(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+):
+    r"""
+    Returns the contraction of two ``(A,b,c)`` triples.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+        idx1: the indices of the first ``(A,b,c)`` triple to contract
+        idx2: the indices of the second ``(A,b,c)`` triple to contract
+
+    Returns:
+        The contracted ``(A,b,c)`` triple
+    """
+    Abc = join_Abc(Abc1, Abc2)
+    return complex_gaussian_integral(
+        Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
+    )

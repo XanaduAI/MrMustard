@@ -67,16 +67,22 @@ Examples:
 
 """
 
+# pylint: disable = wrong-import-position
+
+
 from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
-import numpy as np
-import tensorflow as tf
-from mrmustard.math import Math
 
-math = Math()
+import os
+import numpy as np
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 @dataclass
@@ -240,7 +246,6 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         **kwargs,
     ):  # pylint: disable=unused-argument,arguments-differ
         """Logs costs and parameters to Tensorboard."""
-
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"
 
@@ -258,9 +263,9 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
             orig_cost = np.array(optimizer.callback_history["orig_cost"][-1]).item()
             obj_scalars[f"{obj_tag}/orig_cost"] = orig_cost
             if self.cost_converter is not None:
-                obj_scalars[
-                    f"{obj_tag}/{self.cost_converter.__name__}(orig_cost)"
-                ] = self.cost_converter(orig_cost)
+                obj_scalars[f"{obj_tag}/{self.cost_converter.__name__}(orig_cost)"] = (
+                    self.cost_converter(orig_cost)
+                )
 
         for k, v in obj_scalars.items():
             tf.summary.scalar(k, data=v, step=self.optimizer_step)

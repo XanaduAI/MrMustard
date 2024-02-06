@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=import-outside-toplevel
+
 import numpy as np
 import pytest
 from hypothesis import given
 from thewalrus.fock_gradients import (
-    beamsplitter,
-    displacement,
+    beamsplitter as tw_beamsplitter,
+    displacement as tw_displacement,
     mzgate,
     squeezing,
     two_mode_squeezing,
 )
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -40,7 +42,6 @@ from mrmustard.lab import (
     Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
-from mrmustard.math import Math
 from mrmustard.math.lattice import strategies
 from mrmustard.physics import fock
 from tests.random import (
@@ -53,8 +54,7 @@ from tests.random import (
     single_mode_unitary_gate,
     two_mode_unitary_gate,
 )
-
-math = Math()
+from ..conftest import skip_np
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
@@ -165,6 +165,8 @@ def test_parallel_displacement(x1, x2, y1, y2):
 
 def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
+    skip_np()
+
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
@@ -183,7 +185,7 @@ def test_displacement_grad():
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
-    alpha = math.make_complex(x, y).numpy()
+    alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
     dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
         2 * delta
@@ -207,7 +209,7 @@ def test_fock_representation_displacement_rectangular():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
+    expected_Ud = tw_displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -221,7 +223,7 @@ def test_fock_representation_displacement_rectangular2():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
+    expected_Ud = tw_displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -245,7 +247,7 @@ def test_parallel_squeezing(r1, phi1, r2, phi2):
 @given(theta=angle, phi=angle)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
-    expected = beamsplitter(theta=theta, phi=phi, cutoff=10)
+    expected = tw_beamsplitter(theta=theta, phi=phi, cutoff=10)
     assert np.allclose(expected, BS.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
 
 
@@ -253,14 +255,14 @@ def test_fock_representation_beamsplitter(theta, phi):
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=10)
-    assert np.allclose(expected, S2.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, S2.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=10)
-    assert np.allclose(expected, MZ.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, MZ.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @pytest.mark.parametrize(
@@ -305,18 +307,27 @@ def test_choi_cutoffs():
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
 
 
-@pytest.mark.parametrize("gate", [Sgate(1), Rgate(0.1), Dgate(0.1)])
+@pytest.mark.parametrize(
+    "gate, kwargs",
+    [
+        (Sgate, {"r": 1}),
+        (Rgate, {"angle": 0.1}),
+        (Dgate, {"x": 0.1}),
+    ],
+)
 @pytest.mark.parametrize("cutoff", [2, 5])
 @pytest.mark.parametrize("modes", [[0], [1, 2]])
-def test_choi_for_unitary(gate, cutoff, modes):
+def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     """tests the `choi` method for unitary transformations"""
+    gate = gate(**kwargs)
+
     gate = gate[modes]
     N = gate.num_modes
     cutoffs = [cutoff] * N
 
-    choi = gate.choi(cutoffs=cutoffs).numpy().reshape(cutoff ** (2 * N), cutoff ** (2 * N))
+    choi = math.asnumpy(gate.choi(cutoffs=cutoffs)).reshape(cutoff ** (2 * N), cutoff ** (2 * N))
 
-    t = gate.U(cutoffs=cutoffs).numpy()
+    t = math.asnumpy(gate.U(cutoffs=cutoffs))
     row = t.flatten().reshape(1, cutoff ** (2 * N))
     col = t.flatten().reshape(cutoff ** (2 * N), 1)
     expected = np.dot(col, row)
