@@ -33,19 +33,21 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-__all__ = ["Ansatz", "PolyExpBase", "PolyExpAnsatz"]
+__all__ = ["Ansatz", "ArrayAnsatz", "PolyExpBase", "PolyExpAnsatz"]
 
 
 class Ansatz(ABC):
-    r"""An Ansatz is a function over a continuous and/or discrete domain.
-    It supports many mathematical operations such as addition, subtraction,
+    r"""
+    A function over a continuous and/or discrete domain.
+
+    An ansatz supports basic mathematical operations such as addition, subtraction,
     multiplication, division, negation, equality, etc.
 
-    Note that n-dimensional arrays are like functions defined over an integer lattice of points,
-    so this class also works for e.g. the Fock representation.
+    Note that ``n``-dimensional arrays are like functions defined over an integer lattice of points,
+    so this class also works for, e.g., the Fock representation.
 
-    This class is abstract. Concrete Ansatz classes will have to implement the
-    ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__`` and ``__eq__`` methods.
+    This class is abstract. Concrete ``Ansatz`` classes have to implement the
+    ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__``, and ``__eq__`` methods.
     """
 
     @abstractmethod
@@ -123,7 +125,7 @@ class PolyExpBase(Ansatz):
     functionality by implementing the ``__add__`` method, which concatenates the batch dimensions.
 
     As this can blow up the number of terms in the representation, it is recommended to
-    run the `simplify()` method after adding terms together, which will combine together
+    run the `simplify()` method after adding terms together, which combines together
     terms that have the same exponential part.
 
     Args:
@@ -193,7 +195,7 @@ class PolyExpBase(Ansatz):
 
     def simplify_v2(self) -> None:
         r"""
-        A different implementation that orders the batch dimension first.
+        A different implementation of ``simplify`` that orders the batch dimension first.
         """
         if self._simplified:
             return
@@ -233,6 +235,8 @@ class PolyExpBase(Ansatz):
 
 class PolyExpAnsatz(PolyExpBase):
     r"""
+    The ansatz of the Fock-Bargmann representation.
+    
     Represents the ansatz function:
 
         :math:`F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)`
@@ -244,19 +248,24 @@ class PolyExpAnsatz(PolyExpBase):
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
 
+    .. code-block::
+
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array(1.0)
+
+        >>> F = PolyExpAnsatz(A, b, c)
+        >>> z = np.array([1.0, 2.0])
+        
+        >>> # calculate the value of the function at ``z``
+        >>> val = F(z)
+
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
         c: The array of coefficients for the polynomial terms in the ansatz.
-
-    .. code-block::
-
-        A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
-        b = [np.array([1.0, 1.0])]
-        c = [np.array(1.0)]
-        F = PolyExpAnsatz(A, b, c)
-        z = np.array([1.0, 2.0])
-        print(F(z))  # prints the value of F at z
 
     """
 
@@ -383,7 +392,25 @@ class PolyExpAnsatz(PolyExpBase):
 
 
 class ArrayAnsatz(Ansatz):
-    r"""Represents the ansatz as a multidimensional array."""
+    r"""
+    The ansatz of the Fock-Bargmann representation.
+    
+    Represents the ansatz as a multidimensional array.
+
+    .. code-block ::
+
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array(1.0)
+
+        >>> F = PolyExpAnsatz(A, b, c)
+        >>> z = np.array([1.0, 2.0])
+        
+        >>> # calculate the value of the function at ``z``
+        >>> val = F(z)
+    """
 
     def __init__(self, array: Batch[Tensor]):
         r"""Note that the array is batched."""
