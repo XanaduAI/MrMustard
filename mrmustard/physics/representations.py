@@ -42,7 +42,7 @@ class Representation(ABC):
     """
 
     @abstractmethod
-    def from_ansatz(self, ansatz: Ansatz) -> Representation:
+    def from_ansatz(self, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
         """
