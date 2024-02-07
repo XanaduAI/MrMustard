@@ -203,9 +203,12 @@ We can turn any simulation in Mr Mustard into an optimization by marking which p
 displaced squeezed state.
 
 ```python
+from mrmustard import math
 from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
+
+math.change_backend("tensorflow")
 
 D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
 L = Attenuator(transmissivity=0.5)
