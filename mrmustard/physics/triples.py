@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """
-This module contains the ABC triples for states, transformations in Bargmann representation.
+This module contains the Abc triples for states, transformations in Bargmann representation.
 
-Note that the ABC triples in this file follow the same standard order definition as Wires class:
+Note that the Abc triples in this file follow the same standard order definition as Wires class:
 Pure states: (out_ket_1, out_ket_2, ...)
 Mixed states: (out_bra_1, out_bra_2, ...; out_ket_1, out_ket_2, ...)
 Unitaries: (out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...))
@@ -28,37 +28,62 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 
 #  ~~~~~~~~~~~~
+#  Utilities
+#  ~~~~~~~~~~~~
+
+
+def _X_matrix() -> Matrix:
+    r"""Returns the X matrix."""
+    return math.array([[0, 1], [1, 0]])
+
+
+def _X_matrix_for_unitary(num_modes: int) -> Matrix:
+    r"""Returns the X matrix for the order of unitaries."""
+    return math.cast(np.kron(math.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
+
+
+def _vacuum_A_matrix(shape: int) -> Matrix:
+    r"""Returns the A matrix with all zeros."""
+    return math.zeros((shape, shape))
+
+
+def _vacuum_B_vector(shape: int) -> Vector:
+    r"""Returns the B vector with all zeros."""
+    return math.zeros(shape)
+
+
+#  ~~~~~~~~~~~~
 #  Pure States
 #  ~~~~~~~~~~~~
 
 
-def vacuum_state_ABC_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of the pure vacuum state.
+def vacuum_state_Abc_triples(num_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""Returns the Abc triples of the pure vacuum state.
 
     Args:
-        num_modes (int): number of modes
+        num_modes: number of modes
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the pure vacuum state.
+        A matrix, b vector and c scalar of the pure vacuum state.
     """
-    return vacuum_A_matrix(num_modes), vacuum_B_vector(num_modes), 1.0
+    return _vacuum_A_matrix(num_modes), _vacuum_B_vector(num_modes), 1.0
 
 
-def coherent_state_ABC_triples(
-    x: Union[Scalar, Vector], y: Union[Scalar, Vector]
+def coherent_state_Abc_triples(
+    x: Union[Scalar, list], y: Union[Scalar, list]
 ) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of the pure coherent state.
+    r"""Returns the Abc triples of the pure coherent state.
 
     The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, we will repete it
     to have the same dimension as the other one. For example, if ``x = [1,2,3], y = [1]``, we will fill it automatically
     like ``x = [1,2,3], y = [1,1,1]``.
 
     Args:
-        x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
-        y (scalar or vector): imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
+        x: real part of displacement (in units of :math:`\sqrt{\hbar}`)
+        y: imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the pure coherent state.
+        A matrix, b vector and c scalar of the pure coherent state.
     """
     x = math.atleast_1d(x, math.float64)
     y = math.atleast_1d(y, math.float64)
@@ -67,24 +92,24 @@ def coherent_state_ABC_triples(
     if y.shape[-1] == 1:
         y = math.tile(y, x.shape)
     num_modes = x.shape
-    return vacuum_A_matrix(num_modes), x + 1j * y, math.exp(-0.5 * (x**2 + y**2))
+    return _vacuum_A_matrix(num_modes), x + 1j * y, math.exp(-0.5 * math.sum(x**2 + y**2))
 
 
-def squeezed_vacuum_state_ABC_triples(
-    r: Union[Scalar, Vector], phi: Union[Scalar, Vector]
+def squeezed_vacuum_state_Abc_triples(
+    r: Union[Scalar, list], phi: Union[Scalar, list]
 ) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of a squeezed vacuum state.
+    r"""Returns the Abc triples of a squeezed vacuum state.
 
     The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, we will repete it
     to have the same dimension as the other one. For example, if ``r = [1,2,3], phi = [1]``, we will fill it automatically
     like ``r = [1,2,3], phi = [1,1,1]``.
 
     Args:
-        r (scalar or vector): squeezing magnitude
-        phi (scalar or vector): squeezing angle
+        r: squeezing magnitude
+        phi: squeezing angle
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the squeezed vacuum state.
+        A matrix, b vector and c scalar of the squeezed vacuum state.
     """
     r = math.atleast_1d(r, math.float64)
     phi = math.atleast_1d(phi, math.float64)
@@ -93,27 +118,28 @@ def squeezed_vacuum_state_ABC_triples(
     if phi.shape[-1] == 1:
         phi = math.tile(phi, r.shape)
     num_modes = phi.shape[-1]
-    return squeezed_vacuum_A_matrix(r, phi), vacuum_B_vector(num_modes), 1 / math.sqrt(math.cosh(r))
+    A = math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
+    return A, _vacuum_B_vector(num_modes), math.prod(1 / math.sqrt(math.cosh(r)))
 
 
-def displaced_squeezed_vacuum_state_ABC_triples(
-    x: Union[Scalar, Vector],
-    y: Union[Scalar, Vector],
-    r: Union[Scalar, Vector],
-    phi: Union[Scalar, Vector],
+def displaced_squeezed_vacuum_state_Abc_triples(
+    x: Union[Scalar, list],
+    y: Union[Scalar, list],
+    r: Union[Scalar, list],
+    phi: Union[Scalar, list],
 ) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of a displaced squeezed vacuum state.
+    r"""Returns the Abc triples of a displaced squeezed vacuum state.
 
     ValueError will be raise if the dimensions of ``x``, ``y``, ``r`` and ``phi`` are different.
 
     Args:
-        r (scalar or vector): squeezing magnitude
-        phi (scalar or vector): squeezing angle
-        x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
-        y (scalar or vector): imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
+        r: squeezing magnitude
+        phi: squeezing angle
+        x: real part of displacement (in units of :math:`\sqrt{\hbar}`)
+        y: imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the squeezed vacuum state.
+        A matrix, b vector and c scalar of the squeezed vacuum state.
     """
     r = math.atleast_1d(r, math.float64)
     phi = math.atleast_1d(phi, math.float64)
@@ -123,33 +149,31 @@ def displaced_squeezed_vacuum_state_ABC_triples(
         (r.shape[-1] == phi.shape[-1]) & (x.shape[-1] == y.shape[-1]) & (r.shape[-1] == x.shape[-1])
     ):
         raise ValueError("The shape of them must be the same.")
-    return (
-        squeezed_vacuum_A_matrix(r, phi),
-        displaced_squeezed_vacuum_B_vector(x, y, r, phi),
-        math.exp(
-            -0.5 * (x**2 + y**2)
-            - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
-        )
-        / math.sqrt(math.cosh(r)),
-    )
+    A = math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
+    b = (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+    c = math.exp(
+        -0.5 * (x**2 + y**2)
+        - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+    ) / math.sqrt(math.cosh(r))
+    return A, b, c
 
 
-def two_mode_squeezed_vacuum_state_ABC_triples(
-    r: Union[Scalar, Vector],
-    phi: Union[Scalar, Vector],
+def two_mode_squeezed_vacuum_state_Abc_triples(
+    r: Union[Scalar, list],
+    phi: Union[Scalar, list],
 ) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of a two mode squeezed vacuum state.
+    r"""Returns the Abc triples of a two mode squeezed vacuum state.
 
     The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, we will repete it
     to have the same dimension as the other one. For example, if ``r = [1,2,3], phi = [1]``, we will fill it automatically
     like ``r = [1,2,3], phi = [1,1,1]``.
 
     Args:
-        r (scalar or vector): squeezing magnitude
-        phi (scalar or vector): squeezing angle
+        r: squeezing magnitude
+        phi: squeezing angle
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the two mode squeezed vacuum state.
+        A matrix, b vector and c scalar of the two mode squeezed vacuum state.
     """
     r = math.atleast_1d(r, math.float64)
     phi = math.atleast_1d(phi, math.float64)
@@ -158,10 +182,18 @@ def two_mode_squeezed_vacuum_state_ABC_triples(
     if phi.shape[-1] == 1:
         phi = math.tile(phi, r.shape)
     num_modes = phi.shape[-1] * 2
+    O_n = math.zeros((num_modes, num_modes))
+    tanhr = math.diag(math.sinh(r) / math.cosh(r))
+    A = math.block(
+        [
+            [O_n, -math.exp(1j * phi) * tanhr],
+            [-math.exp(1j * phi) * tanhr, O_n],
+        ]
+    )
     return (
-        two_mode_squeezed_vacuum_A_matrix(r, phi, num_modes),
-        vacuum_B_vector(num_modes),
-        1 / math.cosh(r),
+        A,
+        _vacuum_B_vector(num_modes),
+        math.prod(1 / math.cosh(r)),
     )
 
 
@@ -170,18 +202,18 @@ def two_mode_squeezed_vacuum_state_ABC_triples(
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_ABC_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
-    r"""Returns the ABC triples of a thermal state.
+def thermal_state_Abc_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
+    r"""Returns the Abc triples of a thermal state.
 
     Args:
-        nbar (vector): average number of photons per mode
+        nbar: average number of photons per mode
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the thermal state.
+        A matrix, b vector and c scalar of the thermal state.
     """
     nbar = math.atleast_1d(nbar, math.float64)
     num_modes = nbar.shape[-1]
-    return nbar / (nbar + 1) * X_matrix(), vacuum_B_vector(num_modes), 1 / (nbar + 1)
+    return nbar / (nbar + 1) * _X_matrix(), _vacuum_B_vector(num_modes), 1 / (nbar + 1)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,8 +221,8 @@ def thermal_state_ABC_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_ABC_triples(theta: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of a rotation gate.
+def rotation_gate_Abc_triples(theta: Union[Scalar, list]):
+    r"""Returns the Abc triples of a rotation gate.
 
     The gate is defined by
         :math:`R(\theta) = \exp(i\theta\hat{a}^\dagger\hat{a})`.
@@ -198,25 +230,22 @@ def rotation_gate_ABC_triples(theta: Union[Scalar, Vector]):
     The dimension depends on the dimensions of ``theta``.
 
     Args:
-        theta (scalar or vector): rotation angle
+        theta: rotation angle
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the rotation gate.
+        A matrix, b vector and c scalar of the rotation gate.
     """
     theta = math.atleast_1d(theta, math.float64)
     num_modes = theta.shape[-1]
-    return (
-        math.cast(
-            np.kron(math.array([[0, 1], [1, 0]]), math.exp(1j * theta) * math.eye(num_modes)),
-            math.complex128,
-        ),
-        vacuum_B_vector(num_modes),
-        1.0,
+    A = math.cast(
+        np.kron(math.array([[0, 1], [1, 0]]), math.exp(1j * theta) * math.eye(num_modes)),
+        math.complex128,
     )
+    return A, _vacuum_B_vector(num_modes), 1.0
 
 
-def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of a displacement gate.
+def displacement_gate_Abc_triples(x: Union[Scalar, list], y: Union[Scalar, list]):
+    r"""Returns the Abc triples of a displacement gate.
 
     The gate is defined by
         :math:`D(\gamma) = \exp(\gamma\hat{a}^\dagger-\gamma^*\hat{a})`,
@@ -227,11 +256,11 @@ def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vec
     like ``x = [1,2,3], y = [1,1,1]``.
 
     Args:
-        x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
-        y (scalar or vector): imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
+        x: real part of displacement (in units of :math:`\sqrt{\hbar}`)
+        y: imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the displacement gate.
+        A matrix, b vector and c scalar of the displacement gate.
     """
     x = math.atleast_1d(x, math.float64)
     y = math.atleast_1d(y, math.float64)
@@ -240,15 +269,13 @@ def displacement_gate_ABC_triples(x: Union[Scalar, Vector], y: Union[Scalar, Vec
     if y.shape[-1] == 1:
         y = math.tile(y, x.shape)
     num_modes = x.shape
-    return (
-        X_matrix_for_unitary(num_modes),
-        math.concat([x + 1j * y, -x + 1j * y], axis=0),
-        math.exp(-math.sum(x**2 + y**2) / 2),
-    )
+    b = math.concat([x + 1j * y, -x + 1j * y], axis=0)
+    c = math.exp(-math.sum(x**2 + y**2) / 2)
+    return _X_matrix_for_unitary(num_modes), b, c
 
 
-def squeezing_gate_ABC_triples(r: Union[Scalar, Vector], delta: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of a squeezing gate.
+def squeezing_gate_Abc_triples(r: Union[Scalar, list], delta: Union[Scalar, list]):
+    r"""Returns the Abc triples of a squeezing gate.
 
     The gate is defined by
         :math:`S(\zeta) = \exp(\zeta^*\hat{a}^2 - \zeta\hat{a}^{\dagger 2})`,
@@ -259,11 +286,11 @@ def squeezing_gate_ABC_triples(r: Union[Scalar, Vector], delta: Union[Scalar, Ve
     like ``r = [1,2,3], \delta = [1,1,1]``.
 
     Args:
-        r (scalar or vector): squeezing magnitude
-        delta (scalar or vector): squeezing angle
+        r: squeezing magnitude
+        delta: squeezing angle
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the squeezing gate.
+        A matrix, b vector and c scalar of the squeezing gate.
     """
     r = math.atleast_1d(r, math.float64)
     delta = math.atleast_1d(delta, math.float64)
@@ -272,15 +299,14 @@ def squeezing_gate_ABC_triples(r: Union[Scalar, Vector], delta: Union[Scalar, Ve
     if delta.shape[-1] == 1:
         delta = math.tile(delta, r.shape)
     num_modes = delta.shape[-1]
-    return (
-        squeezing_gate_A_matrix(r, delta),
-        vacuum_B_vector(num_modes * 2),
-        1 / math.sqrt(math.cosh(r)),
-    )
+    tanhr = math.diag(math.sinh(r) / math.cosh(r))
+    sechr = math.diag(1 / math.cosh(r))
+    A = math.block([[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]])
+    return A, _vacuum_B_vector(num_modes * 2), math.prod(1 / math.sqrt(math.cosh(r)))
 
 
-def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of a beamsplitter gate on two modes.
+def beamsplitter_gate_Abc_triples(theta: Union[Scalar, list], phi: Union[Scalar, list]):
+    r"""Returns the Abc triples of a beamsplitter gate on two modes.
 
     The gate is defined by
         :math:`BS(\theta, \phi) = \exp()`.
@@ -290,11 +316,11 @@ def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scala
     like ``theta = [1,2,3], phi = [1,1,1]``.
 
     Args:
-        theta (scalar or vector): transmissivity parameter
-        phi (scalar or vector): phase parameter
+        theta: transmissivity parameter
+        phi: phase parameter
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the beamsplitter gate.
+        A matrix, b vector and c scalar of the beamsplitter gate.
     """
     theta = math.atleast_1d(theta, math.float64)
     phi = math.atleast_1d(phi, math.float64)
@@ -304,8 +330,13 @@ def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scala
         phi = math.tile(phi, theta.shape)
     num_modes = phi.shape[-1]
     O_n = math.zeros((num_modes, num_modes))
-    V = beamsplitter_gate_V_matrix(theta, phi)
-    return math.block([[O_n, V], [math.transpose(V), O_n]]), vacuum_B_vector(num_modes * 2), 1.0
+    costheta = math.diag(math.cos(theta))
+    sintheta = math.diag(math.sin(theta))
+    V = math.block(
+        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
+    )
+    A = math.block([[O_n, V], [math.transpose(V), O_n]])
+    return A, _vacuum_B_vector(num_modes * 2), 1.0
 
 
 # ~~~~~~~~~~
@@ -313,138 +344,46 @@ def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scala
 # ~~~~~~~~~~
 
 
-def attenuator_ABC_triples(eta: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of an atternuator.
+def attenuator_Abc_triples(eta: Union[Scalar, list]):
+    r"""Returns the Abc triples of an atternuator.
 
     The dimension depends on the dimensions of ``eta``.
 
     Args:
-        eta (scalar or vector): value of the transmissivity, must be between 0 and 1
+        eta: value of the transmissivity, must be between 0 and 1
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the attenuator channel.
+        A matrix, b vector and c scalar of the attenuator channel.
     """
     eta = math.atleast_1d(eta, math.float64)
     num_modes = eta.shape[-1]
-    return attenuator_A_matrix(eta, num_modes), vacuum_B_vector(num_modes * 2), np.prod(eta)
+    O_n = math.zeros((num_modes, num_modes))
+    A = math.block(
+        [
+            [O_n, math.diag(math.sqrt(eta)), O_n, O_n],
+            [math.diag(math.sqrt(eta)), O_n, O_n, math.eye(num_modes) - math.diag(eta)],
+            [O_n, O_n, O_n, math.diag(math.sqrt(eta))],
+            [O_n, math.eye(num_modes) - math.diag(eta), math.diag(math.sqrt(eta)), O_n],
+        ]
+    )
+    return A, _vacuum_B_vector(num_modes * 2), np.prod(eta)
 
 
-def amplifier_ABC_triples(g: Union[Scalar, Vector]):
-    r"""Returns the ABC triples of an amplifier.
+def amplifier_Abc_triples(g: Union[Scalar, list]):
+    r"""Returns the Abc triples of an amplifier.
 
     The dimension depends on the dimensions of ``g``.
 
     Args:
-        g (scalar or vector): value of the gain > 1
+        g: value of the ``gain > 1``
 
     Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the amplifier channel.
+        A matrix, b vector and c scalar of the amplifier channel.
     """
     g = math.atleast_1d(g, math.float64)
     num_modes = g.shape[-1]
-    return amplifier_A_matrix(g, num_modes), vacuum_B_vector(num_modes * 2), np.prod(1 / g)
-
-
-def fock_damping_ABC_triples(num_modes: int):
-    r"""Returns the ABC triples of a Fock damper.
-
-    Args:
-         num_modes (int): number of modes
-
-    Returns:
-        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the Fock damping channel.
-    """
-    return X_matrix_for_unitary(num_modes * 2), vacuum_B_vector(num_modes * 4), 1.0
-
-
-#  ~~~~~~~~~~~~
-#  Utilities
-#  ~~~~~~~~~~~~
-
-
-def X_matrix() -> Matrix:
-    r"""Returns the X matrix."""
-    return math.array([[0, 1], [1, 0]])
-
-
-def X_matrix_for_unitary(num_modes: int) -> Matrix:
-    r"""Returns the X matrix for the order of unitaries."""
-    return math.cast(np.kron(math.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
-
-
-def vacuum_A_matrix(num_modes: int) -> Matrix:
-    r"""Returns the A matrix of a vacuum state."""
-    return math.zeros((num_modes, num_modes))
-
-
-def vacuum_B_vector(num_modes: int) -> Vector:
-    r"""Returns the B vector of a vacuum state."""
-    return math.zeros(num_modes)
-
-
-def squeezed_vacuum_A_matrix(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
-    r"""Returns the A matrix of a squeezed vacuum state."""
-    return math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
-
-
-def displaced_squeezed_vacuum_B_vector(
-    x: Union[Scalar, Vector],
-    y: Union[Scalar, Vector],
-    r: Union[Scalar, Vector],
-    phi: Union[Scalar, Vector],
-) -> Vector:
-    r"""Returns the B vector of a displaced squeezed vacuum state."""
-    return (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
-
-
-def two_mode_squeezed_vacuum_A_matrix(
-    r: Union[Scalar, Vector], phi: Union[Scalar, Vector], num_modes: int
-):
-    r"""Returns the A matrix of a two-mode squeezed vacuum state."""
     O_n = math.zeros((num_modes, num_modes))
-    return math.block(
-        [
-            [O_n, -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)],
-            [-math.exp(1j * phi) * math.sinh(r) / math.cosh(r), O_n],
-        ]
-    )
-
-
-def squeezing_gate_A_matrix(r: Union[Scalar, Vector], delta: Union[Scalar, Vector]):
-    r"""Returns the A matrix of a squeezing gate."""
-    tanhr = math.sinh(r) / math.cosh(r)
-    sechr = 1 / math.cosh(r)
-    return math.block(
-        [[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]]
-    )
-
-
-def beamsplitter_gate_V_matrix(theta: Union[Scalar, Vector], phi: Union[Scalar, Vector]):
-    r"""Returns the V transformation matrix of a beamsplitter."""
-    costheta = math.cos(theta)
-    sintheta = math.sin(theta)
-    return math.block(
-        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
-    )
-
-
-def attenuator_A_matrix(eta: Union[Scalar, Vector], num_modes):
-    r"""Returns the A matrix of an attenuator."""
-    O_n = math.zeros((num_modes, num_modes))
-    return math.block(
-        [
-            [O_n, math.sqrt(eta), O_n, O_n],
-            [math.sqrt(eta), O_n, O_n, 1 - eta],
-            [O_n, O_n, O_n, math.sqrt(eta)],
-            [O_n, 1 - eta, math.sqrt(eta), O_n],
-        ]
-    )
-
-
-def amplifier_A_matrix(g: Union[Scalar, Vector], num_modes):
-    r"""Returns the A matrix of an amplifier."""
-    O_n = math.zeros((num_modes, num_modes))
-    return math.block(
+    A = math.block(
         [
             [O_n, 1 / math.sqrt(g), 1 - 1 / g, O_n],
             [1 / math.sqrt(g), O_n, O_n, 1 - g],
@@ -452,3 +391,16 @@ def amplifier_A_matrix(g: Union[Scalar, Vector], num_modes):
             [O_n, O_n, 1 / math.sqrt(g), O_n],
         ]
     )
+    return A, _vacuum_B_vector(num_modes * 2), np.prod(1 / g)
+
+
+def fock_damping_Abc_triples(num_modes: int):
+    r"""Returns the Abc triples of a Fock damper.
+
+    Args:
+         num_modes: number of modes
+
+    Returns:
+        A matrix, b vector and c scalar of the Fock damping channel.
+    """
+    return _X_matrix_for_unitary(num_modes * 2), _vacuum_B_vector(num_modes * 4), 1.0
