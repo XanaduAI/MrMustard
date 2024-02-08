@@ -180,25 +180,35 @@ The physics module contains a growing number of functions that we can apply to s
 ### The math module
 The math module is the backbone of Mr Mustard, which consists in the [Math](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
 Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
+Here's an example where the ``numpy`` backend is used.
+
 ```python
-from mrmustard import math
+import mrmustard.math as math
 
 math.cos(0.1)  # numpy
+```
 
-math.change_backend("numpy")
+In a different session, we can change the backend to ``tensorflow``.
+```python
+import mrmustard.math as math
+math.change_backend("tensorflow")
+
 math.cos(0.1)  # tensorflow
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states, an unitary optimizer for interferometers, and an orthogonal optimizer for real interferometers.
+The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
 displaced squeezed state.
 
 ```python
+from mrmustard import math
 from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
+
+math.change_backend("tensorflow")
 
 D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
 L = Attenuator(transmissivity=0.5)
