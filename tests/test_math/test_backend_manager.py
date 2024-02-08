@@ -590,9 +590,8 @@ class TestBackendManager:
 
     def test_categorical(self):
         r"""
-        Tests the ``Categorical`` method. 
+        Tests the ``Categorical`` method.
         """
         probs = np.array([1e-6 for _ in range(300)])
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
-
