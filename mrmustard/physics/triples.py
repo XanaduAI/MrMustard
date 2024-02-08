@@ -60,14 +60,11 @@ def coherent_state_ABC_triples(
     Returns:
         (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the pure coherent state.
     """
-    x = math.atleast_1d(x, math.float64)
-    y = math.atleast_1d(y, math.float64)
-    if x.shape[-1] == 1:
-        x = math.tile(x, y.shape)
-    if y.shape[-1] == 1:
-        y = math.tile(y, x.shape)
-    num_modes = x.shape
-    return vacuum_A_matrix(num_modes), x + 1j * y, math.exp(-0.5 * (x**2 + y**2))
+    x, y = list(_reshape(x=x, y=y))
+    n_modes = len(x)
+
+    return vacuum_A_matrix(n_modes), x + 1j * y, math.exp(-0.5 * (x**2 + y**2))
+
 
 
 def squeezed_vacuum_state_ABC_triples(
@@ -440,3 +437,22 @@ def amplifier_A_matrix(g: Union[Scalar, Vector], num_modes):
             [O_n, O_n, 1 / math.sqrt(g), O_n],
         ]
     )
+
+def _reshape(**kwargs):
+    r"""
+    A utility function to reshape parameters.
+    """
+    names = list(kwargs.keys())
+    vars = list(kwargs.values())
+    
+    vars = [math.atleast_1d(var, math.complex128) for var in vars]
+    n_modes = max([len(var) for var in vars])
+
+    for i, var in enumerate(vars):
+        if len(var) == 1:
+            var = math.tile(var, (n_modes,))
+        else:
+            if len(var) != n_modes:
+                msg = f"Parameter {names[i]} has an incompatible shape."
+                raise ValueError(msg)
+        yield var
