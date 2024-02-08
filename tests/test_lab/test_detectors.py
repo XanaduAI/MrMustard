@@ -296,7 +296,7 @@ class TestHomodyneDetector:
         ],
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
-    @pytest.mark.parametrize("normalization", [1, 1/3])
+    @pytest.mark.parametrize("normalization", [1, 1 / 3])
     def test_sampling_mean_and_var(
         self, state, kwargs, mean_expected, var_expected, gaussian_state, normalization
     ):
@@ -305,7 +305,7 @@ class TestHomodyneDetector:
         state = state(**kwargs)
 
         if not gaussian_state:
-            state = State(dm=state.dm(cutoffs=[40])*normalization)
+            state = State(dm=state.dm(cutoffs=[40]) * normalization)
         detector = Homodyne(0.0)
 
         results = np.zeros((self.N_MEAS, 2))
