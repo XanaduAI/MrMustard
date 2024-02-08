@@ -281,6 +281,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
         return tf.math.pow(x, y)
 
+    def prod(self, x: tf.Tensor, axis: Union[None, int]):
+        return tf.math.reduce_prod(x, axis=axis)
+
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
 

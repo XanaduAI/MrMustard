@@ -903,6 +903,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("pow", (x, y))
 
+    def prod(self, array: Tensor, axis=None) -> Tensor:
+        r"""Returns the product of all elements in ``array``, unless the axis is given.
+        Args:
+            array: the array to calculate the product
+            axis: axis or axes along which a product is performed.
+                The default, axis = None, calculates the product of all elelemnts in the tensor.
+
+        Returns:
+            The product of elements in the given axis or all of them.
+        """
+        return self._apply("prod", (array, axis))
+
     def real(self, array: Tensor) -> Tensor:
         r"""The real part of ``array``.
 
