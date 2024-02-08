@@ -14,7 +14,6 @@
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
@@ -297,45 +296,16 @@ class TestHomodyneDetector:
         ],
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
+    @pytest.mark.parametrize("normalization", [1, 1/3])
     def test_sampling_mean_and_var(
-        self, state, kwargs, mean_expected, var_expected, gaussian_state
+        self, state, kwargs, mean_expected, var_expected, gaussian_state, normalization
     ):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
         state = state(**kwargs)
 
-        tf.random.set_seed(123)
         if not gaussian_state:
-            state = State(dm=state.dm(cutoffs=[40]))
-        detector = Homodyne(0.0)
-
-        results = np.zeros((self.N_MEAS, 2))
-        for i in range(self.N_MEAS):
-            _ = state << detector
-            results[i] = math.asnumpy(detector.outcome)
-
-        mean = results.mean(axis=0)
-        assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
-        var = results.var(axis=0)
-        assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
-
-    @pytest.mark.parametrize(
-        "state, kwargs, mean_expected, var_expected",
-        [
-            (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-            (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
-        ],
-    )
-    def test_sampling_mean_and_var_unnormalized_state(
-        self, state, kwargs, mean_expected, var_expected
-    ):
-        """Tests that the mean and variance estimates of many homodyne
-        measurements are in agreement with the expected values for the given (unnormalized) states
-        """
-        state = state(**kwargs)
-        state = State(dm=state.dm(cutoffs=[10]) / 3)
-
+            state = State(dm=state.dm(cutoffs=[40])*normalization)
         detector = Homodyne(0.0)
 
         results = np.zeros((self.N_MEAS, 2))
