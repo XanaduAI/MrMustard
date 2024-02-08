@@ -18,7 +18,7 @@ Mr Mustard supports:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Riemannian optimization):
     - Interferometer (unitary), RealInterferometer (orthogonal), Gaussian transformation (symplectic)
-- Dingle-mode states (parallelizable):
+- Single-mode states (parallelizable):
     - Vacuum, Coherent, SqueezedVacuum, Thermal, Fock
 - Two-mode states:
     - TMSV (two-mode squeezed vacuum)
