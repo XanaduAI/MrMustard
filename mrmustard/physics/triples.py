@@ -34,7 +34,7 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 def _X_matrix() -> Matrix:
     r"""Returns the X matrix."""
-    return math.astensor([[0, 1], [1, 0]])
+    return math.astensor([[0, 1], [1, 0]], dtype=math.float64)
 
 
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
@@ -259,12 +259,16 @@ def rotation_gate_Abc_triples(theta: Union[Scalar, list]):
         A matrix, b vector and c scalar of the rotation gate.
     """
     theta = math.atleast_1d(theta, math.float64)
-    n_modes = theta.shape[-1]
+    n_modes = len(theta)
+
     A = math.cast(
         np.kron(math.astensor([[0, 1], [1, 0]]), math.exp(1j * theta) * math.eye(n_modes)),
         math.complex128,
     )
-    return A, _vacuum_B_vector(n_modes), 1.0
+    b = _vacuum_B_vector(n_modes)
+    c = 1.0
+
+    return A, b, c 
 
 
 def displacement_gate_Abc_triples(x: Union[Scalar, list], y: Union[Scalar, list]):

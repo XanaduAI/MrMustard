@@ -99,6 +99,28 @@ class TestTriples:
         assert np.allclose(A, A1)
         assert np.allclose(b, b1)
         assert np.allclose(c, c1)
+   
+    @pytest.mark.parametrize("theta", [0.1])
+    def test_rotation_gate_Abc_triples(self, theta):
+        rotation_gate_Abc_triples
+
+    def test_displacement_gate_Abc_triples(self):
+        pass
+
+    def test_squeezing_gate_Abc_triples(self):
+        pass
+
+    def test_beamsplitter_gate_Abc_triples(self):
+        pass
+
+    def test_attenuator_Abc_triples(self):
+        pass
+
+    def test_amplifier_Abc_triples(self):
+        pass
+
+    def test_fock_damping_Abc_triples(self):
+        pass
 
 
     
