@@ -331,9 +331,10 @@ class TestHomodyneDetector:
         self, state, kwargs, mean_expected, var_expected
     ):
         """Tests that the mean and variance estimates of many homodyne
-        measurements are in agreement with the expected values for the given (unnormalized) states"""
+        measurements are in agreement with the expected values for the given (unnormalized) states
+        """
         state = state(**kwargs)
-        state = State(dm=state.dm(cutoffs=[10])/3)
+        state = State(dm=state.dm(cutoffs=[10]) / 3)
 
         detector = Homodyne(0.0)
 
