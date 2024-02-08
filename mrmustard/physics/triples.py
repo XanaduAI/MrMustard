@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """
-This module contains the Abc triples for states, transformations in Bargmann representation.
+This module contains the ABC triples for states and transformations in the ``Bargmann`` representation.
 
-Note that the Abc triples in this file follow the same standard order definition as Wires class:
+The ABC triples in this module follow the same standard order definition as the ``Wires`` class:
 Pure states: (out_ket_1, out_ket_2, ...)
 Mixed states: (out_bra_1, out_bra_2, ...; out_ket_1, out_ket_2, ...)
 Unitaries: (out_ket_1, out_ket_2, ...; in_ket_1, in_ket_2, ...))
@@ -74,8 +74,8 @@ def coherent_state_Abc_triples(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of the pure coherent state.
 
-    The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``x = [1,2,3], y = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``x = [1,2,3]`` and ``y = [1]`` become
     like ``x = [1,2,3], y = [1,1,1]``.
 
     Args:
@@ -100,8 +100,8 @@ def squeezed_vacuum_state_Abc_triples(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of a squeezed vacuum state.
 
-    The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``r = [1,2,3], phi = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``r = [1,2,3]`` and ``phi = [1]`` become
     like ``r = [1,2,3], phi = [1,1,1]``.
 
     Args:
@@ -130,7 +130,8 @@ def displaced_squeezed_vacuum_state_Abc_triples(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of a displaced squeezed vacuum state.
 
-    ValueError will be raise if the dimensions of ``x``, ``y``, ``r`` and ``phi`` are different.
+    Raises:
+        ValueError: If the dimensions of ``x``, ``y``, ``r`` and ``phi`` are inconsistent.
 
     Args:
         r: squeezing magnitude
@@ -164,8 +165,8 @@ def two_mode_squeezed_vacuum_state_Abc_triples(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of a two mode squeezed vacuum state.
 
-    The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``r = [1,2,3], phi = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``r`` and ``phi``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``r = [1,2,3]`` and `` phi = [1]`` become
     like ``r = [1,2,3], phi = [1,1,1]``.
 
     Args:
@@ -251,8 +252,8 @@ def displacement_gate_Abc_triples(x: Union[Scalar, list], y: Union[Scalar, list]
         :math:`D(\gamma) = \exp(\gamma\hat{a}^\dagger-\gamma^*\hat{a})`,
     where ``\gamma = x + 1j*y``.
 
-    The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``x = [1,2,3], y = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``x`` and ``y``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``x = [1,2,3]`` and ``y = [1]`` become
     like ``x = [1,2,3], y = [1,1,1]``.
 
     Args:
@@ -281,8 +282,8 @@ def squeezing_gate_Abc_triples(r: Union[Scalar, list], delta: Union[Scalar, list
         :math:`S(\zeta) = \exp(\zeta^*\hat{a}^2 - \zeta\hat{a}^{\dagger 2})`,
     where ``\zeta = r\exp(i\delta)``.
 
-    The dimension depends on the dimensions of ``r`` and ``\delta``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``r = [1,2,3], \delta = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``r`` and ``\delta``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``r = [1,2,3]`` and ``\delta = [1]`` become
     like ``r = [1,2,3], \delta = [1,1,1]``.
 
     Args:
@@ -311,8 +312,8 @@ def beamsplitter_gate_Abc_triples(theta: Union[Scalar, list], phi: Union[Scalar,
     The gate is defined by
         :math:`BS(\theta, \phi) = \exp()`.
 
-    The dimension depends on the dimensions of ``theta`` and ``phi``. If one of them has dimension one, we will repete it
-    to have the same dimension as the other one. For example, if ``theta = [1,2,3], phi = [1]``, we will fill it automatically
+    The dimension depends on the dimensions of ``theta`` and ``phi``. If one of them has dimension one, it is repeated
+    to have the same dimension as the other one. For example, ``theta = [1,2,3]`` and ``phi = [1]`` become
     like ``theta = [1,2,3], phi = [1,1,1]``.
 
     Args:
