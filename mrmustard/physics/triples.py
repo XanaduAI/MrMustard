@@ -308,9 +308,9 @@ def beamsplitter_gate_ABC_triples(theta: Union[Scalar, Vector], phi: Union[Scala
     return math.block([[O_n, V], [math.transpose(V), O_n]]), vacuum_B_vector(num_modes * 2), 1.0
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~
-#  Unitary transformations
-# ~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~
+#  Channels
+# ~~~~~~~~~~
 
 
 def attenuator_ABC_triples(eta: Union[Scalar, Vector]):
@@ -343,6 +343,18 @@ def amplifier_ABC_triples(g: Union[Scalar, Vector]):
     g = math.atleast_1d(g, math.float64)
     num_modes = g.shape[-1]
     return amplifier_A_matrix(g, num_modes), vacuum_B_vector(num_modes * 2), np.prod(1 / g)
+
+
+def fock_damping_ABC_triples(num_modes: int):
+    r"""Returns the ABC triples of a Fock damper.
+
+    Args:
+         num_modes (int): number of modes
+
+    Returns:
+        (Matrix, Vector, Scalar): A matrix, B vector and C scalar of the Fock damping channel.
+    """
+    return X_matrix_for_unitary(num_modes * 2), vacuum_B_vector(num_modes * 4), 1.0
 
 
 #  ~~~~~~~~~~~~
