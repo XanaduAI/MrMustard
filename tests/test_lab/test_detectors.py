@@ -319,6 +319,34 @@ class TestHomodyneDetector:
         var = results.var(axis=0)
         assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
 
+    @pytest.mark.parametrize(
+        "state, kwargs, mean_expected, var_expected",
+        [
+            (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
+            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
+        ],
+    )
+    def test_sampling_mean_and_var_unnormalized_state(
+        self, state, kwargs, mean_expected, var_expected
+    ):
+        """Tests that the mean and variance estimates of many homodyne
+        measurements are in agreement with the expected values for the states"""
+        state = state(**kwargs)
+        state = State(dm=state.dm(cutoffs=[10])/3)
+
+        detector = Homodyne(0.0)
+
+        results = np.zeros((self.N_MEAS, 2))
+        for i in range(self.N_MEAS):
+            _ = state << detector
+            results[i] = math.asnumpy(detector.outcome)
+
+        mean = results.mean(axis=0)
+        assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
+        var = results.var(axis=0)
+        assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
+
     def test_homodyne_squeezing_setting(self):
         r"""Check default homodyne squeezing on settings leads to the correct generaldyne
         covarince matrix: one that has tends to :math:`diag(1/\sigma[1,1],0)`."""
