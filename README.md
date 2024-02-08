@@ -28,7 +28,7 @@ Mr Mustard supports:
 - PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
 - Homodyne, Heterodyne and Generaldyne measurements
 - Composable circuits
-- Plug-and-play backends (``numpy`` as default)
+- Plug-and-play backends (`numpy` as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # Increased numerical stability using Julia [optional]
