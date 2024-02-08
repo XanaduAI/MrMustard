@@ -368,7 +368,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
             def sample(self):
                 idx = [i for i, _ in enumerate(probs)]
-                return np.random.choice(1, p=probs / sum(probs))
+                return np.random.choice(idx, p=probs / sum(probs))
 
         return Generator(probs)
 
