@@ -761,9 +761,10 @@ def mikkel_plot(
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
     # Wigner function
+
     ax[1][0].contourf(X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max())
-    ax[1][0].set_xlabel("$x$", fontsize=12)
-    ax[1][0].set_ylabel("$p$", fontsize=12)
+    ax[1][0].set_xlabel("x", fontsize=12)
+    ax[1][0].set_ylabel("p", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(plot_args["xticks"])
     ax[1][0].xaxis.set_ticklabels(plot_args["xtick_labels"])
     ax[1][0].get_yaxis().set_ticks(plot_args["yticks"])
@@ -780,7 +781,7 @@ def mikkel_plot(
     ax[0][0].xaxis.set_ticklabels([])
     ax[0][0].get_yaxis().set_ticks([])
     ax[0][0].tick_params(direction="in")
-    ax[0][0].set_ylabel("Prob($x$)", fontsize=12)
+    ax[0][0].set_ylabel("Prob(x)", fontsize=12)
     ax[0][0].set_xlim(xbounds)
     ax[0][0].set_ylim([0, 1.1 * max(ProbX)])
     ax[0][0].grid(plot_args["grid"])
@@ -792,14 +793,14 @@ def mikkel_plot(
     ax[1][1].get_yaxis().set_ticks(plot_args["yticks"])
     ax[1][1].yaxis.set_ticklabels([])
     ax[1][1].tick_params(direction="in")
-    ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
+    ax[1][1].set_xlabel("Prob(p)", fontsize=12)
     ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
     ax[1][1].set_ylim(ybounds)
     ax[1][1].grid(plot_args["grid"])
 
     # Density matrix
     ax[0][1].matshow(abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max())
-    ax[0][1].set_title(r"abs($\rho$)", fontsize=12)
+    ax[0][1].set_title("abs(ρ)", fontsize=12)
     ax[0][1].tick_params(direction="in")
     ax[0][1].get_xaxis().set_ticks([])
     ax[0][1].get_yaxis().set_ticks([])
