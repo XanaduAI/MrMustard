@@ -5,7 +5,7 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (``numpy`` by default).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` by default).
 
 Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
