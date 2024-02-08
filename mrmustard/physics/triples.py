@@ -149,7 +149,7 @@ def displaced_squeezed_vacuum_state_Abc_triples(
     if not (
         (r.shape[-1] == phi.shape[-1]) & (x.shape[-1] == y.shape[-1]) & (r.shape[-1] == x.shape[-1])
     ):
-        raise ValueError("The shape of them must be the same.")
+        raise ValueError("Found parameters of inconsistent shapes.")
     A = math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
     b = (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
     c = math.exp(
