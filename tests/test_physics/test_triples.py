@@ -14,6 +14,21 @@ class TestTriples:
     Tests the Bargmann triples.
     """
 
+    def test_incompatible_shapes(self):
+        match = "incompatible shape"
+        
+        with pytest.raises(ValueError, match=match):
+            coherent_state_Abc_triples([1, 2], [3, 4, 5])
+        
+        with pytest.raises(ValueError, match=match):
+            coherent_state_Abc_triples([1, 2], [3, 4, 5])
+        
+        with pytest.raises(ValueError, match=match):
+            squeezed_vacuum_state_Abc_triples([1, 2], [3, 4, 5])
+
+        with pytest.raises(ValueError, match=match):
+            displaced_squeezed_vacuum_state_Abc_triples([1, 2], [3, 4, 5], 6, 7)
+
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_vacuum_state_Abc_triples(self, n_modes):
         A, b, c = vacuum_state_Abc_triples(n_modes)
@@ -102,7 +117,15 @@ class TestTriples:
    
     @pytest.mark.parametrize("theta", [0.1])
     def test_rotation_gate_Abc_triples(self, theta):
-        rotation_gate_Abc_triples
+        A, b, c = rotation_gate_Abc_triples(theta)
+
+        A1 = [[0, 0.99500417+0.09983342j], [0.99500417+0.09983342j, 0]]
+        b1 = 0
+        c1 = 1
+
+        assert np.allclose(A, A1)
+        assert np.allclose(b, b1)
+        assert np.allclose(c, c1)
 
     def test_displacement_gate_Abc_triples(self):
         pass

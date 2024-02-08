@@ -258,13 +258,11 @@ def rotation_gate_Abc_triples(theta: Union[Scalar, list]):
     Returns:
         A matrix, b vector and c scalar of the rotation gate.
     """
-    theta = math.atleast_1d(theta, math.float64)
+    theta = math.atleast_1d(theta, math.complex128)
     n_modes = len(theta)
 
-    A = math.cast(
-        np.kron(math.astensor([[0, 1], [1, 0]]), math.exp(1j * theta) * math.eye(n_modes)),
-        math.complex128,
-    )
+    A = math.astensor([[0, 1], [1, 0]], math.complex128)
+    A = np.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
     b = _vacuum_B_vector(n_modes)
     c = 1.0
 
