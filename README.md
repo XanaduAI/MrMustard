@@ -5,7 +5,7 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (``numpy`` by default).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` by default).
 
 Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
@@ -18,7 +18,7 @@ Mr Mustard supports:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Riemannian optimization):
     - Interferometer (unitary), RealInterferometer (orthogonal), Gaussian transformation (symplectic)
-- Dingle-mode states (parallelizable):
+- Single-mode states (parallelizable):
     - Vacuum, Coherent, SqueezedVacuum, Thermal, Fock
 - Two-mode states:
     - TMSV (two-mode squeezed vacuum)
@@ -28,7 +28,7 @@ Mr Mustard supports:
 - PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
 - Homodyne, Heterodyne and Generaldyne measurements
 - Composable circuits
-- Plug-and-play backends (``numpy`` as default)
+- Plug-and-play backends (`numpy` as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # Increased numerical stability using Julia [optional]
@@ -234,7 +234,7 @@ The physics module contains a growing number of functions that we can apply to s
 # The math module
 The math module is the backbone of Mr Mustard. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
 
-Here's an example where the ``numpy`` backend is used.
+Here's an example where the `numpy` backend is used.
 ```python
 import mrmustard.math as math
 
@@ -250,7 +250,7 @@ math.cos(0.1)  # tensorflow
 ```
 
 ### Optimization
-The `Optimizer` available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
+The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a displaced squeezed state.
 

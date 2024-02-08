@@ -197,7 +197,7 @@ math.cos(0.1)  # tensorflow
 ```
 
 ### Optimization
-The `Optimizer` available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states, an unitary optimizer for interferometers, and an orthogonal optimizer for real interferometers.
+The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
 displaced squeezed state.
