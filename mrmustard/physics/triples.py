@@ -18,7 +18,7 @@ various states and transformations.
 """
 
 import numpy as np
-from typing import Union
+from typing import Generator, Iterable, Union
 from mrmustard import math
 from mrmustard.utils.typing import Matrix, Vector, Scalar
 
@@ -31,32 +31,32 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar
 def _X_matrix() -> Matrix:
     r"""
     The X matrix.
-    """   
+    """
     return math.astensor([[0, 1], [1, 0]], dtype=math.float64)
 
 
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
     The X matrix for the order of unitaries.
-    """   
+    """
     return math.cast(np.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
 
 
 def _vacuum_A_matrix(n_modes: int) -> Matrix:
     r"""
     The A matrix of the vacuum state.
-    """   
+    """
     return math.zeros((n_modes, n_modes))
 
 
 def _vacuum_B_vector(n_modes: int) -> Vector:
     r"""
     The B vector of the vacuum state.
-    """   
+    """
     return math.zeros((n_modes,))
 
 
-def _reshape(**kwargs):
+def _reshape(**kwargs) -> Generator:
     r"""
     A utility function to reshape parameters.
     """
@@ -99,14 +99,14 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 
 def coherent_state_Abc(
-    x: Union[Scalar, list], y: Union[Scalar, list]
+    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of pure coherent states.
 
     The number of modes depends on the length of the input parameters.
 
-    If one of the input parameters has length `1`, it is tiled so that its length matches
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``x=[1,2,3]`` and ``y=1`` is equivalent to passing
     ``x=[1,2,3]`` and ``y=[1,1,1]``.
 
@@ -128,14 +128,14 @@ def coherent_state_Abc(
 
 
 def squeezed_vacuum_state_Abc(
-    r: Union[Scalar, list], phi: Union[Scalar, list]
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of squeezed vacuum states.
 
     The number of modes depends on the length of the input parameters.
 
-    If one of the input parameters has length `1`, it is tiled so that its length matches
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
     passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
 
@@ -157,17 +157,17 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: Union[Scalar, list],
-    y: Union[Scalar, list],
-    r: Union[Scalar, list],
-    phi: Union[Scalar, list],
+    x: Union[float, Iterable[float]],
+    y: Union[float, Iterable[float]],
+    r: Union[float, Iterable[float]],
+    phi: Union[float, Iterable[float]],
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of displazed squeezed vacuum states.
 
     The number of modes depends on the length of the input parameters.
 
-    If some of the input parameters have length `1`, they are tiled so that their length
+    If some of the input parameters have length ``1``, they are tiled so that their length
     matches that of the other ones. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent
     to passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
 
@@ -198,7 +198,7 @@ def displaced_squeezed_vacuum_state_Abc(
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_Abc(nbar: list) -> Union[Matrix, Vector, Scalar]:
+def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of thermal states.
 
@@ -225,7 +225,7 @@ def thermal_state_Abc(nbar: list) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc(theta: Union[Scalar, list]):
+def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of rotation gates.
 
@@ -251,7 +251,9 @@ def rotation_gate_Abc(theta: Union[Scalar, list]):
     return A, b, c
 
 
-def displacement_gate_Abc(x: Union[Scalar, list], y: Union[Scalar, list]):
+def displacement_gate_Abc(
+    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]]
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of displacement gates.
 
@@ -261,7 +263,7 @@ def displacement_gate_Abc(x: Union[Scalar, list], y: Union[Scalar, list]):
 
     The number of modes depends on the length of the input parameters.
 
-    If one of the input parameters has length `1`, it is tiled so that its length matches
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``x=[1,2,3]`` and ``y=1`` is equivalent to
     passing ``x=[1,2,3]`` and ``y=[1,1,1]``.
 
@@ -282,7 +284,9 @@ def displacement_gate_Abc(x: Union[Scalar, list], y: Union[Scalar, list]):
     return A, b, c
 
 
-def squeezing_gate_Abc(r: Union[Scalar, list], delta: Union[Scalar, list]):
+def squeezing_gate_Abc(
+    r: Union[float, Iterable[float]], delta: Union[float, Iterable[float]]
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of squeezing gates.
 
@@ -292,7 +296,7 @@ def squeezing_gate_Abc(r: Union[Scalar, list], delta: Union[Scalar, list]):
 
     The number of modes depends on the length of the input parameters.
 
-    If one of the input parameters has length `1`, it is tiled so that its length matches
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``r=[1,2,3]`` and ``delta=1`` is equivalent to
     passing ``r=[1,2,3]`` and ``delta=[1,1,1]``.
 
@@ -316,7 +320,9 @@ def squeezing_gate_Abc(r: Union[Scalar, list], delta: Union[Scalar, list]):
     return A, b, c
 
 
-def beamsplitter_gate_Abc(theta: Union[Scalar, list], phi: Union[Scalar, list]):
+def beamsplitter_gate_Abc(
+    theta: Union[Scalar, Iterable], phi: Union[Scalar, Iterable]
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
 
@@ -325,7 +331,7 @@ def beamsplitter_gate_Abc(theta: Union[Scalar, list], phi: Union[Scalar, list]):
 
     The number of modes depends on the length of the input parameters.
 
-    If one of the input parameters has length `1`, it is tiled so that its length matches
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``theta=[1,2,3]`` and ``phi=1`` is equivalent to
     passing ``theta=[1,2,3]`` and ``phi=[1,1,1]``.
 
@@ -358,7 +364,7 @@ def beamsplitter_gate_Abc(theta: Union[Scalar, list], phi: Union[Scalar, list]):
 # ~~~~~~~~~~
 
 
-def attenuator_Abc(eta: Union[Scalar, list]):
+def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of atternuators.
 
@@ -396,7 +402,7 @@ def attenuator_Abc(eta: Union[Scalar, list]):
     return A, b, c
 
 
-def amplifier_Abc(g: Union[Scalar, list]):
+def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of amplifiers.
 
@@ -441,7 +447,7 @@ def amplifier_Abc(g: Union[Scalar, list]):
     return A, b, c
 
 
-def fock_damping_Abc(n_modes: int):
+def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 

@@ -137,7 +137,15 @@ class TestTriples:
 
     def test_amplifier_Abc(self):
         A1, b1, c1 = amplifier_Abc(2)
-        assert np.allclose(A1, [[0, 0.70710678, 0.5, 0], [0.70710678, 0, 0, -1], [0.5, 0, 0, 0.70710678], [0., 0, 0.70710678, 0]])
+        assert np.allclose(
+            A1,
+            [
+                [0, 0.70710678, 0.5, 0],
+                [0.70710678, 0, 0, -1],
+                [0.5, 0, 0, 0.70710678],
+                [0.0, 0, 0.70710678, 0],
+            ],
+        )
         assert np.allclose(b1, 0)
         assert np.allclose(c1, 0.5)
 
