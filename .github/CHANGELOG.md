@@ -1,3 +1,25 @@
+# Release 0.7.1 (current develop)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
 # Release 0.7.0 (current release)
 
 ### New features
