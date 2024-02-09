@@ -1,3 +1,25 @@
+# Release 0.7.1 (current develop)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
 # Release 0.7.0 (current release)
 
 ### New features
@@ -20,9 +42,6 @@
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
   [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
-
-* Added a new class `Wires` in `mrmustard.lab` to handle the connectivity of objects in a circuit.
-  [(#330)](https://github.com/XanaduAI/MrMustard/pull/330)
 
 ### Breaking changes
 * Removed circular dependencies by:
