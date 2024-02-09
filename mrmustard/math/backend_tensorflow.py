@@ -14,13 +14,19 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+import os
 import numpy as np
-import tensorflow as tf
 import tensorflow_probability as tfp
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
+
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -106,9 +112,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
-
-        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
-            array = self.real(array)
         return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
@@ -367,11 +370,16 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         return tf.math.xlogy(x, y)
 
-    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+    def sqrtm(self, tensor: tf.Tensor, dtype, rtol=1e-05, atol=1e-08) -> Tensor:
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return tf.linalg.sqrtm(tensor)
+            ret = self.zeros_like(tensor)
+        else:
+            ret = tf.linalg.sqrtm(tensor)
+
+        if dtype is None:
+            return self.cast(ret, self.complex128)
+        return self.cast(ret, dtype)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions

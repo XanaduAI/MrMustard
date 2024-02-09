@@ -1,5 +1,5 @@
-mrmustard.lab.wires
-===================
+mrmustard.lab_dev.wires
+=======================
 
 .. currentmodule:: mrmustard.lab_dev.wires
 

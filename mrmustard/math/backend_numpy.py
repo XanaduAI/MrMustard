@@ -367,8 +367,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
                 self._probs = probs
 
             def sample(self):
-                array = np.random.multinomial(1, pvals=probs)
-                return np.where(array == 1)[0][0]
+                idx = [i for i, _ in enumerate(probs)]
+                return np.random.choice(idx, p=probs / sum(probs))
 
         return Generator(probs)
 
@@ -401,10 +401,15 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def eigh(tensor: np.ndarray) -> tuple:
         return np.linalg.eigh(tensor)
 
-    def sqrtm(self, tensor: np.ndarray, rtol=1e-05, atol=1e-08) -> np.ndarray:
+    def sqrtm(self, tensor: np.ndarray, dtype, rtol=1e-05, atol=1e-08) -> np.ndarray:
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return scipy_sqrtm(tensor)
+            ret = self.zeros_like(tensor)
+        else:
+            ret = scipy_sqrtm(tensor)
+
+        if dtype is None:
+            return self.cast(ret, self.complex128)
+        return self.cast(ret, dtype)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions
