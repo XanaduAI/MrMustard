@@ -70,6 +70,14 @@ def _reshape(**kwargs) -> Generator:
         yield var
 
 
+def _get_reshape_list_for_channel(num_modes: int):
+    r"""
+    A unitlity function to find out the reorder list for the channel.
+    """
+    new_order = [[i, i + num_modes, i + num_modes * 2, i + num_modes * 3] for i in range(num_modes)]
+    return np.array(new_order).reshape(num_modes * 4)
+
+
 #  ~~~~~~~~~~~
 #  Pure States
 #  ~~~~~~~~~~~
@@ -381,14 +389,18 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes))
+    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes)).reshape((n_modes, n_modes))
+    eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
     A = math.block(
         [
-            [O_n, math.diag(math.sqrt(eta)), O_n, O_n],
-            [math.diag(math.sqrt(eta)), O_n, O_n, math.eye(n_modes) - math.diag(eta)],
-            [O_n, O_n, O_n, math.diag(math.sqrt(eta))],
-            [O_n, math.eye(n_modes) - math.diag(eta), math.diag(math.sqrt(eta)), O_n],
+            [O_n, eta1, O_n, O_n],
+            [eta1, O_n, O_n, eta2],
+            [O_n, O_n, O_n, eta1],
+            [O_n, eta2, eta1, O_n],
         ]
     )
+    reshape_list = _get_reshape_list_for_channel(n_modes)
+    A = A[reshape_list, :][:, reshape_list]
     b = _vacuum_B_vector(n_modes * 2)
     c = np.prod(eta)
 
@@ -422,18 +434,19 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
     n_modes = len(g)
 
     O_n = math.zeros((n_modes, n_modes))
-    g0 = math.diag(math.astensor([1 - g])).reshape((n_modes, n_modes))
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
     g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
 
     A = math.block(
         [
             [O_n, g1, g2, O_n],
-            [g1, O_n, O_n, g0],
+            [g1, O_n, O_n, O_n],
             [g2, O_n, O_n, g1],
             [O_n, O_n, g1, O_n],
         ]
     )
+    reshape_list = _get_reshape_list_for_channel(n_modes)
+    A = A[reshape_list, :][:, reshape_list]
     b = _vacuum_B_vector(n_modes * 2)
     c = np.prod(1 / g)
 
