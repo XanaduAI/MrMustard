@@ -1,4 +1,26 @@
-# Release 0.7.0 (development release)
+# Release 0.7.1 (current develop)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.0 (current release)
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
@@ -15,7 +37,7 @@
 * Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
-* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+* Added `complex_gaussian_integral` method.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
@@ -88,6 +110,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
 * Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
 [(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
+* Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
+[(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
 
 ### Documentation
 
@@ -105,7 +129,19 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 ---
 
-# Release 0.6.0 (current release)
+# Release 0.6.1-post1
+
+### Improvements
+
+* Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
+  [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+
+---
+# Release 0.6.0
 
 ### New features
 
@@ -165,7 +201,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 ---
 
-# Release 0.5.0 (current release)
+# Release 0.5.0 
 
 ### New features
 
@@ -304,7 +340,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 (current release)
+# Release 0.4.0 
 
 ### New features
 
