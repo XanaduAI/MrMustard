@@ -150,7 +150,7 @@ class TestWires:
         w1 = Wires([0], [1], [2], [3])
         w2 = Wires([0], [2], [3], [4])
         with pytest.raises(Exception):
-            w1 + w2
+            w1 + w2  # pylint: disable=pointless-statement
 
     def test_bool(self):
         assert Wires([0])
@@ -178,4 +178,4 @@ class TestWires:
         u = Wires([], [], [0], [])  # only output wire
         v = Wires([], [], [0], [])  # only output wire
         with pytest.raises(ValueError):
-            u >> v
+            u >> v  # pylint: disable=pointless-statement

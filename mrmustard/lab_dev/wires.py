@@ -16,8 +16,8 @@
 
 from __future__ import annotations
 
-from IPython.display import display, HTML
 from typing import Iterable, Optional
+from IPython.display import display, HTML
 import numpy as np
 
 from mrmustard import settings
