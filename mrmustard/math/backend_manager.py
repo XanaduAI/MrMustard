@@ -1187,9 +1187,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """Categorical distribution over integers.
 
         Args:
-            probs (Tensor): tensor representing the probabilities of a set of Categorical
-                distributions.
-            name (str): name prefixed to operations created by this class
+            probs: The unnormalized probabilities of a set of Categorical distributions.
+            name: The name prefixed to operations created by this class.
 
         Returns:
             tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class

@@ -367,8 +367,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
                 self._probs = probs
 
             def sample(self):
-                array = np.random.multinomial(1, pvals=probs)
-                return np.where(array == 1)[0][0]
+                idx = [i for i, _ in enumerate(probs)]
+                return np.random.choice(idx, p=probs / sum(probs))
 
         return Generator(probs)
 
