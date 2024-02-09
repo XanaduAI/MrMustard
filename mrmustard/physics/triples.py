@@ -17,10 +17,11 @@ This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representat
 various states and transformations.
 """
 
-import numpy as np
 from typing import Generator, Iterable, Union
 from mrmustard import math
 from mrmustard.utils.typing import Matrix, Vector, Scalar
+
+import numpy as np
 
 
 #  ~~~~~~~~~
