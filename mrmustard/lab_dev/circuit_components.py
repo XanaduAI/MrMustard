@@ -228,6 +228,18 @@ class CircuitComponent:
         order = [before_ids.index(id) for id in new_wires.ids]
         new_repr = new_repr.reorder(order)
         return CircuitComponent.from_attributes(self.name + " @ " + other.name, new_wires, new_repr)
+    
+    def __and__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""Tensor product of two circuit components.
+        Use with caution: the combined object can be very large."""
+        if not isinstance(other, type(self)):
+            raise ValueError("Can only tensor with objects of the same type")
+        if not set(self.wires.modes).isdisjoint(other.wires.modes):
+            raise ValueError("Modes must be disjoint")
+        representation = self.representation & other.representation
+        ids = (self.wires >> other.wires).ids
+        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
+        return self.__class__(representation, modes=sorted(self.modes + other.modes))
 
 
 

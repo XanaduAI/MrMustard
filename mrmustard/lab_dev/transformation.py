@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 from mrmustard import physics
-from mrmustard import settings
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.circuit_components import CircuitComponent
@@ -28,7 +27,7 @@ class Transformation(CircuitComponent):
     Mixin class for quantum states. It supplies common functionalities and properties of Ket and DM.
     """
 
-    def __getitem__(self, modes: int | tuple) -> State:
+    def __getitem__(self, modes: int | tuple) -> CircuitComponent:
         r"""Re-initializes the state on an alternative set of modes"""
         modes = [modes] if isinstance(modes, int) else [i for i in modes]
         if len(modes) != self.num_modes:
@@ -50,7 +49,7 @@ class Transformation(CircuitComponent):
 
 class Unitary(Transformation):
     """Density matrix class."""
-    def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "DM"):
+    def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "Unitary"):
         super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes, representation=representation)
 
     @classmethod
@@ -58,34 +57,29 @@ class Unitary(Transformation):
         return cls(Bargmann(A, b, c), modes)
 
     @classmethod
-    def from_phasespace(cls, cov, means, modes, name="Unitary"):
+    def from_phasespace(cls, X, d, modes, name="Unitary"):
         r"""General constructor for density matrices from phase space representation.
 
         Args:
-            cov (Batch[ComplexMatrix]): the covariance matrix
-            means (Batch[ComplexVector]): the vector of means
+            X (Batch[ComplexMatrix]): symplectic / transformation matrix
+            d (int): displacement
             modes (Sequence[int]): the modes of the state
-            name (str): the name of the state
+            name (str): the name of the transformation
         """
-        A, b, c = physics.bargmann.wigner_to_bargmann_rho(cov, means) # (s, characteristic) not implemented yet
+        A, b, c = physics.bargmann.wigner_to_bargmann_U(X, d)
         return cls(Bargmann(A, b, c), modes, name=name)
 
     def phasespace(self):
         r"""Returns the phase space parameters (cov, means)
 
         Returns:
-            cov, means: the covariance matrix and the vector of means
+            X, d: the symplectic / transformation matrix, the noise matrix, and the displacement
         """
-        raise NotImplementedError("need to calculate the siegel-weil kernel")
-
+        raise NotImplementedError("use kernel that you calculated with Yuan")
 
     @classmethod
     def from_fock(cls, fock_array, modes, batched=False, name="DM"):
         return cls(Fock(fock_array, batched), modes, name=name)
-
-    @classmethod
-    def from_quadrature(self):
-        raise NotImplementedError
 
     # will be cached if backend is numpy
     def fock(self, shape: list[int] = None, prob: float = None) -> Batch[ComplexTensor]:
@@ -98,25 +92,12 @@ class Unitary(Transformation):
         Returns:
             State: the converted state with the target Fock Representation
         """
-        if isinstance(self.representation, Fock):
-            return math.sum(self.representation.array)
-        if shape is None:  # NOTE: we will support optional ints in the shape as well
-            cutoffs = physics.fock.autocutoffs(*self.phasespace(), prob or settings.AUTOCUTOFF_PROBABILITY)
-            shape = cutoffs + cutoffs  # NOTE: in the future we can use a shape for each batch element
-        arrays = [math.hermite_renormalized(A, b, c, shape) for A,b,c in zip(self.bargmann)]
-        return math.sum(arrays, axis=0)
+        raise NotImplementedError
 
-    def __and__(self, other: Transformation) -> State:
-        r"""Tensor product of two states. Use sparingly: the combined DM can be a large object."""
-        ids = (self.wires + other.wires).ids  # eventual exceptions are raised here
-        representation = self.representation @ other.representation
-        representation = representation.reorder([ids.index(id) for id in self.wires.ids + other.wires.ids])
-        return self.__class__(representation, modes=sorted(set(self.modes).union(other.modes)))
-
-    def __rshift__(self, other: CircuitComponent) -> DM | CircuitComponent:
+    def __rshift__(self, other: CircuitComponent) -> Unitary | Channel | CircuitComponent:
         r"""self is contracted with other on matching modes and ket/bra sides.
-        It adds a bra if needed (e.g. ket >> channel is treated as
-        (ket.adjoint & ket) >> channel).
+        It adds a bra if needed (e.g. unitary >> channel is treated as
+        (unitary.adjoint & unitary) >> channel).
         """
         common = set(self.wires.output.modes).intersection(other.wires.input.modes)
         # it's important to check common to avoid adding unnecessary adjoints
@@ -126,37 +107,26 @@ class Unitary(Transformation):
 
 
 
-
-class Ket(State):
-    def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "Ket"):
+class Channel(Transformation):
+    def __init__(self, representation: Bargmann | Fock, modes: list[int], name: str = "Channel"):
         super().__init__(name=name, modes_out_ket=modes, representation=representation)
 
-    @property # will be @lazy_if_numpy
-    def probability(self) -> float:
-        return self.L2_norm
-
-    @property
-    def purity(self) -> float:
-        return 1.0
-
     @classmethod
-    def from_bargmann(cls, A, b, c, modes, name="Ket"):
+    def from_bargmann(cls, A, b, c, modes, name="Ch"):
         return cls(Bargmann(A, b, c), modes, name=name)
 
     @classmethod
-    def from_phasespace(cls, cov, mean, modes, name="Ket", pure_check=True):
-        r"""General constructor for kets in phase space representation.
+    def from_phasespace(cls, X, Y, d, modes, name="Ch"):
+        r"""General constructor for channels from their phase space representation.
 
         Args:
-            cov (Batch[ComplexMatrix]): the covariance matrix
-            mean (Batch[ComplexVector]): the vector of means
+            X (Batch[ComplexMatrix]): the symplectic matrix
+            Y (Batch[ComplexMatrix]): the noise matrix
+            d (Batch[ComplexVector]): the displacement
             modes (Sequence[int]): the modes of the state
             name (str): the name of the state
-            pure_check (bool): whether to check if the state is pure (default: True)
         """
-        if pure_check and (purity := physics.gaussian.purity(cov)) < 1.0 - settings.ATOL_PURITY:
-            raise ValueError(f"Cannot initialize a ket: purity is {purity:.3f} which is less than 1.0.")
-        A, b, c = physics.bargmann.wigner_to_bargmann_psi(cov, mean)
+        A, b, c = physics.bargmann.wigner_to_bargmann_Choi(X, Y, d)
         return cls(Bargmann(A, b, c), modes, name=name)
 
     # will be cached if backend is numpy
@@ -165,65 +135,28 @@ class Ket(State):
         the s-parametrized phase space representation of the pure density matrix |self><self|.
 
         Returns:
-            cov, means: the covariance matrix and the vector of means
+            X, Y, d: the symplectic matrix, the noise matrix, and the displacement
         """
-        return (self.adjoint & self).phasespace()
+        raise NotImplementedError("use kernel that you calculated with Yuan")
 
     @classmethod
-    def from_fock(cls, fock_array, modes, batched=False, name="Ket"):
+    def from_fock(cls, fock_array, modes, batched=False, name="Ch"):
         return cls(Fock(fock_array, batched), modes, name=name)
 
     # will be cached if backend is numpy
-    def fock(
-        self,
-        shape: Optional[List[int]] = None,
-        max_prob: Optional[float] = None,
-    ):
-        r"""Converts the representation of the Ket to Fock representation.
+    def fock(self, shape: list[int]):
+        r"""Converts the channel to fock representation.
 
         Args:
-            shape (optional List[int]): The shape of the desired Fock tensor. If None it is guessed automatically.
-            max_prob (optional float): The maximum probability of the state. Defaults to settings.AUTOCUTOFF_PROBABILITY.
-                (used to stop the calculation of the amplitudes early)
+            shape (List[int]): The shape of the desired Fock tensor. If None it is guessed automatically.
 
         Returns:
-            State: the converted state with the target Fock Representation
+            Array: the fock representation of the channel
         """
         if isinstance(self.representation, Fock):
             return  math.sum(self.representation.array, axis=0)
-        if shape is None:
-            shape = physics.fock.autocutoffs(*self.phasespace(), max_prob or settings.AUTOCUTOFF_PROBABILITY)
         arrays = [math.hermite_renormalized(A, b, c, shape) for A,b,c in zip(self.bargmann)]
         return math.sum(arrays, axis=0)
-
-    def from_quadrature(self, cov, means, modes, name="Ket"):
-        r"""General constructor for kets in quadrature representation."""
-        A, b, c = physics.bargmann.ket_from_quadrature(cov, means)
-        return self.__class__(Bargmann(A, b, c), modes, name=name)
-    
-    # will be cached if backend is numpy
-    def quadrature(self, angle: float) -> tuple[Matrix, Vector]:
-        r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
-        Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
-
-        Args:
-            angle (optional float): The quadrature angle.
-
-        Returns:
-            tuple[Matrix, Vector]: the quadrature representation of the state
-        """
-        raise NotImplementedError
-
-    def __and__(self, other: Ket) -> Ket:  # TODO: needs to be in Ket and DM
-        r"""Tensor product of two states."""
-        if not isinstance(other, Ket):
-            raise ValueError("Can only tensor with other Kets")
-        if not set(self.wires.modes).isdisjoint(other.wires.modes):
-            raise ValueError("Modes must be disjoint")
-        representation = self.representation & other.representation
-        ids = (self.wires >> other.wires).ids
-        representation = representation.reorder([ids.index(id) for id in self.wires.ids+other.wires.ids])
-        return self.__class__(representation, modes=sorted(self.modes + other.modes))
     
     def __rshift__(self, other: CircuitComponent) -> Ket | CircuitComponent:
         r"""self is contracted with other on matching modes and ket/bra sides.
