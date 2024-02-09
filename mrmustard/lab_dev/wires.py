@@ -25,6 +25,7 @@ from mrmustard import settings
 __all__ = ["Wires"]
 
 
+# pylint: disable=protected-access
 class Wires:
     r"""
     A class with wire functionality for tensor network applications.
