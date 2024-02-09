@@ -90,6 +90,19 @@ class TestTriples:
         assert np.allclose(b1, 0)
         assert np.allclose(c1, 1 / (0.1 + 1))
 
+        A2, b2, c2 = triples.thermal_state_Abc([0.1, 0.2])
+        assert np.allclose(
+            A2,
+            [
+                [0, 0.09090909, 0, 0],
+                [0.09090909, 0, 0, 0],
+                [0, 0, 0, 0.16666667],
+                [0, 0, 0.16666667, 0],
+            ],
+        )
+        assert np.allclose(b2, 0)
+        assert np.allclose(c2, 1 / (0.1 + 1) / (0.2 + 1))
+
     def test_rotation_gate_Abc(self):
         A1, b1, c1 = triples.rotation_gate_Abc(0.1)
         assert np.allclose(A1, [[0, 0.99500417 + 0.09983342j], [0.99500417 + 0.09983342j, 0]])

@@ -22,18 +22,12 @@ from mrmustard import math
 from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 import numpy as np
+import scipy
 
 
 #  ~~~~~~~~~
 #  Utilities
 #  ~~~~~~~~~
-
-
-def _X_matrix() -> Matrix:
-    r"""
-    The X matrix.
-    """
-    return math.astensor([[0, 1], [1, 0]], dtype=math.float64)
 
 
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
@@ -213,11 +207,14 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     """
     nbar = math.atleast_1d(nbar, math.float64)
     n_modes = len(nbar)
-
-    A = nbar / (nbar + 1) * _X_matrix()
+    if n_modes == 1:
+        A = math.cast(nbar / (nbar + 1) * np.array([[0, 1], [1, 0]]), dtype=math.complex128)
+        c = 1 / (nbar + 1)
+    else:
+        matrix_list = [_nbar / (_nbar + 1) * np.array([[0, 1], [1, 0]]) for _nbar in nbar]
+        A = math.cast(scipy.linalg.block_diag(*matrix_list), dtype=math.complex128)
+        c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
     b = _vacuum_B_vector(n_modes)
-    c = 1 / (nbar + 1)
-
     return A, b, c
 
 
