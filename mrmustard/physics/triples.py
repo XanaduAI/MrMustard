@@ -193,48 +193,6 @@ def displaced_squeezed_vacuum_state_Abc(
     return A, b, c
 
 
-def two_mode_squeezed_vacuum_state_Abc(
-    r: Union[Scalar, list],
-    phi: Union[Scalar, list],
-) -> Union[Matrix, Vector, Scalar]:
-    r"""
-    The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length `1`, it is tiled so that its length matches
-    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
-
-    Args:
-        r: The squeezing magnitudes.
-        phi: The squeezing angles.
-
-    Returns:
-        The ``(A, b, c)`` triple of the two mode squeezed vacuum state.
-    """
-    r = math.atleast_1d(r, math.float64)
-    phi = math.atleast_1d(phi, math.float64)
-    if r.shape[-1] == 1:
-        r = math.tile(r, phi.shape)
-    if phi.shape[-1] == 1:
-        phi = math.tile(phi, r.shape)
-    n_modes = phi.shape[-1] * 2
-    O_n = math.zeros((n_modes, n_modes))
-    tanhr = math.diag(math.sinh(r) / math.cosh(r))
-    A = math.block(
-        [
-            [O_n, -math.exp(1j * phi) * tanhr],
-            [-math.exp(1j * phi) * tanhr, O_n],
-        ]
-    )
-    return (
-        A,
-        _vacuum_B_vector(n_modes),
-        math.prod(1 / math.cosh(r)),
-    )
-
-
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
@@ -461,10 +419,13 @@ def amplifier_Abc(g: Union[Scalar, list]):
             msg = "Found amplifier with gain ``g`` smaller than `1`."
             raise ValueError(msg)
 
+    g = math.atleast_1d(g, math.float64)
+    n_modes = len(g)
+
     O_n = math.zeros((n_modes, n_modes))
-    g0 = math.diag(math.astensor([1 - g]))
-    g1 = math.diag(math.astensor([1 / math.sqrt(g)]))
-    g2 = math.diag(math.astensor([1 - 1 / g]))
+    g0 = math.diag(math.astensor([1 - g])).reshape((n_modes, n_modes))
+    g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
+    g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
 
     A = math.block(
         [

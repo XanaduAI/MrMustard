@@ -70,9 +70,6 @@ class TestTriples:
         assert np.allclose(b2, [0.14952016 + 0.15768091j, 0.15349763 + 0.1628361j])
         assert np.allclose(c2, 0.912428762764038 + 0.013026652993991094j)
 
-    def displaced_squeezed_vacuum_state_Abc(self):
-        pass
-
     def test_thermal_state_Abc(self):
         A1, b1, c1 = thermal_state_Abc(0.1)
         assert np.allclose(A1, [[0, 0.09090909], [0.09090909, 0]])
@@ -139,7 +136,10 @@ class TestTriples:
             attenuator_Abc(-2)
 
     def test_amplifier_Abc(self):
-        pass
+        A1, b1, c1 = amplifier_Abc(2)
+        assert np.allclose(A1, [[0, 0.70710678, 0.5, 0], [0.70710678, 0, 0, -1], [0.5, 0, 0, 0.70710678], [0., 0, 0.70710678, 0]])
+        assert np.allclose(b1, 0)
+        assert np.allclose(c1, 0.5)
 
     def test_amplifier_Abc_error(self):
         with pytest.raises(ValueError, match="smaller than"):
