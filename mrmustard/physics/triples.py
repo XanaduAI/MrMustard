@@ -77,7 +77,7 @@ def _reshape(**kwargs):
 #  ~~~~~~~~~~~~
 
 
-def vacuum_state_Abc_triples(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of the pure vacuum state.
 
     Args:
@@ -93,7 +93,7 @@ def vacuum_state_Abc_triples(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def coherent_state_Abc_triples(
+def coherent_state_Abc(
     x: Union[Scalar, list], y: Union[Scalar, list]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of the pure coherent state.
@@ -119,7 +119,7 @@ def coherent_state_Abc_triples(
     return A, b, c
 
 
-def squeezed_vacuum_state_Abc_triples(
+def squeezed_vacuum_state_Abc(
     r: Union[Scalar, list], phi: Union[Scalar, list]
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of a squeezed vacuum state.
@@ -145,7 +145,7 @@ def squeezed_vacuum_state_Abc_triples(
     return A, b, c
 
 
-def displaced_squeezed_vacuum_state_Abc_triples(
+def displaced_squeezed_vacuum_state_Abc(
     x: Union[Scalar, list],
     y: Union[Scalar, list],
     r: Union[Scalar, list],
@@ -178,7 +178,7 @@ def displaced_squeezed_vacuum_state_Abc_triples(
     return A, b, c
 
 
-def two_mode_squeezed_vacuum_state_Abc_triples(
+def two_mode_squeezed_vacuum_state_Abc(
     r: Union[Scalar, list],
     phi: Union[Scalar, list],
 ) -> Union[Matrix, Vector, Scalar]:
@@ -222,7 +222,7 @@ def two_mode_squeezed_vacuum_state_Abc_triples(
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_Abc_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
+def thermal_state_Abc(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
     r"""Returns the Abc triples of a thermal state.
 
     Args:
@@ -246,7 +246,7 @@ def thermal_state_Abc_triples(nbar: Vector) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc_triples(theta: Union[Scalar, list]):
+def rotation_gate_Abc(theta: Union[Scalar, list]):
     r"""Returns the Abc triples of a rotation gate.
 
     The gate is defined by
@@ -271,7 +271,7 @@ def rotation_gate_Abc_triples(theta: Union[Scalar, list]):
     return A, b, c
 
 
-def displacement_gate_Abc_triples(x: Union[Scalar, list], y: Union[Scalar, list]):
+def displacement_gate_Abc(x: Union[Scalar, list], y: Union[Scalar, list]):
     r"""Returns the Abc triples of a displacement gate.
 
     The gate is defined by
@@ -299,7 +299,7 @@ def displacement_gate_Abc_triples(x: Union[Scalar, list], y: Union[Scalar, list]
     return A, b, c
 
 
-def squeezing_gate_Abc_triples(r: Union[Scalar, list], delta: Union[Scalar, list]):
+def squeezing_gate_Abc(r: Union[Scalar, list], delta: Union[Scalar, list]):
     r"""Returns the Abc triples of a squeezing gate.
 
     The gate is defined by
@@ -330,7 +330,7 @@ def squeezing_gate_Abc_triples(r: Union[Scalar, list], delta: Union[Scalar, list
     return A, b, c
 
 
-def beamsplitter_gate_Abc_triples(theta: Union[Scalar, list], phi: Union[Scalar, list]):
+def beamsplitter_gate_Abc(theta: Union[Scalar, list], phi: Union[Scalar, list]):
     r"""Returns the Abc triples of a beamsplitter gate on two modes.
 
     The gate is defined by
@@ -369,7 +369,7 @@ def beamsplitter_gate_Abc_triples(theta: Union[Scalar, list], phi: Union[Scalar,
 # ~~~~~~~~~~
 
 
-def attenuator_Abc_triples(eta: Union[Scalar, list]):
+def attenuator_Abc(eta: Union[Scalar, list]):
     r"""Returns the Abc triples of an atternuator.
 
     The dimension depends on the dimensions of ``eta``.
@@ -406,7 +406,7 @@ def attenuator_Abc_triples(eta: Union[Scalar, list]):
     return A, b, c
 
 
-def amplifier_Abc_triples(g: Union[Scalar, list]):
+def amplifier_Abc(g: Union[Scalar, list]):
     r"""Returns the Abc triples of an amplifier.
 
     The dimension depends on the dimensions of ``g``.
@@ -439,7 +439,7 @@ def amplifier_Abc_triples(g: Union[Scalar, list]):
     return A, b, c
 
 
-def fock_damping_Abc_triples(n_modes: int):
+def fock_damping_Abc(n_modes: int):
     r"""Returns the Abc triples of a Fock damper.
 
     Args:
