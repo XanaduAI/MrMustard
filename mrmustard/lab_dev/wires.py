@@ -16,13 +16,13 @@
 
 from __future__ import annotations
 
+from IPython.display import display, HTML
 from typing import Iterable, Optional
 import numpy as np
 
 from mrmustard import settings
 
 __all__ = ["Wires"]
-
 
 
 class Wires:
@@ -416,12 +416,4 @@ class Wires:
             html += row_html
 
         html += "</table>"
-
-        try:
-            from IPython.display import display, HTML
-
-            display(HTML(html))
-        except ImportError as e:
-            raise ImportError(
-                "To display the wires in a jupyter notebook you need to `pip install IPython` first."
-            ) from e
+        display(HTML(html))
