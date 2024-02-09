@@ -232,9 +232,6 @@ def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, S
 
     The number of modes depends on the length of the input parameters.
 
-    The rotation gate is defined by
-    :math:`R(\theta) = \exp(i\theta\hat{a}^\dagger\hat{a})`.
-
     Args:
         theta: The rotation angles.
 
@@ -257,10 +254,6 @@ def displacement_gate_Abc(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of displacement gates.
-
-    The gate is defined by
-        :math:`D(\gamma) = \exp(\gamma\hat{a}^\dagger-\gamma^*\hat{a})`,
-    where ``\gamma = x + 1j*y``.
 
     The number of modes depends on the length of the input parameters.
 
@@ -290,10 +283,6 @@ def squeezing_gate_Abc(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of squeezing gates.
-
-    The gate is defined by
-        :math:`S(\zeta) = \exp(\zeta^*\hat{a}^2 - \zeta\hat{a}^{\dagger 2})`,
-    where ``\zeta = r\exp(i\delta)``.
 
     The number of modes depends on the length of the input parameters.
 
@@ -326,9 +315,6 @@ def beamsplitter_gate_Abc(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
-
-    The gate is defined by
-        :math:`BS(\theta, \phi) = \exp()`.
 
     The number of modes depends on the length of the input parameters.
 
