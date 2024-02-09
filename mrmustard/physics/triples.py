@@ -65,7 +65,7 @@ def _reshape(**kwargs) -> Generator:
     vars = list(kwargs.values())
 
     vars = [math.atleast_1d(var, math.complex128) for var in vars]
-    n_modes = max([len(var) for var in vars])
+    n_modes = max(len(var) for var in vars)
 
     for i, var in enumerate(vars):
         if len(var) == 1:

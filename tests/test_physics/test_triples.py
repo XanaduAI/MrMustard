@@ -9,6 +9,7 @@ Tests the Bargmann triples.
 """
 
 
+# pylint: disable = missing-function-docstring
 class TestTriples:
     r"""
     Tests the Bargmann triples.
@@ -75,12 +76,6 @@ class TestTriples:
         assert np.allclose(A1, [[0, 0.09090909], [0.09090909, 0]])
         assert np.allclose(b1, 0)
         assert np.allclose(c1, 1 / (0.1 + 1))
-
-    def test_rotation_gate_Abc(self):
-        A1, b1, c1 = rotation_gate_Abc(0.1)
-        assert np.allclose(A1, [[0, 0.99500417 + 0.09983342j], [0.99500417 + 0.09983342j, 0]])
-        assert np.allclose(b1, 0)
-        assert np.allclose(c1, 1)
 
     def test_rotation_gate_Abc(self):
         A1, b1, c1 = rotation_gate_Abc(0.1)
