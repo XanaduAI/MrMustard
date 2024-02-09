@@ -903,8 +903,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("pow", (x, y))
 
+    def kron(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
+        r"""
+        The Kroenecker product of the given tensors.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: Another tensor.
+
+        Returns:
+            The Kroenecker product.
+        """
+        return self._apply("kron", (tensor1, tensor2))
+
     def prod(self, array: Tensor, axis=None) -> Tensor:
-        r"""Returns the product of all elements in ``array``, unless the axis is given.
+        r"""
+        The product of all elements in ``array``, unless the axis is given.
+
         Args:
             array: the array to calculate the product
             axis: axis or axes along which a product is performed.

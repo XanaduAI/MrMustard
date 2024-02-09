@@ -39,7 +39,7 @@ def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
     The X matrix for the order of unitaries.
     """
-    return math.cast(np.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
+    return math.cast(math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
 
 
 def _vacuum_A_matrix(n_modes: int) -> Matrix:
