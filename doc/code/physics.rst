@@ -5,8 +5,7 @@ mrmustard.physics
     :maxdepth: 1
 
     physics/ansatze
-    physics/bargmann
-    physics/fock
+    physics/triples
     physics/gaussian
     physics/representations
 

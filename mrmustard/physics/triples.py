@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """
-This module contains the ``(A, b, c)`` triples for states and transformations in the
-``Bargmann`` representation.
+This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
+various states and transformations.
 """
 
 import numpy as np
@@ -445,13 +445,21 @@ def amplifier_Abc(g: Union[Scalar, list]):
     The number of modes depends on the length of the input parameters.
 
     Args:
-        g: The values of the gains/
+        g: The values of the gains.
 
     Returns:
         The ``(A, b, c)`` triple of the amplifier channels.
+
+    Raises:
+        ValueError: If ``g`` is smaller than `1`.
     """
     g = math.atleast_1d(g, math.float64)
     n_modes = len(g)
+
+    for g_val in g:
+        if g_val < 1:
+            msg = "Found amplifier with gain ``g`` smaller than `1`."
+            raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes))
     g0 = math.diag(math.astensor([1 - g]))

@@ -1,5 +1,5 @@
-Abc Triples in Bargmann representation
-===============
+Abc triples for Bargmann representation
+=======================================
 
 .. currentmodule:: mrmustard.physics.triples
 

@@ -141,6 +141,10 @@ class TestTriples:
     def test_amplifier_Abc(self):
         pass
 
+    def test_amplifier_Abc_error(self):
+        with pytest.raises(ValueError, match="smaller than"):
+            amplifier_Abc(0.1)
+
     @pytest.mark.parametrize("n_modes", [1, 2, 3])
     def test_fock_damping_Abc(self, n_modes):
         A1, b1, c1 = fock_damping_Abc(n_modes)
