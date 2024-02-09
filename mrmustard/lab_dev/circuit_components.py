@@ -24,11 +24,9 @@ from ..physics.representations import Bargmann, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .wires import Wire, Wires
+from .wires import Wires
 
-__all__ = [
-    "CircuitComponent",
-]
+__all__ = ["CircuitComponent"]
 
 
 class CircuitComponent:
