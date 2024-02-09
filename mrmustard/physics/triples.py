@@ -72,7 +72,7 @@ def _reshape(**kwargs) -> Generator:
 
 def _get_reshape_list_for_channel(num_modes: int):
     r"""
-    A unitlity function to find out the reorder list for the channel.
+    A utility function to find out the reorder list for the channel.
     """
     new_order = [[i, i + num_modes, i + num_modes * 2, i + num_modes * 3] for i in range(num_modes)]
     return np.array(new_order).reshape(num_modes * 4)
