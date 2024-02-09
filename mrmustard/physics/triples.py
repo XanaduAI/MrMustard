@@ -22,7 +22,6 @@ from mrmustard import math
 from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 import numpy as np
-import scipy
 
 
 #  ~~~~~~~~~
@@ -205,15 +204,11 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the thermal states.
     """
-    nbar = math.atleast_1d(nbar, math.float64)
+    nbar = math.atleast_1d(nbar, math.complex128)
     n_modes = len(nbar)
-    if n_modes == 1:
-        A = math.cast(nbar / (nbar + 1) * np.array([[0, 1], [1, 0]]), dtype=math.complex128)
-        c = 1 / (nbar + 1)
-    else:
-        matrix_list = [_nbar / (_nbar + 1) * np.array([[0, 1], [1, 0]]) for _nbar in nbar]
-        A = math.cast(scipy.linalg.block_diag(*matrix_list), dtype=math.complex128)
-        c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
+    A = math.astensor([[0, 1], [1, 0]], math.complex128)
+    A = np.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
+    c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
     b = _vacuum_B_vector(n_modes)
     return A, b, c
 
