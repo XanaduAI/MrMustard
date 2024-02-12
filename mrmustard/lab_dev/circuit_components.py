@@ -20,15 +20,13 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Union
 
-from ..physics.representations import Bargmann, Representation
+from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
-from .wires import Wire, Wires
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
+from .wires import Wires
 
-__all__ = [
-    "CircuitComponent",
-]
+__all__ = ["CircuitComponent"]
 
 
 class CircuitComponent:
@@ -48,10 +46,10 @@ class CircuitComponent:
     def __init__(
         self,
         name: str,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
         representation: Optional[Representation] = None,
     ) -> None:
         # TODO: Add validation to check that wires and representation are compatible (e.g.,
@@ -68,10 +66,10 @@ class CircuitComponent:
         A: Batch[ComplexMatrix],
         B: Batch[ComplexVector],
         c: Batch[ComplexTensor],
-        modes_in_ket: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
     ):
         r"""
         Initializes a circuit component from Bargmann's A, B, and c.
@@ -115,7 +113,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> set(Mode):
+    def modes(self) -> list(int):
         r"""
         A set with all the modes in this component.
         """
@@ -142,6 +140,7 @@ class CircuitComponent:
         """
         return self._wires
 
+    @property
     def adjoint(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the adjoint of it, obtained by taking the
@@ -153,6 +152,21 @@ class CircuitComponent:
         representation = ret.representation.conj()
         return CircuitComponent.from_attributes(name, wires, representation)
 
+    def bargmann(self):
+        r"""
+        Returns the ``(A, b, c)`` triple for the Fock-Bargmann representation of this component.
+
+        Returns:
+            The ``(A, b, c)`` triple for the Fock-Bargmann representation of this component.
+
+        Raises:
+            ValueError: If the ``(A, b, c)`` triple for this object cannot be computed.
+        """
+        if isinstance(self.representation, Bargmann):
+            return self.representation.A, self.representation.b, self.representation.c
+        raise ValueError("Cannot compute the ``(A, b, c)`` triple for this object.")
+
+    @property
     def dual(self) -> CircuitComponent:
         r"""
         Light-copies this component, then returns the dual of it, obtained by taking the
@@ -174,7 +188,58 @@ class CircuitComponent:
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
-    def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
+    def __eq__(self, other) -> bool:
+        r"""
+        Whether this component is equal to another component.
+
+        Compares representations and wires.
+        """
+        return self.representation == other.representation  # and self.wires == other.wires
+
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, but without adding
+        missing adjoints.
+        """
+        # set the name of the returned component
+        name_ret = ""
+
+        # initialized the ``Wires`` of the returned component
+        wires_ret = self.wires >> other.wires
+
+        # store the indices of the wires being contracted
+        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
+        bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
+        idx_z = self.wires[ket_modes].ket.output.indices + self.wires[bra_modes].bra.output.indices
+        idx_zconj = (
+            other.wires[ket_modes].ket.input.indices + other.wires[bra_modes].bra.input.indices
+        )
+
+        # convert Bargmann -> Fock if needed
+        LEFT = self.representation
+        RIGHT = other.representation
+        msg = "Cannot contract objects with different representations"
+        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
+            raise ValueError(msg)
+            # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
+            # LEFT = Fock(self.fock(shape=shape), batched=False)
+        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
+            raise ValueError(msg)
+            # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
+            # RIGHT = Fock(other.fock(shape=shape), batched=False)
+
+        # calculate the representation of the returned component and reorder it
+        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
+        contracted_idx += [
+            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
+        ]
+
+        order = [contracted_idx.index(id) for id in wires_ret.ids]
+        repr_ret = (LEFT[idx_z] @ RIGHT[idx_zconj]).reorder(order)
+
+        return CircuitComponent.from_attributes(name_ret, wires_ret, repr_ret)
+
+    def __getitem__(self, idx: Union[int, Sequence[int]]):
         r"""
         Returns a slice of this component for the given modes.
         """
@@ -229,6 +294,6 @@ def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     for component in components:
         ret.append(component.light_copy())
         if not component.wires.bra:
-            ret.append(component.adjoint())
+            ret.append(component.adjoint)
 
     return ret

@@ -22,7 +22,7 @@ from typing import Sequence
 
 from mrmustard import math
 from ..physics.representations import Bargmann
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .circuits import Circuit
 from .circuit_components import CircuitComponent
 
@@ -47,7 +47,7 @@ class Pure(State):
         modes: The modes of this pure states.
     """
 
-    def __init__(self, name: str, modes: Sequence[Mode]):
+    def __init__(self, name: str, modes: Sequence[int]):
         super().__init__(name, modes_out_ket=modes)
 
 
