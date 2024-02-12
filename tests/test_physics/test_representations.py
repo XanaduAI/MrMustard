@@ -18,37 +18,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.ansatze import ArrayAnsatz
 from mrmustard.physics.representations import Bargmann, Fock
-
-# ~~~~~~~~~
-# Utilities
-# ~~~~~~~~~
-
-
-def Abc_triple(n: int):
-    r""""""
-    min_magnitude = 1e-9
-    max_magnitude = 1
-
-    # complex symmetric matrix A
-    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (n, n)
-    )
-    A = 0.5 * (A + A.T)  # make it symmetric
-
-    # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, (n,))
-
-    # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,))
-
-    return A, b, c
-
-
-# ~~~~~
-# Tests
-# ~~~~~
+from ..random import Abc_triple
 
 # pylint: disable = missing-function-docstring
 

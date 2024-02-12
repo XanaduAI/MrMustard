@@ -15,11 +15,11 @@
 # pylint: disable = missing-function-docstring
 
 import numpy as np
-from hypothesis import given
 import pytest
 
 from mrmustard import math
 from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz
+from ..random import Abc_triple
 
 
 def Abc_triple(n: int):

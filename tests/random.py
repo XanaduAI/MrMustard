@@ -68,19 +68,22 @@ complex_number = st.complex_numbers(
 size = st.integers(min_value=1, max_value=9)
 
 
-@st.composite
-def Abc_triple(draw, n=None):
-    n = n or draw(size)
+def Abc_triple(n: int):
+    r""""""
+    min_magnitude = 1e-9
+    max_magnitude = 1
 
-    # Complex symmetric matrix A
-    A = draw(arrays(dtype=complex, shape=(n, n), elements=complex_number))
-    A = 0.5 * (A + A.T)  # Make it symmetric
+    # complex symmetric matrix A
+    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (n, n)
+    )
+    A = 0.5 * (A + A.T)  # make it symmetric
 
-    # Complex vector b
-    b = draw(arrays(dtype=complex, shape=n, elements=complex_number))
+    # complex vector b
+    b = np.random.uniform(min_magnitude, max_magnitude, (n,))
 
-    # Complex scalar c
-    c = draw(complex_number)
+    # complex scalar c
+    c = np.random.uniform(min_magnitude, max_magnitude, (1,))
 
     return A, b, c
 
