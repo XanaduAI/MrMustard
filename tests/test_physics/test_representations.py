@@ -50,6 +50,8 @@ def Abc_triple(n: int):
 # Tests
 # ~~~~~
 
+# pylint: disable = missing-function-docstring
+
 
 class TestBargmannRepresentation:
     r"""
@@ -73,7 +75,7 @@ class TestBargmannRepresentation:
     def test_init_from_ansatz(self, triple):
         bargmann1 = Bargmann(*triple)
         bargmann2 = Bargmann.from_ansatz(bargmann1.ansatz)
-        
+
         assert bargmann1 == bargmann2
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -186,7 +188,8 @@ class TestBargmannRepresentation:
         bargmann = Bargmann(*triple)
 
         assert bargmann(0.1 + 0.2j) == bargmann.ansatz(0.1 + 0.2j)
-    
+
+
 class TestFockRepresentation:
     r"""Tests the Fock Representation."""
 
@@ -298,4 +301,3 @@ class TestFockRepresentation:
         fock2 = fock1.reorder(order=(2, 1, 0))
         assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
         assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
-
