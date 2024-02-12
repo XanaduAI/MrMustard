@@ -42,7 +42,7 @@ class Representation(ABC):
     """
 
     @abstractmethod
-    def from_ansatz(self, ansatz: Ansatz) -> Representation:  # pragma: no cover
+    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
         """
@@ -470,48 +470,6 @@ class Fock(Representation):
             for j in range(other.array.shape[0]):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(new_array))
-
-    def __add__(self, other: Fock) -> Fock:
-        r"""
-        Adds two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz + other.ansatz)
-
-    def __sub__(self, other: Fock) -> Fock:
-        r"""
-        Subtracts two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz - other.ansatz)
-
-    def __mul__(self, other: Fock | Scalar) -> Fock:
-        r"""
-        Multiplies two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz * other.ansatz)
-        else:
-            return self.from_ansatz(self.ansatz * other)
-
-    def __truediv__(self, other: Fock) -> Fock:
-        r"""
-        Divides two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz / other.ansatz)
-        else:
-            return self.from_ansatz(self.ansatz / other)
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
