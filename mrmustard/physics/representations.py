@@ -208,9 +208,10 @@ class Bargmann(Representation):
         r"""Evaluates the Bargmann function at the given array of points."""
         return self.ansatz(z)
 
-    def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
+    @classmethod
+    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:
         r"""Returns a Bargmann object from an ansatz object."""
-        return self.__class__(ansatz.A, ansatz.b, ansatz.c)
+        return cls(ansatz.A, ansatz.b, ansatz.c)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -511,15 +512,6 @@ class Fock(Representation):
             return self.from_ansatz(self.ansatz / other.ansatz)
         else:
             return self.from_ansatz(self.ansatz / other)
-
-    def __and__(self, other: Fock) -> Fock:
-        r"""
-        Outer product two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz & other.ansatz)
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
