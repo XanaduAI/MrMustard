@@ -143,7 +143,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> list(Mode):
+    def modes(self) -> list(int):
         r"""
         A set with all the modes in this component.
         """
@@ -203,7 +203,7 @@ class CircuitComponent:
         instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_wires"] = self.wires.copy() # this assigns new ids, which is what we want
         return instance
-    
+
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""Contracts self and other (as the would in a circuit), but without adding
         eventual missing adjoints."""
