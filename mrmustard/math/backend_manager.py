@@ -918,15 +918,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     def prod(self, array: Tensor, axis=None) -> Tensor:
         r"""
-        The product of all elements in ``array``, unless the axis is given.
+        The product of all elements in ``array``.
 
         Args:
-            array: the array to calculate the product
-            axis: axis or axes along which a product is performed.
-                The default, axis = None, calculates the product of all elelemnts in the tensor.
+            array: The array of elements to calculate the product of.
+            axis: The axis along which a product is performed. If ``None``, it calculates
+                the product of all elements in ``array``.
 
         Returns:
-            The product of elements in the given axis or all of them.
+            The product of the elements in ``array``.
         """
         return self._apply("prod", (array, axis))
 

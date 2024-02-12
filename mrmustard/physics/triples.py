@@ -214,10 +214,12 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     """
     nbar = math.atleast_1d(nbar, math.complex128)
     n_modes = len(nbar)
+
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
     c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
     b = _vacuum_B_vector(n_modes)
+
     return A, b, c
 
 
@@ -377,6 +379,7 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
     O_n = math.zeros((n_modes, n_modes))
     eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes)).reshape((n_modes, n_modes))
     eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
+
     A = math.block(
         [
             [O_n, eta1, O_n, O_n],
@@ -386,6 +389,7 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
         ]
     )
     reshape_list = _get_reshape_list_for_channel(n_modes)
+
     A = A[reshape_list, :][:, reshape_list]
     b = _vacuum_B_vector(n_modes * 2)
     c = np.prod(eta)
@@ -418,6 +422,7 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
 
     g = math.atleast_1d(g, math.float64)
     n_modes = len(g)
+    reshape_list = _get_reshape_list_for_channel(n_modes)
 
     O_n = math.zeros((n_modes, n_modes))
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
@@ -431,7 +436,6 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
             [O_n, O_n, g1, O_n],
         ]
     )
-    reshape_list = _get_reshape_list_for_channel(n_modes)
     A = A[reshape_list, :][:, reshape_list]
     b = _vacuum_B_vector(n_modes * 2)
     c = np.prod(1 / g)
