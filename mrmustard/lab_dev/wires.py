@@ -308,9 +308,6 @@ class Wires:
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
 
-    def __lshift__(self, other: Wires) -> Wires:
-        return (other.dual >> self.dual).dual  # how cool is this
-
     @staticmethod
     def _outin(self_in: int, self_out: int, other_in: int, other_out: int) -> np.ndarray:
         r"""
@@ -331,12 +328,17 @@ class Wires:
         else:  # no wires on other
             return np.array([self_out, self_in], dtype=np.int64)
 
-    def __rshift__(self, other: Wires) -> Wires:
+    def __matmul__(self, other: Wires) -> Wires:
         r"""
-        A new Wires object with the wires of ``self`` and ``other`` combined as two
-        components in a circuit: the output of self connects to the input of other wherever
-        they match. All surviving wires are arranged in the standard order.
-        A ValueError is raised if there are any surviving wires that overlap.
+        A new ``Wires`` object with the wires of ``self`` and ``other`` combined.
+        
+        The output of ``self`` connects to the input of ``other`` wherever they match. All
+        surviving wires are arranged in the standard order.
+
+        This function does not add missing adjoints.
+
+        Raises:
+            ValueError: If there are any surviving wires that overlap.
         """
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)

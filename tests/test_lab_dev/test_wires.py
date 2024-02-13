@@ -167,15 +167,15 @@ class TestWires:
         assert w1.modes == [1]
         assert w1.ids == [w.ids[1], w.ids[3]]
 
-    def test_rshift(self):
+    def test_matmul(self):
         # contracts 1,1 on bra side
         # contracts 3,3 and 13,13 on ket side (note order doesn't matter)
         u = Wires([1, 5], [2, 6, 15], [3, 7, 13], [4, 8])
         v = Wires([0, 9, 14], [1, 10], [2, 11], [13, 3, 12])
-        assert (u >> v)._args() == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
+        assert (u @ v)._args() == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
 
-    def test_rshift_error(self):
+    def test_matmul_error(self):
         u = Wires([], [], [0], [])  # only output wire
         v = Wires([], [], [0], [])  # only output wire
         with pytest.raises(ValueError):
-            u >> v  # pylint: disable=pointless-statement
+            u @ v  # pylint: disable=pointless-statement
