@@ -34,10 +34,39 @@ class State(CircuitComponent):
     """
 
 
+class DM(State):
+    r"""
+    Base class for density matrices.
+
+    Arguments:
+        name: The name of this pure state.
+        modes: The modes of this pure states.
+    """
+
+    def __init__(self, name: str, modes: Sequence[int]):
+        super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``DM`` when ``other`` is a ``Unitary`` or a ``Channel``, and ``other`` acts on
+        ``self``'s modes. Otherwise, it returns a ``CircuitComponent``.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(set(self.modes)):
+            dm = DM(component.name, [])
+            dm._wires = component.wires
+            dm._representation = component.representation
+            return dm
+        return component
+
 
 class Ket(State):
     r"""
-    Base class for all pure states.
+    Base class for all pure states, potentially unnormalized.
 
     Arguments:
         name: The name of this pure state.
@@ -48,14 +77,24 @@ class Ket(State):
         super().__init__(name, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        ret = super().__rshift__(other)
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
 
-        # if isinstance(other, Unitary) and not ret.wires.input:
-        #     ret = Ket.from_attributes(ret.name, ret.wires, ret.representation)
-        # elif isinstance(other, Channel):
-        #     ret = DM.from_attributes(ret.name, ret.wires, ret.representation)
-        # elif isinstance(other, Ket)
-        return ret
+        Returns a ``State`` (either ``Ket`` or ``DM``) when ``other`` is a ``Unitary`` or a
+        ``Channel``, and ``other`` acts on ``self``'s modes. Otherwise, it returns a
+        ``CircuitComponent``.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(set(self.modes)):
+            state = (
+                Ket(component.name, []) if isinstance(other, Unitary) else DM(component.name, [])
+            )
+            state._wires = component.wires
+            state._representation = component.representation
+            return state
+        return component
 
 
 class Vacuum(Ket):

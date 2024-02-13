@@ -237,7 +237,7 @@ class CircuitComponent:
         repr_ret = (LEFT[idx_z] @ RIGHT[idx_zconj]).reorder(order)
 
         return CircuitComponent.from_attributes(name_ret, wires_ret, repr_ret)
-    
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when

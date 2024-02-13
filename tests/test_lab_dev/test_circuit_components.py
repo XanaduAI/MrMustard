@@ -19,7 +19,7 @@ Tests for circuit components.
 import numpy as np
 
 from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
-from mrmustard.lab_dev.states import Ket, Vacuum
+from mrmustard.lab_dev.states import DM, Ket, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Unitary
 
 
@@ -95,7 +95,7 @@ class TestCircuitComponent:
             result1.representation.b,
             [1 - 3j, 2 - 4j, -1 - 3j, -2 - 4j, 1 + 3j, 2 + 4j, -1 + 3j, -2 + 4j],
         )
-        assert np.allclose(result1.representation.c, d01.representation.c ** 2)
+        assert np.allclose(result1.representation.c, d01.representation.c**2)
 
     def test_rshift_gates_only(self):
         r"""
@@ -149,11 +149,27 @@ class TestCircuitComponent:
             result1.representation.b,
             [1 - 3j, 2 - 4j, -1 - 3j, -2 - 4j, 1 + 3j, 2 + 4j, -1 + 3j, -2 + 4j],
         )
-        assert np.allclose(result1.representation.c, d01.representation.c ** 2)
+        assert np.allclose(result1.representation.c, d01.representation.c**2)
 
     def test_rshift_returned_type(self):
-        vac = Vacuum(3)
+        vac = Vacuum(2)
         d0 = Dgate(1, modes=[0])
+        d01 = Dgate(1, modes=[0, 1])
+        d012 = Dgate(1, modes=[0, 1, 2])
+        a0 = Attenuator(1, modes=[0])
+
+        assert isinstance(vac >> d0, Ket)
+        assert isinstance(vac >> d01, Ket)
+        assert isinstance(vac >> d012, CircuitComponent)
+        assert isinstance(vac >> a0, DM)
+        assert isinstance(vac >> a0 >> d012, CircuitComponent)
+        assert isinstance(d0 >> d0, Unitary)
+        assert isinstance(d0 >> d01, Unitary)
+        assert isinstance(d0 >> d012, Unitary)
+        assert isinstance(a0 >> a0, Channel)
+        assert isinstance(a0 >> d0, Channel)
+        assert isinstance(d0 >> a0, Channel)
+        assert isinstance(d012 >> a0, Channel)
 
 
 class TestConnect:

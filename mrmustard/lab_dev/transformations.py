@@ -47,6 +47,27 @@ class Unitary(Transformation):
     def __init__(self, name, modes):
         super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
 
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
+        ``Channel``, and a ``CircuitComponent`` otherwise.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)):
+            transformation = (
+                Unitary(component.name, [])
+                if isinstance(other, Unitary)
+                else Channel(component.name, [])
+            )
+            transformation._wires = component.wires
+            transformation._representation = component.representation
+            return transformation
+        return component
+
 
 class Dgate(Unitary):
     r"""
@@ -114,6 +135,23 @@ class Channel(Transformation):
         super().__init__(
             name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``Channel`` when ``other`` is a ``Unitary`` or a ``Channel``, and a
+        ``CircuitComponent`` otherwise.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)):
+            channel = Channel(component.name, [])
+            channel._wires = component.wires
+            channel._representation = component.representation
+            return channel
+        return component
 
 
 class Attenuator(Channel):
