@@ -392,7 +392,7 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
 
     A = A[reshape_list, :][:, reshape_list]
     b = _vacuum_B_vector(n_modes * 2)
-    c = np.prod(eta)
+    c = 1.0
 
     return A, b, c
 
