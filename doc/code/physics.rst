@@ -6,6 +6,8 @@ mrmustard.physics
 
     physics/ansatze
     physics/triples
+    physics/bargmann
+    physics/fock
     physics/gaussian
     physics/representations
 
