@@ -101,7 +101,7 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 
 def coherent_state_Abc(
-    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]]
+    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of pure coherent states.
@@ -130,7 +130,7 @@ def coherent_state_Abc(
 
 
 def squeezed_vacuum_state_Abc(
-    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]]
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of squeezed vacuum states.
@@ -160,9 +160,9 @@ def squeezed_vacuum_state_Abc(
 
 def displaced_squeezed_vacuum_state_Abc(
     x: Union[float, Iterable[float]],
-    y: Union[float, Iterable[float]],
-    r: Union[float, Iterable[float]],
-    phi: Union[float, Iterable[float]],
+    y: Union[float, Iterable[float]] = 0,
+    r: Union[float, Iterable[float]] = 0,
+    phi: Union[float, Iterable[float]] = 0,
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of displazed squeezed vacuum states.
@@ -252,7 +252,7 @@ def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, S
 
 
 def displacement_gate_Abc(
-    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]]
+    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of displacement gates.
@@ -281,7 +281,7 @@ def displacement_gate_Abc(
 
 
 def squeezing_gate_Abc(
-    r: Union[float, Iterable[float]], delta: Union[float, Iterable[float]]
+    r: Union[float, Iterable[float]], delta: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of squeezing gates.
@@ -305,7 +305,7 @@ def squeezing_gate_Abc(
     tanhr = math.diag(math.sinh(r) / math.cosh(r))
     sechr = math.diag(1 / math.cosh(r))
 
-    A = math.block([[math.exp(1j * delta) * tanhr, sechr], [sechr, -math.exp(-1j * delta) * tanhr]])
+    A = math.block([[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]])
     b = _vacuum_B_vector(n_modes * 2)
     c = math.prod(1 / math.sqrt(math.cosh(r)))
 
@@ -313,7 +313,7 @@ def squeezing_gate_Abc(
 
 
 def beamsplitter_gate_Abc(
-    theta: Union[Scalar, Iterable], phi: Union[Scalar, Iterable]
+    theta: Union[Scalar, Iterable], phi: Union[Scalar, Iterable] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.

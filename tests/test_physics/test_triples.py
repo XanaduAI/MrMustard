@@ -62,6 +62,11 @@ class TestTriples:
         assert np.allclose(b2, [0.1 + 0.2j, 0.1 + 0.3j])
         assert np.allclose(c2, 0.9277434863)
 
+        A3, b3, c3 = triples.coherent_state_Abc(0.1)
+        assert np.allclose(A3, 0)
+        assert np.allclose(b3, 0.1)
+        assert np.allclose(c3, 0.9950124791926823)
+
     def test_squeezed_vacuum_state_Abc(self):
         A1, b1, c1 = triples.squeezed_vacuum_state_Abc(0.1, 0.2)
         assert np.allclose(A1, -0.09768127 - 0.01980097j)
@@ -73,6 +78,11 @@ class TestTriples:
         assert np.allclose(b2, 0)
         assert np.allclose(c2, 0.9950207489532265)
 
+        A3, b3, c3 = triples.squeezed_vacuum_state_Abc(0.1)
+        assert np.allclose(A3, -0.09966799)
+        assert np.allclose(b3, 0)
+        assert np.allclose(c3, 0.9975072676192522)
+
     def test_displaced_squeezed_vacuum_state_Abc(self):
         A1, b1, c1 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.2, 0.3, 0.4)
         assert np.allclose(A1, -0.26831668 - 0.11344247j)
@@ -83,6 +93,12 @@ class TestTriples:
         assert np.allclose(A2, [[-0.26831668 - 0.11344247j, 0], [0, -0.25565087 - 0.13966271j]])
         assert np.allclose(b2, [0.14952016 + 0.15768091j, 0.15349763 + 0.1628361j])
         assert np.allclose(c2, 0.912428762764038 + 0.013026652993991094j)
+
+        A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc([0.1, 0.2])
+        A3_correct, b3_correct, c3_correct = triples.coherent_state_Abc([0.1, 0.2])
+        assert np.allclose(A3, A3_correct)
+        assert np.allclose(b3, b3_correct)
+        assert np.allclose(c3, c3_correct)
 
     def test_thermal_state_Abc(self):
         A1, b1, c1 = triples.thermal_state_Abc(0.1)
@@ -117,18 +133,49 @@ class TestTriples:
         assert np.allclose(c2, 1.0)
 
     def test_displacement_gate_Abc(self):
-        A1, b1, c1 = triples.displacement_gate_Abc([0.1, 0.2], 0.1)
-        assert np.allclose(A1, [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
-        assert np.allclose(b1, [0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j])
-        assert np.allclose(c1, 0.9656054162575665)
+        A1, b1, c1 = triples.displacement_gate_Abc(0.1, 0.1)
+        assert np.allclose(A1, [[0, 1], [1, 0]])
+        assert np.allclose(b1, [0.1 + 0.1j, -0.1 + 0.1j])
+        assert np.allclose(c1, 0.990049833749168)
+
+        A2, b2, c2 = triples.displacement_gate_Abc([0.1, 0.2], 0.1)
+        assert np.allclose(A2, [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
+        assert np.allclose(b2, [0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j])
+        assert np.allclose(c2, 0.9656054162575665)
+
+        A3, b3, c3 = triples.displacement_gate_Abc(x=[0.1, 0.2])
+        assert np.allclose(A3, [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
+        assert np.allclose(b3, [0.1, 0.2, -0.1, -0.2])
+        assert np.allclose(c3, 0.9753099120283327)
 
     def test_squeezing_gate_Abc(self):
         A1, b1, c1 = triples.squeezing_gate_Abc(0.1, 0.2)
         assert np.allclose(
-            A1, [[0.09768127 + 0.01980097j, 0.99502075], [0.99502075, -0.09768127 + 0.01980097j]]
+            A1,
+            [[-0.09768127 - 1.98009738e-02j, 0.99502075], [0.99502075, 0.09768127 - 0.01980097j]],
         )
         assert np.allclose(b1, 0)
         assert np.allclose(c1, 0.9975072676192522)
+
+        A2, b2, c2 = triples.squeezing_gate_Abc([0.1, 0.3], 0.2)
+        assert np.allclose(
+            A2,
+            [
+                [-0.09768127 - 1.98009738e-02j, 0, 0.99502075, 0],
+                [0, -0.28550576 - 5.78748818e-02j, 0, 0.95662791],
+                [0.99502075, 0, 0.09768127 - 1.98009738e-02j, 0],
+                [0, 0.95662791, 0, 0.28550576 - 5.78748818e-02j],
+            ],
+        )
+        assert np.allclose(b2, 0)
+        assert np.allclose(c2, 0.9756354961606032)
+
+        A3, b3, c3 = triples.squeezing_gate_Abc(0.1)
+        assert np.allclose(
+            A3, [[-0.09966799 + 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]
+        )
+        assert np.allclose(b3, 0)
+        assert np.allclose(c3, 0.9975072676192522)
 
     def test_beamsplitter_gate_Abc(self):
         A1, b1, c1 = triples.beamsplitter_gate_Abc(0.1, 0.2)
@@ -137,6 +184,32 @@ class TestTriples:
             [0.0, 0, 0.0978434 + 0.01983384j, 0.99500417],
             [0.99500417, 0.0978434 + 0.01983384j, 0, 0],
             [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
+        ]
+        assert np.allclose(A1, A_exp)
+        assert np.allclose(b1, 0)
+        assert np.allclose(c1, 1)
+
+        A2, b2, c2 = triples.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
+        O_4 = np.zeros((4, 4))
+        V = np.array(
+            [
+                [0.99500417, 0, -0.0978434 + 0.01983384j, 0],
+                [0, 0.99500417, 0, -0.0978434 + 0.01983384j],
+                [0.0978434 + 0.01983384j, 0, 0.99500417, 0],
+                [0, 0.0978434 + 0.01983384j, 0, 0.99500417],
+            ]
+        )
+        A_exp = np.block([[O_4, V], [V.T, O_4]])
+        assert np.allclose(A2, A_exp)
+        assert np.allclose(b2, 0)
+        assert np.allclose(c2, 1)
+
+        A1, b1, c1 = triples.beamsplitter_gate_Abc(0.1)
+        A_exp = [
+            [0, 0, 9.95004165e-01, -9.98334166e-02],
+            [0.0, 0, 9.98334166e-02, 9.95004165e-01],
+            [9.95004165e-01, 9.98334166e-02, 0, 0],
+            [-9.98334166e-02, 9.95004165e-01, 0, 0],
         ]
         assert np.allclose(A1, A_exp)
         assert np.allclose(b1, 0)
