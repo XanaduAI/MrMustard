@@ -281,6 +281,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
         return tf.math.pow(x, y)
 
+    def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
+        tf.experimental.numpy.experimental_enable_numpy_behavior()
+        return tf.experimental.numpy.kron(tensor1, tensor2)
+
+    def prod(self, x: tf.Tensor, axis: Union[None, int]):
+        return tf.math.reduce_prod(x, axis=axis)
+
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
 

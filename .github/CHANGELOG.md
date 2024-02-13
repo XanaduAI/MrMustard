@@ -1,6 +1,8 @@
 # Release 0.7.1 (current develop)
 
 ### New features
+* Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
+  several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
 
 ### Breaking changes
 

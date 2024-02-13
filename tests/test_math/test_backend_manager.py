@@ -513,6 +513,23 @@ class TestBackendManager:
         arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.pow(arr, 2)), math.pow(arr, 2))
 
+    def test_kron(self):
+        r"""
+        Tests the ``kron`` method.
+        """
+        t1 = math.astensor([[0, 1], [1, 0]])
+        t2 = math.eye(2)
+        kron = [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]
+        assert np.allclose(math.kron(t1, t2), kron)
+
+    def test_prod(self):
+        r"""
+        Tests the ``prod`` method.
+        """
+        assert np.allclose(math.prod([1]), 1)
+        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=0), [6, 6])
+        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=1), [4, 9])
+
     def test_real(self):
         r"""
         Tests the ``real`` method.
