@@ -90,7 +90,7 @@ class CircuitComponent:
         Initializes a circuit component from its attributes (a name, a ``Wires``,
         and a ``Representation``).
         """
-        ret = CircuitComponent(name)
+        ret = cls(name)
         ret._wires = wires
         ret._representation = representation
         return ret
@@ -198,8 +198,7 @@ class CircuitComponent:
 
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, but without adding
-        missing adjoints.
+        Contracts ``self`` and ``other``, without adding adjoints.
         """
         # set the name of the returned component
         name_ret = ""
@@ -238,6 +237,37 @@ class CircuitComponent:
         repr_ret = (LEFT[idx_z] @ RIGHT[idx_zconj]).reorder(order)
 
         return CircuitComponent.from_attributes(name_ret, wires_ret, repr_ret)
+    
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+        """
+        ret = self @ other
+
+        if not self.wires.bra:
+            if not other.wires.bra:
+                # self has ket, other has ket
+                return ret
+            elif not other.wires.ket:
+                # self has ket, other has bra
+                return ret @ ret.adjoint
+            # self has ket, other has ket and bra
+            return self.adjoint @ ret
+        elif not self.wires.ket:
+            if not other.wires.bra:
+                # self has bra, other has ket
+                return ret @ ret.adjoint
+            elif not other.wires.ket:
+                # self has bra, other has bra
+                return ret
+            # self has bra, other has ket and bra
+            return self.adjoint @ ret
+        if not other.wires.bra or not other.wires.ket:
+            # self has ket and bra, other has ket or bra
+            return ret @ other.adjoint
+        # self has ket and bra, other has ket and bra
+        return ret
 
     def __getitem__(self, idx: Union[int, Sequence[int]]):
         r"""

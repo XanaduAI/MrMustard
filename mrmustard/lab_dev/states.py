@@ -22,11 +22,10 @@ from typing import Sequence
 
 from mrmustard import math
 from ..physics.representations import Bargmann
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
-from .circuits import Circuit
 from .circuit_components import CircuitComponent
+from .transformations import Unitary, Channel
 
-__all__ = ["Pure", "State", "Vacuum"]
+__all__ = ["Ket", "State", "Vacuum"]
 
 
 class State(CircuitComponent):
@@ -34,11 +33,9 @@ class State(CircuitComponent):
     Base class for all states.
     """
 
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
 
 
-class Pure(State):
+class Ket(State):
     r"""
     Base class for all pure states.
 
@@ -50,8 +47,18 @@ class Pure(State):
     def __init__(self, name: str, modes: Sequence[int]):
         super().__init__(name, modes_out_ket=modes)
 
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        ret = super().__rshift__(other)
 
-class Vacuum(Pure):
+        # if isinstance(other, Unitary) and not ret.wires.input:
+        #     ret = Ket.from_attributes(ret.name, ret.wires, ret.representation)
+        # elif isinstance(other, Channel):
+        #     ret = DM.from_attributes(ret.name, ret.wires, ret.representation)
+        # elif isinstance(other, Ket)
+        return ret
+
+
+class Vacuum(Ket):
     r"""
     The N-mode vacuum state.
 

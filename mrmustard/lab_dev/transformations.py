@@ -34,9 +34,6 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
-
 
 class Unitary(Transformation):
     r"""
