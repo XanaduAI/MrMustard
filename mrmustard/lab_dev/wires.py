@@ -299,6 +299,26 @@ class Wires:
         Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
         """
         return len(self.ids) > 0
+    
+    def __eq__(self, other) -> bool:
+        r"""
+        Returns ``True`` if this ``Wires`` acts on the same modes as ``other``, ``False`` otherwise.
+        """
+        if self.output.bra.modes != other.output.bra.modes:
+            return False
+        if self.input.bra.modes != other.input.bra.modes:
+            return False
+        if self.output.ket.modes != other.output.ket.modes:
+            return False
+        if self.input.ket.modes != other.input.ket.modes:
+            return False
+        return True
+    
+    def __neq__(self, other) -> bool:
+        r"""
+        Returns ``False`` if this ``Wires`` is equal to ``other``, ``True`` otherwise.
+        """
+        return not self == other
 
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         r"""

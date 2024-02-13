@@ -167,6 +167,21 @@ class TestWires:
         assert w1.modes == [1]
         assert w1.ids == [w.ids[1], w.ids[3]]
 
+    def test_eq_neq(self):
+        w1 = Wires([0, 1], [2, 3], [4, 5], [6, 7])
+        w2 = Wires([0, 1], [2, 3], [4, 5], [6, 7])
+        w3 = Wires([], [2, 3], [4, 5], [6, 7])
+        w4 = Wires([0, 1], [], [4, 5], [6, 7])
+        w5 = Wires([0, 1], [2, 3], [], [6, 7])
+        w6 = Wires([0, 1], [2, 3], [4, 5], [])
+
+        assert w1 == w1
+        assert w1 == w2
+        assert w1 != w3
+        assert w1 != w4
+        assert w1 != w5
+        assert w1 != w6
+
     def test_matmul(self):
         # contracts 1,1 on bra side
         # contracts 3,3 and 13,13 on ket side (note order doesn't matter)
