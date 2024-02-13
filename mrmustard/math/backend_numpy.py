@@ -279,6 +279,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
+    def kron(self, tensor1: np.ndarray, tensor2: np.ndarray):
+        return np.kron(tensor1, tensor2)
+
+    def prod(self, x: np.ndarray, axis: Union[None, int]):
+        return np.prod(x, axis=axis)
+
     def real(self, array: np.ndarray) -> np.ndarray:
         return np.real(array)
 
