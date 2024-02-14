@@ -108,7 +108,7 @@ class TestCircuitComponent:
         result1 = vac012 @ d0 @ d1 @ a0 @ a1 @ a2 @ d2
         result2 = (vac012 @ d0) @ (d1 @ a0) @ a1 @ (a2 @ d2)
         result3 = vac012 @ (d0 @ (d1 @ a0 @ a1) @ a2 @ d2)
-        result4 = (vac012 @ (d0 @ (d1 @ (a0 @ (a1 @ (a2 @ d2))))))
+        result4 = vac012 @ (d0 @ (d1 @ (a0 @ (a1 @ (a2 @ d2)))))
 
         assert result1 == result2
         assert result1 == result3
