@@ -1,35 +1,42 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/anaconda
 {
-	"name": "MrMustard 🌭",
+	"name": "Mr Mustard",
 	"build": {
-		"dockerfile": "../env.Dockerfile"
+		"context": "..",
+		"dockerfile": "Dockerfile"
 	},
+	"features": {
+    "ghcr.io/julialang/devcontainer-features/julia:1": {
+        "channel": "1.9.3"
+    }
+	},
+	"postCreateCommand": "/bin/zsh ./.devcontainer/post-install.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
 				"ms-python.vscode-pylance",
-				"ms-python.pylint",
-				"ms-toolsai.jupyter",
+				"eamodio.gitlens",
+				"dbaeumer.vscode-eslint",
 				"GitHub.vscode-pull-request-github",
-				"mutantdino.resourcemonitor",
-				"njpwerner.autodocstring"
+				"mutantdino.resourcemonitor"
 			],
 			"settings": {
-				"python.languageServer": "Pylance",
-				"python.testing.unittestEnabled": false,
+                "python.testing.pytestArgs": [
+                    "tests"
+                ],
+                "python.testing.unittestEnabled": false,
                 "python.testing.pytestEnabled": true,
-				"python.testing.pytestArgs": [
-					"tests"
-				],
-				"python.analysis.typeCheckingMode": "off",
+                "python.linting.pylintEnabled": true,
+                "python.linting.enabled": true,
+				"python.languageServer": "Pylance",
 				"python.defaultInterpreterPath": "/usr/local/bin/python",
 				"python.terminal.executeInFileDir": true,
 				"code-runner.fileDirectoryAsCwd": true,
-				"autoDocstring.docstringFormat": "google"
+				"terminal.integrated.env.linux": {"PYTHONPATH": "/workspaces/mrmustard"}
             }
 		}
 	},
-	"remoteUser": "root",
-	"workspaceMount": "source=${localWorkspaceFolder},target=/mrmustard,type=bind",
-	"workspaceFolder": "/mrmustard"
+	"remoteUser": "root"
 }
