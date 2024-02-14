@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module contains the classes for the available ansatze.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -55,21 +59,18 @@ class Ansatz(ABC):
         r"""
         Negates this ansatz.
         """
-        ...
 
     @abstractmethod
     def __eq__(self, other: Ansatz) -> bool:
         r"""
         Whether this ansatz is equal to another ansatz.
         """
-        ...
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:
         r"""
         Sums this ansatz to another ansatz.
         """
-        ...
 
     def __sub__(self, other: Ansatz) -> Ansatz:
         r"""
@@ -85,21 +86,18 @@ class Ansatz(ABC):
         r"""
         Evaluates this ansatz at a given point in the domain.
         """
-        ...
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         r"""
         Divides this ansatz by another ansatz or by a scalar.
         """
-        ...
 
     @abstractmethod
     def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         r"""
         Multiplies this ansatz by another ansatz.
         """
-        ...
 
     def __rmul__(self, other: Scalar) -> Ansatz:
         r"""
@@ -273,7 +271,7 @@ class PolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor | Scalar] = [1.0],
+        c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
     ):
         self.name = name

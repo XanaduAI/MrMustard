@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+"""
+This module contains the classes for the available representations.
+"""
+
 from __future__ import annotations
 
-import numpy as np
+from abc import ABC, abstractmethod
 from matplotlib import colors
 import matplotlib.pyplot as plt
-from abc import ABC, abstractmethod
+import numpy as np
 
 from mrmustard import math
 from mrmustard.physics import bargmann
@@ -198,7 +203,7 @@ class Bargmann(Representation):
         self,
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
-        c: Batch[ComplexTensor] = [1.0],
+        c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = PolyExpAnsatz(A, b, c)
@@ -238,7 +243,7 @@ class Bargmann(Representation):
         The conjugate of this Bargmann object.
         """
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
-        new._contract_idxs = self._contract_idxs
+        new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
