@@ -194,6 +194,6 @@ class Attenuator(Channel):
             math.complex128,
         )
         B = math.cast([0.0, 0.0, 0.0, 0.0], math.complex128)
-        C = 1
+        C = math.cast(1.0, dtype=math.complex128)
 
         return Bargmann(A, B, C)
