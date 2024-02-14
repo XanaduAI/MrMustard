@@ -36,6 +36,8 @@ from mrmustard.utils.typing import (
     Tensor,
 )
 
+__all__ = ["Representation", "Bargmann", "Fock"]
+
 
 class Representation(ABC):
     r"""
@@ -123,20 +125,14 @@ class Bargmann(Representation):
 
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
 
         >>> # bargmann representation of one-mode vacuum
-        >>> A = np.array([[0,],])
-        >>> b = np.array([0,])
-        >>> c = 1
-        >>> rep_vac = Bargmann(A, b, c)
+        >>> rep_vac = Bargmann(*vacuum_state_Abc(1))
 
         >>> # bargmann representation of one-mode dgate with gamma=1+0j
-        >>> A = np.array([[0, 1], [1, 0]])
-        >>> b = np.array([1, -1])
-        >>> c = 0.6065306597126334
-        >>> rep_dgate = Bargmann(A, b, c)
+        >>> rep_dgate = Bargmann(*displacement_gate_Abc(1))
 
     The inner product is defined as the contraction of two Bargmann objects across
     marked indices.
@@ -144,6 +140,8 @@ class Bargmann(Representation):
     indices?)
 
     .. code-block ::
+
+        >>> import numpy as np
 
         >>> # mark indices for contraction
         >>> idx_vac = [0]
@@ -208,13 +206,11 @@ class Bargmann(Representation):
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = PolyExpAnsatz(A, b, c)
 
-    def __call__(self, z: ComplexTensor) -> ComplexTensor:
-        r"""Evaluates the Bargmann function at the given array of points."""
-        return self.ansatz(z)
-
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
-        r"""Returns a Bargmann object from an ansatz object."""
+        r"""
+        Returns a Bargmann object from an ansatz object.
+        """
         return cls(ansatz.A, ansatz.b, ansatz.c)
 
     @property
@@ -245,50 +241,14 @@ class Bargmann(Representation):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
-
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
-        r"""
-        A copy of self with the given indices marked for contraction.
-        """
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.ansatz.dim:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
-                )
-        new = self.__class__(self.A, self.b, self.c)
-        new._contract_idxs = idx
-        return new
-
-    def __matmul__(self, other: Bargmann) -> Bargmann:
-        r"""
-        The inner product of ansatze across the marked indices.
-        """
-        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
-            )
-        Abc = []
-        for A1, b1, c1 in zip(self.A, self.b, self.c):
-            for A2, b2, c2 in zip(other.A, other.b, other.c):
-                Abc.append(
-                    bargmann.contract_two_Abc(
-                        (A1, b1, c1),
-                        (A2, b2, c2),
-                        self._contract_idxs,
-                        other._contract_idxs,
-                    )
-                )
-        A, b, c = zip(*Abc)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
-
+    
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""
         The partial trace over the given index pairs.
 
         Args:
-            idx_z: indices to trace over
-            idx_zconj: indices to trace over
+            idx_z: The first part of the pairs of indices to trace over.
+            idx_zconj: The second part.
 
         Returns:
             Bargmann: the ansatz with the given indices traced over
@@ -309,8 +269,27 @@ class Bargmann(Representation):
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
-        Returns a new Bargmann object."""
+        r"""
+        Reorders the indices of the ``A`` matrix and ``b`` vector of the ``(A, b, c)`` triple in
+        this Bargmann object.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.triples import displacement_gate_Abc
+
+            >>> rep_dgate1 = Bargmann(*displacement_gate_Abc([0.1, 0.2, 0.3]))
+            >>> rep_dgate2 = Bargmann(*displacement_gate_Abc([0.2, 0.3, 0.1]))
+
+            >>> assert rep_dgate1.reorder([1, 2, 0, 4, 5, 3]) == rep_dgate2
+
+        Args:
+            order: The new order.
+        
+        Returns:
+            The reordered Bargmann object.
+        """
+        # @filippo, should we add error-checking? What if I pass an order that is incorrect (e.g., shorter)?
         A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
         return self.__class__(A, b, c)
 
@@ -323,17 +302,17 @@ class Bargmann(Representation):
         ylim=(-2 * np.pi, 2 * np.pi),
     ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
         r"""
-        Plots the Bargmann function .. math::`F(z)` on the complex plane. Phase is represented by
-        color, magnitude by brightness. The function can be multiplied by .. math::`exp(-|z|^2)`
+        Plots the Bargmann function :math:`F(z)` on the complex plane. Phase is represented by
+        color, magnitude by brightness. The function can be multiplied by :math:`exp(-|z|^2)`
         to represent the Bargmann function times the measure function (for integration).
 
         Args:
-            just_phase: whether to plot only the phase of the Bargmann function
-            with_measure: whether to plot the bargmann function times the measure function
-                .. math::`exp(-|z|^2)`
-            log_scale: whether to plot the log of the Bargmann function
-            xlim: `x` limits of the plot
-            ylim: `y` limits of the plot
+            just_phase: Whether to plot only the phase of the Bargmann function.
+            with_measure: Whether to plot the bargmann function times the measure function
+                :math:`exp(-|z|^2)`.
+            log_scale: Whether to plot the log of the Bargmann function.
+            xlim: The `x` limits of the plot.
+            ylim: The `y` limits of the plot.
 
         Returns:
             The figure and axes of the plot
@@ -373,6 +352,55 @@ class Bargmann(Representation):
         plt.show(block=False)
         return fig, ax
 
+    def __call__(self, z: ComplexTensor) -> ComplexTensor:
+        r"""
+        Evaluates the Bargmann function at the given array of points.
+
+        Args:
+            z: The array of points.
+
+        Returns:
+            The value of the Bargmann function at ``z``.
+        """
+        return self.ansatz(z)
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+        r"""
+        A copy of self with the given indices marked for contraction.
+        """
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i >= self.ansatz.dim:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                )
+        new = self.__class__(self.A, self.b, self.c)
+        new._contract_idxs = idx
+        return new
+
+    def __matmul__(self, other: Bargmann) -> Bargmann:
+        r"""
+        The inner product of ansatze across the marked indices.
+        """
+        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
+            )
+        Abc = []
+        for A1, b1, c1 in zip(self.A, self.b, self.c):
+            for A2, b2, c2 in zip(other.A, other.b, other.c):
+                Abc.append(
+                    bargmann.contract_two_Abc(
+                        (A1, b1, c1),
+                        (A2, b2, c2),
+                        self._contract_idxs,
+                        other._contract_idxs,
+                    )
+                )
+        A, b, c = zip(*Abc)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+
+
 
 class Fock(Representation):
     r"""
@@ -406,7 +434,7 @@ class Fock(Representation):
         >>> # outer product (tensor product)
         >>> fock7 = fock1 & fock3
 
-        >>> conjugation
+        >>> # conjugation
         >>> fock8 = fock1.conj()
 
     Args:
@@ -447,7 +475,9 @@ class Fock(Representation):
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
-        r"""Returns a copy of self with the given indices marked for contraction."""
+        r"""
+        Returns a copy of self with the given indices marked for contraction.
+        """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= len(self.array.shape):
@@ -459,10 +489,11 @@ class Fock(Representation):
         return new
 
     def __matmul__(self, other: Fock) -> Fock:
-        r"""Implements the inner product of ansatze across the marked indices.
+        r"""
+        Implements the inner product of ansatze across the marked indices.
 
         Batch:
-        The new Fock will hold the tensor product batch of them.
+        The new Fock holds the tensor product batch of them.
 
         Order of index:
         The new Fock's order is arranged as uncontracted elements in self and then other.
@@ -478,11 +509,11 @@ class Fock(Representation):
         r"""Implements the partial trace over the given index pairs.
 
         Args:
-            idxs1 tuple(int): first part of the pairs of indices to trace over
-            idxs2 tuple(int): second part
+            idxs1: The first part of the pairs of indices to trace over.
+            idxs2: The second part.
 
         Returns:
-            The ansatz with the given pairs of indices traced over
+            The traced-over Fock object.
         """
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
             raise ValueError("idxs must be of equal length and disjoint")

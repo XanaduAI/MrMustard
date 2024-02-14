@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains functions for transforming to the Bargmann representation.
+This module contains functions for performing calculations on objects in the Bargmann representations.
 """
 from typing import Sequence, Tuple
 

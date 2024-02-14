@@ -15,7 +15,7 @@
 # pylint: disable=redefined-outer-name
 
 """
-This module contains functions for performing calculations on Fock states.
+This module contains functions for performing calculations on objects in the Fock representations.
 """
 
 from functools import lru_cache

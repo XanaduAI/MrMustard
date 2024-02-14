@@ -403,10 +403,10 @@ class ArrayAnsatz(Ansatz):
 
     .. code-block ::
 
-        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+        >>> from mrmustard.physics.ansatze import ArrayAnsatz
 
         >>> array = np.random.random((2, 4, 5))
-        >>> ansatz = ArrayAnsatz(A, b, c)
+        >>> ansatz = ArrayAnsatz(array)
     """
 
     def __init__(self, array: Batch[Tensor]):
