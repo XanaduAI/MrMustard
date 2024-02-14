@@ -46,7 +46,7 @@ class Representation(ABC):
         r"""
         Returns a representation from an ansatz.
         """
-        
+
     def __eq__(self, other: Representation) -> bool:
         r"""
         Whether this representation is equal to another.
@@ -420,7 +420,7 @@ class Fock(Representation):
         self.ansatz = ArrayAnsatz(array=array)
 
     @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:    # pylint: disable=arguments-differ
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
         r"""
         Returns a Fock object from an ansatz object.
         """
