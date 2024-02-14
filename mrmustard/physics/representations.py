@@ -241,7 +241,7 @@ class Bargmann(Representation):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
-    
+
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""
         The partial trace over the given index pairs.
@@ -285,7 +285,7 @@ class Bargmann(Representation):
 
         Args:
             order: The new order.
-        
+
         Returns:
             The reordered Bargmann object.
         """
@@ -399,7 +399,6 @@ class Bargmann(Representation):
                 )
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
-
 
 
 class Fock(Representation):
