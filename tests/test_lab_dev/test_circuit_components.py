@@ -82,7 +82,7 @@ class TestConnect:
         Tests the ``connect`` function with components with kets and bras.
         """
         d1 = Dgate(1, modes=[0, 8, 9])
-        d1_adj = d1.adjoint()
+        d1_adj = d1.adjoint
         a1 = Attenuator(0.1, modes=[8])
 
         components = connect([d1, d1_adj, a1])
