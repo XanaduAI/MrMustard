@@ -162,6 +162,9 @@ class PolyExpBase(Ansatz):
 
     @property
     def degree(self) -> int:
+        r"""
+        The degree of this ansatz.
+        """
         if self.array.ndim == 1:
             return 0
         return self.array.shape[-1] - 1
