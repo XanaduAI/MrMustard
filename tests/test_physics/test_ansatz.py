@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable = missing-function-docstring
+"""This module contains tests for ``Ansatz`` objects."""
+
+# pylint: disable = missing-function-docstring, pointless-statement, comparison-with-itself
 
 import numpy as np
 import pytest
@@ -20,26 +22,6 @@ import pytest
 from mrmustard import math
 from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz
 from ..random import Abc_triple
-
-
-def Abc_triple(n: int):
-    r""""""
-    min_magnitude = 1e-9
-    max_magnitude = 1
-
-    # complex symmetric matrix A
-    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (n, n)
-    )
-    A = 0.5 * (A + A.T)  # make it symmetric
-
-    # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, (n,))
-
-    # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,))
-
-    return A, b, c
 
 
 class TestPolyExpAnsatz:
@@ -162,7 +144,7 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(
             A=[np.array([[0]]), np.array([[1]])], b=[np.array([1]), np.array([0])], c=[1, 2]
         )
-        ansatz._order_batch()
+        ansatz._order_batch()  # pylint: disable=protected-access
 
         assert np.allclose(ansatz.A[0], np.array([[1]]))
         assert np.allclose(ansatz.b[0], np.array([0]))
@@ -286,13 +268,18 @@ class TestArrayAnsatz:
         array2 = np.random.random((3, 4, 8, 9))
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
+
         with pytest.raises(Exception):
             aa1 + aa2
+
         with pytest.raises(Exception):
             aa1 - aa2
+
         with pytest.raises(Exception):
             aa1 * aa2
+
         with pytest.raises(Exception):
             aa1 / aa2
+
         with pytest.raises(Exception):
             aa1 == aa2

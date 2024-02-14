@@ -69,7 +69,9 @@ size = st.integers(min_value=1, max_value=9)
 
 
 def Abc_triple(n: int):
-    r""""""
+    r"""
+    Produces a random ``(A, b, c)`` triple for ``n`` modes.
+    """
     min_magnitude = 1e-9
     max_magnitude = 1
 
