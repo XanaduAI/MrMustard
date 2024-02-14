@@ -220,7 +220,7 @@ class TestTriples:
         e = 0.31622777
         assert np.allclose(A1, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
         assert np.allclose(b1, 0)
-        assert np.allclose(c1, 0.1)
+        assert np.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.attenuator_Abc([0.1, 1])
         e = 0.31622777
@@ -238,7 +238,7 @@ class TestTriples:
             ],
         )
         assert np.allclose(b2, 0)
-        assert np.allclose(c2, 0.1)
+        assert np.allclose(c2, 1.0)
 
     def test_attenuator_Abc_error(self):
         with pytest.raises(ValueError, match="in the interval"):
