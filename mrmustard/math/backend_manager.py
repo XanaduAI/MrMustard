@@ -903,6 +903,33 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("pow", (x, y))
 
+    def kron(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
+        r"""
+        The Kroenecker product of the given tensors.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: Another tensor.
+
+        Returns:
+            The Kroenecker product.
+        """
+        return self._apply("kron", (tensor1, tensor2))
+
+    def prod(self, array: Tensor, axis=None) -> Tensor:
+        r"""
+        The product of all elements in ``array``.
+
+        Args:
+            array: The array of elements to calculate the product of.
+            axis: The axis along which a product is performed. If ``None``, it calculates
+                the product of all elements in ``array``.
+
+        Returns:
+            The product of the elements in ``array``.
+        """
+        return self._apply("prod", (array, axis))
+
     def real(self, array: Tensor) -> Tensor:
         r"""The real part of ``array``.
 
@@ -990,16 +1017,24 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         Args:
             x: The array to take the square root of
-            dtype (type): ``dtype`` of the output array.
+            dtype: ``dtype`` of the output array.
 
         Returns:
             The square root of ``x``
         """
         return self._apply("sqrt", (x, dtype))
 
-    def sqrtm(self, tensor: Tensor) -> Tensor:
-        r"""The matrix square root."""
-        return self._apply("sqrtm", (tensor,))
+    def sqrtm(self, tensor: Tensor, dtype=None) -> Tensor:
+        r"""The matrix square root.
+
+        Args:
+            tensor: The tensor to take the matrix square root of.
+            dtype: The ``dtype`` of the output tensor. If ``None``, the output
+                is of type ``math.complex128``.
+
+        Returns:
+            The square root of ``x``"""
+        return self._apply("sqrtm", (tensor, dtype))
 
     def sum(self, array: Tensor, axes: Sequence[int] = None):
         r"""The sum of array.
@@ -1179,9 +1214,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """Categorical distribution over integers.
 
         Args:
-            probs (Tensor): tensor representing the probabilities of a set of Categorical
-                distributions.
-            name (str): name prefixed to operations created by this class
+            probs: The unnormalized probabilities of a set of Categorical distributions.
+            name: The name prefixed to operations created by this class.
 
         Returns:
             tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
