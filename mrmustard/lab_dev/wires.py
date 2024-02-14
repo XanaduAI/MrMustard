@@ -299,7 +299,7 @@ class Wires:
         Returns ``True`` if this ``Wires`` object has ids, ``False`` otherwise.
         """
         return len(self.ids) > 0
-    
+
     def __eq__(self, other) -> bool:
         r"""
         Returns ``True`` if this ``Wires`` acts on the same modes as ``other``, ``False`` otherwise.
@@ -313,7 +313,7 @@ class Wires:
         if self.input.ket.modes != other.input.ket.modes:
             return False
         return True
-    
+
     def __neq__(self, other) -> bool:
         r"""
         Returns ``False`` if this ``Wires`` is equal to ``other``, ``True`` otherwise.
@@ -351,7 +351,7 @@ class Wires:
     def __matmul__(self, other: Wires) -> Wires:
         r"""
         A new ``Wires`` object with the wires of ``self`` and ``other`` combined.
-        
+
         The output of ``self`` connects to the input of ``other`` wherever they match. All
         surviving wires are arranged in the standard order.
 

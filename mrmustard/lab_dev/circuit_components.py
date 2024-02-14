@@ -173,7 +173,7 @@ class CircuitComponent:
         instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
-    
+
     def __eq__(self, other) -> bool:
         r"""
         Whether this component is equal to another component.
@@ -238,7 +238,6 @@ class CircuitComponent:
         representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes(name_ret, wires_ret, representation_ret)
-
 
 
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:

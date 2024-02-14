@@ -16,9 +16,13 @@ r"""
 Tests for circuit components.
 """
 
+import numpy as np
+
+from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
+from mrmustard.lab_dev.wires import Wires
 
 
 class TestCircuitComponent:
@@ -36,6 +40,79 @@ class TestCircuitComponent:
         assert d.x is d_copy.x
         assert d.y is d_copy.y
         assert d.wires is not d_copy.wires
+
+    def test_matmul_one_mode(self):
+        r"""
+        Tests that ``__matmul__`` produces the correct outputs for one-mode components.
+        """
+        vac0 = Vacuum(1)
+        d0 = Dgate(1, modes=[0])
+        a0 = Attenuator(0.9, modes=[0])
+
+        result1 = vac0 @ d0
+        result1 = (result1 @ result1.adjoint) @ a0
+
+        assert result1.wires == Wires(modes_out_bra=[0], modes_out_ket=[0])
+        assert np.allclose(result1.representation.A, 0)
+        assert np.allclose(result1.representation.b, [0.9486833, 0.9486833])
+        assert np.allclose(result1.representation.c, 0.40656966)
+
+        result2 = result1 @ vac0.dual @ vac0.dual.adjoint
+        assert not result2.wires
+        assert np.allclose(result2.representation.A, 0)
+        assert np.allclose(result2.representation.b, 0)
+        assert np.allclose(result2.representation.c, 0.40656966)
+
+    def test_matmul_multi_modes(self):
+        r"""
+        Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
+        """
+        vac012 = Vacuum(3)
+        d0 = Dgate(0.1, 0.1, modes=[0])
+        d1 = Dgate(0.1, 0.1, modes=[1])
+        d2 = Dgate(0.1, 0.1, modes=[2])
+        a0 = Attenuator(0.8, modes=[0])
+        a1 = Attenuator(0.8, modes=[1])
+        a2 = Attenuator(0.7, modes=[2])
+
+        result = vac012 @ d0 @ d1 @ d2
+        result = result @ result.adjoint @ a0 @ a1 @ a2
+
+        assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
+        assert np.allclose(result.representation.A, 0)
+        assert np.allclose(
+            result.representation.b,
+            [
+                0.08944272 - 0.08944272j,
+                0.08944272 - 0.08944272j,
+                0.083666 - 0.083666j,
+                0.08944272 + 0.08944272j,
+                0.08944272 + 0.08944272j,
+                0.083666 + 0.083666j,
+            ],
+        )
+        assert np.allclose(result.representation.c, 0.95504196)
+
+    def test_matmul_is_associative(self):
+        r"""
+        Tests that ``__matmul__`` is associative, meaning ``a @ (b @ c) == (a @ b) @ c``.
+        """
+        vac012 = Vacuum(3)
+        d0 = Dgate(0.1, 0.1, modes=[0])
+        d1 = Dgate(0.1, 0.1, modes=[1])
+        d2 = Dgate(0.1, 0.1, modes=[2])
+        a0 = Attenuator(0.8, modes=[0])
+        a1 = Attenuator(0.8, modes=[1])
+        a2 = Attenuator(0.7, modes=[2])
+
+        result1 = vac012 @ d0 @ d1 @ a0 @ a1 @ a2 @ d2
+        result2 = (vac012 @ d0) @ (d1 @ a0) @ a1 @ (a2 @ d2)
+        result3 = vac012 @ (d0 @ (d1 @ a0 @ a1) @ a2 @ d2)
+        result4 = (vac012 @ (d0 @ (d1 @ (a0 @ (a1 @ (a2 @ d2))))))
+
+        assert result1 == result2
+        assert result1 == result3
+        assert result1 == result4
 
 
 class TestConnect:
