@@ -387,10 +387,6 @@ class TestBackendManager:
         exp2 = np.array([6, 7, 8])
         assert np.allclose(res2, exp2)
 
-        res3 = math.asnumpy(math.gather(arr, [], 0))
-        exp3 = math.zeros_like(arr)
-        assert np.allclose(res3, exp3)
-
     def test_imag(self):
         r"""
         Tests the ``imag`` method.
