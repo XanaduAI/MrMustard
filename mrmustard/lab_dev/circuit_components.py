@@ -198,13 +198,15 @@ class CircuitComponent:
         # initialized the ``Wires`` of the returned component
         wires_ret = self.wires @ other.wires
 
-        # find the indices of the wires being contracted
-        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
+        # find the indices of the wires being contracted on the bra side
         bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
-        idx_z = self.wires[bra_modes].bra.output.indices + self.wires[ket_modes].ket.output.indices
-        idx_zconj = (
-            other.wires[bra_modes].bra.input.indices + other.wires[ket_modes].ket.input.indices
-        )
+        idx_z = self.wires[bra_modes].bra.output.indices
+        idx_zconj = other.wires[bra_modes].bra.input.indices
+
+        # find the indices of the wires being contracted on the ket side
+        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
+        idx_z += self.wires[ket_modes].ket.output.indices
+        idx_zconj += other.wires[ket_modes].ket.input.indices
 
         # convert Bargmann -> Fock if needed
         LEFT = self.representation
