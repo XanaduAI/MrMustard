@@ -46,8 +46,7 @@ class Representation(ABC):
         r"""
         Returns a representation from an ansatz.
         """
-        ...
-
+        
     def __eq__(self, other: Representation) -> bool:
         r"""
         Whether this representation is equal to another.
@@ -209,7 +208,7 @@ class Bargmann(Representation):
         return self.ansatz(z)
 
     @classmethod
-    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:
+    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
         r"""Returns a Bargmann object from an ansatz object."""
         return cls(ansatz.A, ansatz.b, ansatz.c)
 
@@ -317,7 +316,6 @@ class Bargmann(Representation):
         log_scale: bool = False,
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
-        **kwargs,
     ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
         r"""
         Plots the Bargmann function .. math::`F(z)` on the complex plane. Phase is represented by
@@ -422,7 +420,7 @@ class Fock(Representation):
         self.ansatz = ArrayAnsatz(array=array)
 
     @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:    # pylint: disable=arguments-differ
         r"""
         Returns a Fock object from an ansatz object.
         """
@@ -440,7 +438,7 @@ class Fock(Representation):
         The conjugate of this Fock object.
         """
         new = self.from_ansatz(self.ansatz.conj)
-        new._contract_idxs = self._contract_idxs
+        new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
