@@ -6,6 +6,9 @@ mrmustard.physics
 
     physics/ansatze
     physics/representations
+    
+.. toctree::
+    :maxdepth: 1
 
     physics/bargmann
     physics/utils/fock_calculations
