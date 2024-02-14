@@ -195,11 +195,6 @@ class CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
         """
-        # set the name of the returned component
-        name_ret = ""
-
-        # self, other = other, self
-
         # initialized the ``Wires`` of the returned component
         wires_ret = self.wires @ other.wires
 
@@ -210,7 +205,6 @@ class CircuitComponent:
         idx_zconj = (
             other.wires[bra_modes].bra.input.indices + other.wires[ket_modes].ket.input.indices
         )
-        # print("hey", idx_z, idx_zconj)
 
         # convert Bargmann -> Fock if needed
         LEFT = self.representation
@@ -226,7 +220,6 @@ class CircuitComponent:
 
         # calculate the representation of the returned component
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
-        # print(representation_ret.b)
 
         # reorder the representation
         contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
@@ -234,10 +227,9 @@ class CircuitComponent:
             other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
         ]
         order = [contracted_idx.index(id) for id in wires_ret.ids]
-        # print(order)
         representation_ret = representation_ret.reorder(order)
 
-        return CircuitComponent.from_attributes(name_ret, wires_ret, representation_ret)
+        return CircuitComponent.from_attributes("", wires_ret, representation_ret)
 
 
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
