@@ -195,7 +195,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def from_backend(self, value) -> bool:
         return isinstance(value, np.ndarray)
 
-    def gather(self, array: np.ndarray, indices: Optional[np.ndarray], axis: int = 0) -> np.ndarray:
+    def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
         if self.astensor(indices).shape == (0,):
             return self.zeros_like(array)
         return np.take(array, indices, axis=axis)

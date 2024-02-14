@@ -593,6 +593,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
         r"""The values of the array at the given indices.
 
+        If indices is empty, it returns ``math.zeros_like(array)``.
+
         Args:
             array: The array to gather values from.
             indices: The indices to gather values from.
