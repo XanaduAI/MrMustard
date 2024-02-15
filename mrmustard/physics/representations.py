@@ -121,7 +121,7 @@ class Bargmann(Representation):
         F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on Bargmann objects including
-    linear combinations, outer product (``&``), and inner product (``@``).
+    linear combinations (``+``), outer product (``&``), and inner product (``@``).
 
     .. code-block ::
 
