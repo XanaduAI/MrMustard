@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains functions for performing calculations on Gaussian states.
+This module contains functions for performing calculations on objects in the Gaussian representations.
 """
 
 from typing import Any, Optional, Sequence, Tuple, Union
