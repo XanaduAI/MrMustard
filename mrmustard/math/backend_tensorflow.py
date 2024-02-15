@@ -63,7 +63,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
-    
+
     def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
         array1 = self.astensor(array1)
         array2 = self.astensor(array2)

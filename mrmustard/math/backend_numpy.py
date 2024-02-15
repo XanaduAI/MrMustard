@@ -58,7 +58,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
-    
+
     def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
         array1 = self.asnumpy(array1)
         array2 = self.asnumpy(array2)
