@@ -372,7 +372,7 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
     n_modes = len(eta)
 
     for e in eta:
-        if  math.real(e) > 1 or math.real(e) < 0:
+        if math.real(e) > 1 or math.real(e) < 0:
             msg = "Transmissivity must be a float in the interval ``[0, 1]``"
             raise ValueError(msg)
 
