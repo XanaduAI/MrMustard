@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.physics.bargmann import contract_two_Abc
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
@@ -160,6 +161,17 @@ class TestBargmannRepresentation:
         bargmann = Bargmann(*triple)
 
         assert bargmann(0.1 + 0.2j) == bargmann.ansatz(0.1 + 0.2j)
+
+    def test_matmul(self):
+        triple1 = Abc_triple(3)
+        triple2 = Abc_triple(3)
+
+        res1 = Bargmann(*triple1) @ Bargmann(*triple2)
+        exp1 = contract_two_Abc(triple1, triple2, [], [])
+        assert np.allclose(res1.A, exp1[0])
+        assert np.allclose(res1.b, exp1[1])
+        assert np.allclose(res1.c, exp1[2])
+        
 
 
 class TestFockRepresentation:

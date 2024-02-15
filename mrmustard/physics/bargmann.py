@@ -148,11 +148,17 @@ def complex_gaussian_integral(
     Z = math.zeros((n, n), dtype=A.dtype)
     X = math.block([[Z, I], [I, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
-    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-
     bM = math.gather(b, idx, axis=-1)
-    bR = math.gather(b, not_idx, axis=-1)
+
+    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
+    if math.asnumpy(not_idx).shape != (0,):
+        D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
+        R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
+        bR = math.gather(b, not_idx, axis=-1)
+    else:
+        D = math.zeros_like(math.gather(A, idx, axis=-1))
+        R = math.zeros_like(A)
+        bR = math.zeros_like(b)
 
     A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
     b_post = bR - math.matvec(D, math.solve(M, bM))
