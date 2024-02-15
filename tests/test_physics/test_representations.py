@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.bargmann import contract_two_Abc
+from mrmustard.physics.bargmann import contract_two_Abc, complex_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
@@ -142,12 +142,14 @@ class TestBargmannRepresentation:
         assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
         assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, -bargmann2.c], axis=0))
 
-    # @ Filippo??
-    # def test_trace(self):
-    #     bargmann = Bargmann(*Abc_triple(4)).trace([0], [2])
-    #     assert np.allclose(bargmann.A.shape, (1, 2, 2))
-    #     assert np.allclose(bargmann.b.shape, (1, 2))
-    #     assert np.allclose(bargmann.c.shape, (1,))
+    def test_trace(self):
+        triple = Abc_triple(4)
+        bargmann = Bargmann(*triple).trace([0], [2])
+        A, b, c = complex_gaussian_integral(triple, [0], [2])
+
+        assert np.allclose(bargmann.A, A)
+        assert np.allclose(bargmann.b, b)
+        assert np.allclose(bargmann.c, c)
 
     def test_reorder(self):
         triple = Abc_triple(3)
@@ -171,7 +173,6 @@ class TestBargmannRepresentation:
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
-        
 
 
 class TestFockRepresentation:

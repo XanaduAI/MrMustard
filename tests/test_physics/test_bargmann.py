@@ -75,6 +75,7 @@ def test_bargmann_numpy_transformation():
     transformation = Ggate(1)
     assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
 
+
 def test_join_Abc():
     """Tests the ``join_Abc`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
@@ -89,6 +90,7 @@ def test_join_Abc():
     b12 = math.concat([b1, b2], axis=-1)
     c12 = math.outer(c1, c2)
     return A12, b12, c12
+
 
 def test_complex_gaussian_integral():
     """Tests the ``complex_gaussian_integral`` method."""
@@ -113,13 +115,21 @@ def test_complex_gaussian_integral():
     assert np.allclose(res3[1], 0)
     assert np.allclose(res3[2], 1)
 
+
 def test_complex_gaussian_integral_error():
     """Tests the error of the ``complex_gaussian_integral`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
 
     with pytest.raises(ValueError, match="idx_z and idx_zconj must have the same length"):
-        complex_gaussian_integral(join_Abc((A1, b1, c1), (A2, b2, c2)), [0, 1], [4,])
+        complex_gaussian_integral(
+            join_Abc((A1, b1, c1), (A2, b2, c2)),
+            [0, 1],
+            [
+                4,
+            ],
+        )
+
 
 def test_contract_two_Abc():
     """Tests the error of the ``contract_two_Abc`` method."""
@@ -128,15 +138,15 @@ def test_contract_two_Abc():
 
     res1 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [], [])
     assert np.allclose(res1[0], math.block_diag(A1, A2))
-    assert np.allclose(res1[1], [0, 0, 0.1+0.3j, 0.2+0.3j, -0.1+0.3j, -0.2+0.3j])
+    assert np.allclose(res1[1], [0, 0, 0.1 + 0.3j, 0.2 + 0.3j, -0.1 + 0.3j, -0.2 + 0.3j])
     assert np.allclose(res1[2], c1 * c2)
 
     res2 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3])
     assert np.allclose(res2[0], math.zeros((2, 2)))
-    assert np.allclose(res2[1], [0.1+0.3j, 0.2+0.3j])
+    assert np.allclose(res2[1], [0.1 + 0.3j, 0.2 + 0.3j])
     assert np.allclose(res2[2], c1 * c2)
 
     res3 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1])
     assert np.allclose(res3[0], math.zeros((2, 2)))
-    assert np.allclose(res3[1], [-0.1+0.3j, -0.2+0.3j])
+    assert np.allclose(res3[1], [-0.1 + 0.3j, -0.2 + 0.3j])
     assert np.allclose(res3[2], c1 * c2)

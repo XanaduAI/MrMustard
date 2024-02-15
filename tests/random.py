@@ -82,10 +82,14 @@ def Abc_triple(n: int):
     A = 0.5 * (A + A.T)  # make it symmetric
 
     # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, (n,))
+    b = np.random.uniform(min_magnitude, max_magnitude, (n,)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (n,)
+    )
 
     # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,))
+    c = np.random.uniform(min_magnitude, max_magnitude, (1,)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (1,)
+    )
 
     return A, b, c
 

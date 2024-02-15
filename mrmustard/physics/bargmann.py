@@ -133,7 +133,10 @@ def complex_gaussian_integral(
         measure: the exponent of the measure (default is -1: Bargmann measure)
 
     Returns:
-        The ``(A,b,c)`` triple of the result of the integral
+        The ``(A,b,c)`` triple of the result of the integral.
+
+    Raises:
+        ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
     """
     A, b, c = Abc
     if len(idx_z) != len(idx_zconj):

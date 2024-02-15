@@ -257,9 +257,6 @@ class Bargmann(Representation):
             raise NotImplementedError(
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
-        if len(idx_z) != len(idx_zconj):
-            msg = f"The number of indices to trace over must be the same for ``z`` and ``z*`` (got {len(idx_z)} and {len(idx_zconj)})."
-            raise ValueError(msg)
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
             Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)

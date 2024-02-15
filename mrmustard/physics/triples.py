@@ -95,7 +95,7 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0.j
+    c = 1.0 + 0.0j
 
     return A, b, c
 
@@ -246,7 +246,7 @@ def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, S
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
     b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0.j
+    c = 1.0 + 0.0j
 
     return A, b, c
 
