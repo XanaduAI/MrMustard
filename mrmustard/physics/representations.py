@@ -134,10 +134,9 @@ class Bargmann(Representation):
         >>> # bargmann representation of one-mode dgate with gamma=1+0j
         >>> rep_dgate = Bargmann(*displacement_gate_Abc(1))
 
-    The inner product is defined as the contraction of two Bargmann objects across
-    marked indices.
-    (@filippo can you help me find a simple way to explain the story of the marked
-    indices?)
+    The inner product is defined as the contraction of two Bargmann objects across marked indices.
+    Indices are marked using ``__getitem__``. Once the indices are marked for contraction, they are
+    be used the next time the inner product (``@``) is called. For example:
 
     .. code-block ::
 
@@ -286,7 +285,6 @@ class Bargmann(Representation):
         Returns:
             The reordered Bargmann object.
         """
-        # @filippo, should we add error-checking? What if I pass an order that is incorrect (e.g., shorter)?
         A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
         return self.__class__(A, b, c)
 
