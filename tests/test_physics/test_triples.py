@@ -103,7 +103,7 @@ class TestTriples:
     def test_thermal_state_Abc(self):
         A1, b1, c1 = triples.thermal_state_Abc(0.1)
         assert np.allclose(A1, [[0, 0.09090909], [0.09090909, 0]])
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((2)))
         assert np.allclose(c1, 1 / (0.1 + 1))
 
         A2, b2, c2 = triples.thermal_state_Abc([0.1, 0.2])
@@ -116,20 +116,20 @@ class TestTriples:
                 [0, 0, 0.16666667, 0],
             ],
         )
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((4)))
         assert np.allclose(c2, 1 / (0.1 + 1) / (0.2 + 1))
 
     def test_rotation_gate_Abc(self):
         A1, b1, c1 = triples.rotation_gate_Abc(0.1)
         assert np.allclose(A1, [[0, 0.99500417 + 0.09983342j], [0.99500417 + 0.09983342j, 0]])
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((2)))
         assert np.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.rotation_gate_Abc([0.1, 0.2])
         g1 = 0.99500417 + 0.09983342j
         g2 = 0.98006658 + 0.19866933j
         assert np.allclose(A2, [[0, 0, g1, 0], [0, 0, 0, g2], [g1, 0, 0, 0], [0, g2, 0, 0]])
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((4)))
         assert np.allclose(c2, 1.0)
 
     def test_displacement_gate_Abc(self):
@@ -154,7 +154,7 @@ class TestTriples:
             A1,
             [[-0.09768127 - 1.98009738e-02j, 0.99502075], [0.99502075, 0.09768127 - 0.01980097j]],
         )
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((2)))
         assert np.allclose(c1, 0.9975072676192522)
 
         A2, b2, c2 = triples.squeezing_gate_Abc([0.1, 0.3], 0.2)
@@ -167,7 +167,7 @@ class TestTriples:
                 [0, 0.95662791, 0, 0.28550576 - 5.78748818e-02j],
             ],
         )
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((4)))
         assert np.allclose(c2, 0.9756354961606032)
 
         A3, b3, c3 = triples.squeezing_gate_Abc(0.1)
@@ -186,7 +186,7 @@ class TestTriples:
             [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
         ]
         assert np.allclose(A1, A_exp)
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((4)))
         assert np.allclose(c1, 1)
 
         A2, b2, c2 = triples.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
@@ -201,25 +201,25 @@ class TestTriples:
         )
         A_exp = np.block([[O_4, V], [V.T, O_4]])
         assert np.allclose(A2, A_exp)
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((8)))
         assert np.allclose(c2, 1)
 
-        A1, b1, c1 = triples.beamsplitter_gate_Abc(0.1)
+        A3, b3, c3 = triples.beamsplitter_gate_Abc(0.1)
         A_exp = [
             [0, 0, 9.95004165e-01, -9.98334166e-02],
             [0.0, 0, 9.98334166e-02, 9.95004165e-01],
             [9.95004165e-01, 9.98334166e-02, 0, 0],
             [-9.98334166e-02, 9.95004165e-01, 0, 0],
         ]
-        assert np.allclose(A1, A_exp)
-        assert np.allclose(b1, 0)
-        assert np.allclose(c1, 1)
+        assert np.allclose(A3, A_exp)
+        assert np.allclose(b3, np.zeros((4)))
+        assert np.allclose(c3, 1)
 
     def test_attenuator_Abc(self):
         A1, b1, c1 = triples.attenuator_Abc(0.1)
         e = 0.31622777
         assert np.allclose(A1, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((4)))
         assert np.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.attenuator_Abc([0.1, 1])
@@ -237,7 +237,7 @@ class TestTriples:
                 [0, 0, 0, 0, 0, 0, 1, 0],
             ],
         )
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((8)))
         assert np.allclose(c2, 1.0)
 
     def test_attenuator_Abc_error(self):
@@ -258,7 +258,7 @@ class TestTriples:
                 [0.0, 0, 0.70710678, 0],
             ],
         )
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((4)))
         assert np.allclose(c1, 0.5)
 
         A2, b2, c2 = triples.amplifier_Abc([2, 1])
@@ -275,7 +275,7 @@ class TestTriples:
                 [0, 0, 0, 0, 0, 0, 1, 0],
             ],
         )
-        assert np.allclose(b2, 0)
+        assert np.allclose(b2, np.zeros((8)))
         assert np.allclose(c2, 0.5)
 
     def test_amplifier_Abc_error(self):
@@ -286,5 +286,5 @@ class TestTriples:
     def test_fock_damping_Abc(self, n_modes):
         A1, b1, c1 = triples.fock_damping_Abc(n_modes)
         assert np.allclose(A1, np.kron(math.astensor([[0, 1], [1, 0]]), math.eye(2 * n_modes)))
-        assert np.allclose(b1, 0)
+        assert np.allclose(b1, np.zeros((4 * n_modes)))
         assert np.allclose(c1, 1)

@@ -218,7 +218,7 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
     c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
-    b = _vacuum_B_vector(n_modes)
+    b = _vacuum_B_vector(n_modes * 2)
 
     return A, b, c
 
@@ -245,7 +245,7 @@ def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, S
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
-    b = _vacuum_B_vector(n_modes)
+    b = _vacuum_B_vector(n_modes * 2)
     c = 1.0
 
     return A, b, c
@@ -391,7 +391,7 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
     reshape_list = _get_reshape_list_for_channel(n_modes)
 
     A = A[reshape_list, :][:, reshape_list]
-    b = _vacuum_B_vector(n_modes * 2)
+    b = _vacuum_B_vector(n_modes * 4)
     c = 1.0
 
     return A, b, c
@@ -437,7 +437,7 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
         ]
     )
     A = A[reshape_list, :][:, reshape_list]
-    b = _vacuum_B_vector(n_modes * 2)
+    b = _vacuum_B_vector(n_modes * 4)
     c = np.prod(1 / g)
 
     return A, b, c
