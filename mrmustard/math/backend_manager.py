@@ -199,6 +199,26 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The absolute value of the given ``array``.
         """
         return self._apply("abs", (array,))
+    
+    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
+        r"""
+        Whether two arrays are equal within tolerance.
+
+        The two arrays are compaired element-wise.
+
+        Args:
+            array1: An array.
+            array2: Another array.
+            atol: The absolute tolerance.
+
+        Returns:
+            Whether two arrays are equal within tolerance.
+
+        Raises:
+            ValueError: If the shape of the two arrays do not match.
+        """
+        return self._apply("allclose", (array1, array2, atol))
+
 
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.

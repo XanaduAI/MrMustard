@@ -58,6 +58,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
+    
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.asnumpy(array1)
+        array2 = self.asnumpy(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return np.allclose(array1, array2, atol=atol)
 
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
