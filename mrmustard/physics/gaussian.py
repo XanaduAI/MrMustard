@@ -594,7 +594,7 @@ def general_dyne(
     else:
         # If the projector is already given: proj_means
         # use the formula 5.139 in Serafini - Quantum Continuous Variables
-        # fixed by -0.5 on the exponential, hbar and pi with adaptation changes
+        # fixed by -0.5 on the exponential, added hbar and removed pi due to different convention
         outcome = proj_means
         prob = (
             settings.HBAR**M
