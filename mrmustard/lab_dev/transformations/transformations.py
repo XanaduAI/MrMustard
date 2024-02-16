@@ -22,33 +22,12 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy as np
 
 from mrmustard import math
-from ..physics.representations import Bargmann
-from .circuit_components import CircuitComponent
-from .utils import make_parameter
+from .base import Unitary, Channel
+from ...physics.representations import Bargmann
+from ...physics import triples
+from ..utils import make_parameter
 
-__all__ = ["Attenuator", "Channel", "Dgate", "Transformation", "Unitary"]
-
-
-class Transformation(CircuitComponent):
-    r"""
-    Base class for all transformations.
-    """
-
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
-
-
-class Unitary(Transformation):
-    r"""
-    Base class for all unitary transformations.
-
-    Arguments:
-        name: The name of this unitary.
-        modes: The modes that this unitary acts on.
-    """
-
-    def __init__(self, name, modes):
-        super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
+__all__ = ["Attenuator", "Dgate"]
 
 
 class Dgate(Unitary):
@@ -97,26 +76,7 @@ class Dgate(Unitary):
         if len(ys) == 1:
             ys = np.array([ys[0] for _ in range(num_modes)])
 
-        A = math.cast(np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes)), math.complex128)
-        B = math.cast(math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0), math.complex128)
-        C = math.cast(np.prod(math.exp(-abs(xs + 1j * ys) ** 2 / 2)), math.complex128)
-
-        return Bargmann(A, B, C)
-
-
-class Channel(Transformation):
-    r"""
-    Base class for all non-unitary transformations.
-
-    Arguments:
-        name: The name of this channel.
-        modes: The modes that this channel acts on.
-    """
-
-    def __init__(self, name, modes):
-        super().__init__(
-            name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
-        )
+        return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
 
 class Attenuator(Channel):
@@ -176,24 +136,5 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        if len(self.modes) > 1:
-            msg = "Attenuator's representation not supported for more than one mode"
-            raise ValueError(msg)
-
-        e = self.transmissivity.value
-
-        A = math.cast(
-            np.array(
-                [
-                    [0, np.sqrt(e), 0, 0],
-                    [np.sqrt(e), 0, 0, 1 - e],
-                    [0, 0, 0, np.sqrt(e)],
-                    [0, 1 - e, np.sqrt(e), 0],
-                ],
-            ),
-            math.complex128,
-        )
-        B = math.cast([0.0, 0.0, 0.0, 0.0], math.complex128)
-        C = math.cast(1.0, dtype=math.complex128)
-
-        return Bargmann(A, B, C)
+        eta = self.transmissivity.value
+        return Bargmann(*triples.attenuator_Abc(eta))

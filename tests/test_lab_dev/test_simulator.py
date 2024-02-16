@@ -35,7 +35,7 @@ class TestSimulator:
         r"""
         Simulates a circuit with a three-mode vacuum state undergoing one- and two-mode Dgates.
         """
-        vac = Vacuum(3)
+        vac = Vacuum([0, 1, 2])
         d0 = Dgate(1, modes=[0])
         d01 = Dgate([2, 3], modes=[0, 1])
         d1 = Dgate(4, modes=[1])
@@ -78,7 +78,7 @@ class TestSimulator:
         r"""
         Simulates a circuit with ``add_bras=True``.
         """
-        vac = Vacuum(2)
+        vac = Vacuum([0, 1])
         d0 = Dgate(1.0, modes=[0])
         d1 = Dgate(2.0, modes=[1])
         d01 = Dgate(3.0, modes=[0, 1])

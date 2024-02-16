@@ -45,7 +45,7 @@ class TestCircuitComponent:
         r"""
         Tests that ``__matmul__`` produces the correct outputs for one-mode components.
         """
-        vac0 = Vacuum(1)
+        vac0 = Vacuum([0])
         d0 = Dgate(1, modes=[0])
         a0 = Attenuator(0.9, modes=[0])
 
@@ -67,7 +67,7 @@ class TestCircuitComponent:
         r"""
         Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
         """
-        vac012 = Vacuum(3)
+        vac012 = Vacuum([0, 1, 2])
         d0 = Dgate(0.1, 0.1, modes=[0])
         d1 = Dgate(0.1, 0.1, modes=[1])
         d2 = Dgate(0.1, 0.1, modes=[2])
@@ -97,7 +97,7 @@ class TestCircuitComponent:
         r"""
         Tests that ``__matmul__`` is associative, meaning ``a @ (b @ c) == (a @ b) @ c``.
         """
-        vac012 = Vacuum(3)
+        vac012 = Vacuum([0, 1, 2])
         d0 = Dgate(0.1, 0.1, modes=[0])
         d1 = Dgate(0.1, 0.1, modes=[1])
         d2 = Dgate(0.1, 0.1, modes=[2])
@@ -124,7 +124,7 @@ class TestConnect:
         r"""
         Tests the ``connect`` function with ket-only components.
         """
-        vacuum = Vacuum(3)
+        vacuum = Vacuum([0, 1, 2])
         d1 = Dgate(1, modes=[0, 8, 9])
         d2 = Dgate(1, modes=[0, 1, 2])
 
@@ -178,7 +178,7 @@ class TestAddBra:
         r"""
         Tests the ``add_bra`` function with ket-only components.
         """
-        vacuum = Vacuum(3)
+        vacuum = Vacuum([0, 1, 2])
         d1 = Dgate(1, modes=[0, 8, 9])
 
         components = add_bra([vacuum, d1])
@@ -199,7 +199,7 @@ class TestAddBra:
         r"""
         Tests the ``add_bra`` function with components with kets and bras.
         """
-        vacuum = Vacuum(3)
+        vacuum = Vacuum([0, 1, 2])
         a1 = Attenuator(1, modes=[0, 8, 9])
 
         components = add_bra([vacuum, a1])
