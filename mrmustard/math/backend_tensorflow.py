@@ -90,13 +90,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
 
     def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
 
     def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
         if len(array.shape) == 2:
             array = self.expand_dims(array, 0)
         return array
