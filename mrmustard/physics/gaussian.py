@@ -585,11 +585,24 @@ def general_dyne(
 
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
-    pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
-    outcome = (
-        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
-    )
-    prob = pdf.prob(outcome)
+    if proj_means is None:
+        pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+        outcome = (
+            pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
+        )
+        prob = pdf.prob(outcome)
+    else:
+        # If the projector is already given: proj_means
+        # use the formula 5.139 in Serafini - Quantum Continuous Variables
+        # fixed by -0.5 on the exponential, hbar and pi with adaptation changes
+        outcome = proj_means
+        prob = (
+            settings.HBAR**M
+            * math.exp(
+                -0.5 * math.sum(math.solve(reduced_cov, (proj_means - b)) * (proj_means - b))
+            )
+            / math.sqrt(math.det(reduced_cov))
+        )
 
     # calculate conditional output state of unmeasured modes
     num_remaining_modes = N - M

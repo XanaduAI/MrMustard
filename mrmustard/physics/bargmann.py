@@ -126,6 +126,11 @@ def complex_gaussian_integral(
 
     :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
+    Note that the indices must be a complex variable pairs with each other (idx_z, idx_zconj) to make this contraction meaningful.
+    Please make sure the corresponding complex variable with respect to your Abc triples.
+    For examples, if the indices of Abc denotes the variables ``(\alpha, \beta, \alpha^*, \beta^*, \gamma, \eta)``, the contraction only works
+    with the indices between ``(\alpha, \alpha^*)`` pairs and ``(\beta, \beta^*)`` pairs.
+
     Arguments:
         A,b,c: the ``(A,b,c)`` triple
         idx_z: the tuple of indices of the z variables
@@ -158,13 +163,12 @@ def complex_gaussian_integral(
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
         R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
         bR = math.gather(b, not_idx, axis=-1)
+        A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
+        b_post = bR - math.matvec(D, math.solve(M, bM))
     else:
-        D = math.zeros_like(math.gather(A, idx, axis=-1))
-        R = math.zeros_like(A)
-        bR = math.zeros_like(b)
+        A_post = math.astensor([])
+        b_post = math.astensor([])
 
-    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.matvec(D, math.solve(M, bM))
     c_post = (
         c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
@@ -217,7 +221,12 @@ def contract_two_Abc(
     idx2: Sequence[int],
 ):
     r"""
-    Returns the contraction of two ``(A,b,c)`` triples.
+    Returns the contraction of two ``(A,b,c)`` triples with given indices.
+
+    Note that the indices must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
+    the corresponding complex variable with respect to your Abc triples.
+    For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
+    ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
 
     Arguments:
         Abc1: the first ``(A,b,c)`` triple

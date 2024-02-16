@@ -113,7 +113,9 @@ class Transformation(Tensor):
             State: the transformed state
         """
         X, Y, d = self.XYd(allow_none=False) if not dual else self.XYd_dual(allow_none=False)
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
+        cov, means = gaussian.CPTP(
+            math.astensor(state.cov), math.astensor(state.means), X, Y, d, state.modes, self.modes
+        )
         new_state = State(
             cov=cov, means=means, modes=state.modes, _norm=state.norm
         )  # NOTE: assumes modes don't change
