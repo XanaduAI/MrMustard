@@ -65,6 +65,30 @@ class TestBackendManager:
         res = math.asnumpy(math.abs(np.array(l)))
         assert np.allclose(res, np.abs(arr))
 
+    def test_allclose(self):
+        r"""
+        Tests the ``allclose`` method.
+        """
+        arr1 = [1, 2, 3]
+        arr2 = [1, 2, 3]
+        arr3 = [1.01, 2, 3]
+        arr4 = [2, 3, 1]
+
+        assert math.allclose(arr1, arr2)
+        assert not math.allclose(arr1, arr3)
+        assert math.allclose(arr1, arr3, 1e-2)
+        assert not math.allclose(arr1, arr4)
+
+    def test_allclose_error(self):
+        r"""
+        Tests the error of ``allclose`` method.
+        """
+        arr1 = [1, 2, 3]
+        arr2 = [[1, 2, 3]]
+
+        with pytest.raises(ValueError, match="Cannot compare"):
+            math.allclose(arr1, arr2)
+
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
         r"""

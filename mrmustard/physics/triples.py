@@ -40,14 +40,14 @@ def _vacuum_A_matrix(n_modes: int) -> Matrix:
     r"""
     The A matrix of the vacuum state.
     """
-    return math.zeros((n_modes, n_modes), dtype=math.complex128)
+    return math.zeros((n_modes, n_modes), math.complex128)
 
 
 def _vacuum_B_vector(n_modes: int) -> Vector:
     r"""
     The B vector of the vacuum state.
     """
-    return math.zeros((n_modes,), dtype=math.complex128)
+    return math.zeros((n_modes,), math.complex128)
 
 
 def _reshape(**kwargs) -> Generator:
@@ -95,7 +95,7 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0.0j
+    c = 1.0 + 0j
 
     return A, b, c
 
@@ -200,7 +200,7 @@ def displaced_squeezed_vacuum_state_Abc(
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
+def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of thermal states.
 
@@ -218,7 +218,7 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
     c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
-    b = _vacuum_B_vector(n_modes)
+    b = _vacuum_B_vector(n_modes * 2)
 
     return A, b, c
 
@@ -228,7 +228,7 @@ def thermal_state_Abc(nbar: Iterable) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
+def rotation_gate_Abc(theta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of rotation gates.
 
@@ -245,8 +245,8 @@ def rotation_gate_Abc(theta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, S
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = np.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
-    b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0.0j
+    b = _vacuum_B_vector(n_modes * 2)
+    c = 1.0 + 0j
 
     return A, b, c
 
@@ -313,7 +313,7 @@ def squeezing_gate_Abc(
 
 
 def beamsplitter_gate_Abc(
-    theta: Union[Scalar, Iterable], phi: Union[Scalar, Iterable] = 0
+    theta: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
@@ -343,7 +343,7 @@ def beamsplitter_gate_Abc(
 
     A = math.block([[O_n, V], [math.transpose(V), O_n]])
     b = _vacuum_B_vector(n_modes * 2)
-    c = 1
+    c = 1.0 + 0j
 
     return A, b, c
 
@@ -353,7 +353,7 @@ def beamsplitter_gate_Abc(
 # ~~~~~~~~~~
 
 
-def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
+def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of atternuators.
 
@@ -368,15 +368,15 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
     Raises:
         ValueError: If ``eta`` is larger than `1` or smaller than `0`.
     """
-    eta = math.atleast_1d(eta, math.float64)
+    eta = math.atleast_1d(eta, math.complex128)
     n_modes = len(eta)
 
     for e in eta:
-        if e > 1 or e < 0:
+        if math.real(e) > 1 or math.real(e) < 0:
             msg = "Transmissivity must be a float in the interval ``[0, 1]``"
             raise ValueError(msg)
 
-    O_n = math.zeros((n_modes, n_modes))
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
     eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes)).reshape((n_modes, n_modes))
     eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
 
@@ -391,13 +391,13 @@ def attenuator_Abc(eta: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar
     reshape_list = _get_reshape_list_for_channel(n_modes)
 
     A = A[reshape_list, :][:, reshape_list]
-    b = _vacuum_B_vector(n_modes * 2)
-    c = 1.0
+    b = _vacuum_B_vector(n_modes * 4)
+    c = 1.0 + 0j
 
     return A, b, c
 
 
-def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
+def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of amplifiers.
 
@@ -412,19 +412,19 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
     Raises:
         ValueError: If ``g`` is smaller than `1`.
     """
-    g = math.atleast_1d(g, math.float64)
+    g = math.atleast_1d(g, math.complex128)
     n_modes = len(g)
 
     for g_val in g:
-        if g_val < 1:
+        if math.real(g_val) < 1:
             msg = "Found amplifier with gain ``g`` smaller than `1`."
             raise ValueError(msg)
 
-    g = math.atleast_1d(g, math.float64)
+    g = math.atleast_1d(g, math.complex128)
     n_modes = len(g)
     reshape_list = _get_reshape_list_for_channel(n_modes)
 
-    O_n = math.zeros((n_modes, n_modes))
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
     g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
 
@@ -437,7 +437,7 @@ def amplifier_Abc(g: Union[Scalar, Iterable]) -> Union[Matrix, Vector, Scalar]:
         ]
     )
     A = A[reshape_list, :][:, reshape_list]
-    b = _vacuum_B_vector(n_modes * 2)
+    b = _vacuum_B_vector(n_modes * 4)
     c = np.prod(1 / g)
 
     return A, b, c
@@ -455,6 +455,6 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     A = _X_matrix_for_unitary(n_modes * 2)
     b = _vacuum_B_vector(n_modes * 4)
-    c = 1.0
+    c = 1.0 + 0j
 
     return A, b, c
