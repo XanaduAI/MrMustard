@@ -114,6 +114,10 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
 * Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
 [(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
+* Fixing a bug in `_transform_gaussian` in transformation.py that modifies the input state's cov and means.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
+* Fixing a bug in `general_dyne` in physics/gaussian.py that returns the wrong probability and outcomes with given projection.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
 
 ### Documentation
 
