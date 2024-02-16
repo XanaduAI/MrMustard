@@ -1,5 +1,5 @@
-Ansatze
-=======
+The representations' Ansatze
+============================
 
 .. currentmodule:: mrmustard.physics.ansatze
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains functions for transforming to the Bargmann representation.
+This module contains functions for performing calculations on objects in the Bargmann representations.
 """
 from typing import Sequence, Tuple
 
@@ -133,7 +133,10 @@ def complex_gaussian_integral(
         measure: the exponent of the measure (default is -1: Bargmann measure)
 
     Returns:
-        The ``(A,b,c)`` triple of the result of the integral
+        The ``(A,b,c)`` triple of the result of the integral.
+
+    Raises:
+        ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
     """
     A, b, c = Abc
     if len(idx_z) != len(idx_zconj):
@@ -142,6 +145,7 @@ def complex_gaussian_integral(
     idx = tuple(idx_z) + tuple(idx_zconj)
     if not idx:
         return A, b, c
+    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
     I = math.eye(n, dtype=A.dtype)
     Z = math.zeros((n, n), dtype=A.dtype)

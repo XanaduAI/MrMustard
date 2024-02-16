@@ -37,4 +37,7 @@ jobs:
           poetry install --extras "ray" --with dev
 
       - name: Run tests
-        run: python -m pytest --doctest-modules mrmustard/lab_dev
+        run: |
+          python -m pytest --doctest-modules mrmustard/physics/ansatze.py
+          python -m pytest --doctest-modules mrmustard/physics/representations.py 
+          python -m pytest --doctest-modules mrmustard/lab_dev
