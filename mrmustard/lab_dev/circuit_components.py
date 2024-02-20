@@ -158,7 +158,7 @@ class CircuitComponent:
         name = ret.name + "_adj"
         wires = ret.wires.adjoint
         representation = ret.representation.conj()
-        return CircuitComponent.from_attributes(name, wires, representation)
+        return ret
 
     @property
     def dual(self) -> CircuitComponent:
@@ -178,7 +178,7 @@ class CircuitComponent:
         it by reference, except for its wires, which are copied by value.
         """
         instance = super().__new__(self.__class__)
-        instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
+        instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
