@@ -155,11 +155,11 @@ class CircuitComponent:
         conjugate of the representation and switching ket and bra wires.
         """
         ret = self.light_copy()
-        name = ret.name + "_adj"
-        wires = ret.wires.adjoint
-        representation = ret.representation.conj()
+        ret._name += "_adj"
+        ret._wires = ret.wires.adjoint
+        ret._representation = ret.representation.conj()
         return ret
-
+    
     @property
     def dual(self) -> CircuitComponent:
         r"""
