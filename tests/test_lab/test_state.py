@@ -1,7 +1,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab import Attenuator, Coherent, Gaussian
+from mrmustard.lab import Attenuator, Coherent, Gaussian, Vacuum, Dgate
 from mrmustard.lab.abstract.state import mikkel_plot
 
 
@@ -58,3 +58,14 @@ def test_mikkel_plot():
 
     assert fig is not None
     assert axs is not None
+
+
+def test_rshit():
+    """Tests that right shifr of the state will not change the state object. This was a bug (PR349)."""
+    vac0 = Vacuum(1)
+    vac0_cov_original = vac0.cov
+    vac0_means_original = vac0.means
+    d1 = Dgate(0.1, 0.1)
+    _ = vac0 >> d1
+    assert np.all(vac0_cov_original == vac0.cov)
+    assert np.all(vac0_means_original == vac0.means)
