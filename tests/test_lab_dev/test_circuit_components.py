@@ -93,6 +93,21 @@ class TestCircuitComponent:
         )
         assert np.allclose(result.representation.c, 0.95504196)
 
+    def test_adjoint(self):
+        r"""
+        Tests the ``adjoint`` method. 
+        """
+        d1 = Dgate(0.1, 0.2)
+        d1_adj = d1.adjoint
+
+        assert d1_adj.name == d1.name + "_adj"
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
     def test_matmul_is_associative(self):
         r"""
         Tests that ``__matmul__`` is associative, meaning ``a @ (b @ c) == (a @ b) @ c``.

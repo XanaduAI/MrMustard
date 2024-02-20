@@ -18,7 +18,7 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Callable, Optional, Sequence, Union
 
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
@@ -118,7 +118,11 @@ class CircuitComponent:
         r"""
         A representation of this circuit component.
         """
-        return self._representation
+        try:
+            # the `adjoint` and `dual` methods set `self._representation` to lambdas
+            return self._representation()
+        except TypeError:
+            return self._representation
 
     @property
     def modes(self) -> set(int):
@@ -157,7 +161,7 @@ class CircuitComponent:
         ret = self.light_copy()
         ret._name += "_adj"
         ret._wires = ret.wires.adjoint
-        ret._representation = ret.representation.conj()
+        ret._representation = lambda: self.representation.conj()
         return ret
     
     @property
@@ -169,7 +173,7 @@ class CircuitComponent:
         ret = self.light_copy()
         ret._name += "_dual"
         ret._wires = ret.wires.dual
-        ret._representation = ret.representation.conj()
+        ret._representation = lambda: self.representation.conj()
         return ret
 
     def light_copy(self) -> CircuitComponent:
