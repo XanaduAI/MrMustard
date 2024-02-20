@@ -32,22 +32,41 @@ __all__ = ["Attenuator", "Dgate"]
 
 class Dgate(Unitary):
     r"""
+    Phase space displacement gate.
 
-    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
+    all the modes share the same parameters.
 
-    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    .. code-block ::
 
-    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Dgate
+
+        >>> gate = Dgate(0.1, [0.2, 0.3], modes=[1, 2])
+        >>> assert gate.modes == [1, 2]
+        >>> assert np.allclose(gate.x.value, [0.1, 0.1])
+        >>> assert np.allclose(gate.y.value, [0.2, 0.3])
+
+    To apply mode-specific values use a list of floats, one can optionally set bounds for each
     parameter, which the optimizer will respect.
 
     Args:
-        x (float or List[float]): the list of displacements along the x axis
-        x_bounds (float, float): bounds for the displacement along the x axis
-        x_trainable (bool): whether x is a trainable variable
-        y (float or List[float]): the list of displacements along the y axis
-        y_bounds (float, float): bounds for the displacement along the y axis
-        y_trainable bool: whether y is a trainable variable
-        modes (optional, List[int]): the list of modes this gate is applied to
+        x: The displacements along the `x` axis.
+        x_bounds: The bounds for the displacement along the `x` axis.
+        x_trainable: Whether `x` is a trainable variable.
+        y: The displacements along the `y` axis.
+        y_bounds: The bounds for the displacement along the `y` axis.
+        y_trainable: Whether `y` is a trainable variable.
+        modes: The modes this gate is applied to.
+
+    .. details::
+
+        The displacement gate is a Gaussian gate defined as
+
+        .. math::
+            D(\alpha) = \exp(\alpha a^\dagger -\alpha^* a) = \exp\left(-i\sqrt{2}(\re(\alpha) \hat{p} -\im(\alpha) \hat{x})/\sqrt{\hbar}\right)
+
+        where :math:`\alpha = x + iy`.
     """
 
     def __init__(
@@ -82,31 +101,34 @@ class Dgate(Unitary):
 class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
-    It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
-    lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
+    If ``transmissivity`` andis an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
+    all the modes share the same transmissivity.
 
-    The CPT channel is given by
+    .. code-block ::
 
-    .. math::
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Attenuator
 
-        X = sqrt(transmissivity) * I
-        Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
-
-    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
-    If ``transmissivity`` is a single float, the parallel instances of the gate share that parameter.
-
-    To apply mode-specific values use a list of floats.
-
-    One can optionally set bounds for `transmissivity`, which the optimizer will respect.
+        >>> channel = Attenuator(0.1, modes=[1, 2])
+        >>> assert channel.modes == [1, 2]
+        >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
+        >>> assert np.allclose(channel.nbar.value, 0)
 
     Args:
-        transmissivity (float or List[float]): the list of transmissivities
-        nbar (float): the average number of photons in the thermal state
-        transmissivity_trainable (bool): whether transmissivity is a trainable variable
-        nbar_trainable (bool): whether nbar is a trainable variable
-        transmissivity_bounds (float, float): bounds for the transmissivity
-        nbar_bounds (float, float): bounds for the average number of photons in the thermal state
-        modes (optional, List[int]): the list of modes this gate is applied to
+        transmissivity: The transmissivity.
+        nbar: The average number of photons in the thermal state.
+        transmissivity_trainable: Whether the transmissivity is a trainable variable.
+        nbar_trainable: Whether nbar is a trainable variable.
+        transmissivity_bounds: The bounds for the transmissivity.
+        nbar_bounds: The bounds for the average number of photons in the thermal state.
+        modes: The modes this gate is applied to.
+
+    .. details::
+
+        The attenuator is defined as
+
+        .. math::
+            ??@yuan
     """
 
     def __init__(
@@ -120,8 +142,7 @@ class Attenuator(Channel):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
-            name="Att",
+            modes=modes or list(range(len(math.atleast_1d(transmissivity)))), name="Att"
         )
         self._add_parameter(
             make_parameter(

@@ -18,12 +18,12 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union
 
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
 __all__ = ["CircuitComponent"]
@@ -46,10 +46,10 @@ class CircuitComponent:
     def __init__(
         self,
         name: str,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
         representation: Optional[Representation] = None,
     ) -> None:
         # TODO: Add validation to check that wires and representation are compatible (e.g.,
@@ -66,10 +66,10 @@ class CircuitComponent:
         A: Batch[ComplexMatrix],
         B: Batch[ComplexVector],
         c: Batch[ComplexTensor],
-        modes_in_ket: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
     ):
         r"""
         Initializes a circuit component from Bargmann's A, B, and c.
@@ -99,9 +99,17 @@ class CircuitComponent:
         r"""
         Adds a parameter to this circuit component.
 
-        Arguments:
+        Args:
             parameter: The parameter to add.
+
+        Raises:
+            ValueError: If the length of the given parameter is incompatible with the number
+                of modes.
         """
+        if parameter.value.shape != ():
+            if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
+                msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
+                raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
@@ -113,7 +121,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> set(Mode):
+    def modes(self) -> set(int):
         r"""
         A set with all the modes in this component.
         """
@@ -182,7 +190,7 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
+    def __getitem__(self, idx: Union[int, Sequence[int]]):
         r"""
         Returns a slice of this component for the given modes.
         """
