@@ -76,18 +76,18 @@ class Coherent(Ket):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
 
-        >>> state = Coherent(x=[0.3, 0.4, 0.5], y=0.2, modes=[0, 1, 2])
+        >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
         >>> assert state.modes == [0, 1, 2]
         >>> # assert Coherent(x=0.5, y=0.2) == Vacuum([0]) >> Dgate(x=0.5, y=0.2)
 
     Args:
+        modes: The modes of the coherent state.
         x: The `x` displacement of the coherent state.
         y: The `y` displacement of the coherent state.
         x_trainable: Whether the `x` displacement is trainable.
         y_trainable: Whether the `y` displacement is trainable.
         x_bounds: The bounds of the `x` displacement.
         y_bounds: The bounds of the `y` displacement.
-        modes: The modes of the coherent state.
 
     .. details::
 
@@ -103,15 +103,27 @@ class Coherent(Ket):
 
     def __init__(
         self,
+        modes: Iterable[int],
         x: Union[float, Iterable[float]] = 0.0,
         y: Union[float, Iterable[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Iterable[int]] = None,
     ):
-        m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        super().__init__("Coherent", modes=modes or list(range(m)))
+        super().__init__("Coherent", modes=modes)
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        num_modes = len(self.modes)
+
+        xs = math.atleast_1d(self.x.value)
+        if len(xs) == 1:
+            xs = math.astensor([xs[0] for _ in range(num_modes)])
+        ys = math.atleast_1d(self.y.value)
+        if len(ys) == 1:
+            ys = math.astensor([ys[0] for _ in range(num_modes)])
+
+        return Bargmann(*triples.coherent_state_Abc(xs, ys))

@@ -18,7 +18,7 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Iterable, Tuple, Union
 import numpy as np
 
 from mrmustard import math
@@ -42,7 +42,7 @@ class Dgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Dgate
 
-        >>> gate = Dgate(0.1, [0.2, 0.3], modes=[1, 2])
+        >>> gate = Dgate(modes=[1, 2], 0.1, [0.2, 0.3])
         >>> assert gate.modes == [1, 2]
         >>> assert np.allclose(gate.x.value, [0.1, 0.1])
         >>> assert np.allclose(gate.y.value, [0.2, 0.3])
@@ -51,13 +51,13 @@ class Dgate(Unitary):
     parameter, which the optimizer will respect.
 
     Args:
+        modes: The modes this gate is applied to.
         x: The displacements along the `x` axis.
         x_bounds: The bounds for the displacement along the `x` axis.
         x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
         y_bounds: The bounds for the displacement along the `y` axis.
         y_trainable: Whether `y` is a trainable variable.
-        modes: The modes this gate is applied to.
 
     .. details::
 
@@ -71,16 +71,15 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        x: Union[float, Sequence[float]] = 0.0,
-        y: Union[float, Sequence[float]] = 0.0,
+        modes: Iterable[int] = None,
+        x: Union[float, Iterable[float]] = 0.0,
+        y: Union[float, Iterable[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = None,
     ) -> None:
-        m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        super().__init__("Dgate", modes=modes or list(range(m)))
+        super().__init__("Dgate", modes=modes)
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -90,10 +89,10 @@ class Dgate(Unitary):
 
         xs = math.atleast_1d(self.x.value)
         if len(xs) == 1:
-            xs = np.array([xs[0] for _ in range(num_modes)])
+            xs = math.astensor([xs[0] for _ in range(num_modes)])
         ys = math.atleast_1d(self.y.value)
         if len(ys) == 1:
-            ys = np.array([ys[0] for _ in range(num_modes)])
+            ys = math.astensor([ys[0] for _ in range(num_modes)])
 
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
@@ -109,19 +108,19 @@ class Attenuator(Channel):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Attenuator
 
-        >>> channel = Attenuator(0.1, modes=[1, 2])
+        >>> channel = Attenuator(modes=[1, 2], 0.1)
         >>> assert channel.modes == [1, 2]
         >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
         >>> assert np.allclose(channel.nbar.value, 0)
 
     Args:
+        modes: The modes this gate is applied to.
         transmissivity: The transmissivity.
         nbar: The average number of photons in the thermal state.
         transmissivity_trainable: Whether the transmissivity is a trainable variable.
         nbar_trainable: Whether nbar is a trainable variable.
         transmissivity_bounds: The bounds for the transmissivity.
         nbar_bounds: The bounds for the average number of photons in the thermal state.
-        modes: The modes this gate is applied to.
 
     .. details::
 
@@ -133,17 +132,15 @@ class Attenuator(Channel):
 
     def __init__(
         self,
+        modes: Optional[Iterable[int]] = None,
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
         nbar: float = 0.0,
         transmissivity_trainable: bool = False,
         nbar_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[list[int]] = None,
     ):
-        super().__init__(
-            modes=modes or list(range(len(math.atleast_1d(transmissivity)))), name="Att"
-        )
+        super().__init__(modes=modes, name="Att")
         self._add_parameter(
             make_parameter(
                 transmissivity_trainable,

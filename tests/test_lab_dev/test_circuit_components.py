@@ -34,7 +34,7 @@ class TestCircuitComponent:
         r"""
         Tests the ``light_copy`` method.
         """
-        d = Dgate(x=1, y=2, y_trainable=True)
+        d = Dgate(modes=[0], x=1, y=2, y_trainable=True)
         d_copy = d.light_copy()
 
         assert d.x is d_copy.x
@@ -46,8 +46,8 @@ class TestCircuitComponent:
         Tests that ``__matmul__`` produces the correct outputs for one-mode components.
         """
         vac0 = Vacuum([0])
-        d0 = Dgate(1, modes=[0])
-        a0 = Attenuator(0.9, modes=[0])
+        d0 = Dgate(modes=[0], x=1)
+        a0 = Attenuator(modes=[0], transmissivity=0.9)
 
         result1 = vac0 @ d0
         result1 = (result1 @ result1.adjoint) @ a0
@@ -68,12 +68,12 @@ class TestCircuitComponent:
         Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
         """
         vac012 = Vacuum([0, 1, 2])
-        d0 = Dgate(0.1, 0.1, modes=[0])
-        d1 = Dgate(0.1, 0.1, modes=[1])
-        d2 = Dgate(0.1, 0.1, modes=[2])
-        a0 = Attenuator(0.8, modes=[0])
-        a1 = Attenuator(0.8, modes=[1])
-        a2 = Attenuator(0.7, modes=[2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
 
         result = vac012 @ d0 @ d1 @ d2
         result = result @ result.adjoint @ a0 @ a1 @ a2
@@ -97,7 +97,7 @@ class TestCircuitComponent:
         r"""
         Tests the ``adjoint`` method.
         """
-        d1 = Dgate(0.1, 0.2)
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
         d1_adj = d1.adjoint
 
         assert d1_adj.name == d1.name
@@ -113,12 +113,12 @@ class TestCircuitComponent:
         Tests that ``__matmul__`` is associative, meaning ``a @ (b @ c) == (a @ b) @ c``.
         """
         vac012 = Vacuum([0, 1, 2])
-        d0 = Dgate(0.1, 0.1, modes=[0])
-        d1 = Dgate(0.1, 0.1, modes=[1])
-        d2 = Dgate(0.1, 0.1, modes=[2])
-        a0 = Attenuator(0.8, modes=[0])
-        a1 = Attenuator(0.8, modes=[1])
-        a2 = Attenuator(0.7, modes=[2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
 
         result1 = vac012 @ d0 @ d1 @ a0 @ a1 @ a2 @ d2
         result2 = (vac012 @ d0) @ (d1 @ a0) @ a1 @ (a2 @ d2)
@@ -140,8 +140,8 @@ class TestConnect:
         Tests the ``connect`` function with ket-only components.
         """
         vacuum = Vacuum([0, 1, 2])
-        d1 = Dgate(1, modes=[0, 8, 9])
-        d2 = Dgate(1, modes=[0, 1, 2])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
+        d2 = Dgate(modes=[0, 1, 2], x=1)
 
         components = [vacuum, d1, d1, d2]
         components = connect(components)
@@ -173,9 +173,9 @@ class TestConnect:
         r"""
         Tests the ``connect`` function with components with kets and bras.
         """
-        d1 = Dgate(1, modes=[0, 8, 9])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
         d1_adj = d1.adjoint
-        a1 = Attenuator(0.1, modes=[8])
+        a1 = Attenuator(modes=[8], transmissivity=0.1)
 
         components = connect([d1, d1_adj, a1])
 
@@ -194,7 +194,7 @@ class TestAddBra:
         Tests the ``add_bra`` function with ket-only components.
         """
         vacuum = Vacuum([0, 1, 2])
-        d1 = Dgate(1, modes=[0, 8, 9])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
 
         components = add_bra([vacuum, d1])
 
@@ -207,7 +207,7 @@ class TestAddBra:
         Tests the ``add_bra`` function with components with kets and bras.
         """
         vacuum = Vacuum([0, 1, 2])
-        a1 = Attenuator(1, modes=[0, 8, 9])
+        a1 = Attenuator(modes=[0, 8, 9], transmissivity=1)
 
         components = add_bra([vacuum, a1])
 
