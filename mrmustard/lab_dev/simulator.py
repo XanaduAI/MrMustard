@@ -18,6 +18,7 @@ Simulators for quantum circuits.
 
 from __future__ import annotations
 
+import numpy as np
 from opt_einsum import contract_path
 from opt_einsum.parser import get_symbol
 from typing import Sequence

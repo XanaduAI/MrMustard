@@ -95,12 +95,12 @@ class TestCircuitComponent:
 
     def test_adjoint(self):
         r"""
-        Tests the ``adjoint`` method. 
+        Tests the ``adjoint`` method.
         """
         d1 = Dgate(0.1, 0.2)
         d1_adj = d1.adjoint
 
-        assert d1_adj.name == d1.name + "_adj"
+        assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.representation == d1.representation.conj()
 
@@ -198,17 +198,9 @@ class TestAddBra:
 
         components = add_bra([vacuum, d1])
 
-        assert len(components) == 4
-
-        assert isinstance(components[0], Vacuum)
-        assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], CircuitComponent)
-        assert not components[1].wires.ket and components[1].wires.bra
-
-        assert isinstance(components[2], Dgate)
-        assert components[2].wires.ket and not components[2].wires.bra
-        assert isinstance(components[3], CircuitComponent)
-        assert not components[3].wires.ket and components[3].wires.bra
+        assert len(components) == 2
+        assert components[0] == vacuum @ vacuum.adjoint
+        assert components[1] == d1 @ d1.adjoint
 
     def test_ket_and_bra(self):
         r"""
@@ -219,12 +211,6 @@ class TestAddBra:
 
         components = add_bra([vacuum, a1])
 
-        assert len(components) == 3
-
-        assert isinstance(components[0], Vacuum)
-        assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], CircuitComponent)
-        assert not components[1].wires.ket and components[1].wires.bra
-
-        assert isinstance(components[2], Attenuator)
-        assert components[2].wires.ket and components[2].wires.bra
+        assert len(components) == 2
+        assert components[0] == vacuum @ vacuum.adjoint
+        assert components[1] == a1

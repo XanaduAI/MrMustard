@@ -86,12 +86,6 @@ class Dgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        # check the representation of the base class (always ``None``, unless this gate
-        # was obtained with the methods ``adjoint`` or ``dual``)
-        super_rep = super().representation
-        if super_rep:
-            return super_rep
-        
         num_modes = len(self.modes)
 
         xs = math.atleast_1d(self.x.value)
@@ -163,11 +157,5 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        # check the representation of the base class (always ``None``, unless this gate
-        # was obtained with the methods ``adjoint`` or ``dual``)
-        super_rep = super().representation
-        if super_rep:
-            return super_rep
-        
         eta = self.transmissivity.value
         return Bargmann(*triples.attenuator_Abc(eta))
