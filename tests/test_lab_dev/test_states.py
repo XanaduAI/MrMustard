@@ -65,6 +65,14 @@ class TestVacuum:
         assert state.name == "Vacuum"
         assert state.modes == sorted(modes)
 
+    @pytest.mark.parametrize("n_modes", [1, 3])
+    def test_representation(self, n_modes):
+        rep = Vacuum([i for i in range(n_modes)]).representation
+
+        assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
+        assert math.allclose(rep.b, np.zeros((1, n_modes)))
+        assert math.allclose(rep.c, [1.0])
+
 
 class TestCoherent:
     r"""
@@ -88,6 +96,20 @@ class TestCoherent:
 
         with pytest.raises(ValueError, match="Length of ``y``"):
             Coherent(modes=[0, 1], x=1, y=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = Coherent([0], 1, 1)
+        state2 = Coherent([0], 1, 1, x_trainable=True, x_bounds=(-2, 2))
+        state3 = Coherent([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.x.value = 3
+
+        state2.x.value = 2
+        assert state2.x.value == 2
+
+        state3.y.value = 2
+        assert state3.y.value == 2
 
     def test_representation(self):
         rep1 = Coherent(modes=[0], x=0.1, y=0.2).representation

@@ -19,7 +19,6 @@ The classes representing transformations in quantum circuits.
 from __future__ import annotations
 
 from typing import Optional, Iterable, Tuple, Union
-import numpy as np
 
 from mrmustard import math
 from .base import Unitary, Channel
@@ -100,7 +99,7 @@ class Dgate(Unitary):
 class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
-    If ``transmissivity`` andis an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
+    If ``transmissivity`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
     all the modes share the same transmissivity.
 
     .. code-block ::
@@ -111,16 +110,12 @@ class Attenuator(Channel):
         >>> channel = Attenuator(modes=[1, 2], 0.1)
         >>> assert channel.modes == [1, 2]
         >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
-        >>> assert np.allclose(channel.nbar.value, 0)
 
     Args:
         modes: The modes this gate is applied to.
         transmissivity: The transmissivity.
-        nbar: The average number of photons in the thermal state.
         transmissivity_trainable: Whether the transmissivity is a trainable variable.
-        nbar_trainable: Whether nbar is a trainable variable.
         transmissivity_bounds: The bounds for the transmissivity.
-        nbar_bounds: The bounds for the average number of photons in the thermal state.
 
     .. details::
 
@@ -134,11 +129,8 @@ class Attenuator(Channel):
         self,
         modes: Optional[Iterable[int]] = None,
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
-        nbar: float = 0.0,
         transmissivity_trainable: bool = False,
-        nbar_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
         super().__init__(modes=modes, name="Att")
         self._add_parameter(
@@ -150,7 +142,6 @@ class Attenuator(Channel):
                 None,
             )
         )
-        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
     def representation(self) -> Bargmann:
