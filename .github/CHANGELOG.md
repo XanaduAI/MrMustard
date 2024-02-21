@@ -119,7 +119,6 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
 [(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
 
-
 ### Documentation
 
 ### Tests
