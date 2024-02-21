@@ -60,7 +60,7 @@ def test_mikkel_plot():
     assert axs is not None
 
 
-def test_rshit():
+def test_rshift():
     """Tests that right shifr of the state will not change the state object. This was a bug (PR349)."""
     vac0 = Vacuum(1)
     vac0_cov_original = vac0.cov
