@@ -314,12 +314,6 @@ class Wires:
             return False
         return True
 
-    def __neq__(self, other) -> bool:
-        r"""
-        Returns ``False`` if this ``Wires`` is equal to ``other``, ``True`` otherwise.
-        """
-        return not self == other
-
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         r"""
         A view of this Wires object with wires only on the given modes.
