@@ -33,7 +33,7 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     ComplexVector,
     Scalar,
-    Tensor
+    Tensor,
 )
 
 __all__ = ["Representation", "Bargmann", "Fock"]
