@@ -64,6 +64,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
@@ -83,13 +90,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
 
     def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
 
     def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
         if len(array.shape) == 2:
             array = self.expand_dims(array, 0)
         return array

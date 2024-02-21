@@ -10,7 +10,3 @@ mrmustard.lab_dev
     lab_dev/transformations
 
 .. currentmodule:: mrmustard.lab_dev
-
-.. automodapi:: mrmustard.lab_dev
-    :no-heading:
-    :include-all-objects:
