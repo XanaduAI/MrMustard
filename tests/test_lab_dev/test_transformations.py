@@ -38,6 +38,7 @@ class TestUnitary:
         assert gate.modes == sorted(modes)
         assert gate.wires == Wires(modes_in_ket=modes, modes_out_ket=modes)
 
+
 class TestChannel:
     r"""
     Tests for the ``Channel`` class.
@@ -50,7 +51,9 @@ class TestChannel:
 
         assert gate.name == name or ""
         assert gate.modes == sorted(modes)
-        assert gate.wires == Wires(modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes)
+        assert gate.wires == Wires(
+            modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes
+        )
 
 
 class TestDgate:

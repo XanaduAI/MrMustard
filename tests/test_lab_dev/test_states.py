@@ -38,6 +38,7 @@ class TestKet:
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_ket=modes)
 
+
 class TestDM:
     r"""
     Tests for the ``DM`` class.
