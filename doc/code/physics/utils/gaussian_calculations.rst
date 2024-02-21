@@ -1,5 +1,5 @@
-Gaussian
-=========
+Calculations on Gaussian objects
+================================
 
 .. currentmodule:: mrmustard.physics.gaussian
 

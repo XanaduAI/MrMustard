@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+"""
+This module contains the classes for the available representations.
+"""
+
 from __future__ import annotations
 
-from typing import Iterable
-import numpy as np
+from abc import ABC, abstractmethod
 from matplotlib import colors
 import matplotlib.pyplot as plt
+import numpy as np
+
 from mrmustard import math
-from mrmustard.physics import bargmann, fock
+from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
     Batch,
@@ -30,18 +36,23 @@ from mrmustard.utils.typing import (
     Tensor,
 )
 
+__all__ = ["Representation", "Bargmann", "Fock"]
 
-class Representation:
+
+class Representation(ABC):
     r"""
     A base class for representations.
+
+    Representations can be initialized using the ``from_ansatz`` method, which automatically equips
+    them with all the functionality required to perform mathematical operations, such as equality,
+    multiplication, subtraction, etc.
     """
 
-    def from_ansatz(self, ansatz: Ansatz) -> Representation:
+    @abstractmethod
+    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
-        Returns a representation object from an ansatz object.
-        To be implemented by subclasses.
+        Returns a representation from an ansatz.
         """
-        raise NotImplementedError
 
     def __eq__(self, other: Representation) -> bool:
         r"""
@@ -99,73 +110,107 @@ class Representation:
 
 
 class Bargmann(Representation):
-    r"""This class is the Fock-Bargmann representation of a broad class of quantum states,
-    transformations, measurements, channels, etc.
+    r"""
+    The Fock-Bargmann representation of a broad class of quantum states, transformations,
+    measurements, channels, etc.
 
-    The ansatz available in this representation is a linear combination of
-    exponentials of bilinear forms with a polynomial part:
+    The ansatz available in this representation is a linear combination of exponentials
+    of bilinear forms with a polynomial part:
 
     .. math::
         F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on Bargmann objects including
-    linear combinations, outer product, and inner product.
-    The inner product is defined as the contraction of two Bargmann objects across
-    marked indices. This can also be used to contract existing indices
-    in a single Bargmann object, e.g. to implement the partial trace.
+    linear combinations (``+``), outer product (``&``), and inner product (``@``).
 
-    Note that the operations that change the shape of the ansatz (outer product (``&``)
-    and inner product (``@``)) do not automatically modify the ordering of the
-    combined or leftover indices.
+    .. code-block ::
 
-    Examples:
-        .. code-block:: python
+        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
 
-            A = math.astensor([[[1.0]]])  # 1x1x1
-            b = math.astensor([[0.0]])    # 1x1
-            c = math.astensor([0.9])      # 1
-            psi1 = Bargmann(A, b, c)
-            psi2 = Bargmann(A, b, c)
-            psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
-            assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
-            psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
-            assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
-            psi5 = psi1 & psi2  # outer product (tensor product)
-            rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
-            assert rho.A.shape == (1, 2, 2)  # we have two wires now
-            assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+        >>> # bargmann representation of one-mode vacuum
+        >>> rep_vac = Bargmann(*vacuum_state_Abc(1))
 
+        >>> # bargmann representation of one-mode dgate with gamma=1+0j
+        >>> rep_dgate = Bargmann(*displacement_gate_Abc(1))
+
+    The inner product is defined as the contraction of two Bargmann objects across marked indices.
+    Indices are marked using ``__getitem__``. Once the indices are marked for contraction, they are
+    be used the next time the inner product (``@``) is called. For example:
+
+    .. code-block ::
+
+        >>> import numpy as np
+
+        >>> # mark indices for contraction
+        >>> idx_vac = [0]
+        >>> idx_rep = [1]
+
+        >>> # bargmann representation of coh = vacuum >> dgate
+        >>> rep_coh = rep_vac[idx_vac] @ rep_dgate[idx_rep]
+        >>> assert np.allclose(rep_coh.A, [[0,],])
+        >>> assert np.allclose(rep_coh.b, [1,])
+        >>> assert np.allclose(rep_coh.c, 0.6065306597126334)
+
+    This can also be used to contract existing indices in a single Bargmann object, e.g.
+    to implement the partial trace.
+
+    .. code-block ::
+
+        >>> trace = (rep_coh @ rep_coh.conj()).trace([0], [1])
+        >>> assert np.allclose(trace.A, 0)
+        >>> assert np.allclose(trace.b, 0)
+        >>> assert trace.c == 1
+
+    The ``A``, ``b``, and ``c`` parameters can be batched to represent superpositions.
+
+    .. code-block ::
+
+        >>> # bargmann representation of one-mode coherent state with gamma=1+0j
+        >>> A_plus = np.array([[0,],])
+        >>> b_plus = np.array([1,])
+        >>> c_plus = 0.6065306597126334
+
+        >>> # bargmann representation of one-mode coherent state with gamma=-1+0j
+        >>> A_minus = np.array([[0,],])
+        >>> b_minus = np.array([-1,])
+        >>> c_minus = 0.6065306597126334
+
+        >>> # bargmann representation of a superposition of coherent states
+        >>> A = [A_plus, A_minus]
+        >>> b = [b_plus, b_minus]
+        >>> c = [c_plus, c_minus]
+        >>> rep_coh_sup = Bargmann(A, b, c)
+
+    Note that the operations that change the shape of the ansatz (outer product and inner
+    product) do not automatically modify the ordering of the combined or leftover indices.
+    However, the ``reordering`` method allows reordering the representation after the products
+    have been carried out.
 
     Args:
-        A: batch of quadratic coefficient :math:`A_i`
-        b: batch of linear coefficients :math:`b_i`
-        c: batch of arrays :math:`c_i` (default: [1.0])
+        A: A batch of quadratic coefficient :math:`A_i`.
+        b: A batch of linear coefficients :math:`b_i`.
+        c: A batch of arrays :math:`c_i`.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
     """
 
     def __init__(
         self,
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
-        c: Batch[ComplexTensor] = [1.0],
+        c: Batch[ComplexTensor] = 1.0,
     ):
-        r"""Initializes the Bargmann representation. Args can be passed non-batched,
-        they will be automatically broadcasted to the correct batch shape.
-
-        Args:
-            A: batch of quadratic coefficient :math:`A_i`
-            b: batch of linear coefficients :math:`b_i`
-            c: batch of arrays :math:`c_i` (default: [1.0])
-        """
         self._contract_idxs: tuple[int, ...] = ()
         self.ansatz = PolyExpAnsatz(A, b, c)
 
-    def __call__(self, z: ComplexTensor) -> ComplexTensor:
-        r"""Evaluates the Bargmann function at the given array of points."""
-        return self.ansatz(z)
-
-    def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
-        r"""Returns a Bargmann object from an ansatz object."""
-        return self.__class__(ansatz.A, ansatz.b, ansatz.c)
+    @classmethod
+    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
+        r"""
+        Returns a Bargmann object from an ansatz object.
+        """
+        return cls(ansatz.A, ansatz.b, ansatz.c)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -193,47 +238,16 @@ class Bargmann(Representation):
         The conjugate of this Bargmann object.
         """
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
-        new._contract_idxs = self._contract_idxs
+        new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
-
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
-        r"""Returns a copy of self with the given indices marked for contraction."""
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.ansatz.dim:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
-                )
-        new = self.__class__(self.A, self.b, self.c)
-        new._contract_idxs = idx
-        return new
-
-    def __matmul__(self, other: Bargmann) -> Bargmann:
-        r"""Implements the inner product of ansatze across the marked indices."""
-        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
-            )
-        Abc = []
-        for A1, b1, c1 in zip(self.A, self.b, self.c):
-            for A2, b2, c2 in zip(other.A, other.b, other.c):
-                Abc.append(
-                    bargmann.contract_two_Abc(
-                        (A1, b1, c1),
-                        (A2, b2, c2),
-                        self._contract_idxs,
-                        other._contract_idxs,
-                    )
-                )
-        A, b, c = zip(*Abc)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
-        r"""Implements the partial trace over the given index pairs.
+        r"""
+        The partial trace over the given index pairs.
 
         Args:
-            idx_z: indices to trace over
-            idx_zconj: indices to trace over
+            idx_z: The first part of the pairs of indices to trace over.
+            idx_zconj: The second part.
 
         Returns:
             Bargmann: the ansatz with the given indices traced over
@@ -242,9 +256,6 @@ class Bargmann(Representation):
             raise NotImplementedError(
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
-        if len(idx_z) != len(idx_zconj):
-            msg = f"The number of indices to trace over must be the same for ``z`` and ``z*`` (got {len(idx_z)} and {len(idx_zconj)})."
-            raise ValueError(msg)
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
             Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
@@ -254,8 +265,26 @@ class Bargmann(Representation):
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
-        Returns a new Bargmann object."""
+        r"""
+        Reorders the indices of the ``A`` matrix and ``b`` vector of the ``(A, b, c)`` triple in
+        this Bargmann object.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.triples import displacement_gate_Abc
+
+            >>> rep_dgate1 = Bargmann(*displacement_gate_Abc([0.1, 0.2, 0.3]))
+            >>> rep_dgate2 = Bargmann(*displacement_gate_Abc([0.2, 0.3, 0.1]))
+
+            >>> assert rep_dgate1.reorder([1, 2, 0, 4, 5, 3]) == rep_dgate2
+
+        Args:
+            order: The new order.
+
+        Returns:
+            The reordered Bargmann object.
+        """
         A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
         return self.__class__(A, b, c)
 
@@ -266,21 +295,22 @@ class Bargmann(Representation):
         log_scale: bool = False,
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
-        **kwargs,
-    ):  # pragma: no cover
-        r"""Plots the Bargmann function F(z) on the complex plane. Phase is represented by color,
-        magnitude by brightness. The function can be multiplied by exp(-|z|^2) to represent
-        the Bargmann function times the measure function (for integration).
+    ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
+        r"""
+        Plots the Bargmann function :math:`F(z)` on the complex plane. Phase is represented by
+        color, magnitude by brightness. The function can be multiplied by :math:`exp(-|z|^2)`
+        to represent the Bargmann function times the measure function (for integration).
 
         Args:
-            just_phase (bool): whether to plot only the phase of the Bargmann function
-            with_measure (bool): whether to plot the bargmann function times the measure function exp(-|z|^2)
-            log_scale (bool): whether to plot the log of the Bargmann function
-            xlim (tuple[float, float]): x limits of the plot
-            ylim (tuple[float, float]): y limits of the plot
+            just_phase: Whether to plot only the phase of the Bargmann function.
+            with_measure: Whether to plot the bargmann function times the measure function
+                :math:`exp(-|z|^2)`.
+            log_scale: Whether to plot the log of the Bargmann function.
+            xlim: The `x` limits of the plot.
+            ylim: The `y` limits of the plot.
 
         Returns:
-            tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]: the figure and axes of the plot
+            The figure and axes of the plot
         """
         # eval F(z) on a grid of complex numbers
         X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
@@ -317,41 +347,96 @@ class Bargmann(Representation):
         plt.show(block=False)
         return fig, ax
 
+    def __call__(self, z: ComplexTensor) -> ComplexTensor:
+        r"""
+        Evaluates the Bargmann function at the given array of points.
+
+        Args:
+            z: The array of points.
+
+        Returns:
+            The value of the Bargmann function at ``z``.
+        """
+        return self.ansatz(z)
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+        r"""
+        A copy of self with the given indices marked for contraction.
+        """
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i >= self.ansatz.dim:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                )
+        new = self.__class__(self.A, self.b, self.c)
+        new._contract_idxs = idx
+        return new
+
+    def __matmul__(self, other: Bargmann) -> Bargmann:
+        r"""
+        The inner product of ansatze across the marked indices.
+        """
+        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
+            )
+        Abc = []
+        for A1, b1, c1 in zip(self.A, self.b, self.c):
+            for A2, b2, c2 in zip(other.A, other.b, other.c):
+                Abc.append(
+                    bargmann.contract_two_Abc(
+                        (A1, b1, c1),
+                        (A2, b2, c2),
+                        self._contract_idxs,
+                        other._contract_idxs,
+                    )
+                )
+        A, b, c = zip(*Abc)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+
 
 class Fock(Representation):
-    r"""The Fock representation of a broad class of quantum states,
-    transformations, measurements, channels, etc.
+    r"""
+    The Fock representation of a broad class of quantum states, transformations, measurements,
+    channels, etc.
 
-    The ansatz available in this representation is ArrayAnsatz.
+    The ansatz available in this representation is ``ArrayAnsatz``.
 
-    This class allows for operations of Fock tensors.
+    This function allows for vector space operations on Fock objects including
+    linear combinations, outer product (``&``), and inner product (``@``).
 
-    Examples:
-        .. code-block:: python
-            array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-            array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-            array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
-            fock1 = Fock(array1)
-            fock2 = Fock(array2)
-            fock3 = Fock(array3)
+    .. code-block::
 
-            fock4 = 1.3 * fock1 - fock2 * 2.1  # linear combination can be done with the same batch dimension
-            assert fock4.ansatz.array.shape == (1,5,7,8)
+        >>> # initialize Fock objects
+        >>> array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        >>> array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        >>> array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+        >>> fock1 = Fock(array1)
+        >>> fock2 = Fock(array2)
+        >>> fock3 = Fock(array3)
 
-            fock5 = fock1 / 1.3  # supports division by a scalar
-            assert fock5.ansatz.array.shape == (1,5,7,8)
+        >>> # linear combination can be done with the same batch dimension
+        >>> fock4 = 1.3 * fock1 - fock2 * 2.1
 
-            fock6 = fock1[2] @ fock3[2]  # contract wires 2 on each (inner product)
-            assert fock6.array.shape == (3, 5, 7, 5, 7) # note that the batch is 1 * 3
+        >>> # division by a scalar
+        >>> fock5 = fock1 / 1.3
 
-            fock7 = fock1 & fock3  # outer product (tensor product)
-            assert fock7.array.shape == (3, 5, 7, 8, 5, 7, 8) # the batch is 1*3
+        >>> # inner product by contracting on marked indices
+        >>> fock6 = fock1[2] @ fock3[2]
 
-            fock8 = fock1.conj() # conjugate of it
-            assert fock8.array.shape == (1,5,7,8)
+        >>> # outer product (tensor product)
+        >>> fock7 = fock1 & fock3
+
+        >>> # conjugation
+        >>> fock8 = fock1.conj()
+
     Args:
-        array (Batch[Tensor]): the (batched) array in Fock representation.
-        batched (bool): if the array input has a batch dimension. False by default.
+        array: the (batched) array in Fock representation.
+        batched: whether the array input has a batch dimension.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
 
     """
 
@@ -362,8 +447,10 @@ class Fock(Representation):
         self.ansatz = ArrayAnsatz(array=array)
 
     @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:
-        r"""Returns a Fock object from an ansatz object."""
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
+        r"""
+        Returns a Fock object from an ansatz object.
+        """
         return cls(ansatz.array, batched=True)
 
     @property
@@ -378,11 +465,13 @@ class Fock(Representation):
         The conjugate of this Fock object.
         """
         new = self.from_ansatz(self.ansatz.conj)
-        new._contract_idxs = self._contract_idxs
+        new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
-        r"""Returns a copy of self with the given indices marked for contraction."""
+        r"""
+        Returns a copy of self with the given indices marked for contraction.
+        """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= len(self.array.shape):
@@ -394,10 +483,11 @@ class Fock(Representation):
         return new
 
     def __matmul__(self, other: Fock) -> Fock:
-        r"""Implements the inner product of ansatze across the marked indices.
+        r"""
+        Implements the inner product of ansatze across the marked indices.
 
         Batch:
-        The new Fock will hold the tensor product batch of them.
+        The new Fock holds the tensor product batch of them.
 
         Order of index:
         The new Fock's order is arranged as uncontracted elements in self and then other.
@@ -409,66 +499,15 @@ class Fock(Representation):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(new_array))
 
-    def __add__(self, other: Fock) -> Fock:
-        r"""
-        Adds two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz + other.ansatz)
-
-    def __sub__(self, other: Fock) -> Fock:
-        r"""
-        Subtracts two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz - other.ansatz)
-
-    def __mul__(self, other: Fock | Scalar) -> Fock:
-        r"""
-        Multiplies two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz * other.ansatz)
-        else:
-            return self.from_ansatz(self.ansatz * other)
-
-    def __truediv__(self, other: Fock) -> Fock:
-        r"""
-        Divides two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        if isinstance(other, Fock):
-            return self.from_ansatz(self.ansatz / other.ansatz)
-        else:
-            return self.from_ansatz(self.ansatz / other)
-
-    def __and__(self, other: Fock) -> Fock:
-        r"""
-        Outer product two Fock representations.
-
-        Batch:
-        The new Fock will hold the tensor product batch of them.
-        """
-        return self.from_ansatz(self.ansatz & other.ansatz)
-
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
 
         Args:
-            idxs1 tuple(int): first part of the pairs of indices to trace over
-            idxs2 tuple(int): second part
+            idxs1: The first part of the pairs of indices to trace over.
+            idxs2: The second part.
 
         Returns:
-            Fock: the ansatz with the given pairs of indices traced over
+            The traced-over Fock object.
         """
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
             raise ValueError("idxs must be of equal length and disjoint")
@@ -484,11 +523,15 @@ class Fock(Representation):
         return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
-        r"""Reorders the indices of the array with the given order.
-        Args:
-            order tuple[int]: does not need to refer to the batch dimension
+        r"""
+        Reorders the indices of the array with the given order.
 
-        Returns a new Fock object."""
+        Args:
+            order: The order. Does not need to refer to the batch dimension.
+
+        Returns:
+            The reordered Fock.
+        """
         return self.from_ansatz(
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
         )

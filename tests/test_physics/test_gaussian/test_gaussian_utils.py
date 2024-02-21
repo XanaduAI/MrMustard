@@ -36,8 +36,8 @@ def test_partition_cov_2modes():
     arr = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
     A, B, AB = gp.partition_cov(gp.math.astensor(arr), Amodes=[0, 1])
     assert np.allclose(A, arr)
-    assert np.allclose(B, [])
-    assert np.allclose(AB, [])
+    assert np.allclose(B, 0)
+    assert np.allclose(AB, 0)
 
     A, B, AB = gp.partition_cov(gp.math.astensor(arr), Amodes=[0])
     assert np.allclose(A, [[1, 3], [9, 11]])

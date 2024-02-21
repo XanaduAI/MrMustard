@@ -1,5 +1,5 @@
-Fock
-====
+Calculations on Fock objects
+============================
 
 .. currentmodule:: mrmustard.physics.fock
 
