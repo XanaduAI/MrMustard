@@ -418,3 +418,13 @@ class TestNormalization:
         """Checks that after projection the norm of the leftover state is as expected."""
         leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
         assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+
+class TestProjectionOnState:
+    r"""Tests the cases that the projection state is given."""
+
+    def test_vacuum_project_on_vacuum(self):
+        """Tests that the probability of Vacuum that projects on Vacuum is 1.0."""
+        assert np.allclose(Vacuum(3) << Vacuum(3), 1.0)
+        assert np.allclose(Vacuum(3) << Coherent([0, 0, 0]), 1.0)
+        assert np.allclose(Vacuum(3) << Fock([0, 0, 0]), 1.0)
