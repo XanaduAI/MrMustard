@@ -20,12 +20,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.11"
+python = ">=3.9,<3.12"
 grpcio = "1.60.0"
 numpy = "^1.23.5"
 scipy = "^1.8.0"
