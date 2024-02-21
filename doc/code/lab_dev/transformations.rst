@@ -11,7 +11,7 @@ Base classes
     :no-heading:
     :include-all-objects:
 
-Transfromations
+Transformations
 ###############
 
 .. automodapi:: mrmustard.lab_dev.transformations.transformations
