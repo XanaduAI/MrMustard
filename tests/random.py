@@ -97,7 +97,7 @@ def Abc_triple(n: int):
 @st.composite
 def vector(draw, length):
     r"""Return a vector of length `length`."""
-    return draw(arrays(np.float, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
+    return draw(arrays(np.float64, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
 
 
 @st.composite
@@ -112,7 +112,7 @@ def list_of_ints(draw, N):
 def matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols`."""
     elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
-    return draw(arrays(np.float, (rows, cols), elements=elements))
+    return draw(arrays(np.float64, (rows, cols), elements=elements))
 
 
 @st.composite
