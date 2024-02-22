@@ -68,11 +68,13 @@ class BSgate(Unitary):
 
         .. math::
             A = \begin{bmatrix}
-                1 & 4 & 7 \\
-                2 & 5 & 8 \\
-                3 & 6 & 9
-            \end{bmatrix} \\
-            b = \\
+                    1 & 4 & 7 \\
+                    2 & 5 & 8 \\
+                    3 & 6 & 9
+                \end{bmatrix} \\
+            b = \begin{bmatrix}
+                    0 & 0 & 0 & 0
+                \end{bmatrix} \\
             c = 1 
     """
 
