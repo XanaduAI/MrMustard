@@ -58,61 +58,22 @@ class BSgate(Unitary):
 
     .. details::
 
-        The beamsplitter gate is a Gaussian gate.
-
-        For the annihilation and creation operators of two modes, denoted :math:`\a_1` and :math:`\a_2`, the
-        beamsplitter is defined by
+        The beamsplitter gate is a Gaussian gate defined by
 
         .. math::
-            B(\theta,\phi) = \exp\left(\theta (e^{i \phi}\a_1 \ad_2 - e^{-i \phi} \ad_1 \a_2) \right)
+            S = \\
+            d = 
 
-        The beamsplitter gate maps :math:`\a_1` and :math:`\a_2` as
-
-        .. math::
-            B^\dagger(\theta,\phi) \a_1  B(\theta,\phi) &= \a_1\cos \theta -\a_2 e^{-i \phi} \sin \theta  = t \a_1 -r^* \a_2,\\
-            B^\dagger(\theta,\phi) \a_2  B(\theta,\phi) &= \a_2\cos \theta + \a_1  e^{i \phi} \sin \theta= t \a_2 +r \a_1.
-
-        where :math:`t = \cos \theta` and :math:`r = e^{i\phi} \sin \theta` are the
-        transmittivity and reflectivity amplitudes of the beamsplitter respectively.
-
-        Therefore, the beamsplitter transforms two input coherent states to two output
-        coherent states :math:`B(\theta, \phi) \ket{\alpha,\beta} = \ket{\alpha',\beta'}`, where
+        The ``(A, b, c)`` triple of a beamsplitter is given by   
 
         .. math::
-            \alpha' &= \alpha\cos \theta-\beta e^{-i\phi}\sin\theta = t\alpha - r^*\beta\\
-            \beta' &= \beta\cos \theta+\alpha e^{i\phi}\sin\theta = t\beta + r\alpha\\
-
-        By substituting in the definition of the creation and annihilation operators in terms
-        of the position and momentum operators, it is possible to derive an expression for
-        how the beamsplitter transforms the quadrature operators:
-
-        .. math::
-            &\begin{cases}
-                B^\dagger(\theta,\phi) \x_1 B(\theta,\phi) = \x_1 \cos(\theta)-\sin(\theta) [\x_2\cos(\phi)+\p_2\sin(\phi)]\\
-                B^\dagger(\theta,\phi) \p_1 B(\theta,\phi) = \p_1 \cos(\theta)-\sin(\theta) [\p_2\cos(\phi)-\x_2\sin(\phi)]\\
-            \end{cases}\\[12pt]
-            &\begin{cases}
-                B^\dagger(\theta,\phi) \x_2 B(\theta,\phi) = \x_2 \cos(\theta)+\sin(\theta) [\x_1\cos(\phi)-\p_1\sin(\phi)]\\
-                B^\dagger(\theta,\phi) \p_2 B(\theta,\phi) = \p_2 \cos(\theta)+\sin(\theta) [\p_1\cos(\phi)+\x_1\sin(\phi)]
-            \end{cases}
-
-        **The 50-50 beamsplitter**
-
-        A ``50-50 beamsplitter'' has :math:`\theta=\pi/4` and :math:`\phi=0` or
-        :math:`\phi=\pi`; consequently :math:`|t|^2 = |r|^2 = \frac{1}{2}`, and it acts as follows:
-
-        .. math::
-            & B(\pi/4,0)\xket{x_1}\xket{x_2} = \xket{\frac{1}{\sqrt{2}}(x_1-x_2)}\xket{\frac{1}{\sqrt{2}}(x_1+x_2)}\\
-            & B(\pi/4,0)\ket{p_1}_p\ket{p_2}_p = \xket{\frac{1}{\sqrt{2}}(p_1-p_2)}\xket{\frac{1}{\sqrt{2}}(p_1+p_2)}
-
-        and
-
-        .. math::
-            & B(\pi/4,\pi)\xket{x_1}\xket{x_2} = \xket{\frac{1}{\sqrt{2}}(x_1+x_2)}\xket{\frac{1}{\sqrt{2}}(x_2-x_1)}\\
-            & B(\pi/4,\pi)\ket{p_1}_p\ket{p_2}_p = \xket{\frac{1}{\sqrt{2}}(p_1+p_2)}\xket{\frac{1}{\sqrt{2}}(p_2-p_1)}
-
-        Alternatively, **symmetric beamsplitter** (one that does not distinguish between
-        :math:`\a_1` and :math:`\a_2`) is obtained by setting :math:`\phi=\pi/2`.
+            A = \begin{bmatrix}
+                1 & 4 & 7 \\
+                2 & 5 & 8 \\
+                3 & 6 & 9
+            \end{bmatrix} \\
+            b = \\
+            c = 1 
     """
 
     def __init__(
