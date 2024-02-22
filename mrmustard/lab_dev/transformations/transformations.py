@@ -61,21 +61,29 @@ class BSgate(Unitary):
         The beamsplitter gate is a Gaussian gate defined by
 
         .. math::
-            S = \\
-            d = 
+            S &= \begin{bmatrix}
+                    \text{Re}(U) & -\text{Im}(U)\\
+                    \text{Im}(U) & \text{Re}(U)
+                \end{bmatrix} \\
+            d &= O_4\:,
 
-        The ``(A, b, c)`` triple of a beamsplitter is given by   
+        with
 
         .. math::
-            A = \begin{bmatrix}
-                    1 & 4 & 7 \\
-                    2 & 5 & 8 \\
-                    3 & 6 & 9
+            U &= \begin{bmatrix}
+                    \text{cos}(\theta) & -e^{-i\phi}\text{sin}(\theta)\\
+                    e^{i\phi}\text{sin}(\theta) & \text{cos}(\theta)
                 \end{bmatrix} \\
-            b = \begin{bmatrix}
-                    0 & 0 & 0 & 0
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \begin{bmatrix}
+                    O_2 & U \\
+                    U^{T} & O_2
                 \end{bmatrix} \\
-            c = 1 
+            b &= O_{4} \\
+            c &= 1
     """
 
     def __init__(
@@ -131,12 +139,23 @@ class Dgate(Unitary):
 
     .. details::
 
-        The displacement gate is a Gaussian gate defined as
+        For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
+        displacement gate is defined by
+
+        .. math:: 
+            S = I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
+
+        Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            D(\alpha) = \exp(\alpha a^\dagger -\alpha^* a) = \exp\left(-i\sqrt{2}(\re(\alpha) \hat{p} -\im(\alpha) \hat{x})/\sqrt{\hbar}\right)
-
-        where :math:`\alpha = x + iy`.
+            A &= \begin{bmatrix}
+                    O_N & I_N\\
+                    I_N & O_N
+                \end{bmatrix} \\
+            b &= \begin{bmatrix}
+                    \bar{\alpha} & -\bar{\alpha}^*
+                \end{bmatrix} \\
+            c &= \text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
     def __init__(
@@ -195,64 +214,27 @@ class Sgate(Unitary):
 
     .. details::
 
-        The squeezing gate is defined as
+        For any :math:`\bar{r}` and :math:`\bar{\phi}` of length :math:`N`, the :math:`N`-mode
+        squeezing gate is defined by
 
         .. math::
-            S(z) = \exp\left(\frac{1}{2}\left(z^* \a^2-z {\ad}^{2} \right) \right)
-            = \exp\left(\frac{r}{2}\left(e^{-i\phi}\a^2 -e^{i\phi}{\ad}^{2} \right) \right)
+            S &= \begin{bmatrix}
+                    \text{diag}_N(\text{cosh}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{sinh}(\bar{r}))\\
+                    -\text{diag}_N(e^{i\bar{\phi}}\text{sinh}(\bar{r})) & \text{diag}_N(\text{cosh}(\bar{r}))
+                \end{bmatrix} \\
+            d &= O_{2N}
 
-        Its action on the annihilation and creation operators is given by
-
-        .. math::
-            S^\dagger(z) \a S(z) = \a \cosh(r) -\ad e^{i \phi} \sinh r\\
-            S^\dagger(z) \ad S(z) = \ad \cosh(r) -\a e^{-i \phi} \sinh(r)\:,
-
-        where :math:`z=r e^{i \phi}` with :math:`r \geq 0` and :math:`\phi \in [0,2 \pi)`.
-
-        The squeezing gate affects the position and momentum operators as
+        Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            S^\dagger(z) \x_{\phi} S(z) = e^{-r}\x_{\phi}, ~~~ S^\dagger(z) \p_{\phi} S(z) = e^{r}\p_{\phi}
+            A &= \begin{bmatrix}
+                    -\text{diag}_N(e^{i\bar{\phi}}\text{tanh}(\bar{r})) & \text{diag}_N(\text{sech}(\bar{r}))\\
+                    \text{diag}_N(\text{sech}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{tanh}(\bar{r}))
+                \end{bmatrix} \\
+            b &= O_{2N} \\
+            c &= \prod_{i=1}^N\sqrt{\text{sech}{r_i}}\:,
 
-        The Fock basis decomposition of displacement is given by
-
-        .. math::
-            f_{n,m}(r,\phi,\beta)&=\bra{n}\exp\left(\frac{r}{2}\left(e^{i \phi} \a^2
-                -e^{-i \phi} \ad \right) \right) D(\beta) \ket{m} = \bra{n}S(z^*) D(\beta) \ket{m}\\
-            &=\sqrt{\frac{n!}{\mu  m!}} e^{\frac{\beta ^2 \nu ^*}{2\mu }-\frac{\left| \beta \right| ^2}{2}}
-            \sum_{i=0}^{\min(m,n)}\frac{\binom{m}{i} \left(\frac{1}{\mu  \nu }\right)^{i/2}2^{\frac{i-m}{2}
-                +\frac{i}{2}-\frac{n}{2}} \left(\frac{\nu }{\mu }\right)^{n/2}
-                \left(-\frac{\nu ^*}{\mu }\right)^{\frac{m-i}{2}} H_{n-i}\left(\frac{\beta }{\sqrt{2}
-                \sqrt{\mu  \nu }}\right) H_{m-i}\left(-\frac{\alpha ^*}{\sqrt{2}\sqrt{-\mu  \nu ^*}}\right)}{(n-i)!}\:,
-
-        where :math:`\nu=e^{- i\phi} \sinh(r), \mu=\cosh(r), \alpha=\beta \mu - \beta^* \nu`. Two important special
-        cases of the last formula are obtained when :math:`r \to 0` and when :math:`\beta \to 0`:
-
-        * For :math:`r \to 0`, we can take :math:`\nu \to 1, \mu \to r, \alpha \to \beta` and use
-          the fact that for large :math:`x \gg 1` the leading order term of the Hermite
-          polynomials is  :math:`H_n(x) = 2^n x^n +O(x^{n-2})` to obtain
-
-          .. math::
-              f_{n,m}(0,\phi,\beta) = \bra{n}D(\beta) \ket{m}=\sqrt{\frac{n!}{  m!}}
-              e^{-\frac{\left| \beta \right| ^2}{2}} \sum_{i=0}^{\min(m,n)}
-              \frac{(-1)^{m-i}}{(n-i)!} \binom{m}{i} \beta^{n-i} (\beta^*)^{m-i}
-
-        * On the other hand, if we let :math:`\beta\to 0` we use the fact that
-
-          .. math::
-              H_n(0) =\begin{cases}0,  & \mbox{if }n\mbox{ is odd} \\
-              (-1)^{\tfrac{n}{2}} 2^{\tfrac{n}{2}} (n-1)!! , & \mbox{if }n\mbox{ is even} \end{cases}
-
-          to deduce that :math:`f_{n,m}(r,\phi,0)` is zero if :math:`n` is even and
-          :math:`m` is odd or vice versa.
-
-        When writing the Bloch-Messiah reduction of a Gaussian state in the Fock basis, one often needs
-        the following matrix element
-
-        .. math::
-            \bra{k} D(\alpha) R(\theta) S(r) \ket{l}  = e^{i \theta l }
-            \bra{k} D(\alpha) S(r e^{2i \theta}) \ket{l} = e^{i \theta l}
-            f^*_{l,k}(-r,-2\theta,-\alpha)
+        where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
     """
 
     def __init__(
@@ -306,10 +288,28 @@ class Attenuator(Channel):
 
     .. details::
 
-        The attenuator is defined as
+        The :math:`N`-mode attenuator is defined as
 
         .. math::
-            ??@yuan
+            X &= \text{cos}(\theta)I_{2N} \\
+            Y &= \big(\text{sin}(\theta)\big)^2I_{2N} \\
+            d &= O_{4N}\:,
+
+        where the :math:`\theta=\text{arcos}(\sqrt{\eta})` and :math:`eta` is the transmissivity.
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \begin{bmatrix}
+                    O_N & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N \\
+                    \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N & \text{diag}_N(1-\sqrt{\bar{\eta}})\\
+                    O_N & O_N & O_N & \text{diag}_N(\sqrt{\bar{\eta}})\\
+                    O_N & \text{diag}_N(1-\sqrt{\bar{\eta}}) & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N
+                \end{bmatrix} \\
+            b &= O_{4N} \\
+            c &= 1\:,
+
+        where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
     """
 
     def __init__(

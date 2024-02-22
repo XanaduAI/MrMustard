@@ -13,7 +13,13 @@
 # limitations under the License.
 
 """
-This module contains the base classes for the available quantum states.
+This module contains the base classes for the available unitaries and channels on quantum states.
+
+In the docstrings defining the available unitaries we provide a definition in terms of
+the symplectic matrix :math:`S` and the real vector :math:`d`. For deterministic Gaussian channels,
+we use the two matrices :math:`X` and :math:`Y` and the vector :math:`d`. Additionally, we
+provide the ``(A, b, c)`` triples that define the transformation in the Fock Bargmann
+representation.
 """
 
 from __future__ import annotations

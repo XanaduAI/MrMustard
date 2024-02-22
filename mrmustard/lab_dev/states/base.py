@@ -14,6 +14,11 @@
 
 """
 This module contains the base classes for the available quantum states.
+
+In the docstrings defining the available states we provide a definition in terms of
+the covariance matrix :math:`V` and the vector of means :math:`r`. Additionally, we
+provide the ``(A, b, c)`` triples that define the states in the Fock Bargmann
+representation.
 """
 
 from __future__ import annotations
