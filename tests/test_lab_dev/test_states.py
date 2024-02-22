@@ -20,7 +20,9 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Vacuum
+from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Unitary
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -37,6 +39,16 @@ class TestKet:
         assert state.name == name or ""
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_ket=modes)
+
+    def test_rshift(self):
+        state = Coherent([0, 1], 1)
+        unitary = Dgate([0], 1)
+        channel = Attenuator([1], 1)
+        component1 = CircuitComponent.from_ABC("", )
+
+        assert isinstance(state >> unitary, Ket)
+        assert isinstance(state >> channel, DM)
+        assert isinstance(state >> unitary >> channel, DM)
 
 
 class TestDM:
