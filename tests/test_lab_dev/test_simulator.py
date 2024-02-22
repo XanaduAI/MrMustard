@@ -35,11 +35,11 @@ class TestSimulator:
         r"""
         Simulates a circuit with a three-mode vacuum state undergoing one- and two-mode Dgates.
         """
-        vac = Vacuum(3)
-        d0 = Dgate(1, modes=[0])
-        d01 = Dgate([2, 3], modes=[0, 1])
-        d1 = Dgate(4, modes=[1])
-        d2 = Dgate(5, modes=[2])
+        vac = Vacuum([0, 1, 2])
+        d0 = Dgate(modes=[0], x=1)
+        d01 = Dgate(modes=[0, 1], x=[2, 3])
+        d1 = Dgate(modes=[1], x=4)
+        d2 = Dgate(modes=[2], x=5)
 
         circuit = Circuit([vac, d1, d01, d0, d2, d0])
         result = Simulator().run(circuit, add_bras=False)
@@ -57,10 +57,10 @@ class TestSimulator:
         r"""
         Simulates a circuit with a sequence of one- and two-mode Dgates.
         """
-        d0 = Dgate(1, modes=[0])
-        d1 = Dgate(2, modes=[1])
-        d01 = Dgate(3, modes=[0, 1])
-        d02 = Dgate(4, modes=[0, 2])
+        d0 = Dgate(modes=[0], x=1)
+        d1 = Dgate(modes=[1], x=2)
+        d01 = Dgate(modes=[0, 1], x=3)
+        d02 = Dgate(modes=[0, 2], x=4)
 
         circuit = Circuit([d1, d0, d02, d01, d01])
         result = Simulator().run(circuit, add_bras=False)
@@ -78,10 +78,10 @@ class TestSimulator:
         r"""
         Simulates a circuit with ``add_bras=True``.
         """
-        vac = Vacuum(2)
-        d0 = Dgate(1.0, modes=[0])
-        d1 = Dgate(2.0, modes=[1])
-        d01 = Dgate(3.0, modes=[0, 1])
+        vac = Vacuum([0, 1])
+        d0 = Dgate(modes=[0], x=1)
+        d1 = Dgate(modes=[1], x=2)
+        d01 = Dgate(modes=[0, 1], x=3)
 
         circuit = Circuit([vac, d01, d1, d0])
         result = Simulator().run(circuit, add_bras=True)
@@ -100,8 +100,8 @@ class TestSimulator:
         Simulates a circuit with a ket-only component (a Dgate) and a component with kets and bras
         (an Attenuator).
         """
-        d1 = Dgate(x=1.0, y=2.0, modes=[1])
-        att = Attenuator(1.0, modes=[1])
+        d1 = Dgate(modes=[1], x=1, y=2)
+        att = Attenuator(modes=[1], transmissivity=1)
 
         circuit = Circuit([d1, att])
         result = Simulator().run(circuit)

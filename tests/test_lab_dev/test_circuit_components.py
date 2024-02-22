@@ -18,9 +18,16 @@ Tests for circuit components.
 
 import numpy as np
 
-from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
-from mrmustard.lab_dev.states import DM, Ket, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Unitary
+from mrmustard.physics.representations import Bargmann
+from mrmustard.lab_dev.circuit_components import (
+    connect,
+    add_bra,
+    CircuitComponent,
+    AdjointView,
+    DualView,
+)
+from mrmustard.lab_dev.states import Vacuum
+from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
 
         # assert isinstance(vac >> d0, Ket)
@@ -46,7 +53,7 @@ class TestCircuitComponent:
         r"""
         Tests the ``light_copy`` method.
         """
-        d = Dgate(x=1, y=2, y_trainable=True)
+        d = Dgate(modes=[0], x=1, y=2, y_trainable=True)
         d_copy = d.light_copy()
 
         assert d.x is d_copy.x
@@ -57,9 +64,9 @@ class TestCircuitComponent:
         r"""
         Tests that ``__matmul__`` produces the correct outputs for one-mode components.
         """
-        vac0 = Vacuum(1)
-        d0 = Dgate(1, modes=[0])
-        a0 = Attenuator(0.9, modes=[0])
+        vac0 = Vacuum([0])
+        d0 = Dgate(modes=[0], x=1)
+        a0 = Attenuator(modes=[0], transmissivity=0.9)
 
         result1 = vac0 @ d0
         result1 = (result1 @ result1.adjoint) @ a0
@@ -75,32 +82,17 @@ class TestCircuitComponent:
         assert np.allclose(result2.representation.b, 0)
         assert np.allclose(result2.representation.c, 0.40656966)
 
-    def test_matmul_one_mode_Dgate_contraction(self):
-        r"""
-        Tests that ``__matmul__`` produces the correct outputs for two Dgate with the formula well-known.
-        """
-        alpha = 1.5 + 0.7888 * 1j
-        beta = -0.1555 + 1j * 2.1
-        alpha_plus_beta = alpha + beta
-        d1 = Dgate(x=alpha.real, y=alpha.imag)
-        d2 = Dgate(x=beta.real, y=beta.imag)
-        result1 = d2 @ d1
-        correct_c = np.exp(-0.5 * (abs(alpha_plus_beta) ** 2)) * np.exp(
-            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
-        )
-        assert np.allclose(result1.representation.c, correct_c)
-
     def test_matmul_multi_modes(self):
         r"""
         Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
         """
-        vac012 = Vacuum(3)
-        d0 = Dgate(0.1, 0.1, modes=[0])
-        d1 = Dgate(0.1, 0.1, modes=[1])
-        d2 = Dgate(0.1, 0.1, modes=[2])
-        a0 = Attenuator(0.8, modes=[0])
-        a1 = Attenuator(0.8, modes=[1])
-        a2 = Attenuator(0.7, modes=[2])
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
 
         result = vac012 @ d0 @ d1 @ d2
         result = result @ result.adjoint @ a0 @ a1 @ a2
@@ -120,17 +112,51 @@ class TestCircuitComponent:
         )
         assert np.allclose(result.representation.c, 0.95504196)
 
+    def test_adjoint(self):
+        r"""
+        Tests the ``adjoint`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_adj = d1.adjoint
+
+        assert isinstance(d1_adj, AdjointView)
+        assert d1_adj.name == d1.name
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert isinstance(d1_adj_adj, CircuitComponent)
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
+    def test_dual(self):
+        r"""
+        Tests the ``dual`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_dual = d1.dual
+
+        assert isinstance(d1_dual, DualView)
+        assert d1_dual.name == d1.name
+        assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.representation == d1.representation.conj()
+
+        d1_dual_dual = d1_dual.dual
+        assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.wires == d1.wires
+        assert d1_dual_dual.representation == d1.representation
+
     def test_matmul_is_associative(self):
         r"""
         Tests that ``__matmul__`` is associative, meaning ``a @ (b @ c) == (a @ b) @ c``.
         """
-        vac012 = Vacuum(3)
-        d0 = Dgate(0.1, 0.1, modes=[0])
-        d1 = Dgate(0.1, 0.1, modes=[1])
-        d2 = Dgate(0.1, 0.1, modes=[2])
-        a0 = Attenuator(0.8, modes=[0])
-        a1 = Attenuator(0.8, modes=[1])
-        a2 = Attenuator(0.7, modes=[2])
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
 
         result1 = vac012 @ d0 @ d1 @ a0 @ a1 @ a2 @ d2
         result2 = (vac012 @ d0) @ (d1 @ a0) @ a1 @ (a2 @ d2)
@@ -142,6 +168,72 @@ class TestCircuitComponent:
         assert result1 == result4
 
 
+class TestAdjointView:
+    r"""
+    Tests ``AdjointView`` objects.
+    """
+
+    def test_init(self):
+        r"""
+        Tests the ``__init__`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_adj = AdjointView(d1)
+
+        assert d1_adj.name == d1.name
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
+    def test_parameters_point_to_original_parameters(self):
+        r"""
+        Tests that the parameters of an AdjointView object point to those of the original object.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+        d1_adj = AdjointView(d1)
+
+        d1.x.value = 0.8
+
+        assert d1_adj.x.value == 0.8
+        assert d1_adj.representation == d1.representation.conj()
+
+
+class TestDualView:
+    r"""
+    Tests ``DualView`` objects.
+    """
+
+    def test_init(self):
+        r"""
+        Tests the ``__init__`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_dual = DualView(d1)
+
+        assert d1_dual.name == d1.name
+        assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.representation == d1.representation.conj()
+
+        d1_dual_dual = DualView(d1_dual)
+        assert d1_dual_dual.wires == d1.wires
+        assert d1_dual_dual.representation == d1.representation
+
+    def test_parameters_point_to_original_parameters(self):
+        r"""
+        Tests that the parameters of a DualView object point to those of the original object.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+        d1_dual = DualView(d1)
+
+        d1.x.value = 0.8
+
+        assert d1_dual.x.value == 0.8
+        assert d1_dual.representation == d1.representation.conj()
+
+
 class TestConnect:
     r"""
     Tests the `connect` function.
@@ -151,9 +243,9 @@ class TestConnect:
         r"""
         Tests the ``connect`` function with ket-only components.
         """
-        vacuum = Vacuum(3)
-        d1 = Dgate(1, modes=[0, 8, 9])
-        d2 = Dgate(1, modes=[0, 1, 2])
+        vacuum = Vacuum([0, 1, 2])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
+        d2 = Dgate(modes=[0, 1, 2], x=1)
 
         components = [vacuum, d1, d1, d2]
         components = connect(components)
@@ -185,9 +277,9 @@ class TestConnect:
         r"""
         Tests the ``connect`` function with components with kets and bras.
         """
-        d1 = Dgate(1, modes=[0, 8, 9])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
         d1_adj = d1.adjoint
-        a1 = Attenuator(0.1, modes=[8])
+        a1 = Attenuator(modes=[8], transmissivity=0.1)
 
         components = connect([d1, d1_adj, a1])
 
@@ -205,38 +297,24 @@ class TestAddBra:
         r"""
         Tests the ``add_bra`` function with ket-only components.
         """
-        vacuum = Vacuum(3)
-        d1 = Dgate(1, modes=[0, 8, 9])
+        vacuum = Vacuum([0, 1, 2])
+        d1 = Dgate(modes=[0, 8, 9], x=1)
 
         components = add_bra([vacuum, d1])
 
-        assert len(components) == 4
-
-        assert isinstance(components[0], Vacuum)
-        assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], CircuitComponent)
-        assert not components[1].wires.ket and components[1].wires.bra
-
-        assert isinstance(components[2], Dgate)
-        assert components[2].wires.ket and not components[2].wires.bra
-        assert isinstance(components[3], CircuitComponent)
-        assert not components[3].wires.ket and components[3].wires.bra
+        assert len(components) == 2
+        assert components[0] == vacuum @ vacuum.adjoint
+        assert components[1] == d1 @ d1.adjoint
 
     def test_ket_and_bra(self):
         r"""
         Tests the ``add_bra`` function with components with kets and bras.
         """
-        vacuum = Vacuum(3)
-        a1 = Attenuator(1, modes=[0, 8, 9])
+        vacuum = Vacuum([0, 1, 2])
+        a1 = Attenuator(modes=[0, 8, 9], transmissivity=1)
 
         components = add_bra([vacuum, a1])
 
-        assert len(components) == 3
-
-        assert isinstance(components[0], Vacuum)
-        assert components[0].wires.ket and not components[0].wires.bra
-        assert isinstance(components[1], CircuitComponent)
-        assert not components[1].wires.ket and components[1].wires.bra
-
-        assert isinstance(components[2], Attenuator)
-        assert components[2].wires.ket and components[2].wires.bra
+        assert len(components) == 2
+        assert components[0] == vacuum @ vacuum.adjoint
+        assert components[1] == a1
