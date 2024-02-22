@@ -87,13 +87,16 @@ class Ket(State):
         """
         component = super().__rshift__(other)
 
-        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(set(self.modes)):
-            state = (
-                Ket(component.name, []) if isinstance(other, Unitary) else DM(component.name, [])
-            )
-            state._wires = component.wires
-            state._representation = component.representation
-            return state
+        if isinstance(other, Unitary) and set(other.modes).issubset(set(self.modes)):
+            ket = Ket(component.name, [])
+            ket._wires = component.wires
+            ket._representation = component.representation
+            return ket
+        elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
+            dm = DM(component.name, [])
+            dm._wires = component.wires
+            dm._representation = component.representation
+            return dm
         return component
 
 

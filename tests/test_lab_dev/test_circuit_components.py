@@ -18,17 +18,23 @@ Tests for circuit components.
 
 import numpy as np
 
-<<<<<<< HEAD
 from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
 from mrmustard.lab_dev.states import DM, Ket, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Unitary
-=======
-from mrmustard.physics.representations import Bargmann
-from mrmustard.lab_dev.circuit_components import connect, add_bra, CircuitComponent
-from mrmustard.lab_dev.states import Vacuum
-from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
->>>>>>> 4d533473c9f52a9a2838dcc9a337d77b45399091
+
+        # assert isinstance(vac >> d0, Ket)
+        # assert isinstance(vac >> d01, Ket)
+        # assert isinstance(vac >> d012, CircuitComponent)
+        # assert isinstance(vac >> a0, DM)
+        # assert isinstance(vac >> a0 >> d012, CircuitComponent)
+        # assert isinstance(d0 >> d0, Unitary)
+        # assert isinstance(d0 >> d01, Unitary)
+        # assert isinstance(d0 >> d012, Unitary)
+        # assert isinstance(a0 >> a0, Channel)
+        # assert isinstance(a0 >> d0, Channel)
+        # assert isinstance(d0 >> a0, Channel)
+        # assert isinstance(d012 >> a0, Channel)
 
 
 class TestCircuitComponent:
@@ -47,139 +53,6 @@ class TestCircuitComponent:
         assert d.y is d_copy.y
         assert d.wires is not d_copy.wires
 
-<<<<<<< HEAD
-    def test_matmul_gates_only(self):
-        r"""
-        Uses ``__matmul__`` to simulate a circuit with a sequence of one- and two-mode Dgates.
-        """
-        d0 = Dgate(1, modes=[0])
-        d1 = Dgate(2, modes=[1])
-        d01 = Dgate(3, modes=[0, 1])
-        d02 = Dgate(4, modes=[0, 2])
-        result = d1 @ d0 @ d02 @ d01 @ d01
-
-        assert result.name == ""
-        assert result.modes == [0, 1, 2]
-        assert np.allclose(result.representation.A, np.kron([[0, 1], [1, 0]], np.eye(3)))
-        assert np.allclose(result.representation.b, [11, 8, 4, -11, -8, -4])
-
-    def test_matmul_ket_plus_gates(self):
-        r"""
-        Uses ``__matmul__`` to simulate a circuit with a three-mode vacuum state undergoing
-        one- and two-mode Dgates.
-        """
-        vac = Vacuum(3)
-        d0 = Dgate(1, modes=[0])
-        d01 = Dgate([2, 3], modes=[0, 1])
-        d1 = Dgate(4, modes=[1])
-        d2 = Dgate(5, modes=[2])
-        result = vac @ d1 @ d01 @ d0 @ d2 @ d0
-
-        assert result.name == ""
-        assert result.modes == [0, 1, 2]
-        assert np.allclose(result.representation.A, [[0, 0, 0]] * 3)
-        assert np.allclose(result.representation.b, [4, 7, 5])
-
-    def test_matmul_with_ket_and_bras(self):
-        r"""
-        Uses ``__matmul__`` to simulate circuits with a ket-only or bra-only component (a Dgate)
-        and a component with kets and bras (an Attenuator).
-        """
-        d01 = Dgate(x=[1, 2], y=[3, 4], modes=[0, 1])
-        att1 = Attenuator(1.0, modes=[1])
-
-        result1 = d01 @ d01.adjoint @ att1
-        result2 = d01 @ att1 @ d01.adjoint
-        result3 = att1 @ d01 @ d01.adjoint
-        result4 = d01 @ d01.adjoint
-
-        assert result1 == result2
-        assert result1 == result3
-        assert result1 == result4
-
-        assert result1.name == ""
-        assert result1.modes == [0, 1]
-        assert np.allclose(result1.representation.A, np.kron(np.eye(2), d01.representation.A))
-        assert np.allclose(
-            result1.representation.b,
-            [1 - 3j, 2 - 4j, -1 - 3j, -2 - 4j, 1 + 3j, 2 + 4j, -1 + 3j, -2 + 4j],
-        )
-        assert np.allclose(result1.representation.c, d01.representation.c**2)
-
-    def test_rshift_gates_only(self):
-        r"""
-        Uses ``__rshift__`` to simulate a circuit with a sequence of one- and two-mode Dgates.
-        """
-        d0 = Dgate(1, modes=[0])
-        d1 = Dgate(2, modes=[1])
-        d01 = Dgate(3, modes=[0, 1])
-        d02 = Dgate(4, modes=[0, 2])
-        result = d1 >> d0 >> d02 >> d01 >> d01
-
-        assert result.name == ""
-        assert result.modes == [0, 1, 2]
-        assert np.allclose(result.representation.A, np.kron([[0, 1], [1, 0]], np.eye(3)))
-        assert np.allclose(result.representation.b, [11, 8, 4, -11, -8, -4])
-
-    def test_rshift_ket_plus_gates(self):
-        r"""
-        Uses ``__rshift__`` to simulate a circuit with a three-mode vacuum state undergoing
-        one- and two-mode Dgates.
-        """
-        vac = Vacuum(3)
-        d0 = Dgate(1, modes=[0])
-        d01 = Dgate([2, 3], modes=[0, 1])
-        d1 = Dgate(4, modes=[1])
-        d2 = Dgate(5, modes=[2])
-        result = vac >> d1 >> d01 >> d0 >> d2 >> d0
-
-        assert result.name == ""
-        assert result.modes == [0, 1, 2]
-        assert np.allclose(result.representation.A, [[0, 0, 0]] * 3)
-        assert np.allclose(result.representation.b, [4, 7, 5])
-
-    def test_rshift_with_ket_and_bras(self):
-        r"""
-        Uses ``__rshift__`` to simulate circuits with a ket-only or bra-only component (a Dgate)
-        and a component with kets and bras (an Attenuator).
-        """
-        d01 = Dgate(x=[1, 2], y=[3, 4], modes=[0, 1])
-        att1 = Attenuator(1.0, modes=[1])
-
-        result1 = d01 >> att1
-        result2 = d01 @ d01.adjoint
-
-        assert result1 == result2
-
-        assert result1.name == ""
-        assert result1.modes == [0, 1]
-        assert np.allclose(result1.representation.A, np.kron(np.eye(2), d01.representation.A))
-        assert np.allclose(
-            result1.representation.b,
-            [1 - 3j, 2 - 4j, -1 - 3j, -2 - 4j, 1 + 3j, 2 + 4j, -1 + 3j, -2 + 4j],
-        )
-        assert np.allclose(result1.representation.c, d01.representation.c**2)
-
-    def test_rshift_returned_type(self):
-        vac = Vacuum(2)
-        d0 = Dgate(1, modes=[0])
-        d01 = Dgate(1, modes=[0, 1])
-        d012 = Dgate(1, modes=[0, 1, 2])
-        a0 = Attenuator(1, modes=[0])
-
-        assert isinstance(vac >> d0, Ket)
-        assert isinstance(vac >> d01, Ket)
-        assert isinstance(vac >> d012, CircuitComponent)
-        assert isinstance(vac >> a0, DM)
-        assert isinstance(vac >> a0 >> d012, CircuitComponent)
-        assert isinstance(d0 >> d0, Unitary)
-        assert isinstance(d0 >> d01, Unitary)
-        assert isinstance(d0 >> d012, Unitary)
-        assert isinstance(a0 >> a0, Channel)
-        assert isinstance(a0 >> d0, Channel)
-        assert isinstance(d0 >> a0, Channel)
-        assert isinstance(d012 >> a0, Channel)
-=======
     def test_matmul_one_mode(self):
         r"""
         Tests that ``__matmul__`` produces the correct outputs for one-mode components.
@@ -267,7 +140,6 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
->>>>>>> 4d533473c9f52a9a2838dcc9a337d77b45399091
 
 
 class TestConnect:
