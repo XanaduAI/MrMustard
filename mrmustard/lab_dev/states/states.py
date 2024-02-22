@@ -46,11 +46,15 @@ class Vacuum(Ket):
 
     .. details::
 
-        The vacuum state :math:`\ket{0}` is a Gaussian state defined by
+        The :math:`N`-mode vacuum state is defined by
+
+        .. math:: 
+            V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
+
+        Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            \ket{0} = \frac{1}{\sqrt[4]{\pi \hbar}}
-            \int dx~e^{-x^2/(2 \hbar)}\ket{x} ~~\text{, where}~~ \a\ket{0}=0
+            A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
     """
 
     def __init__(
@@ -91,14 +95,16 @@ class Coherent(Ket):
 
     .. details::
 
-        For any :math:`\alpha = x + iy\in\mathbb{C}`, the coherent state :math:`\ket{\alpha}` is a
-        displaced vacuum state defined by
+        For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
+        coherent state displaced :math:`N`-mode vacuum state is defined by
+
+        .. math:: 
+            V = \frac{\hbar}{2}I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
+
+        Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            \ket{\alpha} = D(\alpha)\ket{0}\:,
-
-        where :math:`D(\alpha)` is a displacement gate.  The values of ``x`` and ``y`` are
-        automatically rescaled by :math:`1/(2\sqrt{\hbar})`.
+            A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
     def __init__(
