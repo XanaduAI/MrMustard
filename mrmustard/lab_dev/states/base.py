@@ -78,7 +78,7 @@ class Ket(State):
 
     def __init__(self, name: str, modes: Sequence[int]):
         super().__init__(name, modes_out_ket=modes)
-        
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when

@@ -71,7 +71,6 @@ class Unitary(Transformation):
         return component
 
 
-
 class Channel(Transformation):
     r"""
     Base class for all non-unitary transformations.

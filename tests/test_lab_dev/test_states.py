@@ -44,7 +44,9 @@ class TestKet:
         state = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         channel = Attenuator([1], 1)
-        component1 = CircuitComponent.from_ABC("", )
+        component1 = CircuitComponent.from_ABC(
+            "",
+        )
 
         assert isinstance(state >> unitary, Ket)
         assert isinstance(state >> channel, DM)
