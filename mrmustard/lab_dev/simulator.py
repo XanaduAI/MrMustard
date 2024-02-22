@@ -92,7 +92,7 @@ class Simulator:
         # calculate the ``Wires`` of the returned component, alongside its substrings
         wires_out = components[0].wires
         for c in components[1:]:
-            wires_out >>= c.wires
+            wires_out @= c.wires
         subs_out = "".join([ids_to_subs[id] for id in wires_out.ids])
 
         # grab the representation that remains in ``subs_to_rep``

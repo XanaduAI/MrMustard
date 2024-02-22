@@ -14,11 +14,11 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
-
 from rich import print
 
 from ._version import __version__
 from .utils.settings import *
+from .utils.filters import add_complex_warning_filter
 
 
 def version():
@@ -79,3 +79,7 @@ def about():
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
+
+
+# filter tensorflow cast warnings
+add_complex_warning_filter()

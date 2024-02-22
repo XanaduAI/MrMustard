@@ -67,13 +67,22 @@ Examples:
 
 """
 
+# pylint: disable = wrong-import-position
+
+
 from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
+
+import os
 import numpy as np
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 @dataclass

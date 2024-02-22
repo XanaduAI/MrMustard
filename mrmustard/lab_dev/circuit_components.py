@@ -113,7 +113,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> list(int):
+    def modes(self) -> list[int]:
         r"""
         A set with all the modes in this component.
         """
@@ -152,20 +152,6 @@ class CircuitComponent:
         representation = ret.representation.conj()
         return CircuitComponent.from_attributes(name, wires, representation)
 
-    def bargmann(self):
-        r"""
-        Returns the ``(A, b, c)`` triple for the Fock-Bargmann representation of this component.
-
-        Returns:
-            The ``(A, b, c)`` triple for the Fock-Bargmann representation of this component.
-
-        Raises:
-            ValueError: If the ``(A, b, c)`` triple for this object cannot be computed.
-        """
-        if isinstance(self.representation, Bargmann):
-            return self.representation.A, self.representation.b, self.representation.c
-        raise ValueError("Cannot compute the ``(A, b, c)`` triple for this object.")
-
     @property
     def dual(self) -> CircuitComponent:
         r"""
@@ -192,9 +178,9 @@ class CircuitComponent:
         r"""
         Whether this component is equal to another component.
 
-        Compares representations and wires.
+        Compares representations and wires, but not the other attributes (including name and parameter set).
         """
-        return self.representation == other.representation  # and self.wires == other.wires
+        return self.representation == other.representation and self.wires == other.wires
 
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -277,6 +263,48 @@ class CircuitComponent:
         ret._wires = self._wires[idx]
         ret._parameter_set = self.parameter_set
         return ret
+
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other``, without adding adjoints.
+        """
+        # initialized the ``Wires`` of the returned component
+        wires_ret = self.wires @ other.wires
+
+        # find the indices of the wires being contracted on the bra side
+        bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
+        idx_z = self.wires[bra_modes].bra.output.indices
+        idx_zconj = other.wires[bra_modes].bra.input.indices
+
+        # find the indices of the wires being contracted on the ket side
+        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
+        idx_z += self.wires[ket_modes].ket.output.indices
+        idx_zconj += other.wires[ket_modes].ket.input.indices
+
+        # convert Bargmann -> Fock if needed
+        LEFT = self.representation
+        RIGHT = other.representation
+        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
+            raise ValueError("Cannot contract objects with different representations.")
+            # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
+            # LEFT = Fock(self.fock(shape=shape), batched=False)
+        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
+            raise ValueError("Cannot contract objects with different representations.")
+            # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
+            # RIGHT = Fock(other.fock(shape=shape), batched=False)
+
+        # calculate the representation of the returned component
+        representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
+
+        # reorder the representation
+        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
+        contracted_idx += [
+            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
+        ]
+        order = [contracted_idx.index(id) for id in wires_ret.ids]
+        representation_ret = representation_ret.reorder(order)
+
+        return CircuitComponent.from_attributes("", wires_ret, representation_ret)
 
 
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:

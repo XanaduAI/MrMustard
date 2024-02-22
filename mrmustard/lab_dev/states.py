@@ -116,5 +116,5 @@ class Vacuum(Ket):
         num_modes = len(self.modes)
         A = math.zeros(shape=(num_modes, num_modes), dtype=math.complex128)
         B = math.zeros(shape=(num_modes), dtype=math.complex128)
-        C = 1.0
+        C = math.cast(1.0, dtype=math.complex128)
         return Bargmann(A, B, C)

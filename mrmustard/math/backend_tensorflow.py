@@ -14,13 +14,19 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+import os
 import numpy as np
-import tensorflow as tf
 import tensorflow_probability as tfp
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
+
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -58,6 +64,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
@@ -77,13 +90,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
 
     def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
 
     def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
         if len(array.shape) == 2:
             array = self.expand_dims(array, 0)
         return array
@@ -106,9 +119,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
-
-        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
-            array = self.real(array)
         return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
@@ -278,6 +288,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
         return tf.math.pow(x, y)
 
+    def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
+        tf.experimental.numpy.experimental_enable_numpy_behavior()
+        return tf.experimental.numpy.kron(tensor1, tensor2)
+
+    def prod(self, x: tf.Tensor, axis: Union[None, int]):
+        return tf.math.reduce_prod(x, axis=axis)
+
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
 
@@ -367,11 +384,16 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         return tf.math.xlogy(x, y)
 
-    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+    def sqrtm(self, tensor: tf.Tensor, dtype, rtol=1e-05, atol=1e-08) -> Tensor:
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return tf.linalg.sqrtm(tensor)
+            ret = self.zeros_like(tensor)
+        else:
+            ret = tf.linalg.sqrtm(tensor)
+
+        if dtype is None:
+            return self.cast(ret, self.complex128)
+        return self.cast(ret, dtype)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions
