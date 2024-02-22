@@ -48,10 +48,10 @@ class Vacuum(Ket):
 
         The :math:`N`-mode vacuum state is defined by
 
-        .. math:: 
+        .. math::
             V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
@@ -98,10 +98,10 @@ class Coherent(Ket):
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
         coherent state displaced :math:`N`-mode vacuum state is defined by
 
-        .. math:: 
+        .. math::
             V = \frac{\hbar}{2}I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
