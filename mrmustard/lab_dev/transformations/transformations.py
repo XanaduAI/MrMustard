@@ -130,7 +130,7 @@ class Dgate(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        x: The displacements along the `x` axis.
+        x: The displacements along the `x` axis, which represents position axis in phase space.
         x_bounds: The bounds for the displacement along the `x` axis.
         x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
