@@ -24,7 +24,7 @@ from mrmustard import math
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["Attenuator", "BSgate", "Dgate", "Sgate"]
 
@@ -110,7 +110,7 @@ class BSgate(Unitary):
 
 class Dgate(Unitary):
     r"""
-    The displacement gate in phase space.
+    The displacement gate.
 
     If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
@@ -125,16 +125,13 @@ class Dgate(Unitary):
         >>> assert np.allclose(unitary.x.value, [0.1, 0.1])
         >>> assert np.allclose(unitary.y.value, [0.2, 0.3])
 
-    To apply mode-specific values use a list of floats, one can optionally set bounds for each
-    parameter, which the optimizer will respect.
-
     Args:
         modes: The modes this gate is applied to.
-        x: The displacements along the `x` axis.
+        x: The displacements along the `x` axis, which represents position axis in phase space.
         x_bounds: The bounds for the displacement along the `x` axis.
         x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
-        y_bounds: The bounds for the displacement along the `y` axis.
+        y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
         y_trainable: Whether `y` is a trainable variable.
 
     .. details::
@@ -174,15 +171,8 @@ class Dgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-
-        xs = math.atleast_1d(self.x.value)
-        if len(xs) == 1:
-            xs = math.astensor([xs[0] for _ in range(num_modes)])
-        ys = math.atleast_1d(self.y.value)
-        if len(ys) == 1:
-            ys = math.astensor([ys[0] for _ in range(num_modes)])
-
+        n_modes = len(self.modes)
+        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
 
@@ -222,7 +212,7 @@ class Sgate(Unitary):
                     \text{diag}_N(\text{cosh}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{sinh}(\bar{r}))\\
                     -\text{diag}_N(e^{i\bar{\phi}}\text{sinh}(\bar{r})) & \text{diag}_N(\text{cosh}(\bar{r}))
                 \end{bmatrix} \\
-            d &= O_{2N}
+            d &= O_{2N}.
 
         Its ``(A,b,c)`` triple is given by 
 
@@ -253,15 +243,8 @@ class Sgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-
-        rs = math.atleast_1d(self.r.value)
-        if len(rs) == 1:
-            rs = math.astensor([rs[0] for _ in range(num_modes)])
-        phis = math.atleast_1d(self.phi.value)
-        if len(phis) == 1:
-            phis = math.astensor([phis[0] for _ in range(num_modes)])
-
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
 
 
@@ -332,7 +315,6 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        eta = math.atleast_1d(self.transmissivity.value)
-        if len(eta) == 1:
-            eta = math.astensor([eta[0] for _ in range(len(self.modes))])
+        n_modes = len(self.modes)
+        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))

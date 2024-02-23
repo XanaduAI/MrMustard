@@ -103,6 +103,21 @@ class TestCircuitComponent:
         assert np.allclose(result2.representation.b, 0)
         assert np.allclose(result2.representation.c, 0.40656966)
 
+    def test_matmul_one_mode_Dgate_contraction(self):
+        r"""
+        Tests that ``__matmul__`` produces the correct outputs for two Dgate with the formula well-known.
+        """
+        alpha = 1.5 + 0.7888 * 1j
+        beta = -0.1555 + 1j * 2.1
+        alpha_plus_beta = alpha + beta
+        d1 = Dgate(modes=[0], x=alpha.real, y=alpha.imag)
+        d2 = Dgate(modes=[0], x=beta.real, y=beta.imag)
+        result1 = d2 @ d1
+        correct_c = np.exp(-0.5 * (abs(alpha_plus_beta) ** 2)) * np.exp(
+            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
+        )
+        assert np.allclose(result1.representation.c, correct_c)
+
     def test_matmul_multi_modes(self):
         r"""
         Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
@@ -132,6 +147,40 @@ class TestCircuitComponent:
             ],
         )
         assert np.allclose(result.representation.c, 0.95504196)
+
+    def test_adjoint(self):
+        r"""
+        Tests the ``adjoint`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_adj = d1.adjoint
+
+        assert isinstance(d1_adj, AdjointView)
+        assert d1_adj.name == d1.name
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert isinstance(d1_adj_adj, CircuitComponent)
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
+    def test_dual(self):
+        r"""
+        Tests the ``dual`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_dual = d1.dual
+
+        assert isinstance(d1_dual, DualView)
+        assert d1_dual.name == d1.name
+        assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.representation == d1.representation.conj()
+
+        d1_dual_dual = d1_dual.dual
+        assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.wires == d1.wires
+        assert d1_dual_dual.representation == d1.representation
 
     def test_matmul_is_associative(self):
         r"""
@@ -224,6 +273,72 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+
+class TestAdjointView:
+    r"""
+    Tests ``AdjointView`` objects.
+    """
+
+    def test_init(self):
+        r"""
+        Tests the ``__init__`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_adj = AdjointView(d1)
+
+        assert d1_adj.name == d1.name
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
+    def test_parameters_point_to_original_parameters(self):
+        r"""
+        Tests that the parameters of an AdjointView object point to those of the original object.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+        d1_adj = AdjointView(d1)
+
+        d1.x.value = 0.8
+
+        assert d1_adj.x.value == 0.8
+        assert d1_adj.representation == d1.representation.conj()
+
+
+class TestDualView:
+    r"""
+    Tests ``DualView`` objects.
+    """
+
+    def test_init(self):
+        r"""
+        Tests the ``__init__`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_dual = DualView(d1)
+
+        assert d1_dual.name == d1.name
+        assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.representation == d1.representation.conj()
+
+        d1_dual_dual = DualView(d1_dual)
+        assert d1_dual_dual.wires == d1.wires
+        assert d1_dual_dual.representation == d1.representation
+
+    def test_parameters_point_to_original_parameters(self):
+        r"""
+        Tests that the parameters of a DualView object point to those of the original object.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+        d1_dual = DualView(d1)
+
+        d1.x.value = 0.8
+
+        assert d1_dual.x.value == 0.8
+        assert d1_dual.representation == d1.representation.conj()
 
 
 class TestAdjointView:

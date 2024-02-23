@@ -22,7 +22,7 @@ from typing import Iterable, Optional, Tuple, Union
 
 from mrmustard import math
 from .base import Ket, DM
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 from ...physics.representations import Bargmann
 from ...physics import triples
 
@@ -82,7 +82,6 @@ class Coherent(Ket):
 
         >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
         >>> assert state.modes == [0, 1, 2]
-        >>> # assert Coherent(x=0.5, y=0.2) == Vacuum([0]) >> Dgate(x=0.5, y=0.2)
 
     Args:
         modes: The modes of the coherent state.
@@ -123,13 +122,6 @@ class Coherent(Ket):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-
-        xs = math.atleast_1d(self.x.value)
-        if len(xs) == 1:
-            xs = math.astensor([xs[0] for _ in range(num_modes)])
-        ys = math.atleast_1d(self.y.value)
-        if len(ys) == 1:
-            ys = math.astensor([ys[0] for _ in range(num_modes)])
-
+        n_modes = len(self.modes)
+        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.coherent_state_Abc(xs, ys))

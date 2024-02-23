@@ -17,8 +17,9 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
-from typing import Callable, Optional, Tuple
+from typing import Callable, Generator, Optional, Tuple
 
+from mrmustard import math
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
 
 
@@ -51,3 +52,30 @@ def light_copy(obj, duplicate: list[str]):
     instance = object.__new__(type(obj))
     instance.__dict__.update({k: v for k, v in obj.__dict__.items() if k in duplicate})
     return instance
+
+
+def reshape_params(n_modes: str, **kwargs) -> Generator:
+    r"""
+    A utility function to turn the input parameters of states and gates into
+    1-dimensional tensors of length ``n_modes``.
+
+    Args:
+        n_modes: The number of modes.
+
+    Raise:
+        ValueError: If a parameter has a length which is neither equal to ``1``
+        nor ``n_modes``.
+    """
+    names = list(kwargs.keys())
+    vars = list(kwargs.values())
+
+    vars = [math.atleast_1d(var, math.complex128) for var in vars]
+
+    for i, var in enumerate(vars):
+        if len(var) == 1:
+            var = math.tile(var, (n_modes,))
+        else:
+            if len(var) != n_modes:
+                msg = f"Parameter {names[i]} has an incompatible shape."
+                raise ValueError(msg)
+        yield var

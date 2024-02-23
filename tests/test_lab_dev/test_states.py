@@ -166,3 +166,7 @@ class TestCoherent:
         assert math.allclose(rep3.A, np.zeros((1, 1, 1)))
         assert math.allclose(rep3.b, [[0.1]])
         assert math.allclose(rep3.c, [0.9950124791926823])
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Coherent(modes=[0], x=[0.1, 0.2]).representation
