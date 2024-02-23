@@ -32,6 +32,22 @@ def test_reorder_abc():
     )
 
 
+def test_reorder_abc():
+    """Test that the reorder_abc function works correctly"""
+    A = np.array([[1, 2], [2, 3]])
+    b = np.array([4, 5])
+    c = np.array(6)
+    same = reorder_abc((A, b, c), (0, 1))
+    assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
+    flipped = reorder_abc((A, b, c), (1, 0))
+    assert all(np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c)))
+    c = np.array([[6, 7], [8, 9]])
+    flipped = reorder_abc((A, b, c), (1, 0))  #  test transposition of c
+    assert all(
+        np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
+    )
+
+
 def test_wigner_to_bargmann_psi():
     """Test that the Bargmann representation of a ket is correct"""
     G = Gaussian(2) >> Dgate(0.1, 0.2)

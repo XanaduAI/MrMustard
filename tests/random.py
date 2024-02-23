@@ -112,7 +112,11 @@ def list_of_ints(draw, N):
 def matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols`."""
     elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
+<<<<<<< HEAD
     return draw(arrays(np.float64, (rows, cols), elements=elements))
+=======
+    return draw(arrays(np.float, (rows, cols), elements=elements))
+>>>>>>> e235882ee41feadbcf046f625fedec3c42d8a0d9
 
 
 @st.composite
