@@ -18,12 +18,12 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Callable, Optional, Sequence, Union
 
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
 __all__ = ["CircuitComponent"]
@@ -46,10 +46,10 @@ class CircuitComponent:
     def __init__(
         self,
         name: str,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
         representation: Optional[Representation] = None,
     ) -> None:
         # TODO: Add validation to check that wires and representation are compatible (e.g.,
@@ -66,10 +66,10 @@ class CircuitComponent:
         A: Batch[ComplexMatrix],
         B: Batch[ComplexVector],
         c: Batch[ComplexTensor],
-        modes_in_ket: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
     ):
         r"""
         Initializes a circuit component from Bargmann's A, B, and c.
@@ -99,9 +99,17 @@ class CircuitComponent:
         r"""
         Adds a parameter to this circuit component.
 
-        Arguments:
+        Args:
             parameter: The parameter to add.
+
+        Raises:
+            ValueError: If the length of the given parameter is incompatible with the number
+                of modes.
         """
+        if parameter.value.shape != ():
+            if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
+                msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
+                raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
@@ -113,7 +121,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> set(Mode):
+    def modes(self) -> set(int):
         r"""
         A set with all the modes in this component.
         """
@@ -146,11 +154,7 @@ class CircuitComponent:
         Light-copies this component, then returns the adjoint of it, obtained by taking the
         conjugate of the representation and switching ket and bra wires.
         """
-        ret = self.light_copy()
-        name = ret.name + "_adj"
-        wires = ret.wires.adjoint
-        representation = ret.representation.conj()
-        return CircuitComponent.from_attributes(name, wires, representation)
+        return AdjointView(self)
 
     @property
     def dual(self) -> CircuitComponent:
@@ -158,11 +162,7 @@ class CircuitComponent:
         Light-copies this component, then returns the dual of it, obtained by taking the
         conjugate of the representation and switching input and output wires.
         """
-        ret = self.light_copy()
-        ret._name += "_dual"
-        ret._wires = ret.wires.dual
-        ret._representation = ret.representation.conj()
-        return ret
+        return DualView(self)
 
     def light_copy(self) -> CircuitComponent:
         r"""
@@ -170,7 +170,7 @@ class CircuitComponent:
         it by reference, except for its wires, which are copied by value.
         """
         instance = super().__new__(self.__class__)
-        instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
+        instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
@@ -182,7 +182,7 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __getitem__(self, idx: Union[Mode, Sequence[Mode]]):
+    def __getitem__(self, idx: Union[int, Sequence[int]]):
         r"""
         Returns a slice of this component for the given modes.
         """
@@ -234,6 +234,74 @@ class CircuitComponent:
         return CircuitComponent.from_attributes("", wires_ret, representation_ret)
 
 
+class AdjointView(CircuitComponent):
+    r"""
+    Adjoint view of a circuit component.
+
+    Args:
+        component: The circuit component to take the view of.
+    """
+
+    def __init__(self, component: CircuitComponent) -> None:
+        self.__dict__ = component.light_copy().__dict__.copy()
+        self._component = component.light_copy()
+
+    @property
+    def adjoint(self) -> CircuitComponent:
+        r"""
+        Returns a light-copy of the component that was used to generate the view.
+        """
+        return self._component.light_copy()
+
+    @property
+    def representation(self):
+        r"""
+        A representation of this circuit component.
+        """
+        return self._component.representation.conj()
+
+    @property
+    def wires(self):
+        r"""
+        The ``Wires`` in this component.
+        """
+        return self._component.wires.adjoint
+
+
+class DualView(CircuitComponent):
+    r"""
+    Dual view of a circuit component.
+
+    Args:
+        component: The circuit component to take the view of.
+    """
+
+    def __init__(self, component: CircuitComponent) -> None:
+        self.__dict__ = component.__dict__.copy()
+        self._component = component.light_copy()
+
+    @property
+    def dual(self) -> CircuitComponent:
+        r"""
+        Returns a light-copy of the component that was used to generate the view.
+        """
+        return self._component.light_copy()
+
+    @property
+    def representation(self):
+        r"""
+        A representation of this circuit component.
+        """
+        return self._component.representation.conj()
+
+    @property
+    def wires(self):
+        r"""
+        The ``Wires`` in this component.
+        """
+        return self._component.wires.dual
+
+
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
     r"""
     Takes as input a sequence of circuit components and connects their wires.
@@ -277,8 +345,8 @@ def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     ret = []
 
     for component in components:
-        ret.append(component.light_copy())
         if not component.wires.bra:
-            ret.append(component.adjoint)
-
+            ret.append(component @ component.adjoint)
+        else:
+            ret.append(component)
     return ret
