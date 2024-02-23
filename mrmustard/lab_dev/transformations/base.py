@@ -24,7 +24,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..circuit_components import CircuitComponent
 
@@ -46,7 +46,9 @@ class Unitary(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -59,15 +61,16 @@ class Unitary(Transformation):
         """
         component = super().__rshift__(other)
 
-        if isinstance(other, (Unitary, Channel)):
-            transformation = (
-                Unitary(component.name, [])
-                if isinstance(other, Unitary)
-                else Channel(component.name, [])
-            )
-            transformation._wires = component.wires
-            transformation._representation = component.representation
-            return transformation
+        if isinstance(other, Unitary):
+            unitary = Unitary()
+            unitary._wires = component.wires
+            unitary._representation = component.representation
+            return unitary
+        elif isinstance(other, Channel):
+            channel = Channel()
+            channel._wires = component.wires
+            channel._representation = component.representation
+            return channel
         return component
 
 
@@ -80,7 +83,9 @@ class Channel(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(
             name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
@@ -96,7 +101,7 @@ class Channel(Transformation):
         component = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            channel = Channel(component.name, [])
+            channel = Channel()
             channel._wires = component.wires
             channel._representation = component.representation
             return channel

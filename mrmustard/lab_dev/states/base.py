@@ -23,7 +23,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
@@ -46,7 +46,9 @@ class DM(State):
         modes: The modes of this state.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -60,7 +62,7 @@ class DM(State):
         component = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(set(self.modes)):
-            dm = DM(component.name, [])
+            dm = DM()
             dm._wires = component.wires
             dm._representation = component.representation
             return dm
@@ -76,7 +78,9 @@ class Ket(State):
         modes: The modes of this states.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -91,12 +95,12 @@ class Ket(State):
         component = super().__rshift__(other)
 
         if isinstance(other, Unitary) and set(other.modes).issubset(set(self.modes)):
-            ket = Ket(component.name, [])
+            ket = Ket()
             ket._wires = component.wires
             ket._representation = component.representation
             return ket
         elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
-            dm = DM(component.name, [])
+            dm = DM()
             dm._wires = component.wires
             dm._representation = component.representation
             return dm
