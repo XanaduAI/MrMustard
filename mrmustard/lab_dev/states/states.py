@@ -82,7 +82,6 @@ class Coherent(Ket):
 
         >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
         >>> assert state.modes == [0, 1, 2]
-        >>> # assert Coherent(x=0.5, y=0.2) == Vacuum([0]) >> Dgate(x=0.5, y=0.2)
 
     Args:
         modes: The modes of the coherent state.

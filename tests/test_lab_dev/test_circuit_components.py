@@ -69,6 +69,21 @@ class TestCircuitComponent:
         assert np.allclose(result2.representation.b, 0)
         assert np.allclose(result2.representation.c, 0.40656966)
 
+    def test_matmul_one_mode_Dgate_contraction(self):
+        r"""
+        Tests that ``__matmul__`` produces the correct outputs for two Dgate with the formula well-known.
+        """
+        alpha = 1.5 + 0.7888 * 1j
+        beta = -0.1555 + 1j * 2.1
+        alpha_plus_beta = alpha + beta
+        d1 = Dgate(x=alpha.real, y=alpha.imag)
+        d2 = Dgate(x=beta.real, y=beta.imag)
+        result1 = d2 @ d1
+        correct_c = np.exp(-0.5 * (abs(alpha_plus_beta) ** 2)) * np.exp(
+            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
+        )
+        assert np.allclose(result1.representation.c, correct_c)
+
     def test_matmul_multi_modes(self):
         r"""
         Tests that ``__matmul__`` produces the correct outputs for multi-mode components.

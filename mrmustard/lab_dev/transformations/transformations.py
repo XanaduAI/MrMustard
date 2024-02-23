@@ -125,9 +125,6 @@ class Dgate(Unitary):
         >>> assert np.allclose(unitary.x.value, [0.1, 0.1])
         >>> assert np.allclose(unitary.y.value, [0.2, 0.3])
 
-    To apply mode-specific values use a list of floats, one can optionally set bounds for each
-    parameter, which the optimizer will respect.
-
     Args:
         modes: The modes this gate is applied to.
         x: The displacements along the `x` axis.
