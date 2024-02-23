@@ -77,8 +77,8 @@ class TestChannel:
         u_component = CircuitComponent.from_attributes(
             unitary.name, unitary.wires, unitary.representation
         )
-        channel1 = Attenuator([1, 2], 1)
-        channel2 = Attenuator([2, 3], 1)
+        channel1 = Attenuator([1, 2], .9)
+        channel2 = Attenuator([2, 3], .9)
         ch_component = CircuitComponent.from_attributes(
             channel1.name, channel1.wires, channel1.representation
         )
