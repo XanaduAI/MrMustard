@@ -53,6 +53,7 @@ def light_copy(obj, duplicate: list[str]):
     instance.__dict__.update({k: v for k, v in obj.__dict__.items() if k in duplicate})
     return instance
 
+
 def reshape_params(n_modes: str, **kwargs) -> Generator:
     r"""
     A utility function to turn the input parameters of states and gates into
