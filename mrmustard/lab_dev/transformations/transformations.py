@@ -134,7 +134,7 @@ class Dgate(Unitary):
         x_bounds: The bounds for the displacement along the `x` axis.
         x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
-        y_bounds: The bounds for the displacement along the `y` axis.
+        y_bounds: The bounds for the displacement along the `y` axis, , which represents momentum axis in phase space.
         y_trainable: Whether `y` is a trainable variable.
 
     .. details::
