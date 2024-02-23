@@ -110,7 +110,7 @@ class BSgate(Unitary):
 
 class Dgate(Unitary):
     r"""
-    The displacement gate in phase space.
+    The displacement gate.
 
     If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
