@@ -182,79 +182,6 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
-        """
-        # set the name of the returned component
-        name_ret = ""
-
-        # initialized the ``Wires`` of the returned component
-        wires_ret = self.wires >> other.wires
-
-        # store the indices of the wires being contracted
-        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
-        bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
-        idx_z = self.wires[ket_modes].ket.output.indices + self.wires[bra_modes].bra.output.indices
-        idx_zconj = (
-            other.wires[ket_modes].ket.input.indices + other.wires[bra_modes].bra.input.indices
-        )
-
-        # convert Bargmann -> Fock if needed
-        LEFT = self.representation
-        RIGHT = other.representation
-        msg = "Cannot contract objects with different representations"
-        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
-            raise ValueError(msg)
-            # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
-            # LEFT = Fock(self.fock(shape=shape), batched=False)
-        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
-            raise ValueError(msg)
-            # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
-            # RIGHT = Fock(other.fock(shape=shape), batched=False)
-
-        # calculate the representation of the returned component and reorder it
-        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
-        contracted_idx += [
-            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
-        ]
-
-        order = [contracted_idx.index(id) for id in wires_ret.ids]
-        repr_ret = (LEFT[idx_z] @ RIGHT[idx_zconj]).reorder(order)
-
-        return CircuitComponent.from_attributes(name_ret, wires_ret, repr_ret)
-
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
-        """
-        ret = self @ other
-
-        if not self.wires.bra:
-            if not other.wires.bra:
-                # self has ket, other has ket
-                return ret
-            elif not other.wires.ket:
-                # self has ket, other has bra
-                return ret @ ret.adjoint
-            # self has ket, other has ket and bra
-            return self.adjoint @ ret
-        elif not self.wires.ket:
-            if not other.wires.bra:
-                # self has bra, other has ket
-                return ret @ ret.adjoint
-            elif not other.wires.ket:
-                # self has bra, other has bra
-                return ret
-            # self has bra, other has ket and bra
-            return self.adjoint @ ret
-        if not other.wires.bra or not other.wires.ket:
-            # self has ket and bra, other has ket or bra
-            return ret @ other.adjoint
-        # self has ket and bra, other has ket and bra
-        return ret
-
     def __getitem__(self, idx: Union[int, Sequence[int]]):
         r"""
         Returns a slice of this component for the given modes.
@@ -305,6 +232,37 @@ class CircuitComponent:
         representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes("", wires_ret, representation_ret)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+        """
+        ret = self @ other
+
+        if not self.wires.bra:
+            if not other.wires.bra:
+                # self has ket, other has ket
+                return ret
+            elif not other.wires.ket:
+                # self has ket, other has bra
+                return ret @ ret.adjoint
+            # self has ket, other has ket and bra
+            return self.adjoint @ ret
+        elif not self.wires.ket:
+            if not other.wires.bra:
+                # self has bra, other has ket
+                return ret @ ret.adjoint
+            elif not other.wires.ket:
+                # self has bra, other has bra
+                return ret
+            # self has bra, other has ket and bra
+            return self.adjoint @ ret
+        if not other.wires.bra or not other.wires.ket:
+            # self has ket and bra, other has ket or bra
+            return ret @ other.adjoint
+        # self has ket and bra, other has ket and bra
+        return ret
 
 
 class AdjointView(CircuitComponent):
