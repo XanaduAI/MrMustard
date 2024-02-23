@@ -90,7 +90,7 @@ class CircuitComponent:
         Initializes a circuit component from its attributes (a name, a ``Wires``,
         and a ``Representation``).
         """
-        ret = cls(name)
+        ret = CircuitComponent(name)
         ret._wires = wires
         ret._representation = representation
         return ret
