@@ -15,7 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11']
+        backend: [numpy, tensorflow]
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.python-version }}
       cancel-in-progress: true
@@ -53,4 +54,4 @@ jobs:
         run: julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
-        run: python -m pytest tests -p no:warnings --tb=native
+        run: python -m pytest tests -p no:warnings --tb=native --backend=${{ matrix.python-version }}
