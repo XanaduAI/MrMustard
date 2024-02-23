@@ -1,4 +1,4 @@
-# Release 0.7.1 (current develop)
+# Release 0.7.1 (current release)
 
 ### New features
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
@@ -26,7 +26,7 @@
 
 ---
 
-# Release 0.7.0 (current release)
+# Release 0.7.0
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
