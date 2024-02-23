@@ -76,8 +76,8 @@ class TestCircuitComponent:
         alpha = 1.5 + 0.7888 * 1j
         beta = -0.1555 + 1j * 2.1
         alpha_plus_beta = alpha + beta
-        d1 = Dgate(x=alpha.real, y=alpha.imag)
-        d2 = Dgate(x=beta.real, y=beta.imag)
+        d1 = Dgate(modes=[0], x=alpha.real, y=alpha.imag)
+        d2 = Dgate(modes=[0], x=beta.real, y=beta.imag)
         result1 = d2 @ d1
         correct_c = np.exp(-0.5 * (abs(alpha_plus_beta) ** 2)) * np.exp(
             (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2

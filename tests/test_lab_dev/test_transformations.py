@@ -172,6 +172,10 @@ class TestDgate:
         gate3.y.value = 2
         assert gate3.y.value == 2
 
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Dgate(modes=[0], x=[0.1, 0.2]).representation
+
 
 class TestSgate:
     r"""
@@ -242,6 +246,10 @@ class TestSgate:
         gate3.phi.value = 2
         assert gate3.phi.value == 2
 
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Sgate(modes=[0], r=[0.1, 0.2]).representation
+
 
 class TestAttenuator:
     r"""
@@ -278,3 +286,7 @@ class TestAttenuator:
 
         gate2.transmissivity.value = 2
         assert gate2.transmissivity.value == 2
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Attenuator(modes=[0], transmissivity=[0.1, 0.2]).representation

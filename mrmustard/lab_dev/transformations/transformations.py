@@ -24,7 +24,7 @@ from mrmustard import math
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["Attenuator", "BSgate", "Dgate", "Sgate"]
 
@@ -171,15 +171,8 @@ class Dgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-
-        xs = math.atleast_1d(self.x.value)
-        if len(xs) == 1:
-            xs = math.astensor([xs[0] for _ in range(num_modes)])
-        ys = math.atleast_1d(self.y.value)
-        if len(ys) == 1:
-            ys = math.astensor([ys[0] for _ in range(num_modes)])
-
+        n_modes = len(self.modes)
+        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
 
@@ -250,15 +243,8 @@ class Sgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-
-        rs = math.atleast_1d(self.r.value)
-        if len(rs) == 1:
-            rs = math.astensor([rs[0] for _ in range(num_modes)])
-        phis = math.atleast_1d(self.phi.value)
-        if len(phis) == 1:
-            phis = math.astensor([phis[0] for _ in range(num_modes)])
-
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
 
 
@@ -329,7 +315,6 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        eta = math.atleast_1d(self.transmissivity.value)
-        if len(eta) == 1:
-            eta = math.astensor([eta[0] for _ in range(len(self.modes))])
+        n_modes = len(self.modes)
+        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
