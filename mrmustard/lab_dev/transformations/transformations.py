@@ -332,5 +332,7 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        eta = self.transmissivity.value
+        eta = math.atleast_1d(self.transmissivity.value)
+        if len(eta) == 1:
+            eta = math.astensor([eta[0] for _ in range(len(self.modes))])
         return Bargmann(*triples.attenuator_Abc(eta))
