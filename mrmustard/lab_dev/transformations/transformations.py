@@ -110,7 +110,7 @@ class BSgate(Unitary):
 
 class Dgate(Unitary):
     r"""
-    The displacement gate in phase space.
+    The displacement gate.
 
     If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
@@ -127,11 +127,11 @@ class Dgate(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        x: The displacements along the `x` axis.
+        x: The displacements along the `x` axis, which represents position axis in phase space.
         x_bounds: The bounds for the displacement along the `x` axis.
         x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
-        y_bounds: The bounds for the displacement along the `y` axis.
+        y_bounds: The bounds for the displacement along the `y` axis, , which represents momentum axis in phase space.
         y_trainable: Whether `y` is a trainable variable.
 
     .. details::
@@ -219,7 +219,7 @@ class Sgate(Unitary):
                     \text{diag}_N(\text{cosh}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{sinh}(\bar{r}))\\
                     -\text{diag}_N(e^{i\bar{\phi}}\text{sinh}(\bar{r})) & \text{diag}_N(\text{cosh}(\bar{r}))
                 \end{bmatrix} \\
-            d &= O_{2N}
+            d &= O_{2N}.
 
         Its ``(A,b,c)`` triple is given by 
 
