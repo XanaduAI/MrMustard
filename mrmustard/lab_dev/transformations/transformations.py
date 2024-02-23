@@ -222,7 +222,7 @@ class Sgate(Unitary):
                     \text{diag}_N(\text{cosh}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{sinh}(\bar{r}))\\
                     -\text{diag}_N(e^{i\bar{\phi}}\text{sinh}(\bar{r})) & \text{diag}_N(\text{cosh}(\bar{r}))
                 \end{bmatrix} \\
-            d &= O_{2N}
+            d &= O_{2N}.
 
         Its ``(A,b,c)`` triple is given by 
 
