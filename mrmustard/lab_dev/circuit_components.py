@@ -26,7 +26,7 @@ from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
-__all__ = ["add_bra", "CircuitComponent", "connect"]
+__all__ = ["CircuitComponent", "AdjointView", "DualView", "add_bra", "connect"]
 
 
 class CircuitComponent:
