@@ -18,7 +18,7 @@ jobs:
         python-version: ['3.9', '3.10', '3.11']
         backend: [numpy, tensorflow]
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.python-version }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.python-version }}-${{ matrix.backend }}
       cancel-in-progress: true
 
     steps:
