@@ -4,6 +4,8 @@
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
   several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
 
+* Added support for python 3.11. [(#354)](https://github.com/XanaduAI/MrMustard/pull/354)
+
 ### Breaking changes
 
 ### Improvements
