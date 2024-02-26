@@ -26,7 +26,7 @@ from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
-__all__ = ["CircuitComponent"]
+__all__ = ["add_bra", "CircuitComponent", "connect"]
 
 
 class CircuitComponent:
@@ -353,6 +353,30 @@ class DualView(CircuitComponent):
         return self._component.wires.dual
 
 
+def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+    r"""
+    Takes as input a sequence of circuit components and adds the adjoint of every component that
+    has no wires on the bra side.
+
+    It works on light copies of the given components, so the input list is not mutated.
+
+    Args:
+        components: The circuit components to add bras to.
+
+    Returns:
+        The connected components, light-copied.
+    """
+    ret = []
+
+    for component in components:
+        component_cp = component.light_copy()
+        if not component_cp.wires.bra:
+            ret.append(component_cp @ component_cp.adjoint)
+        else:
+            ret.append(component_cp)
+    return ret
+
+
 def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
     r"""
     Takes as input a sequence of circuit components and connects their wires.
@@ -383,28 +407,4 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
                 if output_bra[mode]:
                     component.wires[mode].input.bra.ids = output_bra[mode].output.bra.ids
                 output_bra[mode] = component.wires[mode]
-    return ret
-
-
-def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
-    r"""
-    Takes as input a sequence of circuit components and adds the adjoint of every component that
-    has no wires on the bra side.
-
-    It works on light copies of the given components, so the input list is not mutated.
-
-    Args:
-        components: The circuit components to add bras to.
-
-    Returns:
-        The connected components, light-copied.
-    """
-    ret = []
-
-    for component in components:
-        component_cp = component.light_copy()
-        if not component_cp.wires.bra:
-            ret.append(component_cp @ component_cp.adjoint)
-        else:
-            ret.append(component_cp)
     return ret
