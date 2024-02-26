@@ -18,7 +18,7 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Union
+from typing import  Optional, Sequence, Union
 
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
@@ -31,16 +31,16 @@ __all__ = ["CircuitComponent"]
 
 class CircuitComponent:
     r"""
-    A base class for the components (states, transformations, and measurements)
-    of quantum circuits.
+    A base class for the components (states, transformations, and measurements, or potentially
+    unphysical ``wired'' objects) that can be placed in Mr Mustard's quantum circuits.
 
-    Arguments:
+    Args:
         name: The name of this component.
-        modes_in_ket: The input modes on the ket side.
-        modes_out_ket: The output modes on the ket side.
-        modes_in_bra: The input modes on the bra side.
-        modes_out_bra: The output modes on the bra side.
-        representation: A representation of this circuit component.
+        modes_in_ket: The input modes on the ket side of this component.
+        modes_out_ket: The output modes on the ket side of this component.
+        modes_in_bra: The input modes on the bra side of this component.
+        modes_out_bra: The output modes on the bra side of this component.
+        representation: A representation for this circuit component.
     """
 
     def __init__(
@@ -60,24 +60,33 @@ class CircuitComponent:
         self._representation = representation
 
     @classmethod
-    def from_ABC(
+    def from_bargmann(
         cls,
         name: str,
-        A: Batch[ComplexMatrix],
-        B: Batch[ComplexVector],
-        c: Batch[ComplexTensor],
-        modes_in_ket: Optional[Sequence[int]] = None,
-        modes_out_ket: Optional[Sequence[int]] = None,
-        modes_in_bra: Optional[Sequence[int]] = None,
-        modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_ket: Sequence[int],
+        modes_out_ket: Sequence[int],
+        modes_in_bra: Sequence[int],
+        modes_out_bra: Sequence[int],
+        Abc: Union[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], Bargmann]
     ):
         r"""
-        Initializes a circuit component from Bargmann's A, B, and c.
+        Initializes a circuit component from a Bargmann ``Representation``.
+        
+        Args:
+            name: The name of this component.
+            modes_in_ket: The input modes on the ket side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_bra: The output modes on the bra side of this component.
+            Abc: An ``(A, b, c)`` triple or a Bargmann ``Representation`` for this circuit component.
+        
+        Returns:
+            A circuit component.
         """
-        ret = CircuitComponent(
-            name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c)
+        representation = Abc if isinstance(Abc, Bargmann) else Bargmann(*Abc)
+        return CircuitComponent(
+            name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, representation
         )
-        return ret
 
     @classmethod
     def from_attributes(
@@ -89,6 +98,14 @@ class CircuitComponent:
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
         and a ``Representation``).
+        
+        Args:
+            name: The name of this component.
+            wires: The wires of this component.
+        representation: A representation for this circuit component.
+        
+        Returns:
+            A circuit component.
         """
         ret = CircuitComponent(name)
         ret._wires = wires
@@ -123,7 +140,7 @@ class CircuitComponent:
     @property
     def modes(self) -> list[int]:
         r"""
-        A set with all the modes in this component.
+        The sorted list of modes of this component.
         """
         return self.wires.modes
 
@@ -144,7 +161,7 @@ class CircuitComponent:
     @property
     def wires(self) -> Wires:
         r"""
-        The ``Wires`` in this component.
+        The wires of this component.
         """
         return self._wires
 
@@ -263,6 +280,9 @@ class CircuitComponent:
             return ret @ other.adjoint
         # self has ket and bra, other has ket and bra
         return ret
+    
+    def __repr__(self) -> str:
+        return f"CircuitComponent(name = {self.name}, modes = {self.modes})"
 
 
 class AdjointView(CircuitComponent):
@@ -340,6 +360,12 @@ def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     In particular, it generates a list of light copies of the given components, then it modifies
     the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
     copies, leaving the input list unchanged.
+
+    Args:
+        components: The circuit components to connect.
+
+    Returns:
+        The connected components, light-copied.
     """
     ret = [component.light_copy() for component in components]
 
@@ -365,19 +391,20 @@ def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
     Takes as input a sequence of circuit components and adds the adjoint of every component that
     has no wires on the bra side.
 
-    It works on light copies of the given components, so the input list is not mutatd.
+    It works on light copies of the given components, so the input list is not mutated.
 
     Args:
-        components: A sequence of circuit components.
+        components: The circuit components to add bras to.
 
     Returns:
-        The new components.
+        The connected components, light-copied.
     """
     ret = []
 
     for component in components:
-        if not component.wires.bra:
-            ret.append(component @ component.adjoint)
+        component_cp = component.light_copy()
+        if not component_cp.wires.bra:
+            ret.append(component_cp @ component_cp.adjoint)
         else:
-            ret.append(component)
+            ret.append(component_cp)
     return ret
