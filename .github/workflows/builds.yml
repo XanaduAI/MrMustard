@@ -54,4 +54,4 @@ jobs:
         run: julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
-        run: python -m pytest tests -p no:warnings --tb=native --backend=${{ matrix.python-version }}
+        run: python -m pytest tests -p no:warnings --tb=native --backend=${{ matrix.backend }}
