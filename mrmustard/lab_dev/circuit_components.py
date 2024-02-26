@@ -18,7 +18,7 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import  Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
@@ -36,21 +36,21 @@ class CircuitComponent:
 
     Args:
         name: The name of this component.
+        representation: A representation for this circuit component.
         modes_in_ket: The input modes on the ket side of this component.
         modes_out_ket: The output modes on the ket side of this component.
         modes_in_bra: The input modes on the bra side of this component.
         modes_out_bra: The output modes on the bra side of this component.
-        representation: A representation for this circuit component.
     """
 
     def __init__(
         self,
         name: str,
+        representation: Optional[Representation] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
         modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
-        representation: Optional[Representation] = None,
     ) -> None:
         # TODO: Add validation to check that wires and representation are compatible (e.g.,
         # that wires have as many modes as has the representation).
@@ -63,47 +63,49 @@ class CircuitComponent:
     def from_bargmann(
         cls,
         name: str,
-        modes_in_ket: Sequence[int],
-        modes_out_ket: Sequence[int],
-        modes_in_bra: Sequence[int],
-        modes_out_bra: Sequence[int],
-        Abc: Union[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], Bargmann]
+        Abc: Union[
+            tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], Bargmann
+        ],
+        modes_in_ket: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_bra: Optional[Sequence[int]] = None,
     ):
         r"""
         Initializes a circuit component from a Bargmann ``Representation``.
-        
+
         Args:
             name: The name of this component.
+            Abc: An ``(A, b, c)`` triple or a Bargmann ``Representation`` for this circuit component.
             modes_in_ket: The input modes on the ket side of this component.
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_bra: The input modes on the bra side of this component.
             modes_out_bra: The output modes on the bra side of this component.
-            Abc: An ``(A, b, c)`` triple or a Bargmann ``Representation`` for this circuit component.
-        
+
         Returns:
             A circuit component.
         """
         representation = Abc if isinstance(Abc, Bargmann) else Bargmann(*Abc)
         return CircuitComponent(
-            name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, representation
+            name, representation, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra
         )
 
     @classmethod
     def from_attributes(
         cls,
         name: str,
-        wires: Wires,
         representation: Representation,
+        wires: Wires,
     ):
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
         and a ``Representation``).
-        
+
         Args:
             name: The name of this component.
+            representation: A representation for this circuit component.
             wires: The wires of this component.
-        representation: A representation for this circuit component.
-        
+
         Returns:
             A circuit component.
         """
@@ -280,7 +282,7 @@ class CircuitComponent:
             return ret @ other.adjoint
         # self has ket and bra, other has ket and bra
         return ret
-    
+
     def __repr__(self) -> str:
         return f"CircuitComponent(name = {self.name}, modes = {self.modes})"
 
