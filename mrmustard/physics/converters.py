@@ -20,7 +20,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
 
 
-def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None):
+def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None) -> Fock:
     r"""A function to map ``Representation``s to ``Fock`` representations.
 
     Note that if the rep is ``Fock``, this function maps nothing but return the original rep object directly.
@@ -54,17 +54,14 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
     """
     if isinstance(rep, Bargmann):
         len_cutoff = len(rep.b[0])
-
         if not cutoffs:
             cutoffs = settings.AUTOCUTOFF_MAX_CUTOFF
-
         cutoffs = (cutoffs,) * len_cutoff if isinstance(cutoffs, int) else cutoffs
-
         if len_cutoff != len(cutoffs):
             raise ValueError(
                 f"Given cutoffs ``{cutoffs}`` is incompatible with the representation."
             )
-        return Fock(
+        rep_new = Fock(
             math.astensor(
                 [
                     math.hermite_renormalized(A, b, c, cutoffs)
@@ -74,4 +71,5 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
             batched=True,
         )
     elif isinstance(rep, Fock):
-        return rep
+        rep_new = rep
+    return rep_new
