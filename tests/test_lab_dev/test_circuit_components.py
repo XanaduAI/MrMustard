@@ -30,82 +30,6 @@ from mrmustard.lab_dev.circuit_components import (
 )
 from mrmustard.lab_dev.wires import Wires
 
-# ~~~~~~~
-# Helpers
-# ~~~~~~~
-
-vac0 = CircuitComponent(
-    "",
-    Bargmann(*vacuum_state_Abc(1)),
-    modes_out_ket=[0],
-)
-
-vac012 = CircuitComponent(
-    "",
-    Bargmann(*vacuum_state_Abc(3)),
-    modes_out_ket=[0, 1, 2],
-)
-
-d0 = CircuitComponent(
-    "",
-    Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-    modes_out_ket=[0],
-    modes_in_ket=[0],
-)
-
-d1 = CircuitComponent(
-    "",
-    Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-    modes_out_ket=[1],
-    modes_in_ket=[1],
-)
-
-d2 = CircuitComponent(
-    "",
-    Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-    modes_out_ket=[2],
-    modes_in_ket=[2],
-)
-
-d012 = CircuitComponent(
-    "",
-    Bargmann(*displacement_gate_Abc([0.1, 0.1, 0.1], [0.1, 0.1, 0.1])),
-    modes_out_ket=[0, 1, 2],
-    modes_in_ket=[0, 1, 2],
-)
-
-a0 = CircuitComponent(
-    "",
-    Bargmann(*attenuator_Abc(0.8)),
-    modes_out_bra=[0],
-    modes_in_bra=[0],
-    modes_out_ket=[0],
-    modes_in_ket=[0],
-)
-
-a1 = CircuitComponent(
-    "",
-    Bargmann(*attenuator_Abc(0.8)),
-    modes_out_bra=[1],
-    modes_in_bra=[1],
-    modes_out_ket=[1],
-    modes_in_ket=[1],
-)
-
-a2 = CircuitComponent(
-    "",
-    Bargmann(*attenuator_Abc(0.7)),
-    modes_out_bra=[2],
-    modes_in_bra=[2],
-    modes_out_ket=[2],
-    modes_in_ket=[2],
-)
-
-
-# ~~~~~
-# Tests
-# ~~~~~
-
 
 class TestCircuitComponent:
     r"""
@@ -190,6 +114,13 @@ class TestCircuitComponent:
         assert d1_dual_dual.representation == d1.representation
 
     def test_light_copy(self):
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+
         d1_cp = d1.light_copy()
 
         assert d1_cp.parameter_set is d1.parameter_set
@@ -197,13 +128,57 @@ class TestCircuitComponent:
         assert d1_cp.wires is not d1.wires
 
     def test_eq(self):
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        d2 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
         assert d1 == d1.light_copy()
         assert not d1 == d2
 
     def test_matmul(self):
-        r"""
-        Tests that ``__matmul__`` produces the correct outputs for multi-mode components.
-        """
+        vac012 = CircuitComponent(
+            "",
+            Bargmann(*vacuum_state_Abc(3)),
+            modes_out_ket=[0, 1, 2],
+        )
+        d012 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc([0.1, 0.1, 0.1], [0.1, 0.1, 0.1])),
+            modes_out_ket=[0, 1, 2],
+            modes_in_ket=[0, 1, 2],
+        )
+        a0 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[0],
+            modes_in_bra=[0],
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        a1 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[1],
+            modes_in_bra=[1],
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        a2 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.7)),
+            modes_out_bra=[2],
+            modes_in_bra=[2],
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
 
         result = vac012 @ d012
         result = result @ result.adjoint @ a0 @ a1 @ a2
@@ -251,6 +226,48 @@ class TestCircuitComponent:
         assert np.allclose(result1.representation.c, correct_c)
 
     def test_matmul_is_associative(self):
+        d0 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        d2 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
+        a0 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[0],
+            modes_in_bra=[0],
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        a1 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[1],
+            modes_in_bra=[1],
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        a2 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.7)),
+            modes_out_bra=[2],
+            modes_in_bra=[2],
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
         result1 = d0 @ d1 @ a0 @ a1 @ a2 @ d2
         result2 = d0 @ (d1 @ a0) @ a1 @ (a2 @ d2)
         result3 = d0 @ (d1 @ a0 @ a1) @ a2 @ d2
@@ -261,6 +278,54 @@ class TestCircuitComponent:
         assert result1 == result4
 
     def test_rshift(self):
+        vac012 = CircuitComponent(
+            "",
+            Bargmann(*vacuum_state_Abc(3)),
+            modes_out_ket=[0, 1, 2],
+        )
+        d0 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        d2 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
+        a0 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[0],
+            modes_in_bra=[0],
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        a1 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[1],
+            modes_in_bra=[1],
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        a2 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.7)),
+            modes_out_bra=[2],
+            modes_in_bra=[2],
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
+
         result = vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2
 
         assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
@@ -279,6 +344,53 @@ class TestCircuitComponent:
         assert np.allclose(result.representation.c, 0.95504196)
 
     def test_rshift_is_associative(self):
+        vac012 = CircuitComponent(
+            "",
+            Bargmann(*vacuum_state_Abc(3)),
+            modes_out_ket=[0, 1, 2],
+        )
+        d0 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        d2 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
+        a0 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[0],
+            modes_in_bra=[0],
+            modes_out_ket=[0],
+            modes_in_ket=[0],
+        )
+        a1 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[1],
+            modes_in_bra=[1],
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+        a2 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.7)),
+            modes_out_bra=[2],
+            modes_in_bra=[2],
+            modes_out_ket=[2],
+            modes_in_ket=[2],
+        )
         result1 = vac012 >> d0 >> d1 >> a0 >> a1 >> a2 >> d2
         result2 = (vac012 >> d0) >> (d1 >> a0) >> a1 >> (a2 >> d2)
         result3 = vac012 >> (d0 >> (d1 >> a0 >> a1) >> a2 >> d2)
@@ -295,6 +407,12 @@ class TestAdjointView:
     """
 
     def test_init(self):
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
         d1_adj = AdjointView(d1)
 
         assert d1_adj.name == d1.name
@@ -315,6 +433,12 @@ class TestDualView:
         r"""
         Tests the ``__init__`` method.
         """
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
         d1_dual = DualView(d1)
 
         assert d1_dual.name == d1.name
@@ -332,6 +456,17 @@ class TestAddBra:
     """
 
     def test_ket_only(self):
+        vac012 = CircuitComponent(
+            "",
+            Bargmann(*vacuum_state_Abc(3)),
+            modes_out_ket=[0, 1, 2],
+        )
+        d1 = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
         components = add_bra([vac012, d1])
 
         assert len(components) == 2
@@ -339,6 +474,20 @@ class TestAddBra:
         assert components[1] == d1 @ d1.adjoint
 
     def test_ket_and_bra(self):
+        vac012 = CircuitComponent(
+            "",
+            Bargmann(*vacuum_state_Abc(3)),
+            modes_out_ket=[0, 1, 2],
+        )
+        a1 = CircuitComponent(
+            "",
+            Bargmann(*attenuator_Abc(0.8)),
+            modes_out_bra=[1],
+            modes_in_bra=[1],
+            modes_out_ket=[1],
+            modes_in_ket=[1],
+        )
+
         components = add_bra([vac012, a1])
 
         assert len(components) == 2
