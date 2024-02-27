@@ -27,7 +27,7 @@ import warnings
 
 
 def to_fock(rep: Representation, cutoffs: Union[int, Iterable[int]] = None):
-    r"""This functions takes a Representaion and returns a new Fock Representation object."""
+    r"""A function to map ``Representation``s to ``Fock`` representations."""
     if isinstance(rep, Bargmann):
         shape_of_cutoffs_without_batch = len(rep.b[0])
         if not cutoffs:
