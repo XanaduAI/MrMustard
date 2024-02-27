@@ -369,36 +369,3 @@ def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent
         else:
             ret.append(component_cp)
     return ret
-
-
-def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
-    r"""
-    Takes as input a sequence of circuit components and connects their wires.
-
-    In particular, it generates a list of light copies of the given components, then it modifies
-    the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
-    copies, leaving the input list unchanged.
-
-    Args:
-        components: The circuit components to connect.
-
-    Returns:
-        The connected components, light-copied.
-    """
-    ret = [component.light_copy() for component in components]
-
-    output_ket = {m: None for c in components for m in c.modes}
-    output_bra = {m: None for c in components for m in c.modes}
-
-    for component in ret:
-        for mode in component.modes:
-            if component.wires[mode].ket.ids:
-                if output_ket[mode]:
-                    component.wires[mode].input.ket.ids = output_ket[mode].output.ket.ids
-                output_ket[mode] = component.wires[mode]
-
-            if component.wires[mode].bra.ids:
-                if output_bra[mode]:
-                    component.wires[mode].input.bra.ids = output_bra[mode].output.bra.ids
-                output_bra[mode] = component.wires[mode]
-    return ret
