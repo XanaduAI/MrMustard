@@ -37,10 +37,10 @@ class CircuitComponent:
     Args:
         name: The name of this component.
         representation: A representation for this circuit component.
-        modes_in_ket: The input modes on the ket side of this component.
-        modes_out_ket: The output modes on the ket side of this component.
-        modes_in_bra: The input modes on the bra side of this component.
         modes_out_bra: The output modes on the bra side of this component.
+        modes_in_bra: The input modes on the bra side of this component.
+        modes_out_ket: The output modes on the ket side of this component.
+        modes_in_ket: The input modes on the ket side of this component.
     """
 
     def __init__(
@@ -66,10 +66,10 @@ class CircuitComponent:
         Abc: Union[
             tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], Bargmann
         ],
-        modes_in_ket: Optional[Sequence[int]] = None,
-        modes_out_ket: Optional[Sequence[int]] = None,
-        modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
     ):
         r"""
         Initializes a circuit component from a Bargmann ``Representation``.
@@ -77,10 +77,10 @@ class CircuitComponent:
         Args:
             name: The name of this component.
             Abc: An ``(A, b, c)`` triple or a Bargmann ``Representation`` for this circuit component.
-            modes_in_ket: The input modes on the ket side of this component.
-            modes_out_ket: The output modes on the ket side of this component.
-            modes_in_bra: The input modes on the bra side of this component.
             modes_out_bra: The output modes on the bra side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_ket: The input modes on the ket side of this component.
 
         Returns:
             A circuit component.
