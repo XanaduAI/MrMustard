@@ -87,7 +87,7 @@ class CircuitComponent:
         """
         representation = Abc if isinstance(Abc, Bargmann) else Bargmann(*Abc)
         return CircuitComponent(
-            name, representation, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra
+            name, representation, modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket
         )
 
     @classmethod
@@ -250,7 +250,7 @@ class CircuitComponent:
         order = [contracted_idx.index(id) for id in wires_ret.ids]
         representation_ret = representation_ret.reorder(order)
 
-        return CircuitComponent.from_attributes("", wires_ret, representation_ret)
+        return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
