@@ -37,7 +37,7 @@ def to_fock(rep: Representation, cutoffs: Union[int, Iterable[int]] = None):
         else:
             if len(cutoffs) != shape_of_cutoffs_without_batch:
                 raise ValueError(
-                    "The shape of the given cutoffs ",
+                    f"Given cutoffs ``{cutoffs}`` is incompatible with the representation."
                     cutoffs,
                     "is not compatiable with the object's representation, it should be ",
                     shape_of_cutoffs_without_batch,
