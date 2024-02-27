@@ -238,31 +238,36 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
         """
-        ret = self @ other
-
-        if not self.wires.bra:
-            if not other.wires.bra:
-                # self has ket, other has ket
-                return ret
-            elif not other.wires.ket:
-                # self has ket, other has bra
-                return ret @ ret.adjoint
+        if self.wires.ket and self.wires.bra and other.wires.ket and other.wires.bra:
+            # self has ket and bra, other has ket and bra
+            return self @ other
+        
+        if self.wires.ket and self.wires.bra and other.wires.ket and not other.wires.bra:
+            # self has ket and bra, other has ket
+            return self @ other @ other.adjoint
+        
+        if self.wires.ket and self.wires.bra and not other.wires.ket and other.wires.bra:
+            # self has ket and bra, other has and bra
+            return self @ other @ other.adjoint
+        
+        if self.wires.ket and not self.wires.bra and other.wires.ket and other.wires.bra:
             # self has ket, other has ket and bra
-            return self.adjoint @ ret
-        elif not self.wires.ket:
-            if not other.wires.bra:
-                # self has bra, other has ket
-                return ret @ ret.adjoint
-            elif not other.wires.ket:
-                # self has bra, other has bra
-                return ret
+            return self @ self.adjoint @ other
+        
+        if not self.wires.ket and self.wires.bra and other.wires.ket and other.wires.bra:
             # self has bra, other has ket and bra
-            return self.adjoint @ ret
-        if not other.wires.bra or not other.wires.ket:
-            # self has ket and bra, other has ket or bra
-            return ret @ other.adjoint
-        # self has ket and bra, other has ket and bra
-        return ret
+            return self @ self.adjoint @ other
+        
+        if self.wires.ket and not self.wires.bra and other.wires.ket and not other.wires.bra:
+            # self has ket, other has ket
+            return self @ other
+        
+        if not self.wires.ket and self.wires.bra and not other.wires.ket and other.wires.bra:
+            # self has bra, other has bra
+            return self @ other
+        
+        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
+        raise ValueError(msg)
 
 
 class AdjointView(CircuitComponent):
