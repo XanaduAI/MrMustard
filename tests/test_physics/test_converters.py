@@ -17,14 +17,15 @@
 import numpy as np
 import pytest
 
-from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import vacuum_state_Abc, coherent_state_Abc
 from mrmustard import settings
 
 
 class TestToFock:
-    r"""Tests related to the to_fock function to transform any representations into Fock representation. """
+    r"""Tests related to the to_fock function to transform any representations into Fock representation."""
+
     def test_tofock_from_a_fock(self):
         r"""Tests that the to_fock function works for Fock representation."""
         fock_original = Fock(np.arange(16).reshape((4, 4)), batched=False)
@@ -48,6 +49,7 @@ class TestToFock:
         assert vacuum_fock_with_int_cutoffs.array.shape == (1, 80, 80)
 
     def test_incompatible_cutoffs(self):
+        r"""Tests that the ValueError raises when the cutoffs given are incompatible."""
         vacuum_bargmann = Bargmann(*vacuum_state_Abc(n_modes=2))
         with pytest.raises(ValueError):
             to_fock(vacuum_bargmann, cutoffs=[50])
@@ -56,21 +58,40 @@ class TestToFock:
         r"""Tests that the to_fock function works for a coherent state in Bargmann representation."""
         coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3], y=[0.1]))
         coherent_fock_no_cutoffs = to_fock(coherent_bargmann)
-        assert coherent_fock_no_cutoffs.array[0, 0] == np.exp(
-            -0.5 * (0.3**2 + 0.1**2)
+        assert coherent_fock_no_cutoffs.array[0, 0] == np.exp(-0.5 * (0.3**2 + 0.1**2))
+        assert (
+            coherent_fock_no_cutoffs.array[0, 1]
+            == (0.3 + 1j * 0.1) * coherent_fock_no_cutoffs.array[0, 0]
         )
-        assert coherent_fock_no_cutoffs.array[0, 1] == (0.3 + 1j * 0.1) * coherent_fock_no_cutoffs.array[0, 0]
-        assert coherent_fock_no_cutoffs.array[0, 2] == (0.3 + 1j * 0.1) / np.sqrt(2) * coherent_fock_no_cutoffs.array[0, 1]
+        assert (
+            coherent_fock_no_cutoffs.array[0, 2]
+            == (0.3 + 1j * 0.1) / np.sqrt(2) * coherent_fock_no_cutoffs.array[0, 1]
+        )
         assert coherent_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
-        assert coherent_fock_no_cutoffs.array.shape == (1, 100,)
+        assert coherent_fock_no_cutoffs.array.shape == (
+            1,
+            100,
+        )
 
         coherent_twomode_bargmann = Bargmann(*coherent_state_Abc(x=[0.3, 0.2], y=[0.1]))
         coherent_twomode_fock_no_cutoffs = to_fock(coherent_twomode_bargmann)
         assert coherent_twomode_fock_no_cutoffs.array[0, 0, 0] == np.exp(
             -0.5 * (0.3**2 + 0.1**2 + 0.2**2 + 0.1**2)
         )
-        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 1] == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 0]
-        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 2] == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 1] / np.sqrt(2)
-        assert coherent_twomode_fock_no_cutoffs.array[0, 1, 2] == (0.3 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 2] 
+        assert (
+            coherent_twomode_fock_no_cutoffs.array[0, 0, 1]
+            == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 0]
+        )
+        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 2] == (
+            0.2 + 1j * 0.1
+        ) * coherent_twomode_fock_no_cutoffs.array[0, 0, 1] / np.sqrt(2)
+        assert (
+            coherent_twomode_fock_no_cutoffs.array[0, 1, 2]
+            == (0.3 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 2]
+        )
         assert coherent_twomode_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
-        assert coherent_twomode_fock_no_cutoffs.array.shape == (1, 100, 100,)
+        assert coherent_twomode_fock_no_cutoffs.array.shape == (
+            1,
+            100,
+            100,
+        )
