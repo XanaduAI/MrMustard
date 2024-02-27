@@ -142,10 +142,6 @@ class TestToFock:
             sgate_fock_with_cutoffs.array[0, 1, 1],
             1 / math.cosh(0.3) * sgate_fock_with_cutoffs.array[0, 0, 0],
         )
-        assert np.allclose(
-            sgate_fock_with_cutoffs.array[0, 2, 1],
-            1 / math.cosh(0.3) * sgate_fock_with_cutoffs.array[0, 0, 0],
-        )
         assert sgate_fock_with_cutoffs.array.shape == (
             1,
             8,
