@@ -4,6 +4,9 @@
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
   several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
 
+* Added a function ``to_fock`` to map different representations into Fock representation. 
+  [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+
 ### Breaking changes
 
 ### Improvements
