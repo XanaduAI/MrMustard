@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains the converter functions between different representations.
+This module contains the functions to convert between different representations.
 """
 from typing import Iterable, Union
 from mrmustard.physics.representations import Representation, Bargmann, Fock
