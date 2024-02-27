@@ -24,6 +24,7 @@ from mrmustard import settings
 
 
 class TestToFock:
+    r"""Tests related to the to_fock function to transform any representations into Fock representation. """
     def test_tofock_from_a_fock(self):
         r"""Tests that the to_fock function works for Fock representation."""
         fock_original = Fock(np.arange(16).reshape((4, 4)), batched=False)
@@ -53,13 +54,23 @@ class TestToFock:
 
     def test_tofock_from_a_bargmann_coherent_state(self):
         r"""Tests that the to_fock function works for a coherent state in Bargmann representation."""
-        coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3, 0.2], y=[0.1]))
+        coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3], y=[0.1]))
         coherent_fock_no_cutoffs = to_fock(coherent_bargmann)
-        assert coherent_fock_no_cutoffs.array[0, 0, 0] == np.exp(
-            -0.5 * (0.3**2 + 0.2**2 + 2 * 0.1**2)
+        assert coherent_fock_no_cutoffs.array[0, 0] == np.exp(
+            -0.5 * (0.3**2 + 0.1**2)
         )
-        assert coherent_fock_no_cutoffs.array[0, 1, 0] == (0.3 + 1j * 0.1) * np.exp(
-            -0.5 * (0.3**2 + 0.2**2 + 2 * 0.1**2)
-        )
+        assert coherent_fock_no_cutoffs.array[0, 1] == (0.3 + 1j * 0.1) * coherent_fock_no_cutoffs.array[0, 0]
+        assert coherent_fock_no_cutoffs.array[0, 2] == (0.3 + 1j * 0.1) / np.sqrt(2) * coherent_fock_no_cutoffs.array[0, 1]
         assert coherent_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
-        assert coherent_fock_no_cutoffs.array.shape == (1, 100, 100)
+        assert coherent_fock_no_cutoffs.array.shape == (1, 100,)
+
+        coherent_twomode_bargmann = Bargmann(*coherent_state_Abc(x=[0.3, 0.2], y=[0.1]))
+        coherent_twomode_fock_no_cutoffs = to_fock(coherent_twomode_bargmann)
+        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 0] == np.exp(
+            -0.5 * (0.3**2 + 0.1**2 + 0.2**2 + 0.1**2)
+        )
+        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 1] == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 0]
+        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 2] == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 1] / np.sqrt(2)
+        assert coherent_twomode_fock_no_cutoffs.array[0, 1, 2] == (0.3 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 2] 
+        assert coherent_twomode_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
+        assert coherent_twomode_fock_no_cutoffs.array.shape == (1, 100, 100,)
