@@ -238,23 +238,26 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
         """
-        if self.wires.ket and self.wires.bra and other.wires.ket and other.wires.bra:
-            return self @ other
+        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
 
-        if self.wires.ket and self.wires.bra and (other.wires.ket or other.wires.bra):
+        if self.wires.ket and self.wires.bra:
+            if other.wires.ket and other.wires.bra:
+                return self @ other
             return self @ other @ other.adjoint
 
-        if (self.wires.ket or self.wires.bra) and other.wires.ket and other.wires.bra:
-            return self @ self.adjoint @ other
+        if self.wires.ket:
+            if other.wires.ket and other.wires.bra:
+                return self @ self.adjoint @ other
+            if other.wires.ket:
+                return self @ other
+            raise ValueError(msg)
 
-        if self.wires.ket and not self.wires.bra and other.wires.ket and not other.wires.bra:
-            return self @ other
-
-        if not self.wires.ket and self.wires.bra and not other.wires.ket and other.wires.bra:
-            return self @ other
-
-        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
-        raise ValueError(msg)
+        if self.wires.bra:
+            if other.wires.ket and other.wires.bra:
+                return self @ self.adjoint @ other
+            if other.wires.bra:
+                return self @ other
+            raise ValueError(msg)
 
 
 class AdjointView(CircuitComponent):
