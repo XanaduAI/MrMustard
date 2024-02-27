@@ -239,23 +239,18 @@ class CircuitComponent:
         they are missing.
         """
         if self.wires.ket and self.wires.bra and other.wires.ket and other.wires.bra:
-            # self has ket and bra, other has ket and bra
             return self @ other
 
         if self.wires.ket and self.wires.bra and (other.wires.ket or other.wires.bra):
-            # self has ket and bra, other has ket or bra
             return self @ other @ other.adjoint
 
         if (self.wires.ket or self.wires.bra) and other.wires.ket and other.wires.bra:
-            # self has ket or bra, other has ket and bra
             return self @ self.adjoint @ other
 
         if self.wires.ket and not self.wires.bra and other.wires.ket and not other.wires.bra:
-            # self has ket, other has ket
             return self @ other
 
         if not self.wires.ket and self.wires.bra and not other.wires.ket and other.wires.bra:
-            # self has bra, other has bra
             return self @ other
 
         msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
