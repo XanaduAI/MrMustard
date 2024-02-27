@@ -46,7 +46,7 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
     >>> c = np.array(1.0)
 
     >>> bargmann = Bargmann(A, b, c)
-    >>> fock = to_fock(bargmann).array
+    >>> fock = to_fock(bargmann)
 
     >>> # show the final fock array
     >>> fock.array
