@@ -46,6 +46,8 @@ class TestToFock:
         assert vacuum_fock_with_int_cutoffs.array.shape[-1] == 80
         assert vacuum_fock_with_int_cutoffs.array.shape == (1, 80, 80)
 
+    def test_incompatible_cutoffs(self):
+        vacuum_bargmann = Bargmann(*vacuum_state_Abc(n_modes=2))
         with pytest.raises(ValueError):
             to_fock(vacuum_bargmann, cutoffs=[50])
 
