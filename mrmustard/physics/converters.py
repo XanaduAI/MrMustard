@@ -20,7 +20,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
 
 
-def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None) -> Fock:
+def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None):
     r"""A function to map ``Representation``s to ``Fock`` representations.
 
     Note that if the rep is ``Fock``, this function maps nothing but return the original rep object directly.
@@ -37,6 +37,7 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
 
     .. code-block::
 
+    >>> import numpy as np
     >>> from mrmustard.physics.converters import to_fock
     >>> from mrmustard.physics.representations import Bargmann
 
