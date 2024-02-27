@@ -201,15 +201,6 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __getitem__(self, idx: Union[int, Sequence[int]]):
-        r"""
-        Returns a slice of this component for the given modes.
-        """
-        ret = self.light_copy()
-        ret._wires = self._wires[idx]
-        ret._parameter_set = self.parameter_set
-        return ret
-
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
@@ -284,7 +275,8 @@ class CircuitComponent:
         return ret
 
     def __repr__(self) -> str:
-        return f"CircuitComponent(name = {self.name}, modes = {self.modes})"
+        name = {self.name} if self.name else "None"
+        return f"CircuitComponent(name = {name}, modes = {self.modes})"
 
 
 class AdjointView(CircuitComponent):

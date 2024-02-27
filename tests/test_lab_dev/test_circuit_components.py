@@ -155,17 +155,6 @@ class TestCircuitComponent:
 
         assert cc1 == cc2
 
-    #     def test_light_copy(self):
-    #         r"""
-    #         Tests the ``light_copy`` method.
-    #         """
-    #         d = Dgate(modes=[0], x=1, y=2, y_trainable=True)
-    #         d_copy = d.light_copy()
-
-    #         assert d.x is d_copy.x
-    #         assert d.y is d_copy.y
-    #         assert d.wires is not d_copy.wires
-
     def test_adjoint(self):
         Abc1 = displacement_gate_Abc(x=0.1, y=0.2)
         modes1 = [1, 8]
@@ -199,6 +188,17 @@ class TestCircuitComponent:
         assert isinstance(d1_dual_dual, CircuitComponent)
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
+
+    def test_light_copy(self):
+        d1_cp = d1.light_copy()
+
+        assert d1_cp.parameter_set is d1.parameter_set
+        assert d1_cp.representation is d1.representation
+        assert d1_cp.wires is not d1.wires
+
+    def test_eq(self):
+        assert d1 == d1.light_copy()
+        assert not d1 == d2
 
     def test_matmul(self):
         r"""
