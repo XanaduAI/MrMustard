@@ -61,7 +61,7 @@ class DM(State):
         """
         component = super().__rshift__(other)
 
-        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(set(self.modes)):
+        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(self.modes):
             dm = DM()
             dm._wires = component.wires
             dm._representation = component.representation
