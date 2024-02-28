@@ -27,7 +27,7 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
 
     Args:
         rep: The orginal representation of the object.
-        cutoffs: the cutoffs of the transformed Fock representation object.
+        cutoffs: The cutoffs of the transformed Fock representation object.
 
     Raises:
         ValueError: If the size of the cutoffs given is not compatible with the representation.
