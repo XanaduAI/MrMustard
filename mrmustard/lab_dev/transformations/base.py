@@ -24,7 +24,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..circuit_components import CircuitComponent
 
@@ -36,9 +36,6 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
-
 
 class Unitary(Transformation):
     r"""
@@ -49,8 +46,32 @@ class Unitary(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
+        ``Channel``, and a ``CircuitComponent`` otherwise.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, Unitary):
+            unitary = Unitary()
+            unitary._wires = component.wires
+            unitary._representation = component.representation
+            return unitary
+        elif isinstance(other, Channel):
+            channel = Channel()
+            channel._wires = component.wires
+            channel._representation = component.representation
+            return channel
+        return component
 
 
 class Channel(Transformation):
@@ -62,7 +83,26 @@ class Channel(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(
             name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``Channel`` when ``other`` is a ``Unitary`` or a ``Channel``, and a
+        ``CircuitComponent`` otherwise.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)):
+            channel = Channel()
+            channel._wires = component.wires
+            channel._representation = component.representation
+            return channel
+        return component

@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import Attenuator, BSgate, Channel, Dgate, Sgate, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -34,9 +35,25 @@ class TestUnitary:
     def test_init(self, name, modes):
         gate = Unitary(name, modes)
 
-        assert gate.name == name or ""
+        assert gate.name == (name if name else "")
         assert gate.modes == sorted(modes)
         assert gate.wires == Wires(modes_in_ket=modes, modes_out_ket=modes)
+
+    def test_rshift(self):
+        unitary1 = Dgate([0, 1], 1)
+        unitary2 = Dgate([1, 2], 2)
+        u_component = CircuitComponent.from_attributes(
+            unitary1.name, unitary1.wires, unitary1.representation
+        )
+        channel = Attenuator([1], 1)
+        ch_component = CircuitComponent.from_attributes(
+            channel.name, channel.wires, channel.representation
+        )
+
+        assert isinstance(unitary1 >> unitary2, Unitary)
+        assert isinstance(unitary1 >> channel, Channel)
+        assert isinstance(unitary1 >> u_component, CircuitComponent)
+        assert isinstance(unitary1 >> ch_component, CircuitComponent)
 
 
 class TestChannel:
@@ -49,11 +66,27 @@ class TestChannel:
     def test_init(self, name, modes):
         gate = Channel(name, modes)
 
-        assert gate.name == name or ""
+        assert gate.name == (name if name else "")
         assert gate.modes == sorted(modes)
         assert gate.wires == Wires(
             modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes
         )
+
+    def test_rshift(self):
+        unitary = Dgate([0, 1], 1)
+        u_component = CircuitComponent.from_attributes(
+            unitary.name, unitary.wires, unitary.representation
+        )
+        channel1 = Attenuator([1, 2], 0.9)
+        channel2 = Attenuator([2, 3], 0.9)
+        ch_component = CircuitComponent.from_attributes(
+            channel1.name, channel1.wires, channel1.representation
+        )
+
+        assert isinstance(channel1 >> unitary, Channel)
+        assert isinstance(channel1 >> channel2, Channel)
+        assert isinstance(channel1 >> u_component, CircuitComponent)
+        assert isinstance(channel1 >> ch_component, CircuitComponent)
 
 
 class TestBSgate:

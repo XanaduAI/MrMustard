@@ -23,9 +23,10 @@ representation.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..circuit_components import CircuitComponent
+from ..transformations.transformations import Unitary, Channel
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -34,9 +35,6 @@ class State(CircuitComponent):
     r"""
     Base class for all states.
     """
-
-    def __rshift__(self, other: CircuitComponent):
-        raise NotImplementedError
 
 
 class DM(State):
@@ -48,8 +46,27 @@ class DM(State):
         modes: The modes of this state.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``DM`` when ``other`` is a ``Unitary`` or a ``Channel``, and ``other`` acts on
+        ``self``'s modes. Otherwise, it returns a ``CircuitComponent``.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(self.modes):
+            dm = DM()
+            dm._wires = component.wires
+            dm._representation = component.representation
+            return dm
+        return component
 
 
 class Ket(State):
@@ -61,5 +78,30 @@ class Ket(State):
         modes: The modes of this states.
     """
 
-    def __init__(self, name: str, modes: Sequence[int]):
+    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_out_ket=modes)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``State`` (either ``Ket`` or ``DM``) when ``other`` is a ``Unitary`` or a
+        ``Channel``, and ``other`` acts on ``self``'s modes. Otherwise, it returns a
+        ``CircuitComponent``.
+        """
+        component = super().__rshift__(other)
+
+        if isinstance(other, Unitary) and set(other.modes).issubset(set(self.modes)):
+            ket = Ket()
+            ket._wires = component.wires
+            ket._representation = component.representation
+            return ket
+        elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
+            dm = DM()
+            dm._wires = component.wires
+            dm._representation = component.representation
+            return dm
+        return component

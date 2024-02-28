@@ -20,7 +20,9 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Vacuum
+from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Unitary
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -34,9 +36,27 @@ class TestKet:
     def test_init(self, name, modes):
         state = Ket(name, modes)
 
-        assert state.name == name or ""
+        assert state.name == (name if name else "")
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_ket=modes)
+
+    def test_rshift(self):
+        ket = Coherent([0, 1], 1)
+        unitary = Dgate([0], 1)
+        u_component = CircuitComponent.from_attributes(
+            unitary.name, unitary.wires, unitary.representation
+        )
+        channel = Attenuator([1], 1)
+        ch_component = CircuitComponent.from_attributes(
+            channel.name, channel.wires, channel.representation
+        )
+
+        assert isinstance(ket >> unitary, Ket)
+        assert isinstance(ket >> channel, DM)
+        assert isinstance(ket >> unitary >> channel, DM)
+        assert isinstance(ket >> channel >> unitary, DM)
+        assert isinstance(ket >> u_component, CircuitComponent)
+        assert isinstance(ket >> ch_component, CircuitComponent)
 
 
 class TestDM:
@@ -49,9 +69,28 @@ class TestDM:
     def test_init(self, name, modes):
         state = DM(name, modes)
 
-        assert state.name == name or ""
+        assert state.name == (name if name else "")
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+    def test_rshift(self):
+        ket = Coherent([0, 1], 1)
+        unitary = Dgate([0], 1)
+        u_component = CircuitComponent.from_attributes(
+            unitary.name, unitary.wires, unitary.representation
+        )
+        channel = Attenuator([1], 1)
+        ch_component = CircuitComponent.from_attributes(
+            channel.name, channel.wires, channel.representation
+        )
+
+        dm = ket >> channel
+        assert isinstance(dm, DM)
+
+        assert isinstance(dm >> unitary >> channel, DM)
+        assert isinstance(dm >> channel >> unitary, DM)
+        assert isinstance(dm >> u_component, CircuitComponent)
+        assert isinstance(dm >> ch_component, CircuitComponent)
 
 
 class TestVacuum:

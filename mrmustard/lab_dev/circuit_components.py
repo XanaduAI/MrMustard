@@ -121,7 +121,7 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> set(int):
+    def modes(self) -> list[int]:
         r"""
         A set with all the modes in this component.
         """
@@ -232,6 +232,35 @@ class CircuitComponent:
         representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes("", wires_ret, representation_ret)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+        """
+        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
+
+        wires_out = self.wires.output
+        wires_in = other.wires.input
+
+        if wires_out.ket and wires_out.bra:
+            if wires_in.ket and wires_in.bra:
+                return self @ other
+            return self @ other @ other.adjoint
+
+        if wires_out.ket:
+            if wires_in.ket and wires_in.bra:
+                return self @ self.adjoint @ other
+            if wires_in.ket:
+                return self @ other
+            raise ValueError(msg)
+
+        if wires_out.bra:
+            if wires_in.ket and wires_in.bra:
+                return self @ self.adjoint @ other
+            if wires_in.bra:
+                return self @ other
+            raise ValueError(msg)
 
 
 class AdjointView(CircuitComponent):

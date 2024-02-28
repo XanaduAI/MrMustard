@@ -47,6 +47,40 @@ class TestCircuitComponent:
         assert d.y is d_copy.y
         assert d.wires is not d_copy.wires
 
+    def test_adjoint(self):
+        r"""
+        Tests the ``adjoint`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_adj = d1.adjoint
+
+        assert isinstance(d1_adj, AdjointView)
+        assert d1_adj.name == d1.name
+        assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.representation == d1.representation.conj()
+
+        d1_adj_adj = d1_adj.adjoint
+        assert isinstance(d1_adj_adj, CircuitComponent)
+        assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.representation == d1.representation
+
+    def test_dual(self):
+        r"""
+        Tests the ``dual`` method.
+        """
+        d1 = Dgate(modes=[0], x=0.1, y=0.2)
+        d1_dual = d1.dual
+
+        assert isinstance(d1_dual, DualView)
+        assert d1_dual.name == d1.name
+        assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.representation == d1.representation.conj()
+
+        d1_dual_dual = d1_dual.dual
+        assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.wires == d1.wires
+        assert d1_dual_dual.representation == d1.representation
+
     def test_matmul_one_mode(self):
         r"""
         Tests that ``__matmul__`` produces the correct outputs for one-mode components.
@@ -113,25 +147,6 @@ class TestCircuitComponent:
             ],
         )
         assert np.allclose(result.representation.c, 0.95504196)
-
-    def test_adjoint(self):
-        r"""
-        Tests the ``adjoint`` method.
-        """
-        d1 = Dgate(modes=[0], x=0.1, y=0.2)
-        d1_adj = d1.adjoint
-
-        assert isinstance(d1_adj, AdjointView)
-        assert d1_adj.name == d1.name
-        assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()
-
-        d1_adj_adj = d1_adj.adjoint
-        assert isinstance(d1_adj_adj, CircuitComponent)
-        assert d1_adj_adj.wires == d1.wires
-        assert d1_adj_adj.representation == d1.representation
-
-    def test_dual(self):
         r"""
         Tests the ``dual`` method.
         """
@@ -164,6 +179,77 @@ class TestCircuitComponent:
         result2 = (vac012 @ d0) @ (d1 @ a0) @ a1 @ (a2 @ d2)
         result3 = vac012 @ (d0 @ (d1 @ a0 @ a1) @ a2 @ d2)
         result4 = vac012 @ (d0 @ (d1 @ (a0 @ (a1 @ (a2 @ d2)))))
+
+        assert result1 == result2
+        assert result1 == result3
+        assert result1 == result4
+
+    def test_rshift_one_mode(self):
+        r"""
+        Tests that ``__rshift__`` produces the correct outputs for one-mode components.
+        """
+        vac0 = Vacuum([0])
+        d0 = Dgate(modes=[0], x=1)
+        a0 = Attenuator(modes=[0], transmissivity=0.9)
+
+        result1 = vac0 >> d0 >> a0
+
+        assert result1.wires == Wires(modes_out_bra=[0], modes_out_ket=[0])
+        assert np.allclose(result1.representation.A, 0)
+        assert np.allclose(result1.representation.b, [0.9486833, 0.9486833])
+        assert np.allclose(result1.representation.c, 0.40656966)
+
+        result2 = result1 >> vac0.dual
+        assert not result2.wires
+        assert np.allclose(result2.representation.A, 0)
+        assert np.allclose(result2.representation.b, 0)
+        assert np.allclose(result2.representation.c, 0.40656966)
+
+    def test_rshift_multi_modes(self):
+        r"""
+        Tests that ``__rshift__`` produces the correct outputs for multi-mode components.
+        """
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
+
+        result = vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2
+
+        assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
+        assert np.allclose(result.representation.A, 0)
+        assert np.allclose(
+            result.representation.b,
+            [
+                0.08944272 - 0.08944272j,
+                0.08944272 - 0.08944272j,
+                0.083666 - 0.083666j,
+                0.08944272 + 0.08944272j,
+                0.08944272 + 0.08944272j,
+                0.083666 + 0.083666j,
+            ],
+        )
+        assert np.allclose(result.representation.c, 0.95504196)
+
+    def test_rshift_is_associative(self):
+        r"""
+        Tests that ``__rshift__`` is associative, meaning ``a >> (b >> c) == (a >> b) >> c``.
+        """
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate(modes=[0], x=0.1, y=0.1)
+        d1 = Dgate(modes=[1], x=0.1, y=0.1)
+        d2 = Dgate(modes=[2], x=0.1, y=0.1)
+        a0 = Attenuator(modes=[0], transmissivity=0.8)
+        a1 = Attenuator(modes=[1], transmissivity=0.8)
+        a2 = Attenuator(modes=[2], transmissivity=0.7)
+
+        result1 = vac012 >> d0 >> d1 >> a0 >> a1 >> a2 >> d2
+        result2 = (vac012 >> d0) >> (d1 >> a0) >> a1 >> (a2 >> d2)
+        result3 = vac012 >> (d0 >> (d1 >> a0 >> a1) >> a2 >> d2)
+        result4 = vac012 >> (d0 >> (d1 >> (a0 >> (a1 >> (a2 >> d2)))))
 
         assert result1 == result2
         assert result1 == result3
