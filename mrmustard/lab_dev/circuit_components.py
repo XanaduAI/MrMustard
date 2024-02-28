@@ -16,6 +16,8 @@
 A base class for the components of quantum circuits.
 """
 
+# pylint: disable=super-init-not-called
+
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
@@ -23,7 +25,6 @@ from typing import Optional, Sequence, Union
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
 __all__ = ["CircuitComponent", "AdjointView", "DualView", "add_bra"]
@@ -190,7 +191,7 @@ class CircuitComponent:
             raise ValueError("Cannot contract objects with different representations.")
             # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
             # LEFT = Fock(self.fock(shape=shape), batched=False)
-        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
+        if isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
             raise ValueError("Cannot contract objects with different representations.")
             # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
             # RIGHT = Fock(other.fock(shape=shape), batched=False)
@@ -236,6 +237,8 @@ class CircuitComponent:
             if wires_in.bra:
                 return self @ other
             raise ValueError(msg)
+
+        raise ValueError(msg)
 
     def __repr__(self) -> str:
         name = self.name if self.name else "None"
