@@ -175,7 +175,6 @@ class TestWires:
         w5 = Wires([0, 1], [2, 3], [], [6, 7])
         w6 = Wires([0, 1], [2, 3], [4, 5], [])
 
-        assert w1 == w1
         assert w1 == w2
         assert w1 != w3
         assert w1 != w4
