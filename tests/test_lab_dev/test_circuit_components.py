@@ -50,23 +50,6 @@ class TestCircuitComponent:
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
-    def test_from_bargmann(self, x, y):
-        name = "my_component"
-        Abc = displacement_gate_Abc(x, y)
-        representation = Bargmann(*Abc)
-        modes = [1, 8]
-
-        cc1 = CircuitComponent(name, representation, modes_out_ket=modes, modes_in_ket=modes)
-        cc2 = CircuitComponent.from_bargmann(
-            name, representation, modes_out_ket=modes, modes_in_ket=modes
-        )
-        cc3 = CircuitComponent.from_bargmann(name, Abc, modes_out_ket=modes, modes_in_ket=modes)
-
-        assert cc1 == cc2
-        assert cc1 == cc3
-
-    @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
-    @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
         name = "my_component"
         Abc = displacement_gate_Abc(x, y)

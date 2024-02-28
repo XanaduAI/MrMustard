@@ -52,43 +52,10 @@ class CircuitComponent:
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
     ) -> None:
-        # TODO: Add validation to check that wires and representation are compatible (e.g.,
-        # that wires have as many modes as has the representation).
         self._name = name
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
         self._representation = representation
-
-    @classmethod
-    def from_bargmann(
-        cls,
-        name: str,
-        Abc: Union[
-            tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], Bargmann
-        ],
-        modes_out_bra: Optional[Sequence[int]] = None,
-        modes_in_bra: Optional[Sequence[int]] = None,
-        modes_out_ket: Optional[Sequence[int]] = None,
-        modes_in_ket: Optional[Sequence[int]] = None,
-    ):
-        r"""
-        Initializes a circuit component from a Bargmann ``Representation``.
-
-        Args:
-            name: The name of this component.
-            Abc: An ``(A, b, c)`` triple or a Bargmann ``Representation`` for this circuit component.
-            modes_out_bra: The output modes on the bra side of this component.
-            modes_in_bra: The input modes on the bra side of this component.
-            modes_out_ket: The output modes on the ket side of this component.
-            modes_in_ket: The input modes on the ket side of this component.
-
-        Returns:
-            A circuit component.
-        """
-        representation = Abc if isinstance(Abc, Bargmann) else Bargmann(*Abc)
-        return CircuitComponent(
-            name, representation, modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket
-        )
 
     @classmethod
     def from_attributes(
