@@ -24,6 +24,8 @@ from mrmustard.physics.triples import (
     coherent_state_Abc,
     displacement_gate_Abc,
     squeezing_gate_Abc,
+    beamsplitter_gate_Abc,
+    attenuator_Abc,
 )
 from mrmustard import settings, math
 
@@ -142,8 +144,57 @@ class TestToFock:
             sgate_fock_with_cutoffs.array[0, 1, 1],
             1 / math.cosh(0.3) * sgate_fock_with_cutoffs.array[0, 0, 0],
         )
+        assert np.allclose(
+            sgate_fock_with_cutoffs.array[0, 2, 1],
+            0,
+        )
         assert sgate_fock_with_cutoffs.array.shape == (
             1,
             8,
             12,
+        )
+
+    def test_tofock_from_a_bargmann_beamsplitter_gate(self):
+        r"""Tests that the to_fock function works for a BS gate in Bargmann representation."""
+        bsgate_bargmann = Bargmann(*beamsplitter_gate_Abc(theta=[0.2], phi=[0.1]))
+        bsgate_fock_with_cutoffs = to_fock(bsgate_bargmann, cutoffs=[5, 4, 7, 3])
+        V = np.array(
+            [
+                [math.cos(0.2), -math.exp(-1j * 0.1) * math.sin(0.2)],
+                [math.exp(1j * 0.1) * math.sin(0.2), math.cos(0.2)],
+            ]
+        )
+        assert bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 0] == 1.0
+        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 0] == 0.0
+        assert bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 1] == 0.0
+        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 1] == V[1, 1]
+        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 1, 0] == V[1, 0]
+        assert bsgate_fock_with_cutoffs.array[0, 1, 0, 1, 0] == V[0, 0]
+        assert bsgate_fock_with_cutoffs.array[0, 1, 0, 0, 1] == V[0, 1]
+        assert bsgate_fock_with_cutoffs.array[0, 0, 3, 6, 1] == 0.0
+        assert bsgate_fock_with_cutoffs.array.shape == (
+            1,
+            5,
+            4,
+            7,
+            3,
+        )
+
+    def test_tofock_from_a_bargmann_attenuator_channel(self):
+        r"""Tests that the to_fock function works for a lossy channel in Bargmann representation."""
+        attenuator_bargmann = Bargmann(*attenuator_Abc(eta=0.5))
+        attenuator_bargmann_fock_with_cutoffs = to_fock(attenuator_bargmann, cutoffs=[5, 5, 5, 5])
+        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 0, 0] == 1.0
+        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 0, 1] == 0.0
+        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 1, 0] == 0.0
+        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 2, 0] == 0.0
+        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 1, 1] == math.sqrt(0.5)
+        assert np.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 2, 1], 0.0)
+        assert np.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 1, 2, 1], 0.0)
+        assert attenuator_bargmann_fock_with_cutoffs.array.shape == (
+            1,
+            5,
+            5,
+            5,
+            5,
         )
