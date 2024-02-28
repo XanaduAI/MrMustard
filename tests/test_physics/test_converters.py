@@ -65,94 +65,88 @@ class TestToFock:
         r"""Tests that the to_fock function works for a coherent state in Bargmann representation."""
         coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3], y=[0.1]))
         coherent_fock_no_cutoffs = to_fock(coherent_bargmann)
-        assert coherent_fock_no_cutoffs.array[0, 0] == math.exp(-0.5 * (0.3**2 + 0.1**2))
-        assert (
-            coherent_fock_no_cutoffs.array[0, 1]
-            == (0.3 + 1j * 0.1) * coherent_fock_no_cutoffs.array[0, 0]
+        assert math.allclose(
+            coherent_fock_no_cutoffs.array[0, 0], math.exp(-0.5 * (0.3**2 + 0.1**2))
         )
-        assert (
-            coherent_fock_no_cutoffs.array[0, 2]
-            == (0.3 + 1j * 0.1) / math.sqrt(2) * coherent_fock_no_cutoffs.array[0, 1]
+        assert math.allclose(
+            coherent_fock_no_cutoffs.array[0, 1],
+            (0.3 + 1j * 0.1) * coherent_fock_no_cutoffs.array[0, 0],
+        )
+        assert math.allclose(
+            coherent_fock_no_cutoffs.array[0, 2],
+            (0.3 + 1j * 0.1) / math.sqrt(2.0 + 0j) * coherent_fock_no_cutoffs.array[0, 1],
         )
         assert coherent_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
-        assert coherent_fock_no_cutoffs.array.shape == (
-            1,
-            100,
-        )
+        assert coherent_fock_no_cutoffs.array.shape == (1, 100)
 
         coherent_twomode_bargmann = Bargmann(*coherent_state_Abc(x=[0.3, 0.2], y=[0.1]))
         coherent_twomode_fock_no_cutoffs = to_fock(coherent_twomode_bargmann)
-        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 0] == math.exp(
-            -0.5 * (0.3**2 + 0.1**2 + 0.2**2 + 0.1**2)
+        assert math.allclose(
+            coherent_twomode_fock_no_cutoffs.array[0, 0, 0],
+            math.exp(-0.5 * (0.3**2 + 0.1**2 + 0.2**2 + 0.1**2)),
         )
-        assert (
-            coherent_twomode_fock_no_cutoffs.array[0, 0, 1]
-            == (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 0]
+        assert math.allclose(
+            coherent_twomode_fock_no_cutoffs.array[0, 0, 1],
+            (0.2 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 0],
         )
-        assert coherent_twomode_fock_no_cutoffs.array[0, 0, 2] == (
-            0.2 + 1j * 0.1
-        ) * coherent_twomode_fock_no_cutoffs.array[0, 0, 1] / math.sqrt(2)
-        assert (
-            coherent_twomode_fock_no_cutoffs.array[0, 1, 2]
-            == (0.3 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 2]
+        assert math.allclose(
+            coherent_twomode_fock_no_cutoffs.array[0, 0, 2],
+            (0.2 + 1j * 0.1)
+            * coherent_twomode_fock_no_cutoffs.array[0, 0, 1]
+            / math.sqrt(2.0 + 0j),
+        )
+        assert math.allclose(
+            coherent_twomode_fock_no_cutoffs.array[0, 1, 2],
+            (0.3 + 1j * 0.1) * coherent_twomode_fock_no_cutoffs.array[0, 0, 2],
         )
         assert coherent_twomode_fock_no_cutoffs.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
-        assert coherent_twomode_fock_no_cutoffs.array.shape == (
-            1,
-            100,
-            100,
-        )
+        assert coherent_twomode_fock_no_cutoffs.array.shape == (1, 100, 100)
 
     def test_tofock_from_a_bargmann_displacement_gate(self):
         r"""Tests that the to_fock function works for a displacement gate in Bargmann representation."""
         dgate_bargmann = Bargmann(*displacement_gate_Abc(x=[0.3], y=[0.1]))
         dgate_fock_with_cutoffs = to_fock(dgate_bargmann, cutoffs=[10, 10])
-        assert dgate_fock_with_cutoffs.array[0, 0, 0] == math.exp(-0.5 * (0.3**2 + 0.1**2))
-        assert (
-            dgate_fock_with_cutoffs.array[0, 1, 0]
-            == (0.3 + 1j * 0.1) * dgate_fock_with_cutoffs.array[0, 0, 0]
+        assert math.allclose(
+            dgate_fock_with_cutoffs.array[0, 0, 0], math.exp(-0.5 * (0.3**2 + 0.1**2))
         )
-        assert dgate_fock_with_cutoffs.array[0, 2, 0] == (
-            0.3 + 1j * 0.1
-        ) * dgate_fock_with_cutoffs.array[0, 1, 0] / math.sqrt(2)
-        assert np.allclose(
+        assert math.allclose(
+            dgate_fock_with_cutoffs.array[0, 1, 0],
+            (0.3 + 1j * 0.1) * dgate_fock_with_cutoffs.array[0, 0, 0],
+        )
+        assert math.allclose(
+            dgate_fock_with_cutoffs.array[0, 2, 0],
+            (0.3 + 1j * 0.1) * dgate_fock_with_cutoffs.array[0, 1, 0] / math.sqrt(2.0 + 0j),
+        )
+        assert math.allclose(
             dgate_fock_with_cutoffs.array[0, 1, 1],
             (-0.3 + 1j * 0.1) * dgate_fock_with_cutoffs.array[0, 1, 0]
             + dgate_fock_with_cutoffs.array[0, 0, 0],
         )
-        assert dgate_fock_with_cutoffs.array.shape == (
-            1,
-            10,
-            10,
-        )
+        assert dgate_fock_with_cutoffs.array.shape == (1, 10, 10)
 
     def test_tofock_from_a_bargmann_squeezing_gate(self):
         r"""Tests that the to_fock function works for a squeezing gate in Bargmann representation."""
         sgate_bargmann = Bargmann(*squeezing_gate_Abc(r=[0.3], delta=[0.1]))
         sgate_fock_with_cutoffs = to_fock(sgate_bargmann, cutoffs=[8, 12])
-        assert sgate_fock_with_cutoffs.array[0, 0, 0] == 1 / math.sqrt(math.cosh(0.3))
+        assert math.allclose(sgate_fock_with_cutoffs.array[0, 0, 0], 1 / math.sqrt(math.cosh(0.3)))
         tanhr = math.sinh(0.3) / math.cosh(0.3)
-        assert np.allclose(
+        assert math.allclose(
             sgate_fock_with_cutoffs.array[0, 2, 0],
-            -tanhr * np.exp(1j * 0.1) * sgate_fock_with_cutoffs.array[0, 0, 0] / math.sqrt(2),
+            -tanhr * np.exp(1j * 0.1) * sgate_fock_with_cutoffs.array[0, 0, 0] / math.sqrt(2 + 0j),
         )
-        assert np.allclose(
+        assert math.allclose(
             sgate_fock_with_cutoffs.array[0, 0, 2],
-            tanhr * np.exp(-1j * 0.1) * sgate_fock_with_cutoffs.array[0, 0, 0] / math.sqrt(2),
+            tanhr * np.exp(-1j * 0.1) * sgate_fock_with_cutoffs.array[0, 0, 0] / math.sqrt(2 + 0j),
         )
-        assert np.allclose(
+        assert math.allclose(
             sgate_fock_with_cutoffs.array[0, 1, 1],
             1 / math.cosh(0.3) * sgate_fock_with_cutoffs.array[0, 0, 0],
         )
-        assert np.allclose(
+        assert math.allclose(
             sgate_fock_with_cutoffs.array[0, 2, 1],
             0,
         )
-        assert sgate_fock_with_cutoffs.array.shape == (
-            1,
-            8,
-            12,
-        )
+        assert sgate_fock_with_cutoffs.array.shape == (1, 8, 12)
 
     def test_tofock_from_a_bargmann_beamsplitter_gate(self):
         r"""Tests that the to_fock function works for a BS gate in Bargmann representation."""
@@ -164,21 +158,15 @@ class TestToFock:
                 [math.exp(1j * 0.1) * math.sin(0.2), math.cos(0.2)],
             ]
         )
-        assert bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 0] == 1.0
-        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 0] == 0.0
-        assert bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 1] == 0.0
-        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 1] == V[1, 1]
-        assert bsgate_fock_with_cutoffs.array[0, 0, 1, 1, 0] == V[1, 0]
-        assert bsgate_fock_with_cutoffs.array[0, 1, 0, 1, 0] == V[0, 0]
-        assert bsgate_fock_with_cutoffs.array[0, 1, 0, 0, 1] == V[0, 1]
-        assert bsgate_fock_with_cutoffs.array[0, 0, 3, 6, 1] == 0.0
-        assert bsgate_fock_with_cutoffs.array.shape == (
-            1,
-            5,
-            4,
-            7,
-            3,
-        )
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 0], 1.0)
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 0], 0.0)
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 0, 0, 1], 0.0)
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 1, 0, 1], V[1, 1])
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 1, 1, 0], V[1, 0])
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 1, 0, 1, 0], V[0, 0])
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 1, 0, 0, 1], V[0, 1])
+        assert math.allclose(bsgate_fock_with_cutoffs.array[0, 0, 3, 6, 1], 0.0)
+        assert bsgate_fock_with_cutoffs.array.shape == (1, 5, 4, 7, 3)
 
     def test_tofock_from_a_bargmann_attenuator_channel(self):
         r"""Tests that the to_fock function works for a lossy channel in Bargmann representation."""
@@ -188,13 +176,9 @@ class TestToFock:
         assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 0, 1] == 0.0
         assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 1, 0] == 0.0
         assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 2, 0] == 0.0
-        assert attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 1, 1] == math.sqrt(0.5)
-        assert np.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 2, 1], 0.0)
-        assert np.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 1, 2, 1], 0.0)
-        assert attenuator_bargmann_fock_with_cutoffs.array.shape == (
-            1,
-            5,
-            5,
-            5,
-            5,
+        assert math.allclose(
+            attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 1, 1], math.sqrt(0.5)
         )
+        assert math.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 0, 2, 1], 0.0)
+        assert math.allclose(attenuator_bargmann_fock_with_cutoffs.array[0, 0, 1, 2, 1], 0.0)
+        assert attenuator_bargmann_fock_with_cutoffs.array.shape == (1, 5, 5, 5, 5)
