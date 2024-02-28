@@ -20,50 +20,45 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
 
 
-def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None) -> Fock:
+def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = None) -> Fock:
     r"""A function to map ``Representation``s to ``Fock`` representations.
 
     If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
 
     Args:
         rep: The orginal representation of the object.
-        cutoffs: The cutoffs of the transformed Fock representation object.
+        shape: The shape of the transformed Fock representation object.
 
     Raises:
-        ValueError: If the size of the cutoffs given is not compatible with the representation.
+        ValueError: If the size of the shape given is not compatible with the representation.
 
     Returns:
         A ``Fock`` representation object.
 
     .. code-block::
 
-    >>> import numpy as np
-    >>> from mrmustard.physics.converters import to_fock
-    >>> from mrmustard.physics.representations import Bargmann
+    >>>    import numpy as np
+    >>>    from mrmustard.physics.converters import to_fock
+    >>>    from mrmustard.physics.representations import Bargmann
 
-    >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
-    >>> b = np.array([1.0, 1.0])
-    >>> c = np.array(1.0)
-    >>> bargmann = Bargmann(A, b, c)
-    >>> fock = to_fock(bargmann)
-    >>> # One can show the final fock array by using fock.array
+    >>>    A = np.array([[1.0, 0.0], [0.0, 1.0]])
+    >>>    b = np.array([1.0, 1.0])
+    >>>    c = np.array(1.0)
+    >>>    bargmann = Bargmann(A, b, c)
+    >>>    fock = to_fock(bargmann)
+    >>>    # One can show the final fock array by using fock.array
 
     """
     if isinstance(rep, Bargmann):
-        len_cutoff = len(rep.b[0])
-        if not cutoffs:
-            cutoffs = settings.AUTOCUTOFF_MAX_CUTOFF
-        cutoffs = (cutoffs,) * len_cutoff if isinstance(cutoffs, int) else cutoffs
-        if len_cutoff != len(cutoffs):
-            raise ValueError(
-                f"Given cutoffs ``{cutoffs}`` is incompatible with the representation."
-            )
+        len_shape = len(rep.b[0])
+        if not shape:
+            shape = settings.AUTOCUTOFF_MAX_CUTOFF
+        shape = (shape,) * len_shape if isinstance(shape, int) else shape
+        if len_shape != len(shape):
+            raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
         rep_new = Fock(
             math.astensor(
-                [
-                    math.hermite_renormalized(A, b, c, cutoffs)
-                    for A, b, c in zip(rep.A, rep.b, rep.c)
-                ]
+                [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
             ),
             batched=True,
         )
