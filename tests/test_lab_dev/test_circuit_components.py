@@ -384,7 +384,10 @@ class TestCircuitComponent:
 
     def test_repr(self):
         c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
+        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        
         assert repr(c1) == "CircuitComponent(name=None, modes=[0, 1, 2])"
+        assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
 
 class TestAdjointView:
@@ -408,6 +411,13 @@ class TestAdjointView:
         d1_adj_adj = d1_adj.adjoint
         assert d1_adj_adj.wires == d1.wires
         assert d1_adj_adj.representation == d1.representation
+
+    def test_repr(self):
+        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
+        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        
+        assert repr(c1.adjoint) == "CircuitComponent(name=None, modes=[0, 1, 2])"
+        assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
 
 class TestDualView:
@@ -434,6 +444,13 @@ class TestDualView:
         d1_dual_dual = DualView(d1_dual)
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
+
+    def test_repr(self):
+        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
+        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        
+        assert repr(c1.dual) == "CircuitComponent(name=None, modes=[0, 1, 2])"
+        assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
 
 class TestAddBra:

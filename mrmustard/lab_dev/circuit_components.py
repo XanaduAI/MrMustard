@@ -135,18 +135,16 @@ class CircuitComponent:
         return self._wires
 
     @property
-    def adjoint(self) -> CircuitComponent:
+    def adjoint(self) -> AdjointView:
         r"""
-        Light-copies this component, then returns the adjoint of it, obtained by taking the
-        conjugate of the representation and switching ket and bra wires.
+        The ``AdjointView`` of this component.
         """
         return AdjointView(self)
 
     @property
-    def dual(self) -> CircuitComponent:
+    def dual(self) -> DualView:
         r"""
-        Light-copies this component, then returns the dual of it, obtained by taking the
-        conjugate of the representation and switching input and output wires.
+        The ``DualView`` of this component.
         """
         return DualView(self)
 
@@ -240,7 +238,7 @@ class CircuitComponent:
             raise ValueError(msg)
 
     def __repr__(self) -> str:
-        name = {self.name} if self.name else "None"
+        name = self.name if self.name else "None"
         return f"CircuitComponent(name={name}, modes={self.modes})"
 
 
@@ -277,6 +275,9 @@ class AdjointView(CircuitComponent):
         """
         return self._component.wires.adjoint
 
+    def __repr__(self) -> str:
+        return repr(self._component)
+
 
 class DualView(CircuitComponent):
     r"""
@@ -311,11 +312,13 @@ class DualView(CircuitComponent):
         """
         return self._component.wires.dual
 
+    def __repr__(self) -> str:
+        return repr(self._component)
+
 
 def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
     r"""
-    Takes as input a sequence of circuit components and adds the adjoint of every component that
-    has no wires on the bra side.
+    Adds the adjoint to every component that has no wires on the bra side.
 
     It works on light copies of the given components, so the input list is not mutated.
 
