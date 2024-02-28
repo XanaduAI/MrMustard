@@ -22,7 +22,6 @@ import pytest
 from mrmustard.physics.triples import attenuator_Abc, displacement_gate_Abc, vacuum_state_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import (
-    connect,
     add_bra,
     CircuitComponent,
     AdjointView,
@@ -399,6 +398,10 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+    def test_repr(self):
+        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
+        assert repr(c1) == "CircuitComponent(name=None, modes=[0, 1, 2])"
 
 
 class TestAdjointView:

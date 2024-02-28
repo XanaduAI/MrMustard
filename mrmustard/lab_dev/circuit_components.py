@@ -26,7 +26,7 @@ from ..math.parameters import Constant, Variable
 from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 from .wires import Wires
 
-__all__ = ["CircuitComponent", "AdjointView", "DualView", "add_bra", "connect"]
+__all__ = ["CircuitComponent", "AdjointView", "DualView", "add_bra"]
 
 
 class CircuitComponent:
@@ -248,35 +248,33 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
         """
-        ret = self @ other
+        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
 
-        if not self.wires.bra:
-            if not other.wires.bra:
-                # self has ket, other has ket
-                return ret
-            elif not other.wires.ket:
-                # self has ket, other has bra
-                return ret @ ret.adjoint
-            # self has ket, other has ket and bra
-            return self.adjoint @ ret
-        elif not self.wires.ket:
-            if not other.wires.bra:
-                # self has bra, other has ket
-                return ret @ ret.adjoint
-            elif not other.wires.ket:
-                # self has bra, other has bra
-                return ret
-            # self has bra, other has ket and bra
-            return self.adjoint @ ret
-        if not other.wires.bra or not other.wires.ket:
-            # self has ket and bra, other has ket or bra
-            return ret @ other.adjoint
-        # self has ket and bra, other has ket and bra
-        return ret
+        wires_out = self.wires.output
+        wires_in = other.wires.input
+
+        if wires_out.ket and wires_out.bra:
+            if wires_in.ket and wires_in.bra:
+                return self @ other
+            return self @ other @ other.adjoint
+
+        if wires_out.ket:
+            if wires_in.ket and wires_in.bra:
+                return self @ self.adjoint @ other
+            if wires_in.ket:
+                return self @ other
+            raise ValueError(msg)
+
+        if wires_out.bra:
+            if wires_in.ket and wires_in.bra:
+                return self @ self.adjoint @ other
+            if wires_in.bra:
+                return self @ other
+            raise ValueError(msg)
 
     def __repr__(self) -> str:
         name = {self.name} if self.name else "None"
-        return f"CircuitComponent(name = {name}, modes = {self.modes})"
+        return f"CircuitComponent(name={name}, modes={self.modes})"
 
 
 class AdjointView(CircuitComponent):
