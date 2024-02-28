@@ -591,7 +591,6 @@ class State:  # pylint: disable=too-many-public-methods
         fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
-    # TODO: refactor
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:

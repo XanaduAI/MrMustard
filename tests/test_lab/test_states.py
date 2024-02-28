@@ -39,7 +39,7 @@ hbar0 = settings.HBAR
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
+    return draw(arrays(dtype=np.float64, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
 @given(nmodes, st.floats(0.1, 5.0))

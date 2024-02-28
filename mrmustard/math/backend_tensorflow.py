@@ -64,6 +64,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
@@ -83,13 +90,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
 
     def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.astensor(array, dtype))
+        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
 
     def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
         if len(array.shape) == 2:
             array = self.expand_dims(array, 0)
         return array
@@ -280,6 +287,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     @Autocast()
     def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
         return tf.math.pow(x, y)
+
+    def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
+        tf.experimental.numpy.experimental_enable_numpy_behavior()
+        return tf.experimental.numpy.kron(tensor1, tensor2)
+
+    def prod(self, x: tf.Tensor, axis: Union[None, int]):
+        return tf.math.reduce_prod(x, axis=axis)
 
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
@@ -550,13 +564,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            (
-                poly0,
-                poly2,
-                poly1010,
-                poly1001,
-                poly1,
-            ) = Main_julia.DiagonalAmps.fock_diagonal_amps(
+            (poly0, poly2, poly1010, poly1001, poly1) = Main_julia.DiagonalAmps.fock_diagonal_amps(
                 A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
@@ -672,10 +680,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
             else:  # julia (higher precision than complex128)
                 dpoly_dC = poly0 / C.item()
-                (
-                    dpoly_dA,
-                    dpoly_dB,
-                ) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                (dpoly_dA, dpoly_dB) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 

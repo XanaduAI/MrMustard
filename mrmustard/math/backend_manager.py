@@ -200,6 +200,25 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("abs", (array,))
 
+    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
+        r"""
+        Whether two arrays are equal within tolerance.
+
+        The two arrays are compaired element-wise.
+
+        Args:
+            array1: An array.
+            array2: Another array.
+            atol: The absolute tolerance.
+
+        Returns:
+            Whether two arrays are equal within tolerance.
+
+        Raises:
+            ValueError: If the shape of the two arrays do not match.
+        """
+        return self._apply("allclose", (array1, array2, atol))
+
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
 
@@ -902,6 +921,33 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The :math:`x^y`
         """
         return self._apply("pow", (x, y))
+
+    def kron(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
+        r"""
+        The Kroenecker product of the given tensors.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: Another tensor.
+
+        Returns:
+            The Kroenecker product.
+        """
+        return self._apply("kron", (tensor1, tensor2))
+
+    def prod(self, array: Tensor, axis=None) -> Tensor:
+        r"""
+        The product of all elements in ``array``.
+
+        Args:
+            array: The array of elements to calculate the product of.
+            axis: The axis along which a product is performed. If ``None``, it calculates
+                the product of all elements in ``array``.
+
+        Returns:
+            The product of the elements in ``array``.
+        """
+        return self._apply("prod", (array, axis))
 
     def real(self, array: Tensor) -> Tensor:
         r"""The real part of ``array``.

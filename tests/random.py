@@ -68,19 +68,28 @@ complex_number = st.complex_numbers(
 size = st.integers(min_value=1, max_value=9)
 
 
-@st.composite
-def Abc_triple(draw, n=None):
-    n = n or draw(size)
+def Abc_triple(n: int):
+    r"""
+    Produces a random ``(A, b, c)`` triple for ``n`` modes.
+    """
+    min_magnitude = 1e-9
+    max_magnitude = 1
 
-    # Complex symmetric matrix A
-    A = draw(arrays(dtype=complex, shape=(n, n), elements=complex_number))
-    A = 0.5 * (A + A.T)  # Make it symmetric
+    # complex symmetric matrix A
+    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (n, n)
+    )
+    A = 0.5 * (A + A.T)  # make it symmetric
 
-    # Complex vector b
-    b = draw(arrays(dtype=complex, shape=n, elements=complex_number))
+    # complex vector b
+    b = np.random.uniform(min_magnitude, max_magnitude, (n,)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (n,)
+    )
 
-    # Complex scalar c
-    c = draw(complex_number)
+    # complex scalar c
+    c = np.random.uniform(min_magnitude, max_magnitude, (1,)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, (1,)
+    )
 
     return A, b, c
 
@@ -88,7 +97,7 @@ def Abc_triple(draw, n=None):
 @st.composite
 def vector(draw, length):
     r"""Return a vector of length `length`."""
-    return draw(arrays(np.float, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
+    return draw(arrays(np.float64, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
 
 
 @st.composite
@@ -103,7 +112,7 @@ def list_of_ints(draw, N):
 def matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols`."""
     elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
-    return draw(arrays(np.float, (rows, cols), elements=elements))
+    return draw(arrays(np.float64, (rows, cols), elements=elements))
 
 
 @st.composite

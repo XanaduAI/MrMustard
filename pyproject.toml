@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mrmustard"
-version = "0.7.0"
+version = "0.7.1"
 description = "Differentiable quantum Gaussian circuits"
 authors = ["Xanadu <filippo@xanadu.ai>"]
 license = "Apache License 2.0"
@@ -20,16 +20,17 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.9,<3.12"
 grpcio = "1.60.0"
 numpy = "^1.23.5"
 scipy = "^1.8.0"
-numba = "^0.56.4"
+numba = "^0.59"
 thewalrus = "^0.21.0"
 rich = "^10.15.1"
 matplotlib = "^3.5.0"
@@ -37,6 +38,7 @@ ray = { version = "^2.5.0", extras = ["tune"], optional = true }
 scikit-optimize = { version = "^0.9.0", optional = true }
 networkx = "^3.1"
 julia = "0.6.1"
+ipython = ">=8.18.1"
 
 ######################  The Tensorflow Section ###################### 
 # Dedicated for making sure that poetry can install tensorflow on all platforms.
@@ -71,7 +73,7 @@ optional = true
 pytest = "8.0"
 pytest-cov ="3.0.0"
 hypothesis = "6.31.6"
-pylint = "2.10.0"
+pylint = "^3.0"
 black = ">=22.1.0"
 
 [tool.poetry.group.doc]

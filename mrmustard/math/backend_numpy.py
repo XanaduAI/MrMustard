@@ -59,6 +59,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
 
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.asnumpy(array1)
+        array2 = self.asnumpy(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return np.allclose(array1, array2, atol=atol)
+
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
 
@@ -279,6 +286,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
+    def kron(self, tensor1: np.ndarray, tensor2: np.ndarray):
+        return np.kron(tensor1, tensor2)
+
+    def prod(self, x: np.ndarray, axis: Union[None, int]):
+        return np.prod(x, axis=axis)
+
     def real(self, array: np.ndarray) -> np.ndarray:
         return np.real(array)
 
@@ -320,7 +333,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.tile(array, repeats)
 
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return self.cast(np.trace(array), dtype)
+        return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
     def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> Optional[np.ndarray]:
         if a is None:

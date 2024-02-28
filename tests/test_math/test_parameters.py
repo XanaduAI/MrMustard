@@ -57,10 +57,10 @@ class TestConstant:
         """
         const = Constant(1, "const")
 
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(AttributeError):
             const.value = 2
 
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(AttributeError):
             const.name = "const2"
 
 
@@ -102,10 +102,10 @@ class TestVariable:
         var.update_fn = update_orthogonal
         assert var.update_fn == update_orthogonal
 
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(AttributeError):
             var.name = "var2"
 
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(AttributeError):
             var.bounds = (0, 1)
 
     def test_static_methods(self):

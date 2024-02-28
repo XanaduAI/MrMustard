@@ -1,4 +1,34 @@
-# Release 0.7.0 (current release)
+# Release 0.7.1 (current release)
+
+### New features
+* Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
+  several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
+
+* Added support for python 3.11. [(#354)](https://github.com/XanaduAI/MrMustard/pull/354)
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+* Fixing a bug in `_transform_gaussian` in transformation.py that modifies the input state's cov and means.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
+* Fixing a bug in `general_dyne` in physics/gaussian.py that returns the wrong probability and outcomes with given projection.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.0
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
