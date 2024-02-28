@@ -12,5 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+r"""
+The lab module in development.
+"""
+
 from .circuit_components import *
 from .wires import Wires
