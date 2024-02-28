@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-Tests for circuit components.
-"""
+""" Tests for circuit components. """
+
+# pylint: disable=fix-me, missing-function-docstring
 
 import numpy as np
 import pytest
@@ -385,7 +385,7 @@ class TestCircuitComponent:
     def test_repr(self):
         c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
         c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
-        
+
         assert repr(c1) == "CircuitComponent(name=None, modes=[0, 1, 2])"
         assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
@@ -415,7 +415,7 @@ class TestAdjointView:
     def test_repr(self):
         c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
         c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
-        
+
         assert repr(c1.adjoint) == "CircuitComponent(name=None, modes=[0, 1, 2])"
         assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
@@ -461,7 +461,7 @@ class TestDualView:
     def test_repr(self):
         c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
         c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
-        
+
         assert repr(c1.dual) == "CircuitComponent(name=None, modes=[0, 1, 2])"
         assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
