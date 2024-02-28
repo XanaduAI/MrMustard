@@ -37,16 +37,16 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
 
     .. code-block::
 
-    >>>    import numpy as np
-    >>>    from mrmustard.physics.converters import to_fock
-    >>>    from mrmustard.physics.representations import Bargmann
+        >>> import numpy as np
+        >>> from mrmustard.physics.converters import to_fock
+        >>> from mrmustard.physics.representations import Bargmann
 
-    >>>    A = np.array([[1.0, 0.0], [0.0, 1.0]])
-    >>>    b = np.array([1.0, 1.0])
-    >>>    c = np.array(1.0)
-    >>>    bargmann = Bargmann(A, b, c)
-    >>>    fock = to_fock(bargmann)
-    >>>    # One can show the final fock array by using fock.array
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array(1.0)
+        >>> bargmann = Bargmann(A, b, c)
+        >>> fock = to_fock(bargmann)
+        >>> # One can show the final fock array by using fock.array
 
     """
     if isinstance(rep, Bargmann):
