@@ -26,7 +26,7 @@ def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = 
     If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
 
     Args:
-        rep: the orginal representation of the object.
+        rep: The orginal representation of the object.
         cutoffs: the cutoffs of the transformed Fock representation object.
 
     Raises:
