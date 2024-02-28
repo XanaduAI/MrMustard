@@ -419,6 +419,19 @@ class TestAdjointView:
         assert repr(c1.adjoint) == "CircuitComponent(name=None, modes=[0, 1, 2])"
         assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
+    # TODO: Uncomment when gates are merged
+    # def test_parameters_point_to_original_parameters(self):
+    #     r"""
+    #     Tests that the parameters of an AdjointView object point to those of the original object.
+    #     """
+    #     d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+    #     d1_adj = AdjointView(d1)
+
+    #     d1.x.value = 0.8
+
+    #     assert d1_adj.x.value == 0.8
+    #     assert d1_adj.representation == d1.representation.conj()
+
 
 class TestDualView:
     r"""
@@ -451,6 +464,19 @@ class TestDualView:
         
         assert repr(c1.dual) == "CircuitComponent(name=None, modes=[0, 1, 2])"
         assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+
+    # TODO: Uncomment when gates are merged
+    # def test_parameters_point_to_original_parameters(self):
+    #     r"""
+    #     Tests that the parameters of a DualView object point to those of the original object.
+    #     """
+    #     d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
+    #     d1_dual = DualView(d1)
+
+    #     d1.x.value = 0.8
+
+    #     assert d1_dual.x.value == 0.8
+    #     assert d1_dual.representation == d1.representation.conj()
 
 
 class TestAddBra:
