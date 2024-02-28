@@ -23,7 +23,7 @@ from mrmustard import math, settings
 def to_fock(rep: Representation, cutoffs: Optional[Union[int, Iterable[int]]] = None) -> Fock:
     r"""A function to map ``Representation``s to ``Fock`` representations.
 
-    Note that if the rep is ``Fock``, this function maps nothing but return the original rep object directly.
+    If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
 
     Args:
         rep: the orginal representation of the object.
