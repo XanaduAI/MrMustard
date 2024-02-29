@@ -118,7 +118,7 @@ class TestCircuitComponent:
             modes_in_ket=[2],
         )
         assert d1 == d1.light_copy()
-        assert not d1 == d2
+        assert d1 != d2
 
     def test_matmul(self):
         vac012 = CircuitComponent(
