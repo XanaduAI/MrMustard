@@ -37,8 +37,7 @@ class Coherent(Ket):
 
     .. code-block::
 
-        >>> import numpy as np
-        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
+        >>> from mrmustard.lab_dev import Coherent
 
         >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
         >>> assert state.modes == [0, 1, 2]
@@ -88,7 +87,34 @@ class Coherent(Ket):
 
 
 class Number(Ket):
-    r"""The `N`-mode number state."""
+    r"""The `N`-mode number state.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Number
+
+        >>> state = Number(modes=[0, 1], n=[0.3, 0.4, 0.5], y=0.2)
+        >>> assert state.modes == [0, 1, 2]
+    
+    Args:
+        modes: The modes of the number state.
+        n: The number of photons in each mode.
+        cutoff: The cutoff. If ``None``, it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+
+    .. details::
+
+        For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
+        coherent state displaced :math:`N`-mode vacuum state is defined by
+
+        .. math::
+            V = \frac{\hbar}{2}I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+               
+    """
 
     def __init__(
         self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
@@ -122,7 +148,6 @@ class Vacuum(Ket):
 
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import Vacuum
 
         >>> state = Vacuum([1, 2])
