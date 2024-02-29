@@ -56,12 +56,7 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
         shape = (shape,) * len_shape if isinstance(shape, int) else shape
         if len_shape != len(shape):
             raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
-        rep_new = Fock(
-            math.astensor(
-                [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-            ),
-            batched=True,
-        )
-    elif isinstance(rep, Fock):
-        rep_new = rep
-    return rep_new
+        
+        array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
+        return Fock(math.astensor(array), batched=True)
+    return rep
