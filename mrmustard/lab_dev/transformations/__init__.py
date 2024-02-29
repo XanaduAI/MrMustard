@@ -12,5 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+The classes representing transformations in quantum circuits.
+"""
+
 from .base import *
 from .transformations import *
