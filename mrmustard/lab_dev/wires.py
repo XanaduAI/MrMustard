@@ -349,7 +349,7 @@ class Wires:
         The output of ``self`` connects to the input of ``other`` wherever they match. All
         surviving wires are arranged in the standard order.
 
-        This function does not add missing adjoints.
+        This function only performs the contractions given and it does not add missing adjoints.
 
         Raises:
             ValueError: If there are any surviving wires that overlap.
