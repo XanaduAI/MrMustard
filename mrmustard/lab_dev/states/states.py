@@ -109,11 +109,11 @@ class Number(Ket):
         n_modes = len(self.modes)
         ns = list(reshape_params(n_modes, n=self.n.value))[0]
 
-        array = math.zeros(shape=(n_modes, self.cutoff.value))
+        array = math.asnumpy(math.zeros(shape=(n_modes, self.cutoff.value)))
         for i, n in enumerate(ns):
             array[i, math.cast(n, math.int32)] = 1
 
-        return Fock(array)
+        return Fock(math.astensor(array, dtype=math.complex128))
 
 
 class Vacuum(Ket):

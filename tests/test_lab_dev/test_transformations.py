@@ -107,7 +107,6 @@ class TestChannel:
         assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
 
 
-
 class TestBSgate:
     r"""
     Tests for the ``BSgate`` class.

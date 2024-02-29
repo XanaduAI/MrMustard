@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Vacuum
+from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.lab_dev.wires import Wires
 
@@ -44,11 +44,11 @@ class TestKet:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent.from_attributes(
-            unitary.name, unitary.wires, unitary.representation
+            unitary.name, unitary.representation, unitary.wires
         )
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent.from_attributes(
-            channel.name, channel.wires, channel.representation
+            channel.name, channel.representation, channel.wires
         )
 
         assert isinstance(ket >> unitary, Ket)
@@ -57,6 +57,13 @@ class TestKet:
         assert isinstance(ket >> channel >> unitary, DM)
         assert isinstance(ket >> u_component, CircuitComponent)
         assert isinstance(ket >> ch_component, CircuitComponent)
+
+    def test_repr(self):
+        ket = Coherent([0, 1], 1)
+        ket_component = CircuitComponent.from_attributes(ket.name, ket.representation, ket.wires)
+
+        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
+        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
 
 
 class TestDM:
@@ -77,11 +84,11 @@ class TestDM:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent.from_attributes(
-            unitary.name, unitary.wires, unitary.representation
+            unitary.name, unitary.representation, unitary.wires
         )
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent.from_attributes(
-            channel.name, channel.wires, channel.representation
+            channel.name, channel.representation, channel.wires
         )
 
         dm = ket >> channel
@@ -92,26 +99,14 @@ class TestDM:
         assert isinstance(dm >> u_component, CircuitComponent)
         assert isinstance(dm >> ch_component, CircuitComponent)
 
+    def test_repr(self):
+        ket = Coherent([0, 1], 1)
+        channel = Attenuator([1], 1)
+        dm = ket >> channel
+        dm_component = CircuitComponent.from_attributes(dm.name, dm.representation, dm.wires)
 
-class TestVacuum:
-    r"""
-    Tests for the ``Vacuum`` class.
-    """
-
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
-    def test_init(self, modes):
-        state = Vacuum(modes)
-
-        assert state.name == "Vacuum"
-        assert state.modes == sorted(modes)
-
-    @pytest.mark.parametrize("n_modes", [1, 3])
-    def test_representation(self, n_modes):
-        rep = Vacuum([i for i in range(n_modes)]).representation
-
-        assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
-        assert math.allclose(rep.b, np.zeros((1, n_modes)))
-        assert math.allclose(rep.c, [1.0])
+        assert repr(dm) == "DM(name=None, modes=[0, 1])"
+        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
 
 
 class TestCoherent:
@@ -170,3 +165,61 @@ class TestCoherent:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+
+class TestNumber:
+    r"""
+    Tests for the ``Number`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    n = [[1], 1, [1, 2]]
+    cutoff = [None, 3, 4]
+
+    @pytest.mark.parametrize("modes,n,cutoff", zip(modes, n, cutoff))
+    def test_init(self, modes, n, cutoff):
+        state = Number(modes, n, cutoff)
+
+        assert state.name == "Number"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``n``"):
+            Number(modes=[0, 1], n=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Found ``n=3``, but"):
+            Number(modes=[0, 1], n=3, cutoff=2)
+
+    def test_representation(self):
+        rep1 = Number(modes=[0, 1], n=[2, 3], cutoff=4).representation
+        assert math.allclose(rep1.array, [[[0, 0, 1, 0], [0, 0, 0, 1]]])
+
+        rep2 = Number(modes=[0, 1], n=[2, 3]).representation
+        assert rep2.array.shape == (1, 2, 100)
+        assert rep2.array[0, 0, 2] == 1
+        assert rep2.array[0, 1, 3] == 1
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+
+class TestVacuum:
+    r"""
+    Tests for the ``Vacuum`` class.
+    """
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_init(self, modes):
+        state = Vacuum(modes)
+
+        assert state.name == "Vacuum"
+        assert state.modes == sorted(modes)
+
+    @pytest.mark.parametrize("n_modes", [1, 3])
+    def test_representation(self, n_modes):
+        rep = Vacuum([i for i in range(n_modes)]).representation
+
+        assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
+        assert math.allclose(rep.b, np.zeros((1, n_modes)))
+        assert math.allclose(rep.c, [1.0])
