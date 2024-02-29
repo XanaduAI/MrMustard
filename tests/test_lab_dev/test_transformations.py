@@ -55,6 +55,15 @@ class TestUnitary:
         assert isinstance(unitary1 >> u_component, CircuitComponent)
         assert isinstance(unitary1 >> ch_component, CircuitComponent)
 
+    def test_repr(self):
+        unitary1 = Dgate([0, 1], 1)
+        u_component = CircuitComponent.from_attributes(
+            unitary1.name, unitary1.representation, unitary1.wires
+        )
+
+        assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
+        assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
+
 
 class TestChannel:
     r"""
@@ -87,6 +96,16 @@ class TestChannel:
         assert isinstance(channel1 >> channel2, Channel)
         assert isinstance(channel1 >> u_component, CircuitComponent)
         assert isinstance(channel1 >> ch_component, CircuitComponent)
+
+    def test_repr(self):
+        channel1 = Attenuator([0, 1], 0.9)
+        ch_component = CircuitComponent.from_attributes(
+            channel1.name, channel1.representation, channel1.wires
+        )
+
+        assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
+        assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
+
 
 
 class TestBSgate:

@@ -73,6 +73,9 @@ class Unitary(Transformation):
             return channel
         return component
 
+    def __repr__(self) -> str:
+        return super().__repr__().replace("CircuitComponent", "Unitary")
+
 
 class Channel(Transformation):
     r"""
@@ -106,3 +109,6 @@ class Channel(Transformation):
             channel._representation = component.representation
             return channel
         return component
+
+    def __repr__(self) -> str:
+        return super().__repr__().replace("CircuitComponent", "Channel")
