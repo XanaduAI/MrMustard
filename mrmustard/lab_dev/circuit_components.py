@@ -317,4 +317,3 @@ class DualView(CircuitComponent):
 
     def __repr__(self) -> str:
         return repr(self._component)
-

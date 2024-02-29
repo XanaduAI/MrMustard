@@ -21,12 +21,7 @@ import pytest
 
 from mrmustard.physics.triples import attenuator_Abc, displacement_gate_Abc, vacuum_state_Abc
 from mrmustard.physics.representations import Bargmann
-from mrmustard.lab_dev.circuit_components import (
-    add_bra,
-    CircuitComponent,
-    AdjointView,
-    DualView,
-)
+from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
 from mrmustard.lab_dev.wires import Wires
 
 
