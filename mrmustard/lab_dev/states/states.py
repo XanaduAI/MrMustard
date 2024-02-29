@@ -22,50 +22,10 @@ from typing import Iterable, Optional, Tuple, Union
 
 from .base import Ket
 from ..utils import make_parameter, reshape_params
-from ...physics.representations import Bargmann
+from ...physics.representations import Bargmann, Fock
 from ...physics import triples
 
-__all__ = ["Coherent", "Vacuum"]
-
-
-class Vacuum(Ket):
-    r"""
-    The `N`-mode vacuum state.
-
-    .. code-block ::
-
-        >>> import numpy as np
-        >>> from mrmustard.lab_dev import Vacuum
-
-        >>> state = Vacuum([1, 2])
-        >>> assert state.modes == [1, 2]
-
-    Args:
-        modes: A list of modes.
-
-    .. details::
-
-        The :math:`N`-mode vacuum state is defined by
-
-        .. math::
-            V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
-
-        Its ``(A,b,c)`` triple is given by
-
-        .. math::
-            A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
-    """
-
-    def __init__(
-        self,
-        modes: Iterable[int],
-    ) -> None:
-        super().__init__("Vacuum", modes=modes)
-
-    @property
-    def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-        return Bargmann(*triples.vacuum_state_Abc(num_modes))
+__all__ = ["Coherent", "Number", "Vacuum"]
 
 
 class Coherent(Ket):
@@ -124,3 +84,61 @@ class Coherent(Ket):
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.coherent_state_Abc(xs, ys))
+
+
+class Number(Ket):
+    r"""The `N`-mode number state.
+    """
+    def __init__(
+        self,
+        modes: Iterable[int],
+        n: int | Iterable[int]
+    ) -> None:
+        super().__init__("Number", modes=modes)
+        self._add_parameter(make_parameter(False, n, "n", (None, None)))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        ns = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
+        return Bargmann(*triples.coherent_state_Abc(xs, ys))
+
+
+class Vacuum(Ket):
+    r"""
+    The `N`-mode vacuum state.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Vacuum
+
+        >>> state = Vacuum([1, 2])
+        >>> assert state.modes == [1, 2]
+
+    Args:
+        modes: A list of modes.
+
+    .. details::
+
+        The :math:`N`-mode vacuum state is defined by
+
+        .. math::
+            V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
+    """
+
+    def __init__(
+        self,
+        modes: Iterable[int],
+    ) -> None:
+        super().__init__("Vacuum", modes=modes)
+
+    @property
+    def representation(self) -> Bargmann:
+        num_modes = len(self.modes)
+        return Bargmann(*triples.vacuum_state_Abc(num_modes))
