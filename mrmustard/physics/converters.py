@@ -27,7 +27,9 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
 
     Args:
         rep: The orginal representation of the object.
-        shape: The shape of the transformed Fock representation object.
+        shape: The shape of the returned representation. If ``shape``is given as an ``int``, it is broadcasted
+            to all the dimensions. If ``None``, it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in
+            the settings.
 
     Raises:
         ValueError: If the size of the shape given is not compatible with the representation.
