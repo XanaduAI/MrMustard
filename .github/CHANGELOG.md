@@ -1,11 +1,34 @@
-# Release 0.7.1 (current develop)
+# Current develop
+
+### New features
+* Added a function ``to_fock`` to map different representations into Fock representation. 
+  [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+  
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.1 (current release)
 
 ### New features
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
   several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
 
-* Added a function ``to_fock`` to map different representations into Fock representation. 
-  [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+* Added support for python 3.11. [(#354)](https://github.com/XanaduAI/MrMustard/pull/354)
 
 ### Breaking changes
 
@@ -29,7 +52,7 @@
 
 ---
 
-# Release 0.7.0 (current release)
+# Release 0.7.0
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
