@@ -27,7 +27,7 @@ from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .wires import Wires
 
-__all__ = ["CircuitComponent", "AdjointView", "DualView", "add_bra"]
+__all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
 
 class CircuitComponent:
@@ -317,26 +317,3 @@ class DualView(CircuitComponent):
 
     def __repr__(self) -> str:
         return repr(self._component)
-
-
-def add_bra(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
-    r"""
-    Adds the adjoint to every component that has no wires on the bra side.
-
-    It works on light copies of the given components, so the input list is not mutated.
-
-    Args:
-        components: The circuit components to add bras to.
-
-    Returns:
-        The connected components, light-copied.
-    """
-    ret = []
-
-    for component in components:
-        component_cp = component.light_copy()
-        if not component_cp.wires.bra:
-            ret.append(component_cp @ component_cp.adjoint)
-        else:
-            ret.append(component_cp)
-    return ret
