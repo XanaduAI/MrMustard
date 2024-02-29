@@ -68,6 +68,9 @@ class DM(State):
             return dm
         return component
 
+    def __repr__(self) -> str:
+        return super().__repr__().replace("CircuitComponent", "DM")
+
 
 class Ket(State):
     r"""
@@ -105,3 +108,6 @@ class Ket(State):
             dm._representation = component.representation
             return dm
         return component
+
+    def __repr__(self) -> str:
+        return super().__repr__().replace("CircuitComponent", "Ket")

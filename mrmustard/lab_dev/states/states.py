@@ -20,10 +20,11 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Tuple, Union
 
+from mrmustard import math, settings
+from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
-from ...physics.representations import Bargmann, Fock
-from ...physics import triples
 
 __all__ = ["Coherent", "Number", "Vacuum"]
 
@@ -87,21 +88,32 @@ class Coherent(Ket):
 
 
 class Number(Ket):
-    r"""The `N`-mode number state.
-    """
+    r"""The `N`-mode number state."""
+
     def __init__(
-        self,
-        modes: Iterable[int],
-        n: int | Iterable[int]
+        self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
     ) -> None:
         super().__init__("Number", modes=modes)
         self._add_parameter(make_parameter(False, n, "n", (None, None)))
+        self._add_parameter(
+            make_parameter(False, cutoff or settings.AUTOCUTOFF_MAX_CUTOFF, "cutoff", (None, None))
+        )
+
+        for n_photons in math.atleast_1d(n):
+            if n_photons > self.cutoff.value:
+                msg = f"Found ``n={n_photons}``, but cutoff is ``{self.cutoff.value}``."
+                raise ValueError(msg)
 
     @property
-    def representation(self) -> Bargmann:
+    def representation(self) -> Fock:
         n_modes = len(self.modes)
-        ns = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
-        return Bargmann(*triples.coherent_state_Abc(xs, ys))
+        ns = list(reshape_params(n_modes, n=self.n.value))[0]
+
+        array = math.zeros(shape=(n_modes, self.cutoff.value))
+        for i, n in enumerate(ns):
+            array[i, math.cast(n, math.int32)] = 1
+
+        return Fock(array)
 
 
 class Vacuum(Ket):

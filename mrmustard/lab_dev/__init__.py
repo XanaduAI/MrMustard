@@ -17,5 +17,6 @@ The lab module in development.
 """
 
 from .circuit_components import *
+from .states import *
 from .transformations import *
 from .wires import Wires
