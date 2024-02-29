@@ -14,7 +14,7 @@
 
 """Tests for the transformation subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring
+# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest

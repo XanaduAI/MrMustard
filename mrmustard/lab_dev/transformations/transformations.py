@@ -60,11 +60,11 @@ class BSgate(Unitary):
         The beamsplitter gate is a Gaussian gate defined by
 
         .. math::
-            S &= \begin{bmatrix}
+            S = \begin{bmatrix}
                     \text{Re}(U) & -\text{Im}(U)\\
                     \text{Im}(U) & \text{Re}(U)
-                \end{bmatrix} \\
-            d &= O_4\:,
+                \end{bmatrix} \text{ and }
+            d = O_4\:,
 
         with
 
@@ -77,12 +77,12 @@ class BSgate(Unitary):
         Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            A &= \begin{bmatrix}
+            A = \begin{bmatrix}
                     O_2 & U \\
                     U^{T} & O_2
-                \end{bmatrix} \\
-            b &= O_{4} \\
-            c &= 1
+                \end{bmatrix} \text{, }
+            b = O_{4} \text{, and }
+            c = 1
     """
 
     def __init__(
@@ -139,7 +139,7 @@ class Dgate(Unitary):
         displacement gate is defined by
 
         .. math:: 
-            S = I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
+            S = I_N \text{ and } r = \sqrt{2\hbar}\big[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})\big].
 
         Its ``(A,b,c)`` triple is given by 
 
@@ -147,10 +147,10 @@ class Dgate(Unitary):
             A &= \begin{bmatrix}
                     O_N & I_N\\
                     I_N & O_N
-                \end{bmatrix} \\
+                \end{bmatrix} \\ \\
             b &= \begin{bmatrix}
                     \bar{\alpha} & -\bar{\alpha}^*
-                \end{bmatrix} \\
+                \end{bmatrix} \\ \\
             c &= \text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
@@ -207,23 +207,22 @@ class Sgate(Unitary):
         squeezing gate is defined by
 
         .. math::
-            S &= \begin{bmatrix}
+            S = \begin{bmatrix}
                     \text{diag}_N(\text{cosh}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{sinh}(\bar{r}))\\
                     -\text{diag}_N(e^{i\bar{\phi}}\text{sinh}(\bar{r})) & \text{diag}_N(\text{cosh}(\bar{r}))
-                \end{bmatrix} \\
-            d &= O_{2N}.
+                \end{bmatrix} \text{ and }
+            d = O_{2N},
 
+        where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
         Its ``(A,b,c)`` triple is given by 
 
         .. math::
             A &= \begin{bmatrix}
                     -\text{diag}_N(e^{i\bar{\phi}}\text{tanh}(\bar{r})) & \text{diag}_N(\text{sech}(\bar{r}))\\
                     \text{diag}_N(\text{sech}(\bar{r})) & \text{diag}_N(e^{-i\bar{\phi}}\text{tanh}(\bar{r}))
-                \end{bmatrix} \\
-            b &= O_{2N} \\
-            c &= \prod_{i=1}^N\sqrt{\text{sech}{r_i}}\:,
-
-        where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
+                \end{bmatrix} \\ \\
+            b &= O_{2N} \\ \\
+            c &= \prod_{i=1}^N\sqrt{\text{sech}{\:r_i}}\:.
     """
 
     def __init__(
@@ -273,11 +272,12 @@ class Attenuator(Channel):
         The :math:`N`-mode attenuator is defined as
 
         .. math::
-            X &= \text{cos}(\theta)I_{2N} \\
-            Y &= \big(\text{sin}(\theta)\big)^2I_{2N} \\
-            d &= O_{4N}\:,
+            X = \text{cos}(\theta)I_{2N} \text{ , }
+            Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
+            d = O_{4N}\:,
 
-        where the :math:`\theta=\text{arcos}(\sqrt{\eta})` and :math:`eta` is the transmissivity.
+        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
+        :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
 
         Its ``(A,b,c)`` triple is given by 
 
@@ -287,11 +287,9 @@ class Attenuator(Channel):
                     \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N & \text{diag}_N(1-\sqrt{\bar{\eta}})\\
                     O_N & O_N & O_N & \text{diag}_N(\sqrt{\bar{\eta}})\\
                     O_N & \text{diag}_N(1-\sqrt{\bar{\eta}}) & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N
-                \end{bmatrix} \\
-            b &= O_{4N} \\
-            c &= 1\:,
-
-        where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
+                \end{bmatrix} \\ \\
+            b &= O_{4N} \\ \\
+            c &= 1\:.
     """
 
     def __init__(
