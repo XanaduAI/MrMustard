@@ -290,7 +290,7 @@ class TestAttenuator:
     """
 
     modes = [[0], [1, 2], [9, 7]]
-    transmissivity = [[1], 1, [1, 2]]
+    transmissivity = [[0.1], 0.1, [0.1, 0.2]]
 
     @pytest.mark.parametrize("modes,transmissivity", zip(modes, transmissivity))
     def test_init(self, modes, transmissivity):
@@ -301,7 +301,7 @@ class TestAttenuator:
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="Length of ``transmissivity``"):
-            Attenuator(modes=[0, 1], transmissivity=[2, 3, 4])
+            Attenuator(modes=[0, 1], transmissivity=[0.2, 0.3, 0.4])
 
     def test_representation(self):
         rep1 = Attenuator(modes=[0], transmissivity=0.1).representation
@@ -311,14 +311,14 @@ class TestAttenuator:
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):
-        gate1 = Attenuator([0], 1)
-        gate2 = Attenuator([0], 1, transmissivity_trainable=True, transmissivity_bounds=(-2, 2))
+        gate1 = Attenuator([0], 0.1)
+        gate2 = Attenuator([0], 0.1, transmissivity_trainable=True, transmissivity_bounds=(-0.2, 0.2))
 
         with pytest.raises(AttributeError):
-            gate1.transmissivity.value = 3
+            gate1.transmissivity.value = 0.3
 
-        gate2.transmissivity.value = 2
-        assert gate2.transmissivity.value == 2
+        gate2.transmissivity.value = 0.2
+        assert gate2.transmissivity.value == 0.2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
