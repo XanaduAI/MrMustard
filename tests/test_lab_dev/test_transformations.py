@@ -43,11 +43,11 @@ class TestUnitary:
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
         u_component = CircuitComponent.from_attributes(
-            unitary1.name, unitary1.wires, unitary1.representation
+            unitary1.name, unitary1.representation, unitary1.wires
         )
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent.from_attributes(
-            channel.name, channel.wires, channel.representation
+            channel.name, channel.representation, channel.wires
         )
 
         assert isinstance(unitary1 >> unitary2, Unitary)
@@ -75,12 +75,12 @@ class TestChannel:
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
         u_component = CircuitComponent.from_attributes(
-            unitary.name, unitary.wires, unitary.representation
+            unitary.name, unitary.representation, unitary.wires
         )
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
         ch_component = CircuitComponent.from_attributes(
-            channel1.name, channel1.wires, channel1.representation
+            channel1.name, channel1.representation, channel1.wires
         )
 
         assert isinstance(channel1 >> unitary, Channel)

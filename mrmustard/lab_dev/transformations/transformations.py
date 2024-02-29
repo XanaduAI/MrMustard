@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Optional, Iterable, Tuple, Union
 
-from mrmustard import math
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
