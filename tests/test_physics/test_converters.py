@@ -65,9 +65,7 @@ class TestToFock:
         r"""Tests that the to_fock function works for a coherent state in Bargmann representation."""
         coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3], y=[0.1]))
         coherent_fock_no_shape = to_fock(coherent_bargmann)
-        assert math.allclose(
-            coherent_fock_no_shape.array[0, 0], math.exp(-0.5 * (0.3**2 + 0.1**2))
-        )
+        assert math.allclose(coherent_fock_no_shape.array[0, 0], math.exp(-0.5 * (0.3**2 + 0.1**2)))
         assert math.allclose(
             coherent_fock_no_shape.array[0, 1],
             (0.3 + 1j * 0.1) * coherent_fock_no_shape.array[0, 0],
@@ -91,9 +89,7 @@ class TestToFock:
         )
         assert math.allclose(
             coherent_twomode_fock_no_shape.array[0, 0, 2],
-            (0.2 + 1j * 0.1)
-            * coherent_twomode_fock_no_shape.array[0, 0, 1]
-            / math.sqrt(2.0 + 0j),
+            (0.2 + 1j * 0.1) * coherent_twomode_fock_no_shape.array[0, 0, 1] / math.sqrt(2.0 + 0j),
         )
         assert math.allclose(
             coherent_twomode_fock_no_shape.array[0, 1, 2],
