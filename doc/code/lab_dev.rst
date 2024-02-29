@@ -5,5 +5,6 @@ mrmustard.lab_dev
     :maxdepth: 1
 
     lab_dev/wires
+    lab_dev/circuit_components
 
 .. currentmodule:: mrmustard.lab_dev
