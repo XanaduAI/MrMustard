@@ -94,7 +94,7 @@ class Number(Ket):
         >>> from mrmustard.lab_dev import Number
 
         >>> state = Number(modes=[0, 1], n=[10, 20], cutoff=20)
-        >>> assert state.modes == [0, 1, 2]
+        >>> assert state.modes == [0, 1]
     
     Args:
         modes: The modes of the number state.
