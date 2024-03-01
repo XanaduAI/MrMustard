@@ -14,7 +14,7 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring
+# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
@@ -218,7 +218,7 @@ class TestVacuum:
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):
-        rep = Vacuum([i for i in range(n_modes)]).representation
+        rep = Vacuum(range(n_modes)).representation
 
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
