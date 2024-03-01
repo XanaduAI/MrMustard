@@ -27,7 +27,9 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
 
     Args:
         rep: The orginal representation of the object.
-        shape: The shape of the transformed Fock representation object.
+        shape: The shape of the returned representation. If ``shape``is given as an ``int``, it is broadcasted
+            to all the dimensions. If ``None``, it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in
+            the settings.
 
     Raises:
         ValueError: If the size of the shape given is not compatible with the representation.
@@ -37,16 +39,13 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
 
     .. code-block::
 
-        >>> import numpy as np
         >>> from mrmustard.physics.converters import to_fock
-        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.representations import Bargmann, Fock
+        >>> from mrmustard.physics.triples import displacement_gate_Abc
 
-        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
-        >>> b = np.array([1.0, 1.0])
-        >>> c = np.array(1.0)
-        >>> bargmann = Bargmann(A, b, c)
-        >>> fock = to_fock(bargmann)
-        >>> # One can show the final fock array by using fock.array
+        >>> bargmann = Bargmann(*displacement_gate_Abc(x=0.1, y=[0.2, 0.3]))
+        >>> fock = to_fock(bargmann, shape=10)
+        >>> assert isinstance(fock, Fock)
 
     """
     if isinstance(rep, Bargmann):
