@@ -164,7 +164,9 @@ class TestCoherent:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(modes=[0], x=[0.1, 0.2]).representation
+            Coherent(
+                modes=[0], x=[0.1, 0.2]
+            ).representation  # pylint: disable=expression-not-assigned
 
 
 class TestNumber:
@@ -201,7 +203,9 @@ class TestNumber:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(modes=[0], x=[0.1, 0.2]).representation
+            Coherent(
+                modes=[0], x=[0.1, 0.2]
+            ).representation  # pylint: disable=expression-not-assigned
 
 
 class TestVacuum:
@@ -218,7 +222,7 @@ class TestVacuum:
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):
-        rep = Vacuum([i for i in range(n_modes)]).representation
+        rep = Vacuum(range(n_modes)).representation
 
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
