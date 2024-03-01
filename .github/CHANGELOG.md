@@ -1,7 +1,9 @@
 # Current develop
 
 ### New features
-
+* Added a function ``to_fock`` to map different representations into Fock representation. 
+  [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+  
 ### Breaking changes
 
 ### Improvements
