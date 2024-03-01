@@ -93,7 +93,7 @@ class Number(Ket):
 
         >>> from mrmustard.lab_dev import Number
 
-        >>> state = Number(modes=[0, 1], n=[0.3, 0.4, 0.5], y=0.2)
+        >>> state = Number(modes=[0, 1], n=[10, 20], cutoff=20)
         >>> assert state.modes == [0, 1, 2]
     
     Args:
@@ -103,16 +103,14 @@ class Number(Ket):
 
     .. details::
 
-        For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
-        coherent state displaced :math:`N`-mode vacuum state is defined by
+        For any :math:`\bar{n} = (n_1,\:\ldots,\:n_N)`, the :math:`N`-mode number state is defined
+        by
 
         .. math::
-            V = \frac{\hbar}{2}I_N \text{and } r = \sqrt{2\hbar}[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})].
+            \ket{\bar{n}} = \ket{n_1}\otimes\ldots\otimes\ket{n_N}\:,
 
-        Its ``(A,b,c)`` triple is given by
-
-        .. math::
-            A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+        where :math:`\ket{n_j}` is the eigenstate of the number operator on mode `j` with eigenvalue
+        :math:`n_j`.
                
     """
 
