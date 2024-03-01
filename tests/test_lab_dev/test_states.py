@@ -14,7 +14,7 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring
+# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
@@ -164,9 +164,7 @@ class TestCoherent:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(
-                modes=[0], x=[0.1, 0.2]
-            ).representation  # pylint: disable=expression-not-assigned
+            Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
 class TestNumber:
@@ -203,9 +201,7 @@ class TestNumber:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(
-                modes=[0], x=[0.1, 0.2]
-            ).representation  # pylint: disable=expression-not-assigned
+            Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
 class TestVacuum:
