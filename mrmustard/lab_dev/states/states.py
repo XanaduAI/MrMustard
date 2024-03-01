@@ -95,7 +95,7 @@ class Number(Ket):
 
         >>> state = Number(modes=[0, 1], n=[10, 20], cutoff=20)
         >>> assert state.modes == [0, 1, 2]
-    
+
     Args:
         modes: The modes of the number state.
         n: The number of photons in each mode.
@@ -111,7 +111,7 @@ class Number(Ket):
 
         where :math:`\ket{n_j}` is the eigenstate of the number operator on mode `j` with eigenvalue
         :math:`n_j`.
-               
+
     """
 
     def __init__(
