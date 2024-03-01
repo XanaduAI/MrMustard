@@ -6,5 +6,6 @@ mrmustard.lab_dev
 
     lab_dev/wires
     lab_dev/circuit_components
+    lab_dev/transformations
 
 .. currentmodule:: mrmustard.lab_dev
