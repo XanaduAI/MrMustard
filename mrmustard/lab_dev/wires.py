@@ -300,6 +300,20 @@ class Wires:
         """
         return len(self.ids) > 0
 
+    def __eq__(self, other) -> bool:
+        r"""
+        Returns ``True`` if this ``Wires`` acts on the same modes as ``other``, ``False`` otherwise.
+        """
+        if self.output.bra.modes != other.output.bra.modes:
+            return False
+        if self.input.bra.modes != other.input.bra.modes:
+            return False
+        if self.output.ket.modes != other.output.ket.modes:
+            return False
+        if self.input.ket.modes != other.input.ket.modes:
+            return False
+        return True
+
     def __getitem__(self, modes: Iterable[int] | int) -> Wires:
         r"""
         A view of this Wires object with wires only on the given modes.
@@ -307,9 +321,6 @@ class Wires:
         modes = [modes] if isinstance(modes, int) else modes
         idxs = tuple(list(self._modes).index(m) for m in set(self._modes).difference(modes))
         return self._view(masked_rows=idxs)
-
-    def __lshift__(self, other: Wires) -> Wires:
-        return (other.dual >> self.dual).dual  # how cool is this
 
     @staticmethod
     def _outin(self_in: int, self_out: int, other_in: int, other_out: int) -> np.ndarray:
@@ -331,12 +342,17 @@ class Wires:
         else:  # no wires on other
             return np.array([self_out, self_in], dtype=np.int64)
 
-    def __rshift__(self, other: Wires) -> Wires:
+    def __matmul__(self, other: Wires) -> Wires:
         r"""
-        A new Wires object with the wires of ``self`` and ``other`` combined as two
-        components in a circuit: the output of self connects to the input of other wherever
-        they match. All surviving wires are arranged in the standard order.
-        A ValueError is raised if there are any surviving wires that overlap.
+        A new ``Wires`` object with the wires of ``self`` and ``other`` combined.
+
+        The output of ``self`` connects to the input of ``other`` wherever they match. All
+        surviving wires are arranged in the standard order.
+
+        This function only performs the contractions given and it does not add missing adjoints.
+
+        Raises:
+            ValueError: If there are any surviving wires that overlap.
         """
         all_modes = sorted(set(self.modes) | set(other.modes))
         new_id_array = np.zeros((len(all_modes), 4), dtype=np.int64)
