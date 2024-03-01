@@ -33,9 +33,7 @@ class Circuit:
     r"""
     A quantum circuit.
 
-    Quantum circuits store a list of ``CircuitComponent``s. They can be generated directly by
-    specifying a list of components, or alternatively, indirectly using the
-    operators ``>>`` and ``<<`` on sequences of ``CircuitComponent``s.
+    Quantum circuits store a list of ``CircuitComponent``s.
 
     .. code-block::
 
@@ -46,16 +44,31 @@ class Circuit:
         >>> bs01 = BSgate([0, 1])
         >>> bs12 = BSgate([1, 2])
 
-        >>> components = [g1, g2, g2, g3, g4]
+        >>> components = [vac, s01, bs01, bs12]
         >>> circ = Circuit(components)
         >>> assert circ.components == components
+
+    New components (or entire circuits) can be appended by using the ``>>`` operator.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Vacuum, Sgate, BSgate
+
+        >>> vac = Vacuum([0, 1, 2])
+        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+        >>> bs01 = BSgate([0, 1])
+        >>> bs12 = BSgate([1, 2])
+
+        >>> circ1 = Circuit([vac]) >> s01
+        >>> circ2 = Circuit([bs01, bs12])
+        >>> assert circ1 >> circ2 == Circuit([vac, s01, bs01, bs12])
+
+    Args:
+        components: A list of circuit components.
     """
 
-    def __init__(self, components=Union[CircuitComponent, Sequence[CircuitComponent]]) -> None:
-        if not isinstance(components, Iterable):
-            components = list[components]
-
-        self._components = [c.light_copy() for c in components]
+    def __init__(self, components=Sequence[CircuitComponent]) -> None:
+        self._components = components
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -64,23 +77,24 @@ class Circuit:
         """
         return self._components
 
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
-        r"""
-        Returns a ``Circuit`` that contains all the components of ``self``, as well as
-        a light copy of ``other`` (or light copies of ``other.components`` if ``other`` is
-        a ``Circuit``).
-        """
-        if isinstance(other, CircuitComponent):
-            other = Circuit([other])
-
-        ret = Circuit(self.components + other.components)
-        return ret
+    def __eq__(self, other: Circuit) -> bool:
+        return self.components == other.components
 
     def __getitem__(self, idx: int) -> CircuitComponent:
         r"""
         The component in position ``idx`` of this circuit's components.
         """
         return self._components[idx]
+
+    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
+        r"""
+        Returns a ``Circuit`` that contains all the components of ``self`` as well as
+        ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if
+        ``other`` is a ``Circuit``).
+        """
+        if isinstance(other, CircuitComponent):
+            other = Circuit([other])
+        return Circuit(self.components + other.components)
 
     def draw(self, layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
         r"""Draws the components in this circuit in the style of a tensor network.
