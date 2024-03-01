@@ -18,13 +18,16 @@ A class to quantum circuits.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Iterable, Sequence, Union
 
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
+from mrmustard import math, settings
 from .circuit_components import CircuitComponent
+from .states import State
 
 __all__ = ["Circuit"]
 
@@ -37,7 +40,7 @@ class Circuit:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import Vacuum, Sgate, BSgate
+        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
         >>> vac = Vacuum([0, 1, 2])
         >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
@@ -52,7 +55,7 @@ class Circuit:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import Vacuum, Sgate, BSgate
+        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
         >>> vac = Vacuum([0, 1, 2])
         >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
@@ -86,6 +89,12 @@ class Circuit:
         """
         return self._components[idx]
 
+    def __len__(self):
+        r"""
+        The number of components in this circuit.
+        """
+        return len(self.components)
+
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
@@ -95,120 +104,86 @@ class Circuit:
         if isinstance(other, CircuitComponent):
             other = Circuit([other])
         return Circuit(self.components + other.components)
-
-    def draw(self, layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
-        r"""Draws the components in this circuit in the style of a tensor network.
-
-        Args:
-            layout: The layout method. Must be one of the methods in ``nx.drawing.layout``.
-            figsize: The size of the returned figure.
-
-        Returns:
-            A figure showing the tensor network.
+    
+    def __repr__(self) -> str:
+        r"""
+        A string-based graphic representation of this circuit.
         """
         components = self.components
-        for component in components:
-            if component.wires.bra:
-                components = add_bra(components)
-                break
-        components = connect(components)
+        modes = set(sorted([m for c in components for m in c.modes]))
 
-        try:
-            fn_layout = getattr(nx.drawing.layout, layout)
-        except AttributeError:
-            msg = f"Invalid layout {layout}."
-            # pylint: disable=raise-missing-from
-            raise ValueError(msg)
+        # update this when new controlled gates are added
+        control_gates = ["BSgate", "MZgate", "CZgate", "CXgate"]
+        
+        # create a dictionary mapping modes to heigth in the drawing, where heigth ``0``
+        # corresponds to the top mode, heigth ``1`` to the second top mode, etc.
+        heigths = [h for h in range(len(modes))]
+        modes_to_heigth = {m: h for m, h in zip(modes, heigths)}
 
-        # initialize empty lists and dictionaries used to store metadata
-        component_labels = {}
-        mode_labels = {}
-        node_size = []
-        node_color = []
+        modes_str = [f"{mode}: " for mode in modes]
+        modes_str = [s.rjust(max(len(s) for s in modes_str), " ") for s in modes_str]
 
-        # initialize three graphs--one to store nodes and edges, two to keep track of arrows
-        graph = nx.Graph()
-        arrows_in = nx.Graph()
-        arrows_out = nx.Graph()
+        # generate a dictionary with the graphical representation, heigth by heigth
+        repr = {h: modes_str[h] for h in range(len(modes_str))}
 
-        for idx, component in enumerate(components):
-            component_id = component.name + str(idx)
-            graph.add_node(component_id)
-            component_labels[component_id] = component.name
-            mode_labels[component_id] = ""
-            node_size.append(150)
-            node_color.append("red")
+        # generate a dictionary to map x-axis coordinates to the components drawn at those
+        # coordinates
+        layers = defaultdict(list)
+        x = 0
+        for c1 in components:
+            # if a component would overlap, increase the x-axis coordinate
+            span_c1 = set(range(min(c1.modes), max(c1.modes) + 1))
+            for c2 in layers[x]:
+                span_c2 = set(range(min(c2.modes), max(c2.modes) + 1))
+                if span_c1.intersection(span_c2):
+                    x += 1
+                    break
+            # add component to the dictionary
+            layers[x].append(c1)
 
-            wires = component.wires
-            wires_in = [
-                (m, w)
-                for m, w in list(zip(wires.modes, wires.input.ket.ids))
-                + list(zip(wires.modes, wires.input.bra.ids))
-                if w
-            ]
-            wires_out = [
-                (m, w)
-                for m, w in list(zip(wires.modes, wires.output.ket.ids))
-                + list(zip(wires.modes, wires.output.bra.ids))
-                if w
-            ]
-            wires = wires_in + wires_out
-            for mode, wire in wires:
-                if wire not in graph.nodes:
-                    node_size.append(0)
-                    node_color.append("white")
-                    component_labels[wire] = ""
-                    mode_labels[wire] = mode
+        for layer in layers.values():
+            for h in heigths:
+                repr[h] += "──"
 
-                graph.add_node(wire)
-                graph.add_edge(wire, component_id)
-                if (mode, wire) in wires_in:
-                    arrows_in.add_edge(component_id, wire)
+            layer_str = {h: "" for h in heigths}
+            for c in layer:
+                # add symbols indicating the extent of a given object
+                min_heigth = min(modes_to_heigth[m] for m in c.modes)
+                max_heigth = max(modes_to_heigth[m] for m in c.modes)
+                if max_heigth - min_heigth > 0:
+                    layer_str[min_heigth] = "╭" if c.name in control_gates else ""
+                    layer_str[max_heigth] = "╰" if c.name in control_gates else ""
+                    for h in range(min_heigth + 1, max_heigth):
+                        layer_str[h] = ("├" if h in c.modes else "|") if c.name in control_gates else ""
+
+                # add control for controlled gates
+                control_m = []
+                if c.name in control_gates:
+                    control_m = [c.modes[0]]
+
+                # get list of labels for the component's parameters
+                if c.parameter_set.names:
+                    values = []
+                    for name in c.parameter_set.names:
+                        param = c.parameter_set.constants.get(name) or c.parameter_set.variables.get(name)
+                        new_values = math.atleast_1d(param.value)
+                        if len(new_values) == 1 and c.name not in control_gates:
+                            new_values = math.tile(new_values, len(c.modes))
+                        values.append(list(new_values))
+                        labels = [c.name + str(l) for l in list(zip(*values))]
                 else:
-                    arrows_out.add_edge(component_id, wire)
+                    labels = [c.name for _ in range(len(c.modes))]
 
-        pos = fn_layout(graph)
-        pos_labels = {k: v + np.array([0.0, 0.05]) for k, v in pos.items()}
+                # add str
+                if c.name in control_gates:
+                    for m in c.modes:
+                        layer_str[modes_to_heigth[m]] += "•" if m in control_m else labels[0]
+                else:
+                    for i, m in enumerate(c.modes):
+                        layer_str[modes_to_heigth[m]] += labels[i]
 
-        fig = plt.figure(figsize=figsize)
-        nx.draw_networkx_nodes(
-            graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
-        )
-        nx.draw_networkx_edges(graph, pos, edge_color="lightgreen", width=4, alpha=0.6)
-        nx.draw_networkx_edges(
-            arrows_in,
-            pos,
-            edge_color="darkgreen",
-            width=0.5,
-            arrows=True,
-            arrowsize=10,
-            arrowstyle="<|-",
-        )
-        nx.draw_networkx_edges(
-            arrows_out,
-            pos,
-            edge_color="darkgreen",
-            width=0.5,
-            arrows=True,
-            arrowsize=10,
-            arrowstyle="-|>",
-        )
-        nx.draw_networkx_labels(
-            graph,
-            pos=pos_labels,
-            labels=component_labels,
-            font_size=12,
-            font_color="black",
-            font_family="serif",
-        )
-        nx.draw_networkx_labels(
-            graph,
-            pos=pos_labels,
-            labels=mode_labels,
-            font_size=12,
-            font_color="black",
-            font_family="FreeMono",
-        )
+            max_label_len = max(len(s) for s in layer_str.values())
+            for h in heigths:
+                repr[h] += layer_str[h].ljust(max_label_len, "─")
 
-        plt.title("Mr Mustard Circuit")
-        return fig
+        return "\n".join(list(repr[modes_to_heigth[m]] for m in modes))

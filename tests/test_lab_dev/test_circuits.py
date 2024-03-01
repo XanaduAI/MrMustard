@@ -24,7 +24,6 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, BSgate, Channel, Dgate, Sgate, Unitary
-from mrmustard.lab_dev.wires import Wires
 
 
 class TestCircuit:
@@ -46,12 +45,16 @@ class TestCircuit:
         s01 = Sgate([0, 1])
         bs01 = BSgate([0, 1])
 
-        circ1 = Circuit([vac, s01])
-        circ2 = Circuit([vac, s01])
-        circ3 = Circuit([vac, s01, bs01])
+        assert Circuit([vac, s01]) == Circuit([vac, s01])
+        assert Circuit([vac, s01]) != Circuit([vac, s01, bs01])
 
-        assert circ1 == circ2
-        assert circ1 != circ3
+    def test_len(self):
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+
+        assert len(Circuit([vac])) == 1
+        assert len(Circuit([vac, s01])) == 2
+        assert len(Circuit([vac, s01, s01])) == 3
 
     def test_get_item(self):
         vac = Vacuum([0, 1, 2])
