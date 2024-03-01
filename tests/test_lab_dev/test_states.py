@@ -180,7 +180,7 @@ class TestNumber:
     def test_init(self, modes, n, cutoff):
         state = Number(modes, n, cutoff)
 
-        assert state.name == "Number"
+        assert state.name == "N"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
@@ -213,7 +213,7 @@ class TestVacuum:
     def test_init(self, modes):
         state = Vacuum(modes)
 
-        assert state.name == "Vacuum"
+        assert state.name == "Vac"
         assert state.modes == sorted(modes)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
