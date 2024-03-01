@@ -117,7 +117,7 @@ class Number(Ket):
     def __init__(
         self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
     ) -> None:
-        super().__init__("Number", modes=modes)
+        super().__init__("N", modes=modes)
         self._add_parameter(make_parameter(False, n, "n", (None, None)))
         self._add_parameter(
             make_parameter(False, cutoff or settings.AUTOCUTOFF_MAX_CUTOFF, "cutoff", (None, None))
@@ -171,7 +171,7 @@ class Vacuum(Ket):
         self,
         modes: Iterable[int],
     ) -> None:
-        super().__init__("Vacuum", modes=modes)
+        super().__init__("Vac", modes=modes)
 
     @property
     def representation(self) -> Bargmann:
