@@ -125,7 +125,7 @@ class Number(Ket):
         if any(n_1d > self.cutoff):
             msg = f"The number of photons per mode cannot be larger than ``cutoff={self.cutoff}``."
             raise ValueError(msg)
-        
+
         if len(n_1d) != 1 and len(n_1d) != len(modes):
             msg = f"Length of ``n`` must be 1 or {len(self.modes)}."
             raise ValueError(msg)
@@ -140,14 +140,14 @@ class Number(Ket):
             array[i, math.cast(n, math.int32)] = 1
 
         return Fock(math.astensor(array, dtype=math.complex128))
-    
+
     @property
     def cutoff(self):
         r"""
         The cutoff.
         """
         return self._cutoff
-    
+
     @property
     def n(self):
         r"""
