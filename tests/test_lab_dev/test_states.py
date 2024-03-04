@@ -192,12 +192,12 @@ class TestNumber:
 
     def test_representation(self):
         rep1 = Number(modes=[0, 1], n=[2, 3], cutoff=4).representation
-        assert math.allclose(rep1.array, [[[0, 0, 1, 0], [0, 0, 0, 1]]])
+        assert math.allclose(rep1.array, [[0, 0, 1, 0], [0, 0, 0, 1]])
 
         rep2 = Number(modes=[0, 1], n=[2, 3]).representation
-        assert rep2.array.shape == (1, 2, 100)
-        assert rep2.array[0, 0, 2] == 1
-        assert rep2.array[0, 1, 3] == 1
+        assert rep2.array.shape == (2, 100)
+        assert rep2.array[0, 2] == 1
+        assert rep2.array[1, 3] == 1
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

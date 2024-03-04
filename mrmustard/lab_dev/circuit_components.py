@@ -20,8 +20,10 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union
 
+from mrmustard import settings
+from ..physics.converters import to_fock
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
@@ -159,6 +161,13 @@ class CircuitComponent:
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None):
+        return type(self).from_attributes(
+            self.name,
+            to_fock(self.representation, shape=shape),
+            self.wires,
+        )
+
     def __eq__(self, other) -> bool:
         r"""
         Whether this component is equal to another component.
@@ -188,24 +197,25 @@ class CircuitComponent:
         LEFT = self.representation
         RIGHT = other.representation
         if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
-            raise ValueError("Cannot contract objects with different representations.")
-            # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
-            # LEFT = Fock(self.fock(shape=shape), batched=False)
-        if isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
-            raise ValueError("Cannot contract objects with different representations.")
-            # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
-            # RIGHT = Fock(other.fock(shape=shape), batched=False)
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for i in range(len(LEFT.b[0]))]
+            for i, sh in enumerate(RIGHT.array.shape):
+                shape[idx_z[i]] = sh
+            LEFT = to_fock(LEFT, shape=shape)
+        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
+            shape = (s if i in idx_zconj else None for i, s in enumerate(self.representation.array.shape))
+            RIGHT = Fock(to_fock(RIGHT, shape=shape), batched=False)
+
 
         # calculate the representation of the returned component
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
 
-        # reorder the representation
-        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
-        contracted_idx += [
-            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
-        ]
-        order = [contracted_idx.index(id) for id in wires_ret.ids]
-        representation_ret = representation_ret.reorder(order)
+        # # reorder the representation
+        # contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
+        # contracted_idx += [
+        #     other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
+        # ]
+        # order = [contracted_idx.index(id) for id in wires_ret.ids]
+        # representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
@@ -216,8 +226,8 @@ class CircuitComponent:
         """
         msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
 
-        wires_out = self.wires.output
-        wires_in = other.wires.input
+        wires_out = self.wires
+        wires_in = other.wires
 
         if wires_out.ket and wires_out.bra:
             if wires_in.ket and wires_in.bra:

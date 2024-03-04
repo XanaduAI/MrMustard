@@ -20,8 +20,9 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Tuple, Union
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.fock import fock_state
 from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
@@ -99,7 +100,6 @@ class Number(Ket):
     Args:
         modes: The modes of the number state.
         n: The number of photons in each mode.
-        cutoff: The cutoff. If ``None``, it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
 
     .. details::
 
@@ -118,35 +118,15 @@ class Number(Ket):
         self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
     ) -> None:
         super().__init__("N", modes=modes)
-        self._n = n
-        self._cutoff = cutoff or settings.AUTOCUTOFF_MAX_CUTOFF
 
-        n_1d = math.atleast_1d(n)
-        if any(n_1d > self.cutoff):
-            msg = f"The number of photons per mode cannot be larger than ``cutoff={self.cutoff}``."
-            raise ValueError(msg)
-
-        if len(n_1d) != 1 and len(n_1d) != len(modes):
-            msg = f"Length of ``n`` must be 1 or {len(self.modes)}."
-            raise ValueError(msg)
+        self._n = math.atleast_1d(n)
+        if len(self._n) == 1:
+            self._n = math.tile(self._n, len(modes))    
 
     @property
     def representation(self) -> Fock:
-        n_modes = len(self.modes)
-        ns = list(reshape_params(n_modes, n=self.n))[0]
-
-        array = math.asnumpy(math.zeros(shape=(n_modes, self.cutoff)))
-        for i, n in enumerate(ns):
-            array[i, math.cast(n, math.int32)] = 1
-
-        return Fock(math.astensor(array, dtype=math.complex128))
-
-    @property
-    def cutoff(self):
-        r"""
-        The cutoff.
-        """
-        return self._cutoff
+        array = fock_state(self.n)
+        return Fock(array, batched=True)
 
     @property
     def n(self):

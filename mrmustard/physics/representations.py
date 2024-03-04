@@ -493,10 +493,7 @@ class Fock(Representation):
         The new Fock's order is arranged as uncontracted elements in self and then other.
         """
         axes = [list(self._contract_idxs), list(other._contract_idxs)]
-        new_array = []
-        for i in range(self.array.shape[0]):
-            for j in range(other.array.shape[0]):
-                new_array.append(math.tensordot(self.array[i], other.array[j], axes))
+        new_array = math.tensordot(self.array, other.array, axes)
         return self.from_ansatz(ArrayAnsatz(new_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
