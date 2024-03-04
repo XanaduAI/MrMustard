@@ -104,9 +104,10 @@ class Circuit:
         r"""
         A string-based representation of this component.
         """
+
         def component_to_str(comp: CircuitComponent) -> str:
             r"""
-            Generates a list string-based representation for the given component. 
+            Generates a list string-based representation for the given component.
 
             If ``comp`` is not a controlled gate, the list contains as many elements modes as in
             ``comp.modes``. For example, if ``comp=Sgate([0, 1, 5], r=[0.1, 0.2, 0.5])``, it returns

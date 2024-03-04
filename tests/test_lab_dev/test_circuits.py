@@ -79,7 +79,7 @@ class TestCircuit:
         vac01 = Vacuum([0, 1])
         vac2 = Vacuum([2])
         vac012 = Vacuum([0, 1, 2])
-        s01 = Sgate([0, 1], r = [0, 1], phi=[2, 3])
+        s01 = Sgate([0, 1], r=[0, 1], phi=[2, 3])
         bs01 = BSgate([0, 1])
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3, cutoff=4)
