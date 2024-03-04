@@ -26,38 +26,25 @@ class TestWires:
     Tests for the Wires class.
     """
     def test_args(self):
-        w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
-        assert w.args == ((0, 1, 2), (3, 4, 5), (6, 7), (8,))
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
 
     def test_wire_subsets(self):
-        w = Wires([0], [1], [2], [3])
-        assert w.output.bra.modes == (0,)
-        assert w.input.bra.modes == (1,)
-        assert w.output.ket.modes == (2,)
-        assert w.input.ket.modes == (3,)
-
-        w = Wires([10], [11], [12], [13])
-        assert w[10].ids == w.output.bra.ids
-        assert w[11].ids == w.input.bra.ids
-        assert w[12].ids == w.output.ket.ids
-        assert w[13].ids == w.input.ket.ids
-
-    def test_ids(self):
-        w = Wires([0, 1], [2], [3, 4, 5], [6])
-        assert w.output.bra.ids == w.ids[:2]
-        assert w.input.bra.ids == (w.ids[2],)
-        assert w.output.ket.ids == w.ids[3:6]
-        assert w.input.ket.ids == (w.ids[-1],)
+        w = Wires({0}, {1}, {2}, {3})
+        assert w.output.bra.modes == {0}
+        assert w.input.bra.modes == {1}
+        assert w.output.ket.modes == {2}
+        assert w.input.ket.modes == {3}
 
     def test_indices(self):
-        w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         assert w.output.indices == (0, 1, 2, 6, 7)
         assert w.bra.indices == (0, 1, 2, 3, 4, 5)
         assert w.input.indices == (3, 4, 5, 8)
         assert w.ket.indices == (6, 7, 8)
 
     def test_adjoint(self):
-        w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         w_adj = w.adjoint
         assert w.input.ket.modes == w_adj.input.bra.modes
         assert w.output.ket.modes == w_adj.output.bra.modes
@@ -65,7 +52,7 @@ class TestWires:
         assert w.output.bra.modes == w_adj.output.ket.modes
 
     def test_dual(self):
-        w = Wires([0, 1, 2], [3, 4, 5], [6, 7], [8])
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         w_d = w.dual
         assert w.input.ket.modes == w_d.output.ket.modes
         assert w.output.ket.modes == w_d.input.ket.modes
@@ -73,40 +60,37 @@ class TestWires:
         assert w.output.bra.modes == w_d.input.bra.modes
 
     def test_add(self):
-        w1 = Wires([0], [1], [2], [3])
-        w2 = Wires([1], [2], [3], [4])
-        w12 = Wires([0, 1], [1, 2], [2, 3], [3, 4])
-
+        w1 = Wires({0}, {1}, {2}, {3})
+        w2 = Wires({1}, {2}, {3}, {4})
+        w12 = Wires({0, 1}, {1, 2}, {2, 3}, {3, 4})
         assert (w1 + w2).modes == w12.modes
 
     def test_add_error(self):
-        w1 = Wires([0], [1], [2], [3])
-        w2 = Wires([0], [2], [3], [4])
+        w1 = Wires({0}, {1}, {2}, {3})
+        w2 = Wires({0}, {2}, {3}, {4})
         with pytest.raises(Exception):
             w1 + w2  # pylint: disable=pointless-statement
 
     def test_bool(self):
-        assert Wires([0])
-        assert not Wires([0]).input
+        assert Wires({0})
+        assert not Wires({0}).input
 
     def test_getitem(self):
-        w = Wires([0, 1], [0, 1])
+        w = Wires({0, 1}, {0, 1})
         w0 = w[0]
         w1 = w[1]
-
-        assert w0.modes == (0,)
-        assert w0.ids == (w.ids[0], w.ids[2])
-
-        assert w1.modes == (1,)
-        assert w1.ids == (w.ids[1], w.ids[3])
+        assert w0.modes == {0}
+        assert w0.indices == (w.indices[0], w.indices[2])
+        assert w1.modes == {1}
+        assert w1.indices == (w.indices[1], w.indices[3])
 
     def test_eq_neq(self):
-        w1 = Wires([0, 1], [2, 3], [4, 5], [6, 7])
-        w2 = Wires([0, 1], [2, 3], [4, 5], [6, 7])
-        w3 = Wires([], [2, 3], [4, 5], [6, 7])
-        w4 = Wires([0, 1], [], [4, 5], [6, 7])
-        w5 = Wires([0, 1], [2, 3], [], [6, 7])
-        w6 = Wires([0, 1], [2, 3], [4, 5], [])
+        w1 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
+        w2 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
+        w3 = Wires(set(), {2, 3}, {4, 5}, {6, 7})
+        w4 = Wires({0, 1}, set(), {4, 5}, {6, 7})
+        w5 = Wires({0, 1}, {2, 3}, set(), {6, 7})
+        w6 = Wires({0, 1}, {2, 3}, {4, 5}, set())
 
         assert w1 == w1
         assert w1 == w2
@@ -117,13 +101,13 @@ class TestWires:
 
     def test_matmul(self):
         # contracts 1,1 on bra side
-        # contracts 3,3 and 13,13 on ket side (note order doesn't matter)
-        u = Wires([1, 5], [2, 6, 15], [3, 7, 13], [4, 8])
-        v = Wires([0, 9, 14], [1, 10], [2, 11], [13, 3, 12])
-        assert (u @ v).args == ((0, 5, 9, 14), (2, 6, 10, 15), (2, 7, 11), (4, 8, 12))
+        # contracts 3,3 and 13,13 on ket side
+        u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8})
+        v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12})
+        assert (u @ v).args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
 
     def test_matmul_error(self):
-        u = Wires([], [], [0], [])  # only output wire
-        v = Wires([], [], [0], [])  # only output wire
+        u = Wires({}, {}, {0}, {})  # only output wire
+        v = Wires({}, {}, {0}, {})  # only output wire
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
