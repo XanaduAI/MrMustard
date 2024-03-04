@@ -90,16 +90,16 @@ class TestCircuit:
 
         circ1 = Circuit([vac012])
         draw1 = ""
-        draw1 += "\nmode 0:     Vac"
-        draw1 += "\nmode 1:     Vac"
-        draw1 += "\nmode 2:     Vac"
+        draw1 += "\nmode 0:     ◖Vac◗"
+        draw1 += "\nmode 1:     ◖Vac◗"
+        draw1 += "\nmode 2:     ◖Vac◗"
         assert repr(circ1) == draw1 + "\n\n"
 
         circ2 = Circuit([vac012, s01, bs01, bs12, cc, n12.dual])
         draw2 = ""
-        draw2 += "\nmode 0:     Vac──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──N"
-        draw2 += "\nmode 1:     Vac──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──N"
-        draw2 += "\nmode 2:     Vac────────────────────────────────────╰BSgate(0.0,0.0)──────────"
+        draw2 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
+        draw2 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
+        draw2 += "\nmode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)─────────────"
         assert repr(circ2) == draw2 + "\n\n"
 
         circ3 = Circuit([bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01])
@@ -116,9 +116,9 @@ class TestCircuit:
 
         circ4 = Circuit([vac01, s01, vac2, bs01, bs12, n2.dual, cc, n12.dual])
         draw4 = ""
-        draw4 += "\nmode 0:     Vac──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──N"
-        draw4 += "\nmode 1:     Vac──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──N"
-        draw4 += "\nmode 2:          Vac───────────────────────────────╰BSgate(0.0,0.0)──N       "
+        draw4 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
+        draw4 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
+        draw4 += "\nmode 2:            ◖Vac◗─────────────────────────────╰BSgate(0.0,0.0)──|N)=       "
         assert repr(circ4) == draw4 + "\n\n"
 
     def test_repr_issue_334(self):

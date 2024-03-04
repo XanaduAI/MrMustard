@@ -23,6 +23,7 @@ from typing import Sequence, Union
 
 from mrmustard import math
 from .circuit_components import CircuitComponent
+from .states import Ket
 
 __all__ = ["Circuit"]
 
@@ -122,6 +123,11 @@ class Circuit:
                 comp: A circuit component.
             """
             cc_name = comp.name or "CC"
+            if not comp.wires.input:
+                cc_name = f"◖{cc_name}◗"
+            if not comp.wires.output:
+                cc_name = f"|{cc_name})="
+            
             if comp.parameter_set.names:
                 values = []
                 for name in comp.parameter_set.names:
