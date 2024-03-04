@@ -58,26 +58,6 @@ class CircuitComponent:
         self._parameter_set = ParameterSet()
         self._representation = representation
 
-    def _to_str(comp: CircuitComponent) -> str:
-        r"""
-        Get list of labels for the component's parameters.
-
-        Args:
-            comp: A circuit component.
-        """
-        if comp.parameter_set.names:
-            values = []
-            for name in comp.parameter_set.names:
-                param = comp.parameter_set.constants.get(name) or comp.parameter_set.variables.get(
-                    name
-                )
-                new_values = math.atleast_1d(param.value)
-                if len(new_values) == 1 and comp.name not in control_gates:
-                    new_values = math.tile(new_values, len(comp.modes))
-                values.append(list(new_values))
-            return [comp.name + str(l) for l in list(zip(*values))]
-        return [comp.name for _ in range(len(comp.modes))]
-
     @classmethod
     def from_attributes(
         cls,

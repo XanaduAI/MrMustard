@@ -109,7 +109,15 @@ class Circuit:
     def __repr__(self) -> str:
         def component_to_str(comp: CircuitComponent) -> str:
             r"""
-            Get list of labels for the component's parameters.
+            Generates a list string-based representation for the given component. 
+
+            If ``comp`` is not a controlled gate, the list contains as many elements modes as in
+            ``comp.modes``. For example, if ``comp=Sgate([0, 1, 5], r=[0.1, 0.2, 0.5])``, it returns
+            ``['Sgate(0.1,0.0)', 'Sgate(0.2,0.0)', 'Sgate(0.5,0.0)']``.
+
+            If ``comp`` is a controlled gate, the list contains the string that needs to be added to
+            the target mode. For example, if``comp=BSgate([0, 1], 1, 2)``, it returns
+            ``['BSgate(0.0,0.0)']``.
 
             Args:
                 comp: A circuit component.
@@ -170,6 +178,7 @@ class Circuit:
                 drawing_dict[h] += "──"
 
             for comp in layer:
+                print(component_to_str(comp))
                 # there are two types of components: the controlled gates, and all the other ones
                 if comp.name in control_gates:
                     control = min(lines[m] for m in comp.modes)
