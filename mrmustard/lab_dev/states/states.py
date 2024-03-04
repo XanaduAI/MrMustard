@@ -37,10 +37,10 @@ class Coherent(Ket):
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import Coherent
+        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
 
         >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
-        >>> assert state.modes == [0, 1, 2]
+        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
 
     Args:
         modes: The modes of the coherent state.
@@ -118,26 +118,42 @@ class Number(Ket):
         self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
     ) -> None:
         super().__init__("N", modes=modes)
-        self._add_parameter(make_parameter(False, n, "n", (None, None)))
-        self._add_parameter(
-            make_parameter(False, cutoff or settings.AUTOCUTOFF_MAX_CUTOFF, "cutoff", (None, None))
-        )
+        self._n = n
+        self._cutoff = cutoff or settings.AUTOCUTOFF_MAX_CUTOFF
 
-        for n_photons in math.atleast_1d(n):
-            if n_photons > self.cutoff.value:
-                msg = f"Found ``n={n_photons}``, but cutoff is ``{self.cutoff.value}``."
-                raise ValueError(msg)
+        n_1d = math.atleast_1d(n)
+        if any(n_1d > self.cutoff):
+            msg = f"The number of photons per mode cannot be larger than ``cutoff={self.cutoff}``."
+            raise ValueError(msg)
+
+        if len(n_1d) != 1 and len(n_1d) != len(modes):
+            msg = f"Length of ``n`` must be 1 or {len(self.modes)}."
+            raise ValueError(msg)
 
     @property
     def representation(self) -> Fock:
         n_modes = len(self.modes)
-        ns = list(reshape_params(n_modes, n=self.n.value))[0]
+        ns = list(reshape_params(n_modes, n=self.n))[0]
 
-        array = math.asnumpy(math.zeros(shape=(n_modes, self.cutoff.value)))
+        array = math.asnumpy(math.zeros(shape=(n_modes, self.cutoff)))
         for i, n in enumerate(ns):
             array[i, math.cast(n, math.int32)] = 1
 
         return Fock(math.astensor(array, dtype=math.complex128))
+
+    @property
+    def cutoff(self):
+        r"""
+        The cutoff.
+        """
+        return self._cutoff
+
+    @property
+    def n(self):
+        r"""
+        The number of photons in each mode.
+        """
+        return self._n
 
 
 class Vacuum(Ket):
