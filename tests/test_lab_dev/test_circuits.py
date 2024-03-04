@@ -16,14 +16,10 @@
 
 # pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
-import numpy as np
-import pytest
-
-from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, BSgate, Channel, Dgate, Sgate, Unitary
+from mrmustard.lab_dev.states import Vacuum, Number
+from mrmustard.lab_dev.transformations import BSgate, Dgate, Sgate
 
 
 class TestCircuit:
@@ -78,3 +74,50 @@ class TestCircuit:
         circ2 = Circuit([bs01, bs12])
 
         assert circ1 >> circ2 == Circuit([vac, s01, bs01, bs12])
+
+    def test_repr(self):
+        vac012 = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1], r=[0, 1], phi=[2, 3])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+        cc = CircuitComponent.from_attributes("my_cc", bs01.representation, bs01.wires)
+        n12 = Number([0, 1], n=3, cutoff=4)
+
+        assert repr(Circuit([])) == ""
+
+        circ1 = Circuit([vac012])
+        draw1 = ""
+        draw1 += "\nmode 0:   ──Vac"
+        draw1 += "\nmode 1:   ──Vac"
+        draw1 += "\nmode 2:   ──Vac"
+        assert repr(circ1) == draw1 + "\n\n"
+
+        circ2 = Circuit([vac012, s01, bs01, bs12, cc, n12.dual])
+        draw2 = ""
+        draw2 += "\nmode 0:   ──Vac──Sgate(0,2)──╭•──────────────────────────────────my_cc──N"
+        draw2 += "\nmode 1:   ──Vac──Sgate(1,3)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──N"
+        draw2 += "\nmode 2:   ──Vac────────────────────────────────╰BSgate(0.0,0.0)──────────"
+        assert repr(circ2) == draw2 + "\n\n"
+
+        circ3 = Circuit([bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01])
+        draw3 = ""
+        draw3 += "\nmode 0:   ──╭•────────────────╭•────────────────╭•────────────────╭•────────────── ---"
+        draw3 += "\nmode 1:   ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0) ---"
+        draw3 += "\n\n"
+        draw3 += "\nmode 0:   --- ──╭•────────────────╭•────────────────╭•────────────────╭•────────────── ---"
+        draw3 += "\nmode 1:   --- ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0) ---"
+        draw3 += "\n\n"
+        draw3 += "\nmode 0:   --- ──╭•────────────────╭•────────────────╭•──────────────"
+        draw3 += "\nmode 1:   --- ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)"
+        assert repr(circ3) == draw3 + "\n\n"
+
+    def test_repr_issue_334(self):
+        r"""
+        Tests the bug reported in GH issue #334.
+        """
+        circ1 = Circuit([Sgate([0, 1], [1, -1])])
+        draw1 = ""
+        draw1 += "\nmode 0:   ──Sgate(1,0.0)─"
+        draw1 += "\nmode 1:   ──Sgate(-1,0.0)"
+        draw1 += "\n\n"
+        assert repr(circ1) == draw1
