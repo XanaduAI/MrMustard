@@ -55,7 +55,7 @@ def about():
         TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable=import-outside-toplevel,consider-using-f-string
     import os
     import platform
     import sys

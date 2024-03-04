@@ -140,6 +140,7 @@ class Circuit:
                         new_values.numpy() if math.backend.name == "tensorflow" else new_values
                     )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
+            # some components have an empty parameter set
             return [cc_name for _ in range(len(comp.modes))]
 
         if len(self) == 0:
