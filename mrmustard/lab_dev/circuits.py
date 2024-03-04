@@ -130,8 +130,8 @@ class Circuit:
                     ) or comp.parameter_set.variables.get(name)
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
-                        new_values = math.tile(new_values, len(comp.modes))
-                    values.append(list(new_values))
+                        new_values = math.tile(new_values, (len(comp.modes),))
+                    values.append(new_values.numpy() if math.backend.name == "tensorflow" else new_values)
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             return [cc_name for _ in range(len(comp.modes))]
 
