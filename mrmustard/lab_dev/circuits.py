@@ -150,6 +150,10 @@ class Circuit:
         # - etc.
         lines = {m: h for m, h in zip(modes, range(n_modes))}
 
+        # create a dictionary ``wires`` that maps height ``h`` to "──" if the line contains
+        # a mode, or to "  " if the line does not contain a mode
+        wires = {h: "  " for h in range(n_modes)}
+
         # generate a dictionary to map x-axis coordinates to the components drawn at
         # those coordinates
         layers = defaultdict(list)
@@ -170,16 +174,18 @@ class Circuit:
 
         # loop through the layers and add the components to ``drawing_dict``
         for layer in layers.values():
-            # layers always start with "──"
-            for h in range(n_modes):
-                drawing_dict[h] += "──"
-
             for comp in layer:
-                print(component_to_str(comp))
                 # there are two types of components: the controlled gates, and all the other ones
                 if comp.name in control_gates:
                     control = min(lines[m] for m in comp.modes)
                     target = max(lines[m] for m in comp.modes)
+
+                    # update ``wires`` and start the line with "──"
+                    wires[lines[control]] = "──"
+                    wires[lines[target]] = "──"
+                    drawing_dict[lines[control]] += "──"
+                    drawing_dict[lines[target]] += "──"
+
                     drawing_dict[control] += "╭"
                     drawing_dict[target] += "╰"
                     for h in range(target + 1, control):
@@ -189,13 +195,25 @@ class Circuit:
                     drawing_dict[lines[target]] += component_to_str(comp)[0]
                 else:
                     labels = component_to_str(comp)
-                    for h, m in enumerate(comp.modes):
-                        drawing_dict[lines[m]] += labels[h]
+                    for i, m in enumerate(comp.modes):
+                        # update ``wires`` and start the line with "──" or "  "
+                        if comp.wires.input.modes:
+                            wires[lines[m]] = "──"
+                        drawing_dict[lines[m]] += wires[lines[m]]
+
+                        # draw the label
+                        drawing_dict[lines[m]] += labels[i]
+
+                        # update ``wires`` again
+                        if comp.wires.output.modes:
+                            wires[lines[m]] = "──"
+                        else:
+                            wires[lines[m]] = "  "
 
             # ensure that all the strings in the final drawing have the same lenght
             max_len = max(len(v) for v in drawing_dict.values())
             for h in range(n_modes):
-                drawing_dict[h] = drawing_dict[h].ljust(max_len, "─")
+                drawing_dict[h] = drawing_dict[h].ljust(max_len, wires[h][0])
 
                 # add a special character to mark the end of the layer
                 drawing_dict[h] += "//"
