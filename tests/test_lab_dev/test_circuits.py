@@ -19,7 +19,7 @@
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.states import Vacuum, Number
-from mrmustard.lab_dev.transformations import BSgate, Dgate, Sgate
+from mrmustard.lab_dev.transformations import BSgate, Sgate
 
 
 class TestCircuit:

@@ -100,6 +100,7 @@ class Circuit:
             other = Circuit([other])
         return Circuit(self.components + other.components)
 
+    # pylint: disable=too-many-branches,too-many-statements
     def __repr__(self) -> str:
         r"""
         A string-based representation of this component.
@@ -149,7 +150,7 @@ class Circuit:
         # - heigth ``0`` is the mode with smallest index and drawn on the top line
         # - height ``1`` is the second mode from the top
         # - etc.
-        lines = {m: h for m, h in zip(modes, range(n_modes))}
+        lines = {m: h for h, m in enumerate(modes)}
 
         # create a dictionary ``wires`` that maps height ``h`` to "──" if the line contains
         # a mode, or to "  " if the line does not contain a mode
