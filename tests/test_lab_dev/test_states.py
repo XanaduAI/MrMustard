@@ -187,7 +187,7 @@ class TestNumber:
         with pytest.raises(ValueError, match="Length of ``n``"):
             Number(modes=[0, 1], n=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Found ``n=3``, but"):
+        with pytest.raises(ValueError, match="The number of photons per mode"):
             Number(modes=[0, 1], n=3, cutoff=2)
 
     def test_representation(self):
