@@ -23,7 +23,6 @@ from typing import Sequence, Union
 
 from mrmustard import math
 from .circuit_components import CircuitComponent
-from .states import Ket
 
 __all__ = ["Circuit"]
 
@@ -127,7 +126,7 @@ class Circuit:
                 cc_name = f"◖{cc_name}◗"
             if not comp.wires.output:
                 cc_name = f"|{cc_name})="
-            
+
             if comp.parameter_set.names:
                 values = []
                 for name in comp.parameter_set.names:
@@ -137,7 +136,9 @@ class Circuit:
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
-                    values.append(new_values.numpy() if math.backend.name == "tensorflow" else new_values)
+                    values.append(
+                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
+                    )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             return [cc_name for _ in range(len(comp.modes))]
 
