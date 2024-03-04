@@ -19,16 +19,10 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from textwrap import wrap
 from typing import Sequence, Union
 
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-
-from mrmustard import math, settings
+from mrmustard import math
 from .circuit_components import CircuitComponent
-from .states import State
 
 __all__ = ["Circuit"]
 
@@ -107,6 +101,9 @@ class Circuit:
         return Circuit(self.components + other.components)
 
     def __repr__(self) -> str:
+        r"""
+        A string-based representation of this component.
+        """
         def component_to_str(comp: CircuitComponent) -> str:
             r"""
             Generates a list string-based representation for the given component. 
