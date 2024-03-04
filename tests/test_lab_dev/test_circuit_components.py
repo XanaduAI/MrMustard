@@ -19,9 +19,10 @@
 import numpy as np
 import pytest
 
-from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
+from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
 
@@ -47,12 +48,7 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
-        name = "my_component"
-        Abc = displacement_gate_Abc(x, y)
-        representation = Bargmann(*Abc)
-        modes = [1, 8]
-
-        cc1 = CircuitComponent(name, representation, modes_out_ket=modes, modes_in_ket=modes)
+        cc1 = Dgate([1, 8], x=x, y=y)
         cc2 = CircuitComponent.from_attributes(cc1.name, cc1.representation, cc1.wires)
 
         assert cc1 == cc2
@@ -106,11 +102,7 @@ class TestCircuitComponent:
         assert d1 != d2
 
     def test_matmul(self):
-        vac012 = CircuitComponent(
-            "",
-            Bargmann(*vacuum_state_Abc(3)),
-            modes_out_ket=[0, 1, 2],
-        )
+        vac012 = Vacuum([0, 1, 2])
         d012 = Dgate([0, 1, 2], x=0.1, y=0.1)
         a0 = Attenuator([0], 0.8)
         a1 = Attenuator([1], 0.8)
@@ -169,11 +161,7 @@ class TestCircuitComponent:
         assert result1 == result4
 
     def test_rshift(self):
-        vac012 = CircuitComponent(
-            "",
-            Bargmann(*vacuum_state_Abc(3)),
-            modes_out_ket=[0, 1, 2],
-        )
+        vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([2], x=0.1, y=0.1)
@@ -199,11 +187,7 @@ class TestCircuitComponent:
         assert np.allclose(result.representation.c, 0.95504196)
 
     def test_rshift_is_associative(self):
-        vac012 = CircuitComponent(
-            "",
-            Bargmann(*vacuum_state_Abc(3)),
-            modes_out_ket=[0, 1, 2],
-        )
+        vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([2], x=0.1, y=0.1)
