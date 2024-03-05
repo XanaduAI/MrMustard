@@ -220,7 +220,8 @@ class CircuitComponent:
             other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
         ]
         order = [contracted_idx.index(id) for id in wires_ret.ids]
-        representation_ret = representation_ret.reorder(order)
+        if order:
+            representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
