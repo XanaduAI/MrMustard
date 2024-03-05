@@ -531,7 +531,7 @@ class Fock(Representation):
             The reordered Fock.
         """
         return self.from_ansatz(
-            ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
+            ArrayAnsatz(math.transpose(self.array, order))
         )
 
     def reduce(self, shape: Union[int, Iterable[int]]):

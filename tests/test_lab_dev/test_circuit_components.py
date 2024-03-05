@@ -19,6 +19,8 @@
 import numpy as np
 import pytest
 
+from mrmustard import math, settings
+from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
@@ -160,7 +162,7 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_rshift(self):
+    def test_rshift_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -185,6 +187,24 @@ class TestCircuitComponent:
             ],
         )
         assert np.allclose(result.representation.c, 0.95504196)
+
+    def test_rshift_fock(self):
+        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+
+        vac12 = Vacuum([1, 2])
+        d1 = Dgate([1], x=0.1, y=0.1)
+        d2 = Dgate([2], x=0.1, y=0.2)
+        a1 = Attenuator([1], transmissivity=0.8)
+        m12 = Vacuum([1, 2]).dual
+
+        r1 = (vac12 >> d1 >> d2 >> a1 >> m12).representation.c[0]
+        r2 = (vac12 >> d1 >> d2.to_fock() >> a1 >> m12).representation.array
+        r3 = (vac12 >> d1.to_fock() >> d2 >> a1 >> m12).representation.array
+        r4 = (vac12.to_fock() >> d1.to_fock() >> d2.to_fock() >> a1.to_fock() >> m12.to_fock()).representation.array
+
+        assert math.allclose(r1, r2)
+        assert math.allclose(r1, r3)
+        assert math.allclose(r1, r4)
 
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])
