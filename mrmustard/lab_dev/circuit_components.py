@@ -199,12 +199,12 @@ class CircuitComponent:
         if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
             shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(LEFT.b[0]))]
             for i, j in zip(idx_z, idx_zconj):
-                shape[i] = RIGHT.array.shape[j]
+                shape[i] = RIGHT.array.shape[1:][j]
             LEFT = to_fock(LEFT, shape=shape)
         elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
             shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(RIGHT.b[0]))]
             for i, j in zip(idx_z, idx_zconj):
-                shape[j] = LEFT.array.shape[i]
+                shape[j] = LEFT.array.shape[1:][i]
             RIGHT = to_fock(RIGHT, shape=shape)
         elif isinstance(LEFT, Fock) and isinstance(RIGHT, Fock):
             shape = [l if l < r else r for l, r in zip(LEFT.array.shape, RIGHT.array.shape)]

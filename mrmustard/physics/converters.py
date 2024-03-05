@@ -57,5 +57,5 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
             raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
 
         array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-        return Fock(math.astensor(array)[0], batched=True)
+        return Fock(math.astensor(array), batched=True)
     return rep

@@ -197,7 +197,7 @@ class TestCircuitComponent:
         a1 = Attenuator([1], transmissivity=0.8)
         m12 = Vacuum([1, 2]).dual
 
-        r1 = (vac12 >> d1 >> d2 >> a1 >> m12).representation.c[0]
+        r1 = (vac12 >> d1 >> d2 >> a1 >> m12).representation.c
         r2 = (vac12 >> d1 >> d2.to_fock() >> a1 >> m12).representation.array
         r3 = (vac12 >> d1.to_fock() >> d2 >> a1 >> m12).representation.array
         r4 = (vac12.to_fock() >> d1.to_fock() >> d2.to_fock() >> a1.to_fock() >> m12.to_fock()).representation.array
