@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from matplotlib import colors
+from typing import Iterable, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -532,3 +533,17 @@ class Fock(Representation):
         return self.from_ansatz(
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
         )
+
+    def reduce(self, shape: Union[int, Iterable[int]]):
+        r"""
+        Reduces the dimension of the array in this Fock object by taking slices.
+        """
+        length = len(self.array.shape)
+        shape = (shape,) * length if isinstance(shape, int) else shape
+        if len(shape) != length:
+            msg = f"Expected ``shape`` of lenght {length}, "
+            msg += f"found shape of lenght {len(shape)}."
+
+        for i, s in enumerate(shape):
+            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            self.ansatz = ArrayAnsatz(array=self.array[slc])

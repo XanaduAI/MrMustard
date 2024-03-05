@@ -121,7 +121,7 @@ class Number(Ket):
 
         self._n = math.atleast_1d(n)
         if len(self._n) == 1:
-            self._n = math.tile(self._n, len(modes))    
+            self._n = math.tile(self._n, len(modes))
 
     @property
     def representation(self) -> Fock:

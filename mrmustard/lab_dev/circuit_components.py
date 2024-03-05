@@ -196,26 +196,37 @@ class CircuitComponent:
         # convert Bargmann -> Fock if needed
         LEFT = self.representation
         RIGHT = other.representation
-        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
+        do_reordering = False
+        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Bargmann):
+            do_reordering = True
+        elif isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
             shape = [settings.AUTOCUTOFF_MAX_CUTOFF for i in range(len(LEFT.b[0]))]
             for i, sh in enumerate(RIGHT.array.shape):
                 shape[idx_z[i]] = sh
             LEFT = to_fock(LEFT, shape=shape)
         elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
-            shape = (s if i in idx_zconj else None for i, s in enumerate(self.representation.array.shape))
-            RIGHT = Fock(to_fock(RIGHT, shape=shape), batched=False)
-
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for i in range(len(RIGHT.b[0]))]
+            for i, sh in enumerate(LEFT.array.shape):
+                shape[idx_z[i]] = sh
+            RIGHT = to_fock(RIGHT, shape=shape)
+        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Fock):
+            shape = [l if l < r else r for l, r in zip(LEFT.array.shape, RIGHT.array.shape)]
+            LEFT.reduce(shape)
+            RIGHT.reduce(shape)
 
         # calculate the representation of the returned component
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
 
-        # # reorder the representation
-        # contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
-        # contracted_idx += [
-        #     other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
-        # ]
-        # order = [contracted_idx.index(id) for id in wires_ret.ids]
-        # representation_ret = representation_ret.reorder(order)
+        # reorder the representation
+        if do_reordering:
+            contracted_idx = [
+                self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z
+            ]
+            contracted_idx += [
+                other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
+            ]
+            order = [contracted_idx.index(id) for id in wires_ret.ids]
+            representation_ret = representation_ret.reorder(order)
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
