@@ -17,6 +17,8 @@
 from __future__ import annotations
 from functools import cached_property, cache
 
+from sympy import E
+
 __all__ = ["Wires"]
 
 class Wires:
@@ -58,7 +60,8 @@ class Wires:
         >>> assert w.output.ket.modes == {0, 13}
         >>> assert w.input.bra.modes == {1, 2}
 
-    To access the index of a subset of wires in standard order (i.e. skipping over wires not belonging to the subset),
+    To access the index of a subset of wires in standard order
+    (i.e. skipping over wires not belonging to the subset),
     one can use the ``indices`` attribute:
 
     .. code-block::
@@ -108,11 +111,36 @@ class Wires:
     def types(self) -> set[int]:
         r"A set of up to four integers representing the types of wires in the standard order."
         return set((0,) * bool(self.ob) + (1,) * bool(self.ib) + (2,) * bool(self.ok) + (3,) * bool(self.ik)) - self._exclude_types
-    
+
+    @cached_property
+    def args(self) -> tuple[set[int],...]:
+        r"Returns the input arguments needed to initialize the same ``Wires`` object."
+        return (self.ob - self._exclude_modes if 0 in self.types else set(),
+                self.ib - self._exclude_modes if 1 in self.types else set(),
+                self.ok - self._exclude_modes if 2 in self.types else set(),
+                self.ik - self._exclude_modes if 3 in self.types else set())
+
     @cached_property
     def modes(self) -> set[int]:
         r"The modes of the wires in the standard order."
-        return set.union(*self.args) - self._exclude_modes
+        return set.union(*self.args)
+
+    @cached_property
+    def indices(self) -> tuple[int,...]:
+        r"""
+        The array of indices of this ``Wires`` in the standard order. The array of indices
+        of this ``Wires`` in the standard order. When a subset is selected (e.g. ``.ket``),
+        it skips the indices of wires that do not belong to the subset.
+
+        .. code-block::
+
+            >>> w = Wires(modes_in_ket = (0,1), modes_out_ket = (0,1))
+            >>> assert w.indices == (0,1,2,3)
+            >>> assert w.input.indices == (2,3)
+        """
+        modes = (sorted(self.ob), sorted(self.ib), sorted(self.ok), sorted(self.ik))
+        d = (0, len(self.ob), len(self.ob) + len(self.ib), len(self.ob) + len(self.ib) + len(self.ok))
+        return tuple(modes[t].index(m) + d[t] for t in (0,1,2,3) for m in sorted(self.modes & set(modes[t])))
 
     @cached_property
     def input(self) -> Wires:
@@ -144,38 +172,14 @@ class Wires:
         r"A new ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
+    def __hash__(self) -> int:  # for getitem caching
+        return hash(tuple(s) for s in self.args)
+
     @cache
-    def __getitem__(self, modes: set[int] | int) -> Wires:
+    def __getitem__(self, modes: tuple[int,...] | int) -> Wires:
         r"A view of this Wires object with wires only on the given modes."
-        if not isinstance(modes, set):
-            modes = {modes}
-        return self.view(exclude_modes = self.modes - modes)  # is it better to keep modes to show?
-
-    @cached_property
-    def args(self) -> tuple[set[int],...]:
-        r"Returns the input arguments needed to initialize the same ``Wires`` object."
-        return (self.ob - self._exclude_modes if 0 in self.types else set(),
-                self.ib - self._exclude_modes if 1 in self.types else set(),
-                self.ok - self._exclude_modes if 2 in self.types else set(),
-                self.ik - self._exclude_modes if 3 in self.types else set())
-
-    @cached_property
-    def indices(self) -> tuple[int,...]:
-        r"""
-        The array of indices of this ``Wires`` in the standard order. The array of indices
-        of this ``Wires`` in the standard order. When a subset is selected (e.g. ``.ket``),
-        it skips the indices of wires that do not belong to the subset.
-
-        .. code-block::
-
-            >>> w = Wires(modes_in_ket = (0,1), modes_out_ket = (0,1))
-            >>> assert w.indices == (0,1,2,3)
-            >>> assert w.input.indices == (2,3)
-        """
-        types = (self.ob, self.ib, self.ok, self.ik)  # just references to the sets, not copies
-        offsets = (0, len(self.ob), len(self.ob) + len(self.ib), len(self.ob) + len(self.ib) + len(self.ik))
-        return tuple(sorted(types[t]).index(m) + offsets[t] for t in self.types for m in self.modes & types[t])
-
+        modes = (modes,) if isinstance(modes, int) else modes
+        return self.view(exclude_modes = self.modes - set(modes))
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -184,9 +188,9 @@ class Wires:
             ValueError: If any leftover wires would overlap.
         """
         new_args = []
-        for m1, m2 in zip(self.args, other.args):
+        for t, (m1, m2) in enumerate(zip(self.args, other.args)):
             if m := (m1 & m2):
-                raise ValueError(f"wires overlap on mode(s) {m}")
+                raise ValueError(f"{t}-type wires overlap at mode {m}")
             new_args.append(m1 | m2)
         return Wires(*new_args)
 
@@ -197,40 +201,44 @@ class Wires:
     def __eq__(self, other) -> bool:
         return self.args == other.args
 
-    def __matmul__(self, other: Wires) -> Wires:
+    def __matmul__(self, other: Wires) -> tuple[Wires, list[int]]:
         r"""
-        A new ``Wires`` object with the wires of ``self`` and ``other`` combined.
+        Returns the wires of the circuit composition of self and other (without adding missing adjoints)
+        and the permutation that takes the contracted representations to the standard order.
+        An exception is raised if any leftover wires would overlap.
 
-        The output of ``self`` connects to the input of ``other`` wherever they match. All
-        surviving wires are arranged in the standard order.
+        Indicating the input and output sets of modes of self and other in pseudocode as A,B,C,D, we have:
+        ``B[self]A  @  D[other]C  =  sort(B+(D-A))[result]sort(C+(A-D))``. The standard order would then be:
+        ``sort(C|(A-D))+sort(B|(D-A))``.
+        In comparison, contracting the representations rather than the wires corresponds to an order:
+        ``list(A-D)+list(B)+list(C)+list(D-A)``.
+        The returned permutation is the one that takes the representation to the standard order.
 
-        Note this function does not add missing adjoints!
-
+        Args:
+            other (Wires): The wires of the other circuit component.
+        Returns:
+            tuple[Wires, list[int]]: The wires of the circuit composition and the permutation.
         Raises:
-            ValueError: If there are any surviving wires that overlap.
+            ValueError: If any leftover wires would overlap.
         """
-        if m := other.bra.output.modes & (self.bra.output.modes - other.bra.input.modes):
+        A, B, a, b = self.args
+        C, D, c, d = other.args
+        if (m := C & (A - D)):
             raise ValueError(f"output bra wires {m} overlap")
-        if m := self.bra.input.modes   & (other.bra.input.modes - self.bra.output.modes):
+        if (m := B & (D - A)):
             raise ValueError(f"input bra wires {m} overlap")
-        if m := other.ket.output.modes & (self.ket.output.modes - other.ket.input.modes):
+        if (m := c & (a - d)):
             raise ValueError(f"output ket wires {m} overlap")
-        if m := self.ket.input.modes   & (other.ket.input.modes - self.ket.output.modes):
+        if (m := b & (d - a)):
             raise ValueError(f"input ket wires {m} overlap")
-        modes_bra_out = other.bra.output.modes | (self.bra.output.modes - other.bra.input.modes)
-        modes_bra_in  = self.bra.input.modes   | (other.bra.input.modes - self.bra.output.modes)
-        modes_ket_out = other.ket.output.modes | (self.ket.output.modes - other.ket.input.modes)
-        modes_ket_in  = self.ket.input.modes   | (other.ket.input.modes - self.ket.output.modes)
-
-        # order calculation
-        order = []
-        for m in sorted(modes_bra_out | modes_bra_in | modes_ket_out | modes_ket_in):
-            if m in self.bra.output.modes:
-                order.append(sorted(self.bra.output.modes).index(m))
-            if m in other.bra.output.modes:
-                order.append(len(self.bra.output.modes) + sorted(other.bra.output.modes).index(m))
-
-        return Wires(modes_bra_out, modes_bra_in, modes_ket_out, modes_ket_in)
+        bra_out = sorted(C | (A - D))
+        bra_in  = sorted(B | (D - A))
+        ket_out = sorted(c | (a - d))
+        ket_in  = sorted(b | (d - a))
+        repr_order = list(A-D) + list(B) + list(a-d) + list(b) + list(C) + list(D-A) + list(c) + list(d-a)
+        wires_order = bra_out + bra_in + ket_out + ket_in
+        perm = [wires_order.index(m) for m in repr_order]
+        return Wires(set(bra_out), set(bra_in), set(ket_out), set(ket_in)), perm
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"

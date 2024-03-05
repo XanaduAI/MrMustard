@@ -37,7 +37,7 @@ class TestWires:
         assert w.input.ket.modes == {3}
 
     def test_indices(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
         assert w.output.indices == (0, 1, 2, 6, 7)
         assert w.bra.indices == (0, 1, 2, 3, 4, 5)
         assert w.input.indices == (3, 4, 5, 8)
@@ -104,7 +104,7 @@ class TestWires:
         # contracts 3,3 and 13,13 on ket side
         u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8})
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12})
-        assert (u @ v).args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
+        assert (u @ v)[0].args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
 
     def test_matmul_error(self):
         u = Wires({}, {}, {0}, {})  # only output wire
