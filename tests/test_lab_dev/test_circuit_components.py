@@ -198,15 +198,14 @@ class TestCircuitComponent:
         a1 = Attenuator([1], transmissivity=0.8)
         m12 = Vacuum([1, 2]).dual
 
-        r1 = (vac12 >> d1 >> d2 >> a1 >> m12).representation.c
-        r2 = (vac12 >> d1 >> d2.to_fock() >> a1 >> m12).representation.array
-        r3 = (vac12 >> d1.to_fock() >> d2 >> a1 >> m12).representation.array
-        r4 = (vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> m12.to_fock())
-        r4 = r4.representation.array
+        r1 = vac12 >> d1 >> d2 >> a1 >> m12
+        r2 = vac12 >> d1 >> d2.to_fock() >> a1 >> m12
+        r3 = vac12 >> d1.to_fock() >> d2 >> a1 >> m12
+        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> m12.to_fock()
 
-        assert math.allclose(r1, r2)
-        assert math.allclose(r1, r3)
-        assert math.allclose(r1, r4)
+        assert math.allclose(r1.representation.c, r2.representation.array)
+        assert math.allclose(r1.representation.c, r3.representation.array)
+        assert math.allclose(r1.representation.c, r4.representation.array)
 
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])
