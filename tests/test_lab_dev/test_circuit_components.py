@@ -28,6 +28,9 @@ from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
 
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+
 
 class TestCircuitComponent:
     r"""
@@ -188,8 +191,9 @@ class TestCircuitComponent:
         )
         assert np.allclose(result.representation.c, 0.95504196)
 
-    def test_rshift_fock(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+    @pytest.mark.parametrize("autocutoff", [5, 10])
+    def test_rshift_fock(self, autocutoff):
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff
 
         vac12 = Vacuum([1, 2])
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -206,6 +210,8 @@ class TestCircuitComponent:
         assert math.allclose(r1.representation.c, r2.representation.array)
         assert math.allclose(r1.representation.c, r3.representation.array)
         assert math.allclose(r1.representation.c, r4.representation.array)
+
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])

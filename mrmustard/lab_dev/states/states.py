@@ -114,14 +114,15 @@ class Number(Ket):
 
     """
 
-    def __init__(
-        self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
-    ) -> None:
+    def __init__(self, modes: Iterable[int], n: Union[int, Iterable[int]]) -> None:
         super().__init__("N", modes=modes)
 
         self._n = math.atleast_1d(n)
         if len(self._n) == 1:
-            self._n = math.tile(self._n, len(modes))
+            self._n = math.tile(self._n, [len(modes)])
+        if len(self._n) != len(modes):
+            msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
+            raise ValueError(msg)
 
     @property
     def representation(self) -> Fock:
