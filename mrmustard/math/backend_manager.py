@@ -620,14 +620,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
-        return self._apply(
-            "gather",
-            (
-                array,
-                indices,
-                axis,
-            ),
-        )
+        return self._apply("gather", (array, indices, axis))
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: Tuple[int]
