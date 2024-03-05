@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 from functools import cached_property, cache
+from typing import Sequence
 
 __all__ = ["Wires"]
 
@@ -78,10 +79,10 @@ class Wires:
     """
     def __init__(
         self,
-        modes_out_bra: set[int] = set(),  # TODO switch to frozensets?
-        modes_in_bra: set[int] = set(),
-        modes_out_ket: set[int] = set(),
-        modes_in_ket: set[int] = set(),
+        modes_out_bra: set[int] | Sequence[int] = set(),
+        modes_in_bra: set[int] | Sequence[int] = set(),
+        modes_out_ket: set[int] | Sequence[int] = set(),
+        modes_in_ket: set[int] | Sequence[int] = set(),
     ) -> None:
 
         self.ob = set(modes_out_bra)
@@ -120,7 +121,7 @@ class Wires:
 
     @cached_property
     def modes(self) -> set[int]:
-        r"The modes of the wires in the standard order."
+        r"The modes of the wires."
         return set.union(*self.args)
 
     @cached_property
@@ -236,7 +237,7 @@ class Wires:
         repr_order = list(A-D) + list(B) + list(a-d) + list(b) + list(C) + list(D-A) + list(c) + list(d-a)
         wires_order = bra_out + bra_in + ket_out + ket_in
         perm = [wires_order.index(m) for m in repr_order]
-        return Wires(set(bra_out), set(bra_in), set(ket_out), set(ket_in)), perm
+        return Wires(bra_out, bra_in, ket_out, ket_in), perm
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
