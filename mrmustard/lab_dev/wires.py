@@ -84,10 +84,10 @@ class Wires:
         modes_in_ket: set[int] = set(),
     ) -> None:
 
-        self.ob = modes_out_bra
-        self.ib = modes_in_bra
-        self.ok = modes_out_ket
-        self.ik = modes_in_ket
+        self.ob = set(modes_out_bra)
+        self.ib = set(modes_in_bra)
+        self.ok = set(modes_out_ket)
+        self.ik = set(modes_in_ket)
         self._exclude_modes: set[int] = set()
         self._exclude_types: set[int] = set()
 
