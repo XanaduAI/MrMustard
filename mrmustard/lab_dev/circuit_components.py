@@ -48,10 +48,10 @@ class CircuitComponent:
         self,
         name: str,
         representation: Optional[Representation] = None,
-        modes_out_bra: Optional[Sequence[int]] = None,
-        modes_in_bra: Optional[Sequence[int]] = None,
-        modes_out_ket: Optional[Sequence[int]] = None,
-        modes_in_ket: Optional[Sequence[int]] = None,
+        modes_out_bra: set[int] = set(),
+        modes_in_bra: set[int] = set(),
+        modes_out_ket: set[int] = set(),
+        modes_in_ket: set[int] = set(),
     ) -> None:
         self._name = name
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
@@ -156,7 +156,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = self.wires.copy()
+        instance.__dict__["_wires"] = self.wires.view()
         return instance
 
     def __eq__(self, other) -> bool:
@@ -172,17 +172,17 @@ class CircuitComponent:
         Contracts ``self`` and ``other``, without adding adjoints.
         """
         # initialized the ``Wires`` of the returned component
-        wires_ret = self.wires @ other.wires
+        wires_ret, perm = self.wires @ other.wires
 
         # find the indices of the wires being contracted on the bra side
-        bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
-        idx_z = self.wires[bra_modes].bra.output.indices
-        idx_zconj = other.wires[bra_modes].bra.input.indices
+        bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
+        idx_z = self.wires.bra.output[bra_modes].indices
+        idx_zconj = other.wires.bra.input[bra_modes].indices
 
         # find the indices of the wires being contracted on the ket side
-        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
-        idx_z += self.wires[ket_modes].ket.output.indices
-        idx_zconj += other.wires[ket_modes].ket.input.indices
+        ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
+        idx_z += self.wires.ket.output[ket_modes].indices
+        idx_zconj += other.wires.ket.input[ket_modes].indices
 
         # convert Bargmann -> Fock if needed
         LEFT = self.representation
@@ -200,12 +200,7 @@ class CircuitComponent:
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
 
         # reorder the representation
-        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
-        contracted_idx += [
-            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
-        ]
-        order = [contracted_idx.index(id) for id in wires_ret.ids]
-        representation_ret = representation_ret.reorder(order)
+        representation_ret = representation_ret.reorder(perm)
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
@@ -214,7 +209,7 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
         """
-        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
+        msg = f"``>>`` not supported between {self} and {other}, use ``@``."
 
         wires_out = self.wires.output
         wires_in = other.wires.input
