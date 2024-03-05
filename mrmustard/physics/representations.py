@@ -25,7 +25,7 @@ from typing import Iterable, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
@@ -374,10 +374,21 @@ class Bargmann(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Bargmann) -> Bargmann:
+    def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
         r"""
         The inner product of ansatze across the marked indices.
         """
+        idx_z = self._contract_idxs
+        idx_zconj = other._contract_idxs
+
+        if isinstance(other, Fock):
+            from .converters import to_fock
+
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            for i, j in zip(idx_z, idx_zconj):
+                shape[i] = other.array.shape[1:][j]
+            return to_fock(self, shape=shape)[idx_z] @ other[idx_zconj]
+
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
                 "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
@@ -483,7 +494,7 @@ class Fock(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Fock) -> Fock:
+    def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
         r"""
         Implements the inner product of ansatze across the marked indices.
 
@@ -493,7 +504,35 @@ class Fock(Representation):
         Order of index:
         The new Fock's order is arranged as uncontracted elements in self and then other.
         """
-        axes = [list(self._contract_idxs), list(other._contract_idxs)]
+        idx_z = self._contract_idxs
+        idx_zconj = other._contract_idxs
+
+        if isinstance(other, Bargmann):
+            from .converters import to_fock
+
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
+            for i, j in zip(idx_z, idx_zconj):
+                shape[j] = self.array.shape[1:][i]
+            return self[idx_z] @ to_fock(other, shape=shape)[idx_zconj]
+
+        shape_l = [self.array.shape[1:][i] for i in idx_z]
+        shape_r = [other.array.shape[1:][i] for i in idx_zconj]
+
+        if shape_r != shape_l:
+            shape = [l if l < r else r for l, r in zip(shape_l, shape_r)]
+            new_shape_l = [self.array.shape[0]]
+            new_shape_l += [
+                shape[i] if idx in idx_z else shape_l[i]
+                for i, idx in enumerate(self.array.shape[1:][i])
+            ]
+            new_shape_r = [other.array.shape[0]]
+            new_shape_r += [
+                shape[i] if idx in idx_zconj else shape_r[i]
+                for i, idx in enumerate(other.array.shape[1:][i])
+            ]
+            return self.reduce(new_shape_l)[idx_z] @ other.reduce(new_shape_r)[idx_zconj]
+
+        axes = [list(idx_z), list(idx_zconj)]
         new_array = []
         for i in range(self.array.shape[0]):
             for j in range(other.array.shape[0]):

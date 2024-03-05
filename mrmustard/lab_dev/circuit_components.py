@@ -193,26 +193,8 @@ class CircuitComponent:
         idx_z += self.wires[ket_modes].ket.output.indices
         idx_zconj += other.wires[ket_modes].ket.input.indices
 
-        # convert Bargmann -> Fock if needed
-        LEFT = self.representation
-        RIGHT = other.representation
-        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(LEFT.b[0]))]
-            for i, j in zip(idx_z, idx_zconj):
-                shape[i] = RIGHT.array.shape[1:][j]
-            LEFT = to_fock(LEFT, shape=shape)
-        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(RIGHT.b[0]))]
-            for i, j in zip(idx_z, idx_zconj):
-                shape[j] = LEFT.array.shape[1:][i]
-            RIGHT = to_fock(RIGHT, shape=shape)
-        elif isinstance(LEFT, Fock) and isinstance(RIGHT, Fock):
-            shape = [l if l < r else r for l, r in zip(LEFT.array.shape, RIGHT.array.shape)]
-            LEFT = LEFT.reduce(shape)
-            RIGHT = RIGHT.reduce(shape)
-
         # calculate the representation of the returned component
-        representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
+        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
 
         # reorder the representation
         contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
@@ -220,8 +202,7 @@ class CircuitComponent:
             other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
         ]
         order = [contracted_idx.index(id) for id in wires_ret.ids]
-        if order:
-            representation_ret = representation_ret.reorder(order)
+        representation_ret = representation_ret.reorder(order) if order else representation_ret
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
