@@ -208,8 +208,8 @@ class CircuitComponent:
             RIGHT = to_fock(RIGHT, shape=shape)
         elif isinstance(LEFT, Fock) and isinstance(RIGHT, Fock):
             shape = [l if l < r else r for l, r in zip(LEFT.array.shape, RIGHT.array.shape)]
-            LEFT.reduce(shape)
-            RIGHT.reduce(shape)
+            LEFT = LEFT.reduce(shape)
+            RIGHT = RIGHT.reduce(shape)
 
         # calculate the representation of the returned component
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]

@@ -537,9 +537,9 @@ class Fock(Representation):
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
         )
 
-    def reduce(self, shape: Union[int, Iterable[int]]):
+    def reduce(self, shape: Union[int, Iterable[int]]) -> Fock:
         r"""
-        Reduces the dimension of the array in this Fock object by taking slices.
+        Returns a new Fock object with a sliced array.
         """
         length = len(self.array.shape)
         shape = (shape,) * length if isinstance(shape, int) else shape
@@ -547,6 +547,8 @@ class Fock(Representation):
             msg = f"Expected ``shape`` of lenght {length}, "
             msg += f"found shape of lenght {len(shape)}."
 
+        ret = self.array
         for i, s in enumerate(shape):
             slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
-            self.ansatz = ArrayAnsatz(array=self.array[slc])
+            ret = ret[slc]
+        return Fock(array=ret, batched=True)
