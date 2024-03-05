@@ -48,10 +48,10 @@ class CircuitComponent:
         self,
         name: str,
         representation: Optional[Representation] = None,
-        modes_out_bra: set[int] = set(),
-        modes_in_bra: set[int] = set(),
-        modes_out_ket: set[int] = set(),
-        modes_in_ket: set[int] = set(),
+        modes_out_bra: Sequence[int] = (),
+        modes_in_bra: Sequence[int] = (),
+        modes_out_ket: Sequence[int] = (),
+        modes_in_ket: Sequence[int] = (),
     ) -> None:
         self._name = name
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
