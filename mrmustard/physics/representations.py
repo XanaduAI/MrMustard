@@ -377,6 +377,15 @@ class Bargmann(Representation):
     def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
         r"""
         The inner product of ansatze across the marked indices.
+
+        If ``other`` is ``Fock``, then ``self`` is converted to ``Fock`` before the contraction.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
+            if ``other`` is ``Fock``.
         """
         idx_z = self._contract_idxs
         idx_zconj = other._contract_idxs
@@ -498,15 +507,22 @@ class Fock(Representation):
         r"""
         Implements the inner product of ansatze across the marked indices.
 
-        Batch:
-        The new Fock holds the tensor product batch of them.
+        If ``other`` is ``Fock``, the two representations are automatically reduced
+        before being contracted. The array of the returned representation has the largest
+        possible dimension along every axis.
 
-        Order of index:
-        The new Fock's order is arranged as uncontracted elements in self and then other.
+        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            A ``Fock``representation.
         """
         idx_z = self._contract_idxs
         idx_zconj = other._contract_idxs
 
+        # convert ``other`` to ``Fock``
         if isinstance(other, Bargmann):
             from .converters import to_fock
 
@@ -515,21 +531,26 @@ class Fock(Representation):
                 shape[j] = self.array.shape[1:][i]
             return self[idx_z] @ to_fock(other, shape=shape)[idx_zconj]
 
+        # compare the shapes along the axes being contracted
         shape_l = [self.array.shape[1:][i] for i in idx_z]
         shape_r = [other.array.shape[1:][i] for i in idx_zconj]
-
         if shape_r != shape_l:
+            # calculate new shapes that maintain the largest possible dimension
+            # along each of the contracted axes
             shape = [l if l < r else r for l, r in zip(shape_l, shape_r)]
+
             new_shape_l = [self.array.shape[0]]
             new_shape_l += [
                 shape[i] if idx in idx_z else shape_l[i]
                 for i, idx in enumerate(self.array.shape[1:][i])
             ]
+
             new_shape_r = [other.array.shape[0]]
             new_shape_r += [
                 shape[i] if idx in idx_zconj else shape_r[i]
                 for i, idx in enumerate(other.array.shape[1:][i])
             ]
+
             return self.reduce(new_shape_l)[idx_z] @ other.reduce(new_shape_r)[idx_zconj]
 
         axes = [list(idx_z), list(idx_zconj)]
