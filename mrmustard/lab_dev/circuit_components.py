@@ -215,9 +215,7 @@ class CircuitComponent:
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
 
         # reorder the representation
-        contracted_idx = [
-            self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z
-        ]
+        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
         contracted_idx += [
             other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
         ]

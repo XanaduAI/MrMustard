@@ -194,13 +194,15 @@ class TestCircuitComponent:
         vac12 = Vacuum([1, 2])
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([2], x=0.1, y=0.2)
+        d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
         a1 = Attenuator([1], transmissivity=0.8)
         m12 = Vacuum([1, 2]).dual
 
         r1 = (vac12 >> d1 >> d2 >> a1 >> m12).representation.c
         r2 = (vac12 >> d1 >> d2.to_fock() >> a1 >> m12).representation.array
         r3 = (vac12 >> d1.to_fock() >> d2 >> a1 >> m12).representation.array
-        r4 = (vac12.to_fock() >> d1.to_fock() >> d2.to_fock() >> a1.to_fock() >> m12.to_fock()).representation.array
+        r4 = (vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> m12.to_fock())
+        r4 = r4.representation.array
 
         assert math.allclose(r1, r2)
         assert math.allclose(r1, r3)
