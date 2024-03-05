@@ -145,7 +145,7 @@ def complex_gaussian_integral(
     """
     A, b, c = Abc
     if len(idx_z) != len(idx_zconj):
-        raise ValueError("idx_z and idx_zconj must have the same length")
+        raise ValueError(f"idx_z and idx_zconj must have the same length, got {len(idx_z)} and {len(idx_zconj)}")
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
     if not idx:
