@@ -17,7 +17,9 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
+from mrmustard.physics.converters import to_fock
+from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
 from mrmustard.physics.bargmann import contract_two_Abc, complex_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
@@ -244,7 +246,7 @@ class TestFockRepresentation:
         fock_conj = fock.conj()
         assert np.allclose(fock_conj.array, np.conj(self.array1578))
 
-    def test_matmul(self):
+    def test_matmul_fock_fock(self):
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(array2, batched=True)
@@ -254,6 +256,26 @@ class TestFockRepresentation:
             math.reshape(fock_test.array, -1),
             math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
         )
+
+    @pytest.mark.parametrize("n1", [1, 2])
+    @pytest.mark.parametrize("n2", [1, 2])
+    def test_matmul_fock_barg(self, n1, n2):
+        settings.AUTOCUTOFF_MAX_CUTOFF = 3
+
+        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
+        a0_barg = Bargmann(*attenuator_Abc(0.7))
+
+        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
+        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
+
+        d01_fock = to_fock(d01_barg, shape=(3, 4, 5, 6))
+        a0_fock = to_fock(a0_barg, shape=(7, 8, 9, 10))
+
+        b = n1 * n2
+        assert (d01_fock[0] @ a0_barg[0]).array.shape == (b, 4, 5, 6, 3, 3, 3)
+        assert (d01_barg[0] @ a0_fock[0]).array.shape == (b, 3, 3, 3, 8, 9, 10)
+        assert (d01_fock[0] @ a0_fock[0]).array.shape == (b, 4, 5, 6, 8, 9, 10)
+
 
     def test_add(self):
         fock1 = Fock(self.array2578, batched=True)

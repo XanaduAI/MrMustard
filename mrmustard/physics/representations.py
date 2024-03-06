@@ -519,8 +519,8 @@ class Fock(Representation):
         Returns:
             A ``Fock``representation.
         """
-        idx_z = self._contract_idxs
-        idx_zconj = other._contract_idxs
+        idx_z = list(self._contract_idxs)
+        idx_zconj = list(other._contract_idxs)
 
         # convert ``other`` to ``Fock``
         if isinstance(other, Bargmann):
@@ -537,18 +537,16 @@ class Fock(Representation):
         if shape_r != shape_l:
             # calculate new shapes that maintain the largest possible dimension
             # along each of the contracted axes
-            shape = [l if l < r else r for l, r in zip(shape_l, shape_r)]
+            shape = [min(l, r) for l, r in zip(shape_l, shape_r)]
 
-            new_shape_l = [self.array.shape[0]]
-            new_shape_l += [
-                shape[i] if idx in idx_z else shape_l[i]
-                for i, idx in enumerate(self.array.shape[1:][i])
+            new_shape_l = [self.array.shape[0]] + [
+                shape[idx_z.index(i)] if i in idx_z else idx
+                for i, idx in enumerate(self.array.shape[1:])
             ]
 
-            new_shape_r = [other.array.shape[0]]
-            new_shape_r += [
-                shape[i] if idx in idx_zconj else shape_r[i]
-                for i, idx in enumerate(other.array.shape[1:][i])
+            new_shape_r = [other.array.shape[0]] + [
+                shape[idx_z.index(i)] if i in idx_zconj else idx
+                for i, idx in enumerate(other.array.shape[1:])
             ]
 
             return self.reduce(new_shape_l)[idx_z] @ other.reduce(new_shape_r)[idx_zconj]
