@@ -126,8 +126,7 @@ class Number(Ket):
 
     @property
     def representation(self) -> Fock:
-        array = fock_state(self.n)
-        return Fock(array, batched=True)
+        return Fock(fock_state(self.n))
 
     @property
     def n(self):

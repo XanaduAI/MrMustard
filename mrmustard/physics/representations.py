@@ -548,7 +548,7 @@ class Fock(Representation):
             ]
 
             new_shape_r = [other.array.shape[0]] + [
-                shape[idx_z.index(i)] if i in idx_zconj else idx
+                shape[idx_zconj.index(i)] if i in idx_zconj else idx
                 for i, idx in enumerate(other.array.shape[1:])
             ]
 

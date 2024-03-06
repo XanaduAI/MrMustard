@@ -191,7 +191,7 @@ class TestNumber:
     def test_representation(self, n):
         rep1 = Number(modes=[0, 1], n=n).representation.array
         exp1 = fock_state((n,) * 2 if isinstance(n, int) else n)
-        assert math.allclose(rep1, exp1)
+        assert math.allclose(rep1, exp1.reshape(1, *exp1.shape))
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
