@@ -190,11 +190,10 @@ class TestBargmannRepresentation:
         d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
         a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
 
-        d01_fock = to_fock(d01_barg, shape=(3, 4, 5, 6))
-        a0_fock = to_fock(a0_barg, shape=(7, 8, 9, 10))
+        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
 
-        b = n1 * n2
-        assert (d01_barg[0] @ a0_fock[0]).array.shape == (b, 3, 3, 3, 8, 9, 10)
+        res = (d01_barg[0] @ a0_fock[0]).array
+        assert res.shape == (n1 * n2, 3, 3, 3, 3, 4, 5)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -290,12 +289,11 @@ class TestFockRepresentation:
         d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
         a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
 
-        d01_fock = to_fock(d01_barg, shape=(3, 4, 5, 6))
-        a0_fock = to_fock(a0_barg, shape=(7, 8, 9, 10))
+        d01_fock = to_fock(d01_barg, shape=(2, 3, 4, 5))
+        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
 
-        b = n1 * n2
-        assert (d01_fock[0] @ a0_barg[0]).array.shape == (b, 4, 5, 6, 3, 3, 3)
-        assert (d01_fock[0] @ a0_fock[0]).array.shape == (b, 4, 5, 6, 8, 9, 10)
+        assert (d01_fock[0] @ a0_barg[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 3, 3)
+        assert (d01_fock[0] @ a0_fock[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 4, 5)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -330,3 +328,30 @@ class TestFockRepresentation:
         fock2 = fock1.reorder(order=(2, 1, 0))
         assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
         assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
+
+    @pytest.mark.parametrize("batched", [True, False])
+    def test_reduce(self, batched):
+        shape = (1, 3, 3, 3) if batched else (3, 3, 3)
+        array1 = math.astensor(np.arange(27).reshape(shape))
+        fock1 = Fock(array1, batched=batched)
+        
+        fock2 = fock1.reduce(3)
+        assert fock1 == fock2
+
+        fock3 = fock1.reduce(2)
+        array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
+        assert fock3 == Fock(array3)
+
+        fock4 = fock1.reduce((2, 1, 3, 1))
+        array4 = math.astensor([[[0], [3], [6]]])
+        assert fock4 == Fock(array4)
+
+    def test_reduce_error(self):
+        array1 = math.astensor(np.arange(27).reshape((3, 3, 3)))
+        fock1 = Fock(array1)
+
+        with pytest.raises(ValueError, match="Expected ``shape``"):
+            fock1.reduce((1, 2))
+
+        with pytest.raises(ValueError, match="Expected ``shape``"):
+            fock1.reduce((1, 2, 3, 4, 5))

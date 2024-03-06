@@ -604,6 +604,7 @@ class Fock(Representation):
         if len(shape) != length:
             msg = f"Expected ``shape`` of lenght {length}, "
             msg += f"found shape of lenght {len(shape)}."
+            raise ValueError(msg)
 
         ret = self.array
         for i, s in enumerate(shape):
