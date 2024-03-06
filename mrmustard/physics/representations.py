@@ -406,7 +406,7 @@ class Bargmann(Representation):
             raise NotImplementedError(
                 "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
             )
-        
+
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
