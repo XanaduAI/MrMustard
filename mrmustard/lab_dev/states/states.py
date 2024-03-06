@@ -18,7 +18,7 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Tuple, Union
+from typing import Sequence, Optional, Tuple, Union
 
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
@@ -67,9 +67,9 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        modes: Iterable[int],
-        x: Union[float, Iterable[float]] = 0.0,
-        y: Union[float, Iterable[float]] = 0.0,
+        modes: Sequence[int],
+        x: Union[float, Sequence[float]] = 0.0,
+        y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -115,7 +115,7 @@ class Number(Ket):
     """
 
     def __init__(
-        self, modes: Iterable[int], n: Union[int, Iterable[int]], cutoff: Optional[int] = None
+        self, modes: Sequence[int], n: Union[int, Sequence[int]], cutoff: Optional[int] = None
     ) -> None:
         super().__init__("N", modes=modes)
         self._n = n
@@ -185,7 +185,7 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: Iterable[int],
+        modes: Sequence[int],
     ) -> None:
         super().__init__("Vac", modes=modes)
 
