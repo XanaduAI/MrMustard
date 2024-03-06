@@ -387,21 +387,26 @@ class Bargmann(Representation):
             A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
             if ``other`` is ``Fock``.
         """
-        idx_z = self._contract_idxs
-        idx_zconj = other._contract_idxs
+        idx_s = self._contract_idxs
+        idx_o = other._contract_idxs
 
+        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
         if isinstance(other, Fock):
             from .converters import to_fock
 
+            # set same shape along the contracted axes, and default shape along the
+            # axes that are not being contracted
             shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
-            for i, j in zip(idx_z, idx_zconj):
+            for i, j in zip(idx_s, idx_o):
                 shape[i] = other.array.shape[1:][j]
-            return to_fock(self, shape=shape)[idx_z] @ other[idx_zconj]
+
+            return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
 
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
                 "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
             )
+        
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
@@ -409,12 +414,13 @@ class Bargmann(Representation):
                     bargmann.contract_two_Abc(
                         (A1, b1, c1),
                         (A2, b2, c2),
-                        self._contract_idxs,
-                        other._contract_idxs,
+                        idx_s,
+                        idx_o,
                     )
                 )
+
         A, b, c = zip(*Abc)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(math.astensor(A), math.astensor(b), math.astensor(c))
 
 
 class Fock(Representation):
@@ -522,42 +528,55 @@ class Fock(Representation):
         Returns:
             A ``Fock``representation.
         """
-        idx_z = list(self._contract_idxs)
-        idx_zconj = list(other._contract_idxs)
+        idx_s = list(self._contract_idxs)
+        idx_o = list(other._contract_idxs)
 
-        # convert ``other`` to ``Fock``
+        # if ``other`` is ``Bargmann``, convert it to ``Fock``
         if isinstance(other, Bargmann):
             from .converters import to_fock
 
+            # set same shape along the contracted axes, and default shape along the
+            # axes that are not being contracted
             shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
-            for i, j in zip(idx_z, idx_zconj):
+            for i, j in zip(idx_s, idx_o):
                 shape[j] = self.array.shape[1:][i]
-            return self[idx_z] @ to_fock(other, shape=shape)[idx_zconj]
+
+            return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
+
+        # the number of batches in self and other
+        n_batches_s = self.array.shape[0]
+        n_batches_o = other.array.shape[0]
+
+        # the shapes each batch in self and other
+        shape_s = self.array.shape[1:]
+        shape_o = other.array.shape[1:]
+
+        # the shapes of the axes being contracted
+        shape_s_contr = [shape_s[i] for i in idx_s]
+        shape_o_contr = [shape_o[i] for i in idx_o]
 
         # compare the shapes along the axes being contracted
-        shape_l = [self.array.shape[1:][i] for i in idx_z]
-        shape_r = [other.array.shape[1:][i] for i in idx_zconj]
-        if shape_r != shape_l:
+        if shape_o_contr != shape_s_contr:
             # calculate new shapes that maintain the largest possible dimension
             # along each of the contracted axes
-            shape = [min(l, r) for l, r in zip(shape_l, shape_r)]
+            shape = [min(s, o) for s, o in zip(shape_s_contr, shape_o_contr)]
 
-            new_shape_l = [self.array.shape[0]] + [
-                shape[idx_z.index(i)] if i in idx_z else idx
-                for i, idx in enumerate(self.array.shape[1:])
+            new_shape_s = [n_batches_s]
+            new_shape_s += [
+                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
             ]
 
-            new_shape_r = [other.array.shape[0]] + [
-                shape[idx_zconj.index(i)] if i in idx_zconj else idx
-                for i, idx in enumerate(other.array.shape[1:])
+            new_shape_o = [n_batches_o]
+            new_shape_o += [
+                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
             ]
 
-            return self.reduce(new_shape_l)[idx_z] @ other.reduce(new_shape_r)[idx_zconj]
+            return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
 
-        axes = [list(idx_z), list(idx_zconj)]
+        axes = [list(idx_s), list(idx_o)]
         new_array = []
-        for i in range(self.array.shape[0]):
-            for j in range(other.array.shape[0]):
+        for i in range(n_batches_s):
+            for j in range(n_batches_s):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(new_array))
 
