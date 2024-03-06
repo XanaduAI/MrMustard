@@ -107,7 +107,7 @@ class TestWires:
         assert (u @ v)[0].args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
 
     def test_matmul_error(self):
-        u = Wires({}, {}, {0}, {})  # only output wire
-        v = Wires({}, {}, {0}, {})  # only output wire
+        u = Wires(set(), set(), {0}, set())  # only output wire
+        v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
