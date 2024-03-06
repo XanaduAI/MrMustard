@@ -19,7 +19,7 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from mrmustard import math
 from .circuit_components import CircuitComponent
@@ -57,16 +57,16 @@ class Circuit:
         >>> bs01 = BSgate([0, 1])
         >>> bs12 = BSgate([1, 2])
 
-        >>> circ1 = Circuit([vac]) >> s01
-        >>> circ2 = Circuit([bs01, bs12])
+        >>> circ1 = Circuit() >> vac >> s01
+        >>> circ2 = Circuit([bs01]) >> bs12
         >>> assert circ1 >> circ2 == Circuit([vac, s01, bs01, bs12])
 
     Args:
         components: A list of circuit components.
     """
 
-    def __init__(self, components=Sequence[CircuitComponent]) -> None:
-        self._components = components
+    def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
+        self._components = components or []
 
     @property
     def components(self) -> Sequence[CircuitComponent]:

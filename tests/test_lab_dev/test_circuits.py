@@ -33,8 +33,11 @@ class TestCircuit:
         bs01 = BSgate([0, 1])
         bs12 = BSgate([1, 2])
 
-        circ = Circuit([vac, s01, bs01, bs12])
-        assert circ.components == [vac, s01, bs01, bs12]
+        circ1 = Circuit([vac, s01, bs01, bs12])
+        assert circ1.components == [vac, s01, bs01, bs12]
+
+        circ2 = Circuit() >> vac >> s01 >> bs01 >> bs12
+        assert circ2.components == [vac, s01, bs01, bs12]
 
     def test_eq(self):
         vac = Vacuum([0, 1, 2])
