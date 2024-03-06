@@ -174,11 +174,11 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=shape)
+            >>> d_fock = d.to_fock(shape=3)
             
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert d_fock.representation == to_fock(d.representation, shape)
+            >>> assert d_fock.representation == to_fock(d.representation, shape=3)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
