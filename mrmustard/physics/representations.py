@@ -20,8 +20,8 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from matplotlib import colors
 from typing import Iterable, Union
+from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -392,7 +392,7 @@ class Bargmann(Representation):
 
         # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
         if isinstance(other, Fock):
-            from .converters import to_fock
+            from .converters import to_fock  # pylint: disable=import-outside-toplevel
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
@@ -533,7 +533,7 @@ class Fock(Representation):
 
         # if ``other`` is ``Bargmann``, convert it to ``Fock``
         if isinstance(other, Bargmann):
-            from .converters import to_fock
+            from .converters import to_fock  # pylint: disable=import-outside-toplevel
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
