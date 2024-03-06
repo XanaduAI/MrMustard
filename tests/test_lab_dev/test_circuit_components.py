@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Vacuum
+from mrmustard.lab_dev.states import Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
 
@@ -98,6 +98,26 @@ class TestCircuitComponent:
         assert d1_cp.parameter_set is d1.parameter_set
         assert d1_cp.representation is d1.representation
         assert d1_cp.wires is not d1.wires
+
+    @pytest.mark.parametrize("shape", [3, [3, 2]])
+    def test_to_fock(self, shape):
+        vac = Vacuum([1, 2])
+        vac_fock = vac.to_fock(shape=shape)
+        assert vac_fock.name == vac.name
+        assert vac_fock.wires == vac.wires
+        assert vac_fock.representation == to_fock(vac.representation, shape)
+
+        n = Number([3], n=4)
+        n_fock = n.to_fock(shape=shape)
+        assert n_fock.name == n.name
+        assert n_fock.wires == n.wires
+        assert n_fock.representation == to_fock(n.representation, shape)
+
+        d = Dgate([1], x=0.1, y=0.1)
+        d_fock = d.to_fock(shape=shape)
+        assert d_fock.name == d.name
+        assert d_fock.wires == d.wires
+        assert d_fock.representation == to_fock(d.representation, shape)
 
     def test_eq(self):
         d1 = Dgate([1], x=0.1, y=0.1)

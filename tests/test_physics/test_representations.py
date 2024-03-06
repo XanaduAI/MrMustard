@@ -334,7 +334,7 @@ class TestFockRepresentation:
         shape = (1, 3, 3, 3) if batched else (3, 3, 3)
         array1 = math.astensor(np.arange(27).reshape(shape))
         fock1 = Fock(array1, batched=batched)
-        
+
         fock2 = fock1.reduce(3)
         assert fock1 == fock2
 
