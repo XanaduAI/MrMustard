@@ -576,7 +576,7 @@ class Fock(Representation):
         axes = [list(idx_s), list(idx_o)]
         new_array = []
         for i in range(n_batches_s):
-            for j in range(n_batches_s):
+            for j in range(n_batches_o):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(new_array))
 
