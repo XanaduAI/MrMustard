@@ -21,7 +21,7 @@ A base class for the components of quantum circuits.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
-
+import numpy as np
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
@@ -47,16 +47,23 @@ class CircuitComponent:
     def __init__(
         self,
         name: str,
-        representation: Optional[Representation] = None,
-        modes_out_bra: Sequence[int] = (),
-        modes_in_bra: Sequence[int] = (),
-        modes_out_ket: Sequence[int] = (),
-        modes_in_ket: Sequence[int] = (),
+        representation: Optional[Bargmann | Fock] = None,
+        modes_out_bra: tuple[int,...] = (),
+        modes_in_bra: tuple[int,...] = (),
+        modes_out_ket: tuple[int,...] = (),
+        modes_in_ket: tuple[int,...] = (),
     ) -> None:
         self._name = name
-        self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+        self._wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         self._parameter_set = ParameterSet()
         self._representation = representation
+        # handle out-of-order modes
+        a,b,c,d = sorted(modes_out_bra), sorted(modes_in_bra), sorted(modes_out_ket), sorted(modes_in_ket)
+        perm = (tuple(np.argsort(a)) + tuple(np.argsort(b)+len(a)) +
+                tuple(np.argsort(c)+len(a)+len(b)) + tuple(np.argsort(d)+len(a) + len(b) + len(c)))
+        self._mode_map = {i: j for i, j in enumerate(perm)}
+        if self._representation is not None:
+            self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
     def from_attributes(
@@ -156,7 +163,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = self.wires.view()
+        instance.__dict__["_wires"] = Wires(*self.wires.original.args)
         return instance
 
     def __eq__(self, other) -> bool:
@@ -195,7 +202,6 @@ class CircuitComponent:
             raise ValueError("Cannot contract objects with different representations.")
             # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
             # RIGHT = Fock(other.fock(shape=shape), batched=False)
-
         # calculate the representation of the returned component
         representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
 
