@@ -24,6 +24,9 @@ from mrmustard.physics.bargmann import contract_two_Abc, complex_gaussian_integr
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+
 # pylint: disable = missing-function-docstring
 
 
@@ -166,7 +169,7 @@ class TestBargmannRepresentation:
 
         assert bargmann(0.1 + 0.2j) == bargmann.ansatz(0.1 + 0.2j)
 
-    def test_matmul(self):
+    def test_matmul_barg_barg(self):
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
@@ -175,6 +178,25 @@ class TestBargmannRepresentation:
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
+
+    @pytest.mark.parametrize("n1", [1, 2])
+    @pytest.mark.parametrize("n2", [1, 2])
+    def test_matmul_barg_fock(self, n1, n2):
+        settings.AUTOCUTOFF_MAX_CUTOFF = 3
+
+        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
+        a0_barg = Bargmann(*attenuator_Abc(0.7))
+
+        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
+        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
+
+        d01_fock = to_fock(d01_barg, shape=(3, 4, 5, 6))
+        a0_fock = to_fock(a0_barg, shape=(7, 8, 9, 10))
+
+        b = n1 * n2
+        assert (d01_barg[0] @ a0_fock[0]).array.shape == (b, 3, 3, 3, 8, 9, 10)
+
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
 
 class TestFockRepresentation:
@@ -273,9 +295,9 @@ class TestFockRepresentation:
 
         b = n1 * n2
         assert (d01_fock[0] @ a0_barg[0]).array.shape == (b, 4, 5, 6, 3, 3, 3)
-        assert (d01_barg[0] @ a0_fock[0]).array.shape == (b, 3, 3, 3, 8, 9, 10)
         assert (d01_fock[0] @ a0_fock[0]).array.shape == (b, 4, 5, 6, 8, 9, 10)
 
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
     def test_add(self):
         fock1 = Fock(self.array2578, batched=True)
