@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 from functools import cached_property, cache
-from typing import Sequence
+from typing import Optional
 
 __all__ = ["Wires"]
 
@@ -79,87 +79,68 @@ class Wires:
     """
     def __init__(
         self,
-        modes_out_bra: set[int] | Sequence[int] = set(),
-        modes_in_bra: set[int] | Sequence[int] = set(),
-        modes_out_ket: set[int] | Sequence[int] = set(),
-        modes_in_ket: set[int] | Sequence[int] = set(),
+        modes_out_bra: set[int] = set(),
+        modes_in_bra: set[int] = set(),
+        modes_out_ket: set[int] = set(),
+        modes_in_ket: set[int] = set(),
+        original: Optional[Wires] = None
     ) -> None:
 
-        self.ob = set(modes_out_bra)
-        self.ib = set(modes_in_bra)
-        self.ok = set(modes_out_ket)
-        self.ik = set(modes_in_ket)
-        self._exclude_modes: set[int] = set()
-        self._exclude_types: set[int] = set()
+        self.args = modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket
+        self._original = original
 
-    def view(self, exclude_types: set[int] = set(), exclude_modes: set[int] = set()) -> Wires:
-        r"""
-        A view of this Wires object with partially excluded types and modes.
-        Used to model .ket, .bra, .input, .output and [modes] properties.
-
-        Args:
-            exclude_types (tuple[int,...]): The types of wires to exclude.
-            exclude_modes (tuple[int,...]): The modes of wires to exclude.
-        """
-        w = Wires(*self.args)
-        w._exclude_types = exclude_types
-        w._exclude_modes = exclude_modes
-        return w
+    @property
+    def original(self):
+        if self._original is None:
+            return self
+        return self._original
     
     @cached_property
     def types(self) -> set[int]:
         r"A set of up to four integers representing the types of wires in the standard order."
-        return set((0,) * bool(self.ob) + (1,) * bool(self.ib) + (2,) * bool(self.ok) + (3,) * bool(self.ik)) - self._exclude_types
-
-    @cached_property
-    def args(self) -> tuple[set[int],...]:
-        r"Returns the input arguments needed to initialize the same ``Wires`` object."
-        return (self.ob - self._exclude_modes if 0 in self.types else set(),
-                self.ib - self._exclude_modes if 1 in self.types else set(),
-                self.ok - self._exclude_modes if 2 in self.types else set(),
-                self.ik - self._exclude_modes if 3 in self.types else set())
+        return set([i for i in (0,1,2,3) if bool(self.args[i])])
 
     @cached_property
     def modes(self) -> set[int]:
-        r"The modes of the wires."
+        r"The modes spanned by the wires."
         return set.union(*self.args)
 
     @cached_property
     def indices(self) -> tuple[int,...]:
         r"""
-        The array of indices of this ``Wires`` in the standard order. The array of indices
-        of this ``Wires`` in the standard order. When a subset is selected (e.g. ``.ket``),
-        it skips the indices of wires that do not belong to the subset.
+        The array of indices of this ``Wires`` in the standard order.
+        When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
+        to the subset, but it still counts them because indices refer to the original modes.
 
         .. code-block::
 
-            >>> w = Wires(modes_in_ket = (0,1), modes_out_ket = (0,1))
+            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
             >>> assert w.indices == (0,1,2,3)
             >>> assert w.input.indices == (2,3)
         """
-        modes = (sorted(self.ob), sorted(self.ib), sorted(self.ok), sorted(self.ik))
-        d = (0, len(self.ob), len(self.ob) + len(self.ib), len(self.ob) + len(self.ib) + len(self.ok))
-        return tuple(modes[t].index(m) + d[t] for t in (0,1,2,3) for m in sorted(self.modes & set(modes[t])))
+        a,b,c,_ = self.original.args
+        d = (0, len(a), len(a)+len(b), len(a)+len(b)+len(c))
+        return tuple(sorted(self.original.args[i]).index(m) + d[i] for i in (0,1,2,3) for m in sorted(self.args[i]))
 
     @cached_property
     def input(self) -> Wires:
         r"A view of this ``Wires`` object without output wires."
-        return self.view(exclude_types = self._exclude_types | {0,2})
+        return Wires(set(), self.args[1], set(), self.args[3], self.original)
 
     @cached_property
     def output(self) -> Wires:
         r"A view of this ``Wires`` object without input wires."
-        return self.view(exclude_types = self._exclude_types | {1,3})
+        return Wires(self.args[0], set(), self.args[2], set(), self.original)
 
     @cached_property
     def ket(self) -> Wires:
         r"A view of this ``Wires`` object without bra wires."
-        return self.view(exclude_types = self._exclude_types | {0,1})
+        return Wires(set(), set(), self.args[2], self.args[3], self.original)
     
     @cached_property
     def bra(self) -> Wires:
         r"A view of this ``Wires`` object without ket wires."
-        return self.view(exclude_types = self._exclude_types | {2,3})
+        return Wires(self.args[0], self.args[1], set(), set(), self.original)
     
     @cached_property
     def adjoint(self) -> Wires:
@@ -177,8 +158,8 @@ class Wires:
     @cache
     def __getitem__(self, modes: tuple[int,...] | int) -> Wires:
         r"A view of this Wires object with wires only on the given modes."
-        modes = (modes,) if isinstance(modes, int) else modes
-        return self.view(exclude_modes = self.modes - set(modes))
+        modes_set = {modes} if isinstance(modes, int) else set(modes)
+        return Wires(*(self.args[i] & modes_set for i in (0,1,2,3)), original=self.original)
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -195,15 +176,15 @@ class Wires:
 
     def __bool__(self) -> bool:
         r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."
-        return len(self.indices) > 0
+        return len(self.modes) > 0
 
     def __eq__(self, other) -> bool:
         return self.args == other.args
 
-    def __matmul__(self, other: Wires) -> tuple[Wires, list[int]]:
+    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int,...]]:
         r"""
-        Returns the wires of the circuit composition of self and other (without adding missing adjoints)
-        and the permutation that takes the contracted representations to the standard order.
+        Returns the wires of the circuit composition of self and other without adding missing adjoints.
+        It also returns the permutation that takes the contracted representations to the standard order.
         An exception is raised if any leftover wires would overlap.
 
         Indicating the input and output sets of modes of self and other in pseudocode as A,B,C,D, we have:
@@ -230,13 +211,13 @@ class Wires:
             raise ValueError(f"output ket wires {m} overlap")
         if (m := b & (d - a)):
             raise ValueError(f"input ket wires {m} overlap")
-        bra_out = sorted(C | (A - D))
-        bra_in  = sorted(B | (D - A))
-        ket_out = sorted(c | (a - d))
-        ket_in  = sorted(b | (d - a))
+        bra_out = C | (A - D)
+        bra_in  = B | (D - A)
+        ket_out = c | (a - d)
+        ket_in  = b | (d - a)
         repr_order = list(A-D) + list(B) + list(a-d) + list(b) + list(C) + list(D-A) + list(c) + list(d-a)
-        wires_order = bra_out + bra_in + ket_out + ket_in
-        perm = [wires_order.index(m) for m in repr_order]
+        wires_order = sorted(bra_out) + sorted(bra_in) + sorted(ket_out) + sorted(ket_in)
+        perm = tuple(wires_order.index(m) for m in repr_order)
         return Wires(bra_out, bra_in, ket_out, ket_in), perm
 
     def __repr__(self) -> str:
