@@ -79,7 +79,7 @@ class Ket(State):
         modes: The modes of this states.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+    def __init__(self, name: str = "Ket", modes: tuple[int,...] = ()):
         modes = modes or ()
         name = name or ""
         super().__init__(name, modes_out_ket=modes)
