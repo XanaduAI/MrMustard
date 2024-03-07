@@ -125,9 +125,9 @@ class TestCircuit:
         r4 += "\nmode 2:            ◖Vac◗─────────────────────────────╰BSgate(0.0,0.0)──|N)=       "
         assert repr(circ4) == r4 + "\n\n"
 
-        circ5 = Circuit() >> vac01 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual
+        circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual
         r5 = ""
-        r5 += "\nmode 0:     ◖Vac◗──╭•───────────────────────────────╭•──────────────────────"
+        r5 += "\nmode 0:          ──╭•───────────────────────────────╭•──────────────────────"
         r5 += "\nmode 1:     ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)=  ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)="
         assert repr(circ5) == r5 + "\n\n"
 
