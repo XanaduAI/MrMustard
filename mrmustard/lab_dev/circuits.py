@@ -191,18 +191,18 @@ class Circuit:
                     target = max(lines[m] for m in comp.modes)
 
                     # update ``wires`` and start the line with "──"
-                    wires[lines[control]] = "──"
-                    wires[lines[target]] = "──"
-                    drawing_dict[lines[control]] += "──"
-                    drawing_dict[lines[target]] += "──"
+                    wires[control] = "──"
+                    wires[target] = "──"
+                    drawing_dict[control] += "──"
+                    drawing_dict[target] += "──"
 
                     drawing_dict[control] += "╭"
                     drawing_dict[target] += "╰"
                     for h in range(target + 1, control):
                         drawing_dict[h] += "├" if h in comp.modes else "|"
 
-                    drawing_dict[lines[control]] += "•"
-                    drawing_dict[lines[target]] += component_to_str(comp)[0]
+                    drawing_dict[control] += "•"
+                    drawing_dict[target] += component_to_str(comp)[0]
                 else:
                     labels = component_to_str(comp)
                     for i, m in enumerate(comp.modes):
