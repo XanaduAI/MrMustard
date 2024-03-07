@@ -190,6 +190,16 @@ class CircuitComponent:
             to_fock(self.representation, shape=shape),
             self.wires,
         )
+    
+    def __add__(self, other: CircuitComponent):
+        r"""
+        Implements the addition of circuit components.
+        """
+        if self.wires != other.wires:
+            msg = "Cannot add components with different wires."
+            raise ValueError(msg)
+        rep = self.representation + other.representation
+        return CircuitComponent.from_attributes(self.name, rep, self.wires)
 
     def __eq__(self, other) -> bool:
         r"""

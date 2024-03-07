@@ -36,6 +36,12 @@ class State(CircuitComponent):
     Base class for all states.
     """
 
+    def __lshift__(self, other: State):
+        r"""
+        Projects this state onto another state by using self's ``>>`` on ``other.dual``.
+        """
+        return self >> other.dual
+
 
 class DM(State):
     r"""
