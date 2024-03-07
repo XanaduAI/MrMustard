@@ -42,13 +42,13 @@ class TestUnitary:
     def test_rshift(self):
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
-        u_component = CircuitComponent.from_attributes(
+        u_component = CircuitComponent._from_attributes(
             unitary1.name, unitary1.representation, unitary1.wires
-        )
+        )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent.from_attributes(
+        ch_component = CircuitComponent._from_attributes(
             channel.name, channel.representation, channel.wires
-        )
+        )  # pylint: disable=protected-access
 
         assert isinstance(unitary1 >> unitary2, Unitary)
         assert isinstance(unitary1 >> channel, Channel)
@@ -57,9 +57,9 @@ class TestUnitary:
 
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
-        u_component = CircuitComponent.from_attributes(
+        u_component = CircuitComponent._from_attributes(
             unitary1.name, unitary1.representation, unitary1.wires
-        )
+        )  # pylint: disable=protected-access
 
         assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
         assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
@@ -83,14 +83,14 @@ class TestChannel:
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
-        u_component = CircuitComponent.from_attributes(
+        u_component = CircuitComponent._from_attributes(
             unitary.name, unitary.representation, unitary.wires
-        )
+        )  # pylint: disable=protected-access
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
-        ch_component = CircuitComponent.from_attributes(
+        ch_component = CircuitComponent._from_attributes(
             channel1.name, channel1.representation, channel1.wires
-        )
+        )  # pylint: disable=protected-access
 
         assert isinstance(channel1 >> unitary, Channel)
         assert isinstance(channel1 >> channel2, Channel)
@@ -99,9 +99,9 @@ class TestChannel:
 
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
-        ch_component = CircuitComponent.from_attributes(
+        ch_component = CircuitComponent._from_attributes(
             channel1.name, channel1.representation, channel1.wires
-        )
+        )  # pylint: disable=protected-access
 
         assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
         assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"

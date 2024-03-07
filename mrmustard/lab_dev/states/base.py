@@ -47,8 +47,6 @@ class DM(State):
     """
 
     def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
         super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -82,8 +80,6 @@ class Ket(State):
     """
 
     def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
         super().__init__(name, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

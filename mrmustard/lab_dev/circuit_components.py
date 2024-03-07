@@ -46,20 +46,20 @@ class CircuitComponent:
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         representation: Optional[Representation] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
         modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
     ) -> None:
-        self._name = name
+        self._name = name or ""
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
         self._representation = representation
 
     @classmethod
-    def from_attributes(
+    def _from_attributes(
         cls,
         name: str,
         representation: Representation,
@@ -67,7 +67,11 @@ class CircuitComponent:
     ):
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``).
+        and a ``Representation``), of the same type as ``self``.
+
+        This function does not check that the given attributes are consistent with the
+        type of ``self``. If used improperly, it may return ``State``s with both input and
+        output wires, or ``Unitaries`` with wires on the bra side.
 
         Args:
             name: The name of this component.
@@ -77,9 +81,14 @@ class CircuitComponent:
         Returns:
             A circuit component.
         """
-        ret = CircuitComponent(name)
-        ret._wires = wires
+        types = ["CircuitComponent", "Unitary", "Channel", "Ket", "DM"]
+        ret_cls = [tp for tp in cls.mro() if tp.__name__ in types][0]
+
+        ret = ret_cls()
+        ret._name = name
         ret._representation = representation
+        ret._wires = wires
+
         return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
@@ -207,7 +216,7 @@ class CircuitComponent:
         order = [contracted_idx.index(id) for id in wires_ret.ids]
         representation_ret = representation_ret.reorder(order)
 
-        return CircuitComponent.from_attributes("", representation_ret, wires_ret)
+        return CircuitComponent._from_attributes("", representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

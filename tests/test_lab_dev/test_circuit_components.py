@@ -23,7 +23,7 @@ from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
 from mrmustard.lab_dev.states import Vacuum
-from mrmustard.lab_dev.transformations import Dgate, Attenuator
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -49,9 +49,23 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
         cc1 = Dgate([1, 8], x=x, y=y)
-        cc2 = CircuitComponent.from_attributes(cc1.name, cc1.representation, cc1.wires)
+        cc2 = Dgate._from_attributes(
+            cc1.name, cc1.representation, cc1.wires
+        )  # pylint: disable=protected-access
+        cc3 = Unitary._from_attributes(
+            cc1.name, cc1.representation, cc1.wires
+        )  # pylint: disable=protected-access
+        cc4 = CircuitComponent._from_attributes(
+            cc1.name, cc1.representation, cc1.wires
+        )  # pylint: disable=protected-access
 
         assert cc1 == cc2
+        assert cc1 == cc3
+        assert cc1 == cc4
+
+        assert isinstance(cc2, Unitary) and not isinstance(cc3, Dgate)
+        assert isinstance(cc3, Unitary) and not isinstance(cc3, Dgate)
+        assert isinstance(cc4, CircuitComponent) and not isinstance(cc4, Unitary)
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
