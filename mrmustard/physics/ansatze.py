@@ -445,11 +445,9 @@ class ArrayAnsatz(Ansatz):
         Returns:
             ArrayAnsatz: The addition of this ansatz and other.
         """
-        if self.array.shape[1:] != other.array.shape[1:]:
-            raise ValueError("Cannot add arrays of different shape.")
-
         try:
-            return self.__class__(array=math.concat([self.array, other.array], axis=0))
+            new_array = [a + b for a in self.array for b in other.array]
+            return self.__class__(array=math.astensor(new_array))
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
