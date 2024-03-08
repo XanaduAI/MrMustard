@@ -185,46 +185,55 @@ class Ket(State):
         ret._representation = Fock(array)
         return ret
 
+    @classmethod
     def from_phasespace(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
-        mean: ComplexMatrix,
+        means: ComplexMatrix,
         name: Optional[str] = None,
-        check_purity: bool = True,
+        atol_purity: Optional[float] = 1e-3,
     ):
         r"""General constructor for kets in phase space representation.
 
         Args:
-            cov: The covariance matrix
-            mean (Batch[ComplexVector]): The vector of means.
+            cov: The covariance matrix.
+            means: The vector of means.
             modes: The modes of this states.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
-            check_purity: Whether to check if the state is pure.
+            atol_purity: If not ``None``, the purity of the returned state is computed. If it is
+                smaller than ``1-atol_purity`` or larger than ``1+atol_purity``, an error is
+                raised.
 
         Returns:
             A ``Ket`` state.
 
         Raises:
-            ValueError
+            ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
+                with the number of modes.
+            ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
+                is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
         """
         cov = math.astensor(cov)
-        mean = math.astensor(mean)
+        means = math.astensor(means)
 
-        # n_modes = len(modes)
-        # if len(mean.shape) != n_modes:
-        #     msg = f"Given array is inconsistent with modes=``{modes}``."
-        #     raise ValueError(msg)
+        n_modes = len(modes)
+        if means.shape != (2*n_modes,):
+            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+        if cov.shape != (2*n_modes, 2*n_modes):
+            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
         
-        if check_purity:
+        if atol_purity:
             p = purity(cov)
-            if p < 1.0 - settings.ATOL_PURITY:
-                msg = f"Cannot initialize a ket: purity is {purity:.3f} (must be 1.0)."
+            if p < 1.0 - atol_purity:
+                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
                 raise ValueError(msg)
         
         ret = Ket(name, modes)
-        ret._representation = Bargmann(wigner_to_bargmann_psi(cov, mean))
+        ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
