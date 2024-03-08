@@ -67,14 +67,23 @@ class CircuitComponent:
     ):
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``), of the same type as ``self``.
+        and a ``Representation``), of type ``cls``.
 
-        This function does not check that the given attributes are consistent with the
-        type of ``self``. If used improperly, it may return, e.g., ``Ket``s with both input
-        and output wires, or ``Unitarie``s with wires on the bra side.
+        This function needs to be used with caution. In particular:
+
+            * It is meant to be used to initialize exclusively objects of type
+              ``CircuitComponent``, ``Ket``, ``DM``, ``Unitary``, and ``Channel``, which
+              store a representation to memory upon initialization (as opposed to the
+              convenience states and gates provided in lab_dev, e.g. ``Vacuum`` and ``Dgate``,
+              which compute the representation at runtime.
+
+            * It does not check that the given attributes are consistent with the
+              type of ``self``. If used improperly, it may be used to initialize, e.g.,
+              ``Ket``s with both input and output wires, or ``Unitary``s with wires on
+              the bra side.
 
         Raise:
-            ValueError: If an object of the same type as ``self`` cannot be initialized.
+            ValueError: If an object of type ``cls`` cannot be initialized from its attributes.  
 
         Args:
             name: The name of this component.
@@ -82,7 +91,7 @@ class CircuitComponent:
             wires: The wires of this component.
 
         Returns:
-            A circuit component.
+            A circuit component of type ``cls`` with the given attributes.
         """
         try:
             ret = cls.mro()[0]()
