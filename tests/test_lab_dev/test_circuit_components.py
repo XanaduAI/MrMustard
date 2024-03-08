@@ -49,23 +49,26 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
         cc1 = Dgate([1, 8], x=x, y=y)
-        cc2 = Dgate._from_attributes(
+        cc2 = Unitary._from_attributes(
             cc1.name, cc1.representation, cc1.wires
         )  # pylint: disable=protected-access
-        cc3 = Unitary._from_attributes(
-            cc1.name, cc1.representation, cc1.wires
-        )  # pylint: disable=protected-access
-        cc4 = CircuitComponent._from_attributes(
+        cc3 = CircuitComponent._from_attributes(
             cc1.name, cc1.representation, cc1.wires
         )  # pylint: disable=protected-access
 
         assert cc1 == cc2
         assert cc1 == cc3
-        assert cc1 == cc4
 
-        assert isinstance(cc2, Unitary) and not isinstance(cc3, Dgate)
-        assert isinstance(cc3, Unitary) and not isinstance(cc3, Dgate)
-        assert isinstance(cc4, CircuitComponent) and not isinstance(cc4, Unitary)
+        assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
+        assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
+
+    def test_from_attributes_error(self):
+        cc = Dgate([1, 8], x=1, y=2)
+
+        with pytest.raises(ValueError):
+            Dgate._from_attributes(
+                cc.name, cc.representation, cc.wires
+            )  # pylint: disable=protected-access
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)

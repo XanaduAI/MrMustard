@@ -67,7 +67,7 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        modes: Optional[Iterable[int]],
+        modes: Iterable[int],
         x: Union[float, Iterable[float]] = 0.0,
         y: Union[float, Iterable[float]] = 0.0,
         x_trainable: bool = False,

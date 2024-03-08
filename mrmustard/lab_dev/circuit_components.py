@@ -70,8 +70,11 @@ class CircuitComponent:
         and a ``Representation``), of the same type as ``self``.
 
         This function does not check that the given attributes are consistent with the
-        type of ``self``. If used improperly, it may return ``State``s with both input and
-        output wires, or ``Unitaries`` with wires on the bra side.
+        type of ``self``. If used improperly, it may return, e.g., ``Ket``s with both input
+        and output wires, or ``Unitarie``s with wires on the bra side.
+
+        Raise:
+            ValueError: If an object of the same type as ``self`` cannot be initialized.
 
         Args:
             name: The name of this component.
@@ -81,10 +84,12 @@ class CircuitComponent:
         Returns:
             A circuit component.
         """
-        types = ["CircuitComponent", "Unitary", "Channel", "Ket", "DM"]
-        ret_cls = [tp for tp in cls.mro() if tp.__name__ in types][0]
+        try:
+            ret = cls.mro()[0]()
+        except TypeError:
+            msg = f"Cannot instantiate ``{cls.mro()[0].__name__}`` object from its attributes."
+            raise ValueError(msg)
 
-        ret = ret_cls()
         ret._name = name
         ret._representation = representation
         ret._wires = wires
