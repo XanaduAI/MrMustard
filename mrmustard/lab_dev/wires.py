@@ -79,14 +79,14 @@ class Wires:
     """
     def __init__(
         self,
-        modes_out_bra: set[int] = set(),
-        modes_in_bra: set[int] = set(),
-        modes_out_ket: set[int] = set(),
-        modes_in_ket: set[int] = set(),
+        modes_out_bra: set[int] = None,
+        modes_in_bra: set[int] = None,
+        modes_out_ket: set[int] = None,
+        modes_in_ket: set[int] = None,
         original: Optional[Wires] = None
     ) -> None:
 
-        self.args = modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket
+        self.args = set(modes_out_bra) or set(), set(modes_in_bra) or set(), set(modes_out_ket) or set(), set(modes_in_ket) or set()
         self._original = original
 
     @property
@@ -204,13 +204,13 @@ class Wires:
         A, B, a, b = self.args
         C, D, c, d = other.args
         if (m := C & (A - D)):
-            raise ValueError(f"output bra wires {m} overlap")
+            raise ValueError(f"output bra modes {m} overlap")
         if (m := B & (D - A)):
-            raise ValueError(f"input bra wires {m} overlap")
+            raise ValueError(f"input bra modes {m} overlap")
         if (m := c & (a - d)):
-            raise ValueError(f"output ket wires {m} overlap")
+            raise ValueError(f"output ket modes {m} overlap")
         if (m := b & (d - a)):
-            raise ValueError(f"input ket wires {m} overlap")
+            raise ValueError(f"input ket modes {m} overlap")
         bra_out = C | (A - D)
         bra_in  = B | (D - A)
         ket_out = c | (a - d)
