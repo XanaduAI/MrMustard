@@ -75,7 +75,7 @@ class CircuitComponent:
               ``CircuitComponent``, ``Ket``, ``DM``, ``Unitary``, and ``Channel``, which
               store a representation to memory upon initialization (as opposed to the
               convenience states and gates provided in lab_dev, e.g. ``Vacuum`` and ``Dgate``,
-              which compute the representation at runtime.
+              which compute the representation at runtime).
 
             * It does not check that the given attributes are consistent with the
               type of ``self``. If used improperly, it may be used to initialize, e.g.,
