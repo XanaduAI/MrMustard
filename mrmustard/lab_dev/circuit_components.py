@@ -78,7 +78,7 @@ class CircuitComponent:
               which compute the representation at runtime).
 
             * It does not check that the given attributes are consistent with the
-              type of ``self``. If used improperly, it may be used to initialize, e.g.,
+              given ``cls``. If used improperly, it may be used to initialize, e.g.,
               ``Ket``s with both input and output wires, or ``Unitary``s with wires on
               the bra side.
 
