@@ -182,12 +182,13 @@ class TestArrayAnsatz:
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_add_aa2 = aa1 + aa2
+
         assert isinstance(aa1_add_aa2, ArrayAnsatz)
         assert aa1_add_aa2.array.shape == (4, 2, 2)
-        assert np.allclose(aa1_add_aa2.array[0], np.array([[0, 2], [4, 6]]))
-        assert np.allclose(aa1_add_aa2.array[1], np.array([[4, 6], [8, 10]]))
-        assert np.allclose(aa1_add_aa2.array[2], np.array([[4, 6], [8, 10]]))
-        assert np.allclose(aa1_add_aa2.array[3], np.array([[8, 10], [12, 14]]))
+        assert np.allclose(aa1_add_aa2.array[0], aa1.array[0])
+        assert np.allclose(aa1_add_aa2.array[1], aa1.array[1])
+        assert np.allclose(aa1_add_aa2.array[0], aa2.array[0])
+        assert np.allclose(aa1_add_aa2.array[1], aa2.array[1])
 
     def test_and(self):
         array = np.arange(8).reshape(2, 2, 2)

@@ -65,10 +65,10 @@ class Representation(ABC):
         r"""
         Adds this representation to another.
         """
-        print(self, other.__class__)
-        if not isinstance(self.ansatz, other.ansatz.__class__):
-            msg = f"Cannot add ``{type(self)}`` representation to "
-            msg += f"``{type(other)}`` representation."
+        if self.__class__.__name__ != other.__class__.__name__:
+            msg = f"Cannot add ``{self.__class__.__name__}`` representation to "
+            msg += f"``{other.__class__.__name__}`` representation."
+            raise ValueError(msg)
         return self.from_ansatz(self.ansatz + other.ansatz)
 
     def __sub__(self, other) -> Representation:

@@ -185,12 +185,12 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return CircuitComponent.from_attributes(
+        return self.from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
         )
-    
+
     def __add__(self, other: CircuitComponent):
         r"""
         Implements the addition of circuit components.
@@ -199,7 +199,7 @@ class CircuitComponent:
             msg = "Cannot add components with different wires."
             raise ValueError(msg)
         rep = self.representation + other.representation
-        return CircuitComponent.from_attributes(self.name, rep, self.wires)
+        return self.from_attributes(self.name, rep, self.wires)
 
     def __eq__(self, other) -> bool:
         r"""

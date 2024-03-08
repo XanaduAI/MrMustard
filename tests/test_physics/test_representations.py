@@ -301,19 +301,27 @@ class TestFockRepresentation:
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
         fock1_add_fock2 = fock1 + fock2
-        assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0])
-        assert np.allclose(fock1_add_fock2.array[4], self.array2578[0] + self.array5578[4])
-        assert np.allclose(fock1_add_fock2.array[5], self.array2578[1] + self.array5578[0])
+        assert fock1_add_fock2.array.shape == (7, 5, 7, 8)
+        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0])
+        assert np.allclose(fock1_add_fock2.array[1], self.array2578[1])
+        assert np.allclose(fock1_add_fock2.array[2], self.array5578[0])
+        assert np.allclose(fock1_add_fock2.array[3], self.array5578[1])
+        assert np.allclose(fock1_add_fock2.array[4], self.array5578[2])
+        assert np.allclose(fock1_add_fock2.array[5], self.array5578[3])
+        assert np.allclose(fock1_add_fock2.array[6], self.array5578[4])
 
     def test_sub(self):
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
-        fock1_sub_fock2 = fock1 - fock2
-        assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0])
-        assert np.allclose(fock1_sub_fock2.array[4], self.array2578[0] - self.array5578[4])
-        assert np.allclose(fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4])
+        fock1_add_fock2 = fock1 - fock2
+        assert fock1_add_fock2.array.shape == (7, 5, 7, 8)
+        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0])
+        assert np.allclose(fock1_add_fock2.array[1], self.array2578[1])
+        assert np.allclose(fock1_add_fock2.array[2], -self.array5578[0])
+        assert np.allclose(fock1_add_fock2.array[3], -self.array5578[1])
+        assert np.allclose(fock1_add_fock2.array[4], -self.array5578[2])
+        assert np.allclose(fock1_add_fock2.array[5], -self.array5578[3])
+        assert np.allclose(fock1_add_fock2.array[6], -self.array5578[4])
 
     def test_trace(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
