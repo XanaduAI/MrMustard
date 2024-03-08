@@ -239,6 +239,12 @@ class CircuitComponent:
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
+    def __lshift__(self, other: CircuitComponent):
+        r"""
+        Projects this component onto another component by using self's ``>>`` on ``other.dual``.
+        """
+        return self >> other.dual
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when

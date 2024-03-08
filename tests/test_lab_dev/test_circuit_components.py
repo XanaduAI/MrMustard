@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Number, Vacuum
+from mrmustard.lab_dev.states import Coherent, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 from mrmustard.lab_dev.wires import Wires
 
@@ -185,6 +185,16 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_lshift(self):
+        ket01 = Coherent([0, 1], 1)
+        n0 = Number([0], n=5)
+        unitary = Dgate([0], 1)
+        channel = Attenuator([1], 1)
+
+        assert ket01 << n0 == ket01 >> n0.dual
+        assert ket01 >> unitary << n0 == ket01 >> unitary >> n0.dual
+        assert ket01 >> channel << n0 == ket01 >> channel >> n0.dual
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -246,19 +256,19 @@ class TestCircuitComponent:
         d2 = Dgate([2], x=0.1, y=0.2)
         d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
         a1 = Attenuator([1], transmissivity=0.8)
-        n12 = Number([1, 2], n=1).dual
+        n12 = Number([1, 2], n=1)
 
         # bargmann >> fock
-        r1 = vac12 >> d1 >> d2 >> a1 >> n12
+        r1 = vac12 >> d1 >> d2 >> a1 << n12
 
         # fock >> bargmann
-        r2 = vac12.to_fock() >> d1 >> d2 >> a1 >> n12
+        r2 = vac12.to_fock() >> d1 >> d2 >> a1 << n12
 
         # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock() >> d2 >> a1 >> n12
+        r3 = vac12 >> d1.to_fock() >> d2 >> a1 << n12
 
         # fock only
-        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
+        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() << n12.to_fock()
 
         assert math.allclose(r1.representation.array, r2.representation.array)
         assert math.allclose(r1.representation.array, r3.representation.array)
