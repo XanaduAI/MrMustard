@@ -14,13 +14,12 @@
 
 """Tests for Wires class."""
 
-# pylint: missing-function-docstring
-
 import pytest
 
 from mrmustard.lab_dev.wires import Wires
 
 
+# pylint: missing-function-docstring
 class TestWires:
     r"""
     Tests for the Wires class.
