@@ -105,7 +105,7 @@ class Wires:
     @cached_property
     def types(self) -> set[int]:
         r"A set of up to four integers representing the types of wires in the standard order."
-        return set([i for i in (0, 1, 2, 3) if bool(self.args[i])])
+        return set(i for i in (0, 1, 2, 3) if bool(self.args[i]))
 
     @cached_property
     def modes(self) -> set[int]:
