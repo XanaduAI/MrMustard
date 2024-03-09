@@ -226,21 +226,21 @@ class Wires:
         """
         A, B, a, b = self.args
         C, D, c, d = other.args
-        if m := C & (A - D):
+        sets = (A - D, B, a - d, b, C, D - A, c, d - a)
+        if m := sets[0] & sets[4]:
             raise ValueError(f"output bra modes {m} overlap")
-        if m := B & (D - A):
+        if m := sets[1] & sets[5]:
             raise ValueError(f"input bra modes {m} overlap")
-        if m := c & (a - d):
+        if m := sets[2] & sets[6]:
             raise ValueError(f"output ket modes {m} overlap")
-        if m := b & (d - a):
+        if m := sets[3] & sets[7]:
             raise ValueError(f"input ket modes {m} overlap")
-        bra_out = C | (A - D)
-        bra_in = B | (D - A)
-        ket_out = c | (a - d)
-        ket_in = b | (d - a)
+        bra_out = sets[0] | sets[4]
+        bra_in = sets[1] | sets[5]
+        ket_out = sets[2] | sets[6]
+        ket_in = sets[3] | sets[7]
         w = Wires(bra_out, bra_in, ket_out, ket_in)
         # calculate permutation from the contracted representation to the standard order
-        sets = (A - D, B, a - d, b, C, D - A, c, d - a)
         lists = list(map(sorted, sets))
         offsets = list(map(len, sets))
         final = [sorted(bra_out), sorted(bra_in), sorted(ket_out), sorted(ket_in)]
