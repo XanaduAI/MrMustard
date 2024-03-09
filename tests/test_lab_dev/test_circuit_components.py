@@ -37,11 +37,11 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(name, representation, modes_out_ket=(1,8), modes_in_ket=(1,8))
+        cc = CircuitComponent(name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8))
 
         assert cc.name == name
-        assert list(cc.modes) == [1,8]
-        assert cc.wires == Wires(modes_out_ket={1,8}, modes_in_ket={1,8})
+        assert list(cc.modes) == [1, 8]
+        assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])

@@ -25,6 +25,7 @@ class TestWires:
     r"""
     Tests for the Wires class.
     """
+
     def test_args(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})

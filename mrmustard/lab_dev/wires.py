@@ -24,6 +24,7 @@ __all__ = ["Wires"]
 
 # cached_property = property
 
+
 class Wires:
     r"""
     A class with wire functionality for tensor network applications.
@@ -81,13 +82,14 @@ class Wires:
         modes_out_ket (set[int]): The output modes on the ket side.
         modes_in_ket  (set[int]): The input modes on the ket side.
     """
+
     def __init__(
         self,
         modes_out_bra: set[int] = set(),
         modes_in_bra: set[int] = set(),
         modes_out_ket: set[int] = set(),
         modes_in_ket: set[int] = set(),
-        original: Optional[Wires] = None
+        original: Optional[Wires] = None,
     ) -> None:
 
         self.mode_cache = {}
@@ -99,11 +101,11 @@ class Wires:
         if self._original is None:
             return self
         return self._original
-    
+
     @cached_property
     def types(self) -> set[int]:
         r"A set of up to four integers representing the types of wires in the standard order."
-        return set([i for i in (0,1,2,3) if bool(self.args[i])])
+        return set([i for i in (0, 1, 2, 3) if bool(self.args[i])])
 
     @cached_property
     def modes(self) -> set[int]:
@@ -111,7 +113,7 @@ class Wires:
         return set.union(*self.args)
 
     @cached_property
-    def indices(self) -> tuple[int,...]:
+    def indices(self) -> tuple[int, ...]:
         r"""
         The array of indices of this ``Wires`` in the standard order.
         When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
@@ -123,9 +125,13 @@ class Wires:
             >>> assert w.indices == (0,1,2,3)
             >>> assert w.input.indices == (2,3)
         """
-        a,b,c,_ = self.original.args
-        d = (0, len(a), len(a)+len(b), len(a)+len(b)+len(c))
-        return tuple(sorted(self.original.args[i]).index(m) + d[i] for i in (0,1,2,3) for m in sorted(self.args[i]))
+        a, b, c, _ = self.original.args
+        d = (0, len(a), len(a) + len(b), len(a) + len(b) + len(c))
+        return tuple(
+            sorted(self.original.args[i]).index(m) + d[i]
+            for i in (0, 1, 2, 3)
+            for m in sorted(self.args[i])
+        )
 
     @cached_property
     def input(self) -> Wires:
@@ -141,12 +147,12 @@ class Wires:
     def ket(self) -> Wires:
         r"A view of this ``Wires`` object without bra wires."
         return Wires(set(), set(), self.args[2], self.args[3], self.original)
-    
+
     @cached_property
     def bra(self) -> Wires:
         r"A view of this ``Wires`` object without ket wires."
         return Wires(self.args[0], self.args[1], set(), set(), self.original)
-    
+
     @cached_property
     def adjoint(self) -> Wires:
         r"A new ``Wires`` object obtained by swapping ket and bra wires."
@@ -160,11 +166,14 @@ class Wires:
     def __hash__(self) -> int:  # for getitem caching
         return hash(tuple(s) for s in self.args)
 
-    def __getitem__(self, modes: tuple[int,...] | int) -> Wires:
+    def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"A view of this Wires object with wires only on the given modes."
         modes_set = {modes} if isinstance(modes, int) else set(modes)
         if modes not in self.mode_cache:
-            self.mode_cache[modes] = Wires(*(self.args[i] & modes_set for i in (0,1,2,3)), original=Wires(*self.original.args))
+            self.mode_cache[modes] = Wires(
+                *(self.args[i] & modes_set for i in (0, 1, 2, 3)),
+                original=Wires(*self.original.args),
+            )
         return self.mode_cache[modes]
 
     def __add__(self, other: Wires) -> Wires:
@@ -187,7 +196,7 @@ class Wires:
     def __eq__(self, other) -> bool:
         return self.args == other.args
 
-    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int,...]]:
+    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int, ...]]:
         r"""
         Returns the wires of the circuit composition of self and other without adding missing
         adjoints. It also returns the permutation that takes the contracted representations
@@ -212,24 +221,24 @@ class Wires:
         """
         A, B, a, b = self.args
         C, D, c, d = other.args
-        if (m := C & (A - D)):
+        if m := C & (A - D):
             raise ValueError(f"output bra modes {m} overlap")
-        if (m := B & (D - A)):
+        if m := B & (D - A):
             raise ValueError(f"input bra modes {m} overlap")
-        if (m := c & (a - d)):
+        if m := c & (a - d):
             raise ValueError(f"output ket modes {m} overlap")
-        if (m := b & (d - a)):
+        if m := b & (d - a):
             raise ValueError(f"input ket modes {m} overlap")
         bra_out = C | (A - D)
-        bra_in  = B | (D - A)
+        bra_in = B | (D - A)
         ket_out = c | (a - d)
-        ket_in  = b | (d - a)
+        ket_in = b | (d - a)
         w = Wires(bra_out, bra_in, ket_out, ket_in)
         # calculate permutation from the contracted representation to the standard order
-        sets = (A-D, B, a-d, b, C, D-A, c, d-a)
+        sets = (A - D, B, a - d, b, C, D - A, c, d - a)
         lists = list(map(sorted, sets))
         offsets = list(map(len, sets))
-        final  = [sorted(bra_out), sorted(bra_in), sorted(ket_out), sorted(ket_in)]
+        final = [sorted(bra_out), sorted(bra_in), sorted(ket_out), sorted(ket_in)]
         perm = []
         for m in final[0]:
             if m in sets[0]:
@@ -255,4 +264,3 @@ class Wires:
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
-    

@@ -113,7 +113,7 @@ class Representation(ABC):
         Takes the outer product of this representation with another.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
-    
+
     def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
         r"""
         Stores the indices for contraction.
