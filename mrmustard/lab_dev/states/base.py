@@ -23,8 +23,6 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
-
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
 

@@ -20,6 +20,7 @@ import pytest
 
 from mrmustard.lab_dev.wires import Wires
 
+
 class TestWires:
     r"""
     Tests for the Wires class.

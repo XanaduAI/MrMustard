@@ -101,6 +101,7 @@ class Wires:
 
     @property
     def original(self):
+        r"The 'parent' ``Wires`` object, if any."
         if self._original is None:
             return self
         return self._original
@@ -187,7 +188,7 @@ class Wires:
         """
         new_args = []
         for t, (m1, m2) in enumerate(zip(self.args, other.args)):
-            if m := (m1 & m2):
+            if m := m1 & m2:
                 raise ValueError(f"{t}-type wires overlap at mode {m}")
             new_args.append(m1 | m2)
         return Wires(*new_args)
@@ -199,8 +200,9 @@ class Wires:
     def __eq__(self, other) -> bool:
         return self.args == other.args
 
-    
-    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int, ...]]:  # pylint disable=too-many-branches
+    def __matmul__(
+        self, other: Wires
+    ) -> tuple[Wires, tuple[int, ...]]:  # pylint disable=too-many-branches
         r"""
         Returns the wires of the circuit composition of self and other without adding missing
         adjoints. It also returns the permutation that takes the contracted representations
