@@ -27,7 +27,7 @@ class Wires:
     r"""
     A class with wire functionality for tensor network applications.
 
-    In MrMustard, instances of `CircuitComponent` have a ``Wires`` attribute.
+    In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a circuit picture.
     For example, an `N`-mode pure state has `N` ket wires on the output side,
     while a `N`-mode mixed state has `N` ket wires and `N` bra wires on the output side.
