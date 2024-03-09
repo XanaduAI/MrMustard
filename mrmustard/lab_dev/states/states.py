@@ -68,7 +68,7 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        modes: tuple[int,...],
+        modes: tuple[int, ...],
         x: Union[float, Sequence[float]] = 0.0,
         y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
@@ -114,8 +114,7 @@ class Number(Ket):
 
     """
 
-    def __init__(
-        self, modes: tuple[int,...], n: Union[int, tuple[int,...]]) -> None:
+    def __init__(self, modes: tuple[int, ...], n: Union[int, tuple[int, ...]]) -> None:
         super().__init__("N", modes=modes)
 
         self._n = math.atleast_1d(n)
@@ -166,7 +165,7 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: tuple[int,...],
+        modes: tuple[int, ...],
     ) -> None:
         super().__init__("Vac", modes=modes)
 
