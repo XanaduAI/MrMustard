@@ -45,14 +45,14 @@ class CircuitComponent:
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         representation: Optional[Bargmann | Fock] = None,
         modes_out_bra: tuple[int, ...] = (),
         modes_in_bra: tuple[int, ...] = (),
         modes_out_ket: tuple[int, ...] = (),
         modes_in_ket: tuple[int, ...] = (),
     ) -> None:
-        self._name = name or ""
+        self._name = name or "CC"+"".join(str(self.wires.modes))
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
