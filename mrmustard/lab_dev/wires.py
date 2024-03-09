@@ -201,9 +201,7 @@ class Wires:
         return self.args == other.args
 
     # pylint: disable=too-many-branches
-    def __matmul__(
-        self, other: Wires
-    ) -> tuple[Wires, tuple[int, ...]]:
+    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int, ...]]:
         r"""
         Returns the wires of the circuit composition of self and other without adding missing
         adjoints. It also returns the permutation that takes the contracted representations
