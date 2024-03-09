@@ -19,7 +19,7 @@ This module contains the classes for the available representations.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -47,6 +47,12 @@ class Representation(ABC):
     them with all the functionality required to perform mathematical operations, such as equality,
     multiplication, subtraction, etc.
     """
+
+    @abstractproperty
+    def ansatz(self) -> Ansatz:
+        r"""
+        The ansatz of the representation.
+        """
 
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
@@ -107,6 +113,12 @@ class Representation(ABC):
         Takes the outer product of this representation with another.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
+    
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+        r"""
+        Stores the indices for contraction.
+        """
+        raise NotImplementedError
 
 
 class Bargmann(Representation):
@@ -203,7 +215,14 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self.ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A, b, c)
+
+    @property
+    def ansatz(self) -> PolyExpAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
@@ -444,7 +463,14 @@ class Fock(Representation):
         self._contract_idxs: tuple[int, ...] = ()
         if not batched:
             array = array[None, ...]
-        self.ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array)
+
+    @property
+    def ansatz(self) -> ArrayAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ

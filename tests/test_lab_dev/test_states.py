@@ -37,8 +37,8 @@ class TestKet:
         state = Ket(name, modes)
 
         assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
-        assert state.wires == Wires(modes_out_ket=modes)
+        assert list(state.modes) == sorted(modes)
+        assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
@@ -72,12 +72,12 @@ class TestDM:
     """
 
     @pytest.mark.parametrize("name", [None, "my_dm"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         state = DM(name, modes)
 
         assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
+        assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_rshift(self):
@@ -105,8 +105,8 @@ class TestDM:
         dm = ket >> channel
         dm_component = CircuitComponent.from_attributes(dm.name, dm.representation, dm.wires)
 
-        assert repr(dm) == "DM(name=None, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
+        assert repr(dm) == "DM(name=DM, modes=[0, 1])"
+        assert repr(dm_component) == "CircuitComponent(name=DM, modes=[0, 1])"
 
 
 class TestCoherent:

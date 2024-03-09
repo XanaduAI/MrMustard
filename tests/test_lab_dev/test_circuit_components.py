@@ -40,7 +40,7 @@ class TestCircuitComponent:
         cc = CircuitComponent(name, representation, modes_out_ket=(1,8), modes_in_ket=(1,8))
 
         assert cc.name == name
-        assert cc.modes == {1,8}
+        assert list(cc.modes) == [1,8]
         assert cc.wires == Wires(modes_out_ket={1,8}, modes_in_ket={1,8})
         assert cc.representation == representation
 
@@ -170,7 +170,7 @@ class TestCircuitComponent:
 
         result = vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2
 
-        assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
+        assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
         assert np.allclose(result.representation.A, 0)
         assert np.allclose(
             result.representation.b,

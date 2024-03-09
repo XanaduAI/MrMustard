@@ -19,9 +19,8 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called
 
 from __future__ import annotations
-
-from typing import Optional, Sequence, Union
 import numpy as np
+from typing import Optional, Union
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
@@ -53,17 +52,18 @@ class CircuitComponent:
         modes_out_ket: tuple[int,...] = (),
         modes_in_ket: tuple[int,...] = (),
     ) -> None:
-        self._name = name
+        self._name = name or ""
         self._wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         self._parameter_set = ParameterSet()
         self._representation = representation
         # handle out-of-order modes
         a,b,c,d = sorted(modes_out_bra), sorted(modes_in_bra), sorted(modes_out_ket), sorted(modes_in_ket)
-        perm = (tuple(np.argsort(a)) + tuple(np.argsort(b)+len(a)) +
-                tuple(np.argsort(c)+len(a)+len(b)) + tuple(np.argsort(d)+len(a) + len(b) + len(c)))
-        self._mode_map = {i: j for i, j in enumerate(perm)}
-        if self._representation is not None:
-            self._representation = self._representation.reorder(tuple(perm))
+        if a != sorted(a) or b != sorted(b) or c != sorted(c) or d != sorted(d):
+            offsets = [0, len(a), len(a)+len(b), len(a)+len(b)+len(c)]
+            perm = (tuple(np.argsort(a)) + tuple(np.argsort(b)+offsets[0])
+                    + tuple(np.argsort(c)+offsets[1]) + tuple(np.argsort(d)+offsets[2]))
+            if self._representation is not None:
+                self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
     def from_attributes(
@@ -108,7 +108,7 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
-    def representation(self) -> Representation:
+    def representation(self) -> Optional[Representation]:
         r"""
         A representation of this circuit component.
         """
@@ -119,7 +119,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return self.wires.modes
+        return sorted(self.wires.modes)
 
     @property
     def name(self) -> str:
