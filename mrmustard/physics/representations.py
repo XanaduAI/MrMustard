@@ -48,7 +48,8 @@ class Representation(ABC):
     multiplication, subtraction, etc.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def ansatz(self) -> Ansatz:
         r"""
         The ansatz of the representation.
