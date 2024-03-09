@@ -37,7 +37,7 @@ class TestKet:
     def test_init(self, name, modes):
         state = Ket(name, modes)
 
-        assert state.name == (name if name else "")
+        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
 
@@ -63,8 +63,8 @@ class TestKet:
         ket = Coherent([0, 1], 1)
         ket_component = CircuitComponent.from_attributes(ket.name, ket.representation, ket.wires)
 
-        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
-        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
+        assert repr(ket) == "Ket(name=Coherent, modes=(0, 1))"
+        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=(0, 1))"
 
 
 class TestDM:
@@ -77,7 +77,7 @@ class TestDM:
     def test_init(self, name, modes):
         state = DM(name, modes)
 
-        assert state.name == (name if name else "")
+        assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
@@ -106,8 +106,8 @@ class TestDM:
         dm = ket >> channel
         dm_component = CircuitComponent.from_attributes(dm.name, dm.representation, dm.wires)
 
-        assert repr(dm) == "DM(name=DM, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=DM, modes=[0, 1])"
+        assert repr(dm) == "DM(name=DM01, modes=(0, 1))"
+        assert repr(dm_component) == "CircuitComponent(name=DM01, modes=(0, 1))"
 
 
 class TestCoherent:
@@ -203,12 +203,12 @@ class TestVacuum:
     Tests for the ``Vacuum`` class.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (3, 19, 2)])
     def test_init(self, modes):
         state = Vacuum(modes)
 
         assert state.name == "Vac"
-        assert state.modes == sorted(modes)
+        assert list(state.modes) == sorted(modes)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):

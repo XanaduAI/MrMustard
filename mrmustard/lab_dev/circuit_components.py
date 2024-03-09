@@ -54,11 +54,10 @@ class CircuitComponent:
         modes_out_ket: tuple[int, ...] = (),
         modes_in_ket: tuple[int, ...] = (),
     ) -> None:
-        self._name = name or "CC" + "".join(str(self.wires.modes))
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        print("created wires", self._wires, "for component", self._name)
+        self._name = name or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
         # handle out-of-order modes
@@ -82,7 +81,7 @@ class CircuitComponent:
     @classmethod
     def from_attributes(
         cls,
-        name: str,
+        name: Optional[str],
         representation: Representation,
         wires: Wires,
     ):
@@ -129,11 +128,11 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> list[int]:
+    def modes(self) -> tuple[int, ...]:
         r"""
         The sorted list of modes of this component.
         """
-        return sorted(self.wires.modes)
+        return tuple(sorted(self.wires.modes))
 
     @property
     def name(self) -> str:
@@ -242,7 +241,7 @@ class CircuitComponent:
         # reorder the representation
         representation_ret = representation_ret.reorder(perm)
 
-        return CircuitComponent.from_attributes("", representation_ret, wires_ret)
+        return CircuitComponent.from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -276,8 +275,7 @@ class CircuitComponent:
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        name = self.name if self.name else "None"
-        return f"CircuitComponent(name={name}, modes={self.modes})"
+        return f"CircuitComponent(name={self.name}, modes={self.modes})"
 
 
 class AdjointView(CircuitComponent):

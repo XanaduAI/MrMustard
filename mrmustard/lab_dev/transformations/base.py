@@ -24,7 +24,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional
 
 from ..circuit_components import CircuitComponent
 
@@ -65,11 +65,13 @@ class Unitary(Transformation):
             unitary = Unitary()
             unitary._wires = component.wires
             unitary._representation = component.representation
+            unitary._name += "".join(str(m) for m in component.modes)
             return unitary
         elif isinstance(other, Channel):
             channel = Channel()
             channel._wires = component.wires
             channel._representation = component.representation
+            channel._name += "".join(str(m) for m in component.modes)
             return channel
         return component
 
@@ -109,6 +111,7 @@ class Channel(Transformation):
             channel = Channel()
             channel._wires = component.wires
             channel._representation = component.representation
+            channel._name += "".join(str(m) for m in component.modes)
             return channel
         return component
 

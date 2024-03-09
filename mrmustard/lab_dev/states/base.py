@@ -46,7 +46,9 @@ class DM(State):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "DM" + "".join(str(m) for m in modes), modes_out_bra=modes, modes_out_ket=modes
+            name or "DM" + "".join(str(m) for m in sorted(modes)),
+            modes_out_bra=modes,
+            modes_out_ket=modes,
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -63,6 +65,7 @@ class DM(State):
             dm = DM()
             dm._wires = component.wires
             dm._representation = component.representation
+            dm._name += "".join(str(m) for m in component.modes)
             return dm
         return component
 
@@ -80,7 +83,9 @@ class Ket(State):
     """
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
-        super().__init__(name or "Ket" + "".join(str(m) for m in modes), modes_out_ket=modes)
+        super().__init__(
+            name or "Ket" + "".join(str(m) for m in sorted(modes)), modes_out_ket=modes
+        )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -97,11 +102,13 @@ class Ket(State):
             ket = Ket()
             ket._wires = component.wires
             ket._representation = component.representation
+            ket._name += "".join(str(m) for m in component.modes)
             return ket
         elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
             dm = DM()
             dm._wires = component.wires
             dm._representation = component.representation
+            dm._name += "".join(str(m) for m in component.modes)
             return dm
         return component
 
