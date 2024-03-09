@@ -19,8 +19,8 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called
 
 from __future__ import annotations
-import numpy as np
 from typing import Optional, Union
+import numpy as np
 from ..physics.representations import Bargmann, Fock, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
