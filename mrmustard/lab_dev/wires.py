@@ -83,15 +83,20 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: set[int] = set(),
-        modes_in_bra: set[int] = set(),
-        modes_out_ket: set[int] = set(),
-        modes_in_ket: set[int] = set(),
+        modes_out_bra: Optional[set[int]] = None,
+        modes_in_bra: Optional[set[int]] = None,
+        modes_out_ket: Optional[set[int]] = None,
+        modes_in_ket: Optional[set[int]] = None,
         original: Optional[Wires] = None,
     ) -> None:
 
         self.mode_cache = {}
-        self.args = modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket
+        self.args = (
+            modes_out_bra or set(),
+            modes_in_bra or set(),
+            modes_out_ket or set(),
+            modes_in_ket or set(),
+        )
         self._original = original
 
     @property
