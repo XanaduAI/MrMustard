@@ -47,7 +47,7 @@ class Unitary(Transformation):
     """
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int,...] = ()):
-        super().__init__(name or "U"+"".join(str(self.wires.modes)), modes_in_ket=modes, modes_out_ket=modes)
+        super().__init__(name or "U"+"".join(str(m) for m in modes), modes_in_ket=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -86,7 +86,7 @@ class Channel(Transformation):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int,...] = ()):
         super().__init__(
-            name or "Ch"+"".join(str(self.wires.modes)), modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
+            name or "Ch"+"".join(str(m) for m in modes), modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

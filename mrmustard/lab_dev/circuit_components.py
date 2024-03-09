@@ -56,6 +56,7 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
+        print("created wires", self._wires, "for component", self._name)
         self._parameter_set = ParameterSet()
         self._representation = representation
         # handle out-of-order modes
@@ -228,8 +229,8 @@ class CircuitComponent:
         """
         msg = f"``>>`` not supported between {self} and {other}, use ``@``."
 
-        wires_out = self.wires.output
-        wires_in = other.wires.input
+        wires_out = self.wires#.output
+        wires_in = other.wires#.input
 
         if wires_out.ket and wires_out.bra:
             if wires_in.ket and wires_in.bra:

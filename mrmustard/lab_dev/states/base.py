@@ -45,7 +45,7 @@ class DM(State):
     """
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
-        super().__init__(name or "DM"+"".join(str(self.wires.modes)), modes_out_bra=modes, modes_out_ket=modes)
+        super().__init__(name or "DM"+"".join(str(m) for m in modes), modes_out_bra=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -78,7 +78,7 @@ class Ket(State):
     """
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
-        super().__init__(name or "Ket"+"".join(str(self.wires.modes)), modes_out_ket=modes)
+        super().__init__(name or "Ket"+"".join(str(m) for m in modes), modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
