@@ -20,11 +20,12 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
@@ -393,14 +394,39 @@ class Bargmann(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Bargmann) -> Bargmann:
+    def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
         r"""
         The inner product of ansatze across the marked indices.
+
+        If ``other`` is ``Fock``, then ``self`` is converted to ``Fock`` before the contraction.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
+            if ``other`` is ``Fock``.
         """
+        idx_s = self._contract_idxs
+        idx_o = other._contract_idxs
+
+        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
+        if isinstance(other, Fock):
+            from .converters import to_fock  # pylint: disable=import-outside-toplevel
+
+            # set same shape along the contracted axes, and default shape along the
+            # axes that are not being contracted
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            for i, j in zip(idx_s, idx_o):
+                shape[i] = other.array.shape[1:][j]
+
+            return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
+
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
                 "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
             )
+
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
@@ -408,12 +434,13 @@ class Bargmann(Representation):
                     bargmann.contract_two_Abc(
                         (A1, b1, c1),
                         (A2, b2, c2),
-                        self._contract_idxs,
-                        other._contract_idxs,
+                        idx_s,
+                        idx_o,
                     )
                 )
+
         A, b, c = zip(*Abc)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(math.astensor(A), math.astensor(b), math.astensor(c))
 
 
 class Fock(Representation):
@@ -428,13 +455,16 @@ class Fock(Representation):
 
     .. code-block::
 
+        >>> from mrmustard import math
+        >>> from mrmustard.physics.representations import Fock
+
         >>> # initialize Fock objects
-        >>> array1 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
-        >>> array2 = math.astensor(np.random.random((1,5,7,8))) # where 1 is the batch.
+        >>> array1 = math.astensor(np.random.random((5,7,8)))
+        >>> array2 = math.astensor(np.random.random((5,7,8)))
         >>> array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
         >>> fock1 = Fock(array1)
         >>> fock2 = Fock(array2)
-        >>> fock3 = Fock(array3)
+        >>> fock3 = Fock(array3, batched=True)
 
         >>> # linear combination can be done with the same batch dimension
         >>> fock4 = 1.3 * fock1 - fock2 * 2.1
@@ -509,20 +539,71 @@ class Fock(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Fock) -> Fock:
+    def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
         r"""
         Implements the inner product of ansatze across the marked indices.
 
-        Batch:
-        The new Fock holds the tensor product batch of them.
+        If ``other`` is ``Fock``, the two representations are automatically reduced
+        before being contracted. The array of the returned representation has the largest
+        possible dimension along every axis.
 
-        Order of index:
-        The new Fock's order is arranged as uncontracted elements in self and then other.
+        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            A ``Fock``representation.
         """
-        axes = [list(self._contract_idxs), list(other._contract_idxs)]
+        idx_s = list(self._contract_idxs)
+        idx_o = list(other._contract_idxs)
+
+        # if ``other`` is ``Bargmann``, convert it to ``Fock``
+        if isinstance(other, Bargmann):
+            from .converters import to_fock  # pylint: disable=import-outside-toplevel
+
+            # set same shape along the contracted axes, and default shape along the
+            # axes that are not being contracted
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
+            for i, j in zip(idx_s, idx_o):
+                shape[j] = self.array.shape[1:][i]
+
+            return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
+
+        # the number of batches in self and other
+        n_batches_s = self.array.shape[0]
+        n_batches_o = other.array.shape[0]
+
+        # the shapes each batch in self and other
+        shape_s = self.array.shape[1:]
+        shape_o = other.array.shape[1:]
+
+        # the shapes of the axes being contracted
+        shape_s_contr = [shape_s[i] for i in idx_s]
+        shape_o_contr = [shape_o[i] for i in idx_o]
+
+        # compare the shapes along the axes being contracted
+        if shape_o_contr != shape_s_contr:
+            # calculate new shapes that maintain the largest possible dimension
+            # along each of the contracted axes
+            shape = [min(s, o) for s, o in zip(shape_s_contr, shape_o_contr)]
+
+            new_shape_s = [n_batches_s]
+            new_shape_s += [
+                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
+            ]
+
+            new_shape_o = [n_batches_o]
+            new_shape_o += [
+                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
+            ]
+
+            return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
+
+        axes = [list(idx_s), list(idx_o)]
         new_array = []
-        for i in range(self.array.shape[0]):
-            for j in range(other.array.shape[0]):
+        for i in range(n_batches_s):
+            for j in range(n_batches_o):
                 new_array.append(math.tensordot(self.array[i], other.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(new_array))
 
@@ -562,3 +643,42 @@ class Fock(Representation):
         return self.from_ansatz(
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
         )
+
+    def reduce(self, shape: Union[int, Iterable[int]]) -> Fock:
+        r"""
+        Returns a new ``Fock`` with a sliced array.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.physics.representations import Fock
+
+            >>> array1 = math.astensor(np.arange(27).reshape((3, 3, 3)))
+            >>> fock1 = Fock(array1)
+
+            >>> fock2 = fock1.reduce(3)
+            >>> assert fock1 == fock2
+
+            >>> fock3 = fock1.reduce(2)
+            >>> array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
+            >>> assert fock3 == Fock(array3)
+
+            >>> fock4 = fock1.reduce((2, 1, 3, 1))
+            >>> array4 = math.astensor([[[0], [3], [6]]])
+            >>> assert fock4 == Fock(array4)
+
+        Args:
+            shape: The shape of the array of the returned ``Fock``.
+        """
+        length = len(self.array.shape)
+        shape = (shape,) * length if isinstance(shape, int) else shape
+        if len(shape) != length:
+            msg = f"Expected ``shape`` of lenght {length}, "
+            msg += f"found shape of lenght {len(shape)}."
+            raise ValueError(msg)
+
+        ret = self.array
+        for i, s in enumerate(shape):
+            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            ret = ret[slc]
+        return Fock(array=ret, batched=True)
