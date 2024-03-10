@@ -102,9 +102,7 @@ class Wires:
     @property
     def original(self):
         r"The 'parent' ``Wires`` object, if any."
-        if self._original is None:
-            return self
-        return self._original
+        return self._original or self
 
     @cached_property
     def types(self) -> set[int]:
