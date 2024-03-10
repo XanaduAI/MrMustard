@@ -56,7 +56,7 @@ class Wires:
 
         >>> # get ket/bra modes
         >>> assert w.ket.modes == {0, 1, 2, 13}
-        >>> assert w.bra.modes == {1, 2}
+        >>> assert w.bra.modes == {0, 1, 2}
 
         >>> # combined subsets
         >>> assert w.output.ket.modes == {0, 13}
