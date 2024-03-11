@@ -47,6 +47,8 @@ class Unitary(Transformation):
     """
 
     def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -85,6 +87,8 @@ class Channel(Transformation):
     """
 
     def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
+        modes = modes or []
+        name = name or ""
         super().__init__(
             name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
         )
