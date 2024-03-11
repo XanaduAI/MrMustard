@@ -62,31 +62,26 @@ class CircuitComponent:
     @classmethod
     def _from_attributes(
         cls, name: str, representation: Representation, wires: Wires, mro: bool = True
-    ):
+    ) -> CircuitComponent:
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``), of type ``cls``.
+        and a ``Representation``).
 
-        This function needs to be used with caution. In particular:
+        If ``mro`` is ``True``, the type of the returned component is ``CircuitComponent``.
+        Otherwise, if the Method Resolution Order (MRO) of ``cls`` contains one between
+        ``Ket``, ``DM``, ``Unitary``, and ``Channel``, then the returned component is of
+        that type.
 
-            * It is meant to be used to initialize exclusively objects of type
-              ``CircuitComponent``, ``Ket``, ``DM``, ``Unitary``, and ``Channel``, which
-              store a representation to memory upon initialization (as opposed to the
-              convenience states and gates provided in lab_dev, e.g. ``Vacuum`` and ``Dgate``,
-              which compute the representation at runtime).
-
-            * It does not check that the given attributes are consistent with the
-              given ``cls``. If used improperly, it may be used to initialize, e.g.,
-              ``Ket``s with both input and output wires, or ``Unitary``s with wires on
-              the bra side.
-
-        Raise:
-            ValueError: If an object of type ``cls`` cannot be initialized from its attributes.
+        This function needs to be used with caution, as it does not check that the attributes
+        provided are consistent with the type of the returned component ``cls``. If used
+        improperly, it may be used to initialize, e.g., ``Ket``s with both input and output wires,
+        or ``Unitary``s with wires on the bra side.
 
         Args:
             name: The name of this component.
             representation: A representation for this circuit component.
             wires: The wires of this component.
+            mro: Whether to check the MRO before instantiating the returned object.
 
         Returns:
             A circuit component of type ``cls`` with the given attributes.
@@ -94,9 +89,8 @@ class CircuitComponent:
         ret = CircuitComponent
 
         if mro:
-            names = ["Ket", "DM", "Unitary", "Channel"]
             for tp in cls.mro():
-                if tp.__name__ in names:
+                if tp.__name__ in ["Ket", "DM", "Unitary", "Channel"]:
                     ret = tp
                     break
 

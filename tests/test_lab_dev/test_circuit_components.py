@@ -64,14 +64,19 @@ class TestCircuitComponent:
         cc3 = CircuitComponent._from_attributes(
             cc.name, cc.representation, cc.wires
         )  # pylint: disable=protected-access
+        cc4 = Dgate._from_attributes(
+            cc.name, cc.representation, cc.wires, False
+        )  # pylint: disable=protected-access
 
         assert cc1 == cc
         assert cc2 == cc
         assert cc3 == cc
+        assert cc4 == cc
 
         assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
+        assert isinstance(cc4, CircuitComponent) and not isinstance(cc4, Unitary)
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
