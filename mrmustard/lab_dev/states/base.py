@@ -23,6 +23,7 @@ representation.
 
 from __future__ import annotations
 
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from typing import Optional, Sequence, Union
 
 from mrmustard import math, settings
@@ -32,14 +33,164 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
+from .visualization import mikkel_plot
 
 __all__ = ["State", "DM", "Ket"]
 
 
-class State(CircuitComponent):
+class State(ABC, CircuitComponent):
     r"""
     Base class for all states.
     """
+
+    @abstractclassmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> State:
+        r"""
+        Returns a ``Ket`` from an ``(A, b, c)`` triple defining a Bargmann representation.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.triples import coherent_state_Abc
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> modes = [0, 1]
+            >>> triple = coherent_state_Abc(x=[0.1, 0.2])
+
+            >>> coh = Ket.from_bargmann(modes, triple)
+            >>> assert coh.modes == modes
+            >>> assert coh.representation == Bargmann(*triple)
+            >>> assert isinstance(coh, Ket)
+
+        Args:
+            modes: The modes of this states.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
+
+        Returns:
+            A ``Ket`` state.
+
+        Raises:
+            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
+                the number of modes.
+        """
+
+    @abstractclassmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: Optional[str] = None,
+    ) -> State:
+        r"""
+        Returns a ``State`` from an array describing the state in the Fock representation.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.triples import coherent_state_Abc
+            >>> from mrmustard.lab_dev import Coherent, Ket
+
+            >>> modes = [0]
+            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
+            >>> coh = Ket.from_fock(modes, array)
+
+            >>> assert coh.modes == modes
+            >>> assert coh.representation == Fock(array)
+            >>> assert isinstance(coh, Ket)
+
+        Args:
+            modes: The modes of this states.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
+
+        Returns:
+            A ``Ket`` state.
+
+        Raises:
+            ValueError: If the given array has a shape that is inconsistent with the number of
+                modes.
+        """
+
+    @abstractclassmethod
+    def from_phasespace(
+        cls,
+        modes: Sequence[int],
+        cov: ComplexMatrix,
+        means: ComplexMatrix,
+        name: Optional[str] = None,
+        atol_purity: Optional[float] = 1e-3,
+    ) -> State:
+        r"""
+        Returns a ``Ket`` from the covariance matrix and the vector of means of a state in
+        phase space.
+
+        Args:
+            cov: The covariance matrix.
+            means: The vector of means.
+            modes: The modes of this states.
+            name: The name of this state.
+            atol_purity: If not ``None``, the purity of the returned state is computed. If it is
+                smaller than ``1-atol_purity`` or larger than ``1+atol_purity``, an error is
+                raised.
+
+        Returns:
+            A ``Ket`` state.
+
+        Raises:
+            ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
+                with the number of modes.
+            ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
+                is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
+        """
+
+    @abstractclassmethod
+    def from_quadrature(self) -> State:
+        r"""
+        Returns a ``Ket`` from quadrature.
+        """
+
+    @abstractproperty
+    def purity(self) -> float:
+        r"""
+        The purity of this state.
+        """
+
+    @abstractmethod
+    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+
+    @abstractmethod
+    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+
+    @abstractmethod
+    def phasespace_cov(self):
+        r"""
+        The covariance matrix of this state in phase space.
+        """
+
+    @abstractmethod
+    def phasespace_means(self):
+        r"""
+        The vector of means of this state in phase space.
+        """
+
+    @property
+    def is_pure(self):
+        r"""
+        Whether this state is pure.
+        """
+        return math.allclose(self.purity, 1.0)
 
 
 class DM(State):
@@ -55,6 +206,70 @@ class DM(State):
         modes = modes or []
         name = name or ""
         super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> DM:
+        raise NotImplementedError
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: Optional[str] = None,
+    ) -> DM:
+        raise NotImplementedError
+
+    @classmethod
+    def from_phasespace(
+        cls,
+        modes: Sequence[int],
+        cov: ComplexMatrix,
+        means: ComplexMatrix,
+        name: Optional[str] = None,
+        atol_purity: Optional[float] = 1e-3,
+    ) -> DM:
+        raise NotImplementedError
+
+    @classmethod
+    def from_quadrature(self) -> DM:
+        raise NotImplementedError
+
+    @property
+    def purity(self) -> float:
+        r"""
+        The purity of this state.
+        """
+        raise NotImplementedError
+
+    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+        raise NotImplementedError
+
+    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+        raise NotImplementedError
+
+    def phasespace_cov(self):
+        r"""
+        The covariance matrix of this state in phase space.
+        """
+        raise NotImplementedError
+
+    def phasespace_means(self):
+        r"""
+        The vector of means of this state in phase space.
+        """
+        raise NotImplementedError
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -98,35 +313,6 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Ket:
-        r"""
-        Returns a ``Ket`` from an ``(A, b, c)`` triple defining a Bargmann representation.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.representations import Bargmann
-            >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Ket
-
-            >>> modes = [0, 1]
-            >>> triple = coherent_state_Abc(x=[0.1, 0.2])
-
-            >>> coh = Ket.from_bargmann(modes, triple)
-            >>> assert coh.modes == modes
-            >>> assert coh.representation == Bargmann(*triple)
-            >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this states.
-            triple: The ``(A, b, c)`` triple.
-            name: The name of this state.
-
-        Returns:
-            A ``Ket`` state.
-
-        Raises:
-            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
-                the number of modes.
-        """
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
@@ -147,35 +333,6 @@ class Ket(State):
         array: ComplexTensor,
         name: Optional[str] = None,
     ) -> Ket:
-        r"""
-        Returns a ``Ket`` from an array describing the state in the Fock representation.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.representations import Fock
-            >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Coherent, Ket
-
-            >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
-            >>> coh = Ket.from_fock(modes, array)
-
-            >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array)
-            >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this states.
-            triple: The ``(A, b, c)`` triple.
-            name: The name of this state.
-
-        Returns:
-            A ``Ket`` state.
-
-        Raises:
-            ValueError: If the given array has a shape that is inconsistent with the number of
-                modes.
-        """
         array = math.astensor(array)
 
         n_modes = len(modes)
@@ -196,56 +353,38 @@ class Ket(State):
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
     ):
-        r"""
-        Returns a ``Ket`` from the covariance matrix and the vector of means of a state in
-        phase space.
-
-        Args:
-            cov: The covariance matrix.
-            means: The vector of means.
-            modes: The modes of this states.
-            name: The name of this state.
-            atol_purity: If not ``None``, the purity of the returned state is computed. If it is
-                smaller than ``1-atol_purity`` or larger than ``1+atol_purity``, an error is
-                raised.
-
-        Returns:
-            A ``Ket`` state.
-
-        Raises:
-            ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
-                with the number of modes.
-            ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
-                is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
-        """
         cov = math.astensor(cov)
         means = math.astensor(means)
 
         n_modes = len(modes)
-        if means.shape != (2*n_modes,):
+        if means.shape != (2 * n_modes,):
             msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
-        if cov.shape != (2*n_modes, 2*n_modes):
+        if cov.shape != (2 * n_modes, 2 * n_modes):
             msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
-        
+
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
                 raise ValueError(msg)
-        
+
         ret = Ket(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
-    
+
     @classmethod
     def from_quadrature(self):
         r"""
         Returns a ``Ket`` from quadrature.
         """
         raise NotImplementedError
-    
+
+    @property
+    def purity(self) -> float:
+        return 1.0
+
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         Returns an array that describes this state in the Fock representation.
@@ -261,13 +400,13 @@ class Ket(State):
         Returns an array that describes this state in the Fock representation.
         """
         return self.representation.to_fock(shape).array
-    
+
     def phasespace_cov(self):
         r"""
         The covariance matrix of this state in phase space.
         """
         raise NotImplementedError
-    
+
     def phasespace_means(self):
         r"""
         The vector of means of this state in phase space.
@@ -299,3 +438,28 @@ class Ket(State):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Ket")
+
+    def _repr_markdown_(self):
+        def _format_probability(prob: float) -> str:
+            if prob < 0.001:
+                return f"{100*prob:.3e} %"
+            else:
+                return f"{prob:.3%}"
+
+        table = (
+            f"#### {self.__class__.__qualname__}\n\n"
+            + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
+            + f"| {self.purity :.2e} | "
+            + self._format_probability(self.probability)
+            + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+        )
+
+        if self.num_modes == 1:
+            mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
+
+        if settings.DEBUG:
+            detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+            return f"{table}\n{detailed_info}"
+
+        return table
