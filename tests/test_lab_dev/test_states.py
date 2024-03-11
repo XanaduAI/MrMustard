@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.physics.fock import fock_state
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
@@ -178,11 +179,10 @@ class TestNumber:
 
     modes = [[0], [1, 2], [9, 7]]
     n = [[1], 1, [1, 2]]
-    cutoff = [None, 3, 4]
 
-    @pytest.mark.parametrize("modes,n,cutoff", zip(modes, n, cutoff))
-    def test_init(self, modes, n, cutoff):
-        state = Number(modes, n, cutoff)
+    @pytest.mark.parametrize("modes,n", zip(modes, n))
+    def test_init(self, modes, n):
+        state = Number(modes, n)
 
         assert state.name == "N"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
@@ -191,17 +191,11 @@ class TestNumber:
         with pytest.raises(ValueError, match="Length of ``n``"):
             Number(modes=[0, 1], n=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="The number of photons per mode"):
-            Number(modes=[0, 1], n=3, cutoff=2)
-
-    def test_representation(self):
-        rep1 = Number(modes=[0, 1], n=[2, 3], cutoff=4).representation
-        assert math.allclose(rep1.array, [[[0, 0, 1, 0], [0, 0, 0, 1]]])
-
-        rep2 = Number(modes=[0, 1], n=[2, 3]).representation
-        assert rep2.array.shape == (1, 2, 100)
-        assert rep2.array[0, 0, 2] == 1
-        assert rep2.array[0, 1, 3] == 1
+    @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
+    def test_representation(self, n):
+        rep1 = Number(modes=[0, 1], n=n).representation.array
+        exp1 = fock_state((n,) * 2 if isinstance(n, int) else n)
+        assert math.allclose(rep1, exp1.reshape(1, *exp1.shape))
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
