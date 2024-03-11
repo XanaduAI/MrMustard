@@ -205,7 +205,8 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return CircuitComponent._from_attributes(
+        cls = self.__class__
+        return cls._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,

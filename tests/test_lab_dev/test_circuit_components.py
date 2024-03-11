@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Number, Vacuum
+from mrmustard.lab_dev.states import Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -126,18 +126,21 @@ class TestCircuitComponent:
         assert vac_fock.name == vac.name
         assert vac_fock.wires == vac.wires
         assert vac_fock.representation == to_fock(vac.representation, shape)
+        assert isinstance(vac_fock, Ket)
 
         n = Number([3], n=4)
         n_fock = n.to_fock_component(shape=shape)
         assert n_fock.name == n.name
         assert n_fock.wires == n.wires
         assert n_fock.representation == to_fock(n.representation, shape)
+        assert isinstance(n_fock, Ket)
 
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock_component(shape=shape)
         assert d_fock.name == d.name
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
+        assert isinstance(d_fock, Unitary)
 
     def test_eq(self):
         d1 = Dgate([1], x=0.1, y=0.1)
