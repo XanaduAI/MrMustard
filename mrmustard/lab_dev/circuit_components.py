@@ -131,6 +131,13 @@ class CircuitComponent:
         return self.wires.modes
 
     @property
+    def n_modes(self) -> list[int]:
+        r"""
+        The number of modes in this component.
+        """
+        return len(self.modes)
+
+    @property
     def name(self) -> str:
         r"""
         The name of this component.

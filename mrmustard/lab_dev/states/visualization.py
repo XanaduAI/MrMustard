@@ -35,7 +35,7 @@ def mikkel_plot(
     ybounds: tuple[int] = (-6, 6),
     **kwargs,
 ):  # pylint: disable=too-many-statements
-    """Plots the Wigner function of a state given its density matrix.
+    r"""Plots the Wigner function of a state given its density matrix.
 
     Args:
         dm: The density matrix to plot.

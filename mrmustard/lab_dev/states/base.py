@@ -23,13 +23,13 @@ representation.
 
 from __future__ import annotations
 
-from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from typing import Optional, Sequence, Union
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
+from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
@@ -38,12 +38,12 @@ from .visualization import mikkel_plot
 __all__ = ["State", "DM", "Ket"]
 
 
-class State(ABC, CircuitComponent):
+class State(CircuitComponent):
     r"""
     Base class for all states.
     """
 
-    @abstractclassmethod
+    @classmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
@@ -79,13 +79,15 @@ class State(ABC, CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
+        raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def from_fock(
         cls,
         modes: Sequence[int],
         array: ComplexTensor,
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> State:
         r"""
         Returns a ``State`` from an array describing the state in the Fock representation.
@@ -106,18 +108,20 @@ class State(ABC, CircuitComponent):
 
         Args:
             modes: The modes of this states.
-            triple: The ``(A, b, c)`` triple.
+            array: The Fock array.
             name: The name of this state.
+            batched: Whether the given array is batched.
 
         Returns:
-            A ``Ket`` state.
+            A state.
 
         Raises:
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
+        raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def from_phasespace(
         cls,
         modes: Sequence[int],
@@ -148,42 +152,49 @@ class State(ABC, CircuitComponent):
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
         """
+        raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def from_quadrature(self) -> State:
         r"""
         Returns a ``Ket`` from quadrature.
         """
+        raise NotImplementedError
 
-    @abstractproperty
+    @property
     def purity(self) -> float:
         r"""
         The purity of this state.
         """
+        raise NotImplementedError
 
-    @abstractmethod
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         Returns an array that describes this state in the Fock representation.
         """
+        rep = self.representation
+        if isinstance(rep, Bargmann):
+            return rep.A, rep.b, rep.c
+        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
+        raise ValueError(msg)
 
-    @abstractmethod
     def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
         r"""
         Returns an array that describes this state in the Fock representation.
         """
+        return to_fock(self.representation, shape).array
 
-    @abstractmethod
     def phasespace_cov(self):
         r"""
         The covariance matrix of this state in phase space.
         """
+        raise NotImplementedError
 
-    @abstractmethod
     def phasespace_means(self):
         r"""
         The vector of means of this state in phase space.
         """
+        raise NotImplementedError
 
     @property
     def is_pure(self):
@@ -214,7 +225,18 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> DM:
-        raise NotImplementedError
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+
+        n_modes = len(modes)
+        if A.shape != (2 * n_modes, 2 * n_modes) or b.shape != (2 * n_modes,):
+            msg = f"Given triple is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+
+        ret = DM(name, modes)
+        ret._representation = Bargmann(A, b, c)
+        return ret
 
     @classmethod
     def from_fock(
@@ -222,8 +244,18 @@ class DM(State):
         modes: Sequence[int],
         array: ComplexTensor,
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> DM:
-        raise NotImplementedError
+        array = math.astensor(array)
+
+        n_modes = len(modes)
+        if len(array.shape) != 2 * n_modes + (1 if batched else 0):
+            msg = f"Given array is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+
+        ret = DM(name, modes)
+        ret._representation = Fock(array, batched)
+        return ret
 
     @classmethod
     def from_phasespace(
@@ -234,7 +266,26 @@ class DM(State):
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
     ) -> DM:
-        raise NotImplementedError
+        cov = math.astensor(cov)
+        means = math.astensor(means)
+
+        n_modes = len(modes)
+        if means.shape != (4 * n_modes,):
+            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+        if cov.shape != (4 * n_modes, 4 * n_modes):
+            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+
+        if atol_purity:
+            p = purity(cov)
+            if p < 1.0 - atol_purity:
+                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
+                raise ValueError(msg)
+
+        ret = DM(name, modes)
+        ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
+        return ret
 
     @classmethod
     def from_quadrature(self) -> DM:
@@ -246,18 +297,7 @@ class DM(State):
         The purity of this state.
         """
         raise NotImplementedError
-
-    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        Returns an array that describes this state in the Fock representation.
-        """
-        raise NotImplementedError
-
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        Returns an array that describes this state in the Fock representation.
-        """
-        raise NotImplementedError
+        
 
     def phasespace_cov(self):
         r"""
@@ -291,6 +331,29 @@ class DM(State):
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "DM")
 
+    def _repr_markdown_(self):
+        print("yo")
+        table = (
+            f"#### {self.__class__.__name__}\n\n"
+            + "| Purity | Num modes |\n"
+            + "| :----: | :----: |\n"
+            # + f"| {self.purity :.2e} | {self.n_modes} |"
+        )
+
+        if self.n_modes == 1:
+            array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
+            n_batches = array.shape[0]
+            dm = array[0]
+            for batch in range(1, n_batches):
+                dm += math.outer(array[batch], math.conj(array[batch]))
+            mikkel_plot(dm)
+
+        if settings.DEBUG:
+            detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+            return f"{table}\n{detailed_info}"
+
+        return table
+
 
 class Ket(State):
     r"""
@@ -312,13 +375,16 @@ class Ket(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> Ket:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
 
         n_modes = len(modes)
-        if A.shape != (n_modes, n_modes) or b.shape != (n_modes,):
+        A_sh = (1, n_modes, n_modes) if batched else (n_modes, n_modes)
+        b_sh = (1, n_modes) if batched else (n_modes,)
+        if A.shape != A_sh or b.shape != b_sh:
             msg = f"Given triple is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
 
@@ -332,16 +398,17 @@ class Ket(State):
         modes: Sequence[int],
         array: ComplexTensor,
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> Ket:
         array = math.astensor(array)
 
         n_modes = len(modes)
-        if len(array.shape) != n_modes:
+        if len(array.shape) != n_modes + (1 if batched else 0):
             msg = f"Given array is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
 
         ret = Ket(name, modes)
-        ret._representation = Fock(array)
+        ret._representation = Fock(array, batched)
         return ret
 
     @classmethod
@@ -385,34 +452,6 @@ class Ket(State):
     def purity(self) -> float:
         return 1.0
 
-    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        Returns an array that describes this state in the Fock representation.
-        """
-        rep = self.representation
-        if isinstance(rep, Bargmann):
-            return rep.A, rep.b, rep.c
-        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
-        raise ValueError(msg)
-
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        Returns an array that describes this state in the Fock representation.
-        """
-        return self.representation.to_fock(shape).array
-
-    def phasespace_cov(self):
-        r"""
-        The covariance matrix of this state in phase space.
-        """
-        raise NotImplementedError
-
-    def phasespace_means(self):
-        r"""
-        The vector of means of this state in phase space.
-        """
-        raise NotImplementedError
-
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -440,23 +479,20 @@ class Ket(State):
         return super().__repr__().replace("CircuitComponent", "Ket")
 
     def _repr_markdown_(self):
-        def _format_probability(prob: float) -> str:
-            if prob < 0.001:
-                return f"{100*prob:.3e} %"
-            else:
-                return f"{prob:.3%}"
-
         table = (
-            f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
-            + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.2e} | "
-            + self._format_probability(self.probability)
-            + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            f"#### {self.__class__.__name__}\n\n"
+            + "| Purity | Num modes |\n"
+            + "| :----: | :----: |\n"
+            + f"| {self.purity :.2e} | {self.n_modes} |"
         )
 
-        if self.num_modes == 1:
-            mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
+        if self.n_modes == 1:
+            array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
+            n_batches = array.shape[0]
+            dm = math.outer(array[0], math.conj(array[0]))
+            for batch in range(1, n_batches):
+                dm += math.outer(array[batch], math.conj(array[batch]))
+            mikkel_plot(dm)
 
         if settings.DEBUG:
             detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"

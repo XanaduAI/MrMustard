@@ -21,10 +21,13 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics.fock import fock_state
+from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.lab_dev.wires import Wires
+from ..random import Abc_triple
 
 
 class TestKet:
@@ -40,6 +43,54 @@ class TestKet:
         assert state.name == (name if name else "")
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_ket=modes)
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_bargmann(self, modes):
+        n_modes = len(modes)
+        triple = Abc_triple(n_modes)
+        state = Ket.from_bargmann(modes, triple, "my_ket")
+
+        assert state.modes == sorted(modes)
+        assert state.name == "my_ket"
+        assert state.representation == Bargmann(*triple)
+        
+        assert np.allclose(state.bargmann_triple()[0], triple[0])
+        assert np.allclose(state.bargmann_triple()[1], triple[1])
+        assert np.allclose(state.bargmann_triple()[2], triple[2])
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_bargmann(self, modes):
+        x = 1
+        y = 2
+        xs = [x] * len(modes)
+        ys = [y] * len(modes)
+
+        state_in = Coherent(modes, x, y)
+        triple_in = state_in.bargmann_triple()
+
+        assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
+        assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
+        assert np.allclose(triple_in[2], coherent_state_Abc(xs, ys)[2])
+
+        state_out = Ket.from_bargmann(modes, triple_in, "my_ket", True)
+        assert state_in == state_out
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_fock(self, modes):
+        state_in = Coherent(modes, x=1, y=2)
+        state_in_fock = state_in.to_fock_component(5)
+        array_in = state_in.fock_array(5)
+
+        assert math.allclose(array_in, state_in_fock.representation.array)
+
+        state_out = Ket.from_fock(modes, array_in, "my_ket", True)
+        assert state_in_fock == state_out
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_purity(self, modes):
+        state = Ket("my_ket", modes)
+        assert state.purity == 1
+        assert state.is_pure
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
