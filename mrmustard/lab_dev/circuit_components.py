@@ -20,9 +20,10 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union
 
-from ..physics.representations import Bargmann, Fock, Representation
+from ..physics.converters import to_fock
+from ..physics.representations import Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .wires import Wires
@@ -159,6 +160,39 @@ class CircuitComponent:
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
+    def to_fock_component(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
+        r"""
+        Returns a circuit component with the same attributes as this component, but
+        with ``Fock`` representation.
+
+        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
+        representation.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.converters import to_fock
+            >>> from mrmustard.lab_dev import Dgate
+
+            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d_fock = d.to_fock_component(shape=3)
+
+            >>> assert d_fock.name == d.name
+            >>> assert d_fock.wires == d.wires
+            >>> assert d_fock.representation == to_fock(d.representation, shape=3)
+
+        Args:
+            shape: The shape of the returned representation. If ``shape``is given as
+                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
+                defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+        """
+        return CircuitComponent.from_attributes(
+            self.name,
+            to_fock(self.representation, shape=shape),
+            self.wires,
+        )
+
     def __eq__(self, other) -> bool:
         r"""
         Whether this component is equal to another component.
@@ -184,20 +218,8 @@ class CircuitComponent:
         idx_z += self.wires[ket_modes].ket.output.indices
         idx_zconj += other.wires[ket_modes].ket.input.indices
 
-        # convert Bargmann -> Fock if needed
-        LEFT = self.representation
-        RIGHT = other.representation
-        if isinstance(LEFT, Bargmann) and isinstance(RIGHT, Fock):
-            raise ValueError("Cannot contract objects with different representations.")
-            # shape = [s if i in idx_z else None for i, s in enumerate(other.representation.shape)]
-            # LEFT = Fock(self.fock(shape=shape), batched=False)
-        if isinstance(LEFT, Fock) and isinstance(RIGHT, Bargmann):
-            raise ValueError("Cannot contract objects with different representations.")
-            # shape = [s if i in idx_zconj else None for i, s in enumerate(self.representation.shape)]
-            # RIGHT = Fock(other.fock(shape=shape), batched=False)
-
         # calculate the representation of the returned component
-        representation_ret = LEFT[idx_z] @ RIGHT[idx_zconj]
+        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
 
         # reorder the representation
         contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
@@ -205,7 +227,7 @@ class CircuitComponent:
             other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
         ]
         order = [contracted_idx.index(id) for id in wires_ret.ids]
-        representation_ret = representation_ret.reorder(order)
+        representation_ret = representation_ret.reorder(order) if order else representation_ret
 
         return CircuitComponent.from_attributes("", representation_ret, wires_ret)
 
@@ -216,25 +238,25 @@ class CircuitComponent:
         """
         msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
 
-        wires_out = self.wires.output
-        wires_in = other.wires.input
+        wires_s = self.wires
+        wires_o = other.wires
 
-        if wires_out.ket and wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket and wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ other
             return self @ other @ other.adjoint
 
-        if wires_out.ket:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.ket:
+            if wires_o.ket:
                 return self @ other
             raise ValueError(msg)
 
-        if wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.bra:
+            if wires_o.bra:
                 return self @ other
             raise ValueError(msg)
 
