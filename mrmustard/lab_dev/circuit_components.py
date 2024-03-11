@@ -95,9 +95,9 @@ class CircuitComponent:
                     break
 
         ret = ret()
-        ret._name = name
-        ret._representation = representation
-        ret._wires = wires
+        ret._name = name  # pylint: disable=protected-access
+        ret._representation = representation  # pylint: disable=protected-access
+        ret._wires = wires  # pylint: disable=protected-access
 
         return ret
 
@@ -210,7 +210,7 @@ class CircuitComponent:
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
-        )
+        )  # pylint: disable=protected-access
 
     def __eq__(self, other) -> bool:
         r"""
