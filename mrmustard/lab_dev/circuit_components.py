@@ -93,12 +93,15 @@ class CircuitComponent:
         Returns:
             A circuit component of type ``cls`` with the given attributes.
         """
-        try:
-            ret = cls.mro()[0]()
-        except TypeError:
-            msg = f"Cannot instantiate ``{cls.mro()[0].__name__}`` object from its attributes."
-            raise ValueError(msg)
+        ret = CircuitComponent
 
+        names = ["Ket", "DM", "Unitary", "Channel"]
+        for tp in cls.mro():
+            if tp.__name__ in names:
+                ret = tp
+                break
+
+        ret = ret()
         ret._name = name
         ret._representation = representation
         ret._wires = wires
