@@ -236,25 +236,25 @@ class CircuitComponent:
         """
         msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
 
-        wires_out = self.wires
-        wires_in = other.wires
+        wires_s = self.wires
+        wires_o = other.wires
 
-        if wires_out.ket and wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket and wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ other
             return self @ other @ other.adjoint
 
-        if wires_out.ket:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.ket:
+            if wires_o.ket:
                 return self @ other
             raise ValueError(msg)
 
-        if wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.bra:
+            if wires_o.bra:
                 return self @ other
             raise ValueError(msg)
 
