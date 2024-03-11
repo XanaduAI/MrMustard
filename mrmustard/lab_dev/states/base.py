@@ -23,7 +23,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -238,6 +238,41 @@ class Ket(State):
         ret = Ket(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
+    
+    @classmethod
+    def from_quadrature(self):
+        r"""
+        Returns a ``Ket`` from quadrature.
+        """
+        raise NotImplementedError
+    
+    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+        rep = self.representation
+        if isinstance(rep, Bargmann):
+            return rep.A, rep.b, rep.c
+        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
+        raise ValueError(msg)
+
+    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+        """
+        return self.representation.to_fock(shape).array
+    
+    def phasespace_cov(self):
+        r"""
+        The covariance matrix of this state in phase space.
+        """
+        raise NotImplementedError
+    
+    def phasespace_means(self):
+        r"""
+        The vector of means of this state in phase space.
+        """
+        raise NotImplementedError
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
