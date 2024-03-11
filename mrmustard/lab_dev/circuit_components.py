@@ -61,10 +61,7 @@ class CircuitComponent:
 
     @classmethod
     def _from_attributes(
-        cls,
-        name: str,
-        representation: Representation,
-        wires: Wires,
+        cls, name: str, representation: Representation, wires: Wires, mro: bool = True
     ):
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
@@ -84,7 +81,7 @@ class CircuitComponent:
               the bra side.
 
         Raise:
-            ValueError: If an object of type ``cls`` cannot be initialized from its attributes.  
+            ValueError: If an object of type ``cls`` cannot be initialized from its attributes.
 
         Args:
             name: The name of this component.
@@ -96,11 +93,12 @@ class CircuitComponent:
         """
         ret = CircuitComponent
 
-        names = ["Ket", "DM", "Unitary", "Channel"]
-        for tp in cls.mro():
-            if tp.__name__ in names:
-                ret = tp
-                break
+        if mro:
+            names = ["Ket", "DM", "Unitary", "Channel"]
+            for tp in cls.mro():
+                if tp.__name__ in names:
+                    ret = tp
+                    break
 
         ret = ret()
         ret._name = name
@@ -213,7 +211,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return CircuitComponent.from_attributes(
+        return CircuitComponent._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -255,7 +253,7 @@ class CircuitComponent:
         order = [contracted_idx.index(id) for id in wires_ret.ids]
         representation_ret = representation_ret.reorder(order) if order else representation_ret
 
-        return CircuitComponent._from_attributes("", representation_ret, wires_ret)
+        return CircuitComponent._from_attributes("", representation_ret, wires_ret, mro=False)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
