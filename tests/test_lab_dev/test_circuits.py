@@ -88,7 +88,9 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
-        cc = CircuitComponent.from_attributes("my_cc", bs01.representation, bs01.wires)
+        cc = CircuitComponent._from_attributes(
+            "my_cc", bs01.representation, bs01.wires, False
+        )  # pylint: disable=protected-access
 
         assert repr(Circuit()) == ""
 
@@ -130,8 +132,6 @@ class TestCircuit:
         r5 += "\nmode 0:          ──╭•───────────────────────────────╭•──────────────────────"
         r5 += "\nmode 1:     ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)=  ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)="
         assert repr(circ5) == r5 + "\n\n"
-
-        repr(Circuit() >> vac2 >> bs12)
 
     def test_repr_issue_334(self):
         r"""

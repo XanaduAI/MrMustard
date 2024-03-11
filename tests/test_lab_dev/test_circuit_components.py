@@ -24,8 +24,8 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Coherent, Number, Vacuum
-from mrmustard.lab_dev.transformations import Dgate, Attenuator
+from mrmustard.lab_dev.states import Coherent, Ket, Number, Vacuum
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
 # original settings
@@ -53,10 +53,30 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
-        cc1 = Dgate([1, 8], x=x, y=y)
-        cc2 = CircuitComponent.from_attributes(cc1.name, cc1.representation, cc1.wires)
+        cc = Dgate([1, 8], x=x, y=y)
 
-        assert cc1 == cc2
+        cc1 = Dgate._from_attributes(
+            cc.name, cc.representation, cc.wires
+        )  # pylint: disable=protected-access
+        cc2 = Unitary._from_attributes(
+            cc.name, cc.representation, cc.wires
+        )  # pylint: disable=protected-access
+        cc3 = CircuitComponent._from_attributes(
+            cc.name, cc.representation, cc.wires
+        )  # pylint: disable=protected-access
+        cc4 = Dgate._from_attributes(
+            cc.name, cc.representation, cc.wires, False
+        )  # pylint: disable=protected-access
+
+        assert cc1 == cc
+        assert cc2 == cc
+        assert cc3 == cc
+        assert cc4 == cc
+
+        assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
+        assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
+        assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
+        assert isinstance(cc4, CircuitComponent) and not isinstance(cc4, Unitary)
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
@@ -100,24 +120,27 @@ class TestCircuitComponent:
         assert d1_cp.wires is not d1.wires
 
     @pytest.mark.parametrize("shape", [3, [3, 2]])
-    def test_to_fock(self, shape):
+    def test_to_fock_component(self, shape):
         vac = Vacuum([1, 2])
-        vac_fock = vac.to_fock(shape=shape)
+        vac_fock = vac.to_fock_component(shape=shape)
         assert vac_fock.name == vac.name
         assert vac_fock.wires == vac.wires
         assert vac_fock.representation == to_fock(vac.representation, shape)
+        assert isinstance(vac_fock, Ket)
 
         n = Number([3], n=4)
-        n_fock = n.to_fock(shape=shape)
+        n_fock = n.to_fock_component(shape=shape)
         assert n_fock.name == n.name
         assert n_fock.wires == n.wires
         assert n_fock.representation == to_fock(n.representation, shape)
+        assert isinstance(n_fock, Ket)
 
         d = Dgate([1], x=0.1, y=0.1)
-        d_fock = d.to_fock(shape=shape)
+        d_fock = d.to_fock_component(shape=shape)
         assert d_fock.name == d.name
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
+        assert isinstance(d_fock, Unitary)
 
     def test_eq(self):
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -232,15 +255,15 @@ class TestCircuitComponent:
         a1 = Attenuator([1], transmissivity=0.8)
         a2 = Attenuator([2], transmissivity=0.7)
 
-        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock()
+        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock_component()
         r2 = (
-            vac012.to_fock()
-            >> d0.to_fock()
-            >> d1.to_fock()
-            >> d2.to_fock()
-            >> a0
-            >> a1.to_fock().to_fock()
-            >> a2.to_fock()
+            vac012.to_fock_component()
+            >> d0.to_fock_component()
+            >> d1.to_fock_component()
+            >> d2.to_fock_component()
+            >> a0.to_fock_component()
+            >> a1.to_fock_component()
+            >> a2.to_fock_component()
         )
 
         assert r1 == r2
@@ -256,19 +279,24 @@ class TestCircuitComponent:
         d2 = Dgate([2], x=0.1, y=0.2)
         d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
         a1 = Attenuator([1], transmissivity=0.8)
-        n12 = Number([1, 2], n=1)
+        n12 = Number([1, 2], n=1).dual
 
         # bargmann >> fock
-        r1 = vac12 >> d1 >> d2 >> a1 << n12
+        r1 = vac12 >> d1 >> d2 >> a1 >> n12
 
         # fock >> bargmann
-        r2 = vac12.to_fock() >> d1 >> d2 >> a1 << n12
+        r2 = vac12.to_fock_component() >> d1 >> d2 >> a1 >> n12
 
         # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock() >> d2 >> a1 << n12
+        r3 = vac12 >> d1.to_fock_component() >> d2 >> a1 >> n12
 
         # fock only
-        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() << n12.to_fock()
+        r4 = (
+            vac12.to_fock_component()
+            >> d12.to_fock_component()
+            >> a1.to_fock_component()
+            >> n12.to_fock_component()
+        )
 
         assert math.allclose(r1.representation.array, r2.representation.array)
         assert math.allclose(r1.representation.array, r3.representation.array)
