@@ -72,9 +72,9 @@ class CircuitComponent:
         it is of type ``CircuitComponent``.
 
         This function needs to be used with caution, as it does not check that the attributes
-        provided are consistent with the type of the returned component ``cls``. If used
-        improperly, it may be used to initialize, e.g., ``Ket``s with both input and output wires,
-        or ``Unitary``s with wires on the bra side.
+        provided are consistent with the type of the returned component. If used improperly it
+        may initialize, e.g., ``Ket``s with both input and output wires or ``Unitary``s with
+        wires on the bra side.
 
         Args:
             name: The name of this component.
