@@ -14,7 +14,7 @@
 
 """ Tests for circuit components. """
 
-# pylint: disable=fixme, missing-function-docstring
+# pylint: disable=fixme, missing-function-docstring, protected-access
 
 import numpy as np
 import pytest
@@ -55,28 +55,17 @@ class TestCircuitComponent:
     def test_from_attributes(self, x, y):
         cc = Dgate([1, 8], x=x, y=y)
 
-        cc1 = Dgate._from_attributes(
-            cc.name, cc.representation, cc.wires
-        )  # pylint: disable=protected-access
-        cc2 = Unitary._from_attributes(
-            cc.name, cc.representation, cc.wires
-        )  # pylint: disable=protected-access
-        cc3 = CircuitComponent._from_attributes(
-            cc.name, cc.representation, cc.wires
-        )  # pylint: disable=protected-access
-        cc4 = Dgate._from_attributes(
-            cc.name, cc.representation, cc.wires, False
-        )  # pylint: disable=protected-access
+        cc1 = Dgate._from_attributes(cc.name, cc.representation, cc.wires)
+        cc2 = Unitary._from_attributes(cc.name, cc.representation, cc.wires)
+        cc3 = CircuitComponent._from_attributes(cc.name, cc.representation, cc.wires)
 
         assert cc1 == cc
         assert cc2 == cc
         assert cc3 == cc
-        assert cc4 == cc
 
         assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
-        assert isinstance(cc4, CircuitComponent) and not isinstance(cc4, Unitary)
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
