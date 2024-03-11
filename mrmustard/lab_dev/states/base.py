@@ -113,6 +113,7 @@ class Ket(State):
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
             >>> assert coh.representation == Bargmann(*triple)
+            >>> assert isinstance(coh, Ket)
 
         Args:
             modes: The modes of this states.
@@ -161,6 +162,7 @@ class Ket(State):
 
             >>> assert coh.modes == modes
             >>> assert coh.representation == Fock(array)
+            >>> assert isinstance(coh, Ket)
 
         Args:
             modes: The modes of this states.
@@ -194,13 +196,14 @@ class Ket(State):
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
     ):
-        r"""General constructor for kets in phase space representation.
+        r"""
+        Returns a ``Ket`` from the covariance matrix and the vector of means of a state in
+        phase space.
 
         Args:
             cov: The covariance matrix.
             means: The vector of means.
             modes: The modes of this states.
-            triple: The ``(A, b, c)`` triple.
             name: The name of this state.
             atol_purity: If not ``None``, the purity of the returned state is computed. If it is
                 smaller than ``1-atol_purity`` or larger than ``1+atol_purity``, an error is
