@@ -160,7 +160,9 @@ class CircuitComponent:
         instance.__dict__["_wires"] = self.wires.copy()
         return instance
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock_component(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -174,7 +176,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=3)
+            >>> d_fock = d.to_fock_component(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires

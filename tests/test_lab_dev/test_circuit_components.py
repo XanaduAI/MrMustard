@@ -100,21 +100,21 @@ class TestCircuitComponent:
         assert d1_cp.wires is not d1.wires
 
     @pytest.mark.parametrize("shape", [3, [3, 2]])
-    def test_to_fock(self, shape):
+    def test_to_fock_component(self, shape):
         vac = Vacuum([1, 2])
-        vac_fock = vac.to_fock(shape=shape)
+        vac_fock = vac.to_fock_component(shape=shape)
         assert vac_fock.name == vac.name
         assert vac_fock.wires == vac.wires
         assert vac_fock.representation == to_fock(vac.representation, shape)
 
         n = Number([3], n=4)
-        n_fock = n.to_fock(shape=shape)
+        n_fock = n.to_fock_component(shape=shape)
         assert n_fock.name == n.name
         assert n_fock.wires == n.wires
         assert n_fock.representation == to_fock(n.representation, shape)
 
         d = Dgate([1], x=0.1, y=0.1)
-        d_fock = d.to_fock(shape=shape)
+        d_fock = d.to_fock_component(shape=shape)
         assert d_fock.name == d.name
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
@@ -222,15 +222,15 @@ class TestCircuitComponent:
         a1 = Attenuator([1], transmissivity=0.8)
         a2 = Attenuator([2], transmissivity=0.7)
 
-        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock()
+        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock_component()
         r2 = (
-            vac012.to_fock()
-            >> d0.to_fock()
-            >> d1.to_fock()
-            >> d2.to_fock()
-            >> a0
-            >> a1.to_fock().to_fock()
-            >> a2.to_fock()
+            vac012.to_fock_component()
+            >> d0.to_fock_component()
+            >> d1.to_fock_component()
+            >> d2.to_fock_component()
+            >> a0.to_fock_component()
+            >> a1.to_fock_component()
+            >> a2.to_fock_component()
         )
 
         assert r1 == r2
@@ -252,13 +252,18 @@ class TestCircuitComponent:
         r1 = vac12 >> d1 >> d2 >> a1 >> n12
 
         # fock >> bargmann
-        r2 = vac12.to_fock() >> d1 >> d2 >> a1 >> n12
+        r2 = vac12.to_fock_component() >> d1 >> d2 >> a1 >> n12
 
         # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock() >> d2 >> a1 >> n12
+        r3 = vac12 >> d1.to_fock_component() >> d2 >> a1 >> n12
 
         # fock only
-        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
+        r4 = (
+            vac12.to_fock_component()
+            >> d12.to_fock_component()
+            >> a1.to_fock_component()
+            >> n12.to_fock_component()
+        )
 
         assert math.allclose(r1.representation.array, r2.representation.array)
         assert math.allclose(r1.representation.array, r3.representation.array)
