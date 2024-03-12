@@ -195,13 +195,6 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def is_pure(self):
-        r"""
-        Whether this state is pure.
-        """
-        return math.allclose(self.purity, 1.0)
-
-    @property
     def probability(self) -> float:
         r"""
         Returns :math:`\text{Tr}\big(|\psi\rangle\langle\psi|\big)` for ``Ket`` states :math:`|\psi\rangle` and
@@ -215,6 +208,13 @@ class State(CircuitComponent):
         The purity of this state.
         """
         raise NotImplementedError
+
+    @property
+    def is_pure(self):
+        r"""
+        Whether this state is pure.
+        """
+        return math.allclose(self.purity, 1.0)
 
     def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
         r"""

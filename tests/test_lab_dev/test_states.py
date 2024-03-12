@@ -27,7 +27,6 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
-from ..random import Abc_triple
 
 
 class TestKet:
@@ -61,6 +60,11 @@ class TestKet:
         state_out = Ket.from_bargmann(modes, triple_in, "my_ket", True)
         assert state_in == state_out
 
+    def test_from_bargmann_error(self):
+        state01 = Coherent([0, 1], 1)
+        with pytest.raises(ValueError):
+            Ket.from_bargmann([0], state01.bargmann_triple, "my_ket", True)
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
@@ -71,6 +75,11 @@ class TestKet:
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
+
+    def test_from_fock_error(self):
+        state01 = Coherent([0, 1], 1).to_fock_component(5)
+        with pytest.raises(ValueError):
+            Ket.from_fock([0], state01.fock_array(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phasespace(self, modes):
@@ -154,6 +163,17 @@ class TestDM:
 
         state_out = DM.from_bargmann(modes, triple_in, "my_dm", True)
         assert state_in == state_out
+
+    def test_from_bargmann_error(self):
+        state01 = Coherent([0, 1], 1) >> Attenuator([0], 1)
+        with pytest.raises(ValueError):
+            DM.from_bargmann([0], state01.bargmann_triple, "my_dm", True)
+
+    def test_from_fock_error(self):
+        state01 = Coherent([0, 1], 1) >> Attenuator([0], 1)
+        state01 = state01.to_fock_component(2)
+        with pytest.raises(ValueError):
+            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
@@ -328,6 +348,7 @@ class TestVacuum:
 
         assert state.name == "Vac"
         assert state.modes == sorted(modes)
+        assert state.n_modes == len(modes)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):

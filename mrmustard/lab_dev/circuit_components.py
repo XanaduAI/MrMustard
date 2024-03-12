@@ -219,7 +219,7 @@ class CircuitComponent:
 
     def __add__(self, other: CircuitComponent):
         r"""
-        Implements the addition for circuit components.
+        Implements the addition between circuit components.
         """
         if self.wires != other.wires:
             msg = "Cannot add components with different wires."
