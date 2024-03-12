@@ -17,6 +17,7 @@
 from __future__ import annotations
 from functools import cached_property
 from typing import Optional
+import numpy as np
 
 __all__ = ["Wires"]
 
@@ -234,36 +235,37 @@ class Wires:
         if m := sets[3] & sets[7]:
             raise ValueError(f"input ket modes {m} overlap")
         bra_out = sets[0] | sets[4]
-        bra_in = sets[1] | sets[5]
+        bra_in  = sets[1] | sets[5]
         ket_out = sets[2] | sets[6]
-        ket_in = sets[3] | sets[7]
+        ket_in  = sets[3] | sets[7]
         w = Wires(bra_out, bra_in, ket_out, ket_in)
-        # calculate permutation from the contracted representation to the standard order
-        lists = list(map(sorted, sets))
-        offsets = list(map(len, sets))
-        final = [sorted(bra_out), sorted(bra_in), sorted(ket_out), sorted(ket_in)]
-        perm = []
-        for m in final[0]:
-            if m in sets[0]:
-                perm.append(lists[0].index(m))
-            else:
-                perm.append(lists[4].index(m) + sum(offsets[:4]))
-        for m in final[1]:
-            if m in sets[1]:
-                perm.append(lists[1].index(m) + sum(offsets[:1]))
-            else:
-                perm.append(lists[5].index(m) + sum(offsets[:5]))
-        for m in final[2]:
-            if m in sets[2]:
-                perm.append(lists[2].index(m) + sum(offsets[:2]))
-            else:
-                perm.append(lists[6].index(m) + sum(offsets[:6]))
-        for m in final[3]:
-            if m in sets[3]:
-                perm.append(lists[3].index(m) + sum(offsets[:3]))
-            else:
-                perm.append(lists[7].index(m) + sum(offsets[:7]))
-        return w, tuple(perm)
+        # calculate permutation from the contracted representations to the standard order
+        sorted_sets = [sorted(s) for s in sets]
+        l = [len(s) for s in sets]
+        offsets = [0,l[0],l[0]+l[1],l[0]+l[1]+l[2],l[1]+l[2]+l[3],l[0]+l[2]+l[3]+l[4],
+                   l[0]+l[1]+l[3]+l[4]+l[5],l[0]+l[1]+l[2]+l[4]+l[5]+l[6]]
+        print(self, '@', other)
+        print('sorted',sorted_sets)
+        print('lengths', l)
+        print('offsets',offsets)
+
+        bo = np.argsort(sorted(A-D) + sorted(C))
+        bo[bo<l[0]] += offsets[0]
+        bo[bo>=l[0]] += offsets[4]
+        bi = np.argsort(sorted(B) + sorted(D-A))
+        bi[bi<l[1]] += offsets[1]
+        bi[bi>=l[1]] += offsets[5]
+        ko = np.argsort(sorted(a-d) + sorted(c))
+        print(sorted(a-d), sorted(c))
+        print(ko)
+        ko[ko<l[2]] += offsets[2]
+        print(ko)
+        ko[ko>=l[2]] += offsets[6]
+        print(ko)
+        ki = np.argsort(sorted(b) + sorted(d-a))
+        ki[ki<l[3]] += offsets[3]
+        ki[ki>=l[3]] += offsets[7]
+        return w, tuple(bo) + tuple(bi) + tuple(ko) + tuple(ki)
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
