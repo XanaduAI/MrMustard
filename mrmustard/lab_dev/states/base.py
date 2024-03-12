@@ -193,12 +193,21 @@ class State(CircuitComponent):
         The vector of means of this state in phase space.
         """
         raise NotImplementedError
+    
+    @property
+    def L2_norm(self) -> float:
+        r"""
+        The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        """
+        rep = (self >> self.dual).representation
+        ret = rep.c[0] if isinstance(rep, Bargmann) else rep.array
+        return math.atleast_1d(ret, math.float64)[0]
 
     @property
     def probability(self) -> float:
         r"""
-        Returns :math:`\text{Tr}\big(|\psi\rangle\langle\psi|\big)` for ``Ket`` states :math:`|\psi\rangle` and
-        :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
+        Returns :math:`\text{Tr}\big(|\psi\rangle\langle\psi|\big)` for ``Ket`` states
+        :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
         """
         raise NotImplementedError
 
@@ -330,10 +339,7 @@ class DM(State):
 
     @property
     def purity(self) -> float:
-        r"""
-        The purity of this state.
-        """
-        raise NotImplementedError
+        return (self / self.probability).L2_norm
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

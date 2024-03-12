@@ -103,6 +103,10 @@ class TestKet:
         with pytest.raises(NotImplementedError):
             Ket.from_quadrature()
 
+    def test_L2_norm(self):
+        state = Coherent([0], x=1)
+        assert state.L2_norm == 1
+
     def test_probability(self):
         state = Coherent([0], x=1)
         assert state.probability == 1
@@ -207,16 +211,19 @@ class TestDM:
         with pytest.raises(NotImplementedError):
             DM.from_quadrature()
 
+    def test_L2_norm(self):
+        state = Coherent([0], x=1) >> Attenuator([0], 1)
+        assert state.L2_norm == 1
+
     def test_probability(self):
         state = Coherent([0], x=1) >> Attenuator([0], 1)
         assert state.probability == 1
         assert state.to_fock_component(20).probability == 1
 
-    # @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
-    # def test_purity(self, modes):
-    #     state = Coherent([0], 1, 2) >> Attenuator([0], 0.8)
-    #     assert state.purity == 1
-    #     assert state.is_pure
+    def test_purity(self):
+        state = Coherent([0], 1, 2) >> Attenuator([0], 0.8)
+        assert math.allclose(state.purity, 1)
+        assert state.is_pure
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
