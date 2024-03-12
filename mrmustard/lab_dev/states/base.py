@@ -49,6 +49,7 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> State:
         r"""
         Returns a ``Ket`` from an ``(A, b, c)`` triple defining a Bargmann representation.
@@ -71,6 +72,7 @@ class State(CircuitComponent):
             modes: The modes of this states.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
+            batched: Whether the given triple is batched.
 
         Returns:
             A ``Ket`` state.
@@ -162,15 +164,15 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def purity(self) -> float:
-        r"""
-        The purity of this state.
-        """
-        raise NotImplementedError
-
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        Returns an array that describes this state in the Fock representation.
+        Returns the ``(A, b, c)`` triple that describes this state in the Bargmann representation.
+
+        Returns:
+            The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
+
+        Raises:
+            ValueError: If the triple cannot be calculated given the state's representation.
         """
         rep = self.representation
         if isinstance(rep, Bargmann):
@@ -178,19 +180,15 @@ class State(CircuitComponent):
         msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
         raise ValueError(msg)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        Returns an array that describes this state in the Fock representation.
-        """
-        return to_fock(self.representation, shape).array
-
-    def phasespace_cov(self):
+    @property
+    def cov(self):
         r"""
         The covariance matrix of this state in phase space.
         """
         raise NotImplementedError
 
-    def phasespace_means(self):
+    @property
+    def means(self):
         r"""
         The vector of means of this state in phase space.
         """
@@ -202,6 +200,38 @@ class State(CircuitComponent):
         Whether this state is pure.
         """
         return math.allclose(self.purity, 1.0)
+
+    @property
+    def probability(self) -> float:
+        r"""
+        Returns :math:`\text{Tr}\big(|\psi\rangle\langle\psi|\big)` for ``Ket`` states :math:`|\psi\rangle` and
+        :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
+        """
+        raise NotImplementedError
+
+    @property
+    def purity(self) -> float:
+        r"""
+        The purity of this state.
+        """
+        raise NotImplementedError
+
+    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+        r"""
+        Returns an array that describes this state in the Fock representation.
+
+        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
+        representation into a ``Fock`` object.
+
+        Args:
+            shape: The shape of the returned array. If ``shape``is given as an ``int``, it is
+            broadcasted to all the dimensions. If ``None``, it defaults to the value of
+            ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+
+        Returns:
+            The array that describes this state in the Fock representation.
+        """
+        return to_fock(self.representation, shape).array
 
 
 class DM(State):
@@ -224,13 +254,16 @@ class DM(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
+        batched: bool = False,
     ) -> DM:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
 
         n_modes = len(modes)
-        if A.shape != (2 * n_modes, 2 * n_modes) or b.shape != (2 * n_modes,):
+        A_sh = (1, 2 * n_modes, 2 * n_modes) if batched else (2 * n_modes, 2 * n_modes)
+        b_sh = (1, 2 * n_modes) if batched else (2 * n_modes,)
+        if A.shape != A_sh or b.shape != b_sh:
             msg = f"Given triple is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
 
@@ -287,27 +320,18 @@ class DM(State):
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
         return ret
 
-    @classmethod
-    def from_quadrature(self) -> DM:
-        raise NotImplementedError
+    @property
+    def probability(self) -> float:
+        traced_rep = self.representation.trace(
+            self.wires.output.ket.indices, self.wires.output.bra.indices
+        )
+        ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
+        return math.atleast_1d(ret, math.float64)[0]
 
     @property
     def purity(self) -> float:
         r"""
         The purity of this state.
-        """
-        raise NotImplementedError
-        
-
-    def phasespace_cov(self):
-        r"""
-        The covariance matrix of this state in phase space.
-        """
-        raise NotImplementedError
-
-    def phasespace_means(self):
-        r"""
-        The vector of means of this state in phase space.
         """
         raise NotImplementedError
 
@@ -332,7 +356,6 @@ class DM(State):
         return super().__repr__().replace("CircuitComponent", "DM")
 
     def _repr_markdown_(self):
-        print("yo")
         table = (
             f"#### {self.__class__.__name__}\n\n"
             + "| Purity | Num modes |\n"
@@ -441,12 +464,14 @@ class Ket(State):
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
 
-    @classmethod
-    def from_quadrature(self):
-        r"""
-        Returns a ``Ket`` from quadrature.
-        """
-        raise NotImplementedError
+    @property
+    def probability(self) -> float:
+        dm = self @ self.dual
+        traced_rep = dm.representation.trace(
+            dm.wires.output.ket.indices, dm.wires.output.bra.indices
+        )
+        ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
+        return math.atleast_1d(ret, math.float64)[0]
 
     @property
     def purity(self) -> float:

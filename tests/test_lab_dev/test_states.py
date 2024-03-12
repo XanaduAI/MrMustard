@@ -21,11 +21,11 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics.fock import fock_state
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate
+from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 from ..random import Abc_triple
 
@@ -46,27 +46,13 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
-        n_modes = len(modes)
-        triple = Abc_triple(n_modes)
-        state = Ket.from_bargmann(modes, triple, "my_ket")
-
-        assert state.modes == sorted(modes)
-        assert state.name == "my_ket"
-        assert state.representation == Bargmann(*triple)
-        
-        assert np.allclose(state.bargmann_triple()[0], triple[0])
-        assert np.allclose(state.bargmann_triple()[1], triple[1])
-        assert np.allclose(state.bargmann_triple()[2], triple[2])
-
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
-    def test_to_from_bargmann(self, modes):
         x = 1
         y = 2
         xs = [x] * len(modes)
         ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
-        triple_in = state_in.bargmann_triple()
+        triple_in = state_in.bargmann_triple
 
         assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
         assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
@@ -85,6 +71,33 @@ class TestKet:
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_phasespace(self, modes):
+        with pytest.raises(NotImplementedError):
+            Coherent(modes, x=1, y=2).cov
+
+        with pytest.raises(NotImplementedError):
+            Coherent(modes, x=1, y=2).means
+
+        n_modes = len(modes)
+
+        state1 = Ket.from_phasespace(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        assert state1 == Vacuum(modes)
+
+        r = [i / 10 for i in range(n_modes)]
+        phi = [(i + 1) / 10 for i in range(n_modes)]
+        state2 = Ket.from_phasespace(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
+
+    def test_to_from_phasespace(self):
+        with pytest.raises(NotImplementedError):
+            Ket.from_quadrature()
+
+    def test_probability(self):
+        state = Coherent([0], x=1)
+        assert state.probability == 1
+        assert state.to_fock_component(20).probability == 1
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
@@ -133,6 +146,57 @@ class TestDM:
         assert state.name == (name if name else "")
         assert state.modes == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_bargmann(self, modes):
+        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.8)
+        triple_in = state_in.bargmann_triple
+
+        state_out = DM.from_bargmann(modes, triple_in, "my_dm", True)
+        assert state_in == state_out
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_fock(self, modes):
+        state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
+        state_in_fock = state_in.to_fock_component(5)
+        array_in = state_in.fock_array(5)
+
+        assert math.allclose(array_in, state_in_fock.representation.array)
+
+        state_out = DM.from_fock(modes, array_in, "my_dm", True)
+        assert state_in_fock == state_out
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    def test_to_from_phasespace(self, modes):
+        state0 = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
+
+        with pytest.raises(NotImplementedError):
+            state0.cov
+
+        with pytest.raises(NotImplementedError):
+            state0.means
+
+        n_modes = len(modes)
+
+        cov = vacuum_cov(n_modes)
+        means = [1.78885438, 3.57770876]
+        state1 = DM.from_phasespace(modes, cov, means)
+        assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
+
+    def test_to_from_phasespace(self):
+        with pytest.raises(NotImplementedError):
+            DM.from_quadrature()
+
+    def test_probability(self):
+        state = Coherent([0], x=1) >> Attenuator([0], 1)
+        assert state.probability == 1
+        assert state.to_fock_component(20).probability == 1
+
+    # @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    # def test_purity(self, modes):
+    #     state = Coherent([0], 1, 2) >> Attenuator([0], 0.8)
+    #     assert state.purity == 1
+    #     assert state.is_pure
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)

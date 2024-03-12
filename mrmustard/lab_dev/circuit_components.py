@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 
+from ..utils.typing import Scalar
 from ..physics.converters import to_fock
 from ..physics.representations import Representation
 from ..math.parameter_set import ParameterSet
@@ -218,13 +219,35 @@ class CircuitComponent:
 
     def __add__(self, other: CircuitComponent):
         r"""
-        Implements the addition of circuit components.
+        Implements the addition for circuit components.
         """
         if self.wires != other.wires:
             msg = "Cannot add components with different wires."
             raise ValueError(msg)
         rep = self.representation + other.representation
-        return self.from_attributes(self.name, rep, self.wires)
+        return self._from_attributes(self.name, rep, self.wires)
+
+    def __mul__(self, other: Union[CircuitComponent, Scalar]):
+        r"""
+        Implements the multiplication with a scalar or another component for circuit components.
+        """
+        if isinstance(other, CircuitComponent):
+            rep = self.representation * other.representation
+            wires = self.wires + other.wires
+            return self._from_attributes(self.name, rep, wires)
+        return self._from_attributes(self.name, other * self.representation, self.wires)
+
+    def __rmul__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Implements the multiplication for circuit components with ``other`` on the right.
+        """
+        return self.__mul__(other)
+
+    def __truediv__(self, other: Scalar):
+        r"""
+        Implements the division by a scalar for circuit components.
+        """
+        return self._from_attributes(self.name, self.representation / other, self.wires)
 
     def __eq__(self, other) -> bool:
         r"""
