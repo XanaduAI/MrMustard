@@ -65,6 +65,10 @@ class TestKet:
         with pytest.raises(ValueError):
             Ket.from_bargmann([0], state01.bargmann_triple, "my_ket", True)
 
+    def test_bargmann_triple_error(self):
+        with pytest.raises(ValueError):
+            Number([0], n=10).bargmann_triple
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
@@ -96,7 +100,7 @@ class TestKet:
         state2 = Ket.from_phasespace(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
-    def test_to_from_phasespace(self):
+    def test_to_from_quadrature(self):
         with pytest.raises(NotImplementedError):
             Ket.from_quadrature()
 
@@ -104,10 +108,24 @@ class TestKet:
         state = Coherent([0], x=1)
         assert state.L2_norm == 1
 
+        state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
+        with pytest.raises(ValueError):
+            state_sup.L2_norm
+
+        with pytest.raises(ValueError):
+            state_sup.to_fock_component(5).L2_norm
+
     def test_probability(self):
         state = Coherent([0], x=1)
         assert state.probability == 1
         assert state.to_fock_component(20).probability == 1
+
+        state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
+        with pytest.raises(ValueError):
+            state_sup.probability
+
+        with pytest.raises(ValueError):
+            state_sup.to_fock_component(5).probability
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
@@ -176,6 +194,11 @@ class TestDM:
         with pytest.raises(ValueError):
             DM.from_fock([0], state01.fock_array(5), "my_dm", True)
 
+    def test_bargmann_triple_error(self):
+        fock = Number([0], n=10) >> Attenuator([0], 1)
+        with pytest.raises(ValueError):
+            fock.bargmann_triple
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
@@ -201,7 +224,7 @@ class TestDM:
         state1 = DM.from_phasespace(modes, cov, means)
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
-    def test_to_from_phasespace(self):
+    def test_to_from_quadrature(self):
         with pytest.raises(NotImplementedError):
             DM.from_quadrature()
 
@@ -209,10 +232,24 @@ class TestDM:
         state = Coherent([0], x=1) >> Attenuator([0], 1)
         assert state.L2_norm == 1
 
+        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)) >> Attenuator([0], 1)
+        with pytest.raises(ValueError):
+            state_sup.L2_norm
+
+        with pytest.raises(ValueError):
+            state_sup.to_fock_component(5).L2_norm
+
     def test_probability(self):
         state = Coherent([0], x=1) >> Attenuator([0], 1)
         assert state.probability == 1
         assert state.to_fock_component(20).probability == 1
+
+        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)) >> Attenuator([0], 1)
+        with pytest.raises(ValueError):
+            state_sup.probability
+
+        with pytest.raises(ValueError):
+            state_sup.to_fock_component(5).probability
 
     def test_purity(self):
         state = Coherent([0], 1, 2) >> Attenuator([0], 0.8)
