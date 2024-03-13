@@ -289,9 +289,10 @@ class CircuitComponent:
 
     def __lshift__(self, other: CircuitComponent):
         r"""
-        Projects this component onto another component by using self's ``>>`` on ``other.dual``.
+        Projects this component onto another component by computing
+        ``(other >> self.dual).dual``.
         """
-        return self >> other.dual
+        return (other >> self.dual).dual
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
