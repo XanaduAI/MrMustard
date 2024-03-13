@@ -84,10 +84,7 @@ class TestKet:
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phasespace(self, modes):
         with pytest.raises(NotImplementedError):
-            Coherent(modes, x=1, y=2).cov
-
-        with pytest.raises(NotImplementedError):
-            Coherent(modes, x=1, y=2).means
+            Coherent(modes, x=1, y=2).phasespace
 
         n_modes = len(modes)
 
@@ -195,10 +192,7 @@ class TestDM:
         state0 = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
 
         with pytest.raises(NotImplementedError):
-            state0.cov
-
-        with pytest.raises(NotImplementedError):
-            state0.means
+            state0.phasespace
 
         n_modes = len(modes)
 

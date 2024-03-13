@@ -51,7 +51,7 @@ class State(CircuitComponent):
         batched: bool = False,
     ) -> State:
         r"""
-        Returns a ``Ket`` from an ``(A, b, c)`` triple defining a Bargmann representation.
+        Initializes a state from an ``(A, b, c)`` triple defining a Bargmann representation.
 
         .. code-block::
 
@@ -74,7 +74,7 @@ class State(CircuitComponent):
             batched: Whether the given triple is batched.
 
         Returns:
-            A ``Ket`` state.
+            A state.
 
         Raises:
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
@@ -91,7 +91,7 @@ class State(CircuitComponent):
         batched: bool = False,
     ) -> State:
         r"""
-        Returns a ``State`` from an array describing the state in the Fock representation.
+        Initializes a state from an array describing the state in the Fock representation.
 
         .. code-block::
 
@@ -132,7 +132,7 @@ class State(CircuitComponent):
         atol_purity: Optional[float] = 1e-3,
     ) -> State:
         r"""
-        Returns a ``Ket`` from the covariance matrix and the vector of means of a state in
+        Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
 
         Args:
@@ -140,12 +140,12 @@ class State(CircuitComponent):
             means: The vector of means.
             modes: The modes of this states.
             name: The name of this state.
-            atol_purity: If not ``None``, the purity of the returned state is computed. If it is
-                smaller than ``1-atol_purity`` or larger than ``1+atol_purity``, an error is
-                raised.
+            atol_purity: If ``atol_purity`` is given, the purity of the state is computed, and an
+                error is raised if its value is smaller than ``1-atol_purity`` or larger than
+                ``1+atol_purity``. If ``None``, this check is skipped.
 
         Returns:
-            A ``Ket`` state.
+            A state.
 
         Raises:
             ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
@@ -158,14 +158,14 @@ class State(CircuitComponent):
     @classmethod
     def from_quadrature(self) -> State:
         r"""
-        Returns a ``Ket`` from quadrature.
+        Initializes a state from quadrature.
         """
         raise NotImplementedError
 
     @property
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        Returns the ``(A, b, c)`` triple that describes this state in the Bargmann representation.
+        The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
 
         Returns:
             The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
@@ -180,9 +180,9 @@ class State(CircuitComponent):
         raise ValueError(msg)
 
     @property
-    def cov(self):
+    def phasespace(self) -> tuple[ComplexMatrix, ComplexVector]:
         r"""
-        The covariance matrix of this state in phase space.
+        The covariance matrix and the vector of means that describe this state in phase space.
         """
         raise NotImplementedError
 
@@ -226,7 +226,7 @@ class State(CircuitComponent):
 
     def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
         r"""
-        Returns an array that describes this state in the Fock representation.
+        The array that describes this state in the Fock representation.
 
         Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
         representation into a ``Fock`` object.
