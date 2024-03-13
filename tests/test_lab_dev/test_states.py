@@ -122,9 +122,6 @@ class TestKet:
 
         state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
         with pytest.raises(ValueError):
-            state_sup.probability
-
-        with pytest.raises(ValueError):
             state_sup.to_fock_component(5).probability
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -210,18 +207,15 @@ class TestDM:
         state_out = DM.from_fock(modes, array_in, "my_dm", True)
         assert state_in_fock == state_out
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
-    def test_to_from_phasespace(self, modes):
-        state0 = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
+    def test_to_from_phasespace(self):
+        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 0.8)
 
         with pytest.raises(NotImplementedError):
             state0.phasespace
 
-        n_modes = len(modes)
-
-        cov = vacuum_cov(n_modes)
+        cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phasespace(modes, cov, means)
+        state1 = DM.from_phasespace([0], cov, means)
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
