@@ -206,7 +206,7 @@ class State(CircuitComponent):
         else:
             if rep.A.shape[0] > 1:
                 raise ValueError(msg)
-        
+
         rep = (self >> self.dual).representation
         ret = rep.c if isinstance(rep, Bargmann) else rep.array
         return math.atleast_1d(ret, math.float64)[0]
