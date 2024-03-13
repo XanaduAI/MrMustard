@@ -24,6 +24,7 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
+from IPython.display import display, HTML
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -193,7 +194,7 @@ class State(CircuitComponent):
         The vector of means of this state in phase space.
         """
         raise NotImplementedError
-    
+
     @property
     def L2_norm(self) -> float:
         r"""
@@ -359,29 +360,10 @@ class DM(State):
         return component
 
     def __repr__(self) -> str:
-        return super().__repr__().replace("CircuitComponent", "DM")
+        return ""
 
-    def _repr_markdown_(self):
-        table = (
-            f"#### {self.__class__.__name__}\n\n"
-            + "| Purity | Num modes |\n"
-            + "| :----: | :----: |\n"
-            # + f"| {self.purity :.2e} | {self.n_modes} |"
-        )
-
-        if self.n_modes == 1:
-            array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
-            n_batches = array.shape[0]
-            dm = array[0]
-            for batch in range(1, n_batches):
-                dm += math.outer(array[batch], math.conj(array[batch]))
-            mikkel_plot(dm)
-
-        if settings.DEBUG:
-            detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-            return f"{table}\n{detailed_info}"
-
-        return table
+    def _repr_html_(self):
+        display(HTML(repr_html(self)))
 
 
 class Ket(State):
@@ -507,26 +489,62 @@ class Ket(State):
         return component
 
     def __repr__(self) -> str:
-        return super().__repr__().replace("CircuitComponent", "Ket")
+        return ""
 
-    def _repr_markdown_(self):
-        table = (
-            f"#### {self.__class__.__name__}\n\n"
-            + "| Purity | Num modes |\n"
-            + "| :----: | :----: |\n"
-            + f"| {self.purity :.2e} | {self.n_modes} |"
-        )
+    def _repr_html_(self):  # pragma: no cover
+        display(HTML(repr_html(self)))
 
-        if self.n_modes == 1:
-            array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
-            n_batches = array.shape[0]
-            dm = math.outer(array[0], math.conj(array[0]))
-            for batch in range(1, n_batches):
-                dm += math.outer(array[batch], math.conj(array[batch]))
-            mikkel_plot(dm)
 
-        if settings.DEBUG:
-            detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-            return f"{table}\n{detailed_info}"
+def repr_html(state: Union[Ket, DM]) -> str:
+    r"""
+    An html repr for states.
 
-        return table
+    Args:
+        state: A state.
+
+    Return:
+        An html representation of the given state.
+    """
+    html = f"<h1>{state.name or state.__class__.__name__}</h1>"
+
+    prob = state.probability
+    prob_str = f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"
+    type = "Ket" if isinstance(state, Ket) else "DM"
+    is_barg = "✅" if isinstance(state.representation, Bargmann) else "❌"
+    is_fock = "✅" if isinstance(state.representation, Fock) else "❌"
+
+    html += '<table style="border-collapse: collapse; text-align: center;">'
+
+    html += "<tr>"
+    html += "<th>Purity</th>"
+    html += "<th>Probability</th>"
+    html += "<th>Number of modes</th>"
+    html += "<th>Class</th>"
+    html += "<th>Bargmann</th>"
+    html += "<th>Fock</th>"
+    html += "</tr>"
+
+    html += "<tr>"
+    html += f"<td>{state.purity :.2e}</td>"
+    html += f"<td>{prob_str}</td>"
+    html += f"<td>{state.n_modes}</td>"
+    html += f"<td>{type}</td>"
+    html += f"<td>{is_barg}</td>"
+    html += f"<td>{is_fock}</td>"
+    html += "</tr>"
+
+    html += "</table>"
+
+    if state.n_modes == 1:
+        array = state.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
+        n_batches = array.shape[0]
+        dm = math.outer(array[0], math.conj(array[0])) if isinstance(state, Ket) else array[0]
+        for batch in range(1, n_batches):
+            dm += (
+                math.outer(array[batch], math.conj(array[batch]))
+                if isinstance(state, Ket)
+                else array[batch]
+            )
+        html += mikkel_plot(dm).to_html()
+
+    return html

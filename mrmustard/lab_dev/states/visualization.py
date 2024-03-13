@@ -22,6 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+from mrmustard import math
 from mrmustard.physics import fock
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix
@@ -33,99 +37,70 @@ def mikkel_plot(
     dm: ComplexMatrix,
     xbounds: tuple[int] = (-6, 6),
     ybounds: tuple[int] = (-6, 6),
-    **kwargs,
-):  # pylint: disable=too-many-statements
-    r"""Plots the Wigner function of a state given its density matrix.
+    resolution: int = 200,
+):
+    r"""
+    Visual representation of the Wigner function of a state given its density matrix.
 
     Args:
         dm: The density matrix to plot.
         xbounds: The range of the x axis.
         ybounds: The range of the y axis.
-
-    Keyword args:
-        resolution: The number of points used to calculate the wigner function.
-        xticks: The ticks of the x axis.
-        xtick_labels: The labels of the x axis; if None uses default formatter.
-        yticks: The ticks of the y axis.
-        ytick_labels: The labels of the y axis; if None uses default formatter.
-        grid: Whether to display the grid.
-        cmap: The colormap of the figure.
+        resolution: The number of bins on each axes.
 
     Returns:
         The figure and axes.
     """
+    x, prob_x = fock.quadrature_distribution(dm)
+    p, prob_p = fock.quadrature_distribution(dm, np.pi / 2)
 
-    plot_args = {
-        "resolution": 200,
-        "xticks": (-5, 0, 5),
-        "xtick_labels": None,
-        "yticks": (-5, 0, 5),
-        "ytick_labels": None,
-        "grid": False,
-        "cmap": cm.RdBu,
-    }
-    plot_args.update(kwargs)
+    xvec = np.linspace(*xbounds, resolution)
+    pvec = np.linspace(*ybounds, resolution)
+    z, xs, ps = wigner_discretized(dm, xvec, pvec)
+    xs = xs[:, 0]
+    ps = ps[0, :]
 
-    if plot_args["xtick_labels"] is None:
-        plot_args["xtick_labels"] = plot_args["xticks"]
-    if plot_args["ytick_labels"] is None:
-        plot_args["ytick_labels"] = plot_args["yticks"]
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        column_widths=[2, 1],
+        row_heights=[1, 2],
+        vertical_spacing=0.05,
+        horizontal_spacing=0.05,
+    )
 
-    q, ProbX = fock.quadrature_distribution(dm)
-    p, ProbP = fock.quadrature_distribution(dm, np.pi / 2)
-
-    xvec = np.linspace(*xbounds, plot_args["resolution"])
-    pvec = np.linspace(*ybounds, plot_args["resolution"])
-    W, X, P = wigner_discretized(dm, xvec, pvec)
-
-    gridspec_kw = {"width_ratios": [2, 1], "height_ratios": [1, 2]}
-    fig, ax = plt.subplots(2, 2, figsize=(6, 6), gridspec_kw=gridspec_kw)
-    plt.subplots_adjust(wspace=0.05, hspace=0.05)
-
-    ax[1][0].contourf(X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max())
-    ax[1][0].set_xlabel("x", fontsize=12)
-    ax[1][0].set_ylabel("p", fontsize=12)
-    ax[1][0].get_xaxis().set_ticks(plot_args["xticks"])
-    ax[1][0].xaxis.set_ticklabels(plot_args["xtick_labels"])
-    ax[1][0].get_yaxis().set_ticks(plot_args["yticks"])
-    ax[1][0].yaxis.set_ticklabels(plot_args["ytick_labels"], rotation="vertical", va="center")
-    ax[1][0].tick_params(direction="in")
-    ax[1][0].set_xlim(xbounds)
-    ax[1][0].set_ylim(ybounds)
-    ax[1][0].grid(plot_args["grid"])
+    # X-P plot
+    fig_21 = go.Heatmap(x=xs, y=ps, z=z, colorscale="blues", name="Wigner function")
+    fig.add_trace(fig_21, row=2, col=1)
+    fig.update_traces(row=2, col=1, showscale=False)
+    fig.update_xaxes(title_text="x", row=2, col=1)
+    fig.update_yaxes(title_text="p", row=2, col=1)
 
     # X quadrature probability distribution
-    ax[0][0].fill(q, ProbX, color=plot_args["cmap"](0.5))
-    ax[0][0].plot(q, ProbX, color=plot_args["cmap"](0.8))
-    ax[0][0].get_xaxis().set_ticks(plot_args["xticks"])
-    ax[0][0].xaxis.set_ticklabels([])
-    ax[0][0].get_yaxis().set_ticks([])
-    ax[0][0].tick_params(direction="in")
-    ax[0][0].set_ylabel("Prob(x)", fontsize=12)
-    ax[0][0].set_xlim(xbounds)
-    ax[0][0].set_ylim([0, 1.1 * max(ProbX)])
-    ax[0][0].grid(plot_args["grid"])
+    fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="dodgerblue", width=2), name="Prob(x)")
+    fig.add_trace(fig_11, row=1, col=1)
+    fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
+    fig.update_yaxes(title_text="Prob(x)", row=1, col=1)
 
     # P quadrature probability distribution
-    ax[1][1].fill(ProbP, p, color=plot_args["cmap"](0.5))
-    ax[1][1].plot(ProbP, p, color=plot_args["cmap"](0.8))
-    ax[1][1].get_xaxis().set_ticks([])
-    ax[1][1].get_yaxis().set_ticks(plot_args["yticks"])
-    ax[1][1].yaxis.set_ticklabels([])
-    ax[1][1].tick_params(direction="in")
-    ax[1][1].set_xlabel("Prob(p)", fontsize=12)
-    ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
-    ax[1][1].set_ylim(ybounds)
-    ax[1][1].grid(plot_args["grid"])
+    fig_22 = go.Scatter(x=prob_p, y=p, line=dict(color="dodgerblue", width=2), name="Prob(p)")
+    fig.add_trace(fig_22, row=2, col=2)
+    fig.update_xaxes(title_text="Prob(p)", row=2, col=2)
+    fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
 
     # Density matrix
-    ax[0][1].matshow(abs(dm), cmap=plot_args["cmap"], vmin=-abs(dm).max(), vmax=abs(dm).max())
-    ax[0][1].set_title("abs(ρ)", fontsize=12)
-    ax[0][1].tick_params(direction="in")
-    ax[0][1].get_xaxis().set_ticks([])
-    ax[0][1].get_yaxis().set_ticks([])
-    ax[0][1].set_aspect("auto")
-    ax[0][1].set_ylabel(f"cutoff = {len(dm)}", fontsize=12)
-    ax[0][1].yaxis.set_label_position("right")
+    fig_12 = go.Heatmap(z=abs(dm), colorscale="blues", name=f"abs(ρ)")
+    fig.add_trace(fig_12, row=1, col=2)
+    fig.update_traces(showscale=False, row=1, col=2)
+    fig.update_xaxes(row=1, col=2)
+    fig.update_yaxes(autorange="reversed", row=1, col=2)
 
-    return fig, ax
+    fig.update_layout(height=600, width=600, margin=dict(l=20, r=20, t=30, b=20), showlegend=False)
+    fig.update_xaxes(
+        showline=True, linewidth=1, linecolor="black", mirror=True, tickfont_family="Arial Black"
+    )
+    fig.update_yaxes(
+        showline=True, linewidth=1, linecolor="black", mirror=True, tickfont_family="Arial Black"
+    )
+
+    return fig
