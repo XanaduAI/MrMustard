@@ -18,3 +18,4 @@ The classes representing states in quantum circuits.
 
 from .base import *
 from .states import *
+from .visualization import mikkel_plot

@@ -24,8 +24,9 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
+from IPython.display import display, HTML
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
@@ -33,6 +34,7 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
+from .visualization import mikkel_plot
 
 __all__ = ["State", "DM", "Ket"]
 
