@@ -320,10 +320,10 @@ class DM(State):
         means = math.astensor(means)
 
         n_modes = len(modes)
-        if means.shape != (4 * n_modes,):
+        if means.shape != (2 * n_modes,):
             msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
-        if cov.shape != (4 * n_modes, 4 * n_modes):
+        if cov.shape != (2 * n_modes, 2 * n_modes):
             msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
             raise ValueError(msg)
 
