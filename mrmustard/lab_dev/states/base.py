@@ -198,8 +198,17 @@ class State(CircuitComponent):
         r"""
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
+        rep = self.representation
+        msg = "Method ``L2_norm`` not supported for batched representations."
+        if isinstance(rep, Fock):
+            if rep.array.shape[0] > 1:
+                raise ValueError(msg)
+        else:
+            if rep.A.shape[0] > 1:
+                raise ValueError(msg)
+        
         rep = (self >> self.dual).representation
-        ret = rep.c[0] if isinstance(rep, Bargmann) else rep.array
+        ret = rep.c if isinstance(rep, Bargmann) else rep.array
         return math.atleast_1d(ret, math.float64)[0]
 
     @property
@@ -330,9 +339,19 @@ class DM(State):
 
     @property
     def probability(self) -> float:
-        traced_rep = self.representation.trace(
-            self.wires.output.ket.indices, self.wires.output.bra.indices
-        )
+        rep = self.representation
+        msg = "Method ``probability`` not supported for batched representations."
+        if isinstance(rep, Fock):
+            if rep.array.shape[0] > 1:
+                raise ValueError(msg)
+        else:
+            if rep.A.shape[0] > 1:
+                raise ValueError(msg)
+
+        idx_ket = self.wires.output.ket.indices
+        idx_bra = self.wires.output.bra.indices
+
+        traced_rep = self.representation.trace(idx_ket, idx_bra)
         ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
         return math.atleast_1d(ret, math.float64)[0]
 
@@ -450,9 +469,20 @@ class Ket(State):
     @property
     def probability(self) -> float:
         dm = self @ self.dual
-        traced_rep = dm.representation.trace(
-            dm.wires.output.ket.indices, dm.wires.output.bra.indices
-        )
+
+        rep = dm.representation
+        msg = "Method ``probability`` not supported for batched representations."
+        if isinstance(rep, Fock):
+            if rep.array.shape[0] > 1:
+                raise ValueError(msg)
+        else:
+            if rep.A.shape[0] > 1:
+                raise ValueError(msg)
+
+        idx_ket = dm.wires.output.ket.indices
+        idx_bra = dm.wires.output.bra.indices
+
+        traced_rep = dm.representation.trace(idx_ket, idx_bra)
         ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
         return math.atleast_1d(ret, math.float64)[0]
 
