@@ -100,8 +100,8 @@ class State(CircuitComponent):
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
-            >>> coh = Ket.from_fock(modes, array)
+            >>> array = Coherent(modes, x=0.1).to_fock_component().representation.array
+            >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
             >>> assert coh.representation == Fock(array)
