@@ -137,7 +137,7 @@ class TestBargmannRepresentation:
     def test_add_error(self):
         bargmann = Bargmann(*Abc_triple(3))
         fock = Fock(np.random.random((1, 4, 4, 4)), batched=True)
-        
+
         with pytest.raises(ValueError):
             bargmann + fock
 
