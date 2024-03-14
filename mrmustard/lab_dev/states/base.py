@@ -36,7 +36,6 @@ from ..transformations.transformations import Unitary, Channel
 
 __all__ = ["State", "DM", "Ket"]
 
-
 class State(CircuitComponent):
     r"""
     Base class for all states.
@@ -130,7 +129,7 @@ class State(CircuitComponent):
         means: ComplexMatrix,
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
-    ) -> State:
+    ) -> State:  # pylint: disable=abstract-method
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
@@ -156,7 +155,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:
+    def from_quadrature(self) -> State:  # pylint: disable=abstract-method
         r"""
         Initializes a state from quadrature.
         """
