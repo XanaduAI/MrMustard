@@ -225,7 +225,8 @@ class CircuitComponent:
             msg = "Cannot add components with different wires."
             raise ValueError(msg)
         rep = self.representation + other.representation
-        return self._from_attributes(self.name, rep, self.wires)
+        name = self.name if self.name == other.name else ""
+        return self._from_attributes(name, rep, self.wires)
 
     def __mul__(self, other: Union[CircuitComponent, Scalar]):
         r"""
@@ -234,7 +235,7 @@ class CircuitComponent:
         if isinstance(other, CircuitComponent):
             rep = self.representation * other.representation
             wires = self.wires + other.wires
-            return self._from_attributes(self.name, rep, wires)
+            return self._from_attributes("", rep, wires)
         return self._from_attributes(self.name, other * self.representation, self.wires)
 
     def __rmul__(self, other: Representation | Scalar) -> Representation:
