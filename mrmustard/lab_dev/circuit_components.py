@@ -20,10 +20,10 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional, Sequence, Union
 import numpy as np
 from ..physics.converters import to_fock
-from ..physics.representations import Representation, Bargmann, Fock
+from ..physics.representations import Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .wires import Wires
@@ -179,7 +179,9 @@ class CircuitComponent:
         instance.__dict__["_wires"] = Wires(*self.wires.original.args)
         return instance
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock_component(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -193,7 +195,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=3)
+            >>> d_fock = d.to_fock_component(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
@@ -250,25 +252,25 @@ class CircuitComponent:
         """
         msg = f"``>>`` not supported between {self} and {other}, use ``@``."
 
-        wires_out = self.wires
-        wires_in = other.wires
+        wires_s = self.wires
+        wires_o = other.wires
 
-        if wires_out.ket and wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket and wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ other
             return self @ other @ other.adjoint
 
-        if wires_out.ket:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.ket:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.ket:
+            if wires_o.ket:
                 return self @ other
             raise ValueError(msg)
 
-        if wires_out.bra:
-            if wires_in.ket and wires_in.bra:
+        if wires_s.bra:
+            if wires_o.ket and wires_o.bra:
                 return self @ self.adjoint @ other
-            if wires_in.bra:
+            if wires_o.bra:
                 return self @ other
             raise ValueError(msg)
 

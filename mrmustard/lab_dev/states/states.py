@@ -95,7 +95,7 @@ class Number(Ket):
         >>> from mrmustard.lab_dev import Number
 
         >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert state.modes == (0, 1)
+        >>> assert state.modes == [0, 1]
 
     Args:
         modes: The modes of the number state.
@@ -113,8 +113,7 @@ class Number(Ket):
         :math:`n_j`.
 
     """
-
-    def __init__(self, modes: tuple[int, ...], n: Union[int, tuple[int, ...]]) -> None:
+    def __init__(self, modes: Iterable[int], n: Union[int, Sequence[int]]) -> None:
         super().__init__("N", modes=modes)
 
         self._n = math.atleast_1d(n)
