@@ -121,7 +121,7 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
-    def representation(self) -> Optional[Representation]:
+    def representation(self) -> Representation | None:
         r"""
         A representation of this circuit component.
         """
