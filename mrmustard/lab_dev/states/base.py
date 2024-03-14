@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=abstract-method
+
 """
 This module contains the base classes for the available quantum states.
 
@@ -155,7 +157,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:  # pylint: disable=abstract-method
+    def from_quadrature(self) -> State:X
         r"""
         Initializes a state from quadrature.
         """
