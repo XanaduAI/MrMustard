@@ -67,6 +67,7 @@ def mikkel_plot(
         row_heights=[1, 2],
         vertical_spacing=0.05,
         horizontal_spacing=0.05,
+        # shared_xaxes=True
     )
 
     # X-P plot
