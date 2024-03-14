@@ -568,13 +568,10 @@ def repr_html(state: Union[Ket, DM]) -> str:
     if state.n_modes == 1:
         array = state.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
         n_batches = array.shape[0]
-        dm = math.outer(array[0], math.conj(array[0])) if isinstance(state, Ket) else array[0]
-        for batch in range(1, n_batches):
-            dm += (
-                math.outer(array[batch], math.conj(array[batch]))
-                if isinstance(state, Ket)
-                else array[batch]
-            )
+        if isinstance(state, Ket):
+            dm = sum([math.outer(math.conj(array[b]), array[b]) for b in range(n_batches)])
+        else:
+            dm = math.sum(array, axes=[0])
         html += mikkel_plot(dm).to_html()
 
     return html

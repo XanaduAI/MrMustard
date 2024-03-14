@@ -70,7 +70,7 @@ def mikkel_plot(
     )
 
     # X-P plot
-    fig_21 = go.Heatmap(x=xs, y=ps, z=z, colorscale="viridis", name="Wigner function")
+    fig_21 = go.Heatmap(x=xs, y=-ps, z=z, colorscale="viridis", name="Wigner function")
     fig.add_trace(fig_21, row=2, col=1)
     fig.update_traces(row=2, col=1, showscale=False)
     fig.update_xaxes(title_text="x", row=2, col=1)
@@ -83,7 +83,7 @@ def mikkel_plot(
     fig.update_yaxes(title_text="Prob(x)", row=1, col=1)
 
     # P quadrature probability distribution
-    fig_22 = go.Scatter(x=prob_p, y=p, line=dict(color="brown", width=2), name="Prob(p)")
+    fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="brown", width=2), name="Prob(p)")
     fig.add_trace(fig_22, row=2, col=2)
     fig.update_xaxes(title_text="Prob(p)", row=2, col=2)
     fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
