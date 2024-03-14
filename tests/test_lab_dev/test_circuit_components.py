@@ -14,7 +14,7 @@
 
 """ Tests for circuit components. """
 
-# pylint: disable=fixme, missing-function-docstring, protected-access
+# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
 import numpy as np
 import pytest
