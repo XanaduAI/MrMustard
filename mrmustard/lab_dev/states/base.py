@@ -262,7 +262,12 @@ class State(CircuitComponent):
         resolution: int = 200,
         angle: float = 0,
     ):
-        r""" """
+        r"""
+        2D visualization of one-mode states.
+        """
+        if self.n_modes != 1:
+            raise ValueError("2D visualization not available for multi-mode states.")
+        
         array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
         n_batches = array.shape[0]
         if isinstance(self, Ket):
