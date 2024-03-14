@@ -70,6 +70,7 @@ def mikkel_plot(
     )
 
     # X-P plot
+    # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
     fig_21 = go.Heatmap(x=xs, y=-ps, z=z, colorscale="viridis", name="Wigner function")
     fig.add_trace(fig_21, row=2, col=1)
     fig.update_traces(row=2, col=1, showscale=False)
