@@ -38,7 +38,7 @@ def mikkel_plot(
     xbounds: tuple[int] = (-6, 6),
     ybounds: tuple[int] = (-6, 6),
     resolution: int = 200,
-):
+) -> go.Figure:
     r"""
     Visual representation of the Wigner function of a state given its density matrix.
 

@@ -18,13 +18,14 @@
 
 import numpy as np
 import pytest
+import sys
 
 from mrmustard import math
 from mrmustard.physics.fock import fock_state
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum, mikkel_plot
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 
@@ -389,3 +390,25 @@ class TestVacuum:
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
+
+
+# class TestMikkelPlot:
+#     r"""
+#     Tests for the ``mikkel_plot`` method.
+#     """
+#     # set to ``True`` if the assets need be regenerated
+#     regenerate_assets = True
+
+#     # the path to the assets
+#     path = sys.path + "/assets"
+
+#     def test_ket(self):
+#         path = sys.path
+#         state = Coherent([0], x=1, y=-0.5).to_fock_component(10)
+#         array = state.representation.array
+#         dm = math.outer(math.conj(array[0]), array[0])
+
+#         fig = mikkel_plot(dm)
+#         if self.regenerate_assets:
+#             html = fig.write_html(path)    
+#         # .to_html()
