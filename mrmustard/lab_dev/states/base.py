@@ -38,6 +38,7 @@ from ..transformations.transformations import Unitary, Channel
 
 __all__ = ["State", "DM", "Ket"]
 
+
 class State(CircuitComponent):
     r"""
     Base class for all states.
@@ -157,7 +158,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:X
+    def from_quadrature(self) -> State:
         r"""
         Initializes a state from quadrature.
         """
