@@ -76,7 +76,7 @@ class Wires:
     Note that subsets return new ``Wires`` objects.
 
     Args:
-        modes_out_bra (set[int]): The output modes on the bra side.
+        modes_out_bra: The output modes on the bra side.
         modes_in_bra  (set[int]): The input modes on the bra side.
         modes_out_ket (set[int]): The output modes on the ket side.
         modes_in_ket  (set[int]): The input modes on the ket side.
