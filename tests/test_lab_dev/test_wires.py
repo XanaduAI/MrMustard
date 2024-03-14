@@ -105,7 +105,14 @@ class TestWires:
         # contracts 3,3 and 13,13 on ket side
         u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8})
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12})
-        assert (u @ v)[0].args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
+        new_wires, perm = (u @ v)
+        assert new_wires.args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
+        
+
+    def test_matmul_keeps_ids(self):
+        U = Wires(set(), set(), {0}, {0})
+        psi = Wires(set(), set(), {0}, set())
+        (psi @ U)[0].ids == U.ids[0]
 
     def test_matmul_error(self):
         u = Wires(set(), set(), {0}, set())  # only output wire

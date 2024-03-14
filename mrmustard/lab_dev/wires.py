@@ -21,8 +21,6 @@ import numpy as np
 
 __all__ = ["Wires"]
 
-# cached_property = property
-
 
 class Wires:
     r"""
@@ -89,26 +87,65 @@ class Wires:
         modes_out_ket: Optional[set[int]] = None,
         modes_in_ket: Optional[set[int]] = None,
         original: Optional[Wires] = None,
+        ids: Optional[list[int]] = None,
     ) -> None:
 
-        self.mode_cache = {}
-        self.args = (
+        self._mode_cache = {}
+        self.args: tuple[set,...] = (
             modes_out_bra or set(),
             modes_in_bra or set(),
             modes_out_ket or set(),
             modes_in_ket or set(),
         )
         self._original = original
+        # self._ids: list[int] | None = ids
+    
+    @cached_property
+    def id(self) -> int:
+        if self._original:
+            return self._original.id
+        return np.random.randint(0, 2**32)
 
-    @property
+    @cached_property
+    def index_dicts(self) -> list[dict[int,int]]:
+        r"The index dictionaries for the standard order. Only makes sense for original Wires."
+        if self._original:
+            return self._original.index_dicts
+        return [{m:i + sum(len(s) for s in self.args[:t]) for i,m in enumerate(lst)} for t,lst in enumerate(self.sorted_args)]
+
+    @cached_property
+    def ids_dicts(self) -> list[dict[int,int]]:
+        r"The id dictionaries for the standard order. Only makes sense for original Wires."
+        if self._original:
+            return self._original.ids_dicts
+        return [{m:i + self.id for m,i in d.items()} for d in self.index_dicts]
+    
+    @cached_property
+    def ids(self) -> list[int]:
+        r"The ids of the indices standard order with sorted modes."
+        return list(i + self.id for i in self.indices)    
+
+    @cached_property
+    def sorted_args(self) -> tuple[list[int], ...]:
+        r"The sorted arguments."
+        return tuple(sorted(s) for s in self.args)
+
+    # @property
+    # def ids(self) -> tuple[int, ...]:
+    #     r"The ids of the indices standard order with sorted modes."
+    #     if not self._ids:
+    #         self._ids = tuple(i + self.original.id for i in self.indices)
+    #     return self._ids
+
+    @cached_property
     def original(self):
         r"The 'parent' ``Wires`` object, if any."
         return self._original or self
 
-    @cached_property
-    def types(self) -> set[int]:
-        r"A set of up to four integers representing the types of wires in the standard order."
-        return set(i for i in (0, 1, 2, 3) if bool(self.args[i]))
+    # @cached_property
+    # def types(self) -> set[int]:
+    #     r"A set of up to four integers representing the types of wires in the standard order."
+    #     return set(i for i in (0, 1, 2, 3) if bool(self.args[i]))
 
     @cached_property
     def modes(self) -> set[int]:
@@ -128,13 +165,7 @@ class Wires:
             >>> assert w.indices == (0,1,2,3)
             >>> assert w.input.indices == (2,3)
         """
-        a, b, c, _ = self.original.args
-        d = (0, len(a), len(a) + len(b), len(a) + len(b) + len(c))
-        return tuple(
-            sorted(self.original.args[i]).index(m) + d[i]
-            for i in (0, 1, 2, 3)
-            for m in sorted(self.args[i])
-        )
+        return tuple(self.original.index_dicts[t][m] for t,modes in enumerate(self.sorted_args) for m in modes)
 
     @cached_property
     def input(self) -> Wires:
@@ -172,12 +203,12 @@ class Wires:
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"A view of this Wires object with wires only on the given modes."
         modes_set = {modes} if isinstance(modes, int) else set(modes)
-        if modes not in self.mode_cache:
-            self.mode_cache[modes] = Wires(
-                *(self.args[i] & modes_set for i in (0, 1, 2, 3)),
-                original=Wires(*self.original.args),
+        if modes not in self._mode_cache:
+            self._mode_cache[modes] = Wires(
+                *(self.args[t] & modes_set for t in (0, 1, 2, 3)),
+                original=self.original,
             )
-        return self.mode_cache[modes]
+        return self._mode_cache[modes]
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -200,7 +231,7 @@ class Wires:
         return self.args == other.args
 
     # pylint: disable=too-many-branches
-    def __matmul__(self, other: Wires) -> tuple[Wires, tuple[int, ...]]:
+    def __matmul__(self, other: Wires) -> tuple[Wires, list[int]]:
         r"""
         Returns the wires of the circuit composition of self and other without adding missing
         adjoints. It also returns the permutation that takes the contracted representations
@@ -223,6 +254,8 @@ class Wires:
         Raises:
             ValueError: If any leftover wires would overlap.
         """
+        if self._original or other._original:
+            raise ValueError("cannot contract a subset of wires")
         A, B, a, b = self.args
         C, D, c, d = other.args
         sets = (A - D, B, a - d, b, C, D - A, c, d - a)
@@ -234,38 +267,19 @@ class Wires:
             raise ValueError(f"output ket modes {m} overlap")
         if m := sets[3] & sets[7]:
             raise ValueError(f"input ket modes {m} overlap")
-        bra_out = sets[0] | sets[4]
-        bra_in  = sets[1] | sets[5]
-        ket_out = sets[2] | sets[6]
-        ket_in  = sets[3] | sets[7]
+        bra_out = sets[0] | sets[4]  # A-D | C i.e. (self.output.bra - other.input.bra) | other.output.bra
+        bra_in  = sets[1] | sets[5]  # B | D-A i.e. self.input.bra | (other.input.bra - self.output.bra)
+        ket_out = sets[2] | sets[6]  # a-d | c i.e. (self.output.ket - other.input.ket) | other.output.ket
+        ket_in  = sets[3] | sets[7]  # b | d-a i.e. self.input.ket | (other.input.ket - self.output.ket)
         w = Wires(bra_out, bra_in, ket_out, ket_in)
-        # calculate permutation from the contracted representations to the standard order
-        sorted_sets = [sorted(s) for s in sets]
-        l = [len(s) for s in sets]
-        offsets = [0,l[0],l[0]+l[1],l[0]+l[1]+l[2],l[1]+l[2]+l[3],l[0]+l[2]+l[3]+l[4],
-                   l[0]+l[1]+l[3]+l[4]+l[5],l[0]+l[1]+l[2]+l[4]+l[5]+l[6]]
-        print(self, '@', other)
-        print('sorted',sorted_sets)
-        print('lengths', l)
-        print('offsets',offsets)
-
-        bo = np.argsort(sorted(A-D) + sorted(C))
-        bo[bo<l[0]] += offsets[0]
-        bo[bo>=l[0]] += offsets[4]
-        bi = np.argsort(sorted(B) + sorted(D-A))
-        bi[bi<l[1]] += offsets[1]
-        bi[bi>=l[1]] += offsets[5]
-        ko = np.argsort(sorted(a-d) + sorted(c))
-        print(sorted(a-d), sorted(c))
-        print(ko)
-        ko[ko<l[2]] += offsets[2]
-        print(ko)
-        ko[ko>=l[2]] += offsets[6]
-        print(ko)
-        ki = np.argsort(sorted(b) + sorted(d-a))
-        ki[ki<l[3]] += offsets[3]
-        ki[ki>=l[3]] += offsets[7]
-        return w, tuple(bo) + tuple(bi) + tuple(ko) + tuple(ki)
+        for t in (0,1,2,3):
+            for m in w.args[t]:
+                w.ids_dicts[t][m] = self.original.ids_dicts[t][m] if m in sets[t] else other.original.ids_dicts[t][m]
+        # calculate permutation
+        repr_index = ([ self.original.index_dicts[t][m] for t,s in enumerate(sets[:4]) for m in s] +
+                      [other.original.index_dicts[t][m] for t,s in enumerate(sets[4:]) for m in s])
+        perm = [w.indices.index(i) for i in repr_index]
+        return w, perm
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
