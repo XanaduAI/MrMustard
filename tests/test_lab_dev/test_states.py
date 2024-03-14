@@ -14,7 +14,7 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import numpy as np
 import pytest

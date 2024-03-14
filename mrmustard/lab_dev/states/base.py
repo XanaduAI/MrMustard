@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=abstract-method
+
 """
 This module contains the base classes for the available quantum states.
 
@@ -132,7 +134,7 @@ class State(CircuitComponent):
         means: ComplexMatrix,
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
-    ) -> State:
+    ) -> State:  # pylint: disable=abstract-method
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
