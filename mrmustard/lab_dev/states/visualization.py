@@ -38,6 +38,7 @@ def mikkel_plot(
     xbounds: tuple[int] = (-6, 6),
     ybounds: tuple[int] = (-6, 6),
     resolution: int = 200,
+    angle: float = 0,
 ) -> go.Figure:
     r"""
     Visual representation of the Wigner function of a state given its density matrix.
@@ -51,8 +52,8 @@ def mikkel_plot(
     Returns:
         The figure and axes.
     """
-    x, prob_x = fock.quadrature_distribution(dm)
-    p, prob_p = fock.quadrature_distribution(dm, np.pi / 2)
+    x, prob_x = fock.quadrature_distribution(dm, angle)
+    p, prob_p = fock.quadrature_distribution(dm, np.pi / 2 + angle)
 
     xvec = np.linspace(*xbounds, resolution)
     pvec = np.linspace(*ybounds, resolution)
@@ -72,7 +73,7 @@ def mikkel_plot(
 
     # X-P plot
     # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
-    fig_21 = go.Heatmap(x=xs, y=-ps, z=z, colorscale="viridis", name="Wigner function")
+    fig_21 = go.Heatmap(x=xs, y=ps, z=z, colorscale="viridis", name="Wigner function")
     fig.add_trace(fig_21, row=2, col=1)
     fig.update_traces(row=2, col=1, showscale=False)
     fig.update_xaxes(title_text="x", row=2, col=1)

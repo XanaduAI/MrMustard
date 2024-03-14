@@ -36,6 +36,7 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
+
 from .visualization import mikkel_plot
 
 __all__ = ["State", "DM", "Ket"]
@@ -254,6 +255,58 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
+    def visualize_2d(
+        self,
+        xbounds: tuple[int] = (-6, 6),
+        ybounds: tuple[int] = (-6, 6),
+        resolution: int = 200,
+        angle: float = 0,
+    ):
+        r""" """
+        array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
+        n_batches = array.shape[0]
+        if isinstance(self, Ket):
+            dm = sum([math.outer(math.conj(array[b]), array[b]) for b in range(n_batches)])
+        else:
+            dm = math.sum(array, axes=[0])
+        return mikkel_plot(dm, xbounds, ybounds, resolution, angle)
+
+    def _repr_html_(self):  # pragma: no cover
+        html = f"<h1>{self.name or self.__class__.__name__}</h1>"
+
+        prob = self.probability
+        prob_str = f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"
+        type = "Ket" if isinstance(self, Ket) else "DM"
+        is_barg = "✅" if isinstance(self.representation, Bargmann) else "❌"
+        is_fock = "✅" if isinstance(self.representation, Fock) else "❌"
+
+        html += '<table style="border-collapse: collapse; text-align: center;">'
+
+        html += "<tr>"
+        html += "<th>Purity</th>"
+        html += "<th>Probability</th>"
+        html += "<th>Number of modes</th>"
+        html += "<th>Class</th>"
+        html += "<th>Bargmann</th>"
+        html += "<th>Fock</th>"
+        html += "</tr>"
+
+        html += "<tr>"
+        html += f"<td>{self.purity :.2e}</td>"
+        html += f"<td>{prob_str}</td>"
+        html += f"<td>{self.n_modes}</td>"
+        html += f"<td>{type}</td>"
+        html += f"<td>{is_barg}</td>"
+        html += f"<td>{is_fock}</td>"
+        html += "</tr>"
+
+        html += "</table>"
+
+        if self.n_modes == 1:
+            html += self.visualize_2d().to_html()
+
+        display(HTML(html))
+
 
 class DM(State):
     r"""
@@ -382,9 +435,6 @@ class DM(State):
 
     def __repr__(self) -> str:
         return ""
-
-    def _repr_html_(self):  # pragma: no cover
-        display(HTML(repr_html(self)))
 
 
 class Ket(State):
@@ -522,58 +572,3 @@ class Ket(State):
 
     def __repr__(self) -> str:
         return ""
-
-    def _repr_html_(self):  # pragma: no cover
-        display(HTML(repr_html(self)))
-
-
-def repr_html(state: Union[Ket, DM]) -> str:
-    r"""
-    An html repr for states.
-
-    Args:
-        state: A state.
-
-    Return:
-        An html representation of the given state.
-    """
-    html = f"<h1>{state.name or state.__class__.__name__}</h1>"
-
-    prob = state.probability
-    prob_str = f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"
-    type = "Ket" if isinstance(state, Ket) else "DM"
-    is_barg = "✅" if isinstance(state.representation, Bargmann) else "❌"
-    is_fock = "✅" if isinstance(state.representation, Fock) else "❌"
-
-    html += '<table style="border-collapse: collapse; text-align: center;">'
-
-    html += "<tr>"
-    html += "<th>Purity</th>"
-    html += "<th>Probability</th>"
-    html += "<th>Number of modes</th>"
-    html += "<th>Class</th>"
-    html += "<th>Bargmann</th>"
-    html += "<th>Fock</th>"
-    html += "</tr>"
-
-    html += "<tr>"
-    html += f"<td>{state.purity :.2e}</td>"
-    html += f"<td>{prob_str}</td>"
-    html += f"<td>{state.n_modes}</td>"
-    html += f"<td>{type}</td>"
-    html += f"<td>{is_barg}</td>"
-    html += f"<td>{is_fock}</td>"
-    html += "</tr>"
-
-    html += "</table>"
-
-    if state.n_modes == 1:
-        array = state.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
-        n_batches = array.shape[0]
-        if isinstance(state, Ket):
-            dm = sum([math.outer(math.conj(array[b]), array[b]) for b in range(n_batches)])
-        else:
-            dm = math.sum(array, axes=[0])
-        html += mikkel_plot(dm).to_html()
-
-    return html

@@ -410,5 +410,5 @@ class TestVacuum:
 
 #         fig = mikkel_plot(dm)
 #         if self.regenerate_assets:
-#             html = fig.write_html(path)    
+#             html = fig.write_html(path)
 #         # .to_html()
