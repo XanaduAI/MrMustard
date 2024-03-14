@@ -16,7 +16,7 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called
+# pylint: disable=super-init-not-called, protected-access
 
 from __future__ import annotations
 
@@ -47,28 +47,34 @@ class CircuitComponent:
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         representation: Optional[Representation] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
         modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
     ) -> None:
-        self._name = name
+        self._name = name or ""
         self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
         self._representation = representation
 
     @classmethod
-    def from_attributes(
-        cls,
-        name: str,
-        representation: Representation,
-        wires: Wires,
-    ):
+    def _from_attributes(
+        cls, name: str, representation: Representation, wires: Wires
+    ) -> CircuitComponent:
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
         and a ``Representation``).
+
+        If the Method Resolution Order (MRO) of ``cls`` contains one between ``Ket``, ``DM``,
+        ``Unitary``, and ``Channel``, then the returned component is of that type. Otherwise,
+        it is of type ``CircuitComponent``.
+
+        This function needs to be used with caution, as it does not check that the attributes
+        provided are consistent with the type of the returned component. If used improperly it
+        may initialize, e.g., ``Ket``s with both input and output wires or ``Unitary``s with
+        wires on the bra side.
 
         Args:
             name: The name of this component.
@@ -76,11 +82,20 @@ class CircuitComponent:
             wires: The wires of this component.
 
         Returns:
-            A circuit component.
+            A circuit component of type ``cls`` with the given attributes.
         """
-        ret = CircuitComponent(name)
-        ret._wires = wires
+        types = {"Ket", "DM", "Unitary", "Channel"}
+        for tp in cls.mro():
+            if tp.__name__ in types:
+                ret = tp()
+                break
+        else:
+            ret = CircuitComponent()
+
+        ret._name = name
         ret._representation = representation
+        ret._wires = wires
+
         return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
@@ -187,7 +202,8 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return CircuitComponent.from_attributes(
+        cls = self.__class__
+        return cls._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -229,7 +245,7 @@ class CircuitComponent:
         order = [contracted_idx.index(id) for id in wires_ret.ids]
         representation_ret = representation_ret.reorder(order) if order else representation_ret
 
-        return CircuitComponent.from_attributes("", representation_ret, wires_ret)
+        return CircuitComponent._from_attributes("", representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

@@ -88,7 +88,9 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
-        cc = CircuitComponent.from_attributes("my_cc", bs01.representation, bs01.wires)
+        cc = CircuitComponent._from_attributes(
+            "my_cc", bs01.representation, bs01.wires
+        )  # pylint: disable=protected-access
 
         assert repr(Circuit()) == ""
 
