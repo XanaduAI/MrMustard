@@ -189,13 +189,6 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def means(self):
-        r"""
-        The vector of means of this state in phase space.
-        """
-        raise NotImplementedError
-
-    @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
