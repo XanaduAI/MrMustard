@@ -78,15 +78,15 @@ def mikkel_plot(
     fig.update_yaxes(title_text="p", row=2, col=1)
 
     # X quadrature probability distribution
-    fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="brown", width=2), name="Prob(x)")
+    fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
     fig.add_trace(fig_11, row=1, col=1)
     fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
-    fig.update_yaxes(title_text="Prob(x)", row=1, col=1)
+    fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
     # P quadrature probability distribution
-    fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="brown", width=2), name="Prob(p)")
+    fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
     fig.add_trace(fig_22, row=2, col=2)
-    fig.update_xaxes(title_text="Prob(p)", row=2, col=2)
+    fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
     fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
 
     # Density matrix
@@ -96,7 +96,13 @@ def mikkel_plot(
     fig.update_xaxes(row=1, col=2)
     fig.update_yaxes(autorange="reversed", row=1, col=2)
 
-    fig.update_layout(height=600, width=600, margin=dict(l=20, r=20, t=30, b=20), showlegend=False)
+    fig.update_layout(
+        height=600,
+        width=600,
+        plot_bgcolor="aliceblue",
+        margin=dict(l=20, r=20, t=30, b=20),
+        showlegend=False,
+    )
     fig.update_xaxes(
         showline=True, linewidth=1, linecolor="black", mirror=True, tickfont_family="Arial Black"
     )
