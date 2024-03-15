@@ -113,6 +113,7 @@ class Number(Ket):
         :math:`n_j`.
 
     """
+
     def __init__(self, modes: Iterable[int], n: Union[int, Sequence[int]]) -> None:
         super().__init__("N", modes=modes)
 
