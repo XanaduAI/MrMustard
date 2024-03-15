@@ -44,13 +44,13 @@ class TestKet:
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent.from_attributes(
+        u_component = CircuitComponent._from_attributes(
             unitary.name, unitary.representation, unitary.wires
-        )
+        )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent.from_attributes(
+        ch_component = CircuitComponent._from_attributes(
             channel.name, channel.representation, channel.wires
-        )
+        )  # pylint: disable=protected-access
 
         assert isinstance(ket >> unitary, Ket)
         assert isinstance(ket >> channel, DM)
@@ -61,7 +61,9 @@ class TestKet:
 
     def test_repr(self):
         ket = Coherent([0, 1], 1)
-        ket_component = CircuitComponent.from_attributes(ket.name, ket.representation, ket.wires)
+        ket_component = CircuitComponent._from_attributes(
+            ket.name, ket.representation, ket.wires
+        )  # pylint: disable=protected-access
 
         assert repr(ket) == "Ket(name=Coherent, modes=(0, 1))"
         assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=(0, 1))"
@@ -84,13 +86,13 @@ class TestDM:
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent.from_attributes(
+        u_component = CircuitComponent._from_attributes(
             unitary.name, unitary.representation, unitary.wires
-        )
+        )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent.from_attributes(
+        ch_component = CircuitComponent._from_attributes(
             channel.name, channel.representation, channel.wires
-        )
+        )  # pylint: disable=protected-access
 
         dm = ket >> channel
         assert isinstance(dm, DM)
@@ -104,7 +106,9 @@ class TestDM:
         ket = Coherent([0, 1], 1)
         channel = Attenuator([1], 1)
         dm = ket >> channel
-        dm_component = CircuitComponent.from_attributes(dm.name, dm.representation, dm.wires)
+        dm_component = CircuitComponent._from_attributes(
+            dm.name, dm.representation, dm.wires
+        )  # pylint: disable=protected-access
 
         assert repr(dm) == "DM(name=DM01, modes=(0, 1))"
         assert repr(dm_component) == "CircuitComponent(name=DM01, modes=(0, 1))"
