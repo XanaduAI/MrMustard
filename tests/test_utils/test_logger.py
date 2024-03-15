@@ -47,9 +47,9 @@ https://github.com/pallets/flask/blob/master/tests/test_logging.py
 
 # pylint: disable=no-self-use
 
+import sys
 import logging
 import pytest
-import sys
 from mrmustard.training import optimizer
 from mrmustard.utils.logger import logging_handler_defined, default_handler, create_logger
 
@@ -142,7 +142,7 @@ class TestLoggerIntegration:
     def test_default_mm_logger(self, module):
         """Tests that stderr is set for the MM logger by default as stream if
         there were not other configurations made."""
-        
+
         logger = create_logger(module.__name__)
         assert len(logger.handlers) == 1
         # Check if the stream of the first handler is sys.stderr
