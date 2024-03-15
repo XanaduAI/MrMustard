@@ -304,8 +304,8 @@ class TestCircuitComponent:
         c1 = CircuitComponent("", modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
-        assert repr(c1) == "CircuitComponent(name=CC012, modes=(0, 1, 2))"
-        assert repr(c2) == "CircuitComponent(name=my_component, modes=(0, 1, 2))"
+        assert repr(c1) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
+        assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
 
 class TestAdjointView:
@@ -329,8 +329,8 @@ class TestAdjointView:
         c1 = CircuitComponent("", modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
-        assert repr(c1.adjoint) == "CircuitComponent(name=CC012, modes=(0, 1, 2))"
-        assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=(0, 1, 2))"
+        assert repr(c1.adjoint) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
+        assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
     def test_parameters_point_to_original_parameters(self):
         r"""
@@ -369,8 +369,8 @@ class TestDualView:
         c1 = CircuitComponent("", modes_out_ket=(0, 1, 3))
         c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 3))
 
-        assert repr(c1.dual) == "CircuitComponent(name=CC013, modes=(0, 1, 3))"
-        assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=(0, 1, 3))"
+        assert repr(c1.dual) == "CircuitComponent(name=CC013, modes=[0, 1, 3])"
+        assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 3])"
 
     def test_parameters_point_to_original_parameters(self):
         r"""
