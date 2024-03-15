@@ -65,8 +65,8 @@ class TestKet:
             ket.name, ket.representation, ket.wires
         )  # pylint: disable=protected-access
 
-        assert repr(ket) == "Ket(name=Coherent, modes=(0, 1))"
-        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=(0, 1))"
+        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
+        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
 
 
 class TestDM:
@@ -110,8 +110,8 @@ class TestDM:
             dm.name, dm.representation, dm.wires
         )  # pylint: disable=protected-access
 
-        assert repr(dm) == "DM(name=DM01, modes=(0, 1))"
-        assert repr(dm_component) == "CircuitComponent(name=DM01, modes=(0, 1))"
+        assert repr(dm) == "DM(name=DM01, modes=[0, 1])"
+        assert repr(dm_component) == "CircuitComponent(name=DM01, modes=[0, 1])"
 
 
 class TestCoherent:

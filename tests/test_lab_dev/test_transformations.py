@@ -61,8 +61,8 @@ class TestUnitary:
             unitary1.name, unitary1.representation, unitary1.wires
         )  # pylint: disable=protected-access
 
-        assert repr(unitary1) == "Unitary(name=Dgate, modes=(0, 1))"
-        assert repr(u_component) == "CircuitComponent(name=Dgate, modes=(0, 1))"
+        assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
+        assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
 
 
 class TestChannel:
@@ -103,8 +103,8 @@ class TestChannel:
             channel1.name, channel1.representation, channel1.wires
         )  # pylint: disable=protected-access
 
-        assert repr(channel1) == "Channel(name=Att, modes=(0, 1))"
-        assert repr(ch_component) == "CircuitComponent(name=Att, modes=(0, 1))"
+        assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
+        assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
 
 
 class TestBSgate:
@@ -120,7 +120,7 @@ class TestBSgate:
         gate = BSgate([0, 1], 2, 3)
 
         assert gate.name == "BSgate"
-        assert gate.modes == (0, 1)
+        assert gate.modes == [0, 1]
         assert gate.theta.value == 2
         assert gate.phi.value == 3
 
