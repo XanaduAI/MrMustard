@@ -100,15 +100,17 @@ class Wires:
     with the indices of the wires in the standard order, i.e.
     bra_out, bra_in, ket_out, ket_in, and the modes in sorted increasing order:
 
-                        ╔═════════╗
-            1 (2) ─────▶║         ║─────▶ 0 (0)
-            2 (3) ─────▶║         ║─────▶ 1 (1)
-                        ║         ║
-                        ║  Wires  ║
-            1 (6) ─────▶║         ║
-            2 (7) ─────▶║         ║─────▶ 0 (4)
-           13 (8) ─────▶║         ║─────▶ 13 (5)
-                        ╚═════════╝
+    .. code-block:: 
+
+                     ╔═════════╗
+         1 (2) ─────▶║         ║─────▶ 0 (0)
+         2 (3) ─────▶║         ║─────▶ 1 (1)
+                     ║         ║
+                     ║  Wires  ║
+         1 (6) ─────▶║         ║
+         2 (7) ─────▶║         ║─────▶ 0 (4)
+        13 (8) ─────▶║         ║─────▶ 13 (5)
+                     ╚═════════╝
 
     We refer to this as the "standard order". To access the index of a subset of wires in standard order
     we can use the ``indices`` property:
