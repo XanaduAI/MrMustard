@@ -34,28 +34,28 @@ class Wires:
     .. code-block::
 
         ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-        │Bra in│─────▶║         ║─────▶│Bra out│
-        └──────┘      ║ Channel ║      └───────┘
-        ┌──────┐  m3  ║         ║  m2  ┌───────┐
-        │Ket in│─────▶║         ║─────▶│Ket out│
+        │Bra in│─────▶║          ║─────▶│Bra out│
+        └──────┘      ║ Channel  ║      └───────┘
+        ┌──────┐  m3  ║          ║  m2  ┌───────┐
+        │Ket in│─────▶║          ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
 
         ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-        │Ket in│─────▶║ Unitary ║─────▶│Ket out│
+        │Ket in│─────▶║ Unitary  ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
 
                         ╔═════════╗  m0  ┌───────┐
-                        ║         ║─────▶│Bra out│
-                        ║ Density ║      └───────┘
-                        ║ Matrix  ║  m1  ┌───────┐
-                        ║         ║─────▶│Ket out│
+                        ║          ║─────▶│Bra out│
+                        ║ Density  ║      └───────┘
+                        ║ Matrix   ║  m1  ┌───────┐
+                        ║          ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
 
                         ╔═════════╗  m0  ┌───────┐
-                        ║   Ket   ║─────▶│Ket out│
+                        ║   Ket    ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
