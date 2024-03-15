@@ -77,15 +77,18 @@ class Representation(ABC):
         """
         return self.from_ansatz(self.ansatz - other.ansatz)
 
-    def __mul__(self, other: Scalar) -> Representation:
+    def __mul__(self, other: Representation | Scalar) -> Representation:
         r"""
-        Multiplies this representation by a scalar on the right.
+        Multiplies this representation by another or by a scalar.
         """
-        return self.from_ansatz(self.ansatz * other)
+        try:
+            return self.from_ansatz(self.ansatz * other.ansatz)
+        except AttributeError:
+            return self.from_ansatz(self.ansatz * other)
 
-    def __rmul__(self, other: Scalar) -> Representation:
+    def __rmul__(self, other: Representation | Scalar) -> Representation:
         r"""
-        Multiplies this representation by a scalar on the left.
+        Multiplies this representation by another or by a scalar on the right.
         """
         return self.__mul__(other)
 
@@ -264,7 +267,7 @@ class Bargmann(Representation):
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return Bargmann(A, b, c)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""
@@ -421,7 +424,7 @@ class Bargmann(Representation):
                 )
 
         A, b, c = zip(*Abc)
-        return Bargmann(A, b, c)
+        return Bargmann(math.astensor(A), math.astensor(b), math.astensor(c))
 
 
 class Fock(Representation):
