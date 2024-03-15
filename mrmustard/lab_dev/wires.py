@@ -286,16 +286,26 @@ class Wires:
         Returns the wires of the circuit composition of self and other without adding missing
         adjoints. It also returns the permutation that takes the contracted representations
         to the standard order. An exception is raised if any leftover wires would overlap.
+        Consider the following example:
 
-        In pseudocode, we have:
-        ``B[self]A  @  D[other]C  =  sort(B|(D-A))[result]sort(C|(A-D))``. The standard order
-        would then be ``sort(C|(A-D))+sort(B|(D-A))`` (out, then in).
+                                ╔═══════╗           ╔═══════╗     
+                                ║       ║           ║       ║     
+                            B───║ self  ║───A   D───║ other ║───C 
+                            b───║       ║───a   d───║       ║───c 
+                                ║       ║           ║       ║     
+                                ╚═══════╝           ╚═══════╝     
+                                                                
+        B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
+                                        ╔═══════╗               
+                                        ║       ║               
+                             B|(D-A)────║self @ ║────C|(A-D)    
+                             b|(d-a)────║ other ║────c|(a-d)    
+                                        ║       ║               
+                                        ╚═══════╝               
         In comparison, contracting the representations rather than the wires corresponds to
         an order where we start from juxtaposing the objects and then removing pairs of contracted
-        indices, from self.output and other.input.
-        ``sorted(A-D)+sorted(B)+sorted(C)+sorted(D-A)``, where each of the four parts is offset
-        by the length of the previous ones. The returned permutation is the one that takes the
-        result of multiplying representations to the standard order.
+        indices, i.e. A-D, B, C, D-A and then the same for a-d, b, c, d-a. The returned permutation
+        is the one that takes the result of multiplying representations to the standard order.
 
         Args:
             other (Wires): The wires of the other circuit component.
