@@ -116,13 +116,13 @@ class TestKet:
             state_sup.to_fock_component(5).L2_norm
 
     def test_probability(self):
-        state = Coherent([0], x=1)
-        assert state.probability == 1
-        assert state.to_fock_component(20).probability == 1
+        state = Coherent([0], x=1) / 3
+        assert math.allclose(state.probability, 1 / 9)
+        assert math.allclose(state.to_fock_component(20).probability, 1 / 9)
 
-        state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).probability
+        superp = Coherent([0], x=1) / 3 + 2 * Coherent([0], x=-1) / 3
+        assert math.allclose(superp.probability, 1)
+        assert math.allclose(superp.to_fock_component(20).probability, 1)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):

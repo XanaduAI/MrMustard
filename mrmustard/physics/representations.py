@@ -208,7 +208,7 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self.ansatz = PolyExpAnsatz(math.astensor(A), math.astensor(b), math.astensor(c))
+        self.ansatz = PolyExpAnsatz(A, b, c)
 
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
@@ -439,7 +439,6 @@ class Fock(Representation):
 
     .. code-block::
 
-        >>> from mrmustard import math
         >>> from mrmustard.physics.representations import Fock
 
         >>> # initialize Fock objects
@@ -607,7 +606,8 @@ class Fock(Representation):
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idxs2) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
-        return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
+        trace = math.trace(new_array)
+        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""
@@ -632,7 +632,7 @@ class Fock(Representation):
             >>> from mrmustard import math
             >>> from mrmustard.physics.representations import Fock
 
-            >>> array1 = np.arange(27).reshape((3, 3, 3))
+            >>> array1 = math.arange(27).reshape((3, 3, 3))
             >>> fock1 = Fock(array1)
 
             >>> fock2 = fock1.reduce(3)

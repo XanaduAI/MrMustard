@@ -340,14 +340,13 @@ class DM(State):
 
         if isinstance(rep, Bargmann):
             msg = "Cannot calculate probability of object with non-zero Bargmann"
-            if not math.allclose(rep.A, math.zeros_like(rep.A)):
-                raise ValueError(msg + "``A``.")
-            if not math.allclose(rep.b, math.zeros_like(rep.b)):
-                raise ValueError(msg + "``b``.")
+            if not (0 in rep.A.shape or 0 in rep.b.shape):
+                msg = "Cannot calculate probability of object with Bargmann A or b."
+                raise ValueError(msg)
             return math.real(math.sum(rep.c, axes=[0]))
 
-        msg = "Cannot calculate probability of object with Fock array of shape "
         if rep.array.shape != (1,):
+            msg = "Cannot calculate probability of object with Fock array of shape "
             raise ValueError(msg + f"``{rep.array.shape}``.")
         return math.real(rep.array)[0]
 
@@ -464,12 +463,18 @@ class Ket(State):
 
     @property
     def probability(self) -> float:
-        dm = self @ self.dual
-        return DM._from_attributes("", dm.representation, dm.wires).probability
+        return self.dm().probability
 
     @property
     def purity(self) -> float:
         return 1.0
+    
+    def dm(self) -> DM:
+        r"""
+        The ``DM`` object obtained from this ``Ket``.
+        """
+        dm = self @ self.adjoint
+        return DM._from_attributes(self.name, dm.representation, dm.wires)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
