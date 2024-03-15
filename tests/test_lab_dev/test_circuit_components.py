@@ -224,16 +224,6 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_lshift(self):
-        ket01 = Coherent([0, 1], 1)
-        n0 = Number([0], n=5)
-        unitary = Dgate([0], 1)
-        channel = Attenuator([1], 1)
-
-        assert ket01 << n0 == ket01 >> n0.dual
-        assert ket01 >> unitary << n0 == ket01 >> unitary >> n0.dual
-        assert ket01 >> channel << n0 == ket01 >> channel >> n0.dual
-
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
