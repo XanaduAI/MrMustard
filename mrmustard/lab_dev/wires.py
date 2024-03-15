@@ -84,6 +84,18 @@ class Wires:
         >>> assert w.output.ket.modes == {0, 13}
         >>> assert w.input.bra.modes == {1, 2}
 
+    This function does something amazing.
+
+    .. code-block:: 
+
+        Here is some ASCII art:
+        
+            /\_/\
+           ( o.o )
+            > ^ <
+
+    The ASCII art above is a simple representation of a cat.
+
     Here's a diagram of the original Wires object in the example above,
     with the indices of the wires in the standard order, i.e.
     bra_out, bra_in, ket_out, ket_in, and the modes in sorted increasing order:
