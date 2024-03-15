@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests for the fock.py file."""
+
+# pylint: disable=pointless-statement
+
 import numpy as np
 import pytest
 from hypothesis import given
@@ -40,6 +44,32 @@ from mrmustard.physics import fock
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
+
+
+def test_fock_state():
+    n = [4, 5, 6]
+
+    array1 = fock.fock_state(n)
+    assert array1.shape == (5, 6, 7)
+    assert array1[4, 5, 6] == 1
+
+    array2 = fock.fock_state(n, cutoffs=10)
+    assert array2.shape == (11, 11, 11)
+    assert array2[4, 5, 6] == 1
+
+    array3 = fock.fock_state(n, cutoffs=[5, 6, 7])
+    assert array3.shape == (6, 7, 8)
+    assert array3[4, 5, 6] == 1
+
+
+def test_fock_state_error():
+    n = [4, 5]
+
+    with pytest.raises(ValueError):
+        fock.fock_state(n, cutoffs=[5, 6, 7])
+
+    with pytest.raises(ValueError):
+        fock.fock_state(n, cutoffs=2)
 
 
 @given(n_mean=st.floats(0, 3), phi=st_angle)

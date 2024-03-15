@@ -20,7 +20,7 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Tuple, Union
+from typing import Iterable, Optional, Sequence, Tuple, Union
 
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
@@ -102,6 +102,10 @@ class Number(Ket):
     Args:
         modes: The modes of the number state.
         n: The number of photons in each mode.
+        cutoffs: The cutoffs of the arrays for the number states. If it is given as
+            an ``int``, it is broadcasted to all the states. If ``None``, it
+            defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
+            of the ``i``th mode.
 
     .. details::
 
@@ -116,7 +120,12 @@ class Number(Ket):
 
     """
 
-    def __init__(self, modes: Iterable[int], n: Union[int, Iterable[int]]) -> None:
+    def __init__(
+        self,
+        modes: Sequence[int],
+        n: Union[int, Sequence[int]],
+        cutoffs: Optional[Union[int, Sequence[int]]] = None,
+    ) -> None:
         super().__init__("N", modes=modes)
 
         self._n = math.atleast_1d(n)
@@ -126,9 +135,23 @@ class Number(Ket):
             msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
             raise ValueError(msg)
 
+        self._cutoffs = cutoffs or self.n
+        if len(self._cutoffs) == 1:
+            self._cutoffs = math.tile(self._cutoffs, [len(modes)])
+        if len(self._cutoffs) != len(modes):
+            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
+            raise ValueError(msg)
+
     @property
     def representation(self) -> Fock:
-        return Fock(fock_state(self.n))
+        return Fock(fock_state(self.n, self.cutoffs))
+
+    @property
+    def cutoffs(self):
+        r"""
+        The cutoffs.
+        """
+        return self._cutoffs
 
     @property
     def n(self):
