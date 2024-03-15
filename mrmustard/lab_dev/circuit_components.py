@@ -217,7 +217,7 @@ class CircuitComponent:
             self.wires,
         )
 
-    def __add__(self, other: CircuitComponent):
+    def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the addition between circuit components.
         """
@@ -228,23 +228,19 @@ class CircuitComponent:
         name = self.name if self.name == other.name else ""
         return self._from_attributes(name, rep, self.wires)
 
-    def __mul__(self, other: Union[CircuitComponent, Scalar]):
+    def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
-        Implements the multiplication with a scalar or another component for circuit components.
+        Implements the multiplication by a scalar on the right.
         """
-        if isinstance(other, CircuitComponent):
-            rep = self.representation * other.representation
-            wires = self.wires + other.wires
-            return self._from_attributes("", rep, wires)
         return self._from_attributes(self.name, other * self.representation, self.wires)
 
-    def __rmul__(self, other: Representation | Scalar) -> Representation:
+    def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
-        Implements the multiplication for circuit components with ``other`` on the right.
+        Implements the multiplication by a scalar on the left.
         """
         return self.__mul__(other)
 
-    def __truediv__(self, other: Scalar):
+    def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """

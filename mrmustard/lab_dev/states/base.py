@@ -125,7 +125,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
@@ -180,13 +180,6 @@ class State(CircuitComponent):
             return rep.A, rep.b, rep.c
         msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
         raise ValueError(msg)
-
-    @property
-    def phasespace(self) -> tuple[ComplexMatrix, ComplexVector]:
-        r"""
-        The covariance matrix and the vector of means that describe this state in phase space.
-        """
-        raise NotImplementedError
 
     @property
     def L2_norm(self) -> float:
@@ -244,6 +237,12 @@ class State(CircuitComponent):
             The array that describes this state in the Fock representation.
         """
         return to_fock(self.representation, shape).array
+
+    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector]:
+        r"""
+        The covariance matrix and the vector of means that describe this state in phase space.
+        """
+        raise NotImplementedError
 
 
 class DM(State):
@@ -303,7 +302,7 @@ class DM(State):
         return ret
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
@@ -432,7 +431,7 @@ class Ket(State):
         return ret
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,

@@ -86,18 +86,18 @@ class TestKet:
             Ket.from_fock([0], state01.fock_array(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
-    def test_to_from_phasespace(self, modes):
+    def test_to_from_phase_space(self, modes):
         with pytest.raises(NotImplementedError):
-            Coherent(modes, x=1, y=2).phasespace
+            Coherent(modes, x=1, y=2).phase_space()
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phasespace(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        state1 = Ket.from_phase_space(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phasespace(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -207,15 +207,15 @@ class TestDM:
         state_out = DM.from_fock(modes, array_in, "my_dm", True)
         assert state_in_fock == state_out
 
-    def test_to_from_phasespace(self):
+    def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 0.8)
 
         with pytest.raises(NotImplementedError):
-            state0.phasespace
+            state0.phase_space()
 
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phasespace([0], cov, means)
+        state1 = DM.from_phase_space([0], cov, means)
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
