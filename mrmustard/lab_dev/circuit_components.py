@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Iterable, Optional, Sequence, Union
 import numpy as np
 from ..physics.converters import to_fock
-from ..physics.representations import Representation
+from ..physics.representations import Representation, Bargmann, Fock
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .wires import Wires
