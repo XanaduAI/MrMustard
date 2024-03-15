@@ -182,7 +182,7 @@ class Wires:
     @cached_property
     def ids(self) -> list[int]:
         r"The ids of the indices in standard order."
-        return list(i + self.id for i in self.indices)
+        return [id for d in self.ids_dicts for id in d.values()]
 
     @cached_property
     def sorted_args(self) -> tuple[list[int], ...]:
@@ -289,18 +289,14 @@ class Wires:
         Consider the following example:
 
                                 ╔═══════╗           ╔═══════╗
-                                ║       ║           ║       ║
                             B───║ self  ║───A   D───║ other ║───C
                             b───║       ║───a   d───║       ║───c
-                                ║       ║           ║       ║
                                 ╚═══════╝           ╚═══════╝
 
         B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
                                         ╔═══════╗
-                                        ║       ║
                              B|(D-A)────║self @ ║────C|(A-D)
                              b|(d-a)────║ other ║────c|(a-d)
-                                        ║       ║
                                         ╚═══════╝
         In comparison, contracting the representations rather than the wires corresponds to
         an order where we start from juxtaposing the objects and then removing pairs of contracted
