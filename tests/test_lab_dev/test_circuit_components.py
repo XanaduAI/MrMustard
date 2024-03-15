@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Coherent, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 

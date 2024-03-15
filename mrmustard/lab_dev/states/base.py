@@ -469,7 +469,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        return DM._from_attributes(self.name, dm.representation, dm.wires)
+        return DM._from_attributes(self.name, dm.representation, dm.wires)  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
