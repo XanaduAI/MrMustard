@@ -46,7 +46,7 @@ class Circuit:
         >>> circ = Circuit(components)
         >>> assert circ.components == components
 
-    New components (or entire circuits) can be appended by using the ``>>`` operator.
+    New components (or entire circuits) can be appended using the ``>>`` operator.
 
     .. code-block::
 
@@ -67,13 +67,37 @@ class Circuit:
 
     def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
         self._components = components or []
+        self._path = []
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
         r"""
         The components in this circuit.
         """
-        return self._components
+        return self._components@property
+    
+    @property
+    def path(self) -> list[tuple[int, int]]:
+        r"""
+        A list describing the desired contraction path for this circuit.
+
+        When a path specified, the ``Simulator`` follows the given path to perform
+        the contractions. 
+        
+        In more detail, when a circuit with components ``[c_0, .., c_N]`` has a path of the type
+        ``[(i, j), (l, m), ...]``, the simulator creates a dictionary of the type
+        ``{0: c_0, ..., N: c_N}``. Then:
+
+        * The two components ``c_i`` and ``c_j`` in positions ``i`` and ``j`` are contracted. ``c_i`` is
+            replaced by the resulting component ``c_j >> c_j``, while ``c_j`` popped.
+        * The two components ``c_l`` and ``c_m`` in positions ``l`` and ``m`` are contracted. ``c_l`` is
+            replaced by the resulting component ``c_l >> c_m``, while ``c_l`` is popped.
+        * Et cetera.
+
+        When all the contractions are performed, only one component remains in the dictionary, and this
+        component is returned.
+        """
+        return self._path
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
