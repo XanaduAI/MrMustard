@@ -14,7 +14,7 @@
 
 """ Tests for circuit components. """
 
-# pylint: disable=fixme, missing-function-docstring
+# pylint: disable=fixme, missing-function-docstring, protected-access
 
 import numpy as np
 import pytest
@@ -24,8 +24,8 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Number, Vacuum
-from mrmustard.lab_dev.transformations import Dgate, Attenuator
+from mrmustard.lab_dev.states import Ket, Number, Vacuum
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
 # original settings
@@ -52,10 +52,19 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
-        cc1 = Dgate([1, 8], x=x, y=y)
-        cc2 = CircuitComponent.from_attributes(cc1.name, cc1.representation, cc1.wires)
+        cc = Dgate([1, 8], x=x, y=y)
 
-        assert cc1 == cc2
+        cc1 = Dgate._from_attributes(cc.name, cc.representation, cc.wires)
+        cc2 = Unitary._from_attributes(cc.name, cc.representation, cc.wires)
+        cc3 = CircuitComponent._from_attributes(cc.name, cc.representation, cc.wires)
+
+        assert cc1 == cc
+        assert cc2 == cc
+        assert cc3 == cc
+
+        assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
+        assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
+        assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
@@ -105,18 +114,21 @@ class TestCircuitComponent:
         assert vac_fock.name == vac.name
         assert vac_fock.wires == vac.wires
         assert vac_fock.representation == to_fock(vac.representation, shape)
+        assert isinstance(vac_fock, Ket)
 
         n = Number([3], n=4)
         n_fock = n.to_fock_component(shape=shape)
         assert n_fock.name == n.name
         assert n_fock.wires == n.wires
         assert n_fock.representation == to_fock(n.representation, shape)
+        assert isinstance(n_fock, Ket)
 
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock_component(shape=shape)
         assert d_fock.name == d.name
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
+        assert isinstance(d_fock, Unitary)
 
     def test_eq(self):
         d1 = Dgate([1], x=0.1, y=0.1)
