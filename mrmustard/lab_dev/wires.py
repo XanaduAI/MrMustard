@@ -288,20 +288,20 @@ class Wires:
         to the standard order. An exception is raised if any leftover wires would overlap.
         Consider the following example:
 
-                                ╔═══════╗           ╔═══════╗     
-                                ║       ║           ║       ║     
-                            B───║ self  ║───A   D───║ other ║───C 
-                            b───║       ║───a   d───║       ║───c 
-                                ║       ║           ║       ║     
-                                ╚═══════╝           ╚═══════╝     
-                                                                
+                                ╔═══════╗           ╔═══════╗
+                                ║       ║           ║       ║
+                            B───║ self  ║───A   D───║ other ║───C
+                            b───║       ║───a   d───║       ║───c
+                                ║       ║           ║       ║
+                                ╚═══════╝           ╚═══════╝
+
         B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
-                                        ╔═══════╗               
-                                        ║       ║               
-                             B|(D-A)────║self @ ║────C|(A-D)    
-                             b|(d-a)────║ other ║────c|(a-d)    
-                                        ║       ║               
-                                        ╚═══════╝               
+                                        ╔═══════╗
+                                        ║       ║
+                             B|(D-A)────║self @ ║────C|(A-D)
+                             b|(d-a)────║ other ║────c|(a-d)
+                                        ║       ║
+                                        ╚═══════╝
         In comparison, contracting the representations rather than the wires corresponds to
         an order where we start from juxtaposing the objects and then removing pairs of contracted
         indices, i.e. A-D, B, C, D-A and then the same for a-d, b, c, d-a. The returned permutation
