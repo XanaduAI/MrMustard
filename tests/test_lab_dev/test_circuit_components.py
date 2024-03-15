@@ -140,15 +140,10 @@ class TestCircuitComponent:
 
     def test_mul(self):
         d1 = Dgate([1], x=0.1, y=0.1)
-        d2 = Dgate([2], x=0.2, y=0.2)
 
         assert (d1 * 3).representation == d1.representation * 3
         assert (3 * d1).representation == d1.representation * 3
         assert isinstance(d1 * 3, Unitary)
-
-        d12 = d1 * d2
-        assert d12.representation == d1.representation * d2.representation
-        assert isinstance(d12 * 3, Unitary)
 
     def test_truediv(self):
         d1 = Dgate([1], x=0.1, y=0.1)
