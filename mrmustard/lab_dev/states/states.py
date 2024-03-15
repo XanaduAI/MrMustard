@@ -145,7 +145,7 @@ class Vacuum(Ket):
         >>> from mrmustard.lab_dev import Vacuum
 
         >>> state = Vacuum([1, 2])
-        >>> assert state.modes == (1, 2)
+        >>> assert state.modes == [1, 2]
 
     Args:
         modes: A list of modes.
