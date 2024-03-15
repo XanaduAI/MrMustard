@@ -112,7 +112,7 @@ class TestWires:
     def test_matmul_keeps_ids(self):
         U = Wires(set(), set(), {0}, {0})
         psi = Wires(set(), set(), {0}, set())
-        (psi @ U)[0].ids == U.ids[0]
+        assert (psi @ U)[0].ids[0] == U.ids[0]
 
     def test_matmul_error(self):
         u = Wires(set(), set(), {0}, set())  # only output wire
