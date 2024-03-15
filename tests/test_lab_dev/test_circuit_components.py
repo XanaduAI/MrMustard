@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Coherent, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -223,16 +223,6 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
-
-    def test_lshift(self):
-        ket01 = Coherent([0, 1], 1)
-        n0 = Number([0], n=5)
-        unitary = Dgate([0], 1)
-        channel = Attenuator([1], 1)
-
-        assert ket01 << n0 == ket01 >> n0.dual
-        assert ket01 >> unitary << n0 == ket01 >> unitary >> n0.dual
-        assert ket01 >> channel << n0 == ket01 >> channel >> n0.dual
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])

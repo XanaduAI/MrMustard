@@ -278,8 +278,12 @@ class PolyExpAnsatz(PolyExpBase):
         name: str = "",
     ):
         self.name = name
+
         if A is None and b is None:
             raise ValueError("Please provide either A or b.")
+        A = math.astensor(A)
+        b = math.astensor(b)
+        c = math.astensor(c)
         dim = b[0].shape[-1] if A is None else A[0].shape[-1]
         A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
         b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
