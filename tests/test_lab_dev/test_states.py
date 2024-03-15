@@ -350,11 +350,12 @@ class TestNumber:
     """
 
     modes = [[0], [1, 2], [9, 7]]
-    n = [[1], 1, [1, 2]]
+    n = [[3], 4, [5, 6]]
+    cutoffs = [None, [5], [6, 7]]
 
-    @pytest.mark.parametrize("modes,n", zip(modes, n))
-    def test_init(self, modes, n):
-        state = Number(modes, n)
+    @pytest.mark.parametrize("modes,n,cutoffs", zip(modes, n, cutoffs))
+    def test_init(self, modes, n, cutoffs):
+        state = Number(modes, n, cutoffs)
 
         assert state.name == "N"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
@@ -363,11 +364,15 @@ class TestNumber:
         with pytest.raises(ValueError, match="Length of ``n``"):
             Number(modes=[0, 1], n=[2, 3, 4])
 
+        with pytest.raises(ValueError, match="Length of ``cutoffs``"):
+            Number(modes=[0, 1], n=[2, 3], cutoffs=[4, 5, 6])
+
     @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
-    def test_representation(self, n):
-        rep1 = Number(modes=[0, 1], n=n).representation.array
-        exp1 = fock_state((n,) * 2 if isinstance(n, int) else n)
-        assert math.allclose(rep1, exp1.reshape(1, *exp1.shape))
+    @pytest.mark.parametrize("cutoffs", [None, [4, 5], [5, 5]])
+    def test_representation(self, n, cutoffs):
+        rep1 = Number([0, 1], n, cutoffs).representation.array
+        exp1 = fock_state((n,) * 2 if isinstance(n, int) else n, cutoffs)
+        assert math.allclose(rep1, math.asnumpy(exp1).reshape(1, *exp1.shape))
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
