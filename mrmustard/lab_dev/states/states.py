@@ -33,7 +33,7 @@ __all__ = ["Coherent", "Number", "Vacuum"]
 class Coherent(Ket):
     r"""The `N`-mode coherent state.
 
-    If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
+    If ``x`` and/or ``y`` are Sequences, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
 
     .. code-block::
@@ -114,7 +114,7 @@ class Number(Ket):
 
     """
 
-    def __init__(self, modes: Iterable[int], n: Union[int, Sequence[int]]) -> None:
+    def __init__(self, modes: Sequence[int], n: Union[int, Sequence[int]]) -> None:
         super().__init__("N", modes=modes)
 
         self._n = math.atleast_1d(n)
