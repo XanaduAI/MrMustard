@@ -56,12 +56,11 @@ def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = 
     Returns:
         The Fock array of a tensor product of one-mode ``Number`` states.
     """
+    n = math.atleast_1d(n)
     if cutoffs is None:
         cutoffs = [ni for ni in n]
     elif isinstance(cutoffs, int):
-        cutoffs = [
-            cutoffs,
-        ] * len(n)
+        cutoffs = [cutoffs] * len(n)
 
     if len(cutoffs) != len(n):
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
