@@ -31,30 +31,32 @@ class Wires:
     where states flow from left to right. ``CircuitComponent``s can have wires on the
     bra and/or on the ket side. Here are some examples of the Wires object of various components:
 
-                ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-                │Bra in│─────▶║         ║─────▶│Bra out│
-                └──────┘      ║ Channel ║      └───────┘
-                ┌──────┐  m3  ║         ║  m2  ┌───────┐
-                │Ket in│─────▶║         ║─────▶│Ket out│
-                └──────┘      ╚═════════╝      └───────┘
+    .. code-block:: 
+
+        ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
+        │Bra in│─────▶║         ║─────▶│Bra out│
+        └──────┘      ║ Channel ║      └───────┘
+        ┌──────┐  m3  ║         ║  m2  ┌───────┐
+        │Ket in│─────▶║         ║─────▶│Ket out│
+        └──────┘      ╚═════════╝      └───────┘
 
 
-                ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-                │Ket in│─────▶║ Unitary ║─────▶│Ket out│
-                └──────┘      ╚═════════╝      └───────┘
+        ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
+        │Ket in│─────▶║ Unitary ║─────▶│Ket out│
+        └──────┘      ╚═════════╝      └───────┘
 
 
-                              ╔═════════╗  m0  ┌───────┐
-                              ║         ║─────▶│Bra out│
-                              ║ Density ║      └───────┘
-                              ║ Matrix  ║  m1  ┌───────┐
-                              ║         ║─────▶│Ket out│
-                              ╚═════════╝      └───────┘
+                        ╔═════════╗  m0  ┌───────┐
+                        ║         ║─────▶│Bra out│
+                        ║ Density ║      └───────┘
+                        ║ Matrix  ║  m1  ┌───────┐
+                        ║         ║─────▶│Ket out│
+                        ╚═════════╝      └───────┘
 
 
-                              ╔═════════╗  m0  ┌───────┐
-                              ║   Ket   ║─────▶│Ket out│
-                              ╚═════════╝      └───────┘
+                        ╔═════════╗  m0  ┌───────┐
+                        ║   Ket   ║─────▶│Ket out│
+                        ╚═════════╝      └───────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
 
@@ -83,18 +85,6 @@ class Wires:
         >>> # combined subsets
         >>> assert w.output.ket.modes == {0, 13}
         >>> assert w.input.bra.modes == {1, 2}
-
-    This function does something amazing.
-
-    .. code-block:: 
-
-        Here is some ASCII art:
-        
-            /\_/\
-           ( o.o )
-            > ^ <
-
-    The ASCII art above is a simple representation of a cat.
 
     Here's a diagram of the original Wires object in the example above,
     with the indices of the wires in the standard order, i.e.
@@ -134,11 +124,13 @@ class Wires:
 
     Here's a diagram of the result of the contraction:
 
-                ╔═══════╗      ╔═══════╗
-                ║       ║─────▶║       ║─────▶ 0
-                ║  rho  ║      ║  Phi  ║
-                ║       ║─────▶║       ║─────▶ 0
-                ╚═══════╝      ╚═══════╝
+    .. code-block:: 
+
+        ╔═══════╗      ╔═══════╗
+        ║       ║─────▶║       ║─────▶ 0
+        ║  rho  ║      ║  Phi  ║
+        ║       ║─────▶║       ║─────▶ 0
+        ╚═══════╝      ╚═══════╝
 
     The permutation that takes the contracted representations to the standard order is also returned.
 
@@ -302,16 +294,22 @@ class Wires:
         to the standard order. An exception is raised if any leftover wires would overlap.
         Consider the following example:
 
-                                ╔═══════╗           ╔═══════╗
-                            B───║ self  ║───A   D───║ other ║───C
-                            b───║       ║───a   d───║       ║───c
-                                ╚═══════╝           ╚═══════╝
+        .. code-block:: 
+
+                ╔═══════╗           ╔═══════╗
+            B───║ self  ║───A   D───║ other ║───C
+            b───║       ║───a   d───║       ║───c
+                ╚═══════╝           ╚═══════╝
 
         B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
-                                        ╔═══════╗
-                             B|(D-A)────║self @ ║────C|(A-D)
-                             b|(d-a)────║ other ║────c|(a-d)
-                                        ╚═══════╝
+
+        .. code-block:: 
+
+                    ╔═══════╗
+            B|(D-A)────║self @ ║────C|(A-D)
+            b|(d-a)────║ other ║────c|(a-d)
+                    ╚═══════╝
+
         In comparison, contracting the representations rather than the wires corresponds to
         an order where we start from juxtaposing the objects and then removing pairs of contracted
         indices, i.e. A-D, B, C, D-A and then the same for a-d, b, c, d-a. The returned permutation
