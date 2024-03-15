@@ -77,18 +77,15 @@ class Representation(ABC):
         """
         return self.from_ansatz(self.ansatz - other.ansatz)
 
-    def __mul__(self, other: Representation | Scalar) -> Representation:
+    def __mul__(self, other: Scalar) -> Representation:
         r"""
-        Multiplies this representation by another or by a scalar.
+        Multiplies this representation by a scalar on the right.
         """
-        try:
-            return self.from_ansatz(self.ansatz * other.ansatz)
-        except AttributeError:
-            return self.from_ansatz(self.ansatz * other)
+        return self.from_ansatz(self.ansatz * other)
 
-    def __rmul__(self, other: Representation | Scalar) -> Representation:
+    def __rmul__(self, other: Scalar) -> Representation:
         r"""
-        Multiplies this representation by another or by a scalar on the right.
+        Multiplies this representation by a scalar on the left.
         """
         return self.__mul__(other)
 

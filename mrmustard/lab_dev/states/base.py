@@ -125,7 +125,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
@@ -180,13 +180,6 @@ class State(CircuitComponent):
             return rep.A, rep.b, rep.c
         msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
         raise ValueError(msg)
-
-    @property
-    def phasespace(self) -> tuple[ComplexMatrix, ComplexVector]:
-        r"""
-        The covariance matrix and the vector of means that describe this state in phase space.
-        """
-        raise NotImplementedError
 
     @property
     def L2_norm(self) -> float:
@@ -244,6 +237,12 @@ class State(CircuitComponent):
             The array that describes this state in the Fock representation.
         """
         return to_fock(self.representation, shape).array
+
+    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector]:
+        r"""
+        The covariance matrix and the vector of means that describe this state in phase space.
+        """
+        raise NotImplementedError
 
 
 class DM(State):
@@ -303,7 +302,7 @@ class DM(State):
         return ret
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
@@ -334,21 +333,23 @@ class DM(State):
 
     @property
     def probability(self) -> float:
-        rep = self.representation
-        msg = "Method ``probability`` not supported for batched representations."
-        if isinstance(rep, Fock):
-            if rep.array.shape[0] > 1:
-                raise ValueError(msg)
-        else:
-            if rep.A.shape[0] > 1:
-                raise ValueError(msg)
-
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
 
-        traced_rep = self.representation.trace(idx_ket, idx_bra)
-        ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
-        return math.atleast_1d(ret, math.float64)[0]
+        rep = self.representation.trace(idx_ket, idx_bra)
+
+        if isinstance(rep, Bargmann):
+            msg = "Cannot calculate probability of object with non-zero Bargmann"
+            if not math.allclose(rep.A, math.zeros_like(rep.A)):
+                raise ValueError(msg + "``A``.")
+            if not math.allclose(rep.b, math.zeros_like(rep.b)):
+                raise ValueError(msg + "``b``.")
+            return math.real(math.sum(rep.c, axes=[0]))
+
+        msg = "Cannot calculate probability of object with Fock array of shape "
+        if rep.array.shape != (1,):
+            raise ValueError(msg + f"``{rep.array.shape}``.")
+        return math.real(rep.array)[0]
 
     @property
     def purity(self) -> float:
@@ -432,7 +433,7 @@ class Ket(State):
         return ret
 
     @classmethod
-    def from_phasespace(
+    def from_phase_space(
         cls,
         modes: Sequence[int],
         cov: ComplexMatrix,
@@ -464,22 +465,7 @@ class Ket(State):
     @property
     def probability(self) -> float:
         dm = self @ self.dual
-
-        rep = dm.representation
-        msg = "Method ``probability`` not supported for batched representations."
-        if isinstance(rep, Fock):
-            if rep.array.shape[0] > 1:
-                raise ValueError(msg)
-        else:
-            if rep.A.shape[0] > 1:
-                raise ValueError(msg)
-
-        idx_ket = dm.wires.output.ket.indices
-        idx_bra = dm.wires.output.bra.indices
-
-        traced_rep = dm.representation.trace(idx_ket, idx_bra)
-        ret = traced_rep.c[0] if isinstance(traced_rep, Bargmann) else traced_rep.array
-        return math.atleast_1d(ret, math.float64)[0]
+        return DM._from_attributes("", dm.representation, dm.wires).probability
 
     @property
     def purity(self) -> float:
