@@ -116,19 +116,27 @@ class TestKet:
             state_sup.to_fock_component(5).L2_norm
 
     def test_probability(self):
-        state = Coherent([0], x=1) / 3
-        assert math.allclose(state.probability, 1 / 9)
-        assert math.allclose(state.to_fock_component(20).probability, 1 / 9)
+        state1 = Coherent([0], x=1) / 3
+        assert math.allclose(state1.probability, 1 / 9)
+        assert math.allclose(state1.to_fock_component(20).probability, 1 / 9)
 
-        superp = Coherent([0], x=1) / 3 + 2 * Coherent([0], x=-1) / 3
-        assert math.allclose(superp.probability, 1)
-        assert math.allclose(superp.to_fock_component(20).probability, 1)
+        state2 = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
+        assert math.allclose(state2.probability, 1.13533528)
+        assert math.allclose(state2.to_fock_component(20).probability, 1.13533528)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
         state = Ket("my_ket", modes)
         assert state.purity == 1
         assert state.is_pure
+
+    def test_dm(self):
+        ket = Coherent([0, 1], x=1, y=[2, 3])
+        dm = ket.dm()
+
+        assert dm.name == ket.name
+        assert dm.representation == (ket @ ket.adjoint).representation
+        assert dm.wires == (ket @ ket.adjoint).wires
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
@@ -181,18 +189,18 @@ class TestDM:
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
-        state01 = Coherent([0, 1], 1) >> Attenuator([0], 1)
+        state01 = Coherent([0, 1], 1).dm()
         with pytest.raises(ValueError):
             DM.from_bargmann([0], state01.bargmann_triple, "my_dm", True)
 
     def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1) >> Attenuator([0], 1)
+        state01 = Coherent([0, 1], 1).dm()
         state01 = state01.to_fock_component(2)
         with pytest.raises(ValueError):
             DM.from_fock([0], state01.fock_array(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
-        fock = Number([0], n=10) >> Attenuator([0], 1)
+        fock = Number([0], n=10).dm()
         with pytest.raises(ValueError):
             fock.bargmann_triple
 
@@ -223,10 +231,10 @@ class TestDM:
             DM.from_quadrature()
 
     def test_L2_norm(self):
-        state = Coherent([0], x=1) >> Attenuator([0], 1)
+        state = Coherent([0], x=1).dm()
         assert state.L2_norm == 1
 
-        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)) >> Attenuator([0], 1)
+        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)).dm()
         with pytest.raises(ValueError):
             state_sup.L2_norm
 
@@ -234,19 +242,16 @@ class TestDM:
             state_sup.to_fock_component(5).L2_norm
 
     def test_probability(self):
-        state = Coherent([0], x=1) >> Attenuator([0], 1)
-        assert state.probability == 1
-        assert state.to_fock_component(20).probability == 1
+        state1 = Coherent([0], x=1).dm()
+        assert state1.probability == 1
+        assert state1.to_fock_component(20).probability == 1
 
-        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)) >> Attenuator([0], 1)
-        with pytest.raises(ValueError):
-            state_sup.probability
-
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).probability
+        state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
+        assert state2.probability == 1
+        assert state2.to_fock_component(20).probability == 1
 
     def test_purity(self):
-        state = Coherent([0], 1, 2) >> Attenuator([0], 0.8)
+        state = Coherent([0], 1, 2).dm()
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 

@@ -339,16 +339,8 @@ class DM(State):
         rep = self.representation.trace(idx_ket, idx_bra)
 
         if isinstance(rep, Bargmann):
-            msg = "Cannot calculate probability of object with non-zero Bargmann"
-            if not (0 in rep.A.shape or 0 in rep.b.shape):
-                msg = "Cannot calculate probability of object with Bargmann A or b."
-                raise ValueError(msg)
             return math.real(math.sum(rep.c, axes=[0]))
-
-        if rep.array.shape != (1,):
-            msg = "Cannot calculate probability of object with Fock array of shape "
-            raise ValueError(msg + f"``{rep.array.shape}``.")
-        return math.real(rep.array)[0]
+        return math.real(math.sum(rep.array, axes=[0]))
 
     @property
     def purity(self) -> float:
@@ -463,12 +455,15 @@ class Ket(State):
 
     @property
     def probability(self) -> float:
-        return self.dm().probability
+        rep = (self >> self.dual).representation
+        if isinstance(rep, Bargmann):
+            return math.real(math.sum(rep.c, axes=[0]))
+        return math.real(math.sum(rep.array, axes=[0]))
 
     @property
     def purity(self) -> float:
         return 1.0
-    
+
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``Ket``.
