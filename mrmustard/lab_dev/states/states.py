@@ -135,7 +135,7 @@ class Number(Ket):
             msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
             raise ValueError(msg)
 
-        self._cutoffs = cutoffs or self.n
+        self._cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
         if len(self._cutoffs) == 1:
             self._cutoffs = math.tile(self._cutoffs, [len(modes)])
         if len(self._cutoffs) != len(modes):

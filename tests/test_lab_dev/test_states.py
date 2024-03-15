@@ -124,6 +124,9 @@ class TestKet:
         assert math.allclose(state2.probability, 1.13533528)
         assert math.allclose(state2.to_fock_component(20).probability, 1.13533528)
 
+        state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
+        assert math.allclose(state3.probability, 1)
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
         state = Ket("my_ket", modes)
@@ -249,6 +252,9 @@ class TestDM:
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
         assert state2.to_fock_component(20).probability == 1
+
+        state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
+        assert math.allclose(state3.probability, 1)
 
     def test_purity(self):
         state = Coherent([0], 1, 2).dm()
