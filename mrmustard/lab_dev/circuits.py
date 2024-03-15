@@ -81,7 +81,7 @@ class Circuit:
         r"""
         A list describing the desired contraction path for this circuit.
 
-        When a path specified, the ``Simulator`` follows the given path to perform
+        When a path specified, the ``Simulator`` follows it the given path to perform
         the contractions. 
         
         In more detail, when a circuit with components ``[c_0, .., c_N]`` has a path of the type
