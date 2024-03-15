@@ -143,11 +143,11 @@ class CircuitComponent:
         return self._representation
 
     @property
-    def modes(self) -> tuple[int, ...]:
+    def modes(self) -> list[int]:
         r"""
         The sorted list of modes of this component.
         """
-        return tuple(sorted(self.wires.modes))
+        return sorted(self.wires.modes)
 
     @property
     def name(self) -> str:
