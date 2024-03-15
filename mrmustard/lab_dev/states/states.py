@@ -102,7 +102,7 @@ class Number(Ket):
     Args:
         modes: The modes of the number state.
         n: The number of photons in each mode.
-        cutoffs: The cutoffs of the arrays for the number states. If it is given as
+        cutoffs: The cutoffs for the various modes. If ``cutoffs`` is given as
             an ``int``, it is broadcasted to all the states. If ``None``, it
             defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
             of the ``i``th mode.
