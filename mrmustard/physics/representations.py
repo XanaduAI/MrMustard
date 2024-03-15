@@ -264,7 +264,7 @@ class Bargmann(Representation):
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(A, b, c)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""
@@ -421,7 +421,7 @@ class Bargmann(Representation):
                 )
 
         A, b, c = zip(*Abc)
-        return Bargmann(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(A, b, c)
 
 
 class Fock(Representation):
