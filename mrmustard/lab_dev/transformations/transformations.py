@@ -39,7 +39,7 @@ class BSgate(Unitary):
         >>> from mrmustard.lab_dev import BSgate
 
         >>> unitary = BSgate(modes=[1, 2], theta=0.1)
-        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.theta.value, 0.1)
         >>> assert np.allclose(unitary.phi.value, 0.0)
 
@@ -120,7 +120,7 @@ class Dgate(Unitary):
         >>> from mrmustard.lab_dev import Dgate
 
         >>> unitary = Dgate(modes=[1, 2], x=0.1, y=[0.2, 0.3])
-        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.x.value, [0.1, 0.1])
         >>> assert np.allclose(unitary.y.value, [0.2, 0.3])
 
@@ -188,7 +188,7 @@ class Sgate(Unitary):
         >>> from mrmustard.lab_dev import Sgate
 
         >>> unitary = Sgate(modes=[1, 2], r=0.1, phi=[0.2, 0.3])
-        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.r.value, [0.1, 0.1])
         >>> assert np.allclose(unitary.phi.value, [0.2, 0.3])
 
@@ -258,7 +258,7 @@ class Attenuator(Channel):
         >>> from mrmustard.lab_dev import Attenuator
 
         >>> channel = Attenuator(modes=[1, 2], transmissivity=0.1)
-        >>> assert channel.modes == (1, 2)
+        >>> assert channel.modes == [1, 2]
         >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
 
     Args:
