@@ -260,12 +260,9 @@ class State(CircuitComponent):
         if self.n_modes != 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
-        array = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF).representation.array
-        n_batches = array.shape[0]
-        if isinstance(self, Ket):
-            dm = sum([math.outer(math.conj(array[b]), array[b]) for b in range(n_batches)])
-        else:
-            dm = math.sum(array, axes=[0])
+        state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = state if isinstance(state, DM) else state.dm()
+        dm = math.sum(state.representation.array, axes=[0])
         return mikkel_plot(dm, xbounds, ybounds, resolution, angle)
 
     def _repr_html_(self):  # pragma: no cover
