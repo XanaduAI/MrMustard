@@ -31,7 +31,7 @@ class Wires:
     where states flow from left to right. ``CircuitComponent``s can have wires on the
     bra and/or on the ket side. Here are some examples of the Wires object of various components:
 
-    .. code-block:: 
+    .. code-block::
 
         ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
         │Bra in│─────▶║         ║─────▶│Bra out│
@@ -90,7 +90,7 @@ class Wires:
     with the indices of the wires in the standard order, i.e.
     bra_out, bra_in, ket_out, ket_in, and the modes in sorted increasing order:
 
-    .. code-block:: 
+    .. code-block::
 
                      ╔═════════╗
         1 (2) ─────▶║         ║─────▶ 0 (0)
@@ -124,7 +124,7 @@ class Wires:
 
     Here's a diagram of the result of the contraction:
 
-    .. code-block:: 
+    .. code-block::
 
         ╔═══════╗      ╔═══════╗
         ║       ║─────▶║       ║─────▶ 0
@@ -294,7 +294,7 @@ class Wires:
         to the standard order. An exception is raised if any leftover wires would overlap.
         Consider the following example:
 
-        .. code-block:: 
+        .. code-block::
 
                 ╔═══════╗           ╔═══════╗
             B───║ self  ║───A   D───║ other ║───C
@@ -303,12 +303,12 @@ class Wires:
 
         B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
 
-        .. code-block:: 
+        .. code-block::
 
-                    ╔═══════╗
+                       ╔═══════╗
             B|(D-A)────║self @ ║────C|(A-D)
             b|(d-a)────║ other ║────c|(a-d)
-                    ╚═══════╝
+                       ╚═══════╝
 
         In comparison, contracting the representations rather than the wires corresponds to
         an order where we start from juxtaposing the objects and then removing pairs of contracted
