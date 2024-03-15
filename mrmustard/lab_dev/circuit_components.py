@@ -258,7 +258,7 @@ class CircuitComponent:
 
         # reorder the representation
         representation_ret = representation_ret.reorder(perm)
-        return CircuitComponent.from_attributes(None, representation_ret, wires_ret)
+        return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
