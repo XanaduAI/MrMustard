@@ -30,23 +30,65 @@ class Simulator:
     r"""
     A simulator for quantum circuits.
 
-    The simulation is carried out by contracting the components of ``circuit`` in pairs, until only
-    one component is left and returned. If no ``path`` is given, the order in which these contractions
-    are performed is chosen automatically and may be suboptimal (explain when that may be). The ``path``
-    input allows customising the contraction order and potentially speed up the simulation.
+    Circuits can be simulated by using the ``run`` method of ``Simulator``:
 
-    When a ``path`` of the type ``[(i, j), (l, m), ...]`` is given, the simulator creates a dictionary
-    of the type ``{0: c_0, ..., N: c_N}``, where ``[c_0, .., c_N]`` is the ``circuit.component`` list.
-    Then:
+    .. code-block::
 
-    * The two components ``c_i`` and ``c_j`` in positions ``i`` and ``j`` are contracted. ``c_i`` is
-        replaced by the resulting component ``c_j >> c_j``, while ``c_j`` popped.
-    * The two components ``c_l`` and ``c_m`` in positions ``l`` and ``m`` are contracted. ``c_l`` is
-        replaced by the resulting component ``c_l >> c_m``, while ``c_l`` is popped.
+        >>> from mrmustard.lab_dev import *
+        >>> import numpy as np
+
+        >>> sim = Simulator()
+
+        >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
+        >>> gate = BSgate([0, 1], theta=np.pi/4)
+        >>> proj1 = Number(modes=[1], n=[0]).dual
+        >>> proj01 = Number(modes=[0, 1], n=[2, 0]).dual
+
+        >>> # when all modes are measured, the simulation returns a `float`
+        >>> circuit = Circuit([state, gate, proj01])
+        >>> result = sim.run(circuit)
+        >>> assert result == 0.5
+
+        >>> # otherwise, the simulation returns a component
+        >>> circuit = Circuit([state, gate, proj1])
+        >>> result = sim.run(circuit)
+        >>> assert isinstance(result, CircuitComponent)
+
+    The simulation is carried out by contracting the components of the given circuit in pairs,
+    until only one component is left and returned. In the examples above, the contractions happen
+    in a "left-to-right" fashion, meaning that the left-most component in the circuit (``state``)
+    is contracted with the one in its right (``gate``), and finally the resulting component is
+    contracted with the projector. This provides a simple and convenient way to run simulations,
+    but for large circuits, different contraction paths may be more efficient.
+
+    The ``path`` attribute of ``Circuit``\s allows customising the contraction order and potentially
+    speed up the simulation. When a ``path`` of the type ``[(i, j), (l, m), ...]`` is given, the
+    simulator creates a dictionary of the type ``{0: c0, ..., N: cN}``, where ``[c0, .., cN]``
+    is the ``circuit.component`` list. Then:
+
+    * The two components ``ci`` and ``cj`` in positions ``i`` and ``j`` are contracted. ``ci`` is
+      replaced by the resulting component ``cj >> cj``, while ``cj`` is popped.
+    * The two components ``cl`` and ``cm`` in positions ``l`` and ``m`` are contracted. ``cl`` is
+      replaced by the resulting component ``cl >> cm``, while ``cl`` is popped.
     * Et cetera.
 
-    When all the contractions are performed, only one component remains in the dictionary, and this
-    component is returned.
+    Below is an example where a circuit is simulated in a "right-to-left" fashion:    
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import *
+        >>> import numpy as np
+
+        >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
+        >>> gate = BSgate([0, 1], theta=np.pi/4)
+        >>> proj01 = Number(modes=[0, 1], n=[2, 0]).dual
+
+        >>> # initialize the circuit and specify a custom path
+        >>> circuit = Circuit([state, gate, proj01])
+        >>> circuit.path = [(1, 2), (0, 1)]
+
+        >>> result = Simulator().run(circuit)
+        >>> assert result == 0.5
     """
 
     def run(

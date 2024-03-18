@@ -74,7 +74,7 @@ class Circuit:
         r"""
         The components in this circuit.
         """
-        return self._components@property
+        return self._components
     
     @property
     def path(self) -> list[tuple[int, int]]:
