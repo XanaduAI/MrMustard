@@ -38,7 +38,7 @@ class Simulator:
         self, circuit: Circuit, path: Optional[Sequence[tuple[int, int]]] = None
     ) -> CircuitComponent:
         r"""
-        Simulates the given circuit.
+        Runs the simulations of the given circuit.
 
         The simulation is carried out by contracting the components of ``circuit`` in pairs, until only
         one component is left and returned. If no ``path`` is given, the order in which these contractions
