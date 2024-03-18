@@ -35,9 +35,11 @@ class TestCircuit:
 
         circ1 = Circuit([vac, s01, bs01, bs12])
         assert circ1.components == [vac, s01, bs01, bs12]
+        assert circ1.path == []
 
         circ2 = Circuit() >> vac >> s01 >> bs01 >> bs12
         assert circ2.components == [vac, s01, bs01, bs12]
+        assert circ2.path == []
 
     def test_eq(self):
         vac = Vacuum([0, 1, 2])

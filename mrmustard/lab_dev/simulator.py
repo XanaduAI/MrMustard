@@ -62,7 +62,7 @@ class Simulator:
     but for large circuits, different contraction paths may be more efficient.
 
     The ``path`` attribute of ``Circuit``\s allows customising the contraction order and potentially
-    speed up the simulation. When a ``path`` of the type ``[(i, j), (l, m), ...]`` is given, the
+    speeding up the simulation. When a ``path`` of the type ``[(i, j), (l, m), ...]`` is given, the
     simulator creates a dictionary of the type ``{0: c0, ..., N: cN}``, where ``[c0, .., cN]``
     is the ``circuit.component`` list. Then:
 
@@ -104,9 +104,11 @@ class Simulator:
         Returns:
             A circuit component representing the entire circuit.
         """
-        ret = {i: c for i, c in enumerate(circuit)}
+        if not circuit.path:
+            circuit.generate_path()
 
-        for idx0, idx1 in path:
+        ret = {i: c for i, c in enumerate(circuit.components)}
+        for idx0, idx1 in circuit.path:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
         return list(ret.values())[0]

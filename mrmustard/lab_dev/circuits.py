@@ -79,25 +79,57 @@ class Circuit:
     @property
     def path(self) -> list[tuple[int, int]]:
         r"""
-        A list describing the desired contraction path for this circuit.
-
-        When a path specified, the ``Simulator`` follows it the given path to perform
-        the contractions. 
-        
-        In more detail, when a circuit with components ``[c_0, .., c_N]`` has a path of the type
-        ``[(i, j), (l, m), ...]``, the simulator creates a dictionary of the type
-        ``{0: c_0, ..., N: c_N}``. Then:
-
-        * The two components ``c_i`` and ``c_j`` in positions ``i`` and ``j`` are contracted. ``c_i`` is
-            replaced by the resulting component ``c_j >> c_j``, while ``c_j`` popped.
-        * The two components ``c_l`` and ``c_m`` in positions ``l`` and ``m`` are contracted. ``c_l`` is
-            replaced by the resulting component ``c_l >> c_m``, while ``c_l`` is popped.
-        * Et cetera.
-
-        When all the contractions are performed, only one component remains in the dictionary, and this
-        component is returned.
+        A list describing the desired contraction path followed by the ``Simulator``.
         """
         return self._path
+    
+    @path.setter
+    def path(self, value: list[tuple[int, int]]):
+        self._path = value
+
+    def generate_path(self, strategy: str = "l2r") -> None:
+        r"""
+        Automatically generates a path for this circuit.
+        
+        The available strategies are:
+            * ``l2r``: The two left-most components are contracted together, then the
+                resulting component is contracted with the third one from the left, et cetera.
+            * ``r2l``: The two right-most components are contracted together, then the
+                resulting component is contracted with the third one from the right, et cetera.
+
+        Args:
+            strategy: The strategy used to generate the path.
+        """   
+        if strategy == "l2r":
+            self.path = [(0, i) for i in range(1, len(self))]
+        elif strategy == "r2l":
+            self.path = [(i, i+1) for i in range(len(self)-2, -1, -1)]
+        else:
+            msg = f"Strategy ``{strategy}`` is not available."
+            raise ValueError(msg)
+
+    def lookup_path(self):
+        r"""
+        Returns a dictionary mapping the available contraction indices to the corresponding
+        components.
+
+        Raises:
+            ValueError: If ``circuit.path`` contains invalid contractions.
+        """
+        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
+        for idx0, idx1 in self.path:
+            try:
+                left = remaining[idx0].components
+                right = remaining.pop(idx1).components
+                remaining[idx0] = Circuit(left + right)
+            except KeyError:
+                wrong_key = idx0 if idx0 not in remaining else idx1
+                msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
+                raise ValueError(msg)
+        
+        for idx, circ in remaining.items():
+            print(f"\nindex: {idx}")
+            print(f"{circ}\n")
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
