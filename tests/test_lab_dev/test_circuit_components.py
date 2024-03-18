@@ -14,7 +14,7 @@
 
 """ Tests for circuit components. """
 
-# pylint: disable=fixme, missing-function-docstring, protected-access
+# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
 import numpy as np
 import pytest
@@ -24,7 +24,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Ket, Number, Vacuum
+from mrmustard.lab_dev.states import Coherent, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -130,6 +130,33 @@ class TestCircuitComponent:
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
         assert isinstance(d_fock, Unitary)
+
+    def test_add(self):
+        d1 = Dgate([1], x=0.1, y=0.1)
+        d2 = Dgate([1], x=0.2, y=0.2)
+
+        d12 = d1 + d2
+        assert d12.representation == d1.representation + d2.representation
+
+    def test_mul(self):
+        d1 = Dgate([1], x=0.1, y=0.1)
+
+        assert (d1 * 3).representation == d1.representation * 3
+        assert (3 * d1).representation == d1.representation * 3
+        assert isinstance(d1 * 3, Unitary)
+
+    def test_truediv(self):
+        d1 = Dgate([1], x=0.1, y=0.1)
+
+        assert (d1 / 3).representation == d1.representation / 3
+        assert isinstance(d1 / 3, Unitary)
+
+    def test_add_error(self):
+        d1 = Dgate([1], x=0.1, y=0.1)
+        d2 = Dgate([2], x=0.2, y=0.2)
+
+        with pytest.raises(ValueError):
+            d1 + d2
 
     def test_eq(self):
         d1 = Dgate([1], x=0.1, y=0.1)
