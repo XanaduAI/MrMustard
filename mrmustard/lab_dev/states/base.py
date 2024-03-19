@@ -28,9 +28,14 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 from IPython.display import display, HTML
 from mako.template import Template
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import numpy as np
 import os
 
 from mrmustard import math, settings
+from mrmustard.physics.fock import quadrature_distribution
+from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
@@ -38,8 +43,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
-
-from .visualization import mikkel_plot, dm_plot
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -255,9 +258,23 @@ class State(CircuitComponent):
         ybounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         angle: float = 0,
-    ):
+        colorscale: str = "viridis",
+    ) -> go.Figure:
         r"""
         2D visualization of one-mode states.
+
+        Args:
+            xbounds: The range of the `x` axis.
+            ybounds: The range of the `y` axis.
+            resolution: The number of bins on each axes.
+            angle: A rotation angle.
+            colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color scales.
+
+        Returns:
+            A ``Plotly`` figure representing the state in 2D.
+
+        Raises:
+            ValueError: If this state encompasses more than one mode.
         """
         if self.n_modes != 1:
             raise ValueError("2D visualization not available for multi-mode states.")
@@ -265,11 +282,94 @@ class State(CircuitComponent):
         state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
-        return mikkel_plot(dm, xbounds, ybounds, resolution, angle)
 
-    def visualize_dm(self, cutoff: Optional[int] = None):
+        x, prob_x = quadrature_distribution(dm, angle)
+        p, prob_p = quadrature_distribution(dm, np.pi / 2 + angle)
+
+        mask_x = math.asnumpy([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])
+        x = x[mask_x]
+        prob_x = prob_x[mask_x]
+
+        mask_p = math.asnumpy([pi >= ybounds[0] and pi <= ybounds[1] for pi in p])
+        p = p[mask_p]
+        prob_p = prob_p[mask_p]
+
+        xvec = np.linspace(*xbounds, resolution)
+        pvec = np.linspace(*ybounds, resolution)
+        z, xs, ps = wigner_discretized(dm, xvec, pvec)
+        xs = xs[:, 0]
+        ps = ps[0, :]
+
+        fig = make_subplots(
+            rows=2,
+            cols=2,
+            column_widths=[2, 1],
+            row_heights=[1, 2],
+            vertical_spacing=0.05,
+            horizontal_spacing=0.05,
+            shared_xaxes="columns",
+            shared_yaxes="rows",
+        )
+
+        # X-P plot
+        # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
+        fig_21 = go.Heatmap(
+            x=xs, y=-ps, z=math.transpose(z), colorscale=colorscale, name="Wigner function"
+        )
+        fig.add_trace(fig_21, row=2, col=1)
+        fig.update_traces(row=2, col=1, showscale=False)
+        fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
+        fig.update_yaxes(range=ybounds, title_text="p", row=2, col=1)
+
+        # X quadrature probability distribution
+        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig.add_trace(fig_11, row=1, col=1)
+        fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
+        fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
+
+        # P quadrature probability distribution
+        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig.add_trace(fig_22, row=2, col=2)
+        fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
+        fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
+
+        fig.update_layout(
+            height=500,
+            width=500,
+            plot_bgcolor="aliceblue",
+            margin=dict(l=20, r=20, t=30, b=20),
+            showlegend=False,
+        )
+        fig.update_xaxes(
+            showline=True,
+            linewidth=1,
+            linecolor="black",
+            mirror=True,
+            tickfont_family="Arial Black",
+        )
+        fig.update_yaxes(
+            showline=True,
+            linewidth=1,
+            linecolor="black",
+            mirror=True,
+            tickfont_family="Arial Black",
+        )
+
+        return fig
+
+    def visualize_dm(self, cutoff: Optional[int] = None) -> go.Figure:
         r"""
-        Plots the density matrix of the given state on a heatmap.
+        Plots the absolute value of density matrix of one-mode states on a heatmap.
+
+        Args:
+            cutoff: The desired cutoff. Defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the
+                settings.
+
+        Returns:
+            A ``Plotly`` figure representing absolute value of the density matrix.
+
+        Raises:
+            ValueError: If this state encompasses more than one mode.
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
@@ -277,7 +377,19 @@ class State(CircuitComponent):
         state = self.to_fock_component(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
-        return dm_plot(dm)
+
+        fig = go.Figure(
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
+        )
+        fig.update_yaxes(autorange="reversed")
+        fig.update_layout(
+            height=257,
+            width=257,
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
+
+        return fig
 
     def _repr_html_(self):  # pragma: no cover
         mytemplate = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
