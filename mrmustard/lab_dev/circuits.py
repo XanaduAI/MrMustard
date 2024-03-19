@@ -75,23 +75,23 @@ class Circuit:
         The components in this circuit.
         """
         return self._components
-    
+
     @property
     def path(self) -> list[tuple[int, int]]:
         r"""
         A list describing the desired contraction path followed by the ``Simulator``.
         """
         return self._path
-    
+
     @path.setter
     def path(self, value: list[tuple[int, int]]):
         self._path = value
 
-    def lookup_path(self) -> str:
+    def lookup_path(self) -> None:
         r"""
         An auxiliary function that helps building the contraction path for this circuit.
 
-        Shows the available components and the remaining contraction indices.
+        Shows the remaining components and the corresponding contraction indices.
 
         .. code-block::
 
@@ -104,7 +104,8 @@ class Circuit:
 
                 >>> circ = Circuit([vac, s01, bs01, bs12])
 
-                >>> # lookup the available components 
+                >>> # ``circ`` has no path: all the components are available, and indexed
+                >>> # as they appear in the list of components
                 >>> circ.lookup_path()
                 >>> # index 0: vac
                 >>> # index 1: s01
@@ -140,15 +141,18 @@ class Circuit:
                 wrong_key = idx0 if idx0 not in remaining else idx1
                 msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
                 raise ValueError(msg)
-        
+
+        msg = "\n"
         for idx, circ in remaining.items():
-            print(f"index: {idx}")
-            print(f"{circ}")
+            msg += f"→ index: {idx}"
+            msg += f"{circ}\n"
+
+        print(msg)
 
     def make_path(self, strategy: str = "l2r") -> None:
         r"""
         Automatically generates a path for this circuit.
-        
+
         The available strategies are:
             * ``l2r``: The two left-most components are contracted together, then the
                 resulting component is contracted with the third one from the left, et cetera.
@@ -157,11 +161,11 @@ class Circuit:
 
         Args:
             strategy: The strategy used to generate the path.
-        """   
+        """
         if strategy == "l2r":
             self.path = [(0, i) for i in range(1, len(self))]
         elif strategy == "r2l":
-            self.path = [(i, i+1) for i in range(len(self)-2, -1, -1)]
+            self.path = [(i, i + 1) for i in range(len(self) - 2, -1, -1)]
         else:
             msg = f"Strategy ``{strategy}`` is not available."
             raise ValueError(msg)

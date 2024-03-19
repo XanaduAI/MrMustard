@@ -16,6 +16,8 @@
 
 # pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
+import pytest
+
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
 from mrmustard.lab_dev.states import Vacuum, Number
@@ -40,6 +42,75 @@ class TestCircuit:
         circ2 = Circuit() >> vac >> s01 >> bs01 >> bs12
         assert circ2.components == [vac, s01, bs01, bs12]
         assert circ2.path == []
+
+    def test_make_path(self):
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+
+        circ = Circuit([vac, s01, bs01, bs12])
+
+        circ.make_path("l2r")
+        assert circ.path == [(0, 1), (0, 2), (0, 3)]
+
+        circ.make_path("r2l")
+        assert circ.path == [(2, 3), (1, 2), (0, 1)]
+
+        with pytest.raises(ValueError):
+            circ.make_path("my_strategy")
+
+    def test_lookup_path(self, capfd):
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+
+        circ = Circuit([vac, s01, bs01, bs12])
+        circ.lookup_path()
+        out1, _ = capfd.readouterr()
+        exp1 = "\n"
+        exp1 += "→ index: 0\n"
+        exp1 += "mode 0:     ◖Vac◗\n"
+        exp1 += "mode 1:     ◖Vac◗\n"
+        exp1 += "mode 2:     ◖Vac◗\n\n\n"
+        exp1 += "→ index: 1\n"
+        exp1 += "mode 0:   ──Sgate(0.0,0.0)\n"
+        exp1 += "mode 1:   ──Sgate(0.0,0.0)\n\n\n"
+        exp1 += "→ index: 2\n"
+        exp1 += "mode 0:   ──╭•──────────────\n"
+        exp1 += "mode 1:   ──╰BSgate(0.0,0.0)\n\n\n"
+        exp1 += "→ index: 3\n"
+        exp1 += "mode 1:   ──╭•──────────────\n"
+        exp1 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
+        assert out1 == exp1
+
+        circ.path = [(0, 1)]
+        circ.lookup_path()
+        out2, _ = capfd.readouterr()
+        exp2 = "\n"
+        exp2 += "→ index: 0\n"
+        exp2 += "mode 0:     ◖Vac◗──Sgate(0.0,0.0)\n"
+        exp2 += "mode 1:     ◖Vac◗──Sgate(0.0,0.0)\n"
+        exp2 += "mode 2:     ◖Vac◗────────────────\n\n\n"
+        exp2 += "→ index: 2\n"
+        exp2 += "mode 0:   ──╭•──────────────\n"
+        exp2 += "mode 1:   ──╰BSgate(0.0,0.0)\n\n\n"
+        exp2 += "→ index: 3\n"
+        exp2 += "mode 1:   ──╭•──────────────\n"
+        exp2 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
+        assert out2 == exp2
+
+    def test_lookup_path_error(self):
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+
+        circ = Circuit([vac, s01, bs01, bs12])
+        circ.path = [(0, 1), (0, 1)]
+        with pytest.raises(ValueError):
+            circ.lookup_path()
 
     def test_eq(self):
         vac = Vacuum([0, 1, 2])
