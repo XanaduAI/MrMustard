@@ -33,7 +33,7 @@ class TestSimulator:
     Tests for the ``Circuit`` class.
     """
 
-    @pytest.mark.parametrize("path", [[], [(4, 5), (3, 4), (2, 3), (1, 2), (0, 1)]])
+    @pytest.mark.parametrize("path", [[], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
     def test_run(self, path):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
