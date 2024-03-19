@@ -102,13 +102,6 @@ def mikkel_plot(
     fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
     fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
 
-    # # Density matrix
-    # fig_12 = go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)")
-    # fig.add_trace(fig_12, row=1, col=2)
-    # fig.update_traces(showscale=False, row=1, col=2)
-    # fig.update_xaxes(row=1, col=2)
-    # fig.update_yaxes(autorange="reversed", row=1, col=2)
-
     fig.update_layout(
         height=500,
         width=500,
@@ -126,13 +119,19 @@ def mikkel_plot(
     return fig
 
 
-def dm_plot(
-    dm: ComplexMatrix,
-) -> go.Figure:
-    r""" """
+def dm_plot(dm: ComplexMatrix) -> go.Figure:
+    r"""
+    Visual representation of a density matrix.
+    """
     fig = go.Figure(
         data=go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
     )
     fig.update_yaxes(autorange="reversed")
-    fig.update_layout(height=500, width=500)
+    fig.update_layout(
+        height=300,
+        width=300,
+        margin=dict(l=20, r=20, t=30, b=20),
+    )
+    fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
+
     return fig
