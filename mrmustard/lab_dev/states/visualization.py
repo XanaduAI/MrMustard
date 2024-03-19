@@ -128,8 +128,8 @@ def dm_plot(dm: ComplexMatrix) -> go.Figure:
     )
     fig.update_yaxes(autorange="reversed")
     fig.update_layout(
-        height=300,
-        width=300,
+        height=257,
+        width=257,
         margin=dict(l=20, r=20, t=30, b=20),
     )
     fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
