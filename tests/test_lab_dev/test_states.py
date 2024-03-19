@@ -18,7 +18,7 @@
 
 import numpy as np
 import pytest
-import sys
+import os
 
 from mrmustard import math
 from mrmustard.physics.fock import fock_state
@@ -29,12 +29,55 @@ from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 
+# class TestMikkelPlot:
+#     r"""
+#     Tests for the ``mikkel_plot`` method.
+#     """
+#     # set to ``True`` if the assets need be regenerated
+#     regenerate_assets = True
+
+#     # the path to the assets
+#     path = sys.path + "/assets"
+
+#     def test_ket(self):
+#         path = sys.path
+#         state = Coherent([0], x=1, y=-0.5).to_fock_component(10)
+#         array = state.representation.array
+#         dm = math.outer(math.conj(array[0]), array[0])
+
+#         fig = mikkel_plot(dm)
+#         if self.regenerate_assets:
+#             html = fig.write_html(path)
+#         # .to_html()
+
+
+class TestState:
+    r"""
+    Tests for the ``State`` class.
+    """
+
+    def test_visualize_2d(self):
+        filename=os.path.dirname(__file__) + "/assets/visualize_2d.html"
+
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
+        fig.write_html(filename)
+
+    def test_visualize_dm(self):
+        filename=os.path.dirname(__file__) + "/assets/visualize_dm.html"
+
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_dm(20)
+        fig.write_html(filename)
+
 
 class TestKet:
     r"""
     Tests for the ``Ket`` class.
     """
 
+    # set to ``True`` if the assets need be regenerated
+    regenerate_assets = True
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
@@ -406,25 +449,3 @@ class TestVacuum:
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
-
-
-# class TestMikkelPlot:
-#     r"""
-#     Tests for the ``mikkel_plot`` method.
-#     """
-#     # set to ``True`` if the assets need be regenerated
-#     regenerate_assets = True
-
-#     # the path to the assets
-#     path = sys.path + "/assets"
-
-#     def test_ket(self):
-#         path = sys.path
-#         state = Coherent([0], x=1, y=-0.5).to_fock_component(10)
-#         array = state.representation.array
-#         dm = math.outer(math.conj(array[0]), array[0])
-
-#         fig = mikkel_plot(dm)
-#         if self.regenerate_assets:
-#             html = fig.write_html(path)
-#         # .to_html()

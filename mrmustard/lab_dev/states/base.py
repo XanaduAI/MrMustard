@@ -392,8 +392,8 @@ class State(CircuitComponent):
         return fig
 
     def _repr_html_(self):  # pragma: no cover
-        mytemplate = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
-        display(HTML(mytemplate.render(state=self)))
+        template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
+        display(HTML(template.render(state=self)))
 
 
 class DM(State):
