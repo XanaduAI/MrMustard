@@ -107,26 +107,80 @@ class Circuit:
                 >>> # ``circ`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
                 >>> circ.lookup_path()
-                >>> # index 0: vac
-                >>> # index 1: s01
-                >>> # index 2: bs01
-                >>> # index 3: bs12
-
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗
+                mode 1:     ◖Vac◗
+                mode 2:     ◖Vac◗
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 1
+                mode 0:   ──Sgate(0.1,0.0)
+                mode 1:   ──Sgate(0.2,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•──────────────
+                mode 1:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 3
+                mode 1:   ──╭•──────────────
+                mode 2:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>                
+                
                 >>> # start building the path
-                >>> circ.path = [(1, 2)]
+                >>> circ.path = [(0, 1)]
                 >>> circ.lookup_path()
-                >>> # index 0: vac
-                >>> # index 1: s01 >> bs01
-                >>> # index 3: bs12
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
+                mode 2:     ◖Vac◗────────────────
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•──────────────
+                mode 1:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 3
+                mode 1:   ──╭•──────────────
+                mode 2:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>         
 
-                >>> circ.path = [(1, 2), (0, 1)]
+                >>> circ.path = [(0, 1), (2, 3)]
                 >>> circ.lookup_path()
-                >>> # index 0: vac >> s01 >> bs01
-                >>> # index 3: bs12
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
+                mode 2:     ◖Vac◗────────────────
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•────────────────────────────────
+                mode 1:   ──╰BSgate(0.0,0.0)──╭•──────────────
+                mode 2:                     ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>           
 
-                >>> circ.path = [(1, 2), (0, 1), (0, 3)]
+                >>> circ.path = [(0, 1), (2, 3), (0, 2)]
                 >>> circ.lookup_path()
-                >>> # index 0: vac >> s01 >> bs01 >> bs12
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)──╭•────────────────────────────────
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)──╰BSgate(0.0,0.0)──╭•──────────────
+                mode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>   
+                
 
         Raises:
             ValueError: If ``circuit.path`` contains invalid contractions.

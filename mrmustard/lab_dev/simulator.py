@@ -37,21 +37,17 @@ class Simulator:
         >>> from mrmustard.lab_dev import *
         >>> import numpy as np
 
-        >>> sim = Simulator()
-
+        >>> # initialize a circuit
         >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
         >>> gate = BSgate([0, 1], theta=np.pi/4)
         >>> proj1 = Number(modes=[1], n=[0]).dual
-        >>> proj01 = Number(modes=[0, 1], n=[2, 0]).dual
-
-        >>> # when all modes are measured, the simulation returns a `float`
-        >>> circuit = Circuit([state, gate, proj01])
-        >>> result = sim.run(circuit)
-        >>> assert result == 0.5
-
-        >>> # otherwise, the simulation returns a component
         >>> circuit = Circuit([state, gate, proj1])
-        >>> result = sim.run(circuit)
+
+        >>> # run the simulation
+        >>> result = Simulator().run(circuit)
+
+        >>> # the simulator returns a component that can be potentially be plugged
+        >>> # into another circuit
         >>> assert isinstance(result, CircuitComponent)
 
     The simulation is carried out by contracting the components of the given circuit in pairs,
@@ -88,7 +84,6 @@ class Simulator:
         >>> circuit.path = [(1, 2), (0, 1)]
 
         >>> result = Simulator().run(circuit)
-        >>> assert result == 0.5
     """
 
     def run(
