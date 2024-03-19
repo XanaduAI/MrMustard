@@ -55,6 +55,14 @@ def mikkel_plot(
     x, prob_x = fock.quadrature_distribution(dm, angle)
     p, prob_p = fock.quadrature_distribution(dm, np.pi / 2 + angle)
 
+    mask_x = np.array([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])
+    x = x[mask_x]
+    prob_x = prob_x[mask_x]
+
+    mask_p = np.array([pi >= ybounds[0] and pi <= ybounds[1] for pi in p])
+    p = p[mask_p]
+    prob_p = prob_p[mask_p]
+
     xvec = np.linspace(*xbounds, resolution)
     pvec = np.linspace(*ybounds, resolution)
     z, xs, ps = wigner_discretized(dm, xvec, pvec)
@@ -68,16 +76,19 @@ def mikkel_plot(
         row_heights=[1, 2],
         vertical_spacing=0.05,
         horizontal_spacing=0.05,
-        # shared_xaxes=True
+        shared_xaxes="columns",
+        shared_yaxes="rows",
     )
 
     # X-P plot
     # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
-    fig_21 = go.Heatmap(x=xs, y=-ps, z=math.transpose(z), colorscale="viridis", name="Wigner function")
+    fig_21 = go.Heatmap(
+        x=xs, y=-ps, z=math.transpose(z), colorscale="viridis", name="Wigner function"
+    )
     fig.add_trace(fig_21, row=2, col=1)
     fig.update_traces(row=2, col=1, showscale=False)
-    fig.update_xaxes(title_text="x", row=2, col=1)
-    fig.update_yaxes(title_text="p", row=2, col=1)
+    fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
+    fig.update_yaxes(range=ybounds, title_text="p", row=2, col=1)
 
     # X quadrature probability distribution
     fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
@@ -91,16 +102,16 @@ def mikkel_plot(
     fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
     fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
 
-    # Density matrix
-    fig_12 = go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)")
-    fig.add_trace(fig_12, row=1, col=2)
-    fig.update_traces(showscale=False, row=1, col=2)
-    fig.update_xaxes(row=1, col=2)
-    fig.update_yaxes(autorange="reversed", row=1, col=2)
+    # # Density matrix
+    # fig_12 = go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)")
+    # fig.add_trace(fig_12, row=1, col=2)
+    # fig.update_traces(showscale=False, row=1, col=2)
+    # fig.update_xaxes(row=1, col=2)
+    # fig.update_yaxes(autorange="reversed", row=1, col=2)
 
     fig.update_layout(
-        height=600,
-        width=600,
+        height=500,
+        width=500,
         plot_bgcolor="aliceblue",
         margin=dict(l=20, r=20, t=30, b=20),
         showlegend=False,
@@ -112,4 +123,8 @@ def mikkel_plot(
         showline=True, linewidth=1, linecolor="black", mirror=True, tickfont_family="Arial Black"
     )
 
-    return fig
+    # Density matrix
+    fig_dm = go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
+    # fig_dm.update_yaxes(autorange="reversed")
+
+    return fig, fig_dm
