@@ -1,0 +1,46 @@
+<%! 
+from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.lab_dev.states import Ket, DM
+%>
+
+<%
+# from mrmustard.physics.representation import Bargmann, Fock
+prob = state.probability
+prob_str = f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"
+type = "Ket" if isinstance(state, Ket) else "DM"
+is_barg = "✅" if isinstance(state.representation, Bargmann) else "❌"
+is_fock = "✅" if isinstance(state.representation, Fock) else "❌"
+%>
+
+<h1>${state.name or state.__class__.__name__}</h1>
+
+<table style="border-collapse: collapse; text-align: center;">
+    <tr>
+        <th>Purity</th>
+        <th>Probability</th>
+        <th>Number of modes</th>
+        <th>Class</th>
+        <th>Bargmann</th>
+        <th>Fock</th>
+    </tr>
+
+    <tr>
+        <td>${f"{state.purity :.2e}"}</td>
+        <td>${f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"}</td></td>
+        <td>${state.n_modes}</td></td>
+        <td>${type}</td></td>
+        <td>${is_barg}</td></td>
+        <td>${is_fock}</td>
+    </tr>
+</table>
+
+% if state.n_modes == 1:
+    <div style="display: flex">
+        <div style="flex: 0.6">
+            ${state.visualize_2d().to_html()}
+        </div>
+        <div style="flex: 0.4">
+            ${state.visualize_dm().to_html()}
+        </div>
+    </div>
+% endif

@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Union
 from IPython.display import display, HTML
+from mako.template import Template
+import os
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -37,7 +39,7 @@ from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
 from ..transformations.transformations import Unitary, Channel
 
-from .visualization import mikkel_plot
+from .visualization import mikkel_plot, dm_plot
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -265,41 +267,21 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
         return mikkel_plot(dm, xbounds, ybounds, resolution, angle)
 
+    def visualize_dm(self, cutoff: Optional[int] = None):
+        r"""
+        Plots the density matrix of the given state on a heatmap.
+        """
+        if self.n_modes != 1:
+            raise ValueError("DM visualization not available for multi-mode states.")
+
+        state = self.to_fock_component(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = state if isinstance(state, DM) else state.dm()
+        dm = math.sum(state.representation.array, axes=[0])
+        return dm_plot(dm)
+
     def _repr_html_(self):  # pragma: no cover
-        html = f"<h1>{self.name or self.__class__.__name__}</h1>"
-
-        prob = self.probability
-        prob_str = f"{100*prob:.3e} %" if prob < 0.001 else f"{prob:.3%}"
-        type = "Ket" if isinstance(self, Ket) else "DM"
-        is_barg = "✅" if isinstance(self.representation, Bargmann) else "❌"
-        is_fock = "✅" if isinstance(self.representation, Fock) else "❌"
-
-        html += '<table style="border-collapse: collapse; text-align: center;">'
-
-        html += "<tr>"
-        html += "<th>Purity</th>"
-        html += "<th>Probability</th>"
-        html += "<th>Number of modes</th>"
-        html += "<th>Class</th>"
-        html += "<th>Bargmann</th>"
-        html += "<th>Fock</th>"
-        html += "</tr>"
-
-        html += "<tr>"
-        html += f"<td>{self.purity :.2e}</td>"
-        html += f"<td>{prob_str}</td>"
-        html += f"<td>{self.n_modes}</td>"
-        html += f"<td>{type}</td>"
-        html += f"<td>{is_barg}</td>"
-        html += f"<td>{is_fock}</td>"
-        html += "</tr>"
-
-        html += "</table>"
-
-        if self.n_modes == 1:
-            html += self.visualize_2d().to_html()
-
-        display(HTML(html))
+        mytemplate = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
+        display(HTML(mytemplate.render(state=self)))
 
 
 class DM(State):

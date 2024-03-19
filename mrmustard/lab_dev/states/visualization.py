@@ -30,7 +30,7 @@ from mrmustard.physics import fock
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix
 
-__all__ = ["mikkel_plot"]
+__all__ = ["dm_plot", "mikkel_plot"]
 
 
 def mikkel_plot(
@@ -123,8 +123,16 @@ def mikkel_plot(
         showline=True, linewidth=1, linecolor="black", mirror=True, tickfont_family="Arial Black"
     )
 
-    # Density matrix
-    fig_dm = go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
-    # fig_dm.update_yaxes(autorange="reversed")
+    return fig
 
-    return fig, fig_dm
+
+def dm_plot(
+    dm: ComplexMatrix,
+) -> go.Figure:
+    r""" """
+    fig = go.Figure(
+        data=go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
+    )
+    fig.update_yaxes(autorange="reversed")
+    fig.update_layout(height=500, width=500)
+    return fig
