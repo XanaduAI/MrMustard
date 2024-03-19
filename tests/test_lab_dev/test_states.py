@@ -56,19 +56,25 @@ class TestState:
     Tests for the ``State`` class.
     """
 
-    def test_visualize_2d(self):
-        filename=os.path.dirname(__file__) + "/assets/visualize_2d.html"
+    # set to ``True`` to save the figures for debugging
+    save_figs = False
 
+    # path
+    path = os.path.dirname(__file__) + "/figures"
+
+    def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
         fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
-        fig.write_html(filename)
+
+        if self.save_figs:
+            fig.write_html(self.path + "/visualize_2d.html")
 
     def test_visualize_dm(self):
-        filename=os.path.dirname(__file__) + "/assets/visualize_dm.html"
-
         st = Coherent([0], y=1) + Coherent([0], y=-1)
         fig = st.visualize_dm(20)
-        fig.write_html(filename)
+
+        if self.save_figs:
+            fig.write_html(self.path + "/visualize_dm.html")
 
 
 class TestKet:
@@ -78,6 +84,7 @@ class TestKet:
 
     # set to ``True`` if the assets need be regenerated
     regenerate_assets = True
+
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
