@@ -87,7 +87,65 @@ class Circuit:
     def path(self, value: list[tuple[int, int]]):
         self._path = value
 
-    def generate_path(self, strategy: str = "l2r") -> None:
+    def lookup_path(self) -> str:
+        r"""
+        An auxiliary function that helps building the contraction path for this circuit.
+
+        Shows the available components and the remaining contraction indices.
+
+        .. code-block::
+
+                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+
+                >>> vac = Vacuum([0, 1, 2])
+                >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+                >>> bs01 = BSgate([0, 1])
+                >>> bs12 = BSgate([1, 2])
+
+                >>> circ = Circuit([vac, s01, bs01, bs12])
+
+                >>> # lookup the available components 
+                >>> circ.lookup_path()
+                >>> # index 0: vac
+                >>> # index 1: s01
+                >>> # index 2: bs01
+                >>> # index 3: bs12
+
+                >>> # start building the path
+                >>> circ.path = [(1, 2)]
+                >>> circ.lookup_path()
+                >>> # index 0: vac
+                >>> # index 1: s01 >> bs01
+                >>> # index 3: bs12
+
+                >>> circ.path = [(1, 2), (0, 1)]
+                >>> circ.lookup_path()
+                >>> # index 0: vac >> s01 >> bs01
+                >>> # index 3: bs12
+
+                >>> circ.path = [(1, 2), (0, 1), (0, 3)]
+                >>> circ.lookup_path()
+                >>> # index 0: vac >> s01 >> bs01 >> bs12
+
+        Raises:
+            ValueError: If ``circuit.path`` contains invalid contractions.
+        """
+        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
+        for idx0, idx1 in self.path:
+            try:
+                left = remaining[idx0].components
+                right = remaining.pop(idx1).components
+                remaining[idx0] = Circuit(left + right)
+            except KeyError:
+                wrong_key = idx0 if idx0 not in remaining else idx1
+                msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
+                raise ValueError(msg)
+        
+        for idx, circ in remaining.items():
+            print(f"index: {idx}")
+            print(f"{circ}")
+
+    def make_path(self, strategy: str = "l2r") -> None:
         r"""
         Automatically generates a path for this circuit.
         
@@ -107,29 +165,6 @@ class Circuit:
         else:
             msg = f"Strategy ``{strategy}`` is not available."
             raise ValueError(msg)
-
-    def lookup_path(self):
-        r"""
-        Returns a dictionary mapping the available contraction indices to the corresponding
-        components.
-
-        Raises:
-            ValueError: If ``circuit.path`` contains invalid contractions.
-        """
-        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
-        for idx0, idx1 in self.path:
-            try:
-                left = remaining[idx0].components
-                right = remaining.pop(idx1).components
-                remaining[idx0] = Circuit(left + right)
-            except KeyError:
-                wrong_key = idx0 if idx0 not in remaining else idx1
-                msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
-                raise ValueError(msg)
-        
-        for idx, circ in remaining.items():
-            print(f"\nindex: {idx}")
-            print(f"{circ}\n")
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
