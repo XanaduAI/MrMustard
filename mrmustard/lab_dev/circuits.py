@@ -129,8 +129,8 @@ class Circuit:
                 mode 2:   ──╰BSgate(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
-                <BLANKLINE>                
-                
+                <BLANKLINE>
+
                 >>> # start building the path
                 >>> circ.path = [(0, 1)]
                 >>> circ.lookup_path()
@@ -151,7 +151,7 @@ class Circuit:
                 mode 2:   ──╰BSgate(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
-                <BLANKLINE>         
+                <BLANKLINE>
 
                 >>> circ.path = [(0, 1), (2, 3)]
                 >>> circ.lookup_path()
@@ -168,7 +168,7 @@ class Circuit:
                 mode 2:                     ──╰BSgate(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
-                <BLANKLINE>           
+                <BLANKLINE>
 
                 >>> circ.path = [(0, 1), (2, 3), (0, 2)]
                 >>> circ.lookup_path()
@@ -179,8 +179,8 @@ class Circuit:
                 mode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
-                <BLANKLINE>   
-                
+                <BLANKLINE>
+
 
         Raises:
             ValueError: If ``circuit.path`` contains invalid contractions.

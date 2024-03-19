@@ -86,15 +86,12 @@ class Simulator:
         >>> result = Simulator().run(circuit)
     """
 
-    def run(
-        self, circuit: Circuit, path: Optional[Sequence[tuple[int, int]]] = None
-    ) -> CircuitComponent:
+    def run(self, circuit: Circuit) -> CircuitComponent:
         r"""
         Runs the simulations of the given circuit.
 
         Arguments:
             circuit: The circuit to simulate.
-            path: A list of tuples indicating the contraction path.
 
         Returns:
             A circuit component representing the entire circuit.

@@ -67,4 +67,3 @@ class TestSimulator:
 
         with pytest.raises(ValueError):
             Simulator().run(circuit)
-
