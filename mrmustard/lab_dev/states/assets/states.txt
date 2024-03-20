@@ -61,12 +61,12 @@ from mrmustard.lab_dev.states import Ket, DM
                     </table>
                 </div>
                 <div>
-                    ${state.visualize_dm().to_html()}
+                    ${state.visualize_dm().to_html(full_html=False, include_plotlyjs="cdn")}
                 </div>
             </div>
         </div>
         <div style="flex: 0 0 auto;">
-            ${state.visualize_2d().to_html()}
+            ${state.visualize_2d().to_html(full_html=False, include_plotlyjs="cdn")}
         </div>
     </div>
 

@@ -82,9 +82,6 @@ class TestKet:
     Tests for the ``Ket`` class.
     """
 
-    # set to ``True`` if the assets need be regenerated
-    regenerate_assets = True
-
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
