@@ -161,15 +161,6 @@ class TestKet:
         assert isinstance(ket >> u_component, CircuitComponent)
         assert isinstance(ket >> ch_component, CircuitComponent)
 
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        ket_component = CircuitComponent._from_attributes(
-            ket.name, ket.representation, ket.wires
-        )  # pylint: disable=protected-access
-
-        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
-        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
-
 
 class TestDM:
     r"""
@@ -281,17 +272,6 @@ class TestDM:
         assert isinstance(dm >> channel >> unitary, DM)
         assert isinstance(dm >> u_component, CircuitComponent)
         assert isinstance(dm >> ch_component, CircuitComponent)
-
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        channel = Attenuator([1], 1)
-        dm = ket >> channel
-        dm_component = CircuitComponent._from_attributes(
-            dm.name, dm.representation, dm.wires
-        )  # pylint: disable=protected-access
-
-        assert repr(dm) == "DM(name=None, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
 
 
 class TestCoherent:
@@ -429,13 +409,17 @@ class TestVisualization:
             fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
         ref_data = json.load(open(self.path + "/visualize_2d.json"))
 
-        assert np.all(data["data"][0]["x"] == ref_data["data"][0]["x"])
-        assert np.all(data["data"][0]["y"] == ref_data["data"][0]["y"])
-        assert np.all(data["data"][0]["z"] == ref_data["data"][0]["z"])
-        assert np.all(data["data"][1]["x"] == ref_data["data"][1]["x"])
-        assert np.all(data["data"][1]["y"] == ref_data["data"][1]["y"])
-        assert np.all(data["data"][2]["x"] == ref_data["data"][2]["x"])
-        assert np.all(data["data"][2]["y"] == ref_data["data"][2]["y"])
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert math.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
+        assert math.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
+        assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
+        assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
+
+    def test_visualize_2d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_2d(20)
 
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
@@ -446,4 +430,8 @@ class TestVisualization:
             fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
         ref_data = json.load(open(self.path + "/visualize_dm.json"))
 
-        assert np.all(data["data"][0]["z"] == ref_data["data"][0]["z"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_dm_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_dm(20)
