@@ -16,6 +16,7 @@
 
 # pylint: disable=protected-access, missing-function-docstring, expression-not-assigned, pointless-statement
 
+import json
 import numpy as np
 import pytest
 import os
@@ -28,54 +29,6 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
-
-# class TestMikkelPlot:
-#     r"""
-#     Tests for the ``mikkel_plot`` method.
-#     """
-#     # set to ``True`` if the assets need be regenerated
-#     regenerate_assets = True
-
-#     # the path to the assets
-#     path = sys.path + "/assets"
-
-#     def test_ket(self):
-#         path = sys.path
-#         state = Coherent([0], x=1, y=-0.5).to_fock_component(10)
-#         array = state.representation.array
-#         dm = math.outer(math.conj(array[0]), array[0])
-
-#         fig = mikkel_plot(dm)
-#         if self.regenerate_assets:
-#             html = fig.write_html(path)
-#         # .to_html()
-
-
-class TestState:
-    r"""
-    Tests for the ``State`` class.
-    """
-
-    # set to ``True`` to save the figures for debugging
-    regenerate_assets = True
-
-    # path
-    path = os.path.dirname(__file__) + "/assets"
-
-    def test_visualize_2d(self):
-        st = Coherent([0], y=1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
-
-        if self.regenerate_assets:
-            fig.write_html(self.path + "/visualize_2d.html", full_html=False, include_plotlyjs="cdn")
-
-        assert False
-    # def test_visualize_dm(self):
-    #     st = Coherent([0], y=1) + Coherent([0], y=-1)
-    #     fig = st.visualize_dm(20)
-
-    #     if self.save_figs:
-    #         fig.write_html(self.path + "/visualize_dm.html")
 
 
 class TestKet:
@@ -454,3 +407,43 @@ class TestVacuum:
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
+
+
+class TestVisualization:
+    r"""
+    Tests the functions to visualize states.
+    """
+
+    # set to ``True`` to regenerate the assets
+    regenerate_assets = False
+
+    # path
+    path = os.path.dirname(__file__) + "/assets"
+
+    def test_visualize_2d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_2d.json"))
+
+        assert np.all(data["data"][0]["x"] == ref_data["data"][0]["x"])
+        assert np.all(data["data"][0]["y"] == ref_data["data"][0]["y"])
+        assert np.all(data["data"][0]["z"] == ref_data["data"][0]["z"])
+        assert np.all(data["data"][1]["x"] == ref_data["data"][1]["x"])
+        assert np.all(data["data"][1]["y"] == ref_data["data"][1]["y"])
+        assert np.all(data["data"][2]["x"] == ref_data["data"][2]["x"])
+        assert np.all(data["data"][2]["y"] == ref_data["data"][2]["y"])
+
+    def test_visualize_dm(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_dm(20)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_dm.json"))
+
+        assert np.all(data["data"][0]["z"] == ref_data["data"][0]["z"])
