@@ -482,19 +482,14 @@ class Ket(State):
         ``Channel``, and ``other`` acts on ``self``'s modes. Otherwise, it returns a
         ``CircuitComponent``.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
-        if isinstance(other, Unitary) and set(other.modes).issubset(set(self.modes)):
-            ket = Ket()
-            ket._wires = component.wires
-            ket._representation = component.representation
-            return ket
-        elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
-            dm = DM()
-            dm._wires = component.wires
-            dm._representation = component.representation
-            return dm
-        return component
+        if not ret.wires.input:
+            if not ret.wires.bra:
+                return Ket._from_attributes("", ret.representation, ret.wires)
+            if ret.wires.bra.modes == ret.wires.ket.modes:
+                return DM._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Ket")
