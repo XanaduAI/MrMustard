@@ -191,10 +191,10 @@ class Circuit:
                 left = remaining[idx0].components
                 right = remaining.pop(idx1).components
                 remaining[idx0] = Circuit(left + right)
-            except KeyError:
+            except KeyError as e:
                 wrong_key = idx0 if idx0 not in remaining else idx1
                 msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
-                raise ValueError(msg)
+                raise ValueError(msg) from e
 
         msg = "\n"
         for idx, circ in remaining.items():

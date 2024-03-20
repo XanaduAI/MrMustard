@@ -18,8 +18,6 @@ Simulators for quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
-
 from .circuit_components import CircuitComponent
 from .circuits import Circuit
 
@@ -107,7 +105,7 @@ class Simulator:
             msg += f"found {len(circuit.path)}."
             raise ValueError(msg)
 
-        ret = {i: c for i, c in enumerate(circuit.components)}
+        ret = dict(enumerate(circuit.components))
         for idx0, idx1 in circuit.path:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
