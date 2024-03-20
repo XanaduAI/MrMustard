@@ -60,10 +60,10 @@ class TestState:
     regenerate_assets = True
 
     # path
-    path = os.path.dirname(__file__) + "/figures"
+    path = os.path.dirname(__file__) + "/assets"
 
     def test_visualize_2d(self):
-        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        st = Coherent([0], y=1)
         fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
 
         if self.regenerate_assets:
