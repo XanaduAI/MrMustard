@@ -34,7 +34,6 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
-from ..transformations.transformations import Unitary, Channel
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -357,7 +356,7 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes("", ret.representation, ret.wires)
+            return DM._from_attributes("", ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
