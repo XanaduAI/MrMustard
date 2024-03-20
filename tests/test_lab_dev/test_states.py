@@ -57,7 +57,7 @@ class TestState:
     """
 
     # set to ``True`` to save the figures for debugging
-    save_figs = False
+    regenerate_assets = True
 
     # path
     path = os.path.dirname(__file__) + "/figures"
@@ -66,8 +66,8 @@ class TestState:
         st = Coherent([0], y=1) + Coherent([0], y=-1)
         fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
 
-        if self.save_figs:
-            fig.write_html(self.path + "/visualize_2d.html")#, full_html=False, include_plotlyjs="cdn")
+        if self.regenerate_assets:
+            fig.write_html(self.path + "/visualize_2d.html", full_html=False, include_plotlyjs="cdn")
 
         assert False
     # def test_visualize_dm(self):
