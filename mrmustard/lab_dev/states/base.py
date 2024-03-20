@@ -202,7 +202,7 @@ class State(CircuitComponent):
     @property
     def probability(self) -> float:
         r"""
-        Returns :math:`\text{Tr}\big(|\psi\rangle\langle\psi|\big)` for ``Ket`` states
+        Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
         :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
         """
         raise NotImplementedError
