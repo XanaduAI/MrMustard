@@ -3,6 +3,9 @@
 ### New features
 * Added a function ``to_fock`` to map different representations into Fock representation. 
   [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+
+* Added a new Abc triple for s-parametrized displacement gate. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
   
 ### Breaking changes
 
