@@ -356,8 +356,7 @@ class DM(State):
         """
         ret = super().__rshift__(other)
 
-        if not ret.wires.input:
-            if ret.wires.bra.modes == ret.wires.ket.modes:
+        if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
                 return DM._from_attributes("", ret.representation, ret.wires)
         return ret
 
