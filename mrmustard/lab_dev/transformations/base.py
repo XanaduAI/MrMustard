@@ -59,19 +59,13 @@ class Unitary(Transformation):
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
         ``Channel``, and a ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            unitary = Unitary()
-            unitary._wires = component.wires
-            unitary._representation = component.representation
-            return unitary
+            return Unitary._from_attributes("", ret.representation, ret.wires)
         elif isinstance(other, Channel):
-            channel = Channel()
-            channel._wires = component.wires
-            channel._representation = component.representation
-            return channel
-        return component
+            return Channel._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Unitary")
@@ -101,14 +95,11 @@ class Channel(Transformation):
         Returns a ``Channel`` when ``other`` is a ``Unitary`` or a ``Channel``, and a
         ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            channel = Channel()
-            channel._wires = component.wires
-            channel._representation = component.representation
-            return channel
-        return component
+            return Channel._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Channel")
