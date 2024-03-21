@@ -257,24 +257,33 @@ class State(CircuitComponent):
         xbounds: tuple[int] = (-6, 6),
         ybounds: tuple[int] = (-6, 6),
         resolution: int = 200,
-        angle: float = 0,
         colorscale: str = "viridis",
     ) -> go.Figure:
         r"""
-        2D visualization of one-mode states.
+        2D visualization of the Wigner function of this state.
+
+        Plots the Wigner function on a heatmap, alongside the probability distributions on the
+        two quadrature axis.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Coherent
+
+            >>> state = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
+            >>> # state.visualize_2d()
 
         Args:
             xbounds: The range of the `x` axis.
             ybounds: The range of the `y` axis.
             resolution: The number of bins on each axes.
-            angle: A rotation angle.
-            colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color scales.
+            colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
+                scales.
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
 
         Raises:
-            ValueError: If this state encompasses more than one mode.
+            ValueError: If this state is a multi-mode state.
         """
         if self.n_modes != 1:
             raise ValueError("2D visualization not available for multi-mode states.")
@@ -283,8 +292,8 @@ class State(CircuitComponent):
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
-        x, prob_x = quadrature_distribution(dm, angle)
-        p, prob_p = quadrature_distribution(dm, np.pi / 2 + angle)
+        x, prob_x = quadrature_distribution(dm)
+        p, prob_p = quadrature_distribution(dm, np.pi / 2)
 
         mask_x = math.asnumpy([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])
         x = x[mask_x]
@@ -357,19 +366,94 @@ class State(CircuitComponent):
 
         return fig
 
+    def visualize_3d(
+        self,
+        xbounds: tuple[int] = (-6, 6),
+        ybounds: tuple[int] = (-6, 6),
+        resolution: int = 200,
+        colorscale: str = "viridis",
+    ) -> go.Figure:
+        r"""
+        3D visualization of the Wigner function of this state on a surface plot.
+
+        Args:
+            xbounds: The range of the `x` axis.
+            ybounds: The range of the `y` axis.
+            resolution: The number of bins on each axes.
+            colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
+                scales.
+
+        Returns:
+            A ``Plotly`` figure representing the state in 3D.
+
+        Raises:
+            ValueError: If this state is a multi-mode state.
+        """
+        if self.n_modes != 1:
+            raise ValueError("2D visualization not available for multi-mode states.")
+
+        state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = state if isinstance(state, DM) else state.dm()
+        dm = math.sum(state.representation.array, axes=[0])
+
+        xvec = np.linspace(*xbounds, resolution)
+        pvec = np.linspace(*ybounds, resolution)
+        z, xs, ps = wigner_discretized(dm, xvec, pvec)
+        xs = xs[:, 0]
+        ps = ps[0, :]
+
+        fig = go.Figure(
+            data=go.Surface(
+                x=xs,
+                y=ps,
+                z=z,
+                colorscale="viridis",
+                hovertemplate="x: %{x:.3f}"
+                + "<br>p: %{y:.3f}"
+                + "<br>W(x, p): %{z:.3f}<extra></extra>",
+            )
+        )
+
+        fig.update_layout(
+            autosize=False,
+            width=500,
+            height=500,
+            margin=dict(l=0, r=0, b=0, t=0),
+            scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+        )
+        fig.update_traces(
+            contours_z=dict(
+                show=True, usecolormap=True, highlightcolor="limegreen", project_z=False
+            )
+        )
+        fig.update_traces(
+            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+        )
+        fig.update_traces(
+            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+        )
+        fig.update_scenes(
+            xaxis_title_text="x", yaxis_title_text="p", zaxis_title_text="Wigner function"
+        )
+        fig.update_xaxes(title_text="x")
+        fig.update_yaxes(title="p")
+
+        return fig
+
     def visualize_dm(self, cutoff: Optional[int] = None) -> go.Figure:
         r"""
-        Plots the absolute value of density matrix of one-mode states on a heatmap.
+        Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
+        on a heatmap.
 
         Args:
             cutoff: The desired cutoff. Defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the
                 settings.
 
         Returns:
-            A ``Plotly`` figure representing absolute value of the density matrix.
+            A ``Plotly`` figure representing absolute value of the density matrix of this state.
 
         Raises:
-            ValueError: If this state encompasses more than one mode.
+            ValueError: If this state is a multi-mode state.
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
