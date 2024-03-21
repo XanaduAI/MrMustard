@@ -454,23 +454,17 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_gate_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement gate ``D(\gamma)``.
-    Given the complex variables for this single-mode is ``(z^*, z)`` corresponding to [out_ket, in_ket] unitary ordering,
-    the indices of the final triple denotes ``(\gamma^*, \gamma, z^*, z)``.
+    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement gate :math:`D(\gamma)`.
+    Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
+    the indices of the final triple denotes :math:`(\gamma^*, \gamma, z^*, z)`.
 
     Args:
-        s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator.
-        ``s=0`` is the symmetric ordering, which is symmetric under the exchange of creation and annihilation operators.
-        ``s=-1`` is the normal ordering, where all the creation operators are on the left and all the annihilation operators are on the right.
-        and ``s=1`` is the anti-normal ordering, which is the vice versa of the normal ordering.
-        By using s-parametrized Dgate to generate the s-parametrized characteristic function ``\chi_s = Tr[\rho D_s]``, and then by doing
-        the complex fourier transform, we get the s-parametrized quasi-probaility distribution:
-        ``s=0`` is the Wigner distribution, ``s=-1`` is the Husimi Q distribution, and ``s=1`` is the Glauber P distribution.
+        s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the symmetric ordering, which is symmetric under the exchange of creation and annihilation operators. :math:`s=-1` is the normal ordering, where all the creation operators are on the left and all the annihilation operators are on the right. and :math:`s=1` is the anti-normal ordering, which is the vice versa of the normal ordering. By using s-parametrized Dgate to generate the s-parametrized characteristic function ``\chi_s = Tr[\rho D_s]``, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, ``s=-1`` is the Husimi Q distribution, and ``s=1`` is the Glauber P distribution.
 
     Returns:
-        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement gate ``D(\gamma)``.
+        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement gate :math:`D(\gamma)`.
     """
     A = math.block(
         [
