@@ -288,23 +288,23 @@ class TestTriples:
         assert math.allclose(A1, np.kron(math.astensor([[0, 1], [1, 0]]), math.eye(2 * n_modes)))
         assert math.allclose(b1, np.zeros((4 * n_modes)))
         assert math.allclose(c1, 1)
-    
+
     def test_displacement_gate_s_parametrized_Abc(self):
         A1, b1, c1 = triples.displacement_gate_s_parametrized_Abc(0)
-        A1_correct = np.array([[0, -0.5, -1, 0],[-0.5, 0, 0, 1],[-1, 0, 0, 1],[0, 1, 1, 0]])
+        A1_correct = np.array([[0, -0.5, -1, 0], [-0.5, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A1, A1_correct)
         print(b1.shape)
         assert math.allclose(b1, np.zeros(4))
         assert math.allclose(c1, 1)
 
         A2, b2, c2 = triples.displacement_gate_s_parametrized_Abc(1)
-        A2_correct = np.array([[0, 0, -1, 0],[0, 0, 0, 1],[-1, 0, 0, 1],[0, 1, 1, 0]])
+        A2_correct = np.array([[0, 0, -1, 0], [0, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A2, A2_correct)
         assert math.allclose(b2, np.zeros(4))
         assert math.allclose(c2, 1)
 
         A3, b3, c3 = triples.displacement_gate_s_parametrized_Abc(-1)
-        A3_correct = np.array([[0, -1, -1, 0],[-1, 0, 0, 1],[-1, 0, 0, 1],[0, 1, 1, 0]])
+        A3_correct = np.array([[0, -1, -1, 0], [-1, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A3, A3_correct)
         assert math.allclose(b3, np.zeros(4))
         assert math.allclose(c3, 1)
