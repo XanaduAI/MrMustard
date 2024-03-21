@@ -402,7 +402,7 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), ybounds=(-4, 4))
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4))
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -420,6 +420,23 @@ class TestVisualization:
     def test_visualize_2d_error(self):
         with pytest.raises(ValueError):
             Coherent([0, 1]).visualize_2d(20)
+
+    def test_visualize_3d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4))
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_3d.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_3d.json"))
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_3d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_3d(20)
 
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)

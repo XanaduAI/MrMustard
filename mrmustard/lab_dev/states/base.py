@@ -255,7 +255,7 @@ class State(CircuitComponent):
     def visualize_2d(
         self,
         xbounds: tuple[int] = (-6, 6),
-        ybounds: tuple[int] = (-6, 6),
+        pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
     ) -> go.Figure:
@@ -274,7 +274,7 @@ class State(CircuitComponent):
 
         Args:
             xbounds: The range of the `x` axis.
-            ybounds: The range of the `y` axis.
+            pbounds: The range of the `p` axis.
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
@@ -299,12 +299,12 @@ class State(CircuitComponent):
         x = x[mask_x]
         prob_x = prob_x[mask_x]
 
-        mask_p = math.asnumpy([pi >= ybounds[0] and pi <= ybounds[1] for pi in p])
+        mask_p = math.asnumpy([pi >= pbounds[0] and pi <= pbounds[1] for pi in p])
         p = p[mask_p]
         prob_p = prob_p[mask_p]
 
         xvec = np.linspace(*xbounds, resolution)
-        pvec = np.linspace(*ybounds, resolution)
+        pvec = np.linspace(*pbounds, resolution)
         z, xs, ps = wigner_discretized(dm, xvec, pvec)
         xs = xs[:, 0]
         ps = ps[0, :]
@@ -328,7 +328,7 @@ class State(CircuitComponent):
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
         fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
-        fig.update_yaxes(range=ybounds, title_text="p", row=2, col=1)
+        fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
         fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
@@ -340,7 +340,7 @@ class State(CircuitComponent):
         fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
-        fig.update_yaxes(range=ybounds, row=2, col=2, showticklabels=False)
+        fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
 
         fig.update_layout(
             height=500,
@@ -369,7 +369,7 @@ class State(CircuitComponent):
     def visualize_3d(
         self,
         xbounds: tuple[int] = (-6, 6),
-        ybounds: tuple[int] = (-6, 6),
+        pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
     ) -> go.Figure:
@@ -378,7 +378,7 @@ class State(CircuitComponent):
 
         Args:
             xbounds: The range of the `x` axis.
-            ybounds: The range of the `y` axis.
+            pbounds: The range of the `p` axis.
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
@@ -397,7 +397,7 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         xvec = np.linspace(*xbounds, resolution)
-        pvec = np.linspace(*ybounds, resolution)
+        pvec = np.linspace(*pbounds, resolution)
         z, xs, ps = wigner_discretized(dm, xvec, pvec)
         xs = xs[:, 0]
         ps = ps[0, :]
@@ -407,7 +407,7 @@ class State(CircuitComponent):
                 x=xs,
                 y=ps,
                 z=z,
-                colorscale="viridis",
+                colorscale=colorscale,
                 hovertemplate="x: %{x:.3f}"
                 + "<br>p: %{y:.3f}"
                 + "<br>W(x, p): %{z:.3f}<extra></extra>",
