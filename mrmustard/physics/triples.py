@@ -456,7 +456,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 def displacement_gate_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``-parametrized dispalcement gate ``D(\gamma)``.
+    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement gate ``D(\gamma)``.
     Given the complex variables for this single-mode is ``(z^*, z)`` corresponding to [out_ket, in_ket] unitary ordering,
     the indices of the final triple denotes ``(\gamma^*, \gamma, z^*, z)``.
 
