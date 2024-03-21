@@ -390,7 +390,7 @@ class State(CircuitComponent):
             ValueError: If this state is a multi-mode state.
         """
         if self.n_modes != 1:
-            raise ValueError("2D visualization not available for multi-mode states.")
+            raise ValueError("3D visualization not available for multi-mode states.")
 
         state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
