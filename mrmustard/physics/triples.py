@@ -466,7 +466,7 @@ def displacement_gate_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar
         ``s=-1`` is the normal ordering, where all the creation operators are on the left and all the annihilation operators are on the right.
         and ``s=1`` is the anti-normal ordering, which is the vice versa of the normal ordering.
         By using s-parametrized Dgate to generate the s-parametrized characteristic function ``\chi_s = Tr[\rho D_s]``, and then by doing
-        the complex fourier transform, we wil get the s-parametrized quasi-probaility distribution:
+        the complex fourier transform, we get the s-parametrized quasi-probaility distribution:
         ``s=0`` is the Wigner distribution, ``s=-1`` is the Husimi Q distribution, and ``s=1`` is the Glauber P distribution.
  
     Returns:
