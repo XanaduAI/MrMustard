@@ -63,7 +63,7 @@ class Simulator:
     * The two components ``ci`` and ``cj`` in positions ``i`` and ``j`` are contracted. ``ci`` is
       replaced by the resulting component ``cj >> cj``, while ``cj`` is popped.
     * The two components ``cl`` and ``cm`` in positions ``l`` and ``m`` are contracted. ``cl`` is
-      replaced by the resulting component ``cl >> cm``, while ``cl`` is popped.
+      replaced by the resulting component ``cl >> cm``, while ``cm`` is popped.
     * Et cetera.
 
     Below is an example where a circuit is simulated in a "right-to-left" fashion:
