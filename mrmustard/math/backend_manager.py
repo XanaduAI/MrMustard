@@ -1385,7 +1385,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
 
         Args:
-            num_modes (int): positive integer
+            num_modes: A positive integer representing the number of modes.
 
         Returns:
             The :math:`2N\times 2N` array
