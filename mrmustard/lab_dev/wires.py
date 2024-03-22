@@ -87,7 +87,7 @@ class Wires:
         >>> assert w.input.bra.modes == {1, 2}
 
     Here's a diagram of the original Wires object in the example above,
-    with the indices of the wires in the standard order, i.e.
+    with the indices of the wires (the number in parenthesis) given in the "standard" order:
     bra_out, bra_in, ket_out, ket_in, and the modes in sorted increasing order:
 
     .. code-block::
