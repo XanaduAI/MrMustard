@@ -14,12 +14,12 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import json
+import os
 import numpy as np
 import pytest
-import os
 
 from mrmustard import math
 from mrmustard.physics.fock import fock_state

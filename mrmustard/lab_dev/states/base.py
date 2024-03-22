@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access
 
 """
 This module contains the base classes for the available quantum states.
@@ -166,7 +166,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:
+    def from_quadrature(cls) -> State:
         r"""
         Initializes a state from quadrature.
         """
@@ -463,7 +463,7 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name=f"abs(ρ)", showscale=False)
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
