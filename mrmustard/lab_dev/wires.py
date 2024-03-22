@@ -28,7 +28,7 @@ class Wires:
 
     In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a tensor network picture,
-    where states flow from left to right. ``CircuitComponent``s can have wires on the
+    where states flow from left to right. ``CircuitComponent``\s can have wires on the
     bra and/or on the ket side. Here are some examples of the Wires object of various components:
 
     .. code-block::
