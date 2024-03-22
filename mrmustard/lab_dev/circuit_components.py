@@ -294,7 +294,7 @@ class CircuitComponent:
         representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
 
         # reorder the representation
-        representation_ret = representation_ret.reorder(perm)
+        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
