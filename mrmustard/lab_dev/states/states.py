@@ -165,7 +165,7 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: Sequence[int],
     ) -> None:
         super().__init__("Vac", modes=modes)
 
