@@ -33,7 +33,7 @@ __all__ = ["Coherent", "Number", "Vacuum"]
 class Coherent(Ket):
     r"""The `N`-mode coherent state.
 
-    If ``x`` and/or ``y`` are Sequences, their length must be equal to `1` or `N`. If their length is equal to `1`,
+    If ``x`` and/or ``y`` are ``Sequence``\s, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
 
     .. code-block::
