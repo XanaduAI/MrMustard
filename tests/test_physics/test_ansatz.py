@@ -182,6 +182,7 @@ class TestArrayAnsatz:
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array2)
         aa1_add_aa2 = aa1 + aa2
+
         assert isinstance(aa1_add_aa2, ArrayAnsatz)
         assert aa1_add_aa2.array.shape == (4, 2, 2)
         assert np.allclose(aa1_add_aa2.array[0], np.array([[0, 2], [4, 6]]))

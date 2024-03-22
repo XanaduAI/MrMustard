@@ -72,6 +72,10 @@ class Representation(ABC):
         r"""
         Adds this representation to another.
         """
+        if self.__class__.__name__ != other.__class__.__name__:
+            msg = f"Cannot add ``{self.__class__.__name__}`` representation to "
+            msg += f"``{other.__class__.__name__}`` representation."
+            raise ValueError(msg)
         return self.from_ansatz(self.ansatz + other.ansatz)
 
     def __sub__(self, other) -> Representation:
@@ -181,13 +185,13 @@ class Bargmann(Representation):
     .. code-block ::
 
         >>> # bargmann representation of one-mode coherent state with gamma=1+0j
-        >>> A_plus = np.array([[0,],])
-        >>> b_plus = np.array([1,])
+        >>> A_plus = [[0,],]
+        >>> b_plus = [1,]
         >>> c_plus = 0.6065306597126334
 
         >>> # bargmann representation of one-mode coherent state with gamma=-1+0j
-        >>> A_minus = np.array([[0,],])
-        >>> b_minus = np.array([-1,])
+        >>> A_minus = [[0,],]
+        >>> b_minus = [-1,]
         >>> c_minus = 0.6065306597126334
 
         >>> # bargmann representation of a superposition of coherent states
@@ -283,7 +287,7 @@ class Bargmann(Representation):
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(A, b, c)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""
@@ -440,7 +444,7 @@ class Bargmann(Representation):
                 )
 
         A, b, c = zip(*Abc)
-        return Bargmann(math.astensor(A), math.astensor(b), math.astensor(c))
+        return Bargmann(A, b, c)
 
 
 class Fock(Representation):
@@ -455,13 +459,12 @@ class Fock(Representation):
 
     .. code-block::
 
-        >>> from mrmustard import math
         >>> from mrmustard.physics.representations import Fock
 
         >>> # initialize Fock objects
-        >>> array1 = math.astensor(np.random.random((5,7,8)))
-        >>> array2 = math.astensor(np.random.random((5,7,8)))
-        >>> array3 = math.astensor(np.random.random((3,5,7,8))) # where 3 is the batch.
+        >>> array1 = np.random.random((5,7,8))
+        >>> array2 = np.random.random((5,7,8))
+        >>> array3 = np.random.random((3,5,7,8)) # where 3 is the batch.
         >>> fock1 = Fock(array1)
         >>> fock2 = Fock(array2)
         >>> fock3 = Fock(array3, batched=True)
@@ -492,6 +495,8 @@ class Fock(Representation):
 
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
+
+        array = math.astensor(array)
         if not batched:
             array = array[None, ...]
         self._ansatz = ArrayAnsatz(array=array)
@@ -628,7 +633,8 @@ class Fock(Representation):
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idxs2) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
-        return self.from_ansatz(ArrayAnsatz(math.trace(new_array)))
+        trace = math.trace(new_array)
+        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""
@@ -653,18 +659,18 @@ class Fock(Representation):
             >>> from mrmustard import math
             >>> from mrmustard.physics.representations import Fock
 
-            >>> array1 = math.astensor(np.arange(27).reshape((3, 3, 3)))
+            >>> array1 = math.arange(27).reshape((3, 3, 3))
             >>> fock1 = Fock(array1)
 
             >>> fock2 = fock1.reduce(3)
             >>> assert fock1 == fock2
 
             >>> fock3 = fock1.reduce(2)
-            >>> array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
+            >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
             >>> assert fock3 == Fock(array3)
 
             >>> fock4 = fock1.reduce((2, 1, 3, 1))
-            >>> array4 = math.astensor([[[0], [3], [6]]])
+            >>> array4 = [[[0], [3], [6]]]
             >>> assert fock4 == Fock(array4)
 
         Args:

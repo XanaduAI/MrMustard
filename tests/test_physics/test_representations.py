@@ -134,6 +134,13 @@ class TestBargmannRepresentation:
         assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
         assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
 
+    def test_add_error(self):
+        bargmann = Bargmann(*Abc_triple(3))
+        fock = Fock(np.random.random((1, 4, 4, 4)), batched=True)
+
+        with pytest.raises(ValueError):
+            bargmann + fock
+
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
         triple1 = Abc_triple(n)

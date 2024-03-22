@@ -278,7 +278,7 @@ class Wires:
             if m := m1 & m2:
                 raise ValueError(f"{t}-type wires overlap at mode {m}")
             new_args.append(m1 | m2)
-        return Wires(*new_args)
+        return Wires(*new_args)w
 
     def __bool__(self) -> bool:
         r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."

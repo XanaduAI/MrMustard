@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 import numpy as np
+from ..utils.typing import Scalar
 from ..physics.converters import to_fock
 from ..physics.representations import Representation, Bargmann, Fock
 from ..math.parameter_set import ParameterSet
@@ -150,6 +151,13 @@ class CircuitComponent:
         return sorted(self.wires.modes)
 
     @property
+    def n_modes(self) -> list[int]:
+        r"""
+        The number of modes in this component.
+        """
+        return len(self.modes)
+
+    @property
     def name(self) -> str:
         r"""
         The name of this component.
@@ -227,6 +235,35 @@ class CircuitComponent:
             to_fock(self.representation, shape=shape),
             self.wires,
         )
+
+    def __add__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Implements the addition between circuit components.
+        """
+        if self.wires != other.wires:
+            msg = "Cannot add components with different wires."
+            raise ValueError(msg)
+        rep = self.representation + other.representation
+        name = self.name if self.name == other.name else ""
+        return self._from_attributes(name, rep, self.wires)
+
+    def __mul__(self, other: Scalar) -> CircuitComponent:
+        r"""
+        Implements the multiplication by a scalar on the right.
+        """
+        return self._from_attributes(self.name, other * self.representation, self.wires)
+
+    def __rmul__(self, other: Scalar) -> CircuitComponent:
+        r"""
+        Implements the multiplication by a scalar on the left.
+        """
+        return self.__mul__(other)
+
+    def __truediv__(self, other: Scalar) -> CircuitComponent:
+        r"""
+        Implements the division by a scalar for circuit components.
+        """
+        return self._from_attributes(self.name, self.representation / other, self.wires)
 
     def __eq__(self, other) -> bool:
         r"""
