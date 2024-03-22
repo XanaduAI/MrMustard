@@ -34,7 +34,6 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
-from ..transformations.transformations import Unitary, Channel
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -351,17 +350,14 @@ class DM(State):
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
 
-        Returns a ``DM`` when ``other`` is a ``Unitary`` or a ``Channel``, and ``other`` acts on
-        ``self``'s modes. Otherwise, it returns a ``CircuitComponent``.
+        Returns a ``DM`` when the wires of the resulting components are compatible with those
+        of a ``Ket``, a ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
-        if isinstance(other, (Unitary, Channel)) and set(other.modes).issubset(self.modes):
-            dm = DM()
-            dm._wires = component.wires
-            dm._representation = component.representation
-            return dm
-        return component
+        if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
+            return DM._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "DM")
@@ -478,23 +474,17 @@ class Ket(State):
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
 
-        Returns a ``State`` (either ``Ket`` or ``DM``) when ``other`` is a ``Unitary`` or a
-        ``Channel``, and ``other`` acts on ``self``'s modes. Otherwise, it returns a
-        ``CircuitComponent``.
+        Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
+        with those of a ``DM`` or of a ``Ket``, a ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
-        if isinstance(other, Unitary) and set(other.modes).issubset(set(self.modes)):
-            ket = Ket()
-            ket._wires = component.wires
-            ket._representation = component.representation
-            return ket
-        elif isinstance(other, Channel) and set(other.modes).issubset(set(self.modes)):
-            dm = DM()
-            dm._wires = component.wires
-            dm._representation = component.representation
-            return dm
-        return component
+        if not ret.wires.input:
+            if not ret.wires.bra:
+                return Ket._from_attributes("", ret.representation, ret.wires)
+            if ret.wires.bra.modes == ret.wires.ket.modes:
+                return DM._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Ket")
