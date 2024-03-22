@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal
 
 """
 This module contains the base classes for the available quantum states.
@@ -26,12 +26,13 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
+import os
+
 from IPython.display import display, HTML
 from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-import os
 
 from mrmustard import math, settings
 from mrmustard.physics.fock import quadrature_distribution
