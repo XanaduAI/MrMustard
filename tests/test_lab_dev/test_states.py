@@ -152,12 +152,17 @@ class TestKet:
             channel.name, channel.representation, channel.wires
         )  # pylint: disable=protected-access
 
+        # gates
         assert isinstance(ket >> unitary, Ket)
         assert isinstance(ket >> channel, DM)
         assert isinstance(ket >> unitary >> channel, DM)
         assert isinstance(ket >> channel >> unitary, DM)
         assert isinstance(ket >> u_component, CircuitComponent)
         assert isinstance(ket >> ch_component, CircuitComponent)
+
+        # measurements
+        assert isinstance(ket >> Coherent([0], 1).dual, Ket)
+        assert isinstance(ket >> Coherent([0], 1).dm().dual, DM)
 
     def test_repr(self):
         ket = Coherent([0, 1], 1)
@@ -273,12 +278,17 @@ class TestDM:
         )  # pylint: disable=protected-access
 
         dm = ket >> channel
-        assert isinstance(dm, DM)
 
+        # gates
+        assert isinstance(dm, DM)
         assert isinstance(dm >> unitary >> channel, DM)
         assert isinstance(dm >> channel >> unitary, DM)
         assert isinstance(dm >> u_component, CircuitComponent)
         assert isinstance(dm >> ch_component, CircuitComponent)
+
+        # measurements
+        assert isinstance(dm >> Coherent([0], 1).dual, DM)
+        assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
 
     def test_repr(self):
         ket = Coherent([0, 1], 1)

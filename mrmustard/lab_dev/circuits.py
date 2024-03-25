@@ -46,7 +46,7 @@ class Circuit:
         >>> circ = Circuit(components)
         >>> assert circ.components == components
 
-    New components (or entire circuits) can be appended by using the ``>>`` operator.
+    New components (or entire circuits) can be appended using the ``>>`` operator.
 
     .. code-block::
 
@@ -67,6 +67,7 @@ class Circuit:
 
     def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
         self._components = components or []
+        self._path = []
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -74,6 +75,154 @@ class Circuit:
         The components in this circuit.
         """
         return self._components
+
+    @property
+    def path(self) -> list[tuple[int, int]]:
+        r"""
+        A list describing the desired contraction path followed by the ``Simulator``.
+        """
+        return self._path
+
+    @path.setter
+    def path(self, value: list[tuple[int, int]]):
+        self._path = value
+
+    def lookup_path(self) -> None:
+        r"""
+        An auxiliary function that helps building the contraction path for this circuit.
+
+        Shows the remaining components and the corresponding contraction indices.
+
+        .. code-block::
+
+                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+
+                >>> vac = Vacuum([0, 1, 2])
+                >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+                >>> bs01 = BSgate([0, 1])
+                >>> bs12 = BSgate([1, 2])
+
+                >>> circ = Circuit([vac, s01, bs01, bs12])
+
+                >>> # ``circ`` has no path: all the components are available, and indexed
+                >>> # as they appear in the list of components
+                >>> circ.lookup_path()
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗
+                mode 1:     ◖Vac◗
+                mode 2:     ◖Vac◗
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 1
+                mode 0:   ──Sgate(0.1,0.0)
+                mode 1:   ──Sgate(0.2,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•──────────────
+                mode 1:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 3
+                mode 1:   ──╭•──────────────
+                mode 2:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>
+
+                >>> # start building the path
+                >>> circ.path = [(0, 1)]
+                >>> circ.lookup_path()
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
+                mode 2:     ◖Vac◗────────────────
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•──────────────
+                mode 1:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 3
+                mode 1:   ──╭•──────────────
+                mode 2:   ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>
+
+                >>> circ.path = [(0, 1), (2, 3)]
+                >>> circ.lookup_path()
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
+                mode 2:     ◖Vac◗────────────────
+                <BLANKLINE>
+                <BLANKLINE>
+                → index: 2
+                mode 0:   ──╭•────────────────────────────────
+                mode 1:   ──╰BSgate(0.0,0.0)──╭•──────────────
+                mode 2:                     ──╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>
+
+                >>> circ.path = [(0, 1), (2, 3), (0, 2)]
+                >>> circ.lookup_path()
+                <BLANKLINE>
+                → index: 0
+                mode 0:     ◖Vac◗──Sgate(0.1,0.0)──╭•────────────────────────────────
+                mode 1:     ◖Vac◗──Sgate(0.2,0.0)──╰BSgate(0.0,0.0)──╭•──────────────
+                mode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)
+                <BLANKLINE>
+                <BLANKLINE>
+                <BLANKLINE>
+
+
+        Raises:
+            ValueError: If ``circuit.path`` contains invalid contractions.
+        """
+        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
+        for idx0, idx1 in self.path:
+            try:
+                left = remaining[idx0].components
+                right = remaining.pop(idx1).components
+                remaining[idx0] = Circuit(left + right)
+            except KeyError as e:
+                wrong_key = idx0 if idx0 not in remaining else idx1
+                msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
+                raise ValueError(msg) from e
+
+        msg = "\n"
+        for idx, circ in remaining.items():
+            msg += f"→ index: {idx}"
+            msg += f"{circ}\n"
+
+        print(msg)
+
+    def make_path(self, strategy: str = "l2r") -> None:
+        r"""
+        Automatically generates a path for this circuit.
+
+        The available strategies are:
+            * ``l2r``: The two left-most components are contracted together, then the
+                resulting component is contracted with the third one from the left, et cetera.
+            * ``r2l``: The two right-most components are contracted together, then the
+                resulting component is contracted with the third one from the right, et cetera.
+
+        Args:
+            strategy: The strategy used to generate the path.
+        """
+        if strategy == "l2r":
+            self.path = [(0, i) for i in range(1, len(self))]
+        elif strategy == "r2l":
+            self.path = [(i, i + 1) for i in range(len(self) - 2, -1, -1)]
+        else:
+            msg = f"Strategy ``{strategy}`` is not available."
+            raise ValueError(msg)
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
