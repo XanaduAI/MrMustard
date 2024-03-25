@@ -157,7 +157,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:
+    def from_quadrature(cls) -> State:
         r"""
         Initializes a state from quadrature.
         """
@@ -358,7 +358,9 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes("", ret.representation, ret.wires)
+            return DM._from_attributes(
+                "", ret.representation, ret.wires
+            )  # pylint: disable=protected-access
         return ret
 
     def __repr__(self) -> str:

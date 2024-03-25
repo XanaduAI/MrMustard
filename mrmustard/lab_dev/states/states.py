@@ -20,7 +20,7 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
