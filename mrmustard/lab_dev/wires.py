@@ -29,33 +29,42 @@ class Wires:
     In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a tensor network picture,
     where states flow from left to right. ``CircuitComponent``\s can have wires on the
-    bra and/or on the ket side. Here are some examples of the Wires object of various components:
+    bra and/or on the ket side. Here are some examples for the types of components available on
+    ``mrmustard.lab_dev``:
 
     .. code-block::
 
-        ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-        │Bra in│─────▶║          ║─────▶│Bra out│
-        └──────┘      ║ Channel  ║      └───────┘
-        ┌──────┐  m3  ║          ║  m2  ┌───────┐
-        │Ket in│─────▶║          ║─────▶│Ket out│
+        A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
+
+        ┌──────┐   1  ╔═════════╗   1  ┌───────┐
+        │Bra in│─────▶║         ║─────▶│Bra out│
+        └──────┘      ║ Channel ║      └───────┘
+        ┌──────┐   1  ║         ║   1  ┌───────┐
+        │Ket in│─────▶║         ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
+        
+        A unitary acting on mode ``2`` has input and output wires on the ket side:
 
-        ┌──────┐  m1  ╔═════════╗  m0  ┌───────┐
-        │Ket in│─────▶║ Unitary  ║─────▶│Ket out│
+        ┌──────┐   2  ╔═════════╗   2  ┌───────┐
+        │Ket in│─────▶║ Unitary ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
+        
+        A density matrix representing the state of mode ``0`` has only output wires:
 
-                        ╔═════════╗  m0  ┌───────┐
-                        ║          ║─────▶│Bra out│
-                        ║ Density  ║      └───────┘
-                        ║ Matrix   ║  m1  ┌───────┐
-                        ║          ║─────▶│Ket out│
+                        ╔═════════╗   0  ┌───────┐
+                        ║         ║─────▶│Bra out│
+                        ║ Density ║      └───────┘
+                        ║ Matrix  ║   0  ┌───────┐
+                        ║         ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
+        
+        Also a ket representing the state of mode ``1`` has only output wires:
 
-                        ╔═════════╗  m0  ┌───────┐
-                        ║   Ket    ║─────▶│Ket out│
+                        ╔═════════╗   1  ┌───────┐
+                        ║   Ket   ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
@@ -86,24 +95,24 @@ class Wires:
         >>> assert w.output.ket.modes == {0, 13}
         >>> assert w.input.bra.modes == {1, 2}
 
-    Here's a diagram of the original Wires object in the example above,
-    with the indices of the wires (the number in parenthesis) given in the "standard" order:
-    bra_out, bra_in, ket_out, ket_in, and the modes in sorted increasing order:
+    Here's a diagram of the original ``Wires`` object in the example above,
+    with the indices of the wires (the number in parenthesis) given in the "standard" order
+    (``bra_out``, ``bra_in``, ``ket_out``, ``ket_in``, and the modes in sorted increasing order):
 
     .. code-block::
 
                      ╔═════════╗
         1 (2) ─────▶ ║         ║─────▶ 0 (0)
-        2 (3) ─────▶║         ║─────▶ 1 (1)
+        2 (3) ─────▶ ║         ║─────▶ 1 (1)
                      ║         ║
-                     ║  Wires  ║
-        1 (6) ─────▶║         ║
-        2 (7) ─────▶║         ║─────▶ 0 (4)
-       13 (8) ─────▶║         ║─────▶ 13 (5)
+                     ║  ``Wires``  ║
+        1 (6) ─────▶ ║         ║
+        2 (7) ─────▶ ║         ║─────▶ 0 (4)
+       13 (8) ─────▶ ║         ║─────▶ 13 (5)
                      ╚═════════╝
 
-    We refer to this as the "standard order". To access the index of a subset of wires in standard order
-    we can use the ``indices`` property:
+    To access the index of a subset of wires in standard order we can use the ``indices``
+    property:
 
     .. code-block::
 
@@ -162,8 +171,10 @@ class Wires:
 
     @cached_property
     def id(self) -> int:
-        r"""The id of the original Wires object. It's a unique (up to rare collisions) for each Wires object.
-        Subsets of Wires objects have the same id as the original."""
+        r"""
+        The id of the original ``Wires`` object. The id of each ``Wires`` is unique, and
+        subsets of ``Wires`` objects have the same id as the original.
+        """
         if self._original:
             return self._original.id
         return np.random.randint(0, 2**32)
@@ -278,7 +289,7 @@ class Wires:
             if m := m1 & m2:
                 raise ValueError(f"{t}-type wires overlap at mode {m}")
             new_args.append(m1 | m2)
-        return Wires(*new_args)w
+        return Wires(*new_args)
 
     def __bool__(self) -> bool:
         r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."
@@ -301,7 +312,7 @@ class Wires:
             b───║       ║───a   d───║       ║───c
                 ╚═══════╝           ╚═══════╝
 
-        B and D-A must not overlap, same for b and d-a, etc. The result is a new Wires object
+        B and D-A must not overlap, same for b and d-a, etc. The result is a new ``Wires`` object
 
         .. code-block::
 
