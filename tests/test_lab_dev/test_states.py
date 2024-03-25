@@ -41,9 +41,9 @@ class TestKet:
     def test_init(self, name, modes):
         state = Ket(name, modes)
 
-        assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
-        assert state.wires == Wires(modes_out_ket=modes)
+        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
+        assert list(state.modes) == sorted(modes)
+        assert state.wires == Wires(modes_out_ket=set(modes))
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -173,12 +173,12 @@ class TestDM:
     """
 
     @pytest.mark.parametrize("name", [None, "my_dm"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         state = DM(name, modes)
 
-        assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
+        assert state.name in ("DM0", "DM01", "DM2319") if not name else name
+        assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -382,12 +382,12 @@ class TestVacuum:
     Tests for the ``Vacuum`` class.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (3, 19, 2)])
     def test_init(self, modes):
         state = Vacuum(modes)
 
         assert state.name == "Vac"
-        assert state.modes == sorted(modes)
+        assert list(state.modes) == sorted(modes)
         assert state.n_modes == len(modes)
 
     @pytest.mark.parametrize("n_modes", [1, 3])

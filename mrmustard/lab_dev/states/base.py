@@ -489,10 +489,12 @@ class DM(State):
         modes: The modes of this state.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
-        super().__init__(name, modes_out_bra=modes, modes_out_ket=modes)
+    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+        super().__init__(
+            name or "DM" + "".join(str(m) for m in sorted(modes)),
+            modes_out_bra=modes,
+            modes_out_ket=modes,
+        )
 
     @classmethod
     def from_bargmann(
@@ -592,7 +594,9 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes("", ret.representation, ret.wires)
+            return DM._from_attributes(
+                "", ret.representation, ret.wires
+            )  # pylint: disable=protected-access
         return ret
 
     def __repr__(self) -> str:
@@ -608,10 +612,10 @@ class Ket(State):
         modes: The modes of this states.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
-        super().__init__(name, modes_out_ket=modes)
+    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+        super().__init__(
+            name or "Ket" + "".join(str(m) for m in sorted(modes)), modes_out_ket=modes
+        )
 
     @classmethod
     def from_bargmann(
