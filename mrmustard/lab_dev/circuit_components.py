@@ -329,7 +329,7 @@ class CircuitComponent:
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        return f"CircuitComponent(name={self.name}, modes={self.modes})"
+        return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
 
 class AdjointView(CircuitComponent):

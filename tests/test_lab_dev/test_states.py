@@ -298,8 +298,8 @@ class TestDM:
             dm.name, dm.representation, dm.wires
         )  # pylint: disable=protected-access
 
-        assert repr(dm) == "DM(name=DM01, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=DM01, modes=[0, 1])"
+        assert repr(dm) == "DM(name=None, modes=[0, 1])"
+        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
 
 
 class TestCoherent:
