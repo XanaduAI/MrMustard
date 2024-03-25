@@ -43,14 +43,14 @@ class Wires:
         │Ket in│─────▶║         ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
-        
+
         A unitary acting on mode ``2`` has input and output wires on the ket side:
 
         ┌──────┐   2  ╔═════════╗   2  ┌───────┐
         │Ket in│─────▶║ Unitary ║─────▶│Ket out│
         └──────┘      ╚═════════╝      └───────┘
 
-        
+
         A density matrix representing the state of mode ``0`` has only output wires:
 
                         ╔═════════╗   0  ┌───────┐
@@ -60,7 +60,7 @@ class Wires:
                         ║         ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
-        
+
         Also a ket representing the state of mode ``1`` has only output wires:
 
                         ╔═════════╗   1  ┌───────┐
