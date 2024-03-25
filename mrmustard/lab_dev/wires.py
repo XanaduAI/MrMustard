@@ -187,17 +187,37 @@ class Wires:
         r"""
         A list of numerical identifier for the wires in this ``Wires`` object, in
         the standard order.
+
+        The ``ids`` are derived incrementally from the ``id`` and are unique.
         """
-        if self._original:
-            return [self._original.ids[i] for i in self.indices]
-        n_ids = sum([len(a) for a in self.args])
-        return [self.id + i for i in range(n_ids)]
+        return [id for d in self.ids_dicts for id in d.values()]
+
+    @cached_property
+    def indices(self) -> tuple[int, ...]:
+        r"""
+        The array of indices of this ``Wires`` in the standard order.
+        When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
+        to the subset, but it still counts them because indices refer to the original modes.
+
+        .. code-block::
+
+            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
+            >>> assert w.indices == (0,1,2,3)
+            >>> assert w.input.indices == (2,3)
+        """
+        return tuple(
+            self.index_dicts[t][m]
+            for t, modes in enumerate(self.sorted_args)
+            for m in modes
+        )
 
     @cached_property
     def index_dicts(self) -> list[dict[int, int]]:
         r"""
         A list of dictionary mapping modes to indices, one for each of the subsets
         (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
+
+        If this 
         """
         if self._original:
             return self._original.index_dicts
@@ -215,26 +235,6 @@ class Wires:
         if self._original:
             return self._original.ids_dicts
         return [{m: i + self.id for m, i in d.items()} for d in self.index_dicts]
-
-    @cached_property
-    def indices(self) -> tuple[int, ...]:
-        r"""
-        The array of indices of this ``Wires`` in the standard order.
-        When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
-        to the subset, but it still counts them because indices refer to the original modes.
-
-        .. code-block::
-
-            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
-            >>> assert w.indices == (0,1,2,3)
-            >>> assert w.input.indices == (2,3)
-        """
-        index_dicts = self._original.index_dicts if self._original else self.index_dicts
-        return tuple(
-            index_dicts[t][m]
-            for t, modes in enumerate(self.sorted_args)
-            for m in modes
-        )
 
     @cached_property
     def sorted_args(self) -> tuple[list[int], ...]:
@@ -294,7 +294,7 @@ class Wires:
             w = Wires(
                 *(self.args[t] & modes_set for t in (0, 1, 2, 3))
             )
-            w._original = self._original
+            w._original = self._original or self
             self._mode_cache[modes] = w
         return self._mode_cache[modes]
 
@@ -347,9 +347,11 @@ class Wires:
         is the one that takes the result of multiplying representations to the standard order.
 
         Args:
-            other (Wires): The wires of the other circuit component.
+            other: The wires of the other circuit component.
+
         Returns:
-            tuple[Wires, list[int]]: The wires of the circuit composition and the permutation.
+            tuple: The wires of the circuit composition and the permutation.
+
         Raises:
             ValueError: If any leftover wires would overlap.
         """
@@ -371,16 +373,19 @@ class Wires:
         ket_out = sets[2] | sets[6]  # (self.output.ket - other.input.ket) | other.output.ket
         ket_in = sets[3] | sets[7]  # self.input.ket | (other.input.ket - self.output.ket)
         w = Wires(bra_out, bra_in, ket_out, ket_in)
+
         # preserve ids
         for t in (0, 1, 2, 3):
             for m in w.args[t]:
                 w.ids_dicts[t][m] = self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
+        
         # calculate permutation
         result_ids = [id for d in w.ids_dicts for id in d.values()]
         self_other_ids = [self.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t])] + [
             other.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t + 4])
         ]
         perm = [self_other_ids.index(id) for id in result_ids]
+        # perm = []
         return w, perm
 
     def __repr__(self) -> str:
