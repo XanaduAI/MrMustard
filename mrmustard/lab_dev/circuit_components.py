@@ -200,7 +200,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = Wires(*self.wires.original.args)
+        instance.__dict__["_wires"] = Wires(*self.wires.args)
         return instance
 
     def to_fock_component(
