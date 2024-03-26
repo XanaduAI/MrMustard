@@ -178,8 +178,8 @@ class Wires:
 
         The ``id`` are random and unique, and are preserved when taking subsets.
         """
-        if self._original:
-            return self._original.id
+        if self.original:
+            return self.original.id
         return np.random.randint(0, 2**32)
 
     @cached_property
@@ -197,8 +197,8 @@ class Wires:
             >>> ids = w.ids
             >>> assert ids == [id, id+1, id+2, id+3]
         """
-        if self._original:
-            return [self._original.ids[i] for i in self.indices]
+        if self.original:
+            return [self.original.ids[i] for i in self.indices]
         return [id for d in self.ids_dicts for id in d.values()]
 
     @cached_property
@@ -227,8 +227,8 @@ class Wires:
         If subsets are taken, ``index_dicts`` refers to the parent object rather than to the
         child.
         """
-        if self._original:
-            return self._original.index_dicts
+        if self.original:
+            return self.original.index_dicts
         return [
             {m: i + sum(len(s) for s in self.args[:t]) for i, m in enumerate(lst)}
             for t, lst in enumerate(self.sorted_args)
@@ -243,14 +243,21 @@ class Wires:
         If subsets are taken, ``ids_dicts`` refers to the parent object rather than to the
         child.
         """
-        if self._original:
-            return self._original.ids_dicts
+        if self.original:
+            return self.original.ids_dicts
         return [{m: i + self.id for m, i in d.items()} for d in self.index_dicts]
 
     @cached_property
     def sorted_args(self) -> tuple[list[int], ...]:
         r"The sorted arguments. Allows to sort them only once."
         return tuple(sorted(s) for s in self.args)
+
+    @property
+    def original(self):
+        r"""
+        The parent wire, if any.
+        """
+        return self._original
 
     @cached_property
     def modes(self) -> set[int]:
@@ -261,28 +268,28 @@ class Wires:
     def input(self) -> Wires:
         r"New ``Wires`` object without output wires."
         ret = Wires(set(), self.args[1], set(), self.args[3])
-        ret._original = self._original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def output(self) -> Wires:
         r"New ``Wires`` object without input wires."
         ret = Wires(self.args[0], set(), self.args[2], set())
-        ret._original = self._original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def ket(self) -> Wires:
         r"New ``Wires`` object without bra wires."
         ret = Wires(set(), set(), self.args[2], self.args[3])
-        ret._original = self._original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def bra(self) -> Wires:
         r"New ``Wires`` object without ket wires."
         ret = Wires(self.args[0], self.args[1], set(), set())
-        ret._original = self._original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
@@ -300,7 +307,7 @@ class Wires:
         modes_set = {modes} if isinstance(modes, int) else set(modes)
         if modes not in self._mode_cache:
             w = Wires(*(self.args[t] & modes_set for t in (0, 1, 2, 3)))
-            w._original = self._original or self
+            w._original = self.original or self
             self._mode_cache[modes] = w
         return self._mode_cache[modes]
 
@@ -361,7 +368,7 @@ class Wires:
         Raises:
             ValueError: If any leftover wires would overlap.
         """
-        if self._original or other._original:
+        if self.original or other.original:
             raise ValueError("cannot contract a subset of wires")
         A, B, a, b = self.args
         C, D, c, d = other.args
