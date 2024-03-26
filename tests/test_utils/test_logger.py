@@ -47,6 +47,7 @@ https://github.com/pallets/flask/blob/master/tests/test_logging.py
 
 # pylint: disable=no-self-use
 
+import sys
 import logging
 import pytest
 from mrmustard.training import optimizer
@@ -144,8 +145,8 @@ class TestLoggerIntegration:
 
         logger = create_logger(module.__name__)
         assert len(logger.handlers) == 1
-        # checks if stream is stderr (stream name for stderr is 8 or 9, whereas stdout 6 or 7)
-        assert logger.handlers[0].stream.fileno() in [8, 9]
+        # Check if the stream of the first handler is sys.stderr
+        assert logger.handlers[0].stream is sys.stderr
 
     @pytest.mark.parametrize("module", modules_contain_logging)
     def test_custom_logger_before_mm_logger_with_higher_level(self, module):

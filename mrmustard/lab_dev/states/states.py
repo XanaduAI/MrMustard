@@ -20,7 +20,7 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
@@ -35,7 +35,7 @@ __all__ = ["Coherent", "Number", "Vacuum"]
 class Coherent(Ket):
     r"""The `N`-mode coherent state.
 
-    If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
+    If ``x`` and/or ``y`` are ``Sequence``\s, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
 
     .. code-block::
@@ -70,9 +70,9 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        modes: Iterable[int],
-        x: Union[float, Iterable[float]] = 0.0,
-        y: Union[float, Iterable[float]] = 0.0,
+        modes: tuple[int, ...],
+        x: Union[float, Sequence[float]] = 0.0,
+        y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -190,7 +190,7 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: Iterable[int],
+        modes: Sequence[int],
     ) -> None:
         super().__init__("Vac", modes=modes)
 
