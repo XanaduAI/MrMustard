@@ -28,10 +28,12 @@ from mrmustard.lab_dev.states import Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
+
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
+# pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
     Tests ``CircuitComponent`` objects.
