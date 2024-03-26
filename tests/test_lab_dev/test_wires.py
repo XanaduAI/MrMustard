@@ -26,9 +26,41 @@ class TestWires:
     Tests for the Wires class.
     """
 
-    def test_args(self):
+    def test_init(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+
+    def test_ids(self):
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        assert w.ids == [w.id + i for i in range(9)]
+
+    def test_ids_with_subsets(self):
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+
+        assert w.input.ids == [w.ids[3], w.ids[4], w.ids[5], w.ids[8]]
+        assert w.output.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[6], w.ids[7]]
+        assert w.bra.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[3], w.ids[4], w.ids[5]]
+        assert w.ket.ids == [w.ids[6], w.ids[7], w.ids[8]]
+
+        assert w.output.bra.ids == [w.ids[0], w.ids[1], w.ids[2]]
+        assert w.input.bra.ids == [w.ids[3], w.ids[4], w.ids[5]]
+
+    def test_indices(self):
+        w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
+        assert w.indices == (0, 1, 2, 3, 4, 5, 6, 7, 8)
+
+    def test_indices_with_subsets(self):
+        w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
+
+        assert w.output.indices == (0, 1, 2, 6, 7)
+        assert w.bra.indices == (0, 1, 2, 3, 4, 5)
+        assert w.input.indices == (3, 4, 5, 8)
+        assert w.ket.indices == (6, 7, 8)
+
+        assert w.output.bra.indices == (0, 1, 2)
+        assert w.input.bra.indices == (3, 4, 5)
+        assert w.output.ket.indices == (6, 7)
+        assert w.input.ket.indices == (8,)
 
     def test_wire_subsets(self):
         w = Wires({0}, {1}, {2}, {3})
@@ -37,12 +69,26 @@ class TestWires:
         assert w.output.ket.modes == {2}
         assert w.input.ket.modes == {3}
 
-    def test_indices(self):
-        w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
-        assert w.output.indices == (0, 1, 2, 6, 7)
-        assert w.bra.indices == (0, 1, 2, 3, 4, 5)
-        assert w.input.indices == (3, 4, 5, 8)
-        assert w.ket.indices == (6, 7, 8)
+    def test_index_dicts(self):
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4})
+        d = [{0: 0, 1: 1, 2: 2}, {6: 3, 7: 4, 8: 5}, {3: 6, 4: 7}, {4: 8}]
+
+        assert w.index_dicts == d
+        assert w.input.index_dicts == d
+        assert w.input.bra.index_dicts == d
+
+    def test_ids_dicts(self):
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4})
+        d = [
+            {0: w.id, 1: w.id + 1, 2: w.id + 2},
+            {6: w.id + 3, 7: w.id + 4, 8: w.id + 5},
+            {3: w.id + 6, 4: w.id + 7},
+            {4: w.id + 8},
+        ]
+
+        assert w.ids_dicts == d
+        assert w.input.ids_dicts == d
+        assert w.input.bra.ids_dicts == d
 
     def test_adjoint(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
@@ -61,9 +107,10 @@ class TestWires:
         assert w.output.bra.modes == w_d.input.bra.modes
 
     def test_add(self):
-        w1 = Wires({0}, {1}, {2}, {3})
+        w1 = Wires({0}, {0, 1}, {2}, {3})
         w2 = Wires({1}, {2}, {3}, {4})
-        w12 = Wires({0, 1}, {1, 2}, {2, 3}, {3, 4})
+        w12 = Wires({0, 1}, {0, 1, 2}, {2, 3}, {3, 4})
+
         assert (w1 + w2).modes == w12.modes
 
     def test_add_error(self):
@@ -77,13 +124,23 @@ class TestWires:
         assert not Wires({0}).input
 
     def test_getitem(self):
-        w = Wires({0, 1}, {0, 1})
-        w0 = w[0]
-        w1 = w[1]
-        assert w0.modes == {0}
-        assert w0.indices == (w.indices[0], w.indices[2])
-        assert w1.modes == {1}
-        assert w1.indices == (w.indices[1], w.indices[3])
+        w = Wires({0, 1}, {0, 2})
+
+        w0 = Wires({0}, {0})
+        assert w[0] == w0
+        assert w._mode_cache == {0: w0}  # pylint: disable=protected-access
+
+        w1 = Wires({1})
+        assert w[1] == w1
+        assert w._mode_cache == {0: w0, 1: w1}  # pylint: disable=protected-access
+
+        w2 = Wires({}, {2})
+        assert w[2] == w2
+        assert w._mode_cache == {0: w0, 1: w1, 2: w2}  # pylint: disable=protected-access
+
+        assert w[0].indices == (0, 2)
+        assert w[1].indices == (1,)
+        assert w[2].indices == (3,)
 
     def test_eq_neq(self):
         w1 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
@@ -93,7 +150,6 @@ class TestWires:
         w5 = Wires({0, 1}, {2, 3}, set(), {6, 7})
         w6 = Wires({0, 1}, {2, 3}, {4, 5}, set())
 
-        assert w1 == w1  # pylint: disable=comparison-with-itself
         assert w1 == w2
         assert w1 != w3
         assert w1 != w4
