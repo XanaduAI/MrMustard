@@ -4,6 +4,9 @@
 * Added a function ``to_fock`` to map different representations into Fock representation. 
   [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
   
+* Added a function ``real_gaussian_integral`` as helper function to map between different representations. 
+  [(#371)](https://github.com/XanaduAI/MrMustard/pull/371)
+
 ### Breaking changes
 
 ### Improvements
