@@ -251,7 +251,7 @@ class Wires:
     def sorted_args(self) -> tuple[list[int], ...]:
         r"The sorted arguments. Allows to sort them only once."
         return tuple(sorted(s) for s in self.args)
-    
+
     @property
     def original(self):
         r"""
