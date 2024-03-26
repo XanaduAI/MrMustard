@@ -311,7 +311,7 @@ class TestCircuitComponent:
 
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
-        n1 = Number([1], n=1).dual
+        n1 = Number([1, 2], n=1).dual
 
         assert a1 >> n1 == a1 @ n1 @ n1.adjoint
 
