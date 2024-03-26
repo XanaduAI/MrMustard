@@ -721,9 +721,13 @@ class Ket(State):
 
         if not ret.wires.input:
             if not ret.wires.bra:
-                return Ket._from_attributes("", ret.representation, ret.wires)
+                return Ket._from_attributes(
+                    "", ret.representation, ret.wires
+                )  # pylint: disable=protected-access
             if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes("", ret.representation, ret.wires)
+                return DM._from_attributes(
+                    "", ret.representation, ret.wires
+                )  # pylint: disable=protected-access
         return ret
 
     def __repr__(self) -> str:
