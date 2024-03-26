@@ -268,28 +268,28 @@ class Wires:
     def input(self) -> Wires:
         r"New ``Wires`` object without output wires."
         ret = Wires(set(), self.args[1], set(), self.args[3])
-        ret._original = self.original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def output(self) -> Wires:
         r"New ``Wires`` object without input wires."
         ret = Wires(self.args[0], set(), self.args[2], set())
-        ret._original = self.original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def ket(self) -> Wires:
         r"New ``Wires`` object without bra wires."
         ret = Wires(set(), set(), self.args[2], self.args[3])
-        ret._original = self.original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def bra(self) -> Wires:
         r"New ``Wires`` object without ket wires."
         ret = Wires(self.args[0], self.args[1], set(), set())
-        ret._original = self.original or self
+        ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
