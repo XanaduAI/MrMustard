@@ -175,21 +175,30 @@ class Wires:
     def id(self) -> int:
         r"""
         A numerical identifier for this ``Wires`` object.
-        
+
         The ``id`` are random and unique, and are preserved when taking subsets.
         """
         if self._original:
             return self._original.id
         return np.random.randint(0, 2**32)
-    
-    @property
+
+    @cached_property
     def ids(self) -> list[int]:
         r"""
         A list of numerical identifier for the wires in this ``Wires`` object, in
         the standard order.
 
         The ``ids`` are derived incrementally from the ``id`` and are unique.
+
+        .. code-block::
+
+            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
+            >>> id = w.id
+            >>> ids = w.ids
+            >>> assert ids == [id, id+1, id+2, id+3]
         """
+        if self._original:
+            return [self._original.ids[i] for i in self.indices]
         return [id for d in self.ids_dicts for id in d.values()]
 
     @cached_property
@@ -206,9 +215,7 @@ class Wires:
             >>> assert w.input.indices == (2,3)
         """
         return tuple(
-            self.index_dicts[t][m]
-            for t, modes in enumerate(self.sorted_args)
-            for m in modes
+            self.index_dicts[t][m] for t, modes in enumerate(self.sorted_args) for m in modes
         )
 
     @cached_property
@@ -217,7 +224,8 @@ class Wires:
         A list of dictionary mapping modes to indices, one for each of the subsets
         (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
 
-        If this 
+        If subsets are taken, ``index_dicts`` refers to the parent object rather than to the
+        child.
         """
         if self._original:
             return self._original.index_dicts
@@ -225,12 +233,15 @@ class Wires:
             {m: i + sum(len(s) for s in self.args[:t]) for i, m in enumerate(lst)}
             for t, lst in enumerate(self.sorted_args)
         ]
-    
+
     @cached_property
     def ids_dicts(self) -> list[dict[int, int]]:
         r"""
         A list of dictionary mapping modes to ``ids``, one for each of the subsets
         (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
+
+        If subsets are taken, ``ids_dicts`` refers to the parent object rather than to the
+        child.
         """
         if self._original:
             return self._original.ids_dicts
@@ -250,28 +261,28 @@ class Wires:
     def input(self) -> Wires:
         r"New ``Wires`` object without output wires."
         ret = Wires(set(), self.args[1], set(), self.args[3])
-        ret._original = self
+        ret._original = self._original or self
         return ret
 
     @cached_property
     def output(self) -> Wires:
         r"New ``Wires`` object without input wires."
         ret = Wires(self.args[0], set(), self.args[2], set())
-        ret._original = self
+        ret._original = self._original or self
         return ret
 
     @cached_property
     def ket(self) -> Wires:
         r"New ``Wires`` object without bra wires."
         ret = Wires(set(), set(), self.args[2], self.args[3])
-        ret._original = self
+        ret._original = self._original or self
         return ret
 
     @cached_property
     def bra(self) -> Wires:
         r"New ``Wires`` object without ket wires."
         ret = Wires(self.args[0], self.args[1], set(), set())
-        ret._original = self
+        ret._original = self._original or self
         return ret
 
     @cached_property
@@ -284,16 +295,11 @@ class Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
-    def __hash__(self) -> int:  # for getitem caching
-        return hash(tuple(s) for s in self.args)
-
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
         modes_set = {modes} if isinstance(modes, int) else set(modes)
         if modes not in self._mode_cache:
-            w = Wires(
-                *(self.args[t] & modes_set for t in (0, 1, 2, 3))
-            )
+            w = Wires(*(self.args[t] & modes_set for t in (0, 1, 2, 3)))
             w._original = self._original or self
             self._mode_cache[modes] = w
         return self._mode_cache[modes]
@@ -350,7 +356,7 @@ class Wires:
             other: The wires of the other circuit component.
 
         Returns:
-            tuple: The wires of the circuit composition and the permutation.
+            The wires of the circuit composition and the permutation.
 
         Raises:
             ValueError: If any leftover wires would overlap.
@@ -378,14 +384,13 @@ class Wires:
         for t in (0, 1, 2, 3):
             for m in w.args[t]:
                 w.ids_dicts[t][m] = self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
-        
+
         # calculate permutation
         result_ids = [id for d in w.ids_dicts for id in d.values()]
         self_other_ids = [self.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t])] + [
             other.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t + 4])
         ]
         perm = [self_other_ids.index(id) for id in result_ids]
-        # perm = []
         return w, perm
 
     def __repr__(self) -> str:
