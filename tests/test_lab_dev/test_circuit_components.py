@@ -49,6 +49,22 @@ class TestCircuitComponent:
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
 
+    def test_modes_init_out_of_order(self):
+        m1 = (8, 1)
+        m2 = (1, 8)
+
+        r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
+        r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
+
+        cc1 = CircuitComponent("", r1, modes_out_ket=m1, modes_in_ket=m1)
+        cc2 = CircuitComponent("", r2, modes_out_ket=m2, modes_in_ket=m2)
+        assert cc1 == cc2
+
+        r3 = (cc1.adjoint @ cc1).representation
+        cc3 = CircuitComponent("", r3, m2, m2, m2, m1)
+        cc4 = CircuitComponent("", r3, m2, m2, m2, m2)
+        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
+
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_from_attributes(self, x, y):
