@@ -456,15 +456,15 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement gate :math:`D(\gamma)`.
+    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement map :math:`D(\gamma)`.
     Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
-    the indices of the final triple correspond to the variables :math:`(\gamma^*, \gamma, z^*, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, out_ket, in_bra, in_ket`` wires.
+    the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, out_ket, in_bra, in_ket`` wires.
 
     Args:
         s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the "symmetric" ordering, which is symmetric under the exchange of creation and annihilation operators, :math:`s=-1` is the "normal" ordering, where all the creation operators are on the left and all the annihilation operators are on the right, and :math:`s=1` is the "anti-normal" ordering, which is the vice versa of the normal ordering. By using s-parametrized displacement map to generate the s-parametrized characteristic function :math:`\chi_s = Tr[\rho D_s]`, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, :math:`s=-1` is the Husimi Q distribution, and :math:`s=1` is the Glauber P distribution.
 
     Returns:
-        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement gate :math:`D_s(\gamma)`.
+        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
     A = math.block(
         [
@@ -472,6 +472,9 @@ def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]
             [-math.Zmat(num_modes=1), math.Xmat(num_modes=1)],
         ]
     )
+    A = A[[0, 2, 1, 3], :][
+        :, [0, 2, 1, 3]
+    ]  # Change the order of this map into the normal ordering as a single mode channel
     b = _vacuum_B_vector(4)
     c = 1.0 + 0j
     return A, b, c
