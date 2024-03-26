@@ -21,14 +21,16 @@ from mrmustard.physics.utils import real_gaussian_integral
 
 def test_real_gaussian_integral():
     """Tests the ``real_gaussian_integral`` method with a hard-coded A matric from a Gaussian(3) state."""
-    A = math.astensor(np.array(
-        [
-            [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j, 0.05349344 - 0.13728068j],
-            [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j, 0.18954838 - 0.42959383j],
-            [0.05349344 - 0.13728068j, 0.18954838 - 0.42959383j, -0.16931712 - 0.09205837j],
-        ]
-    ))
-    b = math.astensor(np.arange(3)+0j)
+    A = math.astensor(
+        np.array(
+            [
+                [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j, 0.05349344 - 0.13728068j],
+                [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j, 0.18954838 - 0.42959383j],
+                [0.05349344 - 0.13728068j, 0.18954838 - 0.42959383j, -0.16931712 - 0.09205837j],
+            ]
+        )
+    )
+    b = math.astensor(np.arange(3) + 0j)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert np.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
