@@ -50,33 +50,37 @@ class CircuitComponent:
         self,
         name: Optional[str] = None,
         representation: Optional[Bargmann | Fock] = None,
-        modes_out_bra: Optional[Sequence[int]] = (),
-        modes_in_bra: Optional[Sequence[int]] = (),
-        modes_out_ket: Optional[Sequence[int]] = (),
-        modes_in_ket: Optional[Sequence[int]] = (),
+        modes_out_bra: Optional[Sequence[int]] = None,
+        modes_in_bra: Optional[Sequence[int]] = None,
+        modes_out_ket: Optional[Sequence[int]] = None,
+        modes_in_ket: Optional[Sequence[int]] = None,
     ) -> None:
+        modes_out_bra = modes_out_bra or ()
+        modes_in_bra = modes_in_bra or ()
+        modes_out_ket = modes_out_ket or ()
+        modes_in_ket = modes_in_ket or ()
+
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
         self._name = name or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
+
         # handle out-of-order modes
-        a, b, c, d = (
-            sorted(modes_out_bra),
-            sorted(modes_in_bra),
-            sorted(modes_out_ket),
-            sorted(modes_in_ket),
-        )
-        if a != sorted(a) or b != sorted(b) or c != sorted(c) or d != sorted(d):
-            offsets = [0, len(a), len(a) + len(b), len(a) + len(b) + len(c)]
+        ob = tuple(sorted(modes_out_bra))
+        ib = tuple(sorted(modes_in_bra))
+        ok = tuple(sorted(modes_out_ket))
+        ik = tuple(sorted(modes_in_ket))
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+            offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
-                tuple(np.argsort(a))
-                + tuple(np.argsort(b) + offsets[0])
-                + tuple(np.argsort(c) + offsets[1])
-                + tuple(np.argsort(d) + offsets[2])
+                tuple(np.argsort(modes_out_bra))
+                + tuple(np.argsort(modes_in_bra) + offsets[0])
+                + tuple(np.argsort(modes_out_ket) + offsets[1])
+                + tuple(np.argsort(modes_in_ket) + offsets[2])
             )
-            if self._representation is not None:
+            if self._representation:
                 self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
