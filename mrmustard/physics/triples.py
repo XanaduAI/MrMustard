@@ -18,7 +18,7 @@ various states and transformations.
 """
 
 from typing import Generator, Iterable, Union
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 import numpy as np
@@ -446,4 +446,43 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     b = _vacuum_B_vector(n_modes * 4)
     c = 1.0 + 0j
 
+    return A, b, c
+
+
+def from_quadrature_map_on_single_out_ket_wire_Abc() -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
+    Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
+    the indices of the final triple correspond to the variables :math:`(p, z^*)` of the map.
+
+    Returns:
+        The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
+    """
+    hbar = settings.HBAR
+    A = math.block(
+        [
+            [-1, 1j / math.sqrt(2 * hbar)],
+            [1j / math.sqrt(2 * hbar), 1],
+        ]
+    )
+    b = _vacuum_B_vector(2)
+    c = (1.0 + 0j) / (math.pi * hbar) ** 0.25
+    return A, b, c
+
+
+def to_quadrature_map_on_single_out_ket_wire_Abc() -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a single out_ket wire map from Bargmannrepresentation with ABC Ansatz form into quadrature  representation with ABC Ansatz.
+    Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
+    the indices of the final triple correspond to the variables :math:`(z^*, z, p)` of the map.
+
+    Returns:
+        The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
+    """
+    hbar = settings.HBAR
+    A = math.block(
+        [[0, -0.5, 0], [-0.5, 1, -1j / math.sqrt(2 * hbar)], [0, -1j / math.sqrt(2 * hbar), -1]]
+    )
+    b = _vacuum_B_vector(3)
+    c = (1.0 + 0j) / (math.pi * hbar) ** 0.25
     return A, b, c
