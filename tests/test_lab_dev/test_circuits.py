@@ -145,21 +145,21 @@ class TestCircuit:
         n12 = Number([1, 2], n=1).dual
 
         circuit = Circuit([vac12, d1, d2, d12, a1, n12])
-        assert not circuit._graph
+        assert not circuit._graph  # pylint: disable=protected-access
 
         circuit.make_path("l2r")
-        graph1 = circuit._graph
+        graph1 = circuit._graph  # pylint: disable=protected-access
 
         c0 = circuit.components[0]
         c1 = circuit.components[1]
         assert graph1[c0.wires.output.ket[1].ids[0]] == c1.wires.input.ket[1].ids[0]
 
         circuit.make_path("r2l")
-        graph2 = circuit._graph
+        graph2 = circuit._graph  # pylint: disable=protected-access
         assert graph1 == graph2
 
         circuit.path = [(0, 1), (2, 3)]
-        graph3 = circuit._graph
+        graph3 = circuit._graph  # pylint: disable=protected-access
         assert graph1 == graph3
 
     def test_eq(self):
