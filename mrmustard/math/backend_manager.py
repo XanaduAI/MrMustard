@@ -1381,6 +1381,21 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     @staticmethod
     @lru_cache()
+    def Zmat(num_modes: int):
+        r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
+
+        Args:
+            num_modes: A positive integer representing the number of modes.
+
+        Returns:
+            The :math:`2N\times 2N` array
+        """
+        I = np.identity(num_modes)
+        O = np.zeros((num_modes, num_modes))
+        return np.block([[I, O], [O, -I]])
+
+    @staticmethod
+    @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes."
         I = np.identity(num_modes)

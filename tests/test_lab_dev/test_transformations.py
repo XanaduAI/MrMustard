@@ -31,12 +31,12 @@ class TestUnitary:
     """
 
     @pytest.mark.parametrize("name", [None, "my_unitary"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         gate = Unitary(name, modes)
 
-        assert gate.name == (name if name else "")
-        assert gate.modes == sorted(modes)
+        assert gate.name[:1] == (name or "U")[:1]
+        assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(modes_in_ket=modes, modes_out_ket=modes)
 
     def test_rshift(self):
@@ -71,12 +71,12 @@ class TestChannel:
     """
 
     @pytest.mark.parametrize("name", [None, "my_channel"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         gate = Channel(name, modes)
 
-        assert gate.name == (name if name else "")
-        assert gate.modes == sorted(modes)
+        assert gate.name[:2] == (name or "Ch")[:2]
+        assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(
             modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes
         )
