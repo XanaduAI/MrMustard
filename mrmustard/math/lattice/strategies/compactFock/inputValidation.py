@@ -19,6 +19,7 @@ from mrmustard.math.lattice.strategies.compactFock.singleLeftoverMode_grad impor
     fock_representation_1leftoverMode_grad,
 )
 
+
 def input_validation(A, rtol=1e-05, atol=1e-08):
     """Checks that the matrix A satisfies the requirements for Hafnian calculation.
     These include:
