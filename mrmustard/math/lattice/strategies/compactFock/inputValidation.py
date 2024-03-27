@@ -28,6 +28,8 @@ def input_validation(A, rtol=1e-05, atol=1e-08):
     * That ``A`` does not contain any NaNs
     * That ``A`` is symmetric
 
+    .. note:: This function is an adaptation of the of an analogous method in The Walrus.
+
     Args:
         A (array): a NumPy array.
         rtol (float): the relative tolerance parameter used in ``np.allclose``
