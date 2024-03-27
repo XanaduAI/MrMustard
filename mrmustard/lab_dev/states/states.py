@@ -29,7 +29,7 @@ from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Vacuum"]
+__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum"]
 
 
 #  ~~~~~~~~~~~
@@ -105,7 +105,7 @@ class DisplacedSqueezed(Ket):
         >>> from mrmustard.lab_dev import displaced squeezed, Vacuum, Sgate, Dgate
 
         >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], x=1) >> Sgate([0, 1, 2], phi=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
 
     Args:
         modes: The modes of the coherent state.
@@ -333,14 +333,15 @@ class Vacuum(Ket):
 
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-        return Bargmann(*triples.vacuum_state_Abc(num_modes))
+        n_modes = len(self.modes)
+        return Bargmann(*triples.vacuum_state_Abc(n_modes))
 
 
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
-    
+
+
 class Thermal(Ket):
     r"""
     The `N`-mode thermal state.
@@ -365,14 +366,16 @@ class Thermal(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        nbar: Union[float, Sequence[float]] = 0.0,
+        nbar: Union[int, Sequence[int]] = 0,
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ) -> None:
         super().__init__("Thermal", modes=modes)
         self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
-        
+
     @property
     def representation(self) -> Bargmann:
-        num_modes = len(self.modes)
-        return Bargmann(*triples.vacuum_state_Abc(num_modes))
+        n_modes = len(self.modes)
+        nbars = list(reshape_params(n_modes, nbar=self.nbar.value))[0]
+        print(nbars)
+        return Bargmann(*triples.thermal_state_Abc(nbars))
