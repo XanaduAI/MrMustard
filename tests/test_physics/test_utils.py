@@ -42,3 +42,28 @@ def test_real_gaussian_integral():
         / math.sqrt(math.det(A[:2, :2]))
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
+    res2 = real_gaussian_integral((A, b, c), idx=[])
+    assert np.allclose(res2[0], A)
+    assert np.allclose(res2[1], b)
+    assert np.allclose(res2[2], c)
+
+    A2 = math.astensor(
+        np.array(
+            [
+                [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j],
+                [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
+            ]
+        )
+    )
+    b2 = math.astensor(np.arange(2) + 0j)
+    c2 = 1.0 + 0j
+    res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
+    assert np.allclose(res3[0], math.astensor([]))
+    assert np.allclose(res3[1], math.astensor([]))
+    assert np.allclose(
+        res3[2],
+        c2
+        * (2 * np.pi)
+        / math.sqrt(math.det(A2[:2, :2]))
+        * math.exp(-0.5 * math.sum(b2[:2] * math.matvec(math.inv(A2[:2, :2]), b2[:2]))),
+    )
