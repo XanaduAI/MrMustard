@@ -48,7 +48,7 @@ class TestSimulator:
         n12 = Number([1, 2], n=1).dual
 
         circuit = Circuit([vac12, d1, d2, d12, a1, n12])
-        circuit.set_path(path)
+        circuit.path = path
 
         res = Simulator().run(circuit)
         exp = vac12 >> d1 >> d2 >> d12 >> a1 >> n12
