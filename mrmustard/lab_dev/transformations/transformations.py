@@ -18,7 +18,7 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Iterable, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
@@ -127,10 +127,10 @@ class Dgate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         x: The displacements along the `x` axis, which represents position axis in phase space.
-        x_bounds: The bounds for the displacement along the `x` axis.
-        x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
+        x_bounds: The bounds for the displacement along the `x` axis.
         y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
+        x_trainable: Whether `x` is a trainable variable.
         y_trainable: Whether `y` is a trainable variable.
 
     .. details::
@@ -156,9 +156,9 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        modes: Iterable[int] = None,
-        x: Union[float, Iterable[float]] = 0.0,
-        y: Union[float, Iterable[float]] = 0.0,
+        modes: Sequence[int] = None,
+        x: Union[float, Sequence[float]] = 0.0,
+        y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -227,7 +227,7 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        modes: list[int],
+        modes: Sequence[int],
         r: Union[float, list[float]] = 0.0,
         phi: Union[float, list[float]] = 0.0,
         r_trainable: bool = False,
@@ -294,7 +294,7 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        modes: Optional[Iterable[int]] = None,
+        modes: Sequence[int],
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),

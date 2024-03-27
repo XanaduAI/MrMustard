@@ -29,7 +29,12 @@ from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "Number", "Vacuum"]
+__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Vacuum"]
+
+
+#  ~~~~~~~~~~~
+#  Pure States
+#  ~~~~~~~~~~~
 
 
 class Coherent(Ket):
@@ -70,7 +75,7 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: Sequence[int],
         x: Union[float, Sequence[float]] = 0.0,
         y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
@@ -87,6 +92,81 @@ class Coherent(Ket):
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.coherent_state_Abc(xs, ys))
+
+
+class DisplacedSqueezed(Ket):
+    r"""The `N`-mode displaced squeezed vacuum state.
+
+    If ``x``, ``y``, ``r``, and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`
+    or `N`. If their length is equal to `1`, all the modes share the same parameters.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import displaced squeezed, Vacuum, Sgate, Dgate
+
+        >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], x=1) >> Sgate([0, 1, 2], phi=0.2)
+
+    Args:
+        modes: The modes of the coherent state.
+        x: The displacements along the `x` axis, which represents position axis in phase space.
+        y: The displacements along the `y` axis.
+        r: The squeezing magnitude.
+        phi: The squeezing angles.
+        x_trainable: Whether `x` is a trainable variable.
+        y_trainable: Whether `y` is a trainable variable.
+        r_trainable: Whether `r` is trainable.
+        phi_trainable: Whether `phi` is trainable.
+        x_bounds: The bounds for the displacement along the `x` axis.
+        y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
+        r_bounds: The bounds of `r`.
+        phi_bounds: The bounds of `phi`.
+
+    .. details::
+
+        For any :math:`\bar{x}`, :math:`\bar{y}`, :math:`\bar{r}`, and :math:`\bar{\phi}` of length
+        :math:`N`, the :math:`N`-mode squeezed vacuum state displaced :math:`N`-mode vacuum state
+        is defined by
+
+        .. math::
+            V = @todo \text{and } r = @todo.
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = @todo \text{, }b=@todo\text{, and }c= @todo.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        x: Union[float, Sequence[float]] = 0.0,
+        y: Union[float, Sequence[float]] = 0.0,
+        r: Union[float, Sequence[float]] = 0.0,
+        phi: Union[float, Sequence[float]] = 0.0,
+        x_trainable: bool = False,
+        y_trainable: bool = False,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        super().__init__("DisplacedSqueezed", modes=modes)
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        params = reshape_params(
+            n_modes, x=self.x.value, y=self.y.value, r=self.r.value, phi=self.phi.value
+        )
+        xs, ys, rs, phis = list(params)
+        return Bargmann(*triples.displaced_squeezed_vacuum_state_Abc(xs, ys, rs, phis))
 
 
 class Number(Ket):
@@ -161,6 +241,63 @@ class Number(Ket):
         return self._n
 
 
+class SqueezedVacuum(Ket):
+    r"""The `N`-mode squeezed vacuum state.
+
+    If ``r`` and/or ``phi`` are ``Sequence``\s, their length must be equal to `1` or `N`. If their length is equal to `1`,
+    all the modes share the same parameters.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import SqueezedVacuum, Vacuum, Sgate
+
+        >>> state = SqueezedVacuum(modes=[0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
+
+    Args:
+        modes: The modes of the coherent state.
+        r: The squeezing magnitude.
+        phi: The squeezing angles.
+        r_trainable: Whether `r` is trainable.
+        phi_trainable: Whether `phi` is trainable.
+        r_bounds: The bounds of `r`.
+        phi_bounds: The bounds of `phi`.
+
+    .. details::
+
+        For any :math:`\bar{r}` and :math:`\bar{\phi}` of length :math:`N`, the :math:`N`-mode
+        squeezed vacuum state displaced :math:`N`-mode vacuum state is defined by
+
+        .. math::
+            V = @todo \text{and } r = @todo.
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = @todo \text{, }b=O_N\text{, and }c=\prod_{i=0}^N\big(\text{cosh}r\big)^{-0.5}.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        r: Union[float, Sequence[float]] = 0.0,
+        phi: Union[float, Sequence[float]] = 0.0,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        super().__init__("SqueezedVacuum", modes=modes)
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
+        return Bargmann(*triples.squeezed_vacuum_state_Abc(rs, phis))
+
+
 class Vacuum(Ket):
     r"""
     The `N`-mode vacuum state.
@@ -194,6 +331,47 @@ class Vacuum(Ket):
     ) -> None:
         super().__init__("Vac", modes=modes)
 
+    @property
+    def representation(self) -> Bargmann:
+        num_modes = len(self.modes)
+        return Bargmann(*triples.vacuum_state_Abc(num_modes))
+
+
+#  ~~~~~~~~~~~~
+#  Mixed States
+#  ~~~~~~~~~~~~
+    
+class Thermal(Ket):
+    r"""
+    The `N`-mode thermal state.
+
+    If ``nbar`` is a ``Sequence``, its length must be equal to `1` or `N`. If its length is equal to `1`,
+    all the modes share the same ``nbar``.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import Vacuum
+
+        >>> state = Thermal([1, 2], nbar=3)
+        >>> assert state.modes == [1, 2]
+
+    Args:
+        modes: A list of modes.
+        nbar: The expected number of photons in each mode.
+        nbar_trainable: Whether ``nbar`` is trainable.
+        nbar_bounds: The bounds of ``nbar``.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        nbar: Union[float, Sequence[float]] = 0.0,
+        nbar_trainable: bool = False,
+        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+    ) -> None:
+        super().__init__("Thermal", modes=modes)
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
+        
     @property
     def representation(self) -> Bargmann:
         num_modes = len(self.modes)
