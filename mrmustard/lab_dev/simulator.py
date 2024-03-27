@@ -82,6 +82,9 @@ class Simulator:
         >>> circuit.path = [(1, 2), (0, 1)]
 
         >>> result = Simulator().run(circuit)
+
+    The setter for ``path`` also validates the path using the ``validate_path`` function of
+    ``Circuit``.
     """
 
     def run(self, circuit: Circuit) -> CircuitComponent:
