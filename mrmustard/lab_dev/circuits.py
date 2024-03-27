@@ -71,7 +71,7 @@ class Circuit:
 
         # a dictionary to keeps track of the underlying graph, mapping the ``ids`` of output wires
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
-        # automatically (once and for all) when a path is validated.
+        # automatically (once and for all) when a path is validated for the first time.
         self._graph = {}
 
     @property
@@ -260,7 +260,7 @@ class Circuit:
         if add_adjoints:
             wires = [(w @ w.adjoint)[0] if bool(w.bra) is False else w for w in wires]
 
-        # if the circuit has no graph, compute it.
+        # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
             ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}

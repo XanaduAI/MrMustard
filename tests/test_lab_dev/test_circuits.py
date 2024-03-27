@@ -115,7 +115,7 @@ class TestCircuit:
 
         assert circuit.path == path
 
-    def test_set_path_errors(self):
+    def test_path_errors(self):
         vac12 = Vacuum([1, 2])
         d1 = Dgate([1], x=0.1, y=0.1)
         d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
@@ -135,6 +135,32 @@ class TestCircuit:
         circuit4 = Circuit([vac12.adjoint, d1.adjoint, d12.adjoint])
         with pytest.raises(ValueError, match="is invalid."):
             circuit4.path += [(0, 2)]
+
+    def test_graph(self):
+        vac12 = Vacuum([1, 2])
+        d1 = Dgate([1], x=0.1, y=0.1)
+        d2 = Dgate([2], x=0.1, y=0.2)
+        d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
+        a1 = Attenuator([1], transmissivity=0.8)
+        n12 = Number([1, 2], n=1).dual
+
+        circuit = Circuit([vac12, d1, d2, d12, a1, n12])
+        assert not circuit._graph
+
+        circuit.make_path("l2r")
+        graph1 = circuit._graph
+
+        c0 = circuit.components[0]
+        c1 = circuit.components[1]
+        assert graph1[c0.wires.output.ket[1].ids[0]] == c1.wires.input.ket[1].ids[0]
+
+        circuit.make_path("r2l")
+        graph2 = circuit._graph
+        assert graph1 == graph2
+
+        circuit.path = [(0, 1), (2, 3)]
+        graph3 = circuit._graph
+        assert graph1 == graph3
 
     def test_eq(self):
         vac = Vacuum([0, 1, 2])
