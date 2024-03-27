@@ -85,7 +85,7 @@ class TestCircuit:
         exp1 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
         assert out1 == exp1
 
-        circ.set_path([(0, 1)], False)
+        circ.path += [(0, 1)]
         circ.lookup_path()
         out2, _ = capfd.readouterr()
         exp2 = "\n"
@@ -101,19 +101,8 @@ class TestCircuit:
         exp2 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
         assert out2 == exp2
 
-    def test_lookup_path_error(self):
-        vac = Vacuum([0, 1, 2])
-        s01 = Sgate([0, 1])
-        bs01 = BSgate([0, 1])
-        bs12 = BSgate([1, 2])
-
-        circ = Circuit([vac, s01, bs01, bs12])
-        circ.set_path([(0, 1), (0, 1)], False)
-        with pytest.raises(ValueError):
-            circ.lookup_path()
-
     @pytest.mark.parametrize("path", [[(0, 1), (2, 3)], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
-    def test_set_path(self, path):
+    def test_path(self, path):
         vac12 = Vacuum([1, 2])
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([2], x=0.1, y=0.2)
@@ -122,7 +111,9 @@ class TestCircuit:
         n12 = Number([1, 2], n=1).dual
 
         circuit = Circuit([vac12, d1, d2, d12, a1, n12])
-        circuit.set_path(path)
+        circuit.path = path
+
+        assert circuit.path == path
 
     def test_set_path_errors(self):
         vac12 = Vacuum([1, 2])
@@ -131,19 +122,19 @@ class TestCircuit:
 
         circuit1 = Circuit([vac12, vac12])
         with pytest.raises(ValueError, match="Dangling wires cannot be overwritten."):
-            circuit1.set_path([(0, 1)])
+            circuit1.path += [(0, 1)]
 
-        circuit1 = Circuit([vac12.adjoint, vac12.adjoint])
+        circuit2 = Circuit([vac12.adjoint, vac12.adjoint])
         with pytest.raises(ValueError, match="Dangling wires cannot be overwritten."):
-            circuit1.set_path([(0, 1)])
+            circuit2.path += [(0, 1)]
 
-        circuit2 = Circuit([vac12, d1, d12])
+        circuit3 = Circuit([vac12, d1, d12])
         with pytest.raises(ValueError, match="is invalid."):
-            circuit2.set_path([(0, 2)])
+            circuit3.path += [(0, 2)]
 
-        circuit2 = Circuit([vac12.adjoint, d1.adjoint, d12.adjoint])
+        circuit4 = Circuit([vac12.adjoint, d1.adjoint, d12.adjoint])
         with pytest.raises(ValueError, match="is invalid."):
-            circuit2.set_path([(0, 2)])
+            circuit4.path += [(0, 2)]
 
     def test_eq(self):
         vac = Vacuum([0, 1, 2])

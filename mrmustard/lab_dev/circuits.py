@@ -231,9 +231,9 @@ class Circuit:
             strategy: The strategy used to generate the path.
         """
         if strategy == "l2r":
-            self.path += [(0, i) for i in range(1, len(self))]
+            self.path = [(0, i) for i in range(1, len(self))]
         elif strategy == "r2l":
-            self.path += [(i, i + 1) for i in range(len(self) - 2, -1, -1)]
+            self.path = [(i, i + 1) for i in range(len(self) - 2, -1, -1)]
         else:
             msg = f"Strategy ``{strategy}`` is not available."
             raise ValueError(msg)
