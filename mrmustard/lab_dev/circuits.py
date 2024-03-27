@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=too-many-branches
+
 """
 A class to quantum circuits.
 """
@@ -256,7 +258,7 @@ class Circuit:
 
         # if at least one of the ``Wires`` has wires on the bra side, add the adjoint
         # to all the other ``Wires``
-        add_adjoints = len(set([bool(w.bra) for w in wires])) != 1
+        add_adjoints = len(set(bool(w.bra) for w in wires)) != 1
         if add_adjoints:
             wires = [(w @ w.adjoint)[0] if bool(w.bra) is False else w for w in wires]
 
@@ -290,7 +292,7 @@ class Circuit:
                         ids_dangling_wires[m]["bra"] = w.output.bra[m].ids[0]
 
         # use ``self._graph`` to validate the path
-        remaining = {i: w for i, w in enumerate(wires)}
+        remaining = dict(enumerate(wires))
         for i1, i2 in path:
             overlap_ket = remaining[i1].output.ket.modes & remaining[i2].input.ket.modes
             for m in overlap_ket:
