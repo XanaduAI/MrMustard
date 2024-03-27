@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Sgate"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate"]
 
 
 class BSgate(Unitary):
@@ -173,6 +173,48 @@ class Dgate(Unitary):
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
+    
+
+
+class Rgate(Unitary):
+    r"""
+    The rotation gate.
+
+    If ``theta`` is an iterable, its length must be equal to `1` or `N`. If its length is equal to `1`,
+    all the modes share the same ``theta``.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Rgate
+
+        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
+        >>> assert unitary.modes == [1, 2]
+
+    Args:
+        modes: The modes this gate is applied to.
+        theta: The rotation angles.
+        theta_bounds: The bounds for ``theta``.
+        theta_trainable: Whether ``theta`` is a trainable variable.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        theta: Union[float, list[float]] = 0.0,
+        theta_trainable: bool = False,
+        theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+    ):
+        super().__init__(modes=modes, name="Rgate")
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
+        return Bargmann(*triples.squeezing_gate_Abc(thetas))
+
+
 
 
 class Sgate(Unitary):

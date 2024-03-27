@@ -377,5 +377,4 @@ class Thermal(Ket):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         nbars = list(reshape_params(n_modes, nbar=self.nbar.value))[0]
-        print(nbars)
         return Bargmann(*triples.thermal_state_Abc(nbars))
