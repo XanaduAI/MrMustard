@@ -21,7 +21,15 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.transformations import Attenuator, BSgate, Channel, Dgate, Rgate, Sgate, Unitary
+from mrmustard.lab_dev.transformations import (
+    Attenuator,
+    BSgate,
+    Channel,
+    Dgate,
+    Rgate,
+    Sgate,
+    Unitary,
+)
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -249,27 +257,27 @@ class TestRgate:
 
     def test_representation(self):
         rep1 = Rgate(modes=[0], theta=0.1).representation
-        # assert math.allclose(
-        #     rep1.A,
-        #     [[[-0.09768127 - 1.98009738e-02j, 0.99502075], [0.99502075, 0.09768127 - 0.01980097j]]],
-        # )
-        # assert math.allclose(rep1.b, np.zeros((1, 2)))
-        # assert math.allclose(rep1.c, [0.9975072676192522])
+        assert math.allclose(
+            rep1.A,
+            [[[-0.09966799 - 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 2)))
+        assert math.allclose(rep1.c, [0.99750727])
 
         rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).representation
         assert math.allclose(
             rep2.A,
             [
                 [
-                    [-0.09768127 - 1.98009738e-02j, 0, 0.99502075, 0],
-                    [0, -0.28550576 - 5.78748818e-02j, 0, 0.95662791],
-                    [0.99502075, 0, 0.09768127 - 1.98009738e-02j, 0],
-                    [0, 0.95662791, 0, 0.28550576 - 5.78748818e-02j],
+                    [-0.09966799 - 0.0j, 0.0 - 0.0j, 0.99502075 + 0.0j, 0.0 + 0.0j],
+                    [0.0 - 0.0j, -0.29131261 - 0.0j, 0.0 + 0.0j, 0.95662791 + 0.0j],
+                    [0.99502075 + 0.0j, 0.0 + 0.0j, 0.09966799 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.95662791 + 0.0j, 0.0 + 0.0j, 0.29131261 + 0.0j],
                 ]
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [0.9756354961606032])
+        assert math.allclose(rep2.c, [0.9756355])
 
         rep3 = Rgate(modes=[1], theta=0.1).representation
         assert math.allclose(
@@ -280,7 +288,7 @@ class TestRgate:
         assert math.allclose(rep3.c, [0.9975072676192522])
 
     def test_trainable_parameters(self):
-        gate1 = Rgate([0], 1, 1)
+        gate1 = Rgate([0], 1)
         gate2 = Rgate([0], 1, True, (-2, 2))
 
         with pytest.raises(AttributeError):

@@ -173,7 +173,6 @@ class Dgate(Unitary):
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
-    
 
 
 class Rgate(Unitary):
@@ -213,8 +212,6 @@ class Rgate(Unitary):
         n_modes = len(self.modes)
         thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
         return Bargmann(*triples.squeezing_gate_Abc(thetas))
-
-
 
 
 class Sgate(Unitary):

@@ -524,6 +524,7 @@ class TestVacuum:
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
 
+
 class TestThermal:
     r"""
     Tests for the ``Number`` class.
