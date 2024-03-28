@@ -1,4 +1,4 @@
-# Release 0.7.2 (current release)
+# Release 0.7.3 (current release)
 
 ### New features
 * Added a function ``to_fock`` to map different representations into Fock representation. 
