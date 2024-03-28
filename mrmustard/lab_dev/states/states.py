@@ -121,20 +121,6 @@ class DisplacedSqueezed(Ket):
         y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
-
-    .. details::
-
-        For any :math:`\bar{x}`, :math:`\bar{y}`, :math:`\bar{r}`, and :math:`\bar{\phi}` of length
-        :math:`N`, the :math:`N`-mode squeezed vacuum state displaced :math:`N`-mode vacuum state
-        is defined by
-
-        .. math::
-            V = @todo \text{and } r = @todo.
-
-        Its ``(A,b,c)`` triple is given by
-
-        .. math::
-            A = @todo \text{, }b=@todo\text{, and }c= @todo.
     """
 
     def __init__(
@@ -262,19 +248,6 @@ class SqueezedVacuum(Ket):
         phi_trainable: Whether `phi` is trainable.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
-
-    .. details::
-
-        For any :math:`\bar{r}` and :math:`\bar{\phi}` of length :math:`N`, the :math:`N`-mode
-        squeezed vacuum state displaced :math:`N`-mode vacuum state is defined by
-
-        .. math::
-            V = @todo \text{and } r = @todo.
-
-        Its ``(A,b,c)`` triple is given by
-
-        .. math::
-            A = @todo \text{, }b=O_N\text{, and }c=\prod_{i=0}^N\big(\text{cosh}r\big)^{-0.5}.
     """
 
     def __init__(
