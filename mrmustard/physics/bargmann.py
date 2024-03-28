@@ -94,12 +94,10 @@ def wigner_to_bargmann_Choi(X, Y, d):
     A = math.matmul(math.matmul(R, A), math.dagger(R))
     A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
-    B = math.matvec(
-        math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)
-    ) / math.sqrt(settings.HBAR, dtype=R.dtype)
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(
-        detxi, dtype=b.dtype
+    B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
+        settings.HBAR, dtype=R.dtype
     )
+    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
@@ -181,11 +179,7 @@ def complex_gaussian_integral(
     with np.errstate(divide="ignore", invalid="ignore"):
         detM = math.det(M)
 
-    c_post = (
-        c
-        * math.sqrt((-1) ** n / detM)
-        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
+    c_post = c * math.sqrt((-1) ** n / detM) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
 
     return A_post, b_post, c_post
 
