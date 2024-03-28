@@ -258,7 +258,8 @@ class State(CircuitComponent):
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
-    ) -> go.Figure:
+        return_fig: bool = False,
+    ) -> Union[go.Figure, None]:
         r"""
         2D visualization of the Wigner function of this state.
 
@@ -278,6 +279,7 @@ class State(CircuitComponent):
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -364,7 +366,10 @@ class State(CircuitComponent):
             tickfont_family="Arial Black",
         )
 
-        return fig
+        if return_fig:
+            return fig
+        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
+        display(HTML(html))  # pragma: no cover
 
     def visualize_3d(
         self,
@@ -372,7 +377,8 @@ class State(CircuitComponent):
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
-    ) -> go.Figure:
+        return_fig: bool = False,
+    ) -> Union[go.Figure, None]:
         r"""
         3D visualization of the Wigner function of this state on a surface plot.
 
@@ -382,6 +388,7 @@ class State(CircuitComponent):
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing the state in 3D.
@@ -438,9 +445,16 @@ class State(CircuitComponent):
         fig.update_xaxes(title_text="x")
         fig.update_yaxes(title="p")
 
-        return fig
+        if return_fig:
+            return fig
+        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
+        display(HTML(html))  # pragma: no cover
 
-    def visualize_dm(self, cutoff: Optional[int] = None) -> go.Figure:
+    def visualize_dm(
+        self,
+        cutoff: Optional[int] = None,
+        return_fig: bool = False,
+    ) -> Union[go.Figure, None]:
         r"""
         Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
         on a heatmap.
@@ -448,6 +462,7 @@ class State(CircuitComponent):
         Args:
             cutoff: The desired cutoff. Defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the
                 settings.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing absolute value of the density matrix of this state.
@@ -473,7 +488,10 @@ class State(CircuitComponent):
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 
-        return fig
+        if return_fig:
+            return fig
+        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
+        display(HTML(html))  # pragma: no cover
 
     def _repr_html_(self):  # pragma: no cover
         template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
