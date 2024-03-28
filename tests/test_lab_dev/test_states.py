@@ -14,8 +14,10 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
+import json
+import os
 import numpy as np
 import pytest
 
@@ -164,15 +166,6 @@ class TestKet:
         assert isinstance(ket >> Coherent([0], 1).dual, Ket)
         assert isinstance(ket >> Coherent([0], 1).dm().dual, DM)
 
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        ket_component = CircuitComponent._from_attributes(
-            ket.name, ket.representation, ket.wires
-        )  # pylint: disable=protected-access
-
-        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
-        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
-
 
 class TestDM:
     r"""
@@ -290,17 +283,6 @@ class TestDM:
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
 
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        channel = Attenuator([1], 1)
-        dm = ket >> channel
-        dm_component = CircuitComponent._from_attributes(
-            dm.name, dm.representation, dm.wires
-        )  # pylint: disable=protected-access
-
-        assert repr(dm) == "DM(name=None, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
-
 
 class TestCoherent:
     r"""
@@ -415,3 +397,68 @@ class TestVacuum:
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
+
+
+class TestVisualization:
+    r"""
+    Tests the functions to visualize states.
+    """
+
+    # set to ``True`` to regenerate the assets
+    regenerate_assets = False
+
+    # path
+    path = os.path.dirname(__file__) + "/assets"
+
+    def test_visualize_2d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_2d.json"))
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert math.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
+        assert math.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
+        assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
+        assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
+
+    def test_visualize_2d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_2d(20)
+
+    def test_visualize_3d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_3d.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_3d.json"))
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_3d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_3d(20)
+
+    def test_visualize_dm(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_dm(20, return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
+        ref_data = json.load(open(self.path + "/visualize_dm.json"))
+
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_dm_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_dm(20)

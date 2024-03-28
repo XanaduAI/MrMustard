@@ -21,6 +21,7 @@ A base class for the components of quantum circuits.
 from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
+
 import numpy as np
 from ..utils.typing import Scalar
 from ..physics.converters import to_fock
