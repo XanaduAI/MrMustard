@@ -555,7 +555,9 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_2d.json"))
+        
+        with open(self.path + "/visualize_2d.json") as file:
+            ref_data = json.load(file)
 
         assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
         assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
@@ -576,7 +578,9 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_3d.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_3d.json"))
+
+        with open(self.path + "/visualize_3d.json") as file:
+            ref_data = json.load(file)
 
         assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
         assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
@@ -593,8 +597,10 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_dm.json"))
-
+        
+        with open(self.path + "/visualize_dm.json") as file:
+            ref_data = json.load(file)
+        
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_dm_error(self):
