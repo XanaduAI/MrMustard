@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access, inconsistent-return-statements
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access,inconsistent-return-statements
 
 """
 This module contains the base classes for the available quantum states.
