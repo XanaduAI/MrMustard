@@ -18,8 +18,6 @@ This module contains functions for performing calculations on objects in the Gau
 
 from typing import Any, Optional, Sequence, Tuple, Union
 
-from thewalrus.quantum import is_pure_cov
-
 from mrmustard import math, settings
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
 from mrmustard.utils.typing import Matrix, Scalar, Vector
@@ -658,11 +656,6 @@ def number_cov(cov: Matrix, means: Vector) -> Matrix:
     return (
         CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
     )
-
-
-def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
-    r"""Returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
-    return not is_pure_cov(math.asnumpy(cov))
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
