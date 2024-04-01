@@ -74,7 +74,7 @@ class Circuit:
         # a dictionary to keep track of the underlying graph, mapping the ``ids`` of output wires
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
-        self._graph = {}
+        self._graph: dict[int, int] = {}
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
