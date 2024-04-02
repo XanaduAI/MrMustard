@@ -102,7 +102,7 @@ class DisplacedSqueezed(Ket):
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import displaced squeezed, Vacuum, Sgate, Dgate
+        >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
 
         >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
         >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
@@ -238,7 +238,7 @@ class SqueezedVacuum(Ket):
         >>> from mrmustard.lab_dev import SqueezedVacuum, Vacuum, Sgate
 
         >>> state = SqueezedVacuum(modes=[0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
 
     Args:
         modes: The modes of the coherent state.
