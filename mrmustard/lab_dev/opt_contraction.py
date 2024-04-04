@@ -153,9 +153,8 @@ def optimal_path(data: dict[Node, Info]) -> tuple[int, list]:
     graph = reduce_1BB(graph, debug=debug)
     graph = reduce_2BB(graph, debug=debug)
     graph = reduce_1FF(graph, debug=debug)
-    graph = reduce_1FB(
-        graph, debug=debug
-    )  # this is not always the best thing to do but it is for the staircase GBS
+    # 1FB is not always the best thing to do but it is for the staircase GBS
+    graph = reduce_1FB(graph, debug=debug)
     graph = reduce_2FF(graph, debug=debug)
 
     print("3) Get initial cost by 100 random contractions")
