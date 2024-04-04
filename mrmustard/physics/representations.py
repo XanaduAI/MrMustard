@@ -57,6 +57,12 @@ class Representation(ABC):
         """
 
     @abstractmethod
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+        r"""
+        Reorders the representation indices.
+        """
+
+    @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
