@@ -297,11 +297,12 @@ class TestBackendManager:
         """
         arr = np.array([[1.0, 2.0], [3.0, 4.0]])
         assert np.allclose(math.det(arr), -2.0)
-        
+    
+    def test_det_warning(self):
         # if numpy stops raising this error remove the filter in the det method in the numpy backend
         with pytest.warns(RuntimeWarning):
             matrix = np.random.normal(size=(2,2)) + 0.0j  # needs to be complex
-            det = np.linalg.det(matrix)
+            np.linalg.det(matrix)  # pylint: disable=pointless-statement
 
     def test_diag(self):
         r"""
