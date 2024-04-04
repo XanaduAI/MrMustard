@@ -304,7 +304,7 @@ class TestBackendManager:
         in the det method in the numpy backend
         """
         with pytest.warns(RuntimeWarning):
-            matrix = np.random.normal(size=(2,2)) + 0.0j  # needs to be complex
+            matrix = np.random.normal(size=(2, 2)) + 0.0j  # needs to be complex
             np.linalg.det(matrix)  # pylint: disable=pointless-statement
 
     def test_diag(self):
