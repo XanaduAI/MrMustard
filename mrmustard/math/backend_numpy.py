@@ -136,7 +136,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.cosh(array)
 
     def det(self, matrix: np.ndarray) -> np.ndarray:
-        return np.linalg.det(matrix)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            det = np.linalg.det(matrix)
+        return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if len(array.shape) == 1:
