@@ -363,7 +363,7 @@ class AdjointView(CircuitComponent):
         """
         bras = self._component.wires.bra.indices
         kets = self._component.wires.ket.indices
-        return self._component.representation.reorder(kets+bras).conj()
+        return self._component.representation.reorder(kets + bras).conj()
 
     @property
     def wires(self):
@@ -402,7 +402,7 @@ class DualView(CircuitComponent):
         """
         outs = self._component.wires.output.indices
         ins = self._component.wires.input.indices
-        return self._component.representation.reorder(ins+outs).conj()
+        return self._component.representation.reorder(ins + outs).conj()
 
     @property
     def wires(self):
