@@ -53,8 +53,7 @@ def wigner_to_bargmann_rho(cov, means):
     b = math.solve(Q, beta)
     B = math.conj(b)
     num_C = math.exp(-0.5 * math.sum(math.conj(beta) * b))
-    with np.errstate(divide="ignore", invalid="ignore"):
-        detQ = math.det(Q)
+    detQ = math.det(Q)
     den_C = math.sqrt(detQ, dtype=num_C.dtype)
     C = num_C / den_C
     return A, B, C
@@ -77,8 +76,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     I2 = math.eye(2 * N, dtype=X.dtype)
     XT = math.transpose(X)
     xi = 0.5 * (I2 + math.matmul(X, XT) + 2 * Y / settings.HBAR)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        detxi = math.det(xi)
+    detxi = math.det(xi)
     xi_inv = math.inv(xi)
     A = math.block(
         [
@@ -176,8 +174,7 @@ def complex_gaussian_integral(
         A_post = math.astensor([])
         b_post = math.astensor([])
 
-    with np.errstate(divide="ignore", invalid="ignore"):
-        detM = math.det(M)
+    detM = math.det(M)
 
     c_post = c * math.sqrt((-1) ** n / detM) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
 
