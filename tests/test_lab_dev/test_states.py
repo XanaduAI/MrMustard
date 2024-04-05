@@ -509,7 +509,7 @@ class TestVacuum:
 
 class TestThermal:
     r"""
-    Tests for the ``Number`` class.
+    Tests for the ``Thermal`` class.
     """
 
     modes = [[0], [1, 2], [9, 7]]
