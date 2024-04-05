@@ -43,6 +43,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
+from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -725,6 +726,26 @@ class Ket(State):
         dm = self @ self.adjoint
         return DM._from_attributes(
             self.name, dm.representation, dm.wires
+        )  # pylint: disable=protected-access
+    
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> Ket:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+        
+        wires = Wires(modes_out_ket=modes)
+        traced_modes = set(self.modes).difference(modes)
+        representation = self.representation.trace(traced_modes, traced_modes)
+        
+        return Ket._from_attributes(
+            self.name, representation, wires
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

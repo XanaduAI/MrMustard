@@ -23,7 +23,7 @@ from .parameters import Constant, Variable
 math = BackendManager()
 
 __all__ = [
-    "ParameterSet",
+    "ParameterSet"
 ]
 
 
@@ -134,3 +134,30 @@ class ParameterSet:
                 string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
+    
+    def __getitem__(self, items: Union[int, Sequence[int]]):
+        if isinstance(items, int):
+            items = list([items])
+        items = list(items)
+
+        ret = ParameterSet()
+
+        for name, const in self._constants.items():
+            if const.value.shape != ():
+                val = math.gather(const.value, items)
+                ret.add_parameter(Constant(val, name))
+            else:
+                ret.add_parameter(const)
+
+        for name, var in self._variables.items():
+            if var.value.shape != ():
+                val = math.gather(var.value, items)
+                ret.add_parameter(Variable(val, name))
+            else:
+                ret.add_parameter(var)
+
+        return ret
+
+        
+
+
