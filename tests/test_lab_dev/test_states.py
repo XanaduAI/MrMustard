@@ -22,11 +22,21 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.fock import fock_state
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
-from mrmustard.physics.triples import coherent_state_Abc
+from mrmustard.physics.triples import coherent_state_Abc, thermal_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import (
+    Coherent,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    SqueezedVacuum,
+    Thermal,
+    Vacuum,
+)
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 
@@ -342,6 +352,56 @@ class TestCoherent:
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
+class TestDisplacedSqueezed:
+    r"""
+    Tests for the ``DisplacedSqueezed`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    x = [[1], 1, [1, 2]]
+    y = [[3], [3, 4], [3, 4]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
+    def test_init(self, modes, x, y, r, phi):
+        state = DisplacedSqueezed(modes, x, y, r, phi)
+
+        assert state.name == "DisplacedSqueezed"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``x``"):
+            DisplacedSqueezed(modes=[0, 1], x=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``y``"):
+            DisplacedSqueezed(modes=[0, 1], x=1, y=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = DisplacedSqueezed([0], 1, 1)
+        state2 = DisplacedSqueezed([0], 1, 1, x_trainable=True, x_bounds=(-2, 2))
+        state3 = DisplacedSqueezed([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.x.value = 3
+
+        state2.x.value = 2
+        assert state2.x.value == 2
+
+        state3.y.value = 2
+        assert state3.y.value == 2
+
+    @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
+    def test_representation(self, modes, x, y, r, phi):
+        rep = DisplacedSqueezed(modes, x, y, r, phi).representation
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            DisplacedSqueezed(modes=[0], x=[0.1, 0.2]).representation
+
+
 class TestNumber:
     r"""
     Tests for the ``Number`` class.
@@ -377,6 +437,54 @@ class TestNumber:
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
+class TestSqueezedVacuum:
+    r"""
+    Tests for the ``SqueezedVacuum`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_init(self, modes, r, phi):
+        state = SqueezedVacuum(modes, r, phi)
+
+        assert state.name == "SqueezedVacuum"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``r``"):
+            SqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``phi``"):
+            SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = SqueezedVacuum([0], 1, 1)
+        state2 = SqueezedVacuum([0], 1, 1, r_trainable=True, r_bounds=(-2, 2))
+        state3 = SqueezedVacuum([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.r.value = 3
+
+        state2.r.value = 2
+        assert state2.r.value == 2
+
+        state3.phi.value = 2
+        assert state3.phi.value == 2
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_representation(self, modes, r, phi):
+        rep = SqueezedVacuum(modes, r, phi).representation
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            SqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+
+
 class TestVacuum:
     r"""
     Tests for the ``Vacuum`` class.
@@ -399,6 +507,36 @@ class TestVacuum:
         assert math.allclose(rep.c, [1.0])
 
 
+class TestThermal:
+    r"""
+    Tests for the ``Thermal`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    nbar = [[3], 4, [5, 6]]
+
+    @pytest.mark.parametrize("modes,nbar", zip(modes, nbar))
+    def test_init(self, modes, nbar):
+        state = Thermal(modes, nbar)
+
+        assert state.name == "Thermal"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``nbar``"):
+            Thermal(modes=[0, 1], nbar=[2, 3, 4])
+
+    @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
+    def test_representation(self, nbar):
+        rep = Thermal([0, 1], nbar).representation
+        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Thermal(modes=[0], nbar=[0.1, 0.2]).representation
+
+
 class TestVisualization:
     r"""
     Tests the functions to visualize states.
@@ -417,7 +555,9 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_2d.json"))
+
+        with open(self.path + "/visualize_2d.json") as file:
+            ref_data = json.load(file)
 
         assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
         assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
@@ -438,7 +578,9 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_3d.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_3d.json"))
+
+        with open(self.path + "/visualize_3d.json") as file:
+            ref_data = json.load(file)
 
         assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
         assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
@@ -455,7 +597,9 @@ class TestVisualization:
 
         if self.regenerate_assets:
             fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
-        ref_data = json.load(open(self.path + "/visualize_dm.json"))
+
+        with open(self.path + "/visualize_dm.json") as file:
+            ref_data = json.load(file)
 
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
