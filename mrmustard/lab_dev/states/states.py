@@ -26,7 +26,7 @@ from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.fock import fock_state
 from mrmustard.physics import triples
-from .base import Ket
+from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum"]
@@ -315,7 +315,7 @@ class Vacuum(Ket):
 #  ~~~~~~~~~~~~
 
 
-class Thermal(Ket):
+class Thermal(DM):
     r"""
     The `N`-mode thermal state.
 
