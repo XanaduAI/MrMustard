@@ -18,14 +18,14 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Iterable, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Sgate"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate"]
 
 
 class BSgate(Unitary):
@@ -127,10 +127,10 @@ class Dgate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         x: The displacements along the `x` axis, which represents position axis in phase space.
-        x_bounds: The bounds for the displacement along the `x` axis.
-        x_trainable: Whether `x` is a trainable variable.
         y: The displacements along the `y` axis.
+        x_bounds: The bounds for the displacement along the `x` axis.
         y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
+        x_trainable: Whether `x` is a trainable variable.
         y_trainable: Whether `y` is a trainable variable.
 
     .. details::
@@ -156,9 +156,9 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        modes: Iterable[int] = None,
-        x: Union[float, Iterable[float]] = 0.0,
-        y: Union[float, Iterable[float]] = 0.0,
+        modes: Sequence[int] = None,
+        x: Union[float, Sequence[float]] = 0.0,
+        y: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -173,6 +173,45 @@ class Dgate(Unitary):
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
+
+
+class Rgate(Unitary):
+    r"""
+    The rotation gate.
+
+    If ``theta`` is an iterable, its length must be equal to `1` or `N`. If its length is equal to `1`,
+    all the modes share the same ``theta``.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Rgate
+
+        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
+        >>> assert unitary.modes == [1, 2]
+
+    Args:
+        modes: The modes this gate is applied to.
+        theta: The rotation angles.
+        theta_bounds: The bounds for ``theta``.
+        theta_trainable: Whether ``theta`` is a trainable variable.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        theta: Union[float, list[float]] = 0.0,
+        theta_trainable: bool = False,
+        theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+    ):
+        super().__init__(modes=modes, name="Rgate")
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
+        return Bargmann(*triples.squeezing_gate_Abc(thetas))
 
 
 class Sgate(Unitary):
@@ -227,7 +266,7 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        modes: list[int],
+        modes: Sequence[int],
         r: Union[float, list[float]] = 0.0,
         phi: Union[float, list[float]] = 0.0,
         r_trainable: bool = False,
@@ -294,7 +333,7 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        modes: Optional[Iterable[int]] = None,
+        modes: Sequence[int],
         transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
