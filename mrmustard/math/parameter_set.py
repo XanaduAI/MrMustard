@@ -156,7 +156,15 @@ class ParameterSet:
             else:
                 ret.add_parameter(var)
 
-        return ret
+        return ret    
+    
+    def __bool__(self) -> bool:
+        r"""
+        ``False`` if this parameter set is empty, ``True`` otherwise.
+        """
+        if self._constants or self._variables:
+            return True
+        return False
 
         
 

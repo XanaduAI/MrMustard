@@ -739,8 +739,20 @@ class Ket(State):
         if not modes.issubset(self.modes):
             msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
             raise ValueError(msg)
-        
         wires = Wires(modes_out_ket=modes)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, then ``self`` is one of the built-in states.
+            # we use `mro` to find out which state that is, and we slice the parameter set.
+            # this avoid initializing the representation
+            ret = self.__class__.mro()[0]()
+            ret._name = self.name
+            ret._wires = wires
+            ret._parameter_set = self._parameter_set[[self.modes.index(m) for m in modes]]
+            return ret
+
+        # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
+        # representation
         traced_modes = set(self.modes).difference(modes)
         representation = self.representation.trace(traced_modes, traced_modes)
         
