@@ -35,6 +35,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -498,6 +499,50 @@ class State(CircuitComponent):
         template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
         display(HTML(template.render(state=self)))
 
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, then ``self`` is one of the built-in states.
+            # we use `mro` to find out which state that is, and we slice the parameter set.
+            # this avoids computing the representation (which may be expensive), and allows
+            # using the returned state to perform training
+            items = [i for i, m in enumerate(self.modes) if m in modes]
+            kwargs = {}
+            for name, param in self._parameter_set[items].all_parameters.items():
+                kwargs[name] = param.value
+                if isinstance(param, Variable):
+                    kwargs[name + "_trainable"] = True
+                    kwargs[name + "_bounds"] = param.bounds
+
+            ret = self.__class__.mro()[0](modes, **kwargs)
+            return ret
+
+        # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
+        # representation
+        modes_bra = modes if self.wires.output.bra.modes else set()
+        modes_ket = modes if self.wires.output.ket.modes else set()
+        wires = Wires(modes_out_bra=modes_bra, modes_out_ket=modes_ket)
+
+        traced_idxs = []
+        if modes_bra:
+            traced_idxs += [i for i, m in enumerate(self.modes) if m not in modes_bra]
+        traced_idxs += [i + len(traced_idxs) + 1 for i, m in enumerate(self.modes) if m not in modes_ket]
+        representation = self.representation.trace(traced_idxs, traced_idxs)
+
+        return self.__class__._from_attributes(
+            self.name, representation, wires
+        )  # pylint: disable=protected-access
+
 
 class DM(State):
     r"""
@@ -726,38 +771,6 @@ class Ket(State):
         dm = self @ self.adjoint
         return DM._from_attributes(
             self.name, dm.representation, dm.wires
-        )  # pylint: disable=protected-access
-    
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> Ket:
-        r"""
-        Traces out all the modes, except those in the given ``modes``.
-        """
-        if isinstance(modes, int):
-            modes = [modes]
-        modes = set(modes)
-
-        if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
-        wires = Wires(modes_out_ket=modes)
-
-        if self._parameter_set:
-            # if ``self`` has a parameter set, then ``self`` is one of the built-in states.
-            # we use `mro` to find out which state that is, and we slice the parameter set.
-            # this avoid initializing the representation
-            ret = self.__class__.mro()[0]()
-            ret._name = self.name
-            ret._wires = wires
-            ret._parameter_set = self._parameter_set[[self.modes.index(m) for m in modes]]
-            return ret
-
-        # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
-        # representation
-        traced_modes = set(self.modes).difference(modes)
-        representation = self.representation.trace(traced_modes, traced_modes)
-        
-        return Ket._from_attributes(
-            self.name, representation, wires
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

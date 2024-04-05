@@ -90,7 +90,7 @@ class TestParameterSet:
         const2 = Constant([2, 3, 4], "c2")
         var1 = Variable(5, "v1")
         var2 = Variable([6, 7, 8], "v2")
-        
+
         ps = ParameterSet()
         ps.add_parameter(const1)
         ps.add_parameter(const2)

@@ -22,9 +22,7 @@ from .parameters import Constant, Variable
 
 math = BackendManager()
 
-__all__ = [
-    "ParameterSet"
-]
+__all__ = ["ParameterSet"]
 
 
 class ParameterSet:
@@ -68,6 +66,12 @@ class ParameterSet:
         The variable parameters in this parameter set.
         """
         return self._variables
+
+    @property
+    def all_parameters(self) -> dict[str, Union[Constant, Variable]]:
+        ret = self.constants
+        ret.update(self.variables)
+        return ret
 
     @property
     def names(self) -> Sequence[str]:
@@ -134,7 +138,7 @@ class ParameterSet:
                 string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
-    
+
     def __getitem__(self, items: Union[int, Sequence[int]]):
         if isinstance(items, int):
             items = list([items])
@@ -156,8 +160,8 @@ class ParameterSet:
             else:
                 ret.add_parameter(var)
 
-        return ret    
-    
+        return ret
+
     def __bool__(self) -> bool:
         r"""
         ``False`` if this parameter set is empty, ``True`` otherwise.
@@ -165,7 +169,3 @@ class ParameterSet:
         if self._constants or self._variables:
             return True
         return False
-
-        
-
-
