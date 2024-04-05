@@ -91,7 +91,9 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, AdjointView)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()  # this holds for the Dgate but not in general
+        assert (
+            d1_adj.representation == d1.representation.conj()
+        )  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
@@ -101,7 +103,7 @@ class TestCircuitComponent:
     def test_dual(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_dual = d1.dual
-        vac = Vacuum([1,8])
+        vac = Vacuum([1, 8])
 
         assert isinstance(d1_dual, DualView)
         assert d1_dual.name == d1.name
