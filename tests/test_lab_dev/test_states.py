@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.fock import fock_state
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
@@ -175,6 +176,38 @@ class TestKet:
         # measurements
         assert isinstance(ket >> Coherent([0], 1).dual, Ket)
         assert isinstance(ket >> Coherent([0], 1).dm().dual, DM)
+
+    @pytest.mark.parametrize("modes", [[3, 30, 98]])
+    @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
+    def test_getitem(self, modes, m):
+        ket = Vacuum(modes) >> Dgate(modes, x=[0, 1, 2])
+        dm = ket.dm()
+
+        assert ket[m] == dm[m]
+
+    @pytest.mark.parametrize("modes", [[3, 30, 98]])
+    @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
+    def test_getitem_builtin_kets(self, modes, m):
+        idx = [modes.index(s) for s in m]
+
+        x = math.asnumpy([0, 1, 2])
+        s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
+
+        si = s[m]
+        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
+
+        assert isinstance(si.x, Constant)
+        assert math.allclose(si.x.value, x[idx])
+
+        assert isinstance(si.y, Variable)
+        assert si.y.value == s.y.value
+        assert si.y.bounds == s.y.bounds
+
+        assert isinstance(si.r, Constant)
+        assert si.r.value == s.r.value
+
+        assert isinstance(si.phi, Constant)
+        assert si.phi.value == s.phi.value
 
 
 class TestDM:
