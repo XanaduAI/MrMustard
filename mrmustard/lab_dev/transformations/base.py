@@ -24,7 +24,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional
 
 from ..circuit_components import CircuitComponent
 
@@ -46,10 +46,10 @@ class Unitary(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
-        super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
+    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+        super().__init__(
+            name or "U" + "".join(str(m) for m in modes), modes_in_ket=modes, modes_out_ket=modes
+        )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -59,19 +59,13 @@ class Unitary(Transformation):
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
         ``Channel``, and a ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            unitary = Unitary()
-            unitary._wires = component.wires
-            unitary._representation = component.representation
-            return unitary
+            return Unitary._from_attributes("", ret.representation, ret.wires)
         elif isinstance(other, Channel):
-            channel = Channel()
-            channel._wires = component.wires
-            channel._representation = component.representation
-            return channel
-        return component
+            return Channel._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Unitary")
@@ -86,11 +80,13 @@ class Channel(Transformation):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: Optional[Sequence[int]] = None):
-        modes = modes or []
-        name = name or ""
+    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
+            name or "Ch" + "".join(str(m) for m in modes),
+            modes_in_ket=modes,
+            modes_out_ket=modes,
+            modes_in_bra=modes,
+            modes_out_bra=modes,
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -101,14 +97,11 @@ class Channel(Transformation):
         Returns a ``Channel`` when ``other`` is a ``Unitary`` or a ``Channel``, and a
         ``CircuitComponent`` otherwise.
         """
-        component = super().__rshift__(other)
+        ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            channel = Channel()
-            channel._wires = component.wires
-            channel._representation = component.representation
-            return channel
-        return component
+            return Channel._from_attributes("", ret.representation, ret.wires)
+        return ret
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Channel")

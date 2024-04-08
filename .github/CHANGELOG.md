@@ -1,8 +1,33 @@
 # Current develop
 
 ### New features
+  
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin)
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.3 (current release)
+
+### New features
 * Added a function ``to_fock`` to map different representations into Fock representation. 
   [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+
+* Added a new Abc triple for s-parametrized displacement gate. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
   
 ### Breaking changes
 
@@ -22,7 +47,7 @@
 
 ---
 
-# Release 0.7.1 (current release)
+# Release 0.7.1
 
 ### New features
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of

@@ -28,10 +28,12 @@ from mrmustard.lab_dev.states import Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
+
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
+# pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
     Tests ``CircuitComponent`` objects.
@@ -42,13 +44,28 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        modes = [1, 8]
-        cc = CircuitComponent(name, representation, modes_out_ket=modes, modes_in_ket=modes)
+        cc = CircuitComponent(name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8))
 
         assert cc.name == name
-        assert cc.modes == modes
-        assert cc.wires == Wires(modes_out_ket=modes, modes_in_ket=modes)
+        assert list(cc.modes) == [1, 8]
+        assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
+
+    def test_modes_init_out_of_order(self):
+        m1 = (8, 1)
+        m2 = (1, 8)
+
+        r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
+        r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
+
+        cc1 = CircuitComponent("", r1, modes_out_ket=m1, modes_in_ket=m1)
+        cc2 = CircuitComponent("", r2, modes_out_ket=m2, modes_in_ket=m2)
+        assert cc1 == cc2
+
+        r3 = (cc1.adjoint @ cc1).representation
+        cc3 = CircuitComponent("", r3, m2, m2, m2, m1)
+        cc4 = CircuitComponent("", r3, m2, m2, m2, m2)
+        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -74,7 +91,9 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, AdjointView)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()
+        assert (
+            d1_adj.representation == d1.representation.conj()
+        )  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
@@ -84,11 +103,13 @@ class TestCircuitComponent:
     def test_dual(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_dual = d1.dual
+        vac = Vacuum([1, 8])
 
         assert isinstance(d1_dual, DualView)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation
+        assert (vac >> d1_dual >> d1).representation == vac.representation
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
@@ -175,7 +196,7 @@ class TestCircuitComponent:
         result = vac012 @ d012
         result = result @ result.adjoint @ a0 @ a1 @ a2
 
-        assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
+        assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
         assert np.allclose(result.representation.A, 0)
         assert np.allclose(
             result.representation.b,
@@ -235,7 +256,7 @@ class TestCircuitComponent:
 
         result = vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2
 
-        assert result.wires == Wires(modes_out_bra=[0, 1, 2], modes_out_ket=[0, 1, 2])
+        assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
         assert np.allclose(result.representation.A, 0)
         assert np.allclose(
             result.representation.b,
@@ -310,6 +331,12 @@ class TestCircuitComponent:
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
+    def test_rshift_ketbra_with_ket(self):
+        a1 = Attenuator([1], transmissivity=0.8)
+        n1 = Number([1, 2], n=1).dual
+
+        assert a1 >> n1 == a1 @ n1 @ n1.adjoint
+
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -329,10 +356,10 @@ class TestCircuitComponent:
         assert result1 == result4
 
     def test_repr(self):
-        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
-        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        c1 = CircuitComponent("", modes_out_ket=(0, 1, 2))
+        c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
-        assert repr(c1) == "CircuitComponent(name=None, modes=[0, 1, 2])"
+        assert repr(c1) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
         assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
 
@@ -354,10 +381,10 @@ class TestAdjointView:
         assert d1_adj_adj.representation == d1.representation
 
     def test_repr(self):
-        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
-        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        c1 = CircuitComponent("", modes_out_ket=(0, 1, 2))
+        c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
-        assert repr(c1.adjoint) == "CircuitComponent(name=None, modes=[0, 1, 2])"
+        assert repr(c1.adjoint) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
         assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
     def test_parameters_point_to_original_parameters(self):
@@ -384,21 +411,22 @@ class TestDualView:
         """
         d1 = Dgate([1], x=0.1, y=0.1)
         d1_dual = DualView(d1)
+        vac = Vacuum([1])
 
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation
 
         d1_dual_dual = DualView(d1_dual)
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
     def test_repr(self):
-        c1 = CircuitComponent("", modes_out_ket=[0, 1, 2])
-        c2 = CircuitComponent("my_component", modes_out_ket=[0, 1, 2])
+        c1 = CircuitComponent("", modes_out_ket=(0, 1, 3))
+        c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 3))
 
-        assert repr(c1.dual) == "CircuitComponent(name=None, modes=[0, 1, 2])"
-        assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+        assert repr(c1.dual) == "CircuitComponent(name=CC013, modes=[0, 1, 3])"
+        assert repr(c2.dual) == "CircuitComponent(name=my_component, modes=[0, 1, 3])"
 
     def test_parameters_point_to_original_parameters(self):
         r"""
@@ -406,8 +434,8 @@ class TestDualView:
         """
         d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
         d1_dual = DualView(d1)
-
+        vac = Vacuum([0])
         d1.x.value = 0.8
 
         assert d1_dual.x.value == 0.8
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation

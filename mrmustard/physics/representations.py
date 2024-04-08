@@ -49,6 +49,19 @@ class Representation(ABC):
     multiplication, subtraction, etc.
     """
 
+    @property
+    @abstractmethod
+    def ansatz(self) -> Ansatz:
+        r"""
+        The ansatz of the representation.
+        """
+
+    @abstractmethod
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+        r"""
+        Reorders the representation indices.
+        """
+
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
@@ -112,6 +125,12 @@ class Representation(ABC):
         Takes the outer product of this representation with another.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+        r"""
+        Stores the indices for contraction.
+        """
+        raise NotImplementedError
 
 
 class Bargmann(Representation):
@@ -208,7 +227,14 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self.ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A, b, c)
+
+    @property
+    def ansatz(self) -> PolyExpAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
@@ -479,7 +505,14 @@ class Fock(Representation):
         array = math.astensor(array)
         if not batched:
             array = array[None, ...]
-        self.ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array)
+
+    @property
+    def ansatz(self) -> ArrayAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
