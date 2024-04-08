@@ -91,7 +91,9 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, AdjointView)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()
+        assert (
+            d1_adj.representation == d1.representation.conj()
+        )  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
@@ -101,11 +103,13 @@ class TestCircuitComponent:
     def test_dual(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_dual = d1.dual
+        vac = Vacuum([1, 8])
 
         assert isinstance(d1_dual, DualView)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation
+        assert (vac >> d1_dual >> d1).representation == vac.representation
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
@@ -407,10 +411,11 @@ class TestDualView:
         """
         d1 = Dgate([1], x=0.1, y=0.1)
         d1_dual = DualView(d1)
+        vac = Vacuum([1])
 
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation
 
         d1_dual_dual = DualView(d1_dual)
         assert d1_dual_dual.wires == d1.wires
@@ -429,8 +434,8 @@ class TestDualView:
         """
         d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
         d1_dual = DualView(d1)
-
+        vac = Vacuum([0])
         d1.x.value = 0.8
 
         assert d1_dual.x.value == 0.8
-        assert d1_dual.representation == d1.representation.conj()
+        assert (vac >> d1 >> d1_dual).representation == vac.representation
