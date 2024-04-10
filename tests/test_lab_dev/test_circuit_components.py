@@ -160,6 +160,10 @@ class TestCircuitComponent:
         )
         assert exotic_component_01 == expected
 
+    def test_on_error(self):
+        with pytest.raises(ValueError):
+            Vacuum([1, 2]).on([3])
+
     @pytest.mark.parametrize("shape", [3, [3, 2]])
     def test_to_fock_component(self, shape):
         vac = Vacuum([1, 2])
