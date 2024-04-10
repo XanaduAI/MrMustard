@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access, inconsistent-return-statements
 
 """
 This module contains the base classes for the available quantum states.
@@ -612,9 +612,7 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes(
-                "", ret.representation, ret.wires
-            )  # pylint: disable=protected-access
+            return DM._from_attributes("", ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
@@ -723,9 +721,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        return DM._from_attributes(
-            self.name, dm.representation, dm.wires
-        )  # pylint: disable=protected-access
+        return DM._from_attributes(self.name, dm.representation, dm.wires)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -739,13 +735,9 @@ class Ket(State):
 
         if not ret.wires.input:
             if not ret.wires.bra:
-                return Ket._from_attributes(
-                    "", ret.representation, ret.wires
-                )  # pylint: disable=protected-access
+                return Ket._from_attributes("", ret.representation, ret.wires)
             if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes(
-                    "", ret.representation, ret.wires
-                )  # pylint: disable=protected-access
+                return DM._from_attributes("", ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
