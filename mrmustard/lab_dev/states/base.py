@@ -509,19 +509,17 @@ class State(CircuitComponent):
         This approach avoids computing the representation, which may be expensive. Additionally,
         it allows returning trainable states.
         """
-        if self._parameter_set:
-            # slice the parameter set
-            items = [i for i, m in enumerate(self.modes) if m in modes]
-            kwargs = {}
-            for name, param in self._parameter_set[items].all_parameters.items():
-                kwargs[name] = param.value
-                if isinstance(param, Variable):
-                    kwargs[name + "_trainable"] = True
-                    kwargs[name + "_bounds"] = param.bounds
+        # slice the parameter set
+        items = [i for i, m in enumerate(self.modes) if m in modes]
+        kwargs = {}
+        for name, param in self._parameter_set[items].all_parameters.items():
+            kwargs[name] = param.value
+            if isinstance(param, Variable):
+                kwargs[name + "_trainable"] = True
+                kwargs[name + "_bounds"] = param.bounds
 
-            # use `mro` to find out which state needs to be initialized
-            ret = self.__class__.mro()[0](modes, **kwargs)
-            return ret
+        # use `mro` to return the correct state
+        return self.__class__.mro()[0](modes, **kwargs)
 
 
 class DM(State):
