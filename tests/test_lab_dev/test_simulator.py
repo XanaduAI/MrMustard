@@ -33,7 +33,10 @@ class TestSimulator:
     Tests for the ``Circuit`` class.
     """
 
-    @pytest.mark.parametrize("path", [[], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
+    @pytest.mark.parametrize(
+        "path",
+        [[], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)], [(4, 5), (3, 4), (2, 3), (1, 2), (0, 1)]],
+    )
     def test_run(self, path):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
@@ -53,17 +56,3 @@ class TestSimulator:
         assert res == exp
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-
-    def test_run_error(self):
-        vac12 = Vacuum([1, 2])
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d2 = Dgate([2], x=0.1, y=0.2)
-        d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
-        a1 = Attenuator([1], transmissivity=0.8)
-        n12 = Number([1, 2], n=1).dual
-
-        circuit = Circuit([vac12, d1, d2, d12, a1, n12])
-        circuit.path = [(4, 5), (3, 4), (2, 3), (1, 2)]
-
-        with pytest.raises(ValueError):
-            Simulator().run(circuit)
