@@ -453,7 +453,7 @@ def from_quadrature_Abc() -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
     Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
-    the indices of the final triple correspond to the variables :math:`(p, z^*)` of the map.
+    The indices of the final triple correspond to the variables :math:`(p, z^*)` of the map.
 
     Returns:
         The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
