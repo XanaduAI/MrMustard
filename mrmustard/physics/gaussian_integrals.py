@@ -79,6 +79,7 @@ def real_gaussian_integral(
 
     return A_post, b_post, c_post
 
+
 def complex_gaussian_integral(
     Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
 ):
