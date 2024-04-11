@@ -348,6 +348,45 @@ class DM(State):
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
         return ret
 
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> State:
+        A, b, c = triple
+        A = math.astensor(A)
+        b = math.astensor(b)
+        c = math.astensor(c)
+
+        n_modes = len(modes)
+        if b.shape != (2 * n_modes,):
+            msg = f"Given ``b`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+        if A.shape != (2 * n_modes, 2 * n_modes):
+            msg = f"Given ``A`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+
+        ret = DM(name, modes)
+
+        A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
+            join_Abc(join_Abc((A, b, c), from_quadrature_Abc()), math.conj(from_quadrature_Abc())),
+            idx=[0, 1, n_modes, n_modes + 2],
+        )
+        if n_modes != 1:
+            for _ in range(n_modes - 1):
+                A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
+                    join_Abc(
+                        join_Abc((A_bargmann, b_bargmann, c_bargmann), from_quadrature_Abc()),
+                        math.conj(from_quadrature_Abc()),
+                    ),
+                    idx=[0, 1, n_modes, n_modes + 2],
+                )
+
+        ret._representation = Bargmann(A_bargmann, b_bargmann, c_bargmann)
+        return ret
+
     @property
     def probability(self) -> float:
         idx_ket = self.wires.output.ket.indices
