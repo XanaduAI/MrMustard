@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=too-many-branches
+
 """
 A class to quantum circuits.
 """
@@ -66,8 +68,13 @@ class Circuit:
     """
 
     def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
-        self._components = components or []
+        self._components = [c.light_copy() for c in components] if components else []
         self._path = []
+
+        # a dictionary to keep track of the underlying graph, mapping the ``ids`` of output wires
+        # to the ``ids`` of the input wires that they are being contracted with. It is initialized
+        # automatically (once and for all) when a path is validated for the first time.
+        self._graph: dict[int, int] = {}
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -84,7 +91,16 @@ class Circuit:
         return self._path
 
     @path.setter
-    def path(self, value: list[tuple[int, int]]):
+    def path(self, value: list[tuple[int, int]]) -> None:
+        r"""
+        A function to set the path.
+
+        In addition to setting the path, it validates it using the ``validate_path`` method.
+
+        Args:
+            path: The path.
+        """
+        self.validate_path(value)
         self._path = value
 
     def lookup_path(self) -> None:
@@ -223,6 +239,76 @@ class Circuit:
         else:
             msg = f"Strategy ``{strategy}`` is not available."
             raise ValueError(msg)
+
+    def validate_path(self, path) -> None:
+        r"""
+        A convenience function to check whether a given contraction path is valid for this circuit.
+
+        Uses the wires' ``ids`` to understand what pairs of wires would be contracted, if the
+        simulation was carried from left to right. Next, it checks whether ``path`` is an equivalent
+        contraction path, meaning that it instructs to contract the same wires as a ``l2r`` path.
+
+        Args:
+            path: A candidate contraction path.
+
+        Raises:
+            ValueError: If the given path is not equivalent to a left-to-right path.
+        """
+        wires = [c.wires for c in self.components]
+
+        # if at least one of the ``Wires`` has wires on the bra side, add the adjoint
+        # to all the other ``Wires``
+        add_adjoints = len(set(bool(w.bra) for w in wires)) != 1
+        if add_adjoints:
+            wires = [(w @ w.adjoint)[0] if bool(w.bra) is False else w for w in wires]
+
+        # if the circuit has no graph, compute it
+        if not self._graph:
+            # a dictionary to store the ``ids`` of the dangling wires
+            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
+
+            # populate the graph
+            for w in wires:
+                # if there is a dangling wire, add a contraction
+                for m in w.input.ket.modes:  # ket side
+                    if ids_dangling_wires[m]["ket"]:
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
+                        ids_dangling_wires[m]["ket"] = None
+                for m in w.input.bra.modes:  # bra side
+                    if ids_dangling_wires[m]["bra"]:
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
+                        ids_dangling_wires[m]["bra"] = None
+
+                # update the dangling wires
+                for m in w.output.ket.modes:  # ket side
+                    if w.output.ket[m].ids:
+                        if ids_dangling_wires[m]["ket"]:
+                            raise ValueError("Dangling wires cannot be overwritten.")
+                        ids_dangling_wires[m]["ket"] = w.output.ket[m].ids[0]
+                for m in w.output.bra.modes:  # bra side
+                    if w.output.bra[m].ids:
+                        if ids_dangling_wires[m]["bra"]:
+                            raise ValueError("Dangling wires cannot be overwritten.")
+                        ids_dangling_wires[m]["bra"] = w.output.bra[m].ids[0]
+
+        # use ``self._graph`` to validate the path
+        remaining = dict(enumerate(wires))
+        for i1, i2 in path:
+            overlap_ket = remaining[i1].output.ket.modes & remaining[i2].input.ket.modes
+            for m in overlap_ket:
+                key = remaining[i1].output.ket[m].ids[0]
+                val = remaining[i2].input.ket[m].ids[0]
+                if self._graph[key] != val:
+                    raise ValueError(f"The contraction ``{(i1, i2)}`` is invalid.")
+
+            overlap_bra = remaining[i1].output.bra.modes & remaining[i2].input.bra.modes
+            for m in overlap_bra:
+                key = remaining[i1].output.bra[m].ids[0]
+                val = remaining[i2].input.bra[m].ids[0]
+                if self._graph[key] != val:
+                    raise ValueError(f"The contraction ``{i1, i2}`` is invalid.")
+
+            remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
