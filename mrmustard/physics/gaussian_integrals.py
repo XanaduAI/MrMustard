@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains real and comple gaussian integral functions and related helper functions.
+This module contains gaussian integral functions and related helper functions.
 """
 from typing import Sequence, Tuple
 
