@@ -29,10 +29,11 @@ from typing import Optional, Sequence, Union
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
+from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho, join_Abc
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.triples import from_quadrature_Abc
 from ..circuit_components import CircuitComponent
 
 __all__ = ["State", "DM", "Ket"]
@@ -157,9 +158,26 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(self) -> State:
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> State:
         r"""
-        Initializes a state from quadrature.
+        Initializes a state from quadrature with a ABC Ansatz Gaussian exponential form.
+
+        Args:
+            modes: The modes of this states.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
+
+        Returns:
+            A state.
+
+        Raises:
+            ValueError: If the given triple have shapes that are inconsistent
+                with the number of modes.
         """
         raise NotImplementedError
 
@@ -447,6 +465,41 @@ class Ket(State):
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
+        return ret
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> State:
+        A, b, c = triple
+        A = math.astensor(A)
+        b = math.astensor(b)
+        c = math.astensor(c)
+
+        n_modes = len(modes)
+        if b.shape != (n_modes,):
+            msg = f"Given ``b`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+        if A.shape != (n_modes, n_modes):
+            msg = f"Given ``A`` is inconsistent with modes=``{modes}``."
+            raise ValueError(msg)
+
+        ret = Ket(name, modes)
+
+        A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
+            join_Abc((A, b, c), from_quadrature_Abc()), idx=[0, n_modes]
+        )
+        if n_modes != 1:
+            for _ in range(n_modes - 1):
+                A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
+                    join_Abc((A_bargmann, b_bargmann, c_bargmann), from_quadrature_Abc()),
+                    idx=[0, n_modes],
+                )
+
+        ret._representation = Bargmann(A_bargmann, b_bargmann, c_bargmann)
         return ret
 
     @property
