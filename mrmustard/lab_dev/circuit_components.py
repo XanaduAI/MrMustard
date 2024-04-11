@@ -207,6 +207,43 @@ class CircuitComponent:
         instance.__dict__["_wires"] = Wires(*self.wires.args)
         return instance
 
+    def on(self, modes: Sequence[int]) -> CircuitComponent:
+        r"""
+        Creates a copy of this component that acts on the given ``modes`` instead of on the
+        original modes.
+
+        Args:
+            modes: The new modes that this component acts on.
+
+        Returns:
+            The component acting on the specified modes.
+
+        Raises:
+            ValueError: If ``modes`` contains more or less modes than the original component.
+        """
+        modes = set(modes)
+
+        ob = self.wires.output.bra
+        ib = self.wires.input.bra
+        ok = self.wires.output.ket
+        ik = self.wires.input.ket
+        for subset in [ob, ib, ok, ik]:
+            if subset and len(subset.modes) != len(modes):
+                msg = f"Expected ``{len(modes)}`` modes, found ``{len(subset.modes)}``."
+                raise ValueError(msg)
+
+        wires = Wires(
+            modes_out_bra=modes if ob else set(),
+            modes_in_bra=modes if ib else set(),
+            modes_out_ket=modes if ok else set(),
+            modes_in_ket=modes if ik else set(),
+        )
+
+        ret = self.light_copy()
+        ret._wires = wires
+
+        return ret
+
     def to_fock_component(
         self, shape: Optional[Union[int, Iterable[int]]] = None
     ) -> CircuitComponent:
