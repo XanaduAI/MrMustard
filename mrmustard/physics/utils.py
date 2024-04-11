@@ -60,8 +60,10 @@ def real_gaussian_integral(
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
         R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
         bR = math.gather(b, not_idx, axis=-1)
-        A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-        b_post = bR - math.matvec(D, math.solve(M, bM))
+        T = math.transpose
+        L = T(math.solve(T(M), T(D)))
+        A_post = R - math.matmul(L, T(D))
+        b_post = bR - math.matvec(L, bM)
     else:
         A_post = math.astensor([])
         b_post = math.astensor([])
