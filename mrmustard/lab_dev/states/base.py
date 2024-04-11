@@ -519,7 +519,7 @@ class State(CircuitComponent):
                 kwargs[name + "_bounds"] = param.bounds
 
         # use `mro` to return the correct state
-        return self.__class__.mro()[0](modes, **kwargs)
+        return self.__class__(modes, **kwargs)
 
 
 class DM(State):
@@ -655,8 +655,8 @@ class DM(State):
             raise ValueError(msg)
 
         if self._parameter_set:
-            # if ``self`` has no parameter set, it is a built-in state, and we slice the
-            # representation
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
             return self._getitem_builtin_state(modes)
 
         # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
@@ -789,8 +789,8 @@ class Ket(State):
             raise ValueError(msg)
 
         if self._parameter_set:
-            # if ``self`` has no parameter set, it is a built-in state, and we slice the
-            # representation
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
             return self._getitem_builtin_state(modes)
 
         # if ``self`` has no parameter set, it is not a built-in state.

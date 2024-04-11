@@ -140,6 +140,42 @@ class ParameterSet:
         return ", ".join(strings)
 
     def __getitem__(self, items: Union[int, Sequence[int]]):
+        r"""
+        Returns a parameter set that contains slices of the parameters in this parameter set.
+
+        In particular:
+            * If a parameter's value is a number, the returned parameter set contains the same
+              parameter.
+            * If a parameter's value is an array, the returned parameter set contains the same
+              parameter with sliced value.
+
+        .. code-block::
+
+            >>> from mrmustard.math.parameter_set import ParameterSet
+            >>> from mrmustard.math.parameters import Constant, Variable
+            >>> import numpy as np
+
+            >>> const1 = Constant(1, "c1")
+            >>> const2 = Constant([2, 3, 4], "c2")
+            >>> var1 = Variable(5, "v1")
+            >>> var2 = Variable([6, 7, 8], "v2")
+
+            >>> ps = ParameterSet()
+            >>> ps.add_parameter(const1)
+            >>> ps.add_parameter(const2)
+            >>> ps.add_parameter(var1)
+            >>> ps.add_parameter(var2)
+
+            >>> assert np.allclose(ps[0].constants["c1"].value, 1)
+            >>> assert np.allclose(ps[0].constants["c2"].value, 2)
+            >>> assert np.allclose(ps[0].variables["v1"].value, 5)
+            >>> assert np.allclose(ps[0].variables["v2"].value, 6)
+
+            >>> assert np.allclose(ps[1, 2].constants["c1"].value, 1)
+            >>> assert np.allclose(ps[1, 2].constants["c2"].value, [3, 4])
+            >>> assert np.allclose(ps[1, 2].variables["v1"].value, 5)
+            >>> assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
+        """
         if isinstance(items, int):
             items = list([items])
         items = list(items)
