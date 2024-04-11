@@ -179,7 +179,7 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[3, 30, 98]])
     @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
-    def test_getitem(self, modes, m):
+    def test_get_item(self, modes, m):
         ket = Vacuum(modes) >> Dgate(modes, x=[0, 1, 2])
         dm = ket.dm()
 
@@ -187,13 +187,14 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[3, 30, 98]])
     @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
-    def test_getitem_builtin_kets(self, modes, m):
+    def test_get_item_builtin_kets(self, modes, m):
         idx = [modes.index(s) for s in m]
 
         x = math.asnumpy([0, 1, 2])
         s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
 
         si = s[m]
+        assert isinstance(si, DisplacedSqueezed)
         assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
 
         assert isinstance(si.x, Constant)
