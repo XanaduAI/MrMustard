@@ -449,7 +449,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def from_quadrature_map_on_single_out_ket_wire_Abc() -> Union[Matrix, Vector, Scalar]:
+def from_quadrature_Abc() -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
     Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
@@ -470,7 +470,7 @@ def from_quadrature_map_on_single_out_ket_wire_Abc() -> Union[Matrix, Vector, Sc
     return A, b, c
 
 
-def to_quadrature_map_on_single_out_ket_wire_Abc() -> Union[Matrix, Vector, Scalar]:
+def to_quadrature_Abc() -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a single out_ket wire map from Bargmannrepresentation with ABC Ansatz form into quadrature  representation with ABC Ansatz.
     Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
