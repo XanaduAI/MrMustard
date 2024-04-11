@@ -260,6 +260,12 @@ class State(CircuitComponent):
         The covariance matrix and the vector of means that describe this state in phase space.
         """
         raise NotImplementedError
+    
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector]:
+        r"""
+        ..
+        """
+        raise NotImplementedError
 
 
 class DM(State):
