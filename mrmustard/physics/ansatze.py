@@ -99,6 +99,12 @@ class Ansatz(ABC):
         Multiplies this ansatz by another ansatz.
         """
 
+    @abstractmethod
+    def __and__(self, other: Ansatz) -> Ansatz:
+        r"""
+        Tensor product of this ansatz with another ansatz.
+        """
+
     def __rmul__(self, other: Scalar) -> Ansatz:
         r"""
         Multiplies this ansatz by a scalar.
