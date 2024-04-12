@@ -35,6 +35,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -43,6 +44,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
+from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -497,6 +499,28 @@ class State(CircuitComponent):
         template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
         display(HTML(template.render(state=self)))
 
+    def _getitem_builtin_state(self, modes: set[int]):
+        r"""
+        A convenience function to slice built-in states.
+
+        Built-in states come with a parameter set. To slice them, we simply slice the parameter
+        set, and then used the sliced parameter set to re-initialize them.
+
+        This approach avoids computing the representation, which may be expensive. Additionally,
+        it allows returning trainable states.
+        """
+        # slice the parameter set
+        items = [i for i, m in enumerate(self.modes) if m in modes]
+        kwargs = {}
+        for name, param in self._parameter_set[items].all_parameters.items():
+            kwargs[name] = param.value
+            if isinstance(param, Variable):
+                kwargs[name + "_trainable"] = True
+                kwargs[name + "_bounds"] = param.bounds
+
+        # use `mro` to return the correct state
+        return self.__class__(modes, **kwargs)
+
 
 class DM(State):
     r"""
@@ -618,6 +642,35 @@ class DM(State):
     def __repr__(self) -> str:
         return ""
 
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
+            return self._getitem_builtin_state(modes)
+
+        # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
+        # representation
+        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        representation = self.representation.trace(idxz, idxz_conj)
+
+        return self.__class__._from_attributes(
+            self.name, representation, wires
+        )  # pylint: disable=protected-access
+
 
 class Ket(State):
     r"""
@@ -722,6 +775,27 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
+
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
+            return self._getitem_builtin_state(modes)
+
+        # if ``self`` has no parameter set, it is not a built-in state.
+        # we must turn it into a density matrix and slice the representation
+        return self.dm()[modes]
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
