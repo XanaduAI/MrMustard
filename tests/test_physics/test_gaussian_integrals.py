@@ -137,20 +137,25 @@ def test_contract_two_Abc():
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
 
-    res1 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [], [])
+    res1 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [], [], real=False)
     assert np.allclose(res1[0], math.block_diag(A1, A2))
     assert np.allclose(res1[1], [0, 0, 0.1 + 0.3j, 0.2 + 0.3j, -0.1 + 0.3j, -0.2 + 0.3j])
     assert np.allclose(res1[2], c1 * c2)
 
-    res2 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3])
+    res2 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3], real=False)
     assert np.allclose(res2[0], math.zeros((2, 2)))
     assert np.allclose(res2[1], [0.1 + 0.3j, 0.2 + 0.3j])
     assert np.allclose(res2[2], c1 * c2)
 
-    res3 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1])
+    res3 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1], real=False)
     assert np.allclose(res3[0], math.zeros((2, 2)))
     assert np.allclose(res3[1], [-0.1 + 0.3j, -0.2 + 0.3j])
     assert np.allclose(res3[2], c1 * c2)
+
+    res4 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [], [], real=True)
+    assert np.allclose(res4[0], res1[0])
+    assert np.allclose(res4[1], res1[1])
+    assert np.allclose(res4[2], res1[2])
 
 
 def test_reorder_abc():
