@@ -28,7 +28,7 @@ def real_gaussian_integral(
     idx: tuple[int, ...],
 ):
     r"""Computes the Gaussian integral of the exponential of a real quadratic form.
-    The integral is defined as (note that in general we integrate over a subset of m dimensions):
+    The integral is defined as (note that in general we integrate over a subset of `m` dimensions):
 
     .. :math::
         \int_{R^m} F(x) dx,
