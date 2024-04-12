@@ -485,6 +485,27 @@ def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]
     return A, b, c
 
 
+def complex_fourier_transform_Abc() -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of the complex fourier transform between two pairs of complex variables.
+
+    Given a function :math:`f(z^*, z)`, the complex fourier transform is defined as
+    :math:
+        \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
+
+    The indices of this triple correspond to the variables :math:`(y^*, y, z^*, z)`.
+
+    Returns:
+        The ``(A, b, c)`` triple of the complex fourier transform.
+    """
+    O = math.zeros((2, 2))
+    Z = math.block([[0, 1], [-1, 0]])
+    A = math.block([[O, -Z], [Z, O]])
+    b = _vacuum_B_vector(4)
+    c = 1.0 + 0j
+    return A, b, c
+
+
 # ~~~~~~~~~~~~~~~~
 # Kraus operators
 # ~~~~~~~~~~~~~~~~
