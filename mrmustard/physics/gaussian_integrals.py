@@ -42,7 +42,7 @@ def real_gaussian_integral(
     are specified by ``idx``.
 
     Arguments:
-        A,b,c: the ``(A,b,c)`` triple
+        Abc: the ``(A,b,c)`` triple
         idx: the tuple of indices of the x variables
 
     Returns:
