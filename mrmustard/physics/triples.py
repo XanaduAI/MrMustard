@@ -220,7 +220,9 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc(theta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def rotation_gate_Abc(
+    theta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of rotation gates.
 
@@ -330,7 +332,10 @@ def beamsplitter_gate_Abc(
     costheta = math.diag(math.cos(theta))
     sintheta = math.diag(math.sin(theta))
     V = math.block(
-        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
+        [
+            [costheta, -math.exp(-1j * phi) * sintheta],
+            [math.exp(1j * phi) * sintheta, costheta],
+        ]
     )
 
     A = math.block([[O_n, V], [math.transpose(V), O_n]])
@@ -456,7 +461,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement map :math:`D(\gamma)`.
+    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized displacement map :math:`D(\gamma)`.
     Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
     the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
 
@@ -477,4 +482,32 @@ def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]
     ]  # Change the order of this map into the normal ordering as a single mode channel
     b = _vacuum_B_vector(4)
     c = 1.0 + 0j
+    return A, b, c
+
+
+# ~~~~~~~~~~~~~~~~
+# Kraus operators
+# ~~~~~~~~~~~~~~~~
+
+
+def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
+    The last index is the "bond" index which should be summed/integrated over.
+
+    Args:
+        eta: The value of the transmissivity.
+
+    Returns:
+        The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
+    """
+    costheta = math.sqrt(eta)
+    sintheta = math.sqrt(1 - eta)
+
+    A = math.astensor(
+        [[0, costheta, 0], [costheta, 0, -sintheta], [0, -sintheta, 0]], math.complex128
+    )
+    b = _vacuum_B_vector(3)
+    c = 1.0 + 0j
+
     return A, b, c
