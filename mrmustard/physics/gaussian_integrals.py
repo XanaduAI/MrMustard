@@ -50,8 +50,6 @@ def real_gaussian_integral(
     """
     A, b, c = Abc
 
-    n = len(idx)
-
     if not idx:
         return A, b, c
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
@@ -73,7 +71,7 @@ def real_gaussian_integral(
 
     c_post = (
         c
-        * math.sqrt((2 * np.pi) ** n / math.det(M))
+        * math.sqrt((2 * np.pi) ** len(idx) / math.det(M))
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
