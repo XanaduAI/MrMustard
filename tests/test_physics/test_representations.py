@@ -20,7 +20,7 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
-from mrmustard.physics.bargmann import contract_two_Abc, complex_gaussian_integral
+from mrmustard.physics.gaussian_integrals import contract_two_Abc, complex_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
@@ -181,7 +181,7 @@ class TestBargmannRepresentation:
         triple2 = Abc_triple(3)
 
         res1 = Bargmann(*triple1) @ Bargmann(*triple2)
-        exp1 = contract_two_Abc(triple1, triple2, [], [])
+        exp1 = contract_two_Abc(triple1, triple2, [], [], real=False)
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
