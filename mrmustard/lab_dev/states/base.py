@@ -43,6 +43,7 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -248,11 +249,30 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector]:
+    def phase_space(self, s: float, characteristic: bool) -> tuple[ComplexMatrix, ComplexVector]:
         r"""
-        The covariance matrix and the vector of means that describe this state in phase space.
+        The s-parametrized information about the state that describe this state in phase space.
+
+        Args:
+            s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
+            characteristic: whether the phase space is related to the characteristic or not.
         """
-        raise NotImplementedError
+        A_D_s_map, b_D_s_map, c_D_s_map = displacement_map_s_parametrized_Abc(s)
+
+        if isinstance(self, DM):
+            A_state, b_state, c_state = self.representation.ansatz.A, self.representation.ansatz.b, self.representation.ansatz.c
+        else:
+            new_self = self.dm()
+            A_state, b_state, c_state = new_self.representation.ansatz.A, new_self.representation.ansatz.b, new_self.representation.ansatz.c
+
+        for i in range(self.n_modes):
+            A_state, b_state, c_state = contract_two_Abc((A_state, b_state, c_state),(A_D_s_map, b_D_s_map, c_D_s_map), idz=[i, i+self.n_modes], idz_conj=[1, 3])
+        
+        if characteristic:
+            return Abc_to_cov_means_in_characteristic_picture(A_state, b_state, c_state)
+        else:
+            #Complex Fourier Transform herere
+            return True
 
     def visualize_2d(
         self,
