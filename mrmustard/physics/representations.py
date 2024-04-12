@@ -27,7 +27,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics import bargmann
-from mrmustard.physics.gaussian_integrals import contract_two_Abc, reorder_abc
+from mrmustard.physics.gaussian_integrals import contract_two_Abc, reorder_abc, complex_gaussian_integral
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
     Batch,
@@ -290,7 +290,7 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
