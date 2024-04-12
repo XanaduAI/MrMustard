@@ -449,40 +449,24 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def from_quadrature_Abc() -> Union[Matrix, Vector, Scalar]:
+def quadrature_kernel_Abc() -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
+    The ``(A, b, c)`` triple of the kernel :math:`\langle z|p \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
+    The kernel is related to the transformation on a single out_ket wire.
+
     Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
-    The indices of the final triple correspond to the variables :math:`(p, z^*)` of the map.
+    The indices of the triple correspond to the variables :math:`(p, z^*)` of the map.
 
     Returns:
-        The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
+        The ``(A, b, c)`` triple of the map between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
     """
     hbar = settings.HBAR
     A = math.block(
         [
-            [-1, 1j / math.sqrt(2 * hbar)],
-            [1j / math.sqrt(2 * hbar), 1],
+            [-1 / (2 * hbar), 1j * math.sqrt(2 / hbar)],
+            [1j * math.sqrt(2 / hbar), 1],
         ]
     )
     b = _vacuum_B_vector(2)
-    c = (1.0 + 0j) / (math.pi * hbar) ** 0.25
-    return A, b, c
-
-
-def to_quadrature_Abc() -> Union[Matrix, Vector, Scalar]:
-    r"""
-    The ``(A, b, c)`` triple of a single out_ket wire map from Bargmannrepresentation with ABC Ansatz form into quadrature  representation with ABC Ansatz.
-    Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
-    the indices of the final triple correspond to the variables :math:`(z^*, z, p)` of the map.
-
-    Returns:
-        The ``(A, b, c)`` triple of a single out_ket wire map from quadrature representation with ABC Ansatz form into Bargmann representation with ABC Ansatz.
-    """
-    hbar = settings.HBAR
-    A = math.block(
-        [[0, -0.5, 0], [-0.5, 1, -1j / math.sqrt(2 * hbar)], [0, -1j / math.sqrt(2 * hbar), -1]]
-    )
-    b = _vacuum_B_vector(3)
     c = (1.0 + 0j) / (math.pi * hbar) ** 0.25
     return A, b, c
