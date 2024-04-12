@@ -455,7 +455,9 @@ def quadrature_kernel_Abc() -> Union[Matrix, Vector, Scalar]:
     The kernel is related to the transformation on a single out_ket wire.
 
     Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
-    The indices of the triple correspond to the variables :math:`(p, z^*)` of the map.
+    The indices of the triple correspond to the variables :math:`(p, z^*)` of the kernel here and it is used to transform from quadrature representation in Bargmann.
+    If one wants to do the inverse transformation (from Bargmann to quadrature representation), the kernel will be the conjugate of this one:
+    that is to say, the triple will be conjugated in the value, as well as the variables of the indices :math:`(p, z)`.
 
     Returns:
         The ``(A, b, c)`` triple of the map between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
