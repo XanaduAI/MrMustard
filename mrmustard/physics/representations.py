@@ -26,8 +26,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.physics import bargmann
-from mrmustard.physics.gaussian_integrals import contract_two_Abc, reorder_abc, complex_gaussian_integral
+from mrmustard.physics.gaussian_integrals import (
+    contract_two_Abc,
+    reorder_abc,
+    complex_gaussian_integral,
+)
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
     Batch,
