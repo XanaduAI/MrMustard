@@ -14,12 +14,12 @@
 
 """Tests the Bargmann triples."""
 
-
 import numpy as np
 import pytest
 
 from mrmustard import math
 from mrmustard.physics import triples
+from mrmustard.physics.representations import Bargmann
 
 
 # pylint: disable = missing-function-docstring
@@ -152,7 +152,10 @@ class TestTriples:
         A1, b1, c1 = triples.squeezing_gate_Abc(0.1, 0.2)
         assert math.allclose(
             A1,
-            [[-0.09768127 - 1.98009738e-02j, 0.99502075], [0.99502075, 0.09768127 - 0.01980097j]],
+            [
+                [-0.09768127 - 1.98009738e-02j, 0.99502075],
+                [0.99502075, 0.09768127 - 0.01980097j],
+            ],
         )
         assert math.allclose(b1, np.zeros(2))
         assert math.allclose(c1, 0.9975072676192522)
@@ -172,7 +175,11 @@ class TestTriples:
 
         A3, b3, c3 = triples.squeezing_gate_Abc(0.1)
         assert math.allclose(
-            A3, [[-0.09966799 + 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]
+            A3,
+            [
+                [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
+                [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+            ],
         )
         assert math.allclose(b3, np.zeros(2))
         assert math.allclose(c3, 0.9975072676192522)
@@ -308,3 +315,9 @@ class TestTriples:
         assert math.allclose(A3, A3_correct[[0, 2, 1, 3], :][:, [0, 2, 1, 3]])
         assert math.allclose(b3, np.zeros(4))
         assert math.allclose(c3, 1)
+
+    @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])
+    def test_attenuator_kraus_Abc(self, eta):
+        B = Bargmann(*triples.attenuator_kraus_Abc(eta))
+        Att = Bargmann(*triples.attenuator_Abc(eta))
+        assert B[2] @ B[2] == Att
