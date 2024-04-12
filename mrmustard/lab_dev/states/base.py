@@ -299,7 +299,7 @@ class State(CircuitComponent):
                     idz=[i, i + self.n_modes],
                     idz_conj=[2, 3],
                 )
-            return A_state, b_state, c_state
+            return Abc_to_cov_means(A_state, b_state, c_state)
 
     def visualize_2d(
         self,
