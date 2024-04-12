@@ -150,7 +150,10 @@ def complex_gaussian_integral(
     return A_post, b_post, c_post
 
 
-def join_Abc(Abc1, Abc2):
+def join_Abc(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
 
