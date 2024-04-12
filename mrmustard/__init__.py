@@ -14,11 +14,11 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
-
 from rich import print
 
 from ._version import __version__
 from .utils.settings import *
+from .utils.filters import add_complex_warning_filter
 
 
 def version():
@@ -55,7 +55,7 @@ def about():
         TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable=import-outside-toplevel,consider-using-f-string
     import os
     import platform
     import sys
@@ -79,3 +79,7 @@ def about():
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
+
+
+# filter tensorflow cast warnings
+add_complex_warning_filter()

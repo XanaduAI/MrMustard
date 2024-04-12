@@ -1,4 +1,4 @@
-{{ fullname | replace("strawberryfields", "sf") | escape | underline}}
+{{ fullname | replace("mrmustard", "mm") | escape | underline}}
 
 .. automodule:: {{ fullname }}
 

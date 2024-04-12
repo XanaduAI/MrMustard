@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module contains the classes for the available ansatze.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -33,19 +37,21 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-__all__ = ["Ansatz", "PolyExpBase", "PolyExpAnsatz"]
+__all__ = ["Ansatz", "ArrayAnsatz", "PolyExpBase", "PolyExpAnsatz"]
 
 
 class Ansatz(ABC):
-    r"""An Ansatz is a function over a continuous and/or discrete domain.
-    It supports many mathematical operations such as addition, subtraction,
+    r"""
+    A function over a continuous and/or discrete domain.
+
+    An ansatz supports basic mathematical operations such as addition, subtraction,
     multiplication, division, negation, equality, etc.
 
-    Note that n-dimensional arrays are like functions defined over an integer lattice of points,
-    so this class also works for e.g. the Fock representation.
+    Note that ``n``-dimensional arrays are like functions defined over an integer lattice of points,
+    so this class also works for, e.g., the Fock representation.
 
-    This class is abstract. Concrete Ansatz classes will have to implement the
-    ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__`` and ``__eq__`` methods.
+    This class is abstract. Concrete ``Ansatz`` classes have to implement the
+    ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__``, and ``__eq__`` methods.
     """
 
     @abstractmethod
@@ -53,21 +59,18 @@ class Ansatz(ABC):
         r"""
         Negates this ansatz.
         """
-        ...
 
     @abstractmethod
     def __eq__(self, other: Ansatz) -> bool:
         r"""
         Whether this ansatz is equal to another ansatz.
         """
-        ...
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:
         r"""
         Sums this ansatz to another ansatz.
         """
-        ...
 
     def __sub__(self, other: Ansatz) -> Ansatz:
         r"""
@@ -83,21 +86,24 @@ class Ansatz(ABC):
         r"""
         Evaluates this ansatz at a given point in the domain.
         """
-        ...
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         r"""
         Divides this ansatz by another ansatz or by a scalar.
         """
-        ...
 
     @abstractmethod
     def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         r"""
         Multiplies this ansatz by another ansatz.
         """
-        ...
+
+    @abstractmethod
+    def __and__(self, other: Ansatz) -> Ansatz:
+        r"""
+        Tensor product of this ansatz with another ansatz.
+        """
 
     def __rmul__(self, other: Scalar) -> Ansatz:
         r"""
@@ -123,7 +129,7 @@ class PolyExpBase(Ansatz):
     functionality by implementing the ``__add__`` method, which concatenates the batch dimensions.
 
     As this can blow up the number of terms in the representation, it is recommended to
-    run the `simplify()` method after adding terms together, which will combine together
+    run the `simplify()` method after adding terms together, which combines together
     terms that have the same exponential part.
 
     Args:
@@ -162,6 +168,9 @@ class PolyExpBase(Ansatz):
 
     @property
     def degree(self) -> int:
+        r"""
+        The degree of this ansatz.
+        """
         if self.array.ndim == 1:
             return 0
         return self.array.shape[-1] - 1
@@ -193,7 +202,7 @@ class PolyExpBase(Ansatz):
 
     def simplify_v2(self) -> None:
         r"""
-        A different implementation that orders the batch dimension first.
+        A different implementation of ``simplify`` that orders the batch dimension first.
         """
         if self._simplified:
             return
@@ -233,6 +242,8 @@ class PolyExpBase(Ansatz):
 
 class PolyExpAnsatz(PolyExpBase):
     r"""
+    The ansatz of the Fock-Bargmann representation.
+
     Represents the ansatz function:
 
         :math:`F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)`
@@ -244,19 +255,24 @@ class PolyExpAnsatz(PolyExpBase):
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
 
+    .. code-block::
+
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array(1.0)
+
+        >>> F = PolyExpAnsatz(A, b, c)
+        >>> z = np.array([1.0, 2.0])
+
+        >>> # calculate the value of the function at ``z``
+        >>> val = F(z)
+
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
         c: The array of coefficients for the polynomial terms in the ansatz.
-
-    .. code-block::
-
-        A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
-        b = [np.array([1.0, 1.0])]
-        c = [np.array(1.0)]
-        F = PolyExpAnsatz(A, b, c)
-        z = np.array([1.0, 2.0])
-        print(F(z))  # prints the value of F at z
 
     """
 
@@ -264,12 +280,16 @@ class PolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor | Scalar] = [1.0],
+        c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
     ):
         self.name = name
+
         if A is None and b is None:
             raise ValueError("Please provide either A or b.")
+        A = math.astensor(A)
+        b = math.astensor(b)
+        c = math.astensor(c)
         dim = b[0].shape[-1] if A is None else A[0].shape[-1]
         A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
         b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
@@ -380,3 +400,133 @@ class PolyExpAnsatz(PolyExpBase):
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
         return self.__class__(As, bs, cs)
+
+
+class ArrayAnsatz(Ansatz):
+    r"""
+    The ansatz of the Fock-Bargmann representation.
+
+    Represents the ansatz as a multidimensional array.
+
+    Args:
+        array: A batched array.
+
+    .. code-block ::
+
+        >>> from mrmustard.physics.ansatze import ArrayAnsatz
+
+        >>> array = np.random.random((2, 4, 5))
+        >>> ansatz = ArrayAnsatz(array)
+    """
+
+    def __init__(self, array: Batch[Tensor]):
+        self.array = math.astensor(array)
+
+    def __neg__(self) -> ArrayAnsatz:
+        r"""
+        Negates the values in the array.
+        """
+        return self.__class__(array=-self.array)
+
+    def __eq__(self, other: Ansatz) -> bool:
+        r"""
+        Whether this ansatz's array is equal to another ansatz's array.
+
+        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+        """
+        try:
+            return np.allclose(self.array, other.array)
+        except Exception as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+
+    def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+        r"""
+        Adds the array of this ansatz and the array of another ansatz.
+
+        Args:
+            other: Another ansatz.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The addition of this ansatz and other.
+        """
+        try:
+            new_array = [a + b for a in self.array for b in other.array]
+            return self.__class__(array=math.astensor(new_array))
+        except Exception as e:
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+
+    def __call__(self, point: Any) -> Scalar:
+        r"""
+        Evaluates this ansatz at a given point in the domain.
+        """
+        raise AttributeError("Cannot plot ArrayAnsatz.")
+
+    def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+        r"""
+        Divides this ansatz by another ansatz.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The division of this ansatz and other.
+        """
+        if isinstance(other, ArrayAnsatz):
+            try:
+                new_array = [a / b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array / other)
+
+    def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+        r"""
+        Multiplies this ansatz by another ansatz.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            ValueError: If both of array don't have the same shape.
+
+        Returns:
+            ArrayAnsatz: The product of this ansatz and other.
+        """
+        if isinstance(other, ArrayAnsatz):
+            try:
+                new_array = [a * b for a in self.array for b in other.array]
+                return self.__class__(array=math.astensor(new_array))
+            except Exception as e:
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array * other)
+
+    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+        r"""Tensor product of this ansatz with another ansatz.
+
+        Args:
+            other: Another ansatz.
+
+        Returns:
+            The tensor product of this ansatz and other.
+            Batch size is the product of two batches.
+        """
+        new_array = [math.outer(a, b) for a in self.array for b in other.array]
+        return self.__class__(array=math.astensor(new_array))
+
+    @property
+    def conj(self):
+        r"""
+        The conjugate of this ansatz.
+        """
+        return self.__class__(math.conj(self.array))
