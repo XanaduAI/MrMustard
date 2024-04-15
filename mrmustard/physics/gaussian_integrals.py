@@ -218,7 +218,7 @@ def contract_two_Abc(
     Abc = join_Abc(Abc1, Abc2)
     if real:
         return real_gaussian_integral(Abc, idx1 + list(n + Abc1[0].shape[-1] for n in idx2))
-    else:
-        return complex_gaussian_integral(
-            Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
-        )
+
+    return complex_gaussian_integral(
+        Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
+    )
