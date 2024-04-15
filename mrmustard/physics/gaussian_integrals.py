@@ -198,7 +198,11 @@ def contract_two_Abc(
 ):
     r"""
     Returns the contraction of two ``(A,b,c)`` triples with given indices.
-
+    
+    Note that the indices must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
+    the corresponding complex variable with respect to your Abc triples.
+    For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
+    ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
     For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
     ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
 
