@@ -366,26 +366,11 @@ class D_sMap(Channel):
 
     .. details::
 
-        The :math:`N`-mode attenuator is defined as
-
-        .. math::
-            X = \text{cos}(\theta)I_{2N} \text{ , }
-            Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
-            d = O_{4N}\:,
-
-        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
-        :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
-
         Its ``(A,b,c)`` triple is given by 
 
         .. math::
-            A &= \begin{bmatrix}
-                    O_N & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N \\
-                    \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N & \text{diag}_N(1-\sqrt{\bar{\eta}})\\
-                    O_N & O_N & O_N & \text{diag}_N(\sqrt{\bar{\eta}})\\
-                    O_N & \text{diag}_N(1-\sqrt{\bar{\eta}}) & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N
-                \end{bmatrix} \\ \\
-            b &= O_{4N} \\ \\
+            A &= \\
+            b &= \\
             c &= 1\:.
     """
 
@@ -401,3 +386,32 @@ class D_sMap(Channel):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, n_modes))
+
+
+class CFMap(Channel):
+    r"""The Complex Fourier Transformation as a channel.
+    This will be used as an internal Channel for representation transformation.
+
+    Args:
+        num_modes: number of modes of this channel.
+
+    .. details::
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \\
+            b &= \\
+            c &= 1\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+    ):
+        super().__init__(modes=modes, name="CFMap")
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        return Bargmann(*triples.complex_fourier_transform_Abc(n_modes))

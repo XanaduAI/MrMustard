@@ -43,14 +43,11 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.physics.triples import (
-    displacement_map_s_parametrized_Abc,
-    complex_fourier_transform_Abc,
-)
 from mrmustard.physics.ansatze import (
     Abc_to_cov_and_mean,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
+from ..transformations.transformations import D_sMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -264,45 +261,15 @@ class State(CircuitComponent):
             s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
             characteristic: whether the phase space is related to the characteristic or not.
         """
-        A_D_s_map, b_D_s_map, c_D_s_map = displacement_map_s_parametrized_Abc(s)
-
-        if isinstance(self, DM):
-            A_state, b_state, c_state = (
-                self.representation.ansatz.A,
-                self.representation.ansatz.b,
-                self.representation.ansatz.c,
-            )
-        else:
-            new_self = self.dm()
-            A_state, b_state, c_state = (
-                new_self.representation.ansatz.A,
-                new_self.representation.ansatz.b,
-                new_self.representation.ansatz.c,
-            )
-
-        for i in range(self.n_modes):
-            A_state, b_state, c_state = contract_two_Abc(
-                (A_state, b_state, c_state),
-                (A_D_s_map, b_D_s_map, c_D_s_map),
-                idz=[i, i + self.n_modes],
-                idz_conj=[1, 3],
-            )
-
+        new_state = self >> D_sMap(self.modes, s=s)
         if characteristic:
-            return Abc_to_cov_mean_for_state_in_characteristic(A_state, b_state, c_state)
+            return Abc_to_cov_mean_for_state_in_characteristic(
+                new_state.representation.ansatz.A,
+                new_state.representation.ansatz.b,
+                new_state.representation.ansatz.c,
+            )
         else:
-            (
-                A_complex_fourier,
-                b_complex_fourier,
-                c_complex_fourier,
-            ) = complex_fourier_transform_Abc()
-            for i in range(self.n_modes):
-                A_state, b_state, c_state = contract_two_Abc(
-                    (A_state, b_state, c_state),
-                    (A_complex_fourier, b_complex_fourier, c_complex_fourier),
-                    idz=[i, i + self.n_modes],
-                    idz_conj=[2, 3],
-                )
+            new_state = new_state >> CFMap(self.modes)
             return Abc_to_cov_and_mean(A_state, b_state, c_state)
 
     def visualize_2d(
