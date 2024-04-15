@@ -624,6 +624,43 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
+    
+    def exp_val(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this state.
+
+        Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`dm`
+        is the density matrix of this state. The given ``operator`` is expected to have
+        unitary-like wires, that is, to have input-ket and output-ket wires only.
+
+        Args:
+            operator: A unitary-like circuit component.
+        
+        Raise:
+            ValueError: If ``operator`` is not a unitary-like component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_w = operator.wires
+
+        # check that observable is unitary-like
+        if op_w.bra:
+            msg = "Expected unitary-like observable, but found one with wires on the bra side."
+            raise ValueError(msg)
+        if not op_w.input.modes or op_w.input.modes != op_w.output.modes:
+            msg = "Expected unitary-like observable, but found one with input and output wires on"
+            msg += " different modes."
+            raise ValueError(msg)
+        
+        # check that the returned component is still a `DM`
+        if not op_w.modes.issubset(self.wires.modes):
+            msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
+            msg += f"found one defined for modes `{operator.modes}.`"
+        
+        comp = self @ operator
+        ret = (comp.representation.trace(comp.wires.ket.indices, comp.wires.bra.indices))
+        return ret.array if isinstance(ret, Fock) else ret.c
+
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -775,6 +812,19 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
+    
+    def exp_val(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this state.
+
+        This function is a wrapper around the ``exp_val`` method of ``DM``. In particular, it
+        uses the ``dm`` method of ``Ket`` to turn this state into a ``DM``, then it uses the
+        ``exp_val`` to calculate the expectation value.
+
+        Args:
+            operator: A unitary-like circuit component.
+        """
+        return self.dm().exp_val(operator)
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
