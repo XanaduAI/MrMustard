@@ -195,13 +195,10 @@ def contract_two_Abc(
     Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
     idx1: Sequence[int],
     idx2: Sequence[int],
-    real: bool,
 ):
     r"""
     Returns the contraction of two ``(A,b,c)`` triples with given indices.
 
-    Note that the indices of the complex_gaussian_integral (real = False) must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
-    the corresponding complex variable with respect to your Abc triples.
     For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
     ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
 
@@ -210,15 +207,11 @@ def contract_two_Abc(
         Abc2: the second ``(A,b,c)`` triple
         idx1: the indices of the first ``(A,b,c)`` triple to contract
         idx2: the indices of the second ``(A,b,c)`` triple to contract
-        real: the tag to indicate whether the contraction using real or complex gaussian integral
 
     Returns:
         The contracted ``(A,b,c)`` triple
     """
     Abc = join_Abc(Abc1, Abc2)
-    if real:
-        return real_gaussian_integral(Abc, idx1 + list(n + Abc1[0].shape[-1] for n in idx2))
-
     return complex_gaussian_integral(
         Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
     )

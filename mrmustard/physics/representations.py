@@ -444,7 +444,7 @@ class Bargmann(Representation):
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
-                Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o, real=False))
+                Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
