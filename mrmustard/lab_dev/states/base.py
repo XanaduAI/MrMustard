@@ -47,7 +47,7 @@ from mrmustard.physics.ansatze import (
     Abc_to_cov_and_mean,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
-from ..transformations.transformations import D_sMap
+from ..transformations.transformations import D_sMap, CFMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -270,7 +270,11 @@ class State(CircuitComponent):
             )
         else:
             new_state = new_state >> CFMap(self.modes)
-            return Abc_to_cov_and_mean(A_state, b_state, c_state)
+            return Abc_to_cov_and_mean(
+                new_state.representation.ansatz.A,
+                new_state.representation.ansatz.b,
+                new_state.representation.ansatz.c,
+            )
 
     def visualize_2d(
         self,
