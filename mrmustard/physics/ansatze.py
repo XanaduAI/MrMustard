@@ -530,3 +530,31 @@ class ArrayAnsatz(Ansatz):
         The conjugate of this ansatz.
         """
         return self.__class__(math.conj(self.array))
+
+
+def Abc_to_cov_and_mean(A: Matrix, b: Vector, c: Scalar) -> Union[Matrix, Vector, Scalar]:
+    r"""Function to transform for ABC Ansatz from quadratic form into the Gaussian form.
+
+    Quadratic form is defined :math:`coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
+    Gaussian form is defined :math:`c * exp(-x^T A x + x^T b)`.
+
+    """
+    Ainv = math.inv(A)
+    cov = -0.5 * Ainv
+    mean = 0.5 * math.matvec(Ainv, b)
+    coeff = c / math.exp(0.25 * math.sum(b.T, math.matvec(Ainv.T, b)))
+    return (coeff, cov, mean)
+
+
+def cov_and_mean_to_Abc(cov: Matrix, mean: Vector, coeff: Scalar) -> Union[Matrix, Vector, Scalar]:
+    r"""Function to transform for ABC Ansatz from Gaussian form into the quadratic form.
+
+    Quadratic form is defined :math:`coeffs * exp(-0.5*(x-means)^T cov^-1 (x-means))`.
+    Gaussian form is defined :math:`c * exp(-x^T A x + x^T b)`.
+
+    """
+    covinv = math.inv(cov)
+    A = -0.5 * covinv
+    b = -math.matvec(covinv, mean)
+    c = coeff * math.exp(0.5 * math.sum(mean.T * b))
+    return (A, b, c)
