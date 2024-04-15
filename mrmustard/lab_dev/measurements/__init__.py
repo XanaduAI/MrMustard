@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The lab module in development.
+"""
+The classes representing transformations in quantum circuits.
 """
 
-from .circuit_components import *
-from .circuits import *
-from .measurements import *
-from .states import *
-from .simulator import *
-from .transformations import *
-from .wires import Wires
+from .base import *
+from .detectors import *
