@@ -47,6 +47,10 @@ from mrmustard.physics.triples import (
     displacement_map_s_parametrized_Abc,
     complex_fourier_transform_Abc,
 )
+from mrmustard.physics.ansatze import (
+    Abc_to_cov_and_mean,
+    Abc_to_cov_mean_for_state_in_characteristic,
+)
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -285,7 +289,7 @@ class State(CircuitComponent):
             )
 
         if characteristic:
-            return Abc_to_cov_means_in_characteristic_picture(A_state, b_state, c_state)
+            return Abc_to_cov_mean_for_state_in_characteristic(A_state, b_state, c_state)
         else:
             (
                 A_complex_fourier,
@@ -299,7 +303,7 @@ class State(CircuitComponent):
                     idz=[i, i + self.n_modes],
                     idz_conj=[2, 3],
                 )
-            return Abc_to_cov_and_means(A_state, b_state, c_state)
+            return Abc_to_cov_and_mean(A_state, b_state, c_state)
 
     def visualize_2d(
         self,

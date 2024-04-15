@@ -558,3 +558,13 @@ def cov_and_mean_to_Abc(cov: Matrix, mean: Vector, coeff: Scalar) -> Union[Matri
     b = -math.matvec(covinv, mean)
     c = coeff * math.exp(0.5 * math.sum(mean.T * b))
     return (A, b, c)
+
+
+def Abc_to_cov_mean_for_state_in_characteristic(
+    A: Matrix, b: Vector, c: Scalar
+) -> Union[Matrix, Vector, Scalar]:
+    # TODO!
+    coeff = c
+    cov = 1
+    mean = 1
+    return coeff, cov, mean

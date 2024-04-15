@@ -459,33 +459,57 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
+# def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
+#     r"""
+#     The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized displacement map :math:`D(\gamma)`.
+#     Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
+#     the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
+
+#     Args:
+#         s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the "symmetric" ordering, which is symmetric under the exchange of creation and annihilation operators, :math:`s=-1` is the "normal" ordering, where all the creation operators are on the left and all the annihilation operators are on the right, and :math:`s=1` is the "anti-normal" ordering, which is the vice versa of the normal ordering. By using s-parametrized displacement map to generate the s-parametrized characteristic function :math:`\chi_s = Tr[\rho D_s]`, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, :math:`s=-1` is the Husimi Q distribution, and :math:`s=1` is the Glauber P distribution.
+
+#     Returns:
+#         The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
+#     """
+#     A = math.block(
+#         [
+#             [(s - 1) / 2 * math.Xmat(num_modes=1), -math.Zmat(num_modes=1)],
+#             [-math.Zmat(num_modes=1), math.Xmat(num_modes=1)],
+#         ]
+#     )
+#     A = A[[0, 2, 1, 3], :][
+#         :, [0, 2, 1, 3]
+#     ]  # Change the order of this map into the normal ordering as a single mode channel
+#     b = _vacuum_B_vector(4)
+#     c = 1.0 + 0j
+#     return A, b, c
+
+
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized displacement map :math:`D(\gamma)`.
+    The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map :math:`D(\gamma)`.
     Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
     the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
 
     Args:
         s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the "symmetric" ordering, which is symmetric under the exchange of creation and annihilation operators, :math:`s=-1` is the "normal" ordering, where all the creation operators are on the left and all the annihilation operators are on the right, and :math:`s=1` is the "anti-normal" ordering, which is the vice versa of the normal ordering. By using s-parametrized displacement map to generate the s-parametrized characteristic function :math:`\chi_s = Tr[\rho D_s]`, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, :math:`s=-1` is the Husimi Q distribution, and :math:`s=1` is the Glauber P distribution.
+        n_modes: the number of modes for this map.
 
     Returns:
-        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
+        The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
     A = math.block(
         [
-            [(s - 1) / 2 * math.Xmat(num_modes=1), -math.Zmat(num_modes=1)],
-            [-math.Zmat(num_modes=1), math.Xmat(num_modes=1)],
+            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
+            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
         ]
     )
-    A = A[[0, 2, 1, 3], :][
-        :, [0, 2, 1, 3]
-    ]  # Change the order of this map into the normal ordering as a single mode channel
-    b = _vacuum_B_vector(4)
+    b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
 
 
-def complex_fourier_transform_Abc() -> Union[Matrix, Vector, Scalar]:
+def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex fourier transform between two pairs of complex variables.
 
@@ -493,15 +517,19 @@ def complex_fourier_transform_Abc() -> Union[Matrix, Vector, Scalar]:
     :math:
         \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
 
-    The indices of this triple correspond to the variables :math:`(y^*, y, z^*, z)`.
+    The indices of this triple correspond to the variables :math:`(y^*, z^*, y, z)`.
+
+    Args:
+        n_modes: the number of modes for this map.
 
     Returns:
         The ``(A, b, c)`` triple of the complex fourier transform.
     """
-    O = math.zeros((2, 2))
-    Z = math.block([[0, 1], [-1, 0]])
-    A = math.block([[O, -Z], [Z, O]])
-    b = _vacuum_B_vector(4)
+    On = math.zeros((n_modes, n_modes))
+    O2n = math.zeros((2 * n_modes, 2 * n_modes))
+    Z = math.block([[On, math.eye(n_modes)], [-math.eye(n_modes), On]])
+    A = math.block([[O2n, -Z], [Z, O2n]])
+    b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
 

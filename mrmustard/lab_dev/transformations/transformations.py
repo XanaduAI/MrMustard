@@ -354,3 +354,50 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
+
+
+class D_sMap(Channel):
+    r"""The s-parametrized Dgate as a channel.
+    This will be used as an internal Channel for representation transformation.
+
+    Args:
+        num_modes: number of modes of this channel.
+        s: s-parameter of this channel.
+
+    .. details::
+
+        The :math:`N`-mode attenuator is defined as
+
+        .. math::
+            X = \text{cos}(\theta)I_{2N} \text{ , }
+            Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
+            d = O_{4N}\:,
+
+        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
+        :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \begin{bmatrix}
+                    O_N & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N \\
+                    \text{diag}_N(\sqrt{\bar{\eta}}) & O_N & O_N & \text{diag}_N(1-\sqrt{\bar{\eta}})\\
+                    O_N & O_N & O_N & \text{diag}_N(\sqrt{\bar{\eta}})\\
+                    O_N & \text{diag}_N(1-\sqrt{\bar{\eta}}) & \text{diag}_N(\sqrt{\bar{\eta}}) & O_N
+                \end{bmatrix} \\ \\
+            b &= O_{4N} \\ \\
+            c &= 1\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        s: float,
+    ):
+        super().__init__(modes=modes, name="DsMap")
+        self.s = s
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, n_modes))
