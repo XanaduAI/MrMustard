@@ -6,3 +6,4 @@ Calculations on Bargmann objects
 
     utils/triples
     utils/bargmann_calculations
+    utils/gaussian_integral
