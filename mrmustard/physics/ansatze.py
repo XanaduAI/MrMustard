@@ -563,8 +563,18 @@ def cov_and_mean_to_Abc(cov: Matrix, mean: Vector, coeff: Scalar) -> Union[Matri
 def Abc_to_cov_mean_for_state_in_characteristic(
     A: Matrix, b: Vector, c: Scalar
 ) -> Union[Matrix, Vector, Scalar]:
-    # TODO!
+    r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
+
+    Args:
+        A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+
+    Returns:
+        The coefficient, covariance matric and mean vector of the state in phase space.
+    """
+    num_modes = A.shape[-1] // 2
+    Omega = math.J(num_modes)
+    W = math.rotmat(num_modes)
     coeff = c
-    cov = 1
-    mean = 1
+    cov = -Omega @ W @ A @ W.T @ Omega.T
+    mean = 1j * math.mathvec(Omega @ W, b)
     return coeff, cov, mean

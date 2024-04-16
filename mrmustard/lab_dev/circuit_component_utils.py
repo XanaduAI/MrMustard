@@ -1,4 +1,4 @@
-#Copyright 2024 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,7 +44,13 @@ class DsMap(CircuitComponent):
         modes: Sequence[int],
         s: float,
     ):
-        super().__init__("DsMap", modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes)
+        super().__init__(
+            "DsMap",
+            modes_out_bra=modes,
+            modes_in_bra=modes,
+            modes_out_ket=modes,
+            modes_in_ket=modes,
+        )
         self.s = s
 
     @property
@@ -64,7 +70,13 @@ class CftMap(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
-        super().__init__("CftMap", modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes)
+        super().__init__(
+            "CftMap",
+            modes_out_bra=modes,
+            modes_in_bra=modes,
+            modes_out_ket=modes,
+            modes_in_ket=modes,
+        )
 
     @property
     def representation(self) -> Bargmann:
