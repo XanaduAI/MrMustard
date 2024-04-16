@@ -47,7 +47,7 @@ from mrmustard.physics.ansatze import (
     Abc_to_cov_and_mean,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
-from ..transformations.transformations import DsMap, CftMap
+from ..circuit_components_utils import DsMap, CftMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
