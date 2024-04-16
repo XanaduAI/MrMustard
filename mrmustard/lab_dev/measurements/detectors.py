@@ -58,5 +58,6 @@ class PNR(Detector):
 
     @property
     def representation(self) -> Fock:
-        array = math.concat([[s for s in fock_state(n, self.cutoff)] for n in range(self.cutoff + 1)], 2)
-        return Fock(array, batched=True)
+        array = [math.outer((f := fock_state(n, self.cutoff)), f) for n in range(self.cutoff + 1)]
+        # array = math.concat([[s for s in fock_state(n, self.cutoff)] for n in range(self.cutoff + 1)], 2)
+        return Fock(math.concat(array, 2), batched=True)

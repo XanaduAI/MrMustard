@@ -42,7 +42,7 @@ class Detector(Measurement):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "D" + "".join(str(m) for m in modes), modes_in_ket=modes
+            name or "D" + "".join(str(m) for m in modes), modes_in_bra=modes, modes_in_ket=modes
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

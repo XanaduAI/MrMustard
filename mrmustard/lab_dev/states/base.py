@@ -624,6 +624,20 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
+    
+    def sample(self) -> DM:
+        r"""
+        Samples.
+        """
+        import numpy as np
+        
+        probs = []
+        for rep in self.representation.array:
+            probs.append(DM._from_attributes("", Fock(rep), self.wires).probability)
+        idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
+
+        return DM._from_attributes("", Fock(self.representation.array[idx]), self.wires)
+
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -776,6 +790,7 @@ class Ket(State):
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
 
+
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
         Traces out all the modes, except those in the given ``modes``.
@@ -807,11 +822,12 @@ class Ket(State):
         """
         ret = super().__rshift__(other)
 
-        if not ret.wires.input:
-            if not ret.wires.bra:
-                return Ket._from_attributes("", ret.representation, ret.wires)
-            if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes("", ret.representation, ret.wires)
+        if ret.wires:
+            if not ret.wires.input:
+                if not ret.wires.bra:
+                    return Ket._from_attributes("", ret.representation, ret.wires)
+                if ret.wires.bra.modes == ret.wires.ket.modes:
+                    return DM._from_attributes("", ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
