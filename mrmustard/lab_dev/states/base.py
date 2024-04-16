@@ -624,20 +624,19 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
-    
+
     def sample(self) -> DM:
         r"""
         Samples.
         """
         import numpy as np
-        
+
         probs = []
         for rep in self.representation.array:
             probs.append(DM._from_attributes("", Fock(rep), self.wires).probability)
         idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
 
         return DM._from_attributes("", Fock(self.representation.array[idx]), self.wires)
-
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -789,7 +788,6 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
-
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
