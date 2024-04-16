@@ -34,6 +34,24 @@ class TraceOut(CircuitComponent):
     r"""
     A circuit component to perform trace-out operations.
 
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import *
+        >>> import numpy as np
+        
+        >>> # initialize a multi-mode state
+        >>> state = Coherent([0, 1, 2], x=1)
+
+        >>> # trace out some of the modes
+        >>> assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
+        >>> assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+
+        >>> # use the trace out to estimate expectation values of operators
+        >>> op = Dgate([0], x=1)
+        >>> expectation = ((state.dm() @ op) >> TraceOut([0, 1, 2])).representation.c
+
+        >>> assert np.allclose(expectation, state.expectation(op))
+
     Args:
         modes: The modes to trace out.
     """
