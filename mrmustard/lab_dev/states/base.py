@@ -47,7 +47,7 @@ from mrmustard.physics.ansatze import (
     Abc_to_cov_and_mean,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
-from ..transformations.transformations import D_sMap, CFMap
+from ..transformations.transformations import DsMap, CftMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -261,20 +261,20 @@ class State(CircuitComponent):
             s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
             characteristic: whether the phase space is related to the characteristic or not.
         """
-        new_state = self >> D_sMap(self.modes, s=s)
+        new_state = self >> DsMap(self.modes, s=s)
         if characteristic:
             return Abc_to_cov_mean_for_state_in_characteristic(
                 new_state.representation.ansatz.A,
                 new_state.representation.ansatz.b,
                 new_state.representation.ansatz.c,
             )
-        else:
-            new_state = new_state >> CFMap(self.modes)
-            return Abc_to_cov_and_mean(
-                new_state.representation.ansatz.A,
-                new_state.representation.ansatz.b,
-                new_state.representation.ansatz.c,
-            )
+
+        new_state = new_state >> CftMap(self.modes)
+        return Abc_to_cov_and_mean(
+            new_state.representation.ansatz.A,
+            new_state.representation.ansatz.b,
+            new_state.representation.ansatz.c,
+        )
 
     def visualize_2d(
         self,
