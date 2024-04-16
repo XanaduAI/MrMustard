@@ -18,8 +18,10 @@ This module contains the base classes for the available measurements.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Sequence
 
+from mrmustard.physics.representations import Fock
+from ..states import Ket
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Measurement", "Detector"]
@@ -38,25 +40,32 @@ class Detector(Measurement):
     Arguments:
         name: The name of this detector.
         modes: The modes that this detector acts on.
+        meas_op: A sequence of ket-like circuit components representing the set of operators
+            for this measurement.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        modes: tuple[int, ...] = (),
+        meas_op: Optional[Sequence[Ket]] = None,
+    ):
         super().__init__(
             name or "D" + "".join(str(m) for m in modes), modes_in_bra=modes, modes_in_ket=modes
         )
+        self._meas_op = meas_op
+        self._representation = None
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
+    @property
+    def meas_op(self):
+        return self._meas_op
 
-        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
-        ``Channel``, and a ``CircuitComponent`` otherwise.
-        """
-        ret = super().__rshift__(other)
-
-        # add logic to handle ret type
-        return ret
+    @property
+    def representation(self):
+        if not self._representation:
+            array = [k.representation.array for k in self.meas_op]
+            self._representation = Fock(array, True).outer(Fock(array, True))
+        return self._representation
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Detector")

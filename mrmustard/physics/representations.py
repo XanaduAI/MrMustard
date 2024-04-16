@@ -68,6 +68,16 @@ class Representation(ABC):
         Returns a representation from an ansatz.
         """
 
+    @abstractmethod
+    def outer(self, other: Bargmann):
+        r"""
+        The outer product for representations.
+
+        Consider two batched representations `R1` and `R2` with ``N`` batches. The outer product
+        returns a representation with ``N`` batches, where the `i`-th batch is equal to the product of
+        between the `i`-th batch in `R1` and the `i`-th batch in `R2`.
+        """
+
     def __eq__(self, other: Representation) -> bool:
         r"""
         Whether this representation is equal to another.
@@ -271,6 +281,12 @@ class Bargmann(Representation):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
+
+    def outer(self, other: Bargmann):
+        if self.A.shape != other.A.shape:
+            msg = f"Cannot take the outer product of representations with a different number of"
+            msg = " batches"
+            raise ValueError(msg)
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""
@@ -641,6 +657,18 @@ class Fock(Representation):
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
         trace = math.trace(new_array)
         return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
+
+    def outer(self, other: Bargmann):
+        if self.array.shape[0] != other.array.shape[0]:
+            msg = f"Cannot take the outer product of representations with a different number of"
+            msg = " batches"
+            raise ValueError(msg)
+        array = [math.outer(a, b) for a, b in zip(self.array, other.array)]
+
+        shape = [s for s in array[0].shape if s != 1]
+        array = [a.reshape(shape) for a in array]
+
+        return Fock(array, batched=True)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""
