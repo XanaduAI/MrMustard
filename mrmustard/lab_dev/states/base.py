@@ -625,7 +625,7 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
-    
+
     def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator calculated over this state.
@@ -636,7 +636,7 @@ class DM(State):
 
         Args:
             operator: A unitary-like circuit component.
-        
+
         Raise:
             ValueError: If ``operator`` is not a unitary-like component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -652,17 +652,16 @@ class DM(State):
             msg = "Expected unitary-like observable, but found one with input and output wires on"
             msg += " different modes."
             raise ValueError(msg)
-        
+
         # check that the returned component is still a `DM`
         if not op_w.modes.issubset(self.wires.modes):
             msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
             msg += f"found one defined for modes `{operator.modes}.`"
             raise ValueError(msg)
-        
+
         result = (self @ operator) >> TraceOut(self.modes)
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
-
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -814,7 +813,7 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
-    
+
     def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator calculated over this state.
@@ -826,7 +825,7 @@ class Ket(State):
 
         Args:
             operator: A unitary-like circuit component.
-        
+
         Raise:
             ValueError: If ``operator`` is not a unitary-like component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -842,7 +841,7 @@ class Ket(State):
             msg = "Expected unitary-like observable, but found one with input and output wires on"
             msg += " different modes."
             raise ValueError(msg)
-        
+
         # check that the returned component is still a `DM`
         if not op_w.modes.issubset(self.wires.modes):
             msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "

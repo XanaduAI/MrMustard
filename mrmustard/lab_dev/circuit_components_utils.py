@@ -34,11 +34,14 @@ class TraceOut(CircuitComponent):
     r"""
     A circuit component to perform trace-out operations.
 
+    It has input wires on both the ket and bra sides, but no output wires. Its representation is
+    the same as that of the identity channel.
+
     .. code-block::
 
         >>> from mrmustard.lab_dev import *
         >>> import numpy as np
-        
+
         >>> # initialize a multi-mode state
         >>> state = Coherent([0, 1, 2], x=1)
 
