@@ -28,6 +28,7 @@ from mrmustard.physics.fock import fock_state
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc, thermal_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,
@@ -153,6 +154,22 @@ class TestKet:
         assert dm.name == ket.name
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
+
+    def test_expectation(self):
+        ket = Coherent([0, 1], x=1, y=[2, 3])
+        dm = ket.dm()
+
+        op0 = Dgate([1], x=0.1)
+        op1 = Dgate([0], x=0.2)
+        op01 = Dgate([0, 1], x=[0.3, 0.4])
+
+        res0 = ((dm @ op0) >> TraceOut(dm.modes)).representation.c
+        res1 = ((dm @ op1) >> TraceOut(dm.modes)).representation.c
+        res01 = ((dm @ op01) >> TraceOut(dm.modes)).representation.c
+        
+        assert math.allclose(ket.expectation(op0), res0) 
+        assert math.allclose(ket.expectation(op1), res1) 
+        assert math.allclose(ket.expectation(op01), res01) 
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
