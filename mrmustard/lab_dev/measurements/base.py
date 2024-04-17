@@ -85,7 +85,7 @@ class Detector(Measurement):
         >>> d1 = Dgate([0], x=1) >> Detector("my_pnr", [0], meas_op)
 
         >>> # a detector with displaced measurement operators
-        >>> displaced_meas_op = [m >> Dgate([0], x=1).dual for n in range(5)]
+        >>> displaced_meas_op = [op >> Dgate([0], x=1).dual for op in meas_op]
         >>> d2 = Detector("my__transformed_pnr", [0], displaced_meas_op)
 
         >>> # the two components are identical
