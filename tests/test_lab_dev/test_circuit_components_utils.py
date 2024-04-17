@@ -55,7 +55,7 @@ class TestDsMap:
         assert math.allclose(rep2.b[0], b_correct)
         assert math.allclose(rep2.c[0], c_correct)
 
-    def test_dsmap_on_a_state(self):
+    def test_dsmap_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.4, 0.6])
@@ -71,6 +71,30 @@ class TestDsMap:
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
         A2, b2, c2 = contract_two_Abc(
             state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1], idx2=[1, 3]
+        )
+
+        assert math.allclose(A1[0], A2)
+        assert math.allclose(b1[0], b2)
+        assert math.allclose(c1[0], c2)
+
+        # The init state cov and means comes from the random state 'state = Gaussian(2) >> Dgate([0.2], [0.3])'
+        state_cov = np.array([[0.77969414, 0.10437996, 0.72706741, 0.29121535],
+        [0.10437996, 0.22846619, 0.1211067 , 0.45983868],
+        [0.72706741, 0.1211067 , 1.02215481, 0.16216756],
+        [0.29121535, 0.45983868, 0.16216756, 2.10006   ]])
+        state_means = np.array([0.28284271, 0.        , 0.42426407, 0.        ])
+        A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
+        state = DM.from_bargmann(modes=[0,1], triple=(A, b, c))
+        state_bargmann_triple = (A, b, c)
+
+        # get new triple by right shift
+        state_after = state >> DsMap(modes=[0,1], s=0)
+        A1, b1, c1 = state_after.bargmann_triple
+
+        # get new triple by contraction
+        Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
+        A2, b2, c2 = contract_two_Abc(
+            state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1, 2, 3], idx2=[2,3,6,7]
         )
 
         assert math.allclose(A1[0], A2)

@@ -24,7 +24,7 @@ from typing import Any, Union, Optional
 
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -572,9 +572,9 @@ def Abc_to_cov_mean_for_state_in_characteristic(
         The coefficient, covariance matric and mean vector of the state in phase space.
     """
     num_modes = A.shape[-1] // 2
-    Omega = math.J(num_modes)
-    W = math.rotmat(num_modes)
+    Omega = math.J(num_modes).T
+    W = math.conj(math.rotmat(num_modes)).T
     coeff = c
-    cov = -Omega @ W @ A @ W.T @ Omega.T
-    mean = 1j * math.matvec(Omega @ W, b)
+    cov = -Omega @ W @ A @ W.T @ Omega.T * settings.HBAR
+    mean = 1j * math.matvec(Omega @ W, b) * math.sqrt(settings.HBAR)
     return coeff, cov, mean

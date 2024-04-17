@@ -481,6 +481,12 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
             [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
         ]
     )
+    if n_modes == 1:
+        orderlist = [0,3,1,2]
+    elif n_modes == 2:
+        orderlist = [0,4,3,7,1,5,2,6]
+
+    A = A[orderlist, :][ :, orderlist]
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
