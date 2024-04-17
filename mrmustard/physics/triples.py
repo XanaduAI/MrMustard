@@ -357,7 +357,9 @@ def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     I_n = math.astensor(
-        math.asnumpy(math.diag([1.0 + 0j for _ in range(n_modes)])).reshape((n_modes, n_modes))
+        math.asnumpy(math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)]))).reshape(
+            (n_modes, n_modes)
+        )
     )
 
     A = math.block([[O_n, I_n], [I_n, O_n]])
