@@ -298,7 +298,7 @@ class TestDM:
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert state2.to_fock_component(20).probability == 1
+        assert math.allclose(state2.to_fock_component(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
