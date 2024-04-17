@@ -16,6 +16,7 @@
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
+import numpy as np
 import pytest
 
 from mrmustard import settings
@@ -44,8 +45,16 @@ class TestTraceOut:
 
     def test_trace_out_bargmann_states(self):
         state = Coherent([0, 1, 2], x=1)
+
         assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+
+        no_state = state >> TraceOut([0, 1, 2])
+        assert no_state.modes == []
+        assert no_state.wires == Wires()
+        assert np.allclose(no_state.representation.A, [])
+        assert np.allclose(no_state.representation.b, [])
+        assert np.allclose(no_state.representation.c, 1)
 
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
@@ -53,5 +62,10 @@ class TestTraceOut:
         state = Coherent([0, 1, 2], x=1).to_fock_component()
         assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock_component().dm()
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock_component().dm()
+
+        no_state = state >> TraceOut([0, 1, 2])
+        assert no_state.modes == []
+        assert no_state.wires == Wires()
+        assert np.allclose(no_state.representation.array, [])
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0

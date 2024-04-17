@@ -27,6 +27,8 @@ import tensorflow as tf
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
+tf.experimental.numpy.experimental_enable_numpy_behavior()
+
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -289,7 +291,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.math.pow(x, y)
 
     def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
-        tf.experimental.numpy.experimental_enable_numpy_behavior()
         return tf.experimental.numpy.kron(tensor1, tensor2)
 
     def prod(self, x: tf.Tensor, axis: Union[None, int]):
