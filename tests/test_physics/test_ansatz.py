@@ -20,7 +20,11 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz, Abc_to_cov_mean_for_state_in_characteristic
+from mrmustard.physics.ansatze import (
+    PolyExpAnsatz,
+    ArrayAnsatz,
+    Abc_to_cov_mean_for_state_in_characteristic,
+)
 from ..random import Abc_triple
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
@@ -295,23 +299,44 @@ class TestArrayAnsatz:
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> DsMap(modes=[0], s=0)
         A1, b1, c1 = state_after.bargmann_triple
-        new_state_coeff, new_state_cov, new_state_means = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
+        (
+            new_state_coeff,
+            new_state_cov,
+            new_state_means,
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
         assert math.allclose(state_cov, new_state_cov)
         assert math.allclose(state_means, new_state_means)
         assert math.allclose(1.0, new_state_coeff)
 
-        state_cov = np.block([[np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]]),np.zeros((2,2))],[np.zeros((2,2)),np.eye(2)/settings.HBAR]])
+        state_cov = np.array(
+            [
+                [1.00918303, -0.33243548, 0.15202393, -0.07540124],
+                [-0.33243548, 1.2203162, -0.03961978, 0.30853472],
+                [0.15202393, -0.03961978, 1.11158673, 0.28786279],
+                [-0.07540124, 0.30853472, 0.28786279, 0.97833402],
+            ]
+        )
         state_means = np.array([0.4, 0.6, 0.0, 0.0])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
-        state = DM.from_bargmann(modes=[0,1], triple=(A, b, c))
-        state_bargmann_triple = (A, b, c)
+        state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
-        # get new triple by right shift
-        state_after = state >> DsMap(modes=[0,1], s=0)
+        state_after = state >> DsMap(modes=[0, 1], s=0)
         A1, b1, c1 = state_after.bargmann_triple
-        new_state_coeff1, new_state_cov1, new_state_means1 = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
+        (
+            new_state_coeff1,
+            new_state_cov1,
+            new_state_means1,
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
 
         A22, b22, c22 = (state >> DsMap([0], 0) >> DsMap([1], 0)).bargmann_triple
-        new_state_coeff22, new_state_cov22, new_state_means22 = Abc_to_cov_mean_for_state_in_characteristic(A22[0], b22[0], c22[0])
-        assert math.allclose(new_state_coeff22, state_cov)
-        assert math.allclose(new_state_coeff1, state_cov)
+        (
+            new_state_coeff22,
+            new_state_cov22,
+            new_state_means22,
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A22[0], b22[0], c22[0])
+        assert math.allclose(new_state_cov22, state_cov)
+        assert math.allclose(new_state_cov1, state_cov)
+        assert math.allclose(new_state_means1, state_means)
+        assert math.allclose(new_state_means22, state_means)
+        assert math.allclose(new_state_coeff1, 1.0)
+        assert math.allclose(new_state_coeff22, 1.0)
