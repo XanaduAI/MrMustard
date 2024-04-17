@@ -8,6 +8,7 @@ mrmustard.lab_dev
     lab_dev/circuit_components
     lab_dev/states
     lab_dev/transformations
+    lab_dev/measurements
     lab_dev/circuits
     lab_dev/simulator
 
