@@ -21,7 +21,7 @@ import os
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.fock import fock_state
@@ -41,6 +41,9 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
+
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
 class TestKet:
@@ -155,7 +158,7 @@ class TestKet:
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
 
-    def test_expectation(self):
+    def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
         dm = ket.dm()
 
@@ -169,7 +172,44 @@ class TestKet:
         
         assert math.allclose(ket.expectation(op0), res0) 
         assert math.allclose(ket.expectation(op1), res1) 
-        assert math.allclose(ket.expectation(op01), res01) 
+        assert math.allclose(ket.expectation(op01), res01)
+
+    # def test_expectation_fock(self):
+    #     settings.AUTOCUTOFF_MAX_CUTOFF = 10
+
+    #     ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+    #     dm = ket.dm()
+
+    #     op0 = Dgate([1], x=0.1)
+    #     op1 = Dgate([0], x=0.2)
+    #     op01 = Dgate([0, 1], x=[0.3, 0.4])
+
+    #     res0 = ((dm @ op0) >> TraceOut(dm.modes)).representation.array
+    #     res1 = ((dm @ op1) >> TraceOut(dm.modes)).representation.array
+    #     res01 = ((dm @ op01) >> TraceOut(dm.modes)).representation.array
+        
+    #     assert math.allclose(ket.expectation(op0), res0) 
+    #     assert math.allclose(ket.expectation(op1), res1) 
+    #     assert math.allclose(ket.expectation(op01), res01)
+
+    #     settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
+
+    def test_expectation_error(self):
+        ket = Coherent([0, 1], x=1, y=[2, 3])
+
+        op1 = Attenuator([0])
+        with pytest.raises(ValueError, match="wires on the bra side"):
+            ket.expectation(op1)
+
+        op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
+        with pytest.raises(ValueError, match="different modes"):
+            ket.expectation(op2)
+
+        op3 = Dgate([2])
+        with pytest.raises(ValueError, match="Expected an observable defined for modes"):
+            ket.expectation(op3)
+
+
 
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
