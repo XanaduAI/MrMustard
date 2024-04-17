@@ -1,12 +1,19 @@
 # Current develop
 
 ### New features
-  
+* Added two new internal CircuitComponent ``DsMap`` and `CftMap` to convert the representations. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Added the function `phase_space(s, characteristic)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
 ### Breaking changes
 
 ### Improvements
 
 ### Bug fixes
+* Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 ### Documentation
 
