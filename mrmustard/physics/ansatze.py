@@ -576,5 +576,5 @@ def Abc_to_cov_mean_for_state_in_characteristic(
     W = math.rotmat(num_modes)
     coeff = c
     cov = -Omega @ W @ A @ W.T @ Omega.T
-    mean = 1j * math.mathvec(Omega @ W, b)
+    mean = 1j * math.matvec(Omega @ W, b)
     return coeff, cov, mean
