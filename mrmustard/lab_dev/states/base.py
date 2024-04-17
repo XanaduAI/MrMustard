@@ -847,7 +847,7 @@ class Ket(State):
             msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
             msg += f"found one defined for modes `{operator.modes}.`"
             raise ValueError(msg)
-        
+
         result = (self @ operator @ self.dual).representation
         return result.array if isinstance(result, Fock) else result.c
 

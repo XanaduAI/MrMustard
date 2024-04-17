@@ -345,6 +345,30 @@ def beamsplitter_gate_Abc(
     return A, b, c
 
 
+def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of identity gates.
+
+    Args:
+        n_modes: The number of modes.
+
+    Returns:
+        The ``(A, b, c)`` triple of the identities.
+    """
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    I_n = (
+        math.diag(math.astensor([1.0 + 0j for _ in range(n_modes)]))
+        .reshape((n_modes, n_modes))
+        .reshape((n_modes, n_modes))
+    )
+
+    A = math.block([[O_n, I_n], [I_n, O_n]])
+    b = _vacuum_B_vector(n_modes * 2)
+    c = 1.0 + 0j
+
+    return A, b, c
+
+
 # ~~~~~~~~~~
 #  Channels
 # ~~~~~~~~~~
@@ -433,38 +457,6 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
 
     b = _vacuum_B_vector(n_modes * 4)
     c = np.prod(1 / g)
-
-    return A, b, c
-
-
-def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of identity channels
-
-    Args:
-        n_modes: The number of modes.
-
-    Returns:
-        The ``(A, b, c)`` triple of the Fock damping channels.
-    """
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    I_n = (
-        math.diag(math.astensor([1.0 + 0j for _ in range(n_modes)]))
-        .reshape((n_modes, n_modes))
-        .reshape((n_modes, n_modes))
-    )
-
-    A = math.block(
-        [
-            [O_n, I_n, O_n, O_n],
-            [I_n, O_n, O_n, O_n],
-            [O_n, O_n, O_n, I_n],
-            [O_n, O_n, I_n, O_n],
-        ]
-    )
-
-    b = _vacuum_B_vector(n_modes * 4)
-    c = 1.0 + 0j
 
     return A, b, c
 

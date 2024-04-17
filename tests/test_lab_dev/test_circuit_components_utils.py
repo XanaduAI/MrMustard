@@ -18,12 +18,15 @@
 
 import pytest
 
+from mrmustard import settings
 from mrmustard.physics.triples import identity_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import Coherent
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
+
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
 class TestTraceOut:
@@ -39,6 +42,16 @@ class TestTraceOut:
         assert tr.wires == Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
         assert tr.representation == Bargmann(*identity_Abc(len(modes)))
 
-    def test_trace_out_states(self):
-        assert Coherent([0, 1, 2], x=1) >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
-        assert Coherent([0, 1, 2], x=1) >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+    def test_trace_out_bargmann_states(self):
+        state = Coherent([0, 1, 2], x=1)
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+
+    def test_trace_out_fock_states(self):
+        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+
+        state = Coherent([0, 1, 2], x=1).to_fock_component()
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock_component().dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock_component().dm()
+
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
