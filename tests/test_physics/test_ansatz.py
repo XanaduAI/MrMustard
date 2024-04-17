@@ -19,16 +19,16 @@
 import numpy as np
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.physics.ansatze import (
     PolyExpAnsatz,
     ArrayAnsatz,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
-from ..random import Abc_triple
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.lab_dev.circuit_components_utils import DsMap
+from ..random import Abc_triple
 
 
 class TestPolyExpAnsatz:
@@ -295,7 +295,7 @@ class TestArrayAnsatz:
     def test_Abc_to_cov_mean_for_state_in_characteristic(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
-        state_means = np.array([0.28284271, 0.42426407])
+        state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> DsMap(modes=[0], s=0)
         A1, b1, c1 = state_after.bargmann_triple

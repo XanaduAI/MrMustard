@@ -263,18 +263,24 @@ class State(CircuitComponent):
         """
         new_state = self >> DsMap(self.modes, s=s)
         if characteristic:
-            return Abc_to_cov_mean_for_state_in_characteristic(
-                new_state.representation.ansatz.A,
-                new_state.representation.ansatz.b,
-                new_state.representation.ansatz.c,
-            )
+            return [
+                Abc_to_cov_mean_for_state_in_characteristic(
+                    new_state.representation.ansatz.A[i],
+                    new_state.representation.ansatz.b[i],
+                    new_state.representation.ansatz.c[i],
+                )
+                for i in np.arange(new_state.representation.ansatz.A.shape[0])
+            ]
 
         new_state = new_state >> CftMap(self.modes)
-        return Abc_to_cov_and_mean(
-            new_state.representation.ansatz.A,
-            new_state.representation.ansatz.b,
-            new_state.representation.ansatz.c,
-        )
+        return [
+            Abc_to_cov_and_mean(
+                new_state.representation.ansatz.A[i],
+                new_state.representation.ansatz.b[i],
+                new_state.representation.ansatz.c[i],
+            )
+            for i in np.arange(new_state.representation.ansatz.A.shape[0])
+        ]
 
     def visualize_2d(
         self,
