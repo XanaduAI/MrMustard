@@ -18,15 +18,11 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional
 
-from mrmustard import math, settings
+from mrmustard import settings
 from .base import Detector
 from ..states import Number
-from ...physics.representations import Fock
-from ...physics import triples
-from ...physics.fock import fock_state
-from ..utils import make_parameter, reshape_params
 
 __all__ = ["PNR"]
 
@@ -35,23 +31,19 @@ class PNR(Detector):
     r"""
     The Photon Number Resolving (PNR) detector.
 
-    PNR detectors have a batched ``Fock`` representation with array of shape
-    ``(cutoff, cutoff, cutoff)``. The `n`-th batch , with
+    For a given cutoff :math:`c`, a PNR detector is a ``Detector`` with measurement operators
+    :math:`|0\rangle, |1\rangle, \ldots, |c\rangle`, where :math:`|n\rangle` corresponds to
+    the state ``Number([mode], n, cutoff)``.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev import *
-        >>> import numpy as np
 
-        >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
-        >>> gate = BSgate([0, 1], theta=np.pi/4)
-        >>> proj01 = Number(modes=[0, 1], n=[2, 0]).dual
+        >>> # the measurement operators of a PNR detector with cutoff at n=4
+        >>> cutoff = 4
+        >>> meas_op = [Number([0], n, cutoff) for n in range(cutoff + 1)]
 
-        >>> # initialize the circuit and specify a custom path
-        >>> circuit = Circuit([state, gate, proj01])
-        >>> circuit.path = [(1, 2), (0, 1)]
-
-        >>> result = Simulator().run(circuit)
+        >>> assert Detector("my_detector", [0], meas_op) == PNR(0, cutoff)
 
     Args:
         mode: The mode the this detection is performed on.
@@ -77,8 +69,3 @@ class PNR(Detector):
         The cutoff of this PNR.
         """
         return self._cutoff
-
-    # @property
-    # def representation(self) -> Fock:
-    #     array = [math.outer((f := fock_state(n, self.cutoff)), f) for n in range(self.cutoff + 1)]
-    #     return Fock(math.concat(array, 2), batched=True)

@@ -25,7 +25,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Generator, Optional, Sequence, Union
 import os
 
 from IPython.display import display, HTML
@@ -625,18 +625,28 @@ class DM(State):
     def purity(self) -> float:
         return (self / self.probability).L2_norm
 
-    def sample(self) -> DM:
+    def sample(self, n_shots: int = 1) -> Generator:
         r"""
-        Samples.
+        Performs sampling for states with a batched representation.
+
+        If this state's representation is made of ``N`` batches, it calculates the probability
+        distribution of the various states. Next, it 
         """
-        import numpy as np
+        rep = self.representation
 
         probs = []
-        for rep in self.representation.array:
-            probs.append(DM._from_attributes("", Fock(rep), self.wires).probability)
-        idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
+        if isinstance(rep, Bargmann):
+            n_batches = rep.A.shape[0]
+            for i in range(n_batches):
+                probs.append(math.real(rep.batch(i).c, axes=[0]))
+        else:
+            n_batches = rep.array.shape[0]
+            for i in range(n_batches):
+                probs.append(math.real(math.sum(rep.batch(i).array, axes=[0])))
 
-        return DM._from_attributes("", Fock(self.representation.array[idx]), self.wires)
+        for _ in range(n_shots):
+            idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
+            yield idx, DM._from_attributes("", rep.batch(idx), self.wires)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

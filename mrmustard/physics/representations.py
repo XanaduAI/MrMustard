@@ -20,7 +20,7 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Union
+from typing import Iterable, Sequence, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,14 +68,36 @@ class Representation(ABC):
         Returns a representation from an ansatz.
         """
 
+    @classmethod
     @abstractmethod
-    def outer(self, other: Bargmann):
+    def from_representations(cls, representations: Sequence[Representation]):
         r"""
-        The outer product for representations.
+        Returns a ``Representation`` object that is obtained by stacking all
+        given ``representations`` into a single one.
 
-        Consider two batched representations `R1` and `R2` with ``N`` batches. The outer product
-        returns a representation with ``N`` batches, where the `i`-th batch is equal to the product of
-        between the `i`-th batch in `R1` and the `i`-th batch in `R2`.
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Fock
+
+            >>> f1 = Fock([1, 0, 0, 0])
+            >>> f2 = Fock([0, 1, 0, 0])
+            >>> f3 = Fock([[0, 0, 1, 0], [0, 0, 0, 1]], batched=True)
+
+            >>> array = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+            >>> exp = Fock(array, batched=True)
+            >>> assert Fock.from_representations([f1, f2, f3]) == exp
+
+        Args:
+            representations: The representations to stack.
+
+        Returns:
+            The stacked representation.
+        """
+
+    @abstractmethod
+    def batch(self, i: int) -> Representation:  # pragma: no cover
+        r"""
+        Extracts the ``i``-th batch and places it in a representation.
         """
 
     def __eq__(self, other: Representation) -> bool:
@@ -282,11 +304,20 @@ class Bargmann(Representation):
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
-    def outer(self, other: Bargmann):
-        if self.A.shape != other.A.shape:
-            msg = f"Cannot take the outer product of representations with a different number of"
-            msg = " batches"
-            raise ValueError(msg)
+    @classmethod
+    def from_representations(cls, representations: Sequence[Bargmann]):
+        As = []
+        bs = []
+        cs = []
+        for rep in representations:
+            for A, b, c in zip(rep.A, rep.b, rep.c):
+                As.append(A)
+                bs.append(b)
+                cs.append(c)
+        return Bargmann(As, bs, c)
+    
+    def batch(self, i: int) -> Bargmann:
+        return Bargmann(self.A[i], self.b[i], self.c[i])
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""
@@ -658,17 +689,16 @@ class Fock(Representation):
         trace = math.trace(new_array)
         return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
 
-    def outer(self, other: Bargmann):
-        if self.array.shape[0] != other.array.shape[0]:
-            msg = f"Cannot take the outer product of representations with a different number of"
-            msg = " batches"
-            raise ValueError(msg)
-        array = [math.outer(a, b) for a, b in zip(self.array, other.array)]
-
-        shape = [s for s in array[0].shape if s != 1]
-        array = [a.reshape(shape) for a in array]
-
-        return Fock(array, batched=True)
+    @classmethod
+    def from_representations(cls, representations: Sequence[Fock]):
+        array = []
+        for rep in representations:
+            for batch in rep.array:
+                array.append(batch)
+        return Fock(array, True)
+    
+    def batch(self, i: int) -> Fock:
+        return Fock(self.array[i])
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""

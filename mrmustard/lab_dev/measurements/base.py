@@ -38,14 +38,16 @@ class Detector(Measurement):
     Base class for all detectors.
 
     Detectors are specified by a sequence of ``Ket``\s
-    :math:`|K_0\rangle, \ldots,|K_N\rangle` referred to as "measurement operators."
+    :math:`|k_0\rangle, \ldots,|k_N\rangle` referred to as "measurement operators."
     Their internal representation can be of type ``Bargmann`` or ``Fock``, and is obtained by
-    stacking the representations of each :math:`|K_i\rangle\langle K_i|`.
+    stacking the representations of each :math:`|k_i\rangle\langle k_i|`.
 
-    When a detector is applied to a state :math:`\rho`) via ``>>``, the resulting component is a
-    ``DM``. Its representation contains ``N`` batches, and could equivalently (but less
-    efficiently) be obtained by stacking the representations of all the components of the type
-    :math:`\langle K_i|\rho|K_i\rangle`.
+    When a detector is applied to a state :math:`\rho` via ``>>``, the resulting component is
+    another state. Its representation contains ``N`` batches, and could equivalently (but less
+    efficiently) be obtained by applying the dual of :math:`|k_i\rangle` to :math:`\rho` for every
+    :math:`i\in\{0,\ldots,N\}` (i.e., by computing all the terms
+    :math:`\langle k_i|\rho|k_i\rangle`) and stacking the representations of the resulting
+    components.
 
     .. code-block::
 
@@ -62,11 +64,12 @@ class Detector(Measurement):
         >>> result = Coherent([0, 1], x=1) >> Detector("my_pnr", [0], meas_op)
         >>> arr = result.representation.array
 
-        >>> # the resulting component has a five-batch representation
+        >>> # the resulting component has a five-batch representation (as many
+        >>> # batches as measurement operators)
         >>> assert arr.shape == (5, 10, 10)
 
-        >>> # the `i`-th batch could equivalently be obtained projecting the input state into the dual of
-        >>> # the `i`-th measurement operatos
+        >>> # the `i`-th batch could equivalently be obtained projecting the input
+        >>> # state into the dual of the `i`-th measurement operatos
         >>> dm = Coherent([0, 1], x=1).dm()
         >>> assert np.allclose(arr[0], (dm >> Number([0], 0, 4).dual).representation.array)
         >>> assert np.allclose(arr[1], (dm >> Number([0], 1, 4).dual).representation.array)
@@ -74,9 +77,9 @@ class Detector(Measurement):
         >>> assert np.allclose(arr[3], (dm >> Number([0], 3, 4).dual).representation.array)
         >>> assert np.allclose(arr[4], (dm >> Number([0], 4, 4).dual).representation.array)
 
-    When a detector with measurement operators :math:`|K_0\rangle, \ldots,|K_N\rangle` is applied after
+    When a detector with measurement operators :math:`|k_0\rangle, \ldots,|k_N\rangle` is applied after
     a transformation :math:`U`, the resulting components is equivalent to a detector with measurement
-    operators :math:`U|K_0\rangle, \ldots,U|K_N\rangle`.
+    operators :math:`U|k_0\rangle, \ldots,U|k_N\rangle`.
 
     .. code-block::
 
@@ -86,7 +89,7 @@ class Detector(Measurement):
 
         >>> # a detector with displaced measurement operators
         >>> displaced_meas_op = [op >> Dgate([0], x=1).dual for op in meas_op]
-        >>> d2 = Detector("my__transformed_pnr", [0], displaced_meas_op)
+        >>> d2 = Detector("my_transformed_pnr", [0], displaced_meas_op)
 
         >>> # the two components are identical
         >>> assert d1 == d2
@@ -94,8 +97,7 @@ class Detector(Measurement):
     Arguments:
         name: The name of this detector.
         modes: The modes that this detector acts on.
-        meas_op: A sequence of ket-like circuit components representing the set of operators
-            for this measurement.
+        meas_op: The set of operators that define this measurement.
     """
 
     def __init__(
@@ -117,8 +119,9 @@ class Detector(Measurement):
     @property
     def representation(self):
         if not self._representation:
-            array = [k.representation.array for k in self.meas_op]
-            self._representation = Fock(array, True).outer(Fock(array, True))
+            representations = [(k @ k.adjoint).representation for k in self.meas_op]
+            rep_cls = self.meas_op[0].representation.__class__
+            self._representation = rep_cls.from_representations(representations)
         return self._representation
 
     def __repr__(self) -> str:
