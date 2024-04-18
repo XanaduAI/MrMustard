@@ -44,6 +44,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import TraceOut
 from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
@@ -630,7 +631,7 @@ class DM(State):
         Performs sampling for states with a batched representation.
 
         If this state's representation is made of ``N`` batches, it calculates the probability
-        distribution of the various states. Next, it 
+        distribution of the various states. Next, it
         """
         rep = self.representation
 
@@ -647,6 +648,43 @@ class DM(State):
         for _ in range(n_shots):
             idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
             yield idx, DM._from_attributes("", rep.batch(idx), self.wires)
+
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this state.
+
+        Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
+        is the density matrix of this state. The given ``operator`` is expected to have
+        unitary-like wires, that is, to have input-ket and output-ket wires only.
+
+        Args:
+            operator: A unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a unitary-like component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_w = operator.wires
+
+        # check that observable is unitary-like
+        if op_w.bra:
+            msg = "Expected unitary-like observable, but found one with wires on the bra side."
+            raise ValueError(msg)
+        if not op_w.input.modes or op_w.input.modes != op_w.output.modes:
+            msg = "Expected unitary-like observable, but found one with input and output wires on"
+            msg += " different modes."
+            raise ValueError(msg)
+
+        # check that the returned component is still a `DM`
+        if not op_w.modes.issubset(self.wires.modes):
+            msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
+            msg += f"found one defined for modes `{operator.modes}.`"
+            raise ValueError(msg)
+
+        result = (self @ operator) >> TraceOut(self.modes)
+        rep = result.representation
+        return rep.array if isinstance(rep, Fock) else rep.c
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -798,6 +836,43 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
+
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this state.
+
+        Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
+        where :math:`|\psi\rangle` is the vector representing this state. The given ``operator``
+        is expected to have unitary-like wires, that is, to have input-ket and output-ket wires
+        only.
+
+        Args:
+            operator: A unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a unitary-like component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_w = operator.wires
+
+        # check that observable is unitary-like
+        if op_w.bra:
+            msg = "Expected unitary-like observable, but found one with wires on the bra side."
+            raise ValueError(msg)
+        if not op_w.input.modes or op_w.input.modes != op_w.output.modes:
+            msg = "Expected unitary-like observable, but found one with input and output wires on"
+            msg += " different modes."
+            raise ValueError(msg)
+
+        # check that the returned component is still a `DM`
+        if not op_w.modes.issubset(self.wires.modes):
+            msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
+            msg += f"found one defined for modes `{operator.modes}.`"
+            raise ValueError(msg)
+
+        result = (self @ operator @ self.dual).representation
+        return result.array if isinstance(result, Fock) else result.c
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""

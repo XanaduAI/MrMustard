@@ -222,6 +222,17 @@ class TestTriples:
         assert math.allclose(b3, np.zeros((4)))
         assert math.allclose(c3, 1)
 
+    def test_identity_Abc(self):
+        A1, b1, c1 = triples.identity_Abc(1)
+        assert math.allclose(A1, [[0, 1], [1, 0]])
+        assert math.allclose(b1, [0, 0])
+        assert math.allclose(c1, 1)
+
+        A2, b2, c2 = triples.identity_Abc(2)
+        assert math.allclose(A2, [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
+        assert math.allclose(b2, [0, 0, 0, 0])
+        assert math.allclose(c2, 1)
+
     def test_attenuator_Abc(self):
         A1, b1, c1 = triples.attenuator_Abc(0.1)
         e = 0.31622777
