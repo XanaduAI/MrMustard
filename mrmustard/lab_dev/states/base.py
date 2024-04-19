@@ -49,6 +49,47 @@ from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+def _validate_operator(operator: CircuitComponent) -> tuple[bool, str]:
+    r"""
+    A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
+    ``DM``.
+
+    If ``operator`` is ket-like, density matrix-like, or unitary-like, returns ``False`` and an
+    empty string. Otherwise, it returns ``True`` and an error message.
+    """
+    w = operator.wires
+
+    # check if operator is ket-like
+    if w.ket.output and not w.ket.input and not w.bra:
+        return False, ""
+    
+    # check if operator is density matrix-like
+    if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
+        if not w.ket.output.modes == w.bra.output.modes:
+            msg = "Found DM-like operator with different modes for ket and bra wires."
+            return True, msg
+        return False, ""
+    
+    # check if operator is unitary-like
+    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
+        if not w.ket.input.modes == w.ket.output.modes:
+            msg = "Found unitary-like operator with different modes for input and output wires."
+            return True, msg
+        return False, ""
+    
+    msg = "Cannot calculate the expectation value of the given ``operator``."
+    return True, msg
+
+
+# ~~~~~~~
+# Classes
+# ~~~~~~~
+
 
 class State(CircuitComponent):
     r"""
@@ -631,35 +672,38 @@ class DM(State):
         The expectation value of an operator calculated over this state.
 
         Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
-        is the density matrix of this state. The given ``operator`` is expected to have
-        unitary-like wires, that is, to have input-ket and output-ket wires only.
+        is the density matrix of this state.
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
 
         Args:
-            operator: A unitary-like circuit component.
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
 
         Raise:
-            ValueError: If ``operator`` is not a unitary-like component.
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        op_w = operator.wires
-
-        # check that observable is unitary-like
-        if op_w.bra:
-            msg = "Expected unitary-like observable, but found one with wires on the bra side."
-            raise ValueError(msg)
-        if not op_w.input.modes or op_w.input.modes != op_w.output.modes:
-            msg = "Expected unitary-like observable, but found one with input and output wires on"
-            msg += " different modes."
+        raise_error, msg = _validate_operator(operator)
+        if raise_error:
             raise ValueError(msg)
 
-        # check that the returned component is still a `DM`
-        if not op_w.modes.issubset(self.wires.modes):
+        # check that the operator is defined on valid modes
+        if not operator.wires.modes.issubset(self.wires.modes):
             msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
             msg += f"found one defined for modes `{operator.modes}.`"
             raise ValueError(msg)
+        
+        if not operator.wires.bra and not operator.wires.ket.input:
+            # if operator is ket-like, return <op|self|op>
+            result = self @ operator.dual @ operator.dual.adjoint
+        else:
+            # if it is dm-like or unitary-like, trace out
+            result = (self @ operator) >> TraceOut(self.modes)
 
-        result = (self @ operator) >> TraceOut(self.modes)
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
 
@@ -819,31 +863,27 @@ class Ket(State):
         The expectation value of an operator calculated over this state.
 
         Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
-        where :math:`|\psi\rangle` is the vector representing this state. The given ``operator``
-        is expected to have unitary-like wires, that is, to have input-ket and output-ket wires
-        only.
+        where :math:`|\psi\rangle` is the vector representing this state. 
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
 
         Args:
-            operator: A unitary-like circuit component.
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
 
         Raise:
-            ValueError: If ``operator`` is not a unitary-like component.
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        op_w = operator.wires
-
-        # check that observable is unitary-like
-        if op_w.bra:
-            msg = "Expected unitary-like observable, but found one with wires on the bra side."
-            raise ValueError(msg)
-        if not op_w.input.modes or op_w.input.modes != op_w.output.modes:
-            msg = "Expected unitary-like observable, but found one with input and output wires on"
-            msg += " different modes."
+        raise_error, msg = _validate_operator(operator)
+        if raise_error:
             raise ValueError(msg)
 
-        # check that the returned component is still a `DM`
-        if not op_w.modes.issubset(self.wires.modes):
+        # check that the operator is defined on valid modes
+        if not operator.wires.modes.issubset(self.wires.modes):
             msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
             msg += f"found one defined for modes `{operator.modes}.`"
             raise ValueError(msg)

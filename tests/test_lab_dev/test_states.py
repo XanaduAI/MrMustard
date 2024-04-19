@@ -198,7 +198,7 @@ class TestKet:
         ket = Coherent([0, 1], x=1, y=[2, 3])
 
         op1 = Attenuator([0])
-        with pytest.raises(ValueError, match="wires on the bra side"):
+        with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
         op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
@@ -380,17 +380,29 @@ class TestDM:
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
         dm = ket.dm()
 
-        op0 = Dgate([1], x=0.1)
-        op1 = Dgate([0], x=0.2)
-        op01 = Dgate([0, 1], x=[0.3, 0.4])
+        k0 = Coherent([0], x=1, y=2)
+        k1 = Coherent([1], x=1, y=3)
+        k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res0 = ((dm @ op0) >> TraceOut(dm.modes)).representation.array
-        res1 = ((dm @ op1) >> TraceOut(dm.modes)).representation.array
-        res01 = ((dm @ op01) >> TraceOut(dm.modes)).representation.array
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint).representation.array
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint).representation.array
+        res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
 
-        assert math.allclose(dm.expectation(op0), res0)
-        assert math.allclose(dm.expectation(op1), res1)
-        assert math.allclose(dm.expectation(op01), res01)
+        assert math.allclose(dm.expectation(k0), res_k0)
+        assert math.allclose(dm.expectation(k1), res_k1)
+        assert math.allclose(dm.expectation(k01), res_k01)
+
+        u0 = Dgate([1], x=0.1)
+        u1 = Dgate([0], x=0.2)
+        u01 = Dgate([0, 1], x=[0.3, 0.4])
+
+        res_u0 = ((dm @ u0) >> TraceOut(dm.modes)).representation.array
+        res_u1 = ((dm @ u1) >> TraceOut(dm.modes)).representation.array
+        res_u01 = ((dm @ u01) >> TraceOut(dm.modes)).representation.array
+
+        assert math.allclose(dm.expectation(u0), res_u0)
+        assert math.allclose(dm.expectation(u1), res_u1)
+        assert math.allclose(dm.expectation(u01), res_u01)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -398,7 +410,7 @@ class TestDM:
         dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
         op1 = Attenuator([0])
-        with pytest.raises(ValueError, match="wires on the bra side"):
+        with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
         op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
