@@ -29,6 +29,9 @@
 * Added a new Abc triple for s-parametrized displacement gate. 
   [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
   
+* Added a function ``real_gaussian_integral`` as helper function to map between different representations. 
+  [(#371)](https://github.com/XanaduAI/MrMustard/pull/371)
+
 ### Breaking changes
 
 ### Improvements
