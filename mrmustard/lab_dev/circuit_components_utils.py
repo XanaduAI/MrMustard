@@ -56,28 +56,3 @@ class DsMap(CircuitComponent):
     @property
     def representation(self) -> Bargmann:
         return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
-
-
-class CftMap(CircuitComponent):
-    r"""The Complex Fourier Transformation as a channel.
-    This will be used as an internal Channel for representation transformation.
-
-    Args:
-        num_modes: number of modes of this channel.
-    """
-
-    def __init__(
-        self,
-        modes: Sequence[int],
-    ):
-        super().__init__(
-            "CftMap",
-            modes_out_bra=modes,
-            modes_in_bra=modes,
-            modes_out_ket=modes,
-            modes_in_ket=modes,
-        )
-
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.complex_fourier_transform_Abc(len(self.modes)))

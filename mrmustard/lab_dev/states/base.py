@@ -261,6 +261,9 @@ class State(CircuitComponent):
             s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
             characteristic: whether the phase space is related to the characteristic or not.
         """
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+
         new_state = self >> DsMap(self.modes, s=s)
         if characteristic:
             return [
@@ -272,15 +275,9 @@ class State(CircuitComponent):
                 for i in np.arange(new_state.representation.ansatz.A.shape[0])
             ]
 
-        new_state = new_state >> CftMap(self.modes)
-        return [
-            Abc_to_cov_and_mean(
-                new_state.representation.ansatz.A[i],
-                new_state.representation.ansatz.b[i],
-                new_state.representation.ansatz.c[i],
-            )
-            for i in np.arange(new_state.representation.ansatz.A.shape[0])
-        ]
+        raise NotImplementedError(
+            f"Can not calculate phase space for chracteristic function is ``{characteristic}``."
+        )
 
     def visualize_2d(
         self,
