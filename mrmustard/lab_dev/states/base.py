@@ -260,10 +260,10 @@ class State(CircuitComponent):
         The covariance matrix and the vector of means that describe this state in phase space.
         """
         raise NotImplementedError
-    
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector]:
+
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        ..
+        The A matrix, b vector and c scalar that describe this state in the quadrature basis.
         """
         raise NotImplementedError
 
@@ -361,36 +361,10 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> State:
-        A, b, c = triple
-        A = math.astensor(A)
-        b = math.astensor(b)
-        c = math.astensor(c)
-
-        n_modes = len(modes)
-        if b.shape != (2 * n_modes,):
-            msg = f"Given ``b`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if A.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``A`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        quadrature_rep = Bargmann(*triple)
+        bargmann_rep = quadrature_rep >> QuadMap.conj() >> QuadMap.ajoint().conj()
         ret = DM(name, modes)
-
-        A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
-            join_Abc(join_Abc((A, b, c), from_quadrature_Abc()), math.conj(from_quadrature_Abc())),
-            idx=[0, 1, n_modes, n_modes + 2],
-        )
-        if n_modes != 1:
-            for _ in range(n_modes - 1):
-                A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
-                    join_Abc(
-                        join_Abc((A_bargmann, b_bargmann, c_bargmann), from_quadrature_Abc()),
-                        math.conj(from_quadrature_Abc()),
-                    ),
-                    idx=[0, 1, n_modes, n_modes + 2],
-                )
-
-        ret._representation = Bargmann(A_bargmann, b_bargmann, c_bargmann)
+        ret._representation = bargmann_rep
         return ret
 
     @property
@@ -407,6 +381,10 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
+
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        ret = self >> QuadMap >> QuadMap.ajoint()
+        return ret.bargmann_triple
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -519,32 +497,10 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> State:
-        A, b, c = triple
-        A = math.astensor(A)
-        b = math.astensor(b)
-        c = math.astensor(c)
-
-        n_modes = len(modes)
-        if b.shape != (n_modes,):
-            msg = f"Given ``b`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if A.shape != (n_modes, n_modes):
-            msg = f"Given ``A`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        quadrature_rep = Bargmann(*triple)
+        bargmann_rep = quadrature_rep >> QuadMap.conj()
         ret = Ket(name, modes)
-
-        A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
-            join_Abc((A, b, c), from_quadrature_Abc()), idx=[0, n_modes]
-        )
-        if n_modes != 1:
-            for _ in range(n_modes - 1):
-                A_bargmann, b_bargmann, c_bargmann = real_gaussian_integral(
-                    join_Abc((A_bargmann, b_bargmann, c_bargmann), from_quadrature_Abc()),
-                    idx=[0, n_modes],
-                )
-
-        ret._representation = Bargmann(A_bargmann, b_bargmann, c_bargmann)
+        ret._representation = bargmann_rep
         return ret
 
     @property
@@ -566,6 +522,10 @@ class Ket(State):
         return DM._from_attributes(
             self.name, dm.representation, dm.wires
         )  # pylint: disable=protected-access
+
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        ret = self >> QuadMap
+        return ret.bargmann_triple
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
