@@ -17,6 +17,7 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
+
 from typing import Callable, Generator, Optional, Tuple
 
 from mrmustard import math
@@ -72,3 +73,12 @@ def reshape_params(n_modes: str, **kwargs) -> Generator:
                 msg = f"Parameter {names[i]} has an incompatible shape."
                 raise ValueError(msg)
         yield var
+
+
+def _shape_check(mat, vec, dim: int, name: str):
+    r"""
+    Check that the given Gaussian representation is consistent with the given modes.
+    """
+    if mat.shape[-2:] != (dim, dim) or vec.shape[-1:] != (dim,):
+        msg = f"{name} representation is inconsistent with given modes."
+        raise ValueError(msg)

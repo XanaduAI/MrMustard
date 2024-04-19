@@ -43,6 +43,7 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.lab_dev.utils import _shape_check
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -175,7 +176,7 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    def bargmann(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
 
@@ -196,15 +197,6 @@ class State(CircuitComponent):
         r"""
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        rep = self.representation
-        msg = "Method ``L2_norm`` not supported for batched representations."
-        if isinstance(rep, Fock):
-            if rep.array.shape[0] > 1:
-                raise ValueError(msg)
-        else:
-            if rep.A.shape[0] > 1:
-                raise ValueError(msg)
-
         rep = (self >> self.dual).representation
         ret = rep.c if isinstance(rep, Bargmann) else rep.array
         return math.atleast_1d(ret, math.float64)[0]
@@ -231,7 +223,9 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+    def fock_array(
+        self, shape: Optional[Union[int, Sequence[int]]] = None
+    ) -> ComplexTensor:
         r"""
         The array that describes this state in the Fock representation.
 
@@ -327,7 +321,11 @@ class State(CircuitComponent):
         # X-P plot
         # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
         fig_21 = go.Heatmap(
-            x=xs, y=-ps, z=math.transpose(z), colorscale=colorscale, name="Wigner function"
+            x=xs,
+            y=-ps,
+            z=math.transpose(z),
+            colorscale=colorscale,
+            name="Wigner function",
         )
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
@@ -335,13 +333,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -436,13 +438,19 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
-            xaxis_title_text="x", yaxis_title_text="p", zaxis_title_text="Wigner function"
+            xaxis_title_text="x",
+            yaxis_title_text="p",
+            zaxis_title_text="Wigner function",
         )
         fig.update_xaxes(title_text="x")
         fig.update_yaxes(title="p")
@@ -474,13 +482,14 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-
         state = self.to_fock_component(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -549,14 +558,7 @@ class DM(State):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-
-        n_modes = len(modes)
-        A_sh = (1, 2 * n_modes, 2 * n_modes) if batched else (2 * n_modes, 2 * n_modes)
-        b_sh = (1, 2 * n_modes) if batched else (2 * n_modes,)
-        if A.shape != A_sh or b.shape != b_sh:
-            msg = f"Given triple is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        _shape_check(A, b, 2 * len(modes), "Bargmann")
         ret = DM(name, modes)
         ret._representation = Bargmann(A, b, c)
         return ret
@@ -664,12 +666,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
 
 
 class Ket(State):
