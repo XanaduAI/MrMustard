@@ -27,10 +27,10 @@ from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["DsMap", "CftMap"]
+__all__ = ["_DsMap"]
 
 
-class DsMap(CircuitComponent):
+class _DsMap(CircuitComponent):
     r"""The s-parametrized Dgate as a channel.
     This will be used as an internal Channel for representation transformation.
 
@@ -45,7 +45,7 @@ class DsMap(CircuitComponent):
         s: float,
     ):
         super().__init__(
-            "DsMap",
+            "_DsMap",
             modes_out_bra=modes,
             modes_in_bra=modes,
             modes_out_ket=modes,

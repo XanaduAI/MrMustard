@@ -44,10 +44,9 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
-    Abc_to_cov_and_mean,
     Abc_to_cov_mean_for_state_in_characteristic,
 )
-from ..circuit_components_utils import DsMap, CftMap
+from ..circuit_components_utils import _DsMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -264,7 +263,7 @@ class State(CircuitComponent):
         if not isinstance(self.representation, Bargmann):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
-        new_state = self >> DsMap(self.modes, s=s)
+        new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
         if characteristic:
             return [
                 Abc_to_cov_mean_for_state_in_characteristic(
