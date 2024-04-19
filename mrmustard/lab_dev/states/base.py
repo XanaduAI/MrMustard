@@ -578,7 +578,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-        _shape_check(cov, means, 2*modes, "Phase space")
+        _shape_check(cov, means, 2 * modes, "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
