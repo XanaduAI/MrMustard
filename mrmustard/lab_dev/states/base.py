@@ -636,18 +636,15 @@ class DM(State):
         rep = self.representation
 
         probs = []
-        if isinstance(rep, Bargmann):
-            n_batches = rep.A.shape[0]
-            for i in range(n_batches):
-                probs.append(math.real(rep.batch(i).c, axes=[0]))
-        else:
-            n_batches = rep.array.shape[0]
-            for i in range(n_batches):
-                probs.append(math.real(math.sum(rep.batch(i).array, axes=[0])))
+        n_batches = rep.A.shape[0] if isinstance(rep, Bargmann) else rep.array.shape[0]
+        for i in range(n_batches):
+            probs.append(DM._from_attributes("", rep.batch(i), self.wires).probability)
+
+        print("probs:", probs)
 
         for _ in range(n_shots):
             idx = np.random.choice(range(len(probs)), p=probs / sum(probs))
-            yield idx, DM._from_attributes("", rep.batch(idx), self.wires)
+            yield (idx, DM._from_attributes("", rep.batch(idx), self.wires))
 
     def expectation(self, operator: CircuitComponent):
         r"""

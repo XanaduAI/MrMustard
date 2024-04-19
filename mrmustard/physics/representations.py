@@ -319,7 +319,7 @@ class Bargmann(Representation):
                 bs.append(b)
                 cs.append(c)
         return Bargmann(As, bs, c)
-    
+
     def batch(self, i: int) -> Bargmann:
         return Bargmann(self.A[i], self.b[i], self.c[i])
 
@@ -693,7 +693,7 @@ class Fock(Representation):
             for batch in rep.array:
                 array.append(batch)
         return Fock(array, True)
-    
+
     def batch(self, i: int) -> Fock:
         return Fock(self.array[i])
 
