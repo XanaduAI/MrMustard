@@ -25,9 +25,10 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 from mrmustard import math
 from mrmustard.lab_dev.utils import _shape_check
+from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann
 from ..circuit_components import CircuitComponent
 
@@ -38,6 +39,34 @@ class Transformation(CircuitComponent):
     r"""
     Base class for all transformations.
     """
+
+    @classmethod
+    def from_bargmann(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def from_phase_space(cls):
+        raise NotImplementedError
+
+    @property
+    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        raise NotImplementedError
+
+    @classmethod
+    def from_quadrature(cls):
+        raise NotImplementedError
+
+    @property
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        raise NotImplementedError
+
+    @classmethod
+    def from_fock(cls):
+        raise NotImplementedError
+
+    @property
+    def fock(self) -> ComplexTensor:
+        raise NotImplementedError
 
 
 class Unitary(Transformation):
@@ -74,6 +103,20 @@ class Unitary(Transformation):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Unitary")
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Unitary:
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+        _shape_check(A, b, 2 * len(modes))
+        s = set(modes)
+        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires({}, {}, s, s))
 
 
 class Channel(Transformation):
@@ -122,13 +165,8 @@ class Channel(Transformation):
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
         _shape_check(A, b, 4 * len(modes))
-        ret = Channel(name, modes)
-        ret._representation = Bargmann(A, b, c)
-        return ret
-
-    @property
-    def bargmann(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        return self.representation.A, self.representation.b, self.representation.c
+        s = set(modes)
+        return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))
 
     @classmethod
     def from_phase_space(
