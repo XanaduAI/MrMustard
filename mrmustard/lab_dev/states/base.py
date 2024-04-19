@@ -578,15 +578,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        _shape_check(cov, means, 2*modes, "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
@@ -719,19 +711,12 @@ class Ket(State):
     ):
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
+        _shape_check(cov, means, 2 * len(modes), "Phase space")
 
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
+                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be at least 1.0-atol)."
                 raise ValueError(msg)
 
         ret = Ket(name, modes)
