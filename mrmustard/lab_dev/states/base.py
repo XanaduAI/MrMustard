@@ -252,14 +252,16 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(self, s: float, characteristic: bool) -> tuple[complex, ComplexMatrix, ComplexVector]:
+    def phase_space(
+        self, s: float, characteristic: bool
+    ) -> tuple[complex, ComplexMatrix, ComplexVector]:
         r"""
         The s-parametrized information about the state that describe this state in phase space.
 
         Args:
             s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
             characteristic: Whether the phase space is in the characteristic form or not.
-        
+
             Returns:
                 The coefficient, the covariance matrix and the mean vector of the state in s-parametrized phase space.
         """
