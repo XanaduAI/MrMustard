@@ -258,7 +258,7 @@ class State(CircuitComponent):
 
         Args:
             s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
-            characteristic: whether the phase space is related to the characteristic or not.
+            characteristic: Whether the phase space is related to the characteristic or not.
         """
         if not isinstance(self.representation, Bargmann):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
