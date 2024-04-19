@@ -24,8 +24,11 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional
-
+from typing import Optional, Sequence
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+from mrmustard import math
+from mrmustard.lab_dev.utils import _shape_check
+from mrmustard.physics.representations import Bargmann
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Unitary", "Channel"]
@@ -48,7 +51,9 @@ class Unitary(Transformation):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "U" + "".join(str(m) for m in modes), modes_in_ket=modes, modes_out_ket=modes
+            name or "U" + "".join(str(m) for m in modes),
+            modes_in_ket=modes,
+            modes_out_ket=modes,
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -105,3 +110,37 @@ class Channel(Transformation):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Channel")
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Channel:
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+        _shape_check(A, b, 4 * len(modes))
+        ret = Channel(name, modes)
+        ret._representation = Bargmann(A, b, c)
+        return ret
+
+    @property
+    def bargmann(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        return self.representation.A, self.representation.b, self.representation.c
+
+    @classmethod
+    def from_phase_space(
+        cls,
+        modes: Sequence[int],
+        S: ComplexMatrix,
+        d: ComplexVector,
+        coeff: complex = 1,
+        name: Optional[str] = None,
+    ) -> Channel:
+        S = math.astensor(S)
+        d = math.astensor(d)
+        coeff = math.astensor(coeff)
+        _shape_check(S, d, 2 * len(modes))
+        raise NotImplementedError
