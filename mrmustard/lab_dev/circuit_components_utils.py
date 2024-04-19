@@ -36,7 +36,7 @@ class DsMap(CircuitComponent):
 
     Args:
         num_modes: number of modes of this channel.
-        s: s-parameter of this channel.
+        s: The `s` parameter of this channel.
     """
 
     def __init__(
