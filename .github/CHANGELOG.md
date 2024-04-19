@@ -159,6 +159,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Added suite to filter undesired warnings, and used it to filter tensorflow's ``ComplexWarning``s.
   [(#332)](https://github.com/XanaduAI/MrMustard/pull/332)
 
+* When re-assigning an immutable setting with the same value, no more error is raised.
+  [(#316)](https://github.com/XanaduAI/MrMustard/pull/316)
 
 ### Bug fixes
 
