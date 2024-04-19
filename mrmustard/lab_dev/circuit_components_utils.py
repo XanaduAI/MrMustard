@@ -35,7 +35,7 @@ class _DsMap(CircuitComponent):
     This will be used as an internal Channel for representation transformation.
 
     Args:
-        num_modes: number of modes of this channel.
+        num_modes: The number of modes of this channel.
         s: The `s` parameter of this channel.
     """
 
