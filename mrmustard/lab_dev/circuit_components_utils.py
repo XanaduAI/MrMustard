@@ -31,7 +31,7 @@ __all__ = ["_DsMap"]
 
 
 class _DsMap(CircuitComponent):
-    r"""The s-parametrized Dgate as a channel.
+    r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
     This will be used as an internal Channel for representation transformation.
 
     Args:
