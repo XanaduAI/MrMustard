@@ -220,7 +220,7 @@ class TestDM:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
-        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.8)
+        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
         triple_in = state_in.bargmann
 
         state_out = DM.from_bargmann(modes, triple_in, "my_dm")
