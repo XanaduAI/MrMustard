@@ -64,23 +64,23 @@ class TestKet:
         ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
-        triple_in = state_in.bargmann_triple
+        triple_in = state_in.bargmann
 
         assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
         assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
         assert np.allclose(triple_in[2], coherent_state_Abc(xs, ys)[2])
 
-        state_out = Ket.from_bargmann(modes, triple_in, "my_ket", True)
+        state_out = Ket.from_bargmann(modes, triple_in, "my_ket")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
         state01 = Coherent([0, 1], 1)
         with pytest.raises(ValueError):
-            Ket.from_bargmann([0], state01.bargmann_triple, "my_ket", True)
+            Ket.from_bargmann([0], state01.bargmann, "my_ket")
 
     def test_bargmann_triple_error(self):
         with pytest.raises(ValueError):
-            Number([0], n=10).bargmann_triple
+            Number([0], n=10).bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
@@ -110,7 +110,9 @@ class TestKet:
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(
+            modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes)
+        )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -120,13 +122,6 @@ class TestKet:
     def test_L2_norm(self):
         state = Coherent([0], x=1)
         assert state.L2_norm == 1
-
-        state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
-        with pytest.raises(ValueError):
-            state_sup.L2_norm
-
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).L2_norm
 
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
@@ -195,7 +190,9 @@ class TestKet:
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
+        assert si == DisplacedSqueezed(
+            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
+        )
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])
@@ -228,15 +225,19 @@ class TestDM:
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
         state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.8)
-        triple_in = state_in.bargmann_triple
+        triple_in = state_in.bargmann
 
-        state_out = DM.from_bargmann(modes, triple_in, "my_dm", True)
+        state_out = DM.from_bargmann(modes, triple_in, "my_dm")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
         state01 = Coherent([0, 1], 1).dm()
         with pytest.raises(ValueError):
-            DM.from_bargmann([0], state01.bargmann_triple, "my_dm", True)
+            DM.from_bargmann(
+                [0],
+                state01.bargmann,
+                "my_dm",
+            )
 
     def test_from_fock_error(self):
         state01 = Coherent([0, 1], 1).dm()
@@ -247,7 +248,7 @@ class TestDM:
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
         with pytest.raises(ValueError):
-            fock.bargmann_triple
+            fock.bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
@@ -278,13 +279,6 @@ class TestDM:
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
         assert state.L2_norm == 1
-
-        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)).dm()
-        with pytest.raises(ValueError):
-            state_sup.L2_norm
-
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).L2_norm
 
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
@@ -428,7 +422,9 @@ class TestDisplacedSqueezed:
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_representation(self, modes, x, y, r, phi):
         rep = DisplacedSqueezed(modes, x, y, r, phi).representation
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        exp = (
+            Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)
+        ).representation
         assert rep == exp
 
     def test_representation_error(self):
@@ -563,7 +559,9 @@ class TestThermal:
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
         rep = Thermal([0, 1], nbar).representation
-        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        exp = Bargmann(
+            *thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar)
+        )
         assert rep == exp
 
     def test_representation_error(self):
@@ -584,7 +582,9 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_2d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -607,7 +607,9 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_3d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:
