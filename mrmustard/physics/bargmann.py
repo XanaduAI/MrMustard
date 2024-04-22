@@ -49,7 +49,8 @@ def wigner_to_bargmann_rho(cov, means):
     b = math.solve(Q, beta)
     B = math.conj(b)
     num_C = math.exp(-0.5 * math.sum(math.conj(beta) * b))
-    den_C = math.sqrt(math.det(Q), dtype=num_C.dtype)
+    detQ = math.det(Q)
+    den_C = math.sqrt(detQ, dtype=num_C.dtype)
     C = num_C / den_C
     return A, B, C
 
@@ -71,6 +72,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     I2 = math.eye(2 * N, dtype=X.dtype)
     XT = math.transpose(X)
     xi = 0.5 * (I2 + math.matmul(X, XT) + 2 * Y / settings.HBAR)
+    detxi = math.det(xi)
     xi_inv = math.inv(xi)
     A = math.block(
         [
@@ -89,7 +91,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
+    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
