@@ -449,26 +449,29 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def quadrature_kernel_Abc() -> Union[Matrix, Vector, Scalar]:
+def _bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of the kernel :math:`\langle z|p \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
-    The kernel is related to the transformation on a single out_ket wire.
+    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
+    The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
+    
+    The indices of the triple correspond to the variables :math:`(\vec{z}, \vec{p})` of the kernel here and it is used to transform from quadrature representation in Bargmann.
+    
+    If one wants to transformation from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component.
 
-    Given the real variable in the quadrature representaion of the out_ket wire is :math:`p` and the complex variables for this out_ket wire is :math:`(z^*)`.
-    The indices of the triple correspond to the variables :math:`(p, z^*)` of the kernel here and it is used to transform from quadrature representation in Bargmann.
-    If one wants to do the inverse transformation (from Bargmann to quadrature representation), the kernel will be the conjugate of this one:
-    that is to say, the triple will be conjugated in the value, as well as the variables of the indices :math:`(p, z)`.
+    Args:
+         n_modes: The number of modes.
 
     Returns:
-        The ``(A, b, c)`` triple of the map between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
+        The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
     hbar = settings.HBAR
+    In = math.eye(n_modes)
     A = math.block(
         [
-            [-1 / (2 * hbar), 1j * math.sqrt(2 / hbar)],
-            [1j * math.sqrt(2 / hbar), 1],
+            [In, -1j * math.sqrt(2 / hbar) * In],
+            [-1j * math.sqrt(2 / hbar) * In, -1 / (2 * hbar)],
         ]
     )
-    b = _vacuum_B_vector(2)
-    c = (1.0 + 0j) / (math.pi * hbar) ** 0.25
+    b = _vacuum_B_vector(2 * n_modes)
+    c = (1.0 + 0j) / (math.pi * hbar) ** (0.25 * n_modes)
     return A, b, c
