@@ -100,8 +100,10 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
-        with pytest.raises(NotImplementedError):
-            Coherent(modes, x=1, y=2).phase_space()
+        cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
+        assert math.allclose(coeff[0], 1.0)
+        assert math.allclose(cov[0], np.eye(2))
+        assert math.allclose(means[0], np.array([2.0, 4.0]))
 
         n_modes = len(modes)
 
@@ -261,10 +263,11 @@ class TestDM:
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):
-        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 0.8)
-
-        with pytest.raises(NotImplementedError):
-            state0.phase_space()
+        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
+        cov, means, coeff = state0.phase_space(s=0)  # batch = 1
+        assert coeff[0] == 1.0
+        assert math.allclose(cov[0], np.eye(2))
+        assert math.allclose(means[0], np.array([2.0, 4.0]))
 
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
@@ -293,7 +296,7 @@ class TestDM:
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert state2.to_fock_component(20).probability == 1
+        assert math.allclose(state2.to_fock_component(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
