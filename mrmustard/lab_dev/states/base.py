@@ -32,8 +32,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho, join_Abc
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.physics.triples import from_quadrature_Abc
+from mrmustard.physics.representations import Bargmann, Fock, Mixed
 from ..circuit_components import CircuitComponent
 
 __all__ = ["State", "DM", "Ket"]
@@ -179,7 +178,19 @@ class State(CircuitComponent):
             ValueError: If the given triple have shapes that are inconsistent
                 with the number of modes.
         """
-        raise NotImplementedError
+        dict_rep = dict()
+        for i in range(len(triple[0].shape[-1])):
+            dict_rep[i] = "quad"
+        quadrature_rep = Mixed(dict_rep, *triple)
+        state_component = cls(name, modes)
+        state_component._representation = quadrature_rep
+        state_component = state_component >> QuadMap.dual()
+        state_component._representation = Bargmann(
+            state_component._representation.A,
+            state_component._representation.b,
+            state_component._representation.c,
+        )
+        return state_component
 
     @property
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
@@ -265,7 +276,8 @@ class State(CircuitComponent):
         r"""
         The A matrix, b vector and c scalar that describe this state in the quadrature basis.
         """
-        raise NotImplementedError
+        ret = self >> QuadMap(modes)
+        return ret.bargmann_triple
 
 
 class DM(State):
@@ -354,19 +366,6 @@ class DM(State):
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
         return ret
 
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> State:
-        quadrature_rep = Bargmann(*triple)
-        bargmann_rep = quadrature_rep >> QuadMap.conj() >> QuadMap.ajoint().conj()
-        ret = DM(name, modes)
-        ret._representation = bargmann_rep
-        return ret
-
     @property
     def probability(self) -> float:
         idx_ket = self.wires.output.ket.indices
@@ -381,10 +380,6 @@ class DM(State):
     @property
     def purity(self) -> float:
         return (self / self.probability).L2_norm
-
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        ret = self >> QuadMap >> QuadMap.ajoint()
-        return ret.bargmann_triple
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -490,19 +485,6 @@ class Ket(State):
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
 
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> State:
-        quadrature_rep = Bargmann(*triple)
-        bargmann_rep = quadrature_rep >> QuadMap.conj()
-        ret = Ket(name, modes)
-        ret._representation = bargmann_rep
-        return ret
-
     @property
     def probability(self) -> float:
         rep = (self >> self.dual).representation
@@ -522,10 +504,6 @@ class Ket(State):
         return DM._from_attributes(
             self.name, dm.representation, dm.wires
         )  # pylint: disable=protected-access
-
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        ret = self >> QuadMap
-        return ret.bargmann_triple
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
