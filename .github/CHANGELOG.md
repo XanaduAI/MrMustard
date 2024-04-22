@@ -17,6 +17,8 @@
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
+* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
 ### Documentation
 
 ### Tests
