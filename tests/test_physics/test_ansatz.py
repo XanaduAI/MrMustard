@@ -303,10 +303,10 @@ class TestArrayAnsatz:
             new_state_cov,
             new_state_means,
             new_state_coeff,
-        ) = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
-        assert math.allclose(state_cov, new_state_cov)
-        assert math.allclose(state_means, new_state_means)
-        assert math.allclose(1.0, new_state_coeff)
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A1, b1, c1)
+        assert math.allclose(state_cov, new_state_cov[0])
+        assert math.allclose(state_means, new_state_means[0])
+        assert math.allclose(1.0, new_state_coeff[0])
 
         state_cov = np.array(
             [
@@ -326,7 +326,7 @@ class TestArrayAnsatz:
             new_state_cov1,
             new_state_means1,
             new_state_coeff1,
-        ) = Abc_to_cov_mean_for_state_in_characteristic(A1[0], b1[0], c1[0])
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A1, b1, c1)
 
         A22, b22, c22 = (
             state >> _DsMap([0], 0) >> _DsMap([1], 0)
@@ -335,10 +335,10 @@ class TestArrayAnsatz:
             new_state_cov22,
             new_state_means22,
             new_state_coeff22,
-        ) = Abc_to_cov_mean_for_state_in_characteristic(A22[0], b22[0], c22[0])
-        assert math.allclose(new_state_cov22, state_cov)
-        assert math.allclose(new_state_cov1, state_cov)
-        assert math.allclose(new_state_means1, state_means)
-        assert math.allclose(new_state_means22, state_means)
-        assert math.allclose(new_state_coeff1, 1.0)
-        assert math.allclose(new_state_coeff22, 1.0)
+        ) = Abc_to_cov_mean_for_state_in_characteristic(A22, b22, c22)
+        assert math.allclose(new_state_cov22[0], state_cov)
+        assert math.allclose(new_state_cov1[0], state_cov)
+        assert math.allclose(new_state_means1[0], state_means)
+        assert math.allclose(new_state_means22[0], state_means)
+        assert math.allclose(new_state_coeff1[0], 1.0)
+        assert math.allclose(new_state_coeff22[0], 1.0)
