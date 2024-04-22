@@ -7,6 +7,8 @@
 * Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
+* Added `sort` function to math backends.
+
 ### Breaking changes
 
 ### Improvements
@@ -23,6 +25,7 @@
 [Samuele Ferracin](https://github.com/SamFerracin)
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
+[Austin Lund](https://github.com/aplund)
 
 
 ---
