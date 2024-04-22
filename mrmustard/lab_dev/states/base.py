@@ -703,7 +703,6 @@ class DM(State):
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
 
-        # check that the returned component is still a `DM`
         if not operator.wires.modes.issubset(self.wires.modes):
             msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
             msg += f"found one defined on `{operator.modes}.`"
