@@ -537,6 +537,20 @@ def Abc_to_cov_mean_for_state_in_characteristic(
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
+    The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
+    :math:
+        \Chi_G(r) = \exp\left( -\frac{1}{2}r^T \Omega^T cov \Omega r + i r^T\Omega^T mean \right),
+    
+    and the Wigner function of a Gaussian state:
+    :math:
+        W_G(r) = \frac{1}{\sqrt{\Det(cov)}} \exp\left( -\frac{1}{2}(r - mean)^T cov^{-1} (r-mean) \right).
+
+    The internal expression of our Gaussian state :math:`\rho` is in Bargmann representation, one can write the characteristic function of a Gaussian state in Bargmann representation as
+    :math:
+        \Chi_G(\alpha) = \Tr(\rho D) = c \exp\left( -\frac{1}{2}\alpha^T A \alpha + \alpha^T b \right).
+    
+    This function is to go from the Abc triple in characteristic phase space into the covaraicne and mean vector for Gaussian state.
+
     Args:
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
 
