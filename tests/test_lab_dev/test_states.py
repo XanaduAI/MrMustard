@@ -161,12 +161,14 @@ class TestKet:
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
 
+        assert math.allclose(ket.expectation(ket), [1])
+
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (ket @ k0.dual).representation.c
-        res_k1 = (ket @ k1.dual).representation.c
+        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.c
+        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.c
         res_k01 = (ket @ k01.dual).representation.c
 
         assert math.allclose(ket.expectation(k0), res_k0)
@@ -177,8 +179,8 @@ class TestKet:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual).representation.c
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual).representation.c
+        res_dm0 = ((ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])).representation.c
+        res_dm1 = ((ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])).representation.c
         res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.c
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
@@ -201,13 +203,15 @@ class TestKet:
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        
+        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array)
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (ket @ k0.dual).representation.array
-        res_k1 = (ket @ k1.dual).representation.array
+        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array
+        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array
         res_k01 = (ket @ k01.dual).representation.array
 
         assert math.allclose(ket.expectation(k0), res_k0)
@@ -218,8 +222,8 @@ class TestKet:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual).representation.array
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual).representation.array
+        res_dm0 = ((ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])).representation.array
+        res_dm1 = ((ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])).representation.array
         res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
@@ -412,8 +416,8 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint).representation.c
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint).representation.c
+        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.c
+        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.c
         res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.c
 
         assert math.allclose(dm.expectation(k0), res_k0)
@@ -424,21 +428,21 @@ class TestDM:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (dm @ dm0.dual).representation.c
-        res_dm1 = (dm @ dm1.dual).representation.c
+        res_dm0 = ((dm @ dm0.dual) >> TraceOut([1])).representation.c
+        res_dm1 = ((dm @ dm1.dual) >> TraceOut([0])).representation.c
         res_dm01 = (dm @ dm01.dual).representation.c
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
 
-        u0 = Dgate([1], x=0.1)
-        u1 = Dgate([0], x=0.2)
+        u0 = Dgate([0], x=0.1)
+        u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut(dm.modes)).representation.c
-        res_u1 = ((dm @ u1) >> TraceOut(dm.modes)).representation.c
-        res_u01 = ((dm @ u01) >> TraceOut(dm.modes)).representation.c
+        res_u0 = ((dm @ u0) >> TraceOut([1])).representation.c
+        res_u1 = ((dm @ u1) >> TraceOut([0])).representation.c
+        res_u01 = (dm @ u01).representation.c
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -454,8 +458,8 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint).representation.array
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint).representation.array
+        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
+        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
         res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
 
         assert math.allclose(dm.expectation(k0), res_k0)
@@ -466,21 +470,21 @@ class TestDM:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (dm @ dm0.dual).representation.array
-        res_dm1 = (dm @ dm1.dual).representation.array
+        res_dm0 = ((dm @ dm0.dual) >> TraceOut([1])).representation.array
+        res_dm1 = ((dm @ dm1.dual) >> TraceOut([0])).representation.array
         res_dm01 = (dm @ dm01.dual).representation.array
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
 
-        u0 = Dgate([1], x=0.1)
-        u1 = Dgate([0], x=0.2)
+        u0 = Dgate([0], x=0.1)
+        u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut(dm.modes)).representation.array
-        res_u1 = ((dm @ u1) >> TraceOut(dm.modes)).representation.array
-        res_u01 = ((dm @ u01) >> TraceOut(dm.modes)).representation.array
+        res_u0 = ((dm @ u0) >> TraceOut([1])).representation.array
+        res_u1 = ((dm @ u1) >> TraceOut([0])).representation.array
+        res_u01 = (dm @ u01).representation.array
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)

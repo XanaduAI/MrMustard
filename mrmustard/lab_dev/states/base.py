@@ -714,7 +714,11 @@ class DM(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self @ operator.dual
         else:
-            result = (self @ operator) >> TraceOut(self.modes)
+            result = self @ operator
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if leftover_modes:
+            result >>= TraceOut(leftover_modes)
 
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
@@ -905,7 +909,11 @@ class Ket(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self @ self.adjoint @ operator.dual
         else:
-            result = (self @ operator @ self.dual)
+            result = self @ operator @ self.dual
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if leftover_modes and (op_type is OperatorType.KET_LIKE or op_type is OperatorType.DM_LIKE):
+            result >>= TraceOut(leftover_modes)
 
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
