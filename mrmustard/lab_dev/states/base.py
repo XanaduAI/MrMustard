@@ -842,10 +842,10 @@ class Ket(State):
             msg += " different modes."
             raise ValueError(msg)
 
-        # check that the returned component is still a `DM`
+        # check that the returned component is still a `Ket`
         if not op_w.modes.issubset(self.wires.modes):
-            msg = f"Expected an observable defined for modes `{self.modes}` or a subset thereof, "
-            msg += f"found one defined for modes `{operator.modes}.`"
+            msg = f"Expected an observable defined on a subset of modes `{self.modes}`, "
+            msg += f"found one defined on `{operator.modes}.`"
             raise ValueError(msg)
 
         result = (self @ operator @ self.dual).representation
