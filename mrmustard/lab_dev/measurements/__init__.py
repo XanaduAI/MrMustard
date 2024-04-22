@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-The classes representing transformations in quantum circuits.
+The classes representing measurements in quantum circuits.
 """
 
 from .base import *

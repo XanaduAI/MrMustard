@@ -318,7 +318,7 @@ class Bargmann(Representation):
                 As.append(A)
                 bs.append(b)
                 cs.append(c)
-        return Bargmann(As, bs, c)
+        return Bargmann(As, bs, cs)
 
     def batch(self, i: int) -> Bargmann:
         return Bargmann(self.A[i], self.b[i], self.c[i])
