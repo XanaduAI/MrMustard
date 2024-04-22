@@ -298,7 +298,7 @@ class TestArrayAnsatz:
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> _DsMap(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple
+        A1, b1, c1 = state_after.bargmann
         (
             new_state_cov,
             new_state_means,
@@ -321,7 +321,7 @@ class TestArrayAnsatz:
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
         state_after = state >> _DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple
+        A1, b1, c1 = state_after.bargmann
         (
             new_state_cov1,
             new_state_means1,
@@ -330,7 +330,7 @@ class TestArrayAnsatz:
 
         A22, b22, c22 = (
             state >> _DsMap([0], 0) >> _DsMap([1], 0)
-        ).bargmann_triple  # pylint: disable=protected-access
+        ).bargmann  # pylint: disable=protected-access
         (
             new_state_cov22,
             new_state_means22,
