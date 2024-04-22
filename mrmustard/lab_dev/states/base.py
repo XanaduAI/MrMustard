@@ -44,7 +44,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
-    Abc_to_cov_mean_for_state_in_characteristic,
+    bargmann_Abc_to_phasespace_cov_means,
 )
 from ..circuit_components_utils import _DsMap
 from ..circuit_components import CircuitComponent
