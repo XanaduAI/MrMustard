@@ -23,7 +23,7 @@ from mrmustard import math
 from mrmustard.physics.ansatze import (
     PolyExpAnsatz,
     ArrayAnsatz,
-    Abc_to_cov_mean_for_state_in_characteristic,
+    bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
