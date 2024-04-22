@@ -268,7 +268,7 @@ class State(CircuitComponent):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
         new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
-        return Abc_to_cov_mean_for_state_in_characteristic(
+        return bargmann_Abc_to_phasespace_cov_means(
             new_state.representation.ansatz.A,
             new_state.representation.ansatz.b,
             new_state.representation.ansatz.c,
