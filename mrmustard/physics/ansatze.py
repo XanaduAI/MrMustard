@@ -554,7 +554,7 @@ def Abc_to_cov_mean_for_state_in_characteristic(
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
 
     Returns:
-        The coefficient, covariance matric and mean vector of the state in phase space.
+        The covariance matric, mean vector and coefficient of the state in phase space.
     """
     num_modes = A.shape[-1] // 2
     Omega = math.J(num_modes).T
