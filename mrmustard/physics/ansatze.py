@@ -24,7 +24,7 @@ from typing import Any, Union, Optional
 
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -530,3 +530,36 @@ class ArrayAnsatz(Ansatz):
         The conjugate of this ansatz.
         """
         return self.__class__(math.conj(self.array))
+
+
+def bargmann_Abc_to_phasespace_cov_means(
+    A: Matrix, b: Vector, c: Scalar
+) -> Union[Matrix, Vector, Scalar]:
+    r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
+
+    The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
+    :math:
+        \Chi_G(r) = \exp\left( -\frac{1}{2}r^T \Omega^T cov \Omega r + i r^T\Omega^T mean \right),
+    and the Wigner function of a Gaussian state:
+    :math:
+        W_G(r) = \frac{1}{\sqrt{\Det(cov)}} \exp\left( -\frac{1}{2}(r - mean)^T cov^{-1} (r-mean) \right).
+
+    The internal expression of our Gaussian state :math:`\rho` is in Bargmann representation, one can write the characteristic function of a Gaussian state in Bargmann representation as
+    :math:
+        \Chi_G(\alpha) = \Tr(\rho D) = c \exp\left( -\frac{1}{2}\alpha^T A \alpha + \alpha^T b \right).
+
+    This function is to go from the Abc triple in characteristic phase space into the covariance and mean vector for Gaussian state.
+
+    Args:
+        A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+
+    Returns:
+        The covariance matric, mean vector and coefficient of the state in phase space.
+    """
+    num_modes = A.shape[-1] // 2
+    Omega = math.J(num_modes).T
+    W = math.conj(math.rotmat(num_modes)).T
+    coeff = c
+    cov = [-Omega @ W @ Amat @ W.T @ Omega.T * settings.HBAR for Amat in A]
+    mean = [1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR) for bvec in b]
+    return cov, mean, coeff

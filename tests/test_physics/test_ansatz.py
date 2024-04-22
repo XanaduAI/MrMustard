@@ -20,7 +20,14 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.ansatze import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatze import (
+    PolyExpAnsatz,
+    ArrayAnsatz,
+    bargmann_Abc_to_phasespace_cov_means,
+)
+from mrmustard.lab_dev.states.base import DM
+from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.lab_dev.circuit_components_utils import _DsMap
 from ..random import Abc_triple
 
 
@@ -284,3 +291,54 @@ class TestArrayAnsatz:
 
         with pytest.raises(Exception):
             aa1 == aa2
+
+    def test_bargmann_Abc_to_phasespace_cov_means(self):
+        # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
+        state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
+        state_means = np.array([0.2, 0.3])
+        state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
+        state_after = state >> _DsMap(modes=[0], s=0)  # pylint: disable=protected-access
+        A1, b1, c1 = state_after.bargmann_triple
+        (
+            new_state_cov,
+            new_state_means,
+            new_state_coeff,
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
+        assert math.allclose(state_cov, new_state_cov[0])
+        assert math.allclose(state_means, new_state_means[0])
+        assert math.allclose(1.0, new_state_coeff[0])
+
+        state_cov = np.array(
+            [
+                [1.00918303, -0.33243548, 0.15202393, -0.07540124],
+                [-0.33243548, 1.2203162, -0.03961978, 0.30853472],
+                [0.15202393, -0.03961978, 1.11158673, 0.28786279],
+                [-0.07540124, 0.30853472, 0.28786279, 0.97833402],
+            ]
+        )
+        state_means = np.array([0.4, 0.6, 0.0, 0.0])
+        A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
+        state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
+
+        state_after = state >> _DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        A1, b1, c1 = state_after.bargmann_triple
+        (
+            new_state_cov1,
+            new_state_means1,
+            new_state_coeff1,
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
+
+        A22, b22, c22 = (
+            state >> _DsMap([0], 0) >> _DsMap([1], 0)
+        ).bargmann_triple  # pylint: disable=protected-access
+        (
+            new_state_cov22,
+            new_state_means22,
+            new_state_coeff22,
+        ) = bargmann_Abc_to_phasespace_cov_means(A22, b22, c22)
+        assert math.allclose(new_state_cov22[0], state_cov)
+        assert math.allclose(new_state_cov1[0], state_cov)
+        assert math.allclose(new_state_means1[0], state_means)
+        assert math.allclose(new_state_means22[0], state_means)
+        assert math.allclose(new_state_coeff1[0], 1.0)
+        assert math.allclose(new_state_coeff22[0], 1.0)
