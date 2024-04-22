@@ -4,7 +4,7 @@
 * Added one new internal CircuitComponent ``DsMap`` to convert the representations. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
-* Added the function `phase_space(s, characteristic)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
+* Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 ### Breaking changes

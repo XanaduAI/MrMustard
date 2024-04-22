@@ -252,16 +252,14 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(
-        self, s: float
-    ) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    def phase_space(self, s: float) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians each of cov, means, coeff are arranged in a batch.
         Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
-        The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions. Note that the same ``(cov, means, coeff)`` triple can be used to parametrize the characteristic functions as well. 
+        The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions. Note that the same ``(cov, means, coeff)`` triple can be used to parametrize the characteristic functions as well.
 
         Args:
-            s: The phase space parameter 
+            s: The phase space parameter
 
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
@@ -270,18 +268,10 @@ class State(CircuitComponent):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
         new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
-        if characteristic:
-            return [
-                Abc_to_cov_mean_for_state_in_characteristic(
-                    new_state.representation.ansatz.A[i],
-                    new_state.representation.ansatz.b[i],
-                    new_state.representation.ansatz.c[i],
-                )
-                for i in np.arange(new_state.representation.ansatz.A.shape[0])
-            ]
-
-        raise NotImplementedError(
-            f"Can not calculate phase space for chracteristic function is ``{characteristic}``."
+        return Abc_to_cov_mean_for_state_in_characteristic(
+            new_state.representation.ansatz.A,
+            new_state.representation.ansatz.b,
+            new_state.representation.ansatz.c,
         )
 
     def visualize_2d(

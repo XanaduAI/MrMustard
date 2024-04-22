@@ -547,6 +547,6 @@ def Abc_to_cov_mean_for_state_in_characteristic(
     Omega = math.J(num_modes).T
     W = math.conj(math.rotmat(num_modes)).T
     coeff = c
-    cov = -Omega @ W @ A @ W.T @ Omega.T * settings.HBAR
-    mean = 1j * math.matvec(Omega @ W, b) * math.sqrt(settings.HBAR)
-    return coeff, cov, mean
+    cov = [-Omega @ W @ Amat @ W.T @ Omega.T * settings.HBAR for Amat in A]
+    mean = [1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR) for bvec in b]
+    return cov, mean, coeff

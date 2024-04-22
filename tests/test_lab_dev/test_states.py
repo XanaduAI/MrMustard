@@ -100,9 +100,7 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
-        coeff, cov, means = Coherent([0], x=1, y=2).phase_space(s=0, characteristic=True)[
-            0
-        ]  # batch=1
+        coeff, cov, means = Coherent([0], x=1, y=2).phase_space(s=0)[0]  # batch=1
         assert math.allclose(coeff, 1.0)
         assert math.allclose(cov, np.eye(2))
         assert math.allclose(means, np.array([2.0, 4.0]))
@@ -266,7 +264,7 @@ class TestDM:
 
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
-        coeff, cov, means = state0.phase_space(s=0, characteristic=True)[0]  # batch = 1
+        coeff, cov, means = state0.phase_space(s=0)[0]  # batch = 1
         assert coeff == 1.0
         assert math.allclose(cov, np.eye(2))
         assert math.allclose(means, np.array([2.0, 4.0]))
