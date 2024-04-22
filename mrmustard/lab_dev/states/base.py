@@ -261,11 +261,10 @@ class State(CircuitComponent):
         The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions. Note that the same ``(cov, means, coeff)`` triple can be used to parametrize the characteristic functions as well. 
 
         Args:
-            s: The parameter of the phase space, which corresponds to the measure of the displacement gate :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`. For example, :math:`s=0`, the information is related to the Wigner distribution and we have the covariance matrix and means vector of the state.
-            characteristic: Whether the phase space is in the characteristic form or not.
+            s: The phase space parameter 
 
             Returns:
-                The coefficient, the covariance matrix and the mean vector of the state in s-parametrized phase space.
+                The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
