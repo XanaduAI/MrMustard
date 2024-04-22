@@ -203,7 +203,7 @@ class TestKet:
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
-        
+
         assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array)
 
         k0 = Coherent([0], x=1, y=2)
