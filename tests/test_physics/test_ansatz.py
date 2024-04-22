@@ -292,7 +292,7 @@ class TestArrayAnsatz:
         with pytest.raises(Exception):
             aa1 == aa2
 
-    def test_Abc_to_cov_mean_for_state_in_characteristic(self):
+    def test_bargmann_Abc_to_phasespace_cov_means(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.2, 0.3])
