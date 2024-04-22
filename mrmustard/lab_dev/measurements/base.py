@@ -114,6 +114,9 @@ class Detector(Measurement):
 
     @property
     def meas_op(self):
+        r"""
+        The set of operators that define this measurement.
+        """
         return self._meas_op
 
     @property
