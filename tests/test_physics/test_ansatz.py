@@ -303,7 +303,7 @@ class TestArrayAnsatz:
             new_state_cov,
             new_state_means,
             new_state_coeff,
-        ) = Abc_to_cov_mean_for_state_in_characteristic(A1, b1, c1)
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
         assert math.allclose(state_cov, new_state_cov[0])
         assert math.allclose(state_means, new_state_means[0])
         assert math.allclose(1.0, new_state_coeff[0])
