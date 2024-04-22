@@ -177,9 +177,9 @@ class TestKet:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0).representation.c
-        res_dm1 = (ket @ ket.adjoint @ dm1).representation.c
-        res_dm01 = (ket @ ket.adjoint @ dm01).representation.c
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual).representation.c
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual).representation.c
+        res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.c
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -189,9 +189,9 @@ class TestKet:
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((ket @ ket.dual @ u0) >> TraceOut(ket.modes)).representation.c
-        res_u1 = ((ket @ ket.dual @ u1) >> TraceOut(ket.modes)).representation.c
-        res_u01 = ((ket @ ket.dual @ u01) >> TraceOut(ket.modes)).representation.c
+        res_u0 = (ket @ u0 @ ket.dual).representation.c
+        res_u1 = (ket @ u1 @ ket.dual).representation.c
+        res_u01 = (ket @ u01 @ ket.dual).representation.c
 
         assert math.allclose(ket.expectation(u0), res_u0)
         assert math.allclose(ket.expectation(u1), res_u1)
@@ -218,9 +218,9 @@ class TestKet:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0).representation.array
-        res_dm1 = (ket @ ket.adjoint @ dm1).representation.array
-        res_dm01 = (ket @ ket.adjoint @ dm01).representation.array
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual).representation.array
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual).representation.array
+        res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -230,9 +230,9 @@ class TestKet:
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((ket @ ket.dual @ u0) >> TraceOut(ket.modes)).representation.array
-        res_u1 = ((ket @ ket.dual @ u1) >> TraceOut(ket.modes)).representation.array
-        res_u01 = ((ket @ ket.dual @ u01) >> TraceOut(ket.modes)).representation.array
+        res_u0 = (ket @ u0 @ ket.dual).representation.array
+        res_u1 = (ket @ u1 @ ket.dual).representation.array
+        res_u01 = (ket @ u01 @ ket.dual).representation.array
 
         assert math.allclose(ket.expectation(u0), res_u0)
         assert math.allclose(ket.expectation(u1), res_u1)
@@ -252,7 +252,7 @@ class TestKet:
             ket.expectation(op2)
 
         op3 = Dgate([2])
-        with pytest.raises(ValueError, match="Expected an observable defined for modes"):
+        with pytest.raises(ValueError, match="Expected an operator defined on"):
             ket.expectation(op3)
 
     def test_rshift(self):
@@ -412,9 +412,9 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint).representation.array
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint).representation.array
-        res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint).representation.c
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint).representation.c
+        res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.c
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
@@ -424,9 +424,9 @@ class TestDM:
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (dm @ dm0.dual).representation.array
-        res_dm1 = (dm @ dm1.dual).representation.array
-        res_dm01 = (dm @ dm01.dual).representation.array
+        res_dm0 = (dm @ dm0.dual).representation.c
+        res_dm1 = (dm @ dm1.dual).representation.c
+        res_dm01 = (dm @ dm01.dual).representation.c
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
@@ -436,9 +436,9 @@ class TestDM:
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut(dm.modes)).representation.array
-        res_u1 = ((dm @ u1) >> TraceOut(dm.modes)).representation.array
-        res_u01 = ((dm @ u01) >> TraceOut(dm.modes)).representation.array
+        res_u0 = ((dm @ u0) >> TraceOut(dm.modes)).representation.c
+        res_u1 = ((dm @ u1) >> TraceOut(dm.modes)).representation.c
+        res_u01 = ((dm @ u01) >> TraceOut(dm.modes)).representation.c
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -500,7 +500,7 @@ class TestDM:
             dm.expectation(op2)
 
         op3 = Dgate([2])
-        with pytest.raises(ValueError, match="Expected an observable defined for modes"):
+        with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
     def test_rshift(self):
