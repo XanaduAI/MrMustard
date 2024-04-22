@@ -253,8 +253,8 @@ class State(CircuitComponent):
         return to_fock(self.representation, shape).array
 
     def phase_space(
-        self, s: float, characteristic: bool
-    ) -> tuple[complex, ComplexMatrix, ComplexVector]:
+        self, s: float
+    ) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians each of cov, means, coeff are arranged in a batch.
         Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
