@@ -532,7 +532,7 @@ class ArrayAnsatz(Ansatz):
         return self.__class__(math.conj(self.array))
 
 
-def Abc_to_cov_mean_for_state_in_characteristic(
+def bargmann_Abc_to_phasespace_cov_means(
     A: Matrix, b: Vector, c: Scalar
 ) -> Union[Matrix, Vector, Scalar]:
     r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
