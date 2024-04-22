@@ -56,6 +56,11 @@ __all__ = ["State", "DM", "Ket"]
 
 
 class OperatorType(Enum):
+    r"""
+    A convenience Enum class used to tage the type operators in the ``epectation`` method
+    of ``Ket``\s and ``DM``\s.
+    """
+
     KET_LIKE = 1
     DM_LIKE = 2
     UNITARY_LIKE = 3
