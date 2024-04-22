@@ -326,7 +326,7 @@ class TestArrayAnsatz:
             new_state_cov1,
             new_state_means1,
             new_state_coeff1,
-        ) = Abc_to_cov_mean_for_state_in_characteristic(A1, b1, c1)
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
         A22, b22, c22 = (
             state >> _DsMap([0], 0) >> _DsMap([1], 0)
