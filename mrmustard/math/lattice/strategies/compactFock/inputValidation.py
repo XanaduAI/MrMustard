@@ -18,7 +18,42 @@ from mrmustard.math.lattice.strategies.compactFock.singleLeftoverMode_amps impor
 from mrmustard.math.lattice.strategies.compactFock.singleLeftoverMode_grad import (
     fock_representation_1leftoverMode_grad,
 )
-from thewalrus._hafnian import input_validation
+
+
+def input_validation(A, rtol=1e-05, atol=1e-08):
+    """Checks that the matrix A satisfies the requirements for Hafnian calculation.
+    These include:
+    * That the ``A`` is a NumPy array
+    * That ``A`` is square
+    * That ``A`` does not contain any NaNs
+    * That ``A`` is symmetric
+
+    .. note:: This function is an adaptation of the of an analogous method in The Walrus.
+
+    Args:
+        A (array): a NumPy array.
+        rtol (float): the relative tolerance parameter used in ``np.allclose``
+        atol (float): the absolute tolerance parameter used in ``np.allclose``
+
+    Returns:
+        bool: returns ``True`` if the matrix satisfies all requirements
+    """
+
+    if not isinstance(A, np.ndarray):
+        raise TypeError("Input matrix must be a NumPy array.")
+
+    n = A.shape
+
+    if n[0] != n[1]:
+        raise ValueError("Input matrix must be square.")
+
+    if np.isnan(A).any():
+        raise ValueError("Input matrix must not contain NaNs.")
+
+    if not np.allclose(A, A.T, rtol=rtol, atol=atol):
+        raise ValueError("Input matrix must be symmetric.")
+
+    return True
 
 
 def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):

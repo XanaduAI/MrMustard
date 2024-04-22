@@ -14,17 +14,30 @@
 
 """Tests for the state subpackage."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
+import json
+import os
 import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.fock import fock_state
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
-from mrmustard.physics.triples import coherent_state_Abc
+from mrmustard.physics.triples import coherent_state_Abc, thermal_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import (
+    Coherent,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    SqueezedVacuum,
+    Thermal,
+    Vacuum,
+)
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 
@@ -39,9 +52,9 @@ class TestKet:
     def test_init(self, name, modes):
         state = Ket(name, modes)
 
-        assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
-        assert state.wires == Wires(modes_out_ket=modes)
+        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
+        assert list(state.modes) == sorted(modes)
+        assert state.wires == Wires(modes_out_ket=set(modes))
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -87,8 +100,10 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
-        with pytest.raises(NotImplementedError):
-            Coherent(modes, x=1, y=2).phase_space()
+        cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
+        assert math.allclose(coeff[0], 1.0)
+        assert math.allclose(cov[0], np.eye(2))
+        assert math.allclose(means[0], np.array([2.0, 4.0]))
 
         n_modes = len(modes)
 
@@ -164,14 +179,38 @@ class TestKet:
         assert isinstance(ket >> Coherent([0], 1).dual, Ket)
         assert isinstance(ket >> Coherent([0], 1).dm().dual, DM)
 
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        ket_component = CircuitComponent._from_attributes(
-            ket.name, ket.representation, ket.wires
-        )  # pylint: disable=protected-access
+    @pytest.mark.parametrize("modes", [[3, 30, 98]])
+    @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
+    def test_get_item(self, modes, m):
+        ket = Vacuum(modes) >> Dgate(modes, x=[0, 1, 2])
+        dm = ket.dm()
 
-        assert repr(ket) == "Ket(name=Coherent, modes=[0, 1])"
-        assert repr(ket_component) == "CircuitComponent(name=Coherent, modes=[0, 1])"
+        assert ket[m] == dm[m]
+
+    @pytest.mark.parametrize("modes", [[3, 30, 98]])
+    @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
+    def test_get_item_builtin_kets(self, modes, m):
+        idx = [modes.index(s) for s in m]
+
+        x = math.asnumpy([0, 1, 2])
+        s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
+
+        si = s[m]
+        assert isinstance(si, DisplacedSqueezed)
+        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
+
+        assert isinstance(si.x, Constant)
+        assert math.allclose(si.x.value, x[idx])
+
+        assert isinstance(si.y, Variable)
+        assert si.y.value == s.y.value
+        assert si.y.bounds == s.y.bounds
+
+        assert isinstance(si.r, Constant)
+        assert si.r.value == s.r.value
+
+        assert isinstance(si.phi, Constant)
+        assert si.phi.value == s.phi.value
 
 
 class TestDM:
@@ -180,12 +219,12 @@ class TestDM:
     """
 
     @pytest.mark.parametrize("name", [None, "my_dm"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         state = DM(name, modes)
 
-        assert state.name == (name if name else "")
-        assert state.modes == sorted(modes)
+        assert state.name in ("DM0", "DM01", "DM2319") if not name else name
+        assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -224,10 +263,11 @@ class TestDM:
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):
-        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 0.8)
-
-        with pytest.raises(NotImplementedError):
-            state0.phase_space()
+        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
+        cov, means, coeff = state0.phase_space(s=0)  # batch = 1
+        assert coeff[0] == 1.0
+        assert math.allclose(cov[0], np.eye(2))
+        assert math.allclose(means[0], np.array([2.0, 4.0]))
 
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
@@ -256,7 +296,7 @@ class TestDM:
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert state2.to_fock_component(20).probability == 1
+        assert math.allclose(state2.to_fock_component(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
@@ -289,17 +329,6 @@ class TestDM:
         # measurements
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
-
-    def test_repr(self):
-        ket = Coherent([0, 1], 1)
-        channel = Attenuator([1], 1)
-        dm = ket >> channel
-        dm_component = CircuitComponent._from_attributes(
-            dm.name, dm.representation, dm.wires
-        )  # pylint: disable=protected-access
-
-        assert repr(dm) == "DM(name=None, modes=[0, 1])"
-        assert repr(dm_component) == "CircuitComponent(name=None, modes=[0, 1])"
 
 
 class TestCoherent:
@@ -360,6 +389,56 @@ class TestCoherent:
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
+class TestDisplacedSqueezed:
+    r"""
+    Tests for the ``DisplacedSqueezed`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    x = [[1], 1, [1, 2]]
+    y = [[3], [3, 4], [3, 4]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
+    def test_init(self, modes, x, y, r, phi):
+        state = DisplacedSqueezed(modes, x, y, r, phi)
+
+        assert state.name == "DisplacedSqueezed"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``x``"):
+            DisplacedSqueezed(modes=[0, 1], x=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``y``"):
+            DisplacedSqueezed(modes=[0, 1], x=1, y=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = DisplacedSqueezed([0], 1, 1)
+        state2 = DisplacedSqueezed([0], 1, 1, x_trainable=True, x_bounds=(-2, 2))
+        state3 = DisplacedSqueezed([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.x.value = 3
+
+        state2.x.value = 2
+        assert state2.x.value == 2
+
+        state3.y.value = 2
+        assert state3.y.value == 2
+
+    @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
+    def test_representation(self, modes, x, y, r, phi):
+        rep = DisplacedSqueezed(modes, x, y, r, phi).representation
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            DisplacedSqueezed(modes=[0], x=[0.1, 0.2]).representation
+
+
 class TestNumber:
     r"""
     Tests for the ``Number`` class.
@@ -395,17 +474,65 @@ class TestNumber:
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
+class TestSqueezedVacuum:
+    r"""
+    Tests for the ``SqueezedVacuum`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_init(self, modes, r, phi):
+        state = SqueezedVacuum(modes, r, phi)
+
+        assert state.name == "SqueezedVacuum"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``r``"):
+            SqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``phi``"):
+            SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = SqueezedVacuum([0], 1, 1)
+        state2 = SqueezedVacuum([0], 1, 1, r_trainable=True, r_bounds=(-2, 2))
+        state3 = SqueezedVacuum([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.r.value = 3
+
+        state2.r.value = 2
+        assert state2.r.value == 2
+
+        state3.phi.value = 2
+        assert state3.phi.value == 2
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_representation(self, modes, r, phi):
+        rep = SqueezedVacuum(modes, r, phi).representation
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            SqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+
+
 class TestVacuum:
     r"""
     Tests for the ``Vacuum`` class.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (3, 19, 2)])
     def test_init(self, modes):
         state = Vacuum(modes)
 
         assert state.name == "Vac"
-        assert state.modes == sorted(modes)
+        assert list(state.modes) == sorted(modes)
         assert state.n_modes == len(modes)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
@@ -415,3 +542,104 @@ class TestVacuum:
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
         assert math.allclose(rep.c, [1.0])
+
+
+class TestThermal:
+    r"""
+    Tests for the ``Thermal`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    nbar = [[3], 4, [5, 6]]
+
+    @pytest.mark.parametrize("modes,nbar", zip(modes, nbar))
+    def test_init(self, modes, nbar):
+        state = Thermal(modes, nbar)
+
+        assert state.name == "Thermal"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``nbar``"):
+            Thermal(modes=[0, 1], nbar=[2, 3, 4])
+
+    @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
+    def test_representation(self, nbar):
+        rep = Thermal([0, 1], nbar).representation
+        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Thermal(modes=[0], nbar=[0.1, 0.2]).representation
+
+
+class TestVisualization:
+    r"""
+    Tests the functions to visualize states.
+    """
+
+    # set to ``True`` to regenerate the assets
+    regenerate_assets = False
+
+    # path
+    path = os.path.dirname(__file__) + "/assets"
+
+    def test_visualize_2d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_2d.json", remove_uids=True)
+
+        with open(self.path + "/visualize_2d.json") as file:
+            ref_data = json.load(file)
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert math.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
+        assert math.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
+        assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
+        assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
+
+    def test_visualize_2d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_2d(20)
+
+    def test_visualize_3d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_3d.json", remove_uids=True)
+
+        with open(self.path + "/visualize_3d.json") as file:
+            ref_data = json.load(file)
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_3d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_3d(20)
+
+    def test_visualize_dm(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_dm(20, return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path + "/visualize_dm.json", remove_uids=True)
+
+        with open(self.path + "/visualize_dm.json") as file:
+            ref_data = json.load(file)
+
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_dm_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_dm(20)

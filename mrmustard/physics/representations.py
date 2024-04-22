@@ -26,7 +26,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.physics import bargmann
+from mrmustard.physics.gaussian_integrals import (
+    contract_two_Abc,
+    reorder_abc,
+    complex_gaussian_integral,
+)
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
     Batch,
@@ -48,6 +52,19 @@ class Representation(ABC):
     them with all the functionality required to perform mathematical operations, such as equality,
     multiplication, subtraction, etc.
     """
+
+    @property
+    @abstractmethod
+    def ansatz(self) -> Ansatz:
+        r"""
+        The ansatz of the representation.
+        """
+
+    @abstractmethod
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+        r"""
+        Reorders the representation indices.
+        """
 
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
@@ -112,6 +129,12 @@ class Representation(ABC):
         Takes the outer product of this representation with another.
         """
         return self.from_ansatz(self.ansatz & other.ansatz)
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+        r"""
+        Stores the indices for contraction.
+        """
+        raise NotImplementedError
 
 
 class Bargmann(Representation):
@@ -208,7 +231,14 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self.ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A, b, c)
+
+    @property
+    def ansatz(self) -> PolyExpAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
@@ -263,7 +293,7 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -290,7 +320,7 @@ class Bargmann(Representation):
         Returns:
             The reordered Bargmann object.
         """
-        A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
+        A, b, c = reorder_abc((self.A, self.b, self.c), order)
         return self.__class__(A, b, c)
 
     def plot(
@@ -414,14 +444,7 @@ class Bargmann(Representation):
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
-                Abc.append(
-                    bargmann.contract_two_Abc(
-                        (A1, b1, c1),
-                        (A2, b2, c2),
-                        idx_s,
-                        idx_o,
-                    )
-                )
+                Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -479,7 +502,14 @@ class Fock(Representation):
         array = math.astensor(array)
         if not batched:
             array = array[None, ...]
-        self.ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array)
+
+    @property
+    def ansatz(self) -> ArrayAnsatz:
+        r"""
+        The ansatz of the representation.
+        """
+        return self._ansatz
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ

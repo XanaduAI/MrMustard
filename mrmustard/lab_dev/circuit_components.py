@@ -22,9 +22,10 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 
+import numpy as np
 from ..utils.typing import Scalar
 from ..physics.converters import to_fock
-from ..physics.representations import Representation
+from ..physics.representations import Representation, Bargmann, Fock
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .wires import Wires
@@ -49,16 +50,39 @@ class CircuitComponent:
     def __init__(
         self,
         name: Optional[str] = None,
-        representation: Optional[Representation] = None,
+        representation: Optional[Bargmann | Fock] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
         modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
     ) -> None:
-        self._name = name or ""
-        self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+        modes_out_bra = modes_out_bra or ()
+        modes_in_bra = modes_in_bra or ()
+        modes_out_ket = modes_out_ket or ()
+        modes_in_ket = modes_in_ket or ()
+
+        self._wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
+        self._name = name or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
+
+        # handle out-of-order modes
+        ob = tuple(sorted(modes_out_bra))
+        ib = tuple(sorted(modes_in_bra))
+        ok = tuple(sorted(modes_out_ket))
+        ik = tuple(sorted(modes_in_ket))
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+            offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
+            perm = (
+                tuple(np.argsort(modes_out_bra))
+                + tuple(np.argsort(modes_in_bra) + offsets[0])
+                + tuple(np.argsort(modes_out_ket) + offsets[1])
+                + tuple(np.argsort(modes_in_ket) + offsets[2])
+            )
+            if self._representation:
+                self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
     def _from_attributes(
@@ -118,7 +142,7 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
-    def representation(self) -> Representation:
+    def representation(self) -> Representation | None:
         r"""
         A representation of this circuit component.
         """
@@ -129,7 +153,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return self.wires.modes
+        return sorted(self.wires.modes)
 
     @property
     def n_modes(self) -> list[int]:
@@ -180,8 +204,45 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = self.wires.copy()
+        instance.__dict__["_wires"] = Wires(*self.wires.args)
         return instance
+
+    def on(self, modes: Sequence[int]) -> CircuitComponent:
+        r"""
+        Creates a copy of this component that acts on the given ``modes`` instead of on the
+        original modes.
+
+        Args:
+            modes: The new modes that this component acts on.
+
+        Returns:
+            The component acting on the specified modes.
+
+        Raises:
+            ValueError: If ``modes`` contains more or less modes than the original component.
+        """
+        modes = set(modes)
+
+        ob = self.wires.output.bra
+        ib = self.wires.input.bra
+        ok = self.wires.output.ket
+        ik = self.wires.input.ket
+        for subset in [ob, ib, ok, ik]:
+            if subset and len(subset.modes) != len(modes):
+                msg = f"Expected ``{len(modes)}`` modes, found ``{len(subset.modes)}``."
+                raise ValueError(msg)
+
+        wires = Wires(
+            modes_out_bra=modes if ob else set(),
+            modes_in_bra=modes if ib else set(),
+            modes_out_ket=modes if ok else set(),
+            modes_in_ket=modes if ik else set(),
+        )
+
+        ret = self.light_copy()
+        ret._wires = wires
+
+        return ret
 
     def to_fock_component(
         self, shape: Optional[Union[int, Iterable[int]]] = None
@@ -259,37 +320,31 @@ class CircuitComponent:
         Contracts ``self`` and ``other``, without adding adjoints.
         """
         # initialized the ``Wires`` of the returned component
-        wires_ret = self.wires @ other.wires
+        wires_ret, perm = self.wires @ other.wires
 
         # find the indices of the wires being contracted on the bra side
-        bra_modes = set(self.wires.bra.output.modes).intersection(other.wires.bra.input.modes)
-        idx_z = self.wires[bra_modes].bra.output.indices
-        idx_zconj = other.wires[bra_modes].bra.input.indices
+        bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
+        idx_z = self.wires.bra.output[bra_modes].indices
+        idx_zconj = other.wires.bra.input[bra_modes].indices
 
         # find the indices of the wires being contracted on the ket side
-        ket_modes = set(self.wires.ket.output.modes).intersection(other.wires.ket.input.modes)
-        idx_z += self.wires[ket_modes].ket.output.indices
-        idx_zconj += other.wires[ket_modes].ket.input.indices
+        ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
+        idx_z += self.wires.ket.output[ket_modes].indices
+        idx_zconj += other.wires.ket.input[ket_modes].indices
 
         # calculate the representation of the returned component
         representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
 
         # reorder the representation
-        contracted_idx = [self.wires.ids[i] for i in range(len(self.wires.ids)) if i not in idx_z]
-        contracted_idx += [
-            other.wires.ids[i] for i in range(len(other.wires.ids)) if i not in idx_zconj
-        ]
-        order = [contracted_idx.index(id) for id in wires_ret.ids]
-        representation_ret = representation_ret.reorder(order) if order else representation_ret
-
-        return CircuitComponent._from_attributes("", representation_ret, wires_ret)
+        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
+        return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
         """
-        msg = f"``__rshift__`` not supported between {self} and {other}, use ``__matmul__``."
+        msg = f"``>>`` not supported between {self} and {other}, use ``@``."
 
         wires_s = self.wires
         wires_o = other.wires
@@ -316,8 +371,7 @@ class CircuitComponent:
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        name = self.name if self.name else "None"
-        return f"CircuitComponent(name={name}, modes={self.modes})"
+        return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
 
 class AdjointView(CircuitComponent):
@@ -344,7 +398,9 @@ class AdjointView(CircuitComponent):
         r"""
         A representation of this circuit component.
         """
-        return self._component.representation.conj()
+        bras = self._component.wires.bra.indices
+        kets = self._component.wires.ket.indices
+        return self._component.representation.reorder(kets + bras).conj()
 
     @property
     def wires(self):
@@ -381,7 +437,9 @@ class DualView(CircuitComponent):
         r"""
         A representation of this circuit component.
         """
-        return self._component.representation.conj()
+        outs = self._component.wires.output.indices
+        ins = self._component.wires.input.indices
+        return self._component.representation.reorder(ins + outs).conj()
 
     @property
     def wires(self):

@@ -21,7 +21,15 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.transformations import Attenuator, BSgate, Channel, Dgate, Sgate, Unitary
+from mrmustard.lab_dev.transformations import (
+    Attenuator,
+    BSgate,
+    Channel,
+    Dgate,
+    Rgate,
+    Sgate,
+    Unitary,
+)
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -31,12 +39,12 @@ class TestUnitary:
     """
 
     @pytest.mark.parametrize("name", [None, "my_unitary"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         gate = Unitary(name, modes)
 
-        assert gate.name == (name if name else "")
-        assert gate.modes == sorted(modes)
+        assert gate.name[:1] == (name or "U")[:1]
+        assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(modes_in_ket=modes, modes_out_ket=modes)
 
     def test_rshift(self):
@@ -71,12 +79,12 @@ class TestChannel:
     """
 
     @pytest.mark.parametrize("name", [None, "my_channel"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
         gate = Channel(name, modes)
 
-        assert gate.name == (name if name else "")
-        assert gate.modes == sorted(modes)
+        assert gate.name[:2] == (name or "Ch")[:2]
+        assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(
             modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes
         )
@@ -226,6 +234,72 @@ class TestDgate:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Dgate(modes=[0], x=[0.1, 0.2]).representation
+
+
+class TestRgate:
+    r"""
+    Tests for the ``Rgate`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    theta = [[1], 1, [1, 2]]
+
+    @pytest.mark.parametrize("modes,theta", zip(modes, theta))
+    def test_init(self, modes, theta):
+        gate = Rgate(modes, theta)
+
+        assert gate.name == "Rgate"
+        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``theta``"):
+            Rgate(modes=[0, 1], theta=[2, 3, 4])
+
+    def test_representation(self):
+        rep1 = Rgate(modes=[0], theta=0.1).representation
+        assert math.allclose(
+            rep1.A,
+            [[[-0.09966799 - 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 2)))
+        assert math.allclose(rep1.c, [0.99750727])
+
+        rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).representation
+        assert math.allclose(
+            rep2.A,
+            [
+                [
+                    [-0.09966799 - 0.0j, 0.0 - 0.0j, 0.99502075 + 0.0j, 0.0 + 0.0j],
+                    [0.0 - 0.0j, -0.29131261 - 0.0j, 0.0 + 0.0j, 0.95662791 + 0.0j],
+                    [0.99502075 + 0.0j, 0.0 + 0.0j, 0.09966799 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.95662791 + 0.0j, 0.0 + 0.0j, 0.29131261 + 0.0j],
+                ]
+            ],
+        )
+        assert math.allclose(rep2.b, np.zeros((1, 4)))
+        assert math.allclose(rep2.c, [0.9756355])
+
+        rep3 = Rgate(modes=[1], theta=0.1).representation
+        assert math.allclose(
+            rep3.A,
+            [[[-0.09966799 + 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+        )
+        assert math.allclose(rep3.b, np.zeros((1, 2)))
+        assert math.allclose(rep3.c, [0.9975072676192522])
+
+    def test_trainable_parameters(self):
+        gate1 = Rgate([0], 1)
+        gate2 = Rgate([0], 1, True, (-2, 2))
+
+        with pytest.raises(AttributeError):
+            gate1.theta.value = 3
+
+        gate2.theta.value = 2
+        assert gate2.theta.value == 2
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Rgate(modes=[0], theta=[0.1, 0.2]).representation
 
 
 class TestSgate:

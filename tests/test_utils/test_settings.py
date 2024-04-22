@@ -42,6 +42,12 @@ class TestImmutableSettings:
         with pytest.raises(ValueError, match=f"value of `settings.{s.name}`"):
             s.value = 3
 
+    def test_can_set_same_value(self):
+        """Tests that the same value won't trigger an error"""
+        s = ImmutableSetting(1, "something")
+        s.value = 4
+        s.value = 4  # doesn't raise error
+
 
 class TestSettings:
     """Tests the Settings class"""

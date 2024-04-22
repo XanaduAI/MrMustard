@@ -220,7 +220,9 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc(theta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def rotation_gate_Abc(
+    theta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of rotation gates.
 
@@ -330,7 +332,10 @@ def beamsplitter_gate_Abc(
     costheta = math.diag(math.cos(theta))
     sintheta = math.diag(math.sin(theta))
     V = math.block(
-        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
+        [
+            [costheta, -math.exp(-1j * phi) * sintheta],
+            [math.exp(1j * phi) * sintheta, costheta],
+        ]
     )
 
     A = math.block([[O_n, V], [math.transpose(V), O_n]])
@@ -474,4 +479,72 @@ def _bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     )
     b = _vacuum_B_vector(2 * n_modes)
     c = (1.0 + 0j) / (math.pi * hbar) ** (0.25 * n_modes)
+
+  
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  Maps between representations
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
+    :math:
+        D_s(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} D(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} e^{\frac{1}{2}|\vec{z}|^2} e^{\vec{z}^*\vec{\gamma} - \vec{z} \vec{\gamma}^*}.
+    The indices of the final triple correspond to the variables :math:`(\gamma_1^*, \gamma_2^*, ..., z_1, z_2, ..., \gamma_1, \gamma_2, ..., z_1^*, z_2^*, ...)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
+
+    Args:
+        s: The phase space parameter
+        n_modes: the number of modes for this map.
+
+    Returns:
+        The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
+    """
+    A = math.block(
+        [
+            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
+            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
+        ]
+    )
+    order_list = np.arange(4 * n_modes)  # [0,3,1,2]
+    order_list = list(
+        np.concatenate(
+            (
+                np.concatenate((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
+                order_list[n_modes : 3 * n_modes],
+            ),
+            axis=0,
+        )
+    )
+
+    A = A[order_list, :][:, order_list]
+    b = _vacuum_B_vector(4 * n_modes)
+    c = 1.0 + 0j
+    return A, b, c
+
+
+# ~~~~~~~~~~~~~~~~
+# Kraus operators
+# ~~~~~~~~~~~~~~~~
+
+
+def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
+    The last index is the "bond" index which should be summed/integrated over.
+
+    Args:
+        eta: The value of the transmissivity.
+
+    Returns:
+        The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
+    """
+    costheta = math.sqrt(eta)
+    sintheta = math.sqrt(1 - eta)
+
+    A = math.astensor(
+        [[0, costheta, 0], [costheta, 0, -sintheta], [0, -sintheta, 0]], math.complex128
+    )
+    b = _vacuum_B_vector(3)
+    c = 1.0 + 0j
     return A, b, c
