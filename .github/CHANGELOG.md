@@ -7,6 +7,8 @@
 * Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
+* Added `sort` function to math backends.
+
 ### Breaking changes
 
 ### Improvements
@@ -14,6 +16,8 @@
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
 
 ### Documentation
 
@@ -23,6 +27,7 @@
 [Samuele Ferracin](https://github.com/SamFerracin)
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
+[Austin Lund](https://github.com/aplund)
 
 
 ---

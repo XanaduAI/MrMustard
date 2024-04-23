@@ -315,6 +315,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return np.linalg.solve(matrix, rhs)[..., 0]
         return np.linalg.solve(matrix, rhs)
 
+    def sort(self, array: np.ndarray, axis: int = -1) -> np.ndarray:
+        return np.sort(array, axis)
+
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
