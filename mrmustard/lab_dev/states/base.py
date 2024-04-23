@@ -42,6 +42,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
+from mrmustard.physics.gaussian_integrals import join_Abc, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
@@ -193,16 +194,7 @@ class State(CircuitComponent):
             ValueError: If the given triple have shapes that are inconsistent
                 with the number of modes.
         """
-        quadrature_rep = Bargmann.from_ansatz(*triple)  # pretend it is a Bargmann but it is not yet
-        state_component = cls(name, modes)
-        state_component._representation = quadrature_rep
-        state_component = state_component >> _BtoQMap.dual
-        state_component._representation = Bargmann(
-            state_component._representation.A,
-            state_component._representation.b,
-            state_component._representation.c,
-        )
-        return state_component
+        raise NotImplementedError
 
     @property
     def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
@@ -567,18 +559,16 @@ class State(CircuitComponent):
         # use `mro` to return the correct state
         return self.__class__(modes, **kwargs)
 
-    def quadrature(self, modes) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        The A matrix, b vector and c scalar that describe this state in the quadrature basis.
+        The A matrix, b vector and c scalar that describe this state in the quadrature basis for all modes.
         """
-        if len(list(set(modes) & set(self.modes))) != len(modes):
+        if not isinstance(self.representation, Bargmann):
             raise ValueError(
-                f"The modes ``{modes}`` needs to be transformed is not included in the modes ``{self.modes}`` of the state."
+                f"``{self.representation}`` is not available to calculate the quadrature representation."
             )
-
         ret = self >> _BtoQMap(self.modes)
-        message = "Quadrature rep on modes" + modes + ", Bargmann rep on other modes."
-        return ret.bargmann_triple, message
+        return ret.bargmann_triple
 
 
 class DM(State):
@@ -667,6 +657,26 @@ class DM(State):
 
         ret = DM(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
+        return ret
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> DM:
+        QtoBMap_CC = _BtoQMap(modes).dual @ _BtoQMap(modes).dual.adjoint
+        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
+            QtoBMap_CC.representation.A[0],
+            QtoBMap_CC.representation.b[0],
+            QtoBMap_CC.representation.c[0],
+        )
+        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
+            join_Abc(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)), idx=list(np.arange(4 * len(modes)))
+        )
+        ret = DM(name, modes)
+        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
         return ret
 
     @property
@@ -795,7 +805,7 @@ class Ket(State):
         means: ComplexMatrix,
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
-    ):
+    ) -> Ket:
         cov = math.astensor(cov)
         means = math.astensor(means)
 
@@ -815,6 +825,26 @@ class Ket(State):
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
+        return ret
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Ket:
+        QtoBMap_CC = _BtoQMap(modes).dual
+        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
+            QtoBMap_CC.representation.A[0],
+            QtoBMap_CC.representation.b[0],
+            QtoBMap_CC.representation.c[0],
+        )
+        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
+            join_Abc(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)), idx=list(np.arange(2 * len(modes)))
+        )
+        ret = Ket(name, modes)
+        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
         return ret
 
     @property

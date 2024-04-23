@@ -116,8 +116,17 @@ class TestKet:
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            Ket.from_quadrature()
+        A = np.eye(1)
+        b = np.zeros(1)
+        c = 1.0
+        state1 = Ket.from_quadrature([0], (A, b, c), "quad")
+        assert state1.modes == [0]
+        assert state1.name == "quad"
+        assert isinstance(state1.representation, Bargmann)
+        # assert more about values
+
+        A1, b1, c1 = state1.quadrature()
+        assert math.allclose(A, A1[0])
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
@@ -275,8 +284,16 @@ class TestDM:
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            DM.from_quadrature()
+        A = np.eye(2)
+        b = np.zeros(2)
+        c = 1.0
+        state1 = DM.from_quadrature([0], (A, b, c), "quad")
+        assert state1.modes == [0]
+        assert state1.name == "quad"
+        assert isinstance(state1.representation, Bargmann)
+        # assert more about values
+        A1, b1, c1 = state1.quadrature()
+        assert math.allclose(A, A1[0])
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()

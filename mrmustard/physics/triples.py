@@ -474,11 +474,11 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     A = math.block(
         [
             [In, -1j * math.sqrt(2 / hbar) * In],
-            [-1j * math.sqrt(2 / hbar) * In, -1 / (2 * hbar)],
+            [-1j * math.sqrt(2 / hbar) * In, -1 / (2 * hbar) * In],
         ]
     )
     b = _vacuum_B_vector(2 * n_modes)
-    c = (1.0 + 0j) / (math.pi * hbar) ** (0.25 * n_modes)
+    c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
     return A, b, c
 
 
