@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..circuit_components import CircuitComponent
+from ..measurements import Detector
 
 __all__ = ["Transformation", "Unitary", "Channel"]
 
@@ -59,8 +60,10 @@ class Unitary(Transformation):
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
         ``Channel``, and a ``CircuitComponent`` otherwise.
         """
-        ret = super().__rshift__(other)
+        if isinstance(other, Detector) and self.wires.modes.issubset(other.wires.modes):
+            return Detector("", other.modes, [k >> self.dual for k in other.meas_op])
 
+        ret = super().__rshift__(other)
         if isinstance(other, Unitary):
             return Unitary._from_attributes("", ret.representation, ret.wires)
         elif isinstance(other, Channel):
