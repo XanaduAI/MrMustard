@@ -39,14 +39,15 @@ from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho, join_Abc
+from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
+from mrmustard.physics.gaussian_integrals import join_Abc
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock, Mixed
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import _DsMap
+from ..circuit_components_utils import _DsMap, _BtoQMap
 from ..circuit_components import CircuitComponent
 from ..wires import Wires
 
@@ -196,10 +197,10 @@ class State(CircuitComponent):
         dict_rep = dict()
         for i in range(len(triple[0].shape[-1])):
             dict_rep[i] = "quad"
-        quadrature_rep = Mixed(dict_rep, *triple)
+        quadrature_rep = Mixed.from_ansatz(dict_rep, *triple)
         state_component = cls(name, modes)
         state_component._representation = quadrature_rep
-        state_component = state_component >> QuadMap.dual()
+        state_component = state_component >> _BtoQMap.dual
         state_component._representation = Bargmann(
             state_component._representation.A,
             state_component._representation.b,
@@ -574,7 +575,7 @@ class State(CircuitComponent):
         r"""
         The A matrix, b vector and c scalar that describe this state in the quadrature basis.
         """
-        ret = self >> QuadMap(modes)
+        ret = self >> _BtoQMap(self.modes)
         return ret.bargmann_triple
 
 

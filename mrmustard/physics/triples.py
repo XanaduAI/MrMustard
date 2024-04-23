@@ -454,7 +454,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def _bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
@@ -479,6 +479,7 @@ def _bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     )
     b = _vacuum_B_vector(2 * n_modes)
     c = (1.0 + 0j) / (math.pi * hbar) ** (0.25 * n_modes)
+    return A, b, c
 
   
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

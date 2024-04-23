@@ -719,7 +719,7 @@ class Mixed(Representation):
     """
     def __init__(
         self,
-        dict_rep_idxs: dict(),
+        dict_rep_idxs: dict,
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
@@ -729,14 +729,14 @@ class Mixed(Representation):
         self._dict_rep_idxs = dict_rep_idxs
 
     @classmethod
-    def from_ansatz(cls, dict_rep_idxs: dict(), ansatz: PolyExpAnsatz) -> Mixed:  # pylint: disable=arguments-differ
+    def from_ansatz(cls, dict_rep_idxs: dict, ansatz: PolyExpAnsatz) -> Mixed:  # pylint: disable=arguments-differ
         r"""
         Returns a Mixed object from an ansatz object.
         """
         return cls(dict_rep_idxs, ansatz.A, ansatz.b, ansatz.c)
    
     @property
-    def dict_rep_idxs(self) -> dict():
+    def dict_rep_idxs(self) -> dict:
         r"""
         The dictionary indicates the representation of each indices.
         """
