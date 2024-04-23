@@ -692,6 +692,7 @@ class Fock(Representation):
             ret = ret[slc]
         return Fock(array=ret, batched=True)
 
+
 class Mixed(Representation):
     r"""
     The Mixed representation of a broad class of quantum states, transformations, measurements,
@@ -717,6 +718,7 @@ class Mixed(Representation):
     Note: The args can be passed non-batched, as they will be automatically broadcasted to the
     correct batch shape.
     """
+
     def __init__(
         self,
         dict_rep_idxs: dict,
@@ -729,18 +731,20 @@ class Mixed(Representation):
         self._dict_rep_idxs = dict_rep_idxs
 
     @classmethod
-    def from_ansatz(cls, dict_rep_idxs: dict, ansatz: PolyExpAnsatz) -> Mixed:  # pylint: disable=arguments-differ
+    def from_ansatz(
+        cls, dict_rep_idxs: dict, ansatz: PolyExpAnsatz
+    ) -> Mixed:  # pylint: disable=arguments-differ
         r"""
         Returns a Mixed object from an ansatz object.
         """
         return cls(dict_rep_idxs, ansatz.A, ansatz.b, ansatz.c)
-   
+
     @property
     def dict_rep_idxs(self) -> dict:
         r"""
         The dictionary indicates the representation of each indices.
         """
-        return self._dict_rep_idxs # pylint: disable=protected-access
+        return self._dict_rep_idxs  # pylint: disable=protected-access
 
     @property
     def A(self) -> Batch[ComplexMatrix]:

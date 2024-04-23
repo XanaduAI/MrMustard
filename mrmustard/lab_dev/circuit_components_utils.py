@@ -66,7 +66,7 @@ class _BtoQMap(CircuitComponent):
 
     The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from Bargmann into Quadrature on the `Bra` Wire.
     The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from Quadrature into Bargmann.
-    
+
     Args:
         num_modes: The number of modes of this channel.
     """

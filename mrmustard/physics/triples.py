@@ -458,9 +458,9 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
-    
+
     The indices of the triple correspond to the variables :math:`(\vec{z}, \vec{p})` of the kernel here and it is used to transform from quadrature representation in Bargmann.
-    
+
     If one wants to transformation from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component.
 
     Args:
@@ -481,7 +481,7 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     c = (1.0 + 0j) / (math.pi * hbar) ** (0.25 * n_modes)
     return A, b, c
 
-  
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  Maps between representations
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
