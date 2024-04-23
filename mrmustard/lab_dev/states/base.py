@@ -40,10 +40,9 @@ from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import join_Abc
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Bargmann, Fock, Mixed
+from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -194,10 +193,7 @@ class State(CircuitComponent):
             ValueError: If the given triple have shapes that are inconsistent
                 with the number of modes.
         """
-        dict_rep = dict()
-        for i in range(len(triple[0].shape[-1])):
-            dict_rep[i] = "quad"
-        quadrature_rep = Mixed.from_ansatz(dict_rep, *triple)
+        quadrature_rep = Bargmann.from_ansatz(*triple)  # pretend it is a Bargmann but it is not yet
         state_component = cls(name, modes)
         state_component._representation = quadrature_rep
         state_component = state_component >> _BtoQMap.dual
@@ -571,12 +567,18 @@ class State(CircuitComponent):
         # use `mro` to return the correct state
         return self.__class__(modes, **kwargs)
 
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    def quadrature(self, modes) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
         The A matrix, b vector and c scalar that describe this state in the quadrature basis.
         """
+        if len(list(set(modes) & set(self.modes))) != len(modes):
+            raise ValueError(
+                f"The modes ``{modes}`` needs to be transformed is not included in the modes ``{self.modes}`` of the state."
+            )
+
         ret = self >> _BtoQMap(self.modes)
-        return ret.bargmann_triple
+        message = "Quadrature rep on modes" + modes + ", Bargmann rep on other modes."
+        return ret.bargmann_triple, message
 
 
 class DM(State):
