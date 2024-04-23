@@ -666,7 +666,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> DM:
-        QtoBMap_CC = _BtoQMap(modes).dual @ _BtoQMap(modes).dual.adjoint
+        QtoBMap_CC = _BtoQMap(modes).dual.adjoint @ _BtoQMap(modes).dual
         QtoBMap_A, QtoBMap_b, QtoBMap_c = (
             QtoBMap_CC.representation.A[0],
             QtoBMap_CC.representation.b[0],
