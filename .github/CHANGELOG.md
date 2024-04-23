@@ -1,10 +1,10 @@
 # Current develop
 
 ### New features
-* Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+* Added one new private CircuitComponent ``_BtoQMap`` to convert the representations. 
+  [(#373)](https://github.com/XanaduAI/MrMustard/pull/373)
 
-* Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
+* Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 ### Breaking changes
