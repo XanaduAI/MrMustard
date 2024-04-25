@@ -106,6 +106,9 @@ def test_join_Abc_real():
     assert np.allclose(joined_Abc[1], b2)
     assert np.allclose(joined_Abc[2], math.outer(c1, c2))
 
+    with pytest.raises(NotImplementedError):
+        join_Abc_real((A2, b2, c2), (A1, b1, c1), idx1, idx2)
+
 
 def test_complex_gaussian_integral():
     """Tests the ``complex_gaussian_integral`` method."""

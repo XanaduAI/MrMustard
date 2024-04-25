@@ -29,6 +29,7 @@ from mrmustard.physics.gaussian_integrals import (
     real_gaussian_integral,
     complex_gaussian_integral,
     join_Abc,
+    join_Abc_real,
 )
 
 
@@ -122,23 +123,22 @@ class TestDsMap:
             QtoBMap_CC1.representation.b[0],
             QtoBMap_CC1.representation.c[0],
         )
-        Ainter, _, cinter = complex_gaussian_integral(
+        Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
             idx_z=[0, 1],
             idx_zconj=[2, 3],
             measure=-1,
         )
         QtoBMap_CC2 = _BtoQMap(modes).dual
-        step2A, step2b, _ = (
+        step2A, step2b, step2c = (
             QtoBMap_CC2.representation.A[0],
             QtoBMap_CC2.representation.b[0],
             QtoBMap_CC2.representation.c[0],
         )
 
-        #Needs a new join_Abc for real variables
-        new_step2A = step2A
-        new_step2A[:2, :2] = new_step2A[:2, :2] + Ainter
-        new_A, new_b, new_c = new_step2A, step2b, cinter*step1c
+        new_A, new_b, new_c = join_Abc_real(
+            (Ainter, binter, cinter), (step2A, step2b, step2c), [0, 1], [0, 1]
+        )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
 
