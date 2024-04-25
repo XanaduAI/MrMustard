@@ -22,6 +22,7 @@ from mrmustard.physics.gaussian_integrals import (
     real_gaussian_integral,
     complex_gaussian_integral,
     join_Abc,
+    join_Abc_real,
     contract_two_Abc,
     reorder_abc,
 )
@@ -46,7 +47,7 @@ def test_real_gaussian_integral():
     assert np.allclose(
         res[2],
         c
-        * (2 * np.pi)
+        * 2
         / math.sqrt(math.det(A[:2, :2]))
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
@@ -71,7 +72,7 @@ def test_real_gaussian_integral():
     assert np.allclose(
         res3[2],
         c2
-        * (2 * np.pi)
+        * 2
         / math.sqrt(math.det(A2[:2, :2]))
         * math.exp(-0.5 * math.sum(b2[:2] * math.matvec(math.inv(A2[:2, :2]), b2[:2]))),
     )
@@ -91,6 +92,19 @@ def test_join_Abc():
     b12 = math.concat([b1, b2], axis=-1)
     c12 = math.outer(c1, c2)
     return A12, b12, c12
+
+
+def test_join_Abc_real():
+    """Tests the ``join_Abc_real`` method."""
+    A1, b1, c1 = triples.vacuum_state_Abc(2)
+    A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
+    idx1 = [0, 1]
+    idx2 = [0, 1]
+
+    joined_Abc = join_Abc_real((A1, b1, c1), (A2, b2, c2), idx1, idx2)
+    assert np.allclose(joined_Abc[0], A2)
+    assert np.allclose(joined_Abc[1], b2)
+    assert np.allclose(joined_Abc[2], math.outer(c1, c2))
 
 
 def test_complex_gaussian_integral():

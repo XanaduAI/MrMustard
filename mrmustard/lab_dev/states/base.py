@@ -841,7 +841,8 @@ class Ket(State):
             QtoBMap_CC.representation.c[0],
         )
         bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
-            join_Abc(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)), idx=list(np.arange(2 * len(modes)))
+            join_Abc_real(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)),
+            idx=list(np.arange(len(modes))),
         )
         ret = Ket(name, modes)
         ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)

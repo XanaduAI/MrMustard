@@ -69,7 +69,8 @@ def real_gaussian_integral(
 
     c_post = (
         c
-        * math.sqrt(2) ** len(idx) * math.sqrt( (-1)**len(idx) / math.det(M))
+        * math.sqrt(2) ** len(idx)
+        * math.sqrt((-1) ** len(idx) / math.det(M))
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
@@ -166,6 +167,54 @@ def join_Abc(
     A2, b2, c2 = Abc2
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
+    c12 = math.outer(c1, c2)
+    return A12, b12, c12
+
+
+def join_Abc_real(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+):
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by fusing the same meaning indices (idx1 and idx2 give the information about this) in both ``A``
+    matrices and ``b`` vectors.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+        idx1: the indices of the first ``(A,b,c)`` triple to fuse
+        idx2: the indices of the second ``(A,b,c)`` triple to fuse
+
+    Returns:
+        The joined ``(A,b,c)`` triple with the order [idx1(or idx2), not_idx2].
+    """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    if len(idx1) != len(idx2):
+        raise ValueError(
+            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}"
+        )
+
+    if (len(idx1) > A1.shape[-1]) or (len(idx2) > A2.shape[-1]):
+        raise ValueError(f"idx1 and idx2 must be valid, got {len(idx1)} and {len(idx2)}")
+
+    not_idx1 = tuple(i for i in range(A1.shape[-1]) if i not in idx1)
+    not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
+
+    if math.asnumpy(not_idx1).shape != (0,):
+        raise NotImplementedError()
+
+    A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
+    A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
+    A2_notidx_idx = math.gather(math.gather(A2, idx1, axis=-1), not_idx2, axis=-2)
+    A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+    b2_idx = math.gather(b2, idx2, axis=-1)
+    b2_notidx = math.gather(b2, not_idx2, axis=-1)
+
+    A12 = math.block([[A1 + A2_idx_idx, A2_idx_notidx], [A2_notidx_idx, A2_notidx_notidx]])
+    b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
     c12 = math.outer(c1, c2)
     return A12, b12, c12
 
