@@ -27,7 +27,7 @@ from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut"]
+__all__ = ["TraceOut", "_DsMap"]
 
 
 class TraceOut(CircuitComponent):
@@ -68,3 +68,32 @@ class TraceOut(CircuitComponent):
     @property
     def representation(self) -> Bargmann:
         return Bargmann(*triples.identity_Abc(len(self.modes)))
+
+
+class _DsMap(CircuitComponent):
+    r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
+
+    Used internally as a ``Channel`` for transformations between representations.
+
+    Args:
+        num_modes: The number of modes of this channel.
+        s: The `s` parameter of this channel.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        s: float,
+    ):
+        super().__init__(
+            "_DsMap",
+            modes_out_bra=modes,
+            modes_in_bra=modes,
+            modes_out_ket=modes,
+            modes_in_ket=modes,
+        )
+        self.s = s
+
+    @property
+    def representation(self) -> Bargmann:
+        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
