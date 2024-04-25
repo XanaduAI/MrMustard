@@ -134,9 +134,11 @@ class TestDsMap:
             QtoBMap_CC2.representation.b[0],
             QtoBMap_CC2.representation.c[0],
         )
+
+        #Needs a new join_Abc for real variables
         new_step2A = step2A
         new_step2A[:2, :2] = new_step2A[:2, :2] + Ainter
-        new_A, new_b, new_c = new_step2A, step2b, cinter
+        new_A, new_b, new_c = new_step2A, step2b, cinter*step1c
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
 
