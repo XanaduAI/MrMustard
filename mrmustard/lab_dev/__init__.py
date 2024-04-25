@@ -14,6 +14,21 @@
 
 r"""
 The lab module in development.
+
+The lab module contains all the items that would normally be found in a photonic lab, such as:
+
+* Several useful states (:class:`~mrmustard.lab_dev.states.Vacuum`,
+  :class:`~mrmustard.lab_dev.states.Coherent`, :class:`~mrmustard.lab_dev.states.SqueezedVacuum`, etc.),
+  alongside the tools to initialize custom states (:class:`~mrmustard.lab_dev.states.Ket` and
+  :class:`~mrmustard.lab_dev.states.DM`).
+
+ the elements needed to construct and simulate photonic circuits.
+It contains the items you'd find in a lab:
+
+* states (Vacuum, Coherent, SqueezedVacuum, Thermal, etc.)
+* transformations (Sgate, BSgate, LossChannel, etc.)
+* detectors (PNRDetector, Homodyne, etc.)
+* the Circuit class
 """
 
 from .circuit_components import *
