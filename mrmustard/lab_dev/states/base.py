@@ -42,7 +42,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.gaussian_integrals import join_Abc, real_gaussian_integral
+from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
@@ -673,7 +673,7 @@ class DM(State):
             QtoBMap_CC.representation.c[0],
         )
         bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
-            join_Abc(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)), idx=list(np.arange(4 * len(modes)))
+            join_Abc_real(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c), idx1=list(np.arange(2 * len(modes))), idx2=list(np.arange(2 * len(modes)))), idx=list(np.arange(2 * len(modes)))
         )
         ret = DM(name, modes)
         ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
@@ -840,8 +840,9 @@ class Ket(State):
             QtoBMap_CC.representation.b[0],
             QtoBMap_CC.representation.c[0],
         )
+        joinedA, joinedb, joinedc = join_Abc_real(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c), idx1=list(np.arange(len(modes))), idx2=list(np.arange(len(modes), 2*len(modes))))
         bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
-            join_Abc_real(triple, (QtoBMap_A, QtoBMap_b, QtoBMap_c)),
+            (joinedA, joinedb, joinedc),
             idx=list(np.arange(len(modes))),
         )
         ret = Ket(name, modes)

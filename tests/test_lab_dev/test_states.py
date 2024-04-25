@@ -120,13 +120,14 @@ class TestKet:
         with pytest.raises(ValueError):
             state0.quadrature()
 
-        A = np.eye(1)
-        b = np.zeros(1)
+        A = np.eye(1)*0.567
+        b = np.array([0.7+0.1j])
         c = 1.0
         state1 = Ket.from_quadrature([0], (A, b, c), "quad")
         assert state1.modes == [0]
         assert state1.name == "quad"
         assert isinstance(state1.representation, Bargmann)
+        
         A1, b1, c1 = state1.quadrature()
         assert math.allclose(A, A1[0])
         assert math.allclose(b, b1[0])

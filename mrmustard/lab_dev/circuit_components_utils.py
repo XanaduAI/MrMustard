@@ -21,6 +21,7 @@ perform useful mathematical calculations.
 
 from __future__ import annotations
 
+import numpy as np
 from typing import Sequence
 
 from mrmustard.physics import triples
@@ -83,4 +84,11 @@ class _BtoQMap(CircuitComponent):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(*triples.bargmann_to_quadrature_Abc(len(self.modes)))
+        n_modes = len(self.modes)
+        A, b, c = triples.bargmann_to_quadrature_Abc(n_modes)
+        #Reorder it as a Unitary
+        full_order = np.arange(n_modes * 2)
+        order = list(np.concatenate((full_order[n_modes:], full_order[:n_modes]), axis=0))
+        A = A[order, :][:, order]
+        b = b[order]
+        return Bargmann(A, b, c)
