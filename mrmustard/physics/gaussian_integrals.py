@@ -16,7 +16,6 @@
 This module contains gaussian integral functions and related helper functions.
 """
 from typing import Sequence, Tuple
-import numpy as np
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
