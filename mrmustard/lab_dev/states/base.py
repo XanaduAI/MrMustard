@@ -57,7 +57,7 @@ __all__ = ["State", "DM", "Ket"]
 
 class OperatorType(Enum):
     r"""
-    A convenience Enum class used to tage the type operators in the ``epectation`` method
+    A convenience Enum class used to tag the type operators in the ``expectation`` method
     of ``Ket``\s and ``DM``\s.
     """
 
@@ -686,7 +686,7 @@ class DM(State):
 
     def expectation(self, operator: CircuitComponent):
         r"""
-        The expectation value of an operator calculated over this state.
+        The expectation value of an operator calculated over this DM.
 
         Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
         is the density matrix of this state.
@@ -881,7 +881,7 @@ class Ket(State):
 
     def expectation(self, operator: CircuitComponent):
         r"""
-        The expectation value of an operator calculated over this state.
+        The expectation value of an operator calculated over this Ket.
 
         Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
         where :math:`|\psi\rangle` is the vector representing this state.
@@ -915,7 +915,7 @@ class Ket(State):
                 result >>= TraceOut(leftover_modes)
             result @= result.dual
         elif op_type is OperatorType.DM_LIKE:
-            result = self @ self.adjoint @ operator.dual
+            result = self @ operator.dual @ self.adjoint
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
