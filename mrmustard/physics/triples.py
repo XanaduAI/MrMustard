@@ -481,28 +481,39 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized displacement map :math:`D(\gamma)`.
-    Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
-    the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
+    The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
+    :math:
+        D_s(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} D(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} e^{\frac{1}{2}|\vec{z}|^2} e^{\vec{z}^*\vec{\gamma} - \vec{z} \vec{\gamma}^*}.
+    The indices of the final triple correspond to the variables :math:`(\gamma_1^*, \gamma_2^*, ..., z_1, z_2, ..., \gamma_1, \gamma_2, ..., z_1^*, z_2^*, ...)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
 
     Args:
-        s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the "symmetric" ordering, which is symmetric under the exchange of creation and annihilation operators, :math:`s=-1` is the "normal" ordering, where all the creation operators are on the left and all the annihilation operators are on the right, and :math:`s=1` is the "anti-normal" ordering, which is the vice versa of the normal ordering. By using s-parametrized displacement map to generate the s-parametrized characteristic function :math:`\chi_s = Tr[\rho D_s]`, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, :math:`s=-1` is the Husimi Q distribution, and :math:`s=1` is the Glauber P distribution.
+        s: The phase space parameter
+        n_modes: the number of modes for this map.
 
     Returns:
-        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
+        The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
     A = math.block(
         [
-            [(s - 1) / 2 * math.Xmat(num_modes=1), -math.Zmat(num_modes=1)],
-            [-math.Zmat(num_modes=1), math.Xmat(num_modes=1)],
+            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
+            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
         ]
     )
-    A = A[[0, 2, 1, 3], :][
-        :, [0, 2, 1, 3]
-    ]  # Change the order of this map into the normal ordering as a single mode channel
-    b = _vacuum_B_vector(4)
+    order_list = np.arange(4 * n_modes)  # [0,3,1,2]
+    order_list = list(
+        np.concatenate(
+            (
+                np.concatenate((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
+                order_list[n_modes : 3 * n_modes],
+            ),
+            axis=0,
+        )
+    )
+
+    A = A[order_list, :][:, order_list]
+    b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
 

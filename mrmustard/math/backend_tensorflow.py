@@ -319,6 +319,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return tf.linalg.solve(matrix, rhs)[..., 0]
         return tf.linalg.solve(matrix, rhs)
 
+    def sort(self, array: tf.Tensor, axis: int = -1) -> tf.Tensor:
+        return tf.sort(array, axis)
+
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 

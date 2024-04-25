@@ -44,6 +44,10 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatze import (
+    bargmann_Abc_to_phasespace_cov_means,
+)
+from ..circuit_components_utils import _DsMap
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..wires import Wires
@@ -307,11 +311,27 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector]:
+    def phase_space(self, s: float) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        The covariance matrix and the vector of means that describe this state in phase space.
+        Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians each of cov, means, coeff are arranged in a batch.
+        Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
+        The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions. Note that the same ``(cov, means, coeff)`` triple can be used to parametrize the characteristic functions as well.
+
+        Args:
+            s: The phase space parameter
+
+            Returns:
+                The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        raise NotImplementedError
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+
+        new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
+        return bargmann_Abc_to_phasespace_cov_means(
+            new_state.representation.ansatz.A,
+            new_state.representation.ansatz.b,
+            new_state.representation.ansatz.c,
+        )
 
     def visualize_2d(
         self,
