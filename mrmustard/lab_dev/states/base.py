@@ -935,7 +935,7 @@ class Ket(State):
                 result >>= TraceOut(leftover_modes)
             result @= result.dual
         elif op_type is OperatorType.DM_LIKE:
-            result = self @ operator.dual @ self.adjoint
+            result = self @ self.adjoint @ operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
