@@ -713,16 +713,17 @@ class DM(State):
             msg += f"found one defined on `{operator.modes}.`"
             raise ValueError(msg)
 
+        leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual @ operator.dual.adjoint
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
             result = self @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
         else:
-            result = self @ operator
-
-        leftover_modes = self.wires.modes - operator.wires.modes
-        if leftover_modes:
-            result >>= TraceOut(leftover_modes)
+            result = (self @ operator) >> TraceOut(self.modes)
 
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
@@ -907,19 +908,23 @@ class Ket(State):
             msg += f"found one defined on `{operator.modes}.`"
             raise ValueError(msg)
 
+        leftover_modes = self.wires.modes - operator.wires.modes
+        pow = 1
         if op_type is OperatorType.KET_LIKE:
+            # this calculates <self|operator> and returns the square (pow=2)
             result = self @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+            pow = 2
         elif op_type is OperatorType.DM_LIKE:
             result = self @ self.adjoint @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
         else:
             result = self @ operator @ self.dual
 
-        leftover_modes = self.wires.modes - operator.wires.modes
-        if leftover_modes and (op_type is OperatorType.KET_LIKE or op_type is OperatorType.DM_LIKE):
-            result >>= TraceOut(leftover_modes)
-
         rep = result.representation
-        return rep.array if isinstance(rep, Fock) else rep.c
+        return rep.array ** pow if isinstance(rep, Fock) else rep.c ** pow
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""

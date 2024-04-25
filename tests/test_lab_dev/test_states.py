@@ -204,15 +204,15 @@ class TestKet:
 
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
 
-        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array)
+        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array
-        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array
-        res_k01 = (ket @ k01.dual).representation.array
+        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array ** 2
+        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array ** 2
+        res_k01 = (ket @ k01.dual).representation.array ** 2
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
@@ -440,9 +440,9 @@ class TestDM:
         u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut([1])).representation.c
-        res_u1 = ((dm @ u1) >> TraceOut([0])).representation.c
-        res_u01 = (dm @ u01).representation.c
+        res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.c
+        res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.c
+        res_u01 = ((dm @ u01) >> TraceOut([0, 1])).representation.c
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -482,9 +482,9 @@ class TestDM:
         u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut([1])).representation.array
-        res_u1 = ((dm @ u1) >> TraceOut([0])).representation.array
-        res_u01 = (dm @ u01).representation.array
+        res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.array
+        res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.array
+        res_u01 = ((dm @ u01) >> TraceOut([0, 1])).representation.array
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
