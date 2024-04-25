@@ -881,7 +881,7 @@ class Ket(State):
 
     def expectation(self, operator: CircuitComponent):
         r"""
-        The expectation value of an operator calculated over this state.
+        The expectation value of an operator calculated over this Ket.
 
         Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
         where :math:`|\psi\rangle` is the vector representing this state.
