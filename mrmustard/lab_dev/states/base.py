@@ -686,7 +686,7 @@ class DM(State):
 
     def expectation(self, operator: CircuitComponent):
         r"""
-        The expectation value of an operator calculated over this state.
+        The expectation value of an operator calculated over this DM.
 
         Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
         is the density matrix of this state.
