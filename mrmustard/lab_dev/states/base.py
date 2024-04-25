@@ -57,7 +57,7 @@ __all__ = ["State", "DM", "Ket"]
 
 class OperatorType(Enum):
     r"""
-    A convenience Enum class used to tage the type operators in the ``epectation`` method
+    A convenience Enum class used to tag the type operators in the ``expectation`` method
     of ``Ket``\s and ``DM``\s.
     """
 
