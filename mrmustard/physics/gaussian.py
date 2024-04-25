@@ -745,8 +745,9 @@ def symplectic_eigenvals(cov: Matrix) -> Any:
     """
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = math.matmul(1j * J, cov * (2 / settings.HBAR))
-    vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
+    vals = math.abs(math.eigvals(M))  # compute the eigenspectrum
+    vals = math.sort(vals)
+    return vals[::2]  # return the even eigenvalues
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
