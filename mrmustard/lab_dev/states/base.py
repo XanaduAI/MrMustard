@@ -38,7 +38,12 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import (
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    RealVector,
+)
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
@@ -194,10 +199,19 @@ class State(CircuitComponent):
         msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
         raise ValueError(msg)
 
+    def _L2_norms(self) -> RealVector:
+        r"""
+        The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
+        """
+        rep = (self >> self.dual).representation
+        if isinstance(rep, Bargmann):
+            return math.atleast_1d(rep.c, math.float64)
+        return math.atleast_1d(rep.array, math.float64)
+
     @property
     def L2_norm(self) -> float:
         r"""
-        The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
         rep = (self >> self.dual).representation
         ret = rep.c if isinstance(rep, Bargmann) else rep.array
@@ -225,7 +239,9 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+    def fock_array(
+        self, shape: Optional[Union[int, Sequence[int]]] = None
+    ) -> ComplexTensor:
         r"""
         The array that describes this state in the Fock representation.
 
@@ -255,7 +271,9 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+            raise ValueError(
+                f"Can not calculate phase space for ``{self.name}`` object."
+            )
 
         new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
@@ -299,14 +317,14 @@ class State(CircuitComponent):
         Raises:
             ValueError: If this state is a multi-mode state.
         """
-        if self.n_modes != 1:
+        if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
         state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
-        x, prob_x = quadrature_distribution(dm)
+        x, prob_x = quadrature_distribution(dm)  # TODO: replace with new MM methods
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
 
         mask_x = math.asnumpy([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])
@@ -349,13 +367,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -450,10 +472,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -495,7 +521,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -609,20 +637,30 @@ class DM(State):
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
         return ret
 
-    @property
-    def probability(self) -> float:
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise probabilities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states."""
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
-
         rep = self.representation.trace(idx_ket, idx_bra)
-
         if isinstance(rep, Bargmann):
-            return math.real(math.sum(rep.c, axes=[0]))
-        return math.real(math.sum(rep.array, axes=[0]))
+            return math.real(rep.c)
+        return math.real(rep.array)
+
+    @property
+    def probability(self) -> float:
+        r"""Probability of this DM, using the batch dimension of the Ansatz
+        as a convex combination of states."""
+        return math.sum(self._probabilities())
+
+    def _purities(self) -> RealVector:
+        r"""Element-wise purities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states."""
+        return self._L2_norms() / self._probabilities()
 
     @property
     def purity(self) -> float:
-        return (self / self.probability).L2_norm
+        return self.L2_norm
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -663,12 +701,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -743,12 +781,24 @@ class Ket(State):
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
         return ret
 
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise probabilities along the batch dimension of this Ket.
+        Useful for cases where the batch dimension does not mean a linear combination of states."""
+        return self._L2_norms() ** 2
+
     @property
     def probability(self) -> float:
+        r"""Probability of this state, where the batch dimension of the Ansatz
+        means a linear combination of states."""
         rep = (self >> self.dual).representation
         if isinstance(rep, Bargmann):
             return math.real(math.sum(rep.c, axes=[0]))
         return math.real(math.sum(rep.array, axes=[0]))
+
+    def _purity(self) -> float:
+        r"""Purity of this state, where the batch dimension of the Ansatz
+        means a linear combination of states."""
+        return math.ones((self.representation.batch_size,), math.float64)
 
     @property
     def purity(self) -> float:

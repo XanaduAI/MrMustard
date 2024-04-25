@@ -23,7 +23,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Optional, Sequence, Union
 
-from mrmustard import math
+from mrmustard import math, settings
 from .circuit_components import CircuitComponent
 
 __all__ = ["Circuit"]
@@ -265,18 +265,24 @@ class Circuit:
         # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
+            ids_dangling_wires = {
+                m: {"ket": None, "bra": None} for w in wires for m in w.modes
+            }
 
             # populate the graph
             for w in wires:
                 # if there is a dangling wire, add a contraction
                 for m in w.input.ket.modes:  # ket side
                     if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[
+                            0
+                        ]
                         ids_dangling_wires[m]["ket"] = None
                 for m in w.input.bra.modes:  # bra side
                     if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[
+                            0
+                        ]
                         ids_dangling_wires[m]["bra"] = None
 
                 # update the dangling wires
@@ -362,7 +368,7 @@ class Circuit:
             if not comp.wires.output:
                 cc_name = f"|{cc_name})="
 
-            if comp.parameter_set.names:
+            if comp.parameter_set.names and settings.CIRCUIT_DRAW_PARAMS:
                 values = []
                 for name in comp.parameter_set.names:
                     param = comp.parameter_set.constants.get(
@@ -372,7 +378,9 @@ class Circuit:
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(
-                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
+                        new_values.numpy()
+                        if math.backend.name == "tensorflow"
+                        else new_values
                     )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             # some components have an empty parameter set
@@ -477,7 +485,9 @@ class Circuit:
 
         # every chunk starts with a recap of the modes
         chunk_start = [f"mode {mode}:   " for mode in modes]
-        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
+        chunk_start = [
+            s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start
+        ]
 
         # generate the drawing
         ret = ""
