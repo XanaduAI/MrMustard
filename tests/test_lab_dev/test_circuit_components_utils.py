@@ -20,11 +20,16 @@ import pytest
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev.circuit_components_utils import _DsMap
+from mrmustard.lab_dev.circuit_components_utils import _DsMap, _BtoQMap
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import contract_two_Abc
+from mrmustard.physics.gaussian_integrals import (
+    contract_two_Abc,
+    real_gaussian_integral,
+    complex_gaussian_integral,
+    join_Abc,
+)
 
 
 class TestDsMap:
@@ -104,3 +109,37 @@ class TestDsMap:
         assert math.allclose(A1[0], A2)
         assert math.allclose(b1[0], b2)
         assert math.allclose(c1[0], c2)
+
+    def test_btoqmap_works_correctly_by_applying_it_twice_on_a_state(self):
+        A0 = np.array([[0.5, 0.3], [0.3, 0.5]])
+        b0 = np.zeros(2)
+        c0 = 1.0
+
+        modes = [0, 1]
+        QtoBMap_CC1 = _BtoQMap(modes)
+        step1A, step1b, step1c = (
+            QtoBMap_CC1.representation.A[0],
+            QtoBMap_CC1.representation.b[0],
+            QtoBMap_CC1.representation.c[0],
+        )
+        Ainter, _, cinter = complex_gaussian_integral(
+            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
+            idx_z=[0, 1],
+            idx_zconj=[2, 3],
+            measure=-1,
+        )
+        QtoBMap_CC2 = _BtoQMap(modes).dual
+        step2A, step2b, _ = (
+            QtoBMap_CC2.representation.A[0],
+            QtoBMap_CC2.representation.b[0],
+            QtoBMap_CC2.representation.c[0],
+        )
+        new_step2A = step2A
+        new_step2A[:2, :2] = new_step2A[:2, :2] + Ainter
+        new_A, new_b, new_c = new_step2A, step2b, cinter
+
+        Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
+
+        assert math.allclose(A0, Af)
+        assert math.allclose(b0, bf)
+        assert math.allclose(c0, cf)
