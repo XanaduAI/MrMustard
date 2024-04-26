@@ -83,6 +83,7 @@ class Unitary(Transformation):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Unitary:
+        r"""Initialize a Unitary from the given Bargmann ``(A, b, c)`` triple."""
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
@@ -133,6 +134,7 @@ class Channel(Transformation):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Channel:
+        r"""Initialize a Channel from the given Bargmann ``(A, b, c)`` triple."""
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
