@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 import os
 
+from enum import Enum
 from IPython.display import display, HTML
 from mako.template import Template
 from plotly.subplots import make_subplots
@@ -48,9 +49,67 @@ from mrmustard.physics.ansatze import (
 )
 from ..circuit_components_utils import _DsMap
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import TraceOut
 from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
+
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+class OperatorType(Enum):
+    r"""
+    A convenience Enum class used to tag the type operators in the ``expectation`` method
+    of ``Ket``\s and ``DM``\s.
+    """
+
+    KET_LIKE = 1
+    DM_LIKE = 2
+    UNITARY_LIKE = 3
+    INVALID_TYPE = 4
+
+
+def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
+    r"""
+    A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
+    ``DM``.
+
+    If ``operator`` is ket-like, density matrix-like, or unitary-like, returns the corresponding
+    ``OperatorType`` and an empty string. Otherwise, it returns ``INVALID_TYPE`` and an error
+    message.
+    """
+    w = operator.wires
+
+    # check if operator is ket-like
+    if w.ket.output and not w.ket.input and not w.bra:
+        return (
+            OperatorType.KET_LIKE,
+            "",
+        )
+
+    # check if operator is density matrix-like
+    if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
+        if not w.ket.output.modes == w.bra.output.modes:
+            msg = "Found DM-like operator with different modes for ket and bra wires."
+            return OperatorType.INVALID_TYPE, msg
+        return OperatorType.DM_LIKE, ""
+
+    # check if operator is unitary-like
+    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
+        if not w.ket.input.modes == w.ket.output.modes:
+            msg = "Found unitary-like operator with different modes for input and output wires."
+            return OperatorType.INVALID_TYPE, msg
+        return OperatorType.UNITARY_LIKE, ""
+
+    msg = "Cannot calculate the expectation value of the given ``operator``."
+    return OperatorType.INVALID_TYPE, msg
+
+
+# ~~~~~~~
+# Classes
+# ~~~~~~~
 
 
 class State(CircuitComponent):
@@ -645,6 +704,50 @@ class DM(State):
     def purity(self) -> float:
         return (self / self.probability).L2_norm
 
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this DM.
+
+        Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
+        is the density matrix of this state.
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
+
+        Args:
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_type, msg = _validate_operator(operator)
+        if op_type is OperatorType.INVALID_TYPE:
+            raise ValueError(msg)
+
+        if not operator.wires.modes.issubset(self.wires.modes):
+            msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
+            msg += f"found one defined on `{operator.modes}.`"
+            raise ValueError(msg)
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if op_type is OperatorType.KET_LIKE:
+            result = self @ operator.dual @ operator.dual.adjoint
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        elif op_type is OperatorType.DM_LIKE:
+            result = self @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        else:
+            result = (self @ operator) >> TraceOut(self.modes)
+
+        rep = result.representation
+        return rep.array if isinstance(rep, Fock) else rep.c
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -795,6 +898,49 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
+
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this Ket.
+
+        Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
+        where :math:`|\psi\rangle` is the vector representing this state.
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
+
+        Args:
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_type, msg = _validate_operator(operator)
+        if op_type is OperatorType.INVALID_TYPE:
+            raise ValueError(msg)
+
+        if not operator.wires.modes.issubset(self.wires.modes):
+            msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
+            msg += f"found one defined on `{operator.modes}.`"
+            raise ValueError(msg)
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if op_type is OperatorType.KET_LIKE:
+            result = self @ operator.dual
+            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+        elif op_type is OperatorType.DM_LIKE:
+            result = self @ self.adjoint @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        else:
+            result = self @ operator @ self.dual
+
+        rep = result.representation
+        return rep.array if isinstance(rep, Fock) else rep.c
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
