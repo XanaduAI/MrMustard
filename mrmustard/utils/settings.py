@@ -129,7 +129,7 @@ class Settings:
     def HBAR(self, value: float):
         if np.isclose(value, self._hbar):
             return
-        if self._hbar_locked:
+        if hasattr(self, "_hbar_locked") and self._hbar_locked:
             raise ValueError("Cannot change the value of `settings.HBAR`.")
         self._hbar = value
 

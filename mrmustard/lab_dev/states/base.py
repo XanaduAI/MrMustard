@@ -203,7 +203,6 @@ class State(CircuitComponent):
         r"""
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
         """
-        rep = (self >> self.dual).representation
         if isinstance(rep, Bargmann):
             return math.atleast_1d(rep.c, math.float64)
         return math.atleast_1d(rep.array, math.float64)
@@ -798,7 +797,7 @@ class Ket(State):
     def _purity(self) -> float:
         r"""Purity of this state, where the batch dimension of the Ansatz
         means a linear combination of states."""
-        return math.ones((self.representation.batch_size,), math.float64)
+        return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
     @property
     def purity(self) -> float:

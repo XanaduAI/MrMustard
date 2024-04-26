@@ -302,7 +302,9 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(
+                Abci, idx_z, idx_zconj, measure=-1.0
+            )
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -379,7 +381,9 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+        ax.imshow(
+            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
+        )
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -454,6 +458,62 @@ class Bargmann(Representation):
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
                 Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+
+        A, b, c = zip(*Abc)
+        return Bargmann(A, b, c)
+
+    def __or__(self, other: Bargmann | Fock) -> Bargmann | Fock:
+        r"""Like ``@``, but element-wise along the batch dimension.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
+            if ``other`` is ``Fock``.
+
+        Example:
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.triples import coherent_state_Abc
+
+            >>> c1 = Bargmann(*coherent_state_Abc(x=-2.0))
+            >>> c2 = Bargmann(*coherent_state_Abc(x=2.0))
+            >>> cat = c1 + c2
+            >>> assert (cat[0] @ cat[0].dual).ansatz.batch_size == 4
+            >>> assert (cat[0] | cat[0].dual).ansatz.batch_size == 2
+
+
+
+
+        """
+        idx_s = self._contract_idxs
+        idx_o = other._contract_idxs
+
+        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
+        if isinstance(other, Fock):
+            from .converters import to_fock  # pylint: disable=import-outside-toplevel
+
+            # set same shape along the contracted axes, and default shape along the
+            # axes that are not being contracted
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            for i, j in zip(idx_s, idx_o):
+                shape[i] = other.array.shape[1:][j]
+
+            return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
+
+        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
+            )
+
+        Abc = []
+        for (A1, b1, c1), (A2, b2, c2) in zip(
+            zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
+        ):
+            Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -607,12 +667,14 @@ class Fock(Representation):
 
             new_shape_s = [n_batches_s]
             new_shape_s += [
-                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
+                shape[idx_s.index(i)] if i in idx_s else idx
+                for i, idx in enumerate(shape_s)
             ]
 
             new_shape_o = [n_batches_o]
             new_shape_o += [
-                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
+                shape[idx_o.index(i)] if i in idx_o else idx
+                for i, idx in enumerate(shape_o)
             ]
 
             return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
@@ -638,7 +700,11 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [
+                i + 1
+                for i in range(len(self.array.shape) - 1)
+                if i not in idxs1 + idxs2
+            ]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -697,6 +763,8 @@ class Fock(Representation):
 
         ret = self.array
         for i, s in enumerate(shape):
-            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            slc = (
+                (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            )
             ret = ret[slc]
         return Fock(array=ret, batched=True)
