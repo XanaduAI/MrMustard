@@ -39,46 +39,50 @@ hbar0 = settings.HBAR
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float64, shape=(2, length), elements=st.floats(-5.0, 5.0)))
+    return draw(
+        arrays(dtype=np.float64, shape=(2, length), elements=st.floats(-5.0, 5.0))
+    )
 
 
 @given(nmodes, st.floats(0.1, 5.0))
 def test_vacuum_state(nmodes, hbar):
-    settings._force_hbar(hbar)
+    settings._hbar = hbar
     cov, disp = gp.vacuum_cov(nmodes), gp.vacuum_means(nmodes)
     assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
 
     # restoring hbar to its original value
-    settings._force_hbar(hbar0)
+    settings._hbar = hbar0
 
 
 @given(x=medium_float, y=medium_float)
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
-    assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
+    assert np.allclose(
+        state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]])
+    )
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
-    settings._force_hbar(hbar)
+    settings._hbar = hbar
     assert np.allclose(gp.displacement([x], [y]), np.array([x, y]) * np.sqrt(2 * hbar))
 
     # restoring hbar to its original value
-    settings._force_hbar(hbar0)
+    settings._hbar = hbar0
 
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
-    settings._force_hbar(hbar)
+    settings._hbar = hbar
     assert np.allclose(
         gp.displacement(np.array([x]), np.array([y])),
         np.array([x, y]) * np.sqrt(2 * hbar),
     )
 
     # restoring hbar to its original value
-    settings._force_hbar(hbar0)
+    settings._hbar = hbar0
 
 
 @given(xy=xy_arrays())
@@ -87,10 +91,12 @@ def test_coherent_state_multiple(xy):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
     assert len(x) == len(y)
-    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
+    assert np.allclose(
+        state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR)
+    )
 
     # restoring hbar to its original value
-    settings._force_hbar(hbar0)
+    settings._hbar = hbar0
 
 
 @given(state=n_mode_pure_state(num_modes=1))
@@ -163,11 +169,11 @@ def test_hbar():
     """Test cov matrix is linear in hbar."""
     g = Gaussian(2)
     p = g.purity
-    settings._force_hbar(1.234)
+    settings._hbar = 1.234
     assert g.purity == p
 
     # restoring hbar to its original value
-    settings._force_hbar(hbar0)
+    settings._hbar = hbar0
 
 
 def test_get_single_mode():
@@ -253,7 +259,9 @@ def test_concat_pure_states(pure):
     psi = state1 & state2
 
     # test concatenated state
-    psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
+    psi_dm = math.transpose(
+        math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3]
+    )
     assert np.allclose(psi.dm(), psi_dm)
 
 
