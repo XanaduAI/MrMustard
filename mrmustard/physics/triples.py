@@ -33,9 +33,7 @@ def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
     The X matrix for the order of unitaries.
     """
-    return math.cast(
-        math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128
-    )
+    return math.cast(math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
 
 
 def _vacuum_A_matrix(n_modes: int) -> Matrix:
@@ -301,9 +299,7 @@ def squeezing_gate_Abc(
     tanhr = math.diag(math.sinh(r) / math.cosh(r))
     sechr = math.diag(1 / math.cosh(r))
 
-    A = math.block(
-        [[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]]
-    )
+    A = math.block([[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]])
     b = _vacuum_B_vector(n_modes * 2)
     c = math.prod(1 / math.sqrt(math.cosh(r)))
 
@@ -378,11 +374,7 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    eta1 = (
-        math.diag(math.sqrt(eta))
-        .reshape((n_modes, n_modes))
-        .reshape((n_modes, n_modes))
-    )
+    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes)).reshape((n_modes, n_modes))
     eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
 
     A = math.block(
@@ -467,9 +459,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(
-    s: int, n_modes: int
-) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
     :math:
@@ -493,9 +483,7 @@ def displacement_map_s_parametrized_Abc(
     order_list = list(
         np.concatenate(
             (
-                np.concatenate(
-                    (order_list[:n_modes], order_list[3 * n_modes :]), axis=0
-                ),
+                np.concatenate((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
                 order_list[n_modes : 3 * n_modes],
             ),
             axis=0,

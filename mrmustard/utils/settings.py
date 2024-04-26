@@ -53,10 +53,12 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._hbar = 1.0
+        self._hbar = 2.0
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
-        self._julia_initialized = False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        self._julia_initialized = (
+            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        )
 
         self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
@@ -180,15 +182,9 @@ class Settings:
             Main_julia.cd(utils_directory)
             Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
             Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/helperFunctions.jl"
-            )
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/diagonal_amps.jl"
-            )
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/diagonal_grad.jl"
-            )
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
             Main_julia.include(
                 "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
             )
