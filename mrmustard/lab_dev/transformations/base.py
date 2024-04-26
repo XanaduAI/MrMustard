@@ -40,34 +40,6 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
-    @classmethod
-    def from_bargmann(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def from_phase_space(cls):
-        raise NotImplementedError
-
-    @property
-    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_quadrature(cls):
-        raise NotImplementedError
-
-    @property
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_fock(cls):
-        raise NotImplementedError
-
-    @property
-    def fock(self) -> ComplexTensor:
-        raise NotImplementedError
-
 
 class Unitary(Transformation):
     r"""
@@ -167,18 +139,3 @@ class Channel(Transformation):
         _shape_check(A, b, 4 * len(modes))
         s = set(modes)
         return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))
-
-    @classmethod
-    def from_phase_space(
-        cls,
-        modes: Sequence[int],
-        S: ComplexMatrix,
-        d: ComplexVector,
-        coeff: complex = 1,
-        name: Optional[str] = None,
-    ) -> Channel:
-        S = math.astensor(S)
-        d = math.astensor(d)
-        coeff = math.astensor(coeff)
-        _shape_check(S, d, 2 * len(modes))
-        raise NotImplementedError
