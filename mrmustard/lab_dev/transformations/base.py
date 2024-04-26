@@ -25,7 +25,7 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 from mrmustard import math
 from mrmustard.lab_dev.utils import _shape_check
 from mrmustard.lab_dev.wires import Wires
