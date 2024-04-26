@@ -15,20 +15,24 @@
 r"""
 The lab module in development.
 
-The lab module contains all the items that would normally be found in a photonic lab, such as:
+The lab_dev module contains all the items that would normally be found in a photonic lab, such as:
 
 * Several useful states (:class:`~mrmustard.lab_dev.states.Vacuum`,
   :class:`~mrmustard.lab_dev.states.Coherent`, :class:`~mrmustard.lab_dev.states.SqueezedVacuum`, etc.),
-  alongside the tools to initialize custom states (:class:`~mrmustard.lab_dev.states.Ket` and
-  :class:`~mrmustard.lab_dev.states.DM`).
+  alongside the tools to initialize custom :class:`~mrmustard.lab_dev.states.Ket`\s and
+  :class:`~mrmustard.lab_dev.states.DM`\s.
 
- the elements needed to construct and simulate photonic circuits.
-It contains the items you'd find in a lab:
+* All the gates routinely performed in optical experiments
+  (:class:`~mrmustard.lab_dev.transformations.Dgate`, :class:`~mrmustard.lab_dev.transformations.Sgate`,
+  :class:`~mrmustard.lab_dev.transformations.BSgate`, ...), and the methods to initialize custom
+  :class:`~mrmustard.lab_dev.transformations.Unitary` gates.
 
-* states (Vacuum, Coherent, SqueezedVacuum, Thermal, etc.)
-* transformations (Sgate, BSgate, LossChannel, etc.)
-* detectors (PNRDetector, Homodyne, etc.)
-* the Circuit class
+* Typical noise channels such as the :class:`~mrmustard.lab_dev.transformations.Attenuator`, and
+  tools to initialize custom :class:`~mrmustard.lab_dev.transformations.Channel`\s.
+
+* Detectors (currently in development).
+
+These items can be 
 """
 
 from .circuit_components import *
