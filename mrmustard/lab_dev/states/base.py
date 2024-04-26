@@ -931,9 +931,7 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
-            result @= result.dual
+            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
         elif op_type is OperatorType.DM_LIKE:
             result = self @ self.adjoint @ operator.dual
             if leftover_modes:

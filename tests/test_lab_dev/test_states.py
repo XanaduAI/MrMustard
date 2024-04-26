@@ -212,8 +212,8 @@ class TestKet:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array ** 2
-        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array ** 2
+        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array
+        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array
         res_k01 = (ket @ k01.dual).representation.array ** 2
 
         assert math.allclose(ket.expectation(k0), res_k0)
