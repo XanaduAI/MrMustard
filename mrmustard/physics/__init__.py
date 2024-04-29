@@ -21,15 +21,16 @@ optimization routine.
 """
 
 from mrmustard.physics import fock, gaussian
+from mrmustard.lab import State
 
 
 # pylint: disable=protected-access
-def fidelity(A, B) -> float:
+def fidelity(A: State, B: State) -> float:
     r"""Calculates the fidelity between two quantum states.
 
     Args:
-        A (State) The first quantum state.
-        B (State) The second quantum state.
+        A: The first quantum state.
+        B: The second quantum state.
 
     Returns:
         float: The fidelity between the two states.
@@ -39,14 +40,14 @@ def fidelity(A, B) -> float:
     return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
-def normalize(A):
+def normalize(A: State):
     r"""Returns the normalized state.
 
     Args:
-        A (State): the quantum state
+        A: the quantum state
 
     Returns:
-        State: the normalized state
+        The normalized state
     """
     if A.is_gaussian:
         A._norm = 1.0
@@ -58,75 +59,75 @@ def normalize(A):
     return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
 
 
-def norm(A) -> float:
+def norm(A: State) -> float:
     r"""Calculates the norm of a quantum state.
 
     The norm is equal to the trace of the density matrix if the state
     is mixed and to the norm of the state vector if the state is pure.
 
     Args:
-        A (State): the quantum state
+        A: The quantum state
 
     Returns:
-        float: the norm of the state
+        The norm of the state
     """
     if A.is_gaussian:
         return A._norm
     return fock.norm(A.fock, is_dm=A.is_mixed)
 
 
-def overlap(A, B) -> float:
+def overlap(A: State, B: State) -> float:
     r"""Calculates the overlap between two quantum states.
 
     If the states are both pure it returns :math:`|<A|B>|^2`, if one is mixed it returns :math:`<A|B|A>`
     and if both are mixed it returns :math:`Tr[AB]`.
 
     Args:
-        A (State) the first quantum state
-        B (State) the second quantum state
+        A: The first quantum state
+        B: The second quantum state
 
     Returns:
-        float: the overlap between the two states
+        The overlap between the two states
     """
     raise NotImplementedError
 
 
-def von_neumann_entropy(A) -> float:
+def von_neumann_entropy(A: State) -> float:
     r"""Calculates the Von Neumann entropy of a quantum state.
 
     Args:
-        A (State) the quantum state
+        A: The quantum state
 
     Returns:
-        float: the Von Neumann entropy of the state
+        The Von Neumann entropy of the state
     """
     if A.is_gaussian:
         return gaussian.von_neumann_entropy(A.cov)
     return fock.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
 
 
-def relative_entropy(A, B) -> float:
+def relative_entropy(A: State, B: State) -> float:
     r"""Calculates the relative entropy between two quantum states.
 
     Args:
-        A (State) the first quantum state
-        B (State) the second quantum state
+        A: The first quantum state
+        B: The second quantum state
 
     Returns:
-        float: the relative entropy between the two states
+        The relative entropy between the two states
     """
     raise NotImplementedError
 
 
-def trace_distance(A, B) -> float:
+def trace_distance(A: State, B: State) -> float:
     r"""Calculates the trace distance between two quantum states.
 
     Args:
-        A (State) the first quantum state
-        B (State) the second quantum state
+        A: The first quantum state
+        B: The second quantum state
 
     Returns:
-        float: the trace distance between the two states
+        The trace distance between the two states
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.trace_distance(A.means, A.cov, B.means, B.cov)
