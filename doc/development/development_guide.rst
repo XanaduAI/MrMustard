@@ -38,7 +38,7 @@ The ``-e`` flag ensures that edits to the source code will be reflected when
 importing Mr Mustard in Python.
 
 Increased numerical stability using Julia [optional]
-------------------
+----------------------------------------------------
 Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
 To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
 an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3 recommended).
