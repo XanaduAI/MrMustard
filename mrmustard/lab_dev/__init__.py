@@ -94,7 +94,7 @@ they can take advantage of built-in tensor network functionality to run circuits
     >>> result = Simulator().run(circ)
     >>> assert result == s0 >> s1 >> s2 >> bs01 >> bs12 >> p1 >> p2
 
-    >>> # every path leads to the same result, but some paths are faster than other.
+    >>> # every path leads to the same result, but some paths are faster than others.
     >>> # for example, selecting this path leads to a simulation time of about 17ms on a
     >>> # typical laptop ...
     >>> circ.path = [(4, 5), (4, 6), (2, 4), (0, 3), (1, 0), (1, 2)]
@@ -113,7 +113,8 @@ Check out our guides to learn more about :mod:`~mrmustard.lab_dev` and its core 
 * The :mod:`~mrmustard.lab_dev.transformations` guide shows how to initialize unitary gates and
   channels.
 * :mod:`~mrmustard.lab_dev.circuits` tells you everything you need to know about circuits.
-* The :mod:`~mrmustard.lab_dev.simulator` page shows how to use the simulator object.
+* The :mod:`~mrmustard.lab_dev.simulator` page shows how to use the simulator object and discusses
+  how to select the best paths for your circuits.
 * For more advanced functionality, take a look at the :mod:`~mrmustard.lab_dev.circuit_components`
   module, which contains a series of maps (e.g., the trace-out operation) expressed as circuit
   components.

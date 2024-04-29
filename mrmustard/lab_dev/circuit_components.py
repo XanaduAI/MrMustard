@@ -14,6 +14,82 @@
 
 """
 A base class for the components of quantum circuits.
+
+``CircuitComponent``\s bring together two types of information:
+
+* That contained in the ``Wires`` object, which identifies the modes spanned by a component.
+* That contained in the ``Representation``, which provides a mathematical description of a
+  component.
+Together, wires and representation uniquely define individual components, as well as their
+interaction with other components.
+
+This example shows how to define components with the same wires and representations as popular
+states and gates.
+
+.. code-block ::
+
+    >>> from mrmustard.lab_dev import *
+    >>> from mrmustard.physics.triples import vacuum_state_Abc, beamsplitter_gate_Abc, attenuator_Abc
+    >>> from mrmustard.physics.fock import fock_state
+    >>> from mrmustard.physics.representations import Bargmann, Fock
+    >>> import numpy as np
+
+    >>> # the vacuum state on mode `0`
+    >>> vac_rep = Bargmann(*vacuum_state_Abc(n_modes=1))
+    >>> vac_modes = (0,)
+    >>> vac = CircuitComponent("my_vac", vac_rep, modes_out_ket=vac_modes)
+
+    >>> # the number state on mode `3`
+    >>> num_rep = Fock(fock_state(n=1))
+    >>> num_modes = (3,)
+    >>> number = CircuitComponent("my_num", num_rep, modes_out_ket=num_modes)
+
+    >>> # the 50/50 beam splitter on modes `(8, 19)`
+    >>> bs_rep = Bargmann(*beamsplitter_gate_Abc(theta=np.pi/4))
+    >>> bs_modes = (8, 19)
+    >>> bs = CircuitComponent("my_bs", bs_rep, modes_out_ket=bs_modes, modes_in_ket=bs_modes)
+
+    >>> # the attenuator on mode `16`
+    >>> att_rep = Bargmann(*attenuator_Abc(0.9))
+    >>> att_modes = (16,)
+    >>> att = CircuitComponent("my_att", att_rep, att_modes, att_modes, att_modes, att_modes)
+
+By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
+concatenated via the ``@`` and ``>>`` operators. 
+
+.. code-block ::
+
+    >>> from mrmustard.lab_dev import *
+    >>> from mrmustard.physics.triples import attenuator_Abc
+    >>> from mrmustard.physics.fock import fock_state
+    >>> from mrmustard.physics.representations import Bargmann, Fock
+    >>> import numpy as np
+
+    >>> # the number state on mode `3` with `n=1` photons
+    >>> num_rep = Fock(fock_state(n=1))
+    >>> num_modes = (3,)
+    >>> number = CircuitComponent("my_num", num_rep, modes_out_ket=num_modes)
+
+    >>> # the attenuator on mode `3`
+    >>> att_rep = Bargmann(*attenuator_Abc(0.5))
+    >>> att_modes = (3,)
+    >>> att = CircuitComponent("my_att", att_rep, att_modes, att_modes, att_modes, att_modes)
+
+    >>> # `@` is a "lower-level" operator that simply contracts the two given components,
+    >>> # without adding adjoints. in general, it returns "unphysical" components, like the
+    >>> # following one
+    >>> res1 = number @ att
+    >>> assert res1.wires == Wires(modes_out_bra={3,}, modes_in_bra={3,}, modes_out_ket={3,})
+
+    >>> # `>>` is "higher-level" and is designed to be more user-friendly. by adding the missing
+    >>> # adjoints, it is guaranteed map any two physical components into another component that
+    >>> # also physical.
+    >>> res2 = number >> att
+    >>> assert res2.wires == Wires(modes_out_bra={3,}, modes_out_ket={3,})
+    >>> assert res2 == number @ number.adjoint @ att
+
+By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
+concatenated via the ``@`` and ``>>`` operators. 
 """
 
 # pylint: disable=super-init-not-called, protected-access
@@ -36,7 +112,7 @@ __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 class CircuitComponent:
     r"""
     A base class for the components (states, transformations, and measurements, or potentially
-    unphysical ``wired'' objects) that can be placed in Mr Mustard's quantum circuits.
+    unphysical "wired" objects) that can be placed in Mr Mustard's quantum circuits.
 
     Args:
         name: The name of this component.
