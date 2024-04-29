@@ -13,8 +13,6 @@
 # limitations under the License.
 
 r"""
-The lab module in development.
-
 The :mod:`~mrmustard.lab_dev` module contains all the objects that would normally be found in a photonic lab, such as:
 
 * Several useful states, such as :class:`~mrmustard.lab_dev.states.Vacuum`,
@@ -88,8 +86,8 @@ they can take advantage of built-in tensor network functionality to run circuits
     >>> # initialize a circuit
     >>> circ = Circuit([s0, s1, s2, bs01, bs12, p1, p2])
 
-    >>> # specify a "contraction path" for the circuit above -- i.e., in what order you'd like
-    >>> # to combine them via ``>>``
+    >>> # specify a "contraction path" for the circuit above -- i.e., in what order you'd
+    >>> # like to combine its components via ``>>``
     >>> circ.path = [(4, 5), (4, 6), (2, 4), (0, 3), (1, 0), (1, 2)]
 
     >>> # run the circuit -- the `Simulator` will follow the circuit's path
