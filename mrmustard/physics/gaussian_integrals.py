@@ -69,7 +69,7 @@ def real_gaussian_integral(
 
     c_post = (
         c
-        * math.sqrt(2 * np.pi) ** len(idx)
+        * math.sqrt((2 * np.pi) ** len(idx))
         * math.sqrt((-1) ** len(idx) / math.det(M))
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )

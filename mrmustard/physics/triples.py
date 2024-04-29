@@ -470,18 +470,20 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
     hbar = settings.HBAR
-    In = math.eye(n_modes)
-    A = math.astensor(
-        np.block(
+    In = np.eye(n_modes)
+    A = np.block(
             [
-                [In, -1j * math.sqrt(2 / hbar) * In],
-                [-1j * math.sqrt(2 / hbar) * In, -1 / hbar * In],
+                [In, - 1j * np.sqrt(2 / hbar) * In],
+                [- 1j * np.sqrt(2 / hbar) * In, -1 / hbar * In],
             ]
         )
-    )
     b = _vacuum_B_vector(2 * n_modes)
+    # Reorder it as a Unitary
+    full_order = np.arange(n_modes * 2)
+    order = list(np.concatenate((full_order[n_modes:], full_order[:n_modes]), axis=0))
+    A = A[order, :][:, order]
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
-    return A, b, c
+    return math.astensor(A), b, c
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
