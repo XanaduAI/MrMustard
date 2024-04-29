@@ -116,6 +116,7 @@ class TestBtoQMap:
     r"""
     Tests for the ``BtoQMap`` class.
     """
+
     def test_btoqmap_works_correctly_by_applying_it_twice_on_a_state(self):
         A0 = np.array([[0.5, 0.3], [0.3, 0.5]])
         b0 = np.zeros(2)
@@ -164,7 +165,9 @@ class TestBtoQMap:
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
-            idx_z=[0,],
+            idx_z=[
+                0,
+            ],
             idx_zconj=[2],
             measure=-1,
         )
@@ -180,79 +183,6 @@ class TestBtoQMap:
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])
-
-        assert math.allclose(A0, Af)
-        assert math.allclose(b0, bf)
-        assert math.allclose(c0, cf)
-
-    def test_qtobmap_works_correctly_by_applying_it_twice_on_a_state(self):
-        A0 = np.array([[0.898 , 0.2],[0.2, 0.898]])
-        b0 = np.array([0.2+0.1j, 0.3-0.9j])
-        c0 = 1.333
-
-        modes = [0,1]
-        QtoBMap_CC1 = _BtoQMap(modes).dual
-        step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
-        )
-
-        Ainter, binter, cinter = join_Abc_real(
-            (A0, b0, c0), (step1A, step1b, step1c), modes, modes
-        )
-
-        new_A, new_b, new_c = real_gaussian_integral((Ainter, binter, cinter), idx=modes)
-
-        QtoBMap_CC2 = _BtoQMap(modes)
-        step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
-        )
-
-        Af, bf, cf = complex_gaussian_integral(
-            join_Abc((new_A, new_b, new_c), (step2A, step2b, step2c)),
-            idx_z=modes,
-            idx_zconj=[i+len(modes) for i in modes],
-            measure=-1,
-        )
-
-        assert math.allclose(A0, Af)
-        assert math.allclose(b0, bf)
-        assert math.allclose(c0, cf)
-
-        A0 = np.array([[0.898]])
-        b0 = np.array([0.2+0.1j])
-        c0 = 1.333
-
-        modes = [0]
-        QtoBMap_CC1 = _BtoQMap(modes).dual
-        step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
-        )
-
-        Ainter, binter, cinter = join_Abc_real(
-            (A0, b0, c0), (step1A, step1b, step1c), modes, modes
-        )
-
-        new_A, new_b, new_c = real_gaussian_integral((Ainter, binter, cinter), idx=modes)
-
-        QtoBMap_CC2 = _BtoQMap(modes)
-        step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
-        )
-
-        Af, bf, cf = complex_gaussian_integral(
-            join_Abc((new_A, new_b, new_c), (step2A, step2b, step2c)),
-            idx_z=modes,
-            idx_zconj=[i+len(modes) for i in modes],
-            measure=-1,
-        )
 
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)

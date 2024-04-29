@@ -15,6 +15,7 @@
 """
 This module contains gaussian integral functions and related helper functions.
 """
+import numpy as np
 from typing import Sequence, Tuple
 
 from mrmustard import math
@@ -69,8 +70,8 @@ def real_gaussian_integral(
 
     c_post = (
         c
-        * math.sqrt(2) ** len(idx)
-        * math.sqrt(1/ math.det(M))
+        * math.sqrt(2 * np.pi) ** len(idx)
+        * math.sqrt((-1) ** len(idx) / math.det(M))
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
@@ -203,19 +204,42 @@ def join_Abc_real(
     not_idx1 = tuple(i for i in range(A1.shape[-1]) if i not in idx1)
     not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
 
-    if math.asnumpy(not_idx1).shape != (0,):
-        raise NotImplementedError()
+    if math.asnumpy(not_idx1).shape == (0,):
+        A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
+        A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
+        A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
+        A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+        b2_idx = math.gather(b2, idx2, axis=-1)
+        b2_notidx = math.gather(b2, not_idx2, axis=-1)
 
-    A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
-    A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
-    A2_notidx_idx = math.gather(math.gather(A2, idx1, axis=-1), not_idx2, axis=-2)
-    A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
-    b2_idx = math.gather(b2, idx2, axis=-1)
-    b2_notidx = math.gather(b2, not_idx2, axis=-1)
+        A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
+        b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
+        c12 = math.outer(c1, c2)
+    else:
+        A1_idx_idx = math.gather(math.gather(A1, idx1, axis=-1), idx1, axis=-2)
+        A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
+        A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
+        A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
+        b1_idx = math.gather(b1, idx1, axis=-1)
+        b1_notidx = math.gather(b1, not_idx1, axis=-1)
 
-    A12 = math.block([[A1 + A2_idx_idx, A2_idx_notidx], [A2_notidx_idx, A2_notidx_notidx]])
-    b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
-    c12 = math.outer(c1, c2)
+        A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
+        A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
+        A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
+        A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+        b2_idx = math.gather(b2, idx2, axis=-1)
+        b2_notidx = math.gather(b2, not_idx2, axis=-1)
+
+        O_n = math.zeros((len(not_idx1), len(not_idx2)))
+        A12 = math.block(
+            [
+                [A1_idx_idx + A2_idx_idx, A1_idx_notidx, A2_idx_notidx],
+                [A1_notidx_idx, A1_notidx_notidx, O_n],
+                [A2_notidx_idx, O_n.T, A2_notidx_notidx],
+            ]
+        )
+        b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
+        c12 = math.outer(c1, c2)
     return A12, b12, c12
 
 
