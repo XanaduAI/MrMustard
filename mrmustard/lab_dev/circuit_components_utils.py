@@ -86,7 +86,7 @@ class _BtoQMap(CircuitComponent):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         A, b, c = triples.bargmann_to_quadrature_Abc(n_modes)
-        #Reorder it as a Unitary
+        # Reorder it as a Unitary
         full_order = np.arange(n_modes * 2)
         order = list(np.concatenate((full_order[n_modes:], full_order[:n_modes]), axis=0))
         A = A[order, :][:, order]
