@@ -471,11 +471,13 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     hbar = settings.HBAR
     In = math.eye(n_modes)
-    A = math.block(
-        [
-            [In, -1j * math.sqrt(2 / hbar) * In],
-            [-1j * math.sqrt(2 / hbar) * In, -1 / hbar * In],
-        ]
+    A = math.astensor(
+        np.block(
+            [
+                [In, -1j * math.sqrt(2 / hbar) * In],
+                [-1j * math.sqrt(2 / hbar) * In, -1 / hbar * In],
+            ]
+        )
     )
     b = _vacuum_B_vector(2 * n_modes)
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
@@ -501,7 +503,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    A = math.block(
+    A = np.block(
         [
             [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
             [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
@@ -521,7 +523,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     A = A[order_list, :][:, order_list]
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
-    return A, b, c
+    return math.astensor(A), b, c
 
 
 # ~~~~~~~~~~~~~~~~
