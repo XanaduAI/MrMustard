@@ -107,7 +107,7 @@ class BtoQMap(CircuitComponent):
     The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
 
     Args:
-        num_modes: The number of modes of this channel.
+        modes: The modes of this channel.
     """
 
     def __init__(
