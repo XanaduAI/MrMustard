@@ -24,6 +24,10 @@ from typing import Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
+from IPython.display import display, HTML
+from mako.template import Template
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -691,3 +695,7 @@ class Fock(Representation):
             slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
             ret = ret[slc]
         return Fock(array=ret, batched=True)
+
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")
+        display(HTML(template.render(rep=self)))

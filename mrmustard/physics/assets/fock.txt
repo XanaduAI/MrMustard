@@ -1,0 +1,31 @@
+<%! 
+from mrmustard.physics.representations import Fock
+from mrmustard.lab_dev.states import Ket, DM
+%>
+
+<h3>Fock representation</h3>
+
+<%
+    x = []
+    for row in rep.array:
+        x += [row]
+    print(x)
+%>
+
+<table style="border-collapse: collapse; text-align: center;">
+    <tr>
+        <th>Ansatz</th>
+        <th>Shape</th>
+        <th>Array</th>
+    </tr>
+
+    <tr>
+        <td>${rep.ansatz.__class__.__qualname__}</td>
+        <td>${rep.array.shape}</td>
+        <td>
+            ${
+                repr(rep.array)[:400].replace("array(", "").replace(")", "").replace("[", "(").replace("]", ")")
+            }
+        </td>
+    </tr>
+</table>
