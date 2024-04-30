@@ -731,23 +731,26 @@ class DM(State):
             QtoBMap_CC.representation.b[0],
             QtoBMap_CC.representation.c[0],
         )
-        full_order_list = np.arange(4 * len(modes))
+        full_order_list = math.arange(4 * len(modes))
         bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
             join_Abc_real(
                 triple,
                 (QtoBMap_A, QtoBMap_b, QtoBMap_c),
-                idx1=list(full_order_list[: 2 * len(modes)]),
+                idx1=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
                 idx2=list(
-                    np.concatenate(
-                        [
-                            full_order_list[len(modes) : 2 * len(modes)],
-                            full_order_list[3 * len(modes) :],
-                        ],
-                        axis=0,
+                    math.cast(
+                        math.concat(
+                            [
+                                full_order_list[len(modes) : 2 * len(modes)],
+                                full_order_list[3 * len(modes) :],
+                            ],
+                            axis=0,
+                        ),
+                        math.int32,
                     )
                 ),
             ),
-            idx=list(full_order_list[: 2 * len(modes)]),
+            idx=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
         )
         ret = DM(name, modes)
         ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
