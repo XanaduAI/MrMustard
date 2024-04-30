@@ -208,7 +208,7 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
     n_modes = len(nbar)
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
-    A = np.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
+    A = math.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
     c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
     b = _vacuum_B_vector(n_modes * 2)
 
@@ -238,7 +238,7 @@ def rotation_gate_Abc(
     n_modes = len(theta)
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
-    A = np.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
+    A = math.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
     b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
@@ -432,7 +432,7 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     )
 
     b = _vacuum_B_vector(n_modes * 4)
-    c = np.prod(1 / g)
+    c = math.prod(1 / g)
 
     return A, b, c
 
@@ -470,20 +470,25 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
     hbar = settings.HBAR
-    In = np.eye(n_modes)
-    A = np.block(
+    In = math.eye(n_modes, math.complex128)
+    A = math.block(
+        [
+            [In, -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128)],
             [
-                [In, - 1j * np.sqrt(2 / hbar) * In],
-                [- 1j * np.sqrt(2 / hbar) * In, -1 / hbar * In],
-            ]
-        )
+                -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
+                -1 / hbar * In,
+            ],
+        ]
+    )
     b = _vacuum_B_vector(2 * n_modes)
     # Reorder it as a Unitary
-    full_order = np.arange(n_modes * 2)
-    order = list(np.concatenate((full_order[n_modes:], full_order[:n_modes]), axis=0))
-    A = A[order, :][:, order]
+    full_order = math.arange(n_modes * 2)
+    order = list(
+        math.cast(math.concat((full_order[n_modes:], full_order[:n_modes]), axis=0), math.int32)
+    )
+    A = math.astensor(math.asnumpy(A)[order, :][:, order])
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
-    return math.astensor(A), b, c
+    return A, b, c
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -505,24 +510,27 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    A = np.block(
+    A = math.block(
         [
             [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
             [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
         ]
     )
-    order_list = np.arange(4 * n_modes)  # [0,3,1,2]
+    order_list = math.arange(4 * n_modes)  # [0,3,1,2]
     order_list = list(
-        np.concatenate(
-            (
-                np.concatenate((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
-                order_list[n_modes : 3 * n_modes],
+        math.cast(
+            math.concat(
+                (
+                    math.concat((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
+                    order_list[n_modes : 3 * n_modes],
+                ),
+                axis=0,
             ),
-            axis=0,
+            math.int32,
         )
     )
 
-    A = A[order_list, :][:, order_list]
+    A = math.astensor(math.asnumpy(A)[order_list, :][:, order_list])
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return math.astensor(A), b, c

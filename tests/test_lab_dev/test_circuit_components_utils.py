@@ -120,7 +120,7 @@ class TestBtoQMap:
     def test_btoqmap_works_correctly_by_applying_it_twice_on_a_state(self):
         A0 = np.array([[0.5, 0.3], [0.3, 0.5]])
         b0 = np.zeros(2)
-        c0 = 1.0
+        c0 = 1.0 + 0j
 
         modes = [0, 1]
         QtoBMap_CC1 = _BtoQMap(modes)
@@ -154,7 +154,7 @@ class TestBtoQMap:
 
         A0 = np.array([[0.4895454]])
         b0 = np.zeros(1)
-        c0 = 1.0
+        c0 = 1.0 + 0j
 
         modes = [0]
         QtoBMap_CC1 = _BtoQMap(modes)
