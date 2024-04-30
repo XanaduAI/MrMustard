@@ -204,17 +204,19 @@ def join_Abc_real(
     not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
 
     A1_idx_idx = math.gather(math.gather(A1, idx1, axis=-1), idx1, axis=-2)
-    A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
-    A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
-    A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
     b1_idx = math.gather(b1, idx1, axis=-1)
-    b1_notidx = math.gather(b1, not_idx1, axis=-1)
+    if not_idx1:
+        A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
+        A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
+        A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
+        b1_notidx = math.gather(b1, not_idx1, axis=-1)
     A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
-    A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
-    A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
-    A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
     b2_idx = math.gather(b2, idx2, axis=-1)
-    b2_notidx = math.gather(b2, not_idx2, axis=-1)
+    if not_idx2:
+        A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
+        A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
+        A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+        b2_notidx = math.gather(b2, not_idx2, axis=-1)
 
     if math.asnumpy(not_idx1).shape == (0,):
         A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
