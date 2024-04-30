@@ -99,12 +99,12 @@ class DsMap(CircuitComponent):
 
 
 class BtoQMap(CircuitComponent):
-    r"""The change of representation kernel from Bargmann into Quadrature as a ``Unitary``.
+    r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
 
     Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
 
-    The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from Bargmann into Quadrature on the `Bra` Wire.
-    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from Quadrature into Bargmann.
+    The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from ``Bargmann`` into quadrature on the `bra` Wire.
+    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
 
     Args:
         num_modes: The number of modes of this channel.
