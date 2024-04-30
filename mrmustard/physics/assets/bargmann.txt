@@ -1,0 +1,35 @@
+<%!
+import plotly.graph_objects as go
+%>
+
+<h3>Bargmann representation</h3>
+
+<table style="border-collapse: collapse; text-align: center;">
+    <tr>
+        <th style="text-align: left;">Ansatz</th>
+        <th style="text-align: left;">Shape of A</th>
+        <th style="text-align: left;">Shape of b</th>
+        <th style="text-align: left;">Shape of c</th>
+    </tr>
+
+    <tr>
+        <td style="text-align: left;">${rep.ansatz.__class__.__qualname__}</td>
+        <td style="text-align: center;">${rep.A.shape}</td>
+        <td style="text-align: center;">${rep.b.shape}</td>
+        <td style="text-align: center;">${rep.c.shape}</td>
+    </tr>
+</table>
+
+<%
+    plot_fig = False
+    if len(rep.array.shape) == 2:
+        # `n` on the `x` axis, batch on the `y` axis
+        plot_fig = True
+        is_batched = True
+        array = rep.array
+    elif len(rep.array.shape) == 3 and rep.array.shape[0] == 1:
+        # `n0` on the `x` axis, `n1` on the `y`
+        plot_fig = True
+        is_batched = False
+        array = rep.array[0]
+%>

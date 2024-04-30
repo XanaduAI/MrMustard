@@ -18,6 +18,10 @@ from __future__ import annotations
 from functools import cached_property
 from typing import Optional
 import numpy as np
+import os
+
+from IPython.display import display, HTML
+from mako.template import Template
 
 __all__ = ["Wires"]
 
@@ -402,3 +406,7 @@ class Wires:
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
+    
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
+        display(HTML(template.render(rep=self)))

@@ -453,6 +453,10 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")
+        display(HTML(template.render(rep=self)))
+
 
 class Fock(Representation):
     r"""

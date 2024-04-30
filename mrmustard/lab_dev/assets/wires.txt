@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  .container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border: 2px solid black;
+  }
+  .square {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    top: 25%;
+    left: 25%;
+    border: 2px solid black;
+  }
+
+  .leg {
+    position: relative;
+  }
+  .input {
+    left: 0;
+    width: 25%
+  }
+  .in {
+    position: absolute;
+    width: 25%;
+    top: 50%;
+    left: 0;
+    border-top: 2px solid black;
+    transform: translateY(-50%);
+  }
+  .text {
+    position: absolute;
+    top: 0;
+    left: -50px; /* Adjust the position of the text as needed */
+    transform: translateY(-100%);
+    white-space: nowrap; /* Prevent text from wrapping */
+  }
+</style>
+
+</head>
+<body>
+<h1>Wires</h1>
+<div class="container">
+  <div class="square"></div>
+  <div class="leg in"></div>
+  <div class="text">Text</div>
+</div>
+</body>
+</html>
