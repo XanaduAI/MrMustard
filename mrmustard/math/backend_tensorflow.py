@@ -200,6 +200,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
+        if not indices:
+            return array
         return tf.gather(array, indices, axis=axis)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:

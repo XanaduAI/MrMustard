@@ -205,6 +205,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return isinstance(value, np.ndarray)
 
     def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
+        if not indices:
+            return array
         return np.take(array, indices, axis=axis)
 
     def imag(self, array: np.ndarray) -> np.ndarray:

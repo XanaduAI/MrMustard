@@ -47,7 +47,7 @@ def test_real_gaussian_integral():
     assert np.allclose(
         res[2],
         c
-        * math.sqrt((-2 * np.pi) ** 2)
+        * math.sqrt((-2 * np.pi) ** 2, math.complex128)
         / math.sqrt(math.det(A[:2, :2]))
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
@@ -72,7 +72,7 @@ def test_real_gaussian_integral():
     assert np.allclose(
         res3[2],
         c2
-        * math.sqrt((-2 * np.pi) ** 2)
+        * math.sqrt((-2 * np.pi) ** 2, math.complex128)
         / math.sqrt(math.det(A2[:2, :2]))
         * math.exp(-0.5 * math.sum(b2[:2] * math.matvec(math.inv(A2[:2, :2]), b2[:2]))),
     )
