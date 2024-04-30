@@ -26,7 +26,7 @@ from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "_DsMap", "_BtoQMap"]
+__all__ = ["TraceOut", "DsMap", "BtoQMap"]
 
 
 class TraceOut(CircuitComponent):
@@ -69,7 +69,7 @@ class TraceOut(CircuitComponent):
         return Bargmann(*triples.identity_Abc(len(self.modes)))
 
 
-class _DsMap(CircuitComponent):
+class DsMap(CircuitComponent):
     r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
 
     Used internally as a ``Channel`` for transformations between representations.
@@ -85,7 +85,7 @@ class _DsMap(CircuitComponent):
         s: float,
     ):
         super().__init__(
-            "_DsMap",
+            "DsMap",
             modes_out_bra=modes,
             modes_in_bra=modes,
             modes_out_ket=modes,
@@ -98,7 +98,7 @@ class _DsMap(CircuitComponent):
         return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
 
 
-class _BtoQMap(CircuitComponent):
+class BtoQMap(CircuitComponent):
     r"""The change of representation kernel from Bargmann into Quadrature as a ``Unitary``.
 
     Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
@@ -115,7 +115,7 @@ class _BtoQMap(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            "_BtoQMap",
+            "BtoQMap",
             modes_out_ket=modes,
             modes_in_ket=modes,
         )

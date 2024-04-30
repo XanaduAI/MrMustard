@@ -48,7 +48,7 @@ from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import _DsMap, _BtoQMap
+from ..circuit_components_utils import DsMap, BtoQMap
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..wires import Wires
@@ -344,7 +344,7 @@ class State(CircuitComponent):
         if not isinstance(self.representation, Bargmann):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
-        new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
+        new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
             new_state.representation.ansatz.A,
             new_state.representation.ansatz.b,
@@ -626,7 +626,7 @@ class State(CircuitComponent):
             raise ValueError(
                 f"``{self.representation}`` is not available to calculate the quadrature representation."
             )
-        ret = self >> _BtoQMap(self.modes)
+        ret = self >> BtoQMap(self.modes)
         return ret.bargmann_triple
 
 
@@ -725,7 +725,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> DM:
-        QtoBMap_CC = _BtoQMap(modes).dual.adjoint @ _BtoQMap(modes).dual
+        QtoBMap_CC = BtoQMap(modes).dual.adjoint @ BtoQMap(modes).dual
         QtoBMap_A, QtoBMap_b, QtoBMap_c = (
             QtoBMap_CC.representation.A[0],
             QtoBMap_CC.representation.b[0],
@@ -952,7 +952,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Ket:
-        QtoBMap_CC = _BtoQMap(modes).dual
+        QtoBMap_CC = BtoQMap(modes).dual
         QtoBMap_A, QtoBMap_b, QtoBMap_c = (
             QtoBMap_CC.representation.A[0],
             QtoBMap_CC.representation.b[0],
