@@ -1,31 +1,74 @@
-<%! 
-from mrmustard.physics.representations import Fock
-from mrmustard.lab_dev.states import Ket, DM
+<%!
+import plotly.graph_objects as go
 %>
 
 <h3>Fock representation</h3>
 
-<%
-    x = []
-    for row in rep.array:
-        x += [row]
-    print(x)
-%>
-
-<table style="border-collapse: collapse; text-align: center;">
+<table style="border-collapse: collapse; text-align: left;">
     <tr>
-        <th>Ansatz</th>
-        <th>Shape</th>
-        <th>Array</th>
+        <th style="text-align: left;">Ansatz</th>
+        <th style="text-align: left;">Shape</th>
     </tr>
 
     <tr>
-        <td>${rep.ansatz.__class__.__qualname__}</td>
-        <td>${rep.array.shape}</td>
-        <td>
-            ${
-                repr(rep.array)[:400].replace("array(", "").replace(")", "").replace("[", "(").replace("]", ")")
-            }
-        </td>
+        <td style="text-align: left;">${rep.ansatz.__class__.__qualname__}</td>
+        <td style="text-align: left;">${rep.array.shape}</td>
     </tr>
 </table>
+
+<%
+    plot_fig = False
+    if len(rep.array.shape) == 2:
+        # `n` on the `x` axis, batch on the `y` axis
+        plot_fig = True
+        is_batched = True
+        array = rep.array
+    elif len(rep.array.shape) == 3 and rep.array.shape[0] == 1:
+        # `n0` on the `x` axis, `n1` on the `y`
+        plot_fig = True
+        is_batched = False
+        array = rep.array[0]
+
+    if plot_fig:
+        text = []
+        for y, row in enumerate(array):
+            text.append([])
+            for x, val in enumerate(row):
+                info = f"batch: {y}<br />" if is_batched else f"axis 0: {y}<br />"
+                info += f"n: {x}<br />" if is_batched else f"axis 1: {x}<br />"
+                info += f"val: {str(val)}<br />"
+                text[y].append(info)
+
+        layout = dict(
+            height=300 if 300 < 80*array.shape[0] else 80*array.shape[0],
+            width=500,
+            margin=dict(l=0, r=0, t=0, b=0),
+            showlegend=False,
+            xaxis=dict(
+                title="n" if is_batched else "axis 1",
+                showgrid=True,
+                showline=True,
+            ),
+            yaxis=dict(
+                title="batch" if is_batched else "axis 0",
+                autorange="reversed",
+                showgrid=True,
+                showticklabels=False,
+            )
+        )
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=abs(array[:20]), 
+                colorscale="viridis", 
+                showscale=False,
+                hoverinfo="text",
+                text=text,
+            ), 
+            layout=layout
+        )
+%>
+
+% if plot_fig:
+    <h5 style="margin: 10px;">Array</h5>
+    <div style="margin: 10px;">${fig.to_html(full_html=False, include_plotlyjs="cdn")}</div>
+% endif
