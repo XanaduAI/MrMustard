@@ -17,7 +17,9 @@
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
 import pytest
+import numpy as np
 
+from mrmustard import math
 from mrmustard.lab_dev.circuit_components_utils import _DsMap, _BtoQMap
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc

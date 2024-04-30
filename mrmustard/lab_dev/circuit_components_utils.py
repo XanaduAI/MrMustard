@@ -21,9 +21,7 @@ perform useful mathematical calculations.
 
 from __future__ import annotations
 from typing import Sequence
-import numpy as np
 
-from mrmustard import math
 from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
