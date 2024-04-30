@@ -725,8 +725,8 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> DM:
-        #The representation change from quadrature into Bargmann is to use the BtoQMap.dual.
-        #Plus this map is on a single wire, here for a DM, we need to add a adjoint wire as well.
+        # The representation change from quadrature into Bargmann is to use the BtoQMap.dual.
+        # Plus this map is on a single wire, here for a DM, we need to add a adjoint wire as well.
         QtoBMap_CC = BtoQMap(modes).dual.adjoint @ BtoQMap(modes).dual
         QtoBMap_A, QtoBMap_b, QtoBMap_c = (
             QtoBMap_CC.representation.A[0],
