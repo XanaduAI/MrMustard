@@ -16,13 +16,11 @@
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
-import pytest
 import numpy as np
+import pytest
 
-from mrmustard import math
-from mrmustard.lab_dev.circuit_components_utils import _DsMap, _BtoQMap
-from mrmustard.lab_dev.states.base import DM
-from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
+from mrmustard import math, settings
+from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
@@ -31,6 +29,55 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
     join_Abc_real,
 )
+from mrmustard.physics.representations import Bargmann
+from mrmustard.lab_dev.circuit_components_utils import TraceOut, _DsMap, _BtoQMap
+from mrmustard.lab_dev.states import Coherent, DM
+from mrmustard.lab_dev.wires import Wires
+
+
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+
+
+class TestTraceOut:
+    r"""
+    Tests ``TraceOut`` objects.
+    """
+
+    @pytest.mark.parametrize("modes", [[0], [1, 2], [3, 4, 5]])
+    def test_init(self, modes):
+        tr = TraceOut(modes)
+
+        assert tr.name == "Tr"
+        assert tr.wires == Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
+        assert tr.representation == Bargmann(*identity_Abc(len(modes)))
+
+    def test_trace_out_bargmann_states(self):
+        state = Coherent([0, 1, 2], x=1)
+
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+
+        no_state = state >> TraceOut([0, 1, 2])
+        assert no_state.modes == []
+        assert no_state.wires == Wires()
+        assert np.allclose(no_state.representation.A, [])
+        assert np.allclose(no_state.representation.b, [])
+        assert np.allclose(no_state.representation.c, 1)
+
+    def test_trace_out_fock_states(self):
+        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+
+        state = Coherent([0, 1, 2], x=1).to_fock_component()
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock_component().dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock_component().dm()
+
+        no_state = state >> TraceOut([0, 1, 2])
+        assert no_state.modes == []
+        assert no_state.wires == Wires()
+        assert np.allclose(no_state.representation.array, [])
+
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
 
 class TestDsMap:
