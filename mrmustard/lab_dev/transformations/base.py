@@ -48,7 +48,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Batched transformations are not supported.")
         A, b, _ = self.dual.representation.conj().triple  # apply X
         almost_inverse = self.__class__.from_bargmann(
-            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1)
+            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j)
         )
         almost_identity = (
             self >> almost_inverse
