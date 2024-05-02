@@ -326,13 +326,10 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
+        Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
-        # initialized the ``Wires`` of the returned component
-        wires_ret, perm = self.wires @ other.wires
-
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
         idx_z = self.wires.bra.output[bra_modes].indices
@@ -343,10 +340,15 @@ class CircuitComponent:
         idx_z += self.wires.ket.output[ket_modes].indices
         idx_zconj += other.wires.ket.input[ket_modes].indices
 
-        # calculate the representation of the returned component
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
+        return idx_z, idx_zconj
 
-        # reorder the representation
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other``, without adding adjoints.
+        """
+        wires_ret, perm = self.wires @ other.wires
+        idx_z, idx_zconj = self._matmul_indices(other)
+        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
         representation_ret = representation_ret.reorder(perm) if perm else representation_ret
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
