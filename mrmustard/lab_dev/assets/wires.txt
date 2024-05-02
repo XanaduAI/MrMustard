@@ -27,8 +27,7 @@
 <style>
   .container-wires {
     position: relative;
-    width: 500px;
-    height: 108px;
+    width: 300px;
     margin-left: 20px;
     display: flex;
   }
@@ -62,17 +61,37 @@
     flex: 1;
   }
 
-  .table-idx {
-    position: static;
-    flex: 1;
-    width: 400px;
-    margin-left: 20px;
-    transform: translateY(-200px;)
-  }
-  .table-idx.table {
-    border: 2px solid black;
+  .grid-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      width: 50%;
+      margin-top: 10px;
   }
 
+  .grid-item {
+      border: 1px solid black;
+      padding: 10px;
+      height: 100px;
+  }
+
+  .table-container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+  }
+
+  table {
+      width: 100%;
+      border-collapse: collapse;
+  }
+
+  th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: center;
+  }
 
   .line {
     position: relative;
@@ -97,52 +116,129 @@
 </style>
 
 <body>
-<h1>Wires</h1>
-<div class="container-wires">
-  <div class="in">
-    <div class="ket">
-      <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
-      <p class="text type" style="color: ${color_ik}">in ket</p>
-      <p class="text modes">${modes_ik}</p>
+  <h1>Wires</h1>
+  <div class="container-wires">
+    <div class="in">
+      <div class="ket">
+        <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
+        <p class="text type" style="color: ${color_ik}">in ket</p>
+        <p class="text modes">${modes_ik}</p>
+      </div>
+      <div class="bra">
+        <div class="line" style="background-color: ${color_ib}; height: ${height_line_ib}"></div>
+        <p class="text type" style="color: ${color_ib}">in bra</p>
+        <p class="text modes">${modes_ib}</p>
+      </div>
     </div>
-    <div class="bra">
-      <div class="line" style="background-color: ${color_ib}; height: ${height_line_ib}"></div>
-      <p class="text type" style="color: ${color_ib}">in bra</p>
-      <p class="text modes">${modes_ib}</p>
+
+    <div class="square"></div>
+
+    <div class="out">
+      <div class="ket">
+        <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
+        <p class="text type" style="color: ${color_ok}">out ket</p>
+        <p class="text modes">${modes_ok}</p>
+      </div>
+      <div class="bra">
+        <div class="line" style="background-color: ${color_ob}; height: ${height_line_ob}"></div>
+        <p class="text type" style="color: ${color_ob}">out bra</p>
+        <p class="text modes">${modes_ob}</p>
+      </div>
     </div>
   </div>
 
-  <div class="square"></div>
+  <div class="grid-container">
+    % if modes_ob:
+      <div class="grid-item">
+          <div class="table-container">
+              <table>
+                  <tr>
+                    <th style="text-align: left;"></th>
+                    <th style="text-align: left;">Mode</th>
+                    <th style="text-align: left;">Index</th>
+                  </tr>
+                  <tr>
+                    % for n, m in enumerate(list(wires.output.bra.modes)[:n_modes]):
+                      <tr>
+                        <th style="text-align: center;">${"out bra" if n == 0 else ""}</th>
+                        <td style="text-align: center;">${m}</td>
+                        <td style="text-align: center;">${wires.output.bra[m].indices[0]}</td>
+                      </tr>
+                    % endfor
+                  </tr>
+              </table>
+          </div>
+      </div>
+    % endif
 
-  <div class="out">
-    <div class="ket">
-      <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
-      <p class="text type" style="color: ${color_ok}">out ket</p>
-      <p class="text modes">${modes_ok}</p>
-    </div>
-    <div class="bra">
-      <div class="line" style="background-color: ${color_ob}; height: ${height_line_ob}"></div>
-      <p class="text type" style="color: ${color_ob}">out bra</p>
-      <p class="text modes">${modes_ob}</p>
-    </div>
+    % if modes_ib:
+      <div class="grid-item">
+          <div class="table-container">
+              <table>
+                  <tr>
+                    <th style="text-align: left;"></th>
+                    <th style="text-align: left;">Mode</th>
+                    <th style="text-align: left;">Index</th>
+                  </tr>
+                  <tr>
+                    % for n, m in enumerate(list(wires.input.bra.modes)[:n_modes]):
+                      <tr>
+                        <th style="text-align: center;">${"in bra" if n == 0 else ""}</th>
+                        <td style="text-align: center;">${m}</td>
+                        <td style="text-align: center;">${wires.input.bra[m].indices[0]}</td>
+                      </tr>
+                    % endfor
+                  </tr>
+              </table>
+          </div>
+      </div>
+    % endif
+    
+    % if modes_ok:
+      <div class="grid-item">
+          <div class="table-container">
+              <table>
+                  <tr>
+                    <th style="text-align: left;"></th>
+                    <th style="text-align: left;">Mode</th>
+                    <th style="text-align: left;">Index</th>
+                  </tr>
+                  <tr>
+                    % for n, m in enumerate(list(wires.output.ket.modes)[:n_modes]):
+                      <tr>
+                        <th style="text-align: center;">${"out ket" if n == 0 else ""}</th>
+                        <td style="text-align: center;">${m}</td>
+                        <td style="text-align: center;">${wires.output.ket[m].indices[0]}</td>
+                      </tr>
+                    % endfor
+                  </tr>
+              </table>
+          </div>
+      </div>
+    % endif
+
+    % if modes_ik:
+      <div class="grid-item">
+          <div class="table-container">
+              <table>
+                  <tr>
+                    <th style="text-align: left;"></th>
+                    <th style="text-align: left;">Mode</th>
+                    <th style="text-align: left;">Index</th>
+                  </tr>
+                  <tr>
+                    % for n, m in enumerate(list(wires.input.ket.modes)[:n_modes]):
+                      <tr>
+                        <th style="text-align: center;">${"in ket" if n == 0 else ""}</th>
+                        <td style="text-align: center;">${m}</td>
+                        <td style="text-align: center;">${wires.input.ket[m].indices[0]}</td>
+                      </tr>
+                    % endfor
+                  </tr>
+              </table>
+          </div>
+      </div>
+    % endif
+    
   </div>
-
-  <div class="table-idx">
-    <table style="border-collapse: collapse; text-align: left;">
-      <tr>
-        <th style="text-align: left;"></th>
-        <th style="text-align: left;">Mode</th>
-        <th style="text-align: left;">Index</th>
-      </tr>
-
-      % for n, m in enumerate(list(wires.output.ket.modes)[:n_modes]):
-        <tr>
-          <th style="text-align: center;">${"out ket" if n == 0 else ""}</th>
-          <td style="text-align: center;">${m}</td>
-          <td style="text-align: center;">${wires.output.ket[m].indices[0]}</td>
-        </tr>
-      % endfor
-  </table>
-  </div>
-</div>
 </body>
