@@ -78,7 +78,9 @@ class TestPNRDetector:
         expected_mean = eta * np.sinh(r) ** 2 + dc
         assert np.allclose(mean, expected_mean)
         variance = np.arange(len(ps)) ** 2 @ math.asnumpy(ps) - mean**2
-        expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+        expected_variance = (
+            eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+        )
         assert np.allclose(variance, expected_variance)
 
     @given(
@@ -152,7 +154,9 @@ class TestPNRDetector:
 class TestHomodyneDetector:
     """tests related to homodyne detectors"""
 
-    @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist())
+    @pytest.mark.parametrize(
+        "outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist()
+    )
     def test_homodyne_mode_kwargs(self, outcome):
         """Test that S gates and Homodyne mesurements are applied to the correct modes via the
         `modes` kwarg.
@@ -243,20 +247,6 @@ class TestHomodyneDetector:
             ]
         )
         assert np.allclose(math.asnumpy(remaining_state.cov), cov, atol=1e-5)
-        # TODO: figure out why this is not working
-        # if outcome is not None:
-        #     outcome = outcome * np.sqrt(hbar)
-        #     denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
-        #     expected_means = (
-        #         np.array(
-        #             [
-        #                 np.sqrt(s * (1 + s)) * outcome * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
-        #                 -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom
-        #             ]
-        #         )
-        #     )
-        #     means = remaining_state.means.numpy()
-        #     assert np.allclose(means, expected_means)
 
     @given(
         s=st.floats(min_value=0.0, max_value=1.0),
@@ -276,7 +266,8 @@ class TestHomodyneDetector:
                 + (2 * np.sqrt(s * (s + 1)) * (X - xb))
                 / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
                 pa
-                + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+                + (2 * np.sqrt(s * (s + 1)) * pb)
+                / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
 
@@ -291,7 +282,12 @@ class TestHomodyneDetector:
         "state, kwargs, mean_expected, var_expected",
         [
             (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (
+                Coherent,
+                {"x": 2.0, "y": 0.5},
+                2.0 * np.sqrt(2 * settings.HBAR),
+                settings.HBAR / 2,
+            ),
             (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
         ],
     )
