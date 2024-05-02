@@ -1,8 +1,8 @@
 Calculations on Gaussian Integrals
 ================================
 
-.. currentmodule:: mrmustard.physics.bargmann
+.. currentmodule:: mrmustard.physics.gaussian_integrals
 
-.. automodapi:: mrmustard.physics.bargmann
+.. automodapi:: mrmustard.physics.gaussian_integrals
     :no-heading:
     :include-all-objects:
