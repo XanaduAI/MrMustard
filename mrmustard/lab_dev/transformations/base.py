@@ -40,6 +40,15 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
+    def inverse(self) -> Transformation:
+        r"""Returns the inverse of the transformation."""
+        if not isinstance(self.representation, Bargmann):
+            raise NotImplementedError(
+                "The inverse of this transformation is not implemented."
+            )
+        A, b, c = self.representation.dual.conj()
+        return self._from_attributes("", Bargmann(math.inv(A), b, c), self.dual.wires)
+
 
 class Unitary(Transformation):
     r"""
