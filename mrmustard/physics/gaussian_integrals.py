@@ -133,9 +133,7 @@ def complex_gaussian_integral(
     bM = math.gather(b, idx, axis=-1)
 
     c_post = (
-        c
-        * math.sqrt((-1) ** n / math.det(M))
-        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
     if math.asnumpy(not_idx).shape != (0,):
