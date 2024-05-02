@@ -1,56 +1,148 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%
+    height_line_ob = "4px" if wires.output.bra else "2px"
+    height_line_ib = "4px" if wires.input.bra else "2px"
+    height_line_ok = "4px" if wires.output.ket else "2px"
+    height_line_ik = "4px" if wires.input.ket else "2px"
+
+    color_ob = "black" if wires.output.bra else "gainsboro"
+    color_ib = "black" if wires.input.bra else "gainsboro"
+    color_ok = "black" if wires.output.ket else "gainsboro"
+    color_ik = "black" if wires.input.ket else "gainsboro"
+
+    max_n_modes = 5
+    n_modes = len(wires.modes) if len(wires.modes) < max_n_modes else max_n_modes
+    dots = "" if n_modes < max_n_modes else ", ..."
+
+    modes_ob = ", ".join(str(s) for s in list(wires.output.bra.modes)[:n_modes])
+    modes_ib = ", ".join(str(s) for s in list(wires.input.bra.modes)[:n_modes])
+    modes_ok = ", ".join(str(s) for s in list(wires.output.ket.modes)[:n_modes])
+    modes_ik = ", ".join(str(s) for s in list(wires.input.ket.modes)[:n_modes])
+    
+    modes_ob += "" if not modes_ob else dots
+    modes_ib += "" if not modes_ib else dots
+    modes_ok += "" if not modes_ok else dots
+    modes_ik += "" if not modes_ik else dots
+%>
 
 <style>
-  .container {
+  .container-wires {
     position: relative;
-    width: 300px;
-    height: 300px;
-    border: 2px solid black;
+    width: 500px;
+    height: 108px;
+    margin-left: 20px;
+    display: flex;
   }
   .square {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    top: 25%;
-    left: 25%;
+    width: 100px;
+    height: 100px;
+    top: 10px;
+    border: 4px solid red;
+    flex: 1;
+  }
+
+  .in {
+    width: 100px;
+    height: 108px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .out {
+    height: 108px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .bra {
+    position: static;
+    flex: 1;
+  }
+  .ket {
+    position: static;
+    flex: 1;
+  }
+
+  .table-idx {
+    position: static;
+    flex: 1;
+    width: 400px;
+    margin-left: 20px;
+    transform: translateY(-200px;)
+  }
+  .table-idx.table {
     border: 2px solid black;
   }
 
-  .leg {
+
+  .line {
     position: relative;
-  }
-  .input {
-    left: 0;
-    width: 25%
-  }
-  .in {
-    position: absolute;
-    width: 25%;
     top: 50%;
     left: 0;
-    border-top: 2px solid black;
-    transform: translateY(-50%);
+    width: 100%;
   }
+
   .text {
     position: absolute;
-    top: 0;
-    left: -50px; /* Adjust the position of the text as needed */
-    transform: translateY(-100%);
-    white-space: nowrap; /* Prevent text from wrapping */
+    font-family: "Times New Roman"
+    width: 100%;
+    padding-left: 5px;
+  }
+  .text.type {
+    transform: translateY(25px);
+  }
+  .text.modes {
+    font-size: 13px;
+    transform: translateY(2px);
   }
 </style>
 
-</head>
 <body>
 <h1>Wires</h1>
-<div class="container">
+<div class="container-wires">
+  <div class="in">
+    <div class="ket">
+      <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
+      <p class="text type" style="color: ${color_ik}">in ket</p>
+      <p class="text modes">${modes_ik}</p>
+    </div>
+    <div class="bra">
+      <div class="line" style="background-color: ${color_ib}; height: ${height_line_ib}"></div>
+      <p class="text type" style="color: ${color_ib}">in bra</p>
+      <p class="text modes">${modes_ib}</p>
+    </div>
+  </div>
+
   <div class="square"></div>
-  <div class="leg in"></div>
-  <div class="text">Text</div>
+
+  <div class="out">
+    <div class="ket">
+      <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
+      <p class="text type" style="color: ${color_ok}">out ket</p>
+      <p class="text modes">${modes_ok}</p>
+    </div>
+    <div class="bra">
+      <div class="line" style="background-color: ${color_ob}; height: ${height_line_ob}"></div>
+      <p class="text type" style="color: ${color_ob}">out bra</p>
+      <p class="text modes">${modes_ob}</p>
+    </div>
+  </div>
+
+  <div class="table-idx">
+    <table style="border-collapse: collapse; text-align: left;">
+      <tr>
+        <th style="text-align: left;"></th>
+        <th style="text-align: left;">Mode</th>
+        <th style="text-align: left;">Index</th>
+      </tr>
+
+      % for n, m in enumerate(list(wires.output.ket.modes)[:n_modes]):
+        <tr>
+          <th style="text-align: center;">${"out ket" if n == 0 else ""}</th>
+          <td style="text-align: center;">${m}</td>
+          <td style="text-align: center;">${wires.output.ket[m].indices[0]}</td>
+        </tr>
+      % endfor
+  </table>
+  </div>
 </div>
 </body>
-</html>

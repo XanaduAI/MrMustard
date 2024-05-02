@@ -2,7 +2,7 @@
 import plotly.graph_objects as go
 %>
 
-<h3>Fock representation</h3>
+<h1>Fock representation</h1>
 
 <table style="border-collapse: collapse; text-align: left;">
     <tr>
