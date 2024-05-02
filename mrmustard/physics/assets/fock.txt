@@ -2,17 +2,29 @@
 import plotly.graph_objects as go
 %>
 
+<style>
+  .table-fock {
+    font-family: "Times New Roman";
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .th-fock, td-fock {
+    text-align: left;
+  }
+</style>
+
 <h1>Fock representation</h1>
 
-<table style="border-collapse: collapse; text-align: left;">
+<table class="table-fock">
     <tr>
-        <th style="text-align: left;">Ansatz</th>
-        <th style="text-align: left;">Shape</th>
+        <th class="th-fock">Ansatz</th>
+        <th class="th-fock">Shape</th>
     </tr>
 
     <tr>
-        <td style="text-align: left;">${rep.ansatz.__class__.__qualname__}</td>
-        <td style="text-align: left;">${rep.array.shape}</td>
+        <td class="td-fock">${rep.ansatz.__class__.__qualname__}</td>
+        <td class="td-fock">${rep.array.shape}</td>
     </tr>
 </table>
 
@@ -40,7 +52,7 @@ import plotly.graph_objects as go
                 text[y].append(info)
 
         layout = dict(
-            height=300 if 300 < 80*array.shape[0] else 80*array.shape[0],
+            height=210 if 210 < 80*array.shape[0] else 80*array.shape[0],
             width=500,
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,

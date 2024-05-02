@@ -100,14 +100,13 @@
     overflow-y: auto;
     margin: 5px;
     font-size: 12px;
-    border: 2px solid gray;
-    border-radius: 15px;
   }
 
   .table-wires {
     font-family: "Times New Roman";
     text-align: center;
     margin-left: 30px;
+    box-shadow: 3px 5px 10px #d9ad7c;
   }
 
   .th-wires, td-wires {

@@ -385,15 +385,15 @@ class CircuitComponent:
     def _repr_html_(self):  # pragma: no cover
         temp = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
 
-        rep_temp = Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
-        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
-
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
 
-        display(HTML(temp.render(comp=self, rep=rep_temp_uni, wires=wires_temp_uni)))
+        rep_temp = Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
+        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+
+        display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
 class AdjointView(CircuitComponent):
