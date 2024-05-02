@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Tests for circuit components. """
+"""Tests for circuit components."""
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
@@ -45,7 +45,9 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8))
+        cc = CircuitComponent(
+            name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8)
+        )
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -66,7 +68,9 @@ class TestCircuitComponent:
         r3 = (cc1.adjoint @ cc1).representation
         cc3 = CircuitComponent("", r3, m2, m2, m2, m1)
         cc4 = CircuitComponent("", r3, m2, m2, m2, m2)
-        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
+        assert cc3.representation == cc4.representation.reorder(
+            [0, 1, 2, 3, 4, 5, 7, 6]
+        )
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -193,6 +197,12 @@ class TestCircuitComponent:
 
         d12 = d1 + d2
         assert d12.representation == d1.representation + d2.representation
+
+    def test_sub(self):
+        s1 = DisplacedSqueezed([1], x=1.0, y=0.5, r=0.1)
+        s2 = DisplacedSqueezed([1], x=0.5, y=0.2, r=0.2)
+        s12 = s1 - s2
+        assert s12.representation == s1.representation - s2.representation
 
     def test_mul(self):
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -420,7 +430,9 @@ class TestAdjointView:
         c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
         assert repr(c1.adjoint) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
-        assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+        assert (
+            repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+        )
 
     def test_parameters_point_to_original_parameters(self):
         r"""
