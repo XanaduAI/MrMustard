@@ -73,12 +73,7 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if (
-            ob != modes_out_bra
-            or ib != modes_in_bra
-            or ok != modes_out_ket
-            or ik != modes_in_ket
-        ):
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -360,14 +355,10 @@ class CircuitComponent:
         idx_zconj += other.wires.ket.input[ket_modes].indices
 
         # calculate the representation of the returned component
-        representation_ret = (
-            self.representation[idx_z] @ other.representation[idx_zconj]
-        )
+        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
 
         # reorder the representation
-        representation_ret = (
-            representation_ret.reorder(perm) if perm else representation_ret
-        )
+        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
