@@ -50,7 +50,9 @@ class Transformation(CircuitComponent):
         almost_inverse = self.__class__.from_bargmann(
             [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1)
         )
-        almost_identity = self >> almost_inverse
+        almost_identity = (
+            self >> almost_inverse
+        )  # TODO: this is not efficient, need to get c from formula
         invert_this_c = almost_identity.representation.c
         actual_inverse = self.__class__.from_bargmann(
             [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c)
