@@ -22,21 +22,27 @@
     modes_ib += "" if not modes_ib else dots
     modes_ok += "" if not modes_ok else dots
     modes_ik += "" if not modes_ik else dots
+
+    n_grid_items = sum([1 if m else 0 for m in [modes_ob, modes_ib, modes_ok, modes_ik]])
+    n_grid_rows = 1 if n_grid_items < 3 else 2
+    n_grid_cols = 1 if n_grid_items ==1 else 2
 %>
 
 <style>
   .container-wires {
     position: relative;
-    width: 300px;
+    width: 320px;
     margin-left: 20px;
     display: flex;
+    padding-left: 20px;
   }
   .square {
     width: 100px;
     height: 100px;
     top: 10px;
-    border: 4px solid red;
+    border: 4px solid black;
     flex: 1;
+    border-radius: 15px;
   }
 
   .in {
@@ -63,44 +69,55 @@
 
   .grid-container {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 10px;
-    width: 50%;
-    margin-top: 10px;
+    grid-template-columns: repeat(${n_grid_cols}, 1fr);
+    grid-template-rows: repeat(${n_grid_rows}, 1fr);
+    gap: 20px;
+    width: 350px;
+    margin-top: 40px;
+    margin-left: 20px;
   }
 
-  .grid-item {
-    padding: 10px;
+  .grid-item-wires {
+    width: 170px;
     height: 100px;
+    display: flex;
+    background-color: #fff2df;
+    border-radius: 15px;
+    box-shadow: 3px 5px 10px #d9ad7c;
   }
 
-  .table-container {
-    border: 1px solid black;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-  }
-
-  table {
+  .grid-item-type {
+    flex: 1;
     font-family: "Times New Roman";
-    width: 100%;
-    border-collapse: collapse;
+    transform: translateY(30px);
+    font-weight: bold;
+    padding-left: 10px;
   }
 
-  th, td {
-    border: 1px solid black;
-    padding: 8px;
+  .table-container-wires {
+    flex: 1.7;
+    height: 90px;
+    overflow-y: auto;
+    margin: 5px;
+    font-size: 12px;
+    border: 2px solid gray;
+    border-radius: 15px;
+  }
+
+  .table-wires {
+    font-family: "Times New Roman";
     text-align: center;
+    margin-left: 30px;
+  }
+
+  .th-wires, td-wires {
+    border: 1px solid black;
   }
 
   thead {
     position: sticky;
     top: 0;
     background-color: #fff;
-  }
-  thread > th {
-    text-align: center;
   }
 
   .line {
@@ -112,14 +129,15 @@
 
   .text {
     position: absolute;
-    font-family: "Times New Roman"
     width: 100%;
     padding-left: 5px;
   }
   .text.type {
+    font-family: "Times New Roman";
     transform: translateY(25px);
   }
   .text.modes {
+    font-family: "Times New Roman";
     font-size: 13px;
     transform: translateY(2px);
   }
@@ -159,22 +177,21 @@
 
   <div class="grid-container">
     % if modes_ob:
-      <div class="grid-item">
-          <div class="table-container">
-              <table>
+      <div class="grid-item-wires">
+          <div class="grid-item-type">out bra</div>
+          <div class="table-container-wires">
+              <table class="table-wires">
                   <thead>
                     <tr>
-                      <th style="text-align: left;">out bra</th>
-                      <th style="text-align: left;">mode</th>
-                      <th style="text-align: left;">index</th>
+                      <th class="th-wires">mode</th>
+                      <th class="th-wires">index</th>
                     </tr>
                   </thead>
                   <tr>
                     % for m in wires.output.bra.modes:
                       <tr>
-                        <th style="text-align: center;"></th>
-                        <td style="text-align: center;">${m}</td>
-                        <td style="text-align: center;">${wires.output.bra[m].indices[0]}</td>
+                        <td class="td-wires">${m}</td>
+                        <td class="td-wires">${wires.output.bra[m].indices[0]}</td>
                       </tr>
                     % endfor
                   </tr>
@@ -184,22 +201,21 @@
     % endif
 
     % if modes_ib:
-      <div class="grid-item">
-          <div class="table-container">
-              <table>
+      <div class="grid-item-wires">
+          <div class="grid-item-type">in bra</div>
+          <div class="table-container-wires">
+              <table class="table-wires">
                   <thead>
                     <tr>
-                      <th style="text-align: left;">in bra</th>
-                      <th style="text-align: left;">mode</th>
-                      <th style="text-align: left;">index</th>
+                      <th class="th-wires">mode</th>
+                      <th class="th-wires">index</th>
                     </tr>
                   </thead>
                   <tr>
                     % for m in wires.input.bra.modes:
                       <tr>
-                        <th style="text-align: center;"></th>
-                        <td style="text-align: center;">${m}</td>
-                        <td style="text-align: center;">${wires.input.bra[m].indices[0]}</td>
+                        <td class="td-wires">${m}</td>
+                        <td class="td-wires">${wires.input.bra[m].indices[0]}</td>
                       </tr>
                     % endfor
                   </tr>
@@ -209,22 +225,21 @@
     % endif
     
     % if modes_ok:
-      <div class="grid-item">
-          <div class="table-container">
-              <table>
+      <div class="grid-item-wires">
+          <div class="grid-item-type">out ket</div>
+          <div class="table-container-wires">
+              <table class="table-wires">
                   <thead>
                     <tr>
-                      <th style="text-align: left;">out ket</th>
-                      <th style="text-align: left;">mode</th>
-                      <th style="text-align: left;">index</th>
+                      <th class="th-wires">mode</th>
+                      <th class="th-wires">index</th>
                     </tr>
                   </thead>
                   <tr>
                     % for m in wires.output.ket.modes:
                       <tr>
-                        <th style="text-align: center;"></th>
-                        <td style="text-align: center;">${m}</td>
-                        <td style="text-align: center;">${wires.output.ket[m].indices[0]}</td>
+                        <td class="td-wires">${m}</td>
+                        <td class="td-wires">${wires.output.ket[m].indices[0]}</td>
                       </tr>
                     % endfor
                   </tr>
@@ -234,22 +249,21 @@
     % endif
 
     % if modes_ik:
-      <div class="grid-item">
-          <div class="table-container">
-              <table>
+      <div class="grid-item-wires">
+          <div class="grid-item-type">in ket</div>
+          <div class="table-container-wires">
+              <table class="table-wires">
                   <thead>
                     <tr>
-                      <th style="text-align: left;">in ket</th>
-                      <th style="text-align: left;">mode</th>
-                      <th style="text-align: left;">index</th>
+                      <th class="th-wires">mode</th>
+                      <th class="th-wires">index</th>
                     </tr>
                   </thead>
                   <tr>
                     % for m in wires.input.ket.modes:
                       <tr>
-                        <th style="text-align: center;"></th>
-                        <td style="text-align: center;">${m}</td>
-                        <td style="text-align: center;">${wires.input.ket[m].indices[0]}</td>
+                        <td class="td-wires">${m}</td>
+                        <td class="td-wires">${wires.input.ket[m].indices[0]}</td>
                       </tr>
                     % endfor
                   </tr>
