@@ -46,7 +46,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Only Bargmann representation is supported.")
         if self.representation.ansatz.batch_size > 1:
             raise NotImplementedError("Batched transformations are not supported.")
-        A, b, c = self.dual.representation.conj().triple  # apply X
+        A, b, _ = self.dual.representation.conj().triple  # apply X
         almost_inverse = self.__class__.from_bargmann(
             [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1)
         )
