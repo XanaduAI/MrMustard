@@ -73,7 +73,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -271,8 +276,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        cls = self.__class__
-        return cls._from_attributes(
+        return self.__class__._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -326,7 +330,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -348,8 +354,12 @@ class CircuitComponent:
         """
         wires_ret, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
-        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
+        representation_ret = (
+            self.representation[idx_z] @ other.representation[idx_zconj]
+        )
+        representation_ret = (
+            representation_ret.reorder(perm) if perm else representation_ret
+        )
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
