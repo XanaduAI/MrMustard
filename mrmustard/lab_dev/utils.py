@@ -80,8 +80,6 @@ def _shape_check(mat, vec, dim: int, name: str):
     Check that the given Gaussian representation is consistent with the given modes.
     """
     if mat.shape[-2:] != (dim, dim) or vec.shape[-1:] != (dim,):
-        msg = (
-            f"{name} representation is incompatible with the required dimension {dim}: "
-        )
+        msg = f"{name} representation is incompatible with the required dimension {dim}: "
         msg += f"{mat.shape[-2:]}!=({dim},{dim}) or {vec.shape[-1:]} != ({dim},)."
         raise ValueError(msg)
