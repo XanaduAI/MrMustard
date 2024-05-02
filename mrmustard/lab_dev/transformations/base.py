@@ -40,34 +40,6 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
-    @classmethod
-    def from_bargmann(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def from_phase_space(cls):
-        raise NotImplementedError
-
-    @property
-    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_quadrature(cls):
-        raise NotImplementedError
-
-    @property
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_fock(cls):
-        raise NotImplementedError
-
-    @property
-    def fock(self) -> ComplexTensor:
-        raise NotImplementedError
-
 
 class Unitary(Transformation):
     r"""
