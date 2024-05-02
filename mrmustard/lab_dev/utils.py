@@ -21,6 +21,7 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 from typing import Callable, Generator, Optional, Tuple
 
 from mrmustard import math
+from mrmustard.physics.representations import Bargmann
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
 
 

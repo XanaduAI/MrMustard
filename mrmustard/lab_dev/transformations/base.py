@@ -43,11 +43,19 @@ class Transformation(CircuitComponent):
     def inverse(self) -> Transformation:
         r"""Returns the inverse of the transformation."""
         if not isinstance(self.representation, Bargmann):
-            raise NotImplementedError(
-                "The inverse of this transformation is not implemented."
-            )
-        A, b, c = self.representation.dual.conj()
-        return self._from_attributes("", Bargmann(math.inv(A), b, c), self.dual.wires)
+            raise NotImplementedError("Only Bargmann representation is supported.")
+        if self.representation.ansatz.batch_size > 1:
+            raise NotImplementedError("Batched transformations are not supported.")
+        A, b, c = self.dual.representation.conj().triple  # apply X
+        almost_inverse = self.__class__.from_bargmann(
+            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1)
+        )
+        almost_identity = self >> almost_inverse
+        invert_this_c = almost_identity.representation.c
+        actual_inverse = self.__class__.from_bargmann(
+            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c)
+        )
+        return actual_inverse
 
 
 class Unitary(Transformation):
