@@ -1,4 +1,4 @@
-The representations' Ansatze
+The Ansatze of the representation
 ============================
 
 .. currentmodule:: mrmustard.physics.ansatze

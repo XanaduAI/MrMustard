@@ -1,4 +1,4 @@
-The Converters between different Representations
+The converters between different representations
 ==========================================
 
 .. currentmodule:: mrmustard.physics.converters

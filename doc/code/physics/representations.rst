@@ -1,4 +1,4 @@
-The Fock-Bargmann and Fock Representations
+The representations of quantum objects
 ==========================================
 
 .. currentmodule:: mrmustard.physics.representations
