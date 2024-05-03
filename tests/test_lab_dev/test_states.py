@@ -602,8 +602,12 @@ class TestCoherent:
         state3 = Coherent([0], x=3, y=4)
 
         lc = state1 + state2 - state3
-
         assert lc.representation.ansatz.batch_size == 3
+
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 9
+        settings.ELEMENT_WISE = True
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
+        settings.ELEMENT_WISE = False
 
 
 class TestDisplacedSqueezed:

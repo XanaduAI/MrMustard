@@ -20,7 +20,10 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
-from mrmustard.physics.gaussian_integrals import contract_two_Abc, complex_gaussian_integral
+from mrmustard.physics.gaussian_integrals import (
+    contract_two_Abc,
+    complex_gaussian_integral,
+)
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
@@ -130,9 +133,15 @@ class TestBargmannRepresentation:
         bargmann2 = Bargmann(*triple2)
         bargmann_add = bargmann1 + bargmann2
 
-        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
-        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
-        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
+        assert np.allclose(
+            bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0)
+        )
+        assert np.allclose(
+            bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0)
+        )
+        assert np.allclose(
+            bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0)
+        )
 
     def test_add_error(self):
         bargmann = Bargmann(*Abc_triple(3))
@@ -150,9 +159,15 @@ class TestBargmannRepresentation:
         bargmann2 = Bargmann(*triple2)
         bargmann_add = bargmann1 - bargmann2
 
-        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
-        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
-        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, -bargmann2.c], axis=0))
+        assert np.allclose(
+            bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0)
+        )
+        assert np.allclose(
+            bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0)
+        )
+        assert np.allclose(
+            bargmann_add.c, math.concat([bargmann1.c, -bargmann2.c], axis=0)
+        )
 
     def test_trace(self):
         triple = Abc_triple(4)
@@ -229,6 +244,12 @@ class TestFockRepresentation:
         fock2 = Fock.from_ansatz(fock1.ansatz)
         assert fock1 == fock2
 
+    def test_sum_batch(self):
+        fock = Fock(self.array2578, batched=True)
+        fock_collapsed = fock.sum_batch()[0]
+        assert fock_collapsed.array.shape == (1, 5, 7, 8)
+        assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
+
     def test_and(self):
         fock1 = Fock(self.array1578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
@@ -236,7 +257,9 @@ class TestFockRepresentation:
         assert fock_test.array.shape == (5, 5, 7, 8, 5, 7, 8)
         assert np.allclose(
             math.reshape(fock_test.array, -1),
-            math.reshape(np.einsum("bcde, pfgh -> bpcdefgh", self.array1578, self.array5578), -1),
+            math.reshape(
+                np.einsum("bcde, pfgh -> bpcdefgh", self.array1578, self.array5578), -1
+            ),
         )
 
     def test_multiply_a_scalar(self):
@@ -251,7 +274,9 @@ class TestFockRepresentation:
         assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
         assert np.allclose(
             math.reshape(fock1_mul_fock2.array, -1),
-            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, self.array5578), -1),
+            math.reshape(
+                np.einsum("bcde, pcde -> bpcde", self.array1578, self.array5578), -1
+            ),
         )
 
     def test_divide_on_a_scalar(self):
@@ -266,7 +291,9 @@ class TestFockRepresentation:
         assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
         assert np.allclose(
             math.reshape(fock1_mul_fock2.array, -1),
-            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, 1 / self.array5578), -1),
+            math.reshape(
+                np.einsum("bcde, pcde -> bpcde", self.array1578, 1 / self.array5578), -1
+            ),
         )
 
     def test_conj(self):
@@ -282,7 +309,9 @@ class TestFockRepresentation:
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(
             math.reshape(fock_test.array, -1),
-            math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
+            math.reshape(
+                np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1
+            ),
         )
 
     @pytest.mark.parametrize("n1", [1, 2])
@@ -309,18 +338,30 @@ class TestFockRepresentation:
         fock2 = Fock(self.array5578, batched=True)
         fock1_add_fock2 = fock1 + fock2
         assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0])
-        assert np.allclose(fock1_add_fock2.array[4], self.array2578[0] + self.array5578[4])
-        assert np.allclose(fock1_add_fock2.array[5], self.array2578[1] + self.array5578[0])
+        assert np.allclose(
+            fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0]
+        )
+        assert np.allclose(
+            fock1_add_fock2.array[4], self.array2578[0] + self.array5578[4]
+        )
+        assert np.allclose(
+            fock1_add_fock2.array[5], self.array2578[1] + self.array5578[0]
+        )
 
     def test_sub(self):
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
         fock1_sub_fock2 = fock1 - fock2
         assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0])
-        assert np.allclose(fock1_sub_fock2.array[4], self.array2578[0] - self.array5578[4])
-        assert np.allclose(fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4])
+        assert np.allclose(
+            fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0]
+        )
+        assert np.allclose(
+            fock1_sub_fock2.array[4], self.array2578[0] - self.array5578[4]
+        )
+        assert np.allclose(
+            fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4]
+        )
 
     def test_trace(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
@@ -333,7 +374,9 @@ class TestFockRepresentation:
         array1 = math.astensor(np.arange(8).reshape((1, 2, 2, 2)))
         fock1 = Fock(array1, batched=True)
         fock2 = fock1.reorder(order=(2, 1, 0))
-        assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
+        assert np.allclose(
+            fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]])
+        )
         assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
 
     @pytest.mark.parametrize("batched", [True, False])
