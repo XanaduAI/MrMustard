@@ -27,7 +27,7 @@ from mrmustard.physics.ansatze import (
 )
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
-from mrmustard.lab_dev.circuit_components_utils import _DsMap
+from mrmustard.lab_dev.circuit_components_utils import DsMap
 from ..random import Abc_triple
 
 
@@ -297,7 +297,7 @@ class TestArrayAnsatz:
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
-        state_after = state >> _DsMap(modes=[0], s=0)  # pylint: disable=protected-access
+        state_after = state >> DsMap(modes=[0], s=0)  # pylint: disable=protected-access
         A1, b1, c1 = state_after.bargmann
         (
             new_state_cov,
@@ -320,7 +320,7 @@ class TestArrayAnsatz:
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
-        state_after = state >> _DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        state_after = state >> DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
         A1, b1, c1 = state_after.bargmann
         (
             new_state_cov1,
@@ -329,7 +329,7 @@ class TestArrayAnsatz:
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
         A22, b22, c22 = (
-            state >> _DsMap([0], 0) >> _DsMap([1], 0)
+            state >> DsMap([0], 0) >> DsMap([1], 0)
         ).bargmann  # pylint: disable=protected-access
         (
             new_state_cov22,
