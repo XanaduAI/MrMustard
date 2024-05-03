@@ -1,22 +1,17 @@
 mrmustard.physics
 =================
 
-.. toctree::
-    :maxdepth: 1
-
-    physics/ansatze
-    physics/representations
-    physics/converters
-    
-.. toctree::
-    :maxdepth: 1
-
-    physics/bargmann
-    physics/utils/fock_calculations
-    physics/utils/gaussian_calculations
-
 .. currentmodule:: mrmustard.physics
 
 .. automodapi:: mrmustard.physics
     :no-heading:
     :include-all-objects:
+
+.. toctree::
+    :maxdepth: 1
+
+    physics/ansatze
+    physics/representations  # Representation object (maybe put it together with ansatze)
+    physics/Fock
+    physics/Bargmann  # Bargmann, triples, integrals
+    physics/converters
