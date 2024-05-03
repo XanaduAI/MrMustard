@@ -57,9 +57,7 @@ class Settings:
         self._hbar_locked = False
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
-        self._julia_initialized = (
-            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        )
+        self._julia_initialized = False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
 
         self.ELEMENT_WISE = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
@@ -79,13 +77,16 @@ class Settings:
         self.CIRCUIT_DRAW_PARAMS = True
         "Whether or not to draw the parameters of a circuit."
 
+        self.CIRCUIT_DECIMALS = 3
+        "The number of decimal places to display when drawing a circuit."
+
         self.DISCRETIZATION_METHOD = "iterative"
         "The method used to discretize the Wigner function. Default is ``iterative``."
 
         self.EQ_TRANSFORMATION_CUTOFF = 3  # enough for a full step of rec relations
         "The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 3."
 
-        self.EQ_TRNASFORMATION_RTOL_FOCK = 1e-3
+        self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         "The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 1e-3."
 
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
@@ -99,6 +100,9 @@ class Settings:
 
         self.PROGRESSBAR = True
         "Whether or not to display the progress bar when performing training. Default is True."
+
+        self.PNR_INTERNAL_CUTOFF = 50
+        "The cutoff used when computing the output of a PNR detection. Default is 50."
 
         self.BS_FOCK_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
         "The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."
@@ -184,9 +188,15 @@ class Settings:
             Main_julia.cd(utils_directory)
             Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
             Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/helperFunctions.jl"
+            )
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/diagonal_amps.jl"
+            )
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/diagonal_grad.jl"
+            )
             Main_julia.include(
                 "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
             )
