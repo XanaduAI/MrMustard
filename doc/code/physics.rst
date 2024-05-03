@@ -11,7 +11,7 @@ mrmustard.physics
     :maxdepth: 1
 
     physics/ansatze
-    physics/representations  # Representation object (maybe put it together with ansatze)
+    physics/representations
     physics/Fock
-    physics/Bargmann  # Bargmann, triples, integrals
+    physics/Bargmann
     physics/converters

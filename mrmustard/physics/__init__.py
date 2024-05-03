@@ -13,12 +13,24 @@
 # limitations under the License.
 
 r"""
-The physics module contains high-level functions for performing calculations on quantum objects.
-It allows for objects with different representations to be used seamlessly in the same calculation, e.g., ``fidelity(A, B)`` works whether A and B are in the Fock or Gaussian representation or a mix of both.
+The physics module ...
 
-All the functions are automatically differentiated and can be used in conjunction with an
-optimization routine.
+Check out our guides to learn more about :mod:`~mrmustard.physics` and its core functionalities:
+
+* The :mod:`~mrmustard.physics.ansatze` guide introduces the concept of an ansatz.
+* The :mod:`~mrmustard.physics.representations` (class -> :class:`~mrmustard.physics.representations.Representation`) guide illustrates how to initialize representations.
+* The :mod:`~mrmustard.lab_dev.transformations` guide shows how to initialize unitary gates and
+  channels.
+* :mod:`~mrmustard.lab_dev.circuits` tells you everything you need to know about circuits.
+* The :mod:`~mrmustard.lab_dev.simulator` page shows how to use the simulator object and discusses
+  how to select the best paths for your circuits.
+* For more advanced functionality, take a look at the :mod:`~mrmustard.lab_dev.circuit_components`
+  module, which contains a series of maps (e.g., the trace-out operation) expressed as circuit
+  components.
 """
+
+from .ansatze import *
+from .representations import *
 
 from mrmustard.physics import fock, gaussian
 
