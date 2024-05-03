@@ -88,9 +88,7 @@ class Unitary(Transformation):
         c = math.astensor(triple[2])
         _shape_check(A, b, 2 * len(modes), "Bargmann")
         s = set(modes)
-        return Unitary._from_attributes(
-            name, Bargmann(A, b, c), Wires(set(), set(), s, s)
-        )
+        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires(set(), set(), s, s))
 
 
 class Channel(Transformation):
