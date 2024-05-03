@@ -13,20 +13,28 @@
 # limitations under the License.
 
 r"""
-The physics module ...
+The ``new`` physics module contains the representative theory of the quantum objects and all the physical propety calculations about them related to ``lab_dev``.
+
+Different representations can work to represent a quantum object: such as the Fock basis (or number basis) represenatation, Bargmann representation (holomorphic quantum computing), phase space representation (the well-known Wigner function of a quantum state), characteristic phase space representation and etc.
+The internal engine of MM is powered by the computation between Fock and Bargmann representations.
+It is also capable to convert between different representations (by using the converters).
+
+Under the level of the representation, we define some data structures to store the data related to the quantum object, which is called ``Ansatz``. 
+``Ansatz`` is not only the data, but also includes the linear algebras of the data. We support three different ``Ansatz`` 
+
+The bargmann triples of the objects are in triples.py.
+
+The most important computation between representations is the inner product for Gaussian objects, and the logic functions are in gaussian_integrals.
 
 Check out our guides to learn more about :mod:`~mrmustard.physics` and its core functionalities:
 
-* The :mod:`~mrmustard.physics.ansatze` guide introduces the concept of an ansatz.
-* The :mod:`~mrmustard.physics.representations` (class -> :class:`~mrmustard.physics.representations.Representation`) guide illustrates how to initialize representations.
-* The :mod:`~mrmustard.lab_dev.transformations` guide shows how to initialize unitary gates and
-  channels.
-* :mod:`~mrmustard.lab_dev.circuits` tells you everything you need to know about circuits.
-* The :mod:`~mrmustard.lab_dev.simulator` page shows how to use the simulator object and discusses
-  how to select the best paths for your circuits.
-* For more advanced functionality, take a look at the :mod:`~mrmustard.lab_dev.circuit_components`
-  module, which contains a series of maps (e.g., the trace-out operation) expressed as circuit
-  components.
+* The :mod:`~mrmustard.physics.ansatze` guide introduces the concept of an ansatz and three pre-defined ansatze.
+* The :mod:`~mrmustard.physics.representations` guide how to initialize representations and two basic representations: :class:`~mrmustard.physics.representations.Fock` and :class:`~mrmustard.physics.representations.Bargmann`.
+* The :mod:`~mrmustard.physics.converters` contains the conversion functions from one representation to another one.
+* The :mod:`~mrmustard.physics.triples` contains the triples in the :class:`~mrmustard.physics.representations.Bargmann` representation for all quantum objects.
+* The :mod:`~mrmustard.physics.gaussian_integrals` contains the real and complex Gaussian integrals functions.
+* Other modules are used in the ``lab``, which needs to be rearranged and well documented in the future.
+* The functions in the init file of physics needs to be rearranged as well.
 """
 
 from .ansatze import *
