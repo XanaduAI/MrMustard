@@ -50,7 +50,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.utils import _shape_check
+from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -665,7 +665,7 @@ class DM(State):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 2 * len(modes), "Bargmann")
+        shape_check(A, b, 2 * len(modes), "Bargmann")
         ret = DM(name, modes)
         ret._representation = Bargmann(A, b, c)
         return ret
@@ -700,7 +700,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-        _shape_check(cov, means, 2 * len(modes), "Phase space")
+        shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
@@ -893,7 +893,7 @@ class Ket(State):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, len(modes), "Bargmann")
+        shape_check(A, b, len(modes), "Bargmann")
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(A, b, c)
@@ -929,7 +929,7 @@ class Ket(State):
     ) -> Ket:
         cov = math.astensor(cov)
         means = math.astensor(means)
-        _shape_check(cov, means, 2 * len(modes), "Phase space")
+        shape_check(cov, means, 2 * len(modes), "Phase space")
 
         if atol_purity:
             p = purity(cov)

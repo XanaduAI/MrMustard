@@ -142,6 +142,17 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
+    def bargmann(self) -> tuple:
+        r"""
+        The Bargmann parametrization of this circuit component, if available.
+        """
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError(
+                f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
+            )
+        return self.representation.triple
+
+    @property
     def representation(self) -> Representation | None:
         r"""
         A representation of this circuit component.
@@ -386,17 +397,31 @@ class CircuitComponent:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
 
-class AdjointView(CircuitComponent):
+class CCView(CircuitComponent):
+    r"""A base class for views of circuit components.
+    Args:
+        component: The circuit component to take the view of.
+    """
+
+    def __init__(self, component: CircuitComponent) -> None:
+        self.__dict__ = component.__dict__.copy()
+        self._component = component.light_copy()
+
+    def __getattr__(self, name):
+        r"""send calls to the component"""
+        return getattr(self._component, name)
+
+    def __repr__(self) -> str:
+        return repr(self._component)
+
+
+class AdjointView(CCView):
     r"""
     Adjoint view of a circuit component.
 
     Args:
         component: The circuit component to take the view of.
     """
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.light_copy().__dict__.copy()
-        self._component = component.light_copy()
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -421,21 +446,14 @@ class AdjointView(CircuitComponent):
         """
         return self._component.wires.adjoint
 
-    def __repr__(self) -> str:
-        return repr(self._component)
 
-
-class DualView(CircuitComponent):
+class DualView(CCView):
     r"""
     Dual view of a circuit component.
 
     Args:
         component: The circuit component to take the view of.
     """
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.__dict__.copy()
-        self._component = component.light_copy()
 
     @property
     def dual(self) -> CircuitComponent:
@@ -449,9 +467,11 @@ class DualView(CircuitComponent):
         r"""
         A representation of this circuit component.
         """
-        outs = self._component.wires.output.indices
-        ins = self._component.wires.input.indices
-        return self._component.representation.reorder(ins + outs).conj()
+        ok = self._component.wires.ket.output.indices
+        ik = self._component.wires.ket.input.indices
+        ib = self._component.wires.bra.input.indices
+        ob = self._component.wires.bra.output.indices
+        return self._component.representation.reorder(ib + ob + ik + ok).conj()
 
     @property
     def wires(self):
@@ -459,6 +479,3 @@ class DualView(CircuitComponent):
         The ``Wires`` in this component.
         """
         return self._component.wires.dual
-
-    def __repr__(self) -> str:
-        return repr(self._component)

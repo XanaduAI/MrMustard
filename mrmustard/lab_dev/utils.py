@@ -75,10 +75,17 @@ def reshape_params(n_modes: str, **kwargs) -> Generator:
         yield var
 
 
-def _shape_check(mat, vec, dim: int, name: str):
+def shape_check(mat, vec, dim: int, name: str):
     r"""
     Check that the given Gaussian representation is consistent with the given modes.
+
+    Args:
+        mat: Bargmann A matrix
+        vec: Bargmann b vector
+        dim: The required dimension of the representation
+        name: The name of the representation for error messages
     """
     if mat.shape[-2:] != (dim, dim) or vec.shape[-1:] != (dim,):
-        msg = f"{name} representation has {mat.shape[-1]} wires, but given dim is {dim}."
+        msg = f"{name} representation is incompatible with the required dimension {dim}: "
+        msg += f"{mat.shape[-2:]}!=({dim},{dim}) or {vec.shape[-1:]} != ({dim},)."
         raise ValueError(msg)

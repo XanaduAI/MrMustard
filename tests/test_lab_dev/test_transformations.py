@@ -80,6 +80,11 @@ class TestUnitary:
         assert np.allclose(gate.representation.A[None, ...], A)
         assert np.allclose(gate.representation.b[None, ...], b)
 
+    def test_inverse_unitary(self):
+        gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
+        should_be_identity = gate >> gate.inverse()
+        assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
+
 
 class TestChannel:
     r"""
@@ -132,6 +137,11 @@ class TestChannel:
 
         assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
         assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
+
+    def test_inverse_channel(self):
+        gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
+        should_be_identity = gate >> gate.inverse()
+        assert should_be_identity.representation == Attenuator([0], 1.0).representation
 
 
 class TestBSgate:
