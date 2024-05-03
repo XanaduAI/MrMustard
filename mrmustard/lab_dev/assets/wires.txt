@@ -126,16 +126,16 @@
     width: 100%;
   }
 
-  .text {
+  .text-wires {
     position: absolute;
     width: 100%;
     padding-left: 5px;
   }
-  .text.type {
+  .text-wires.type {
     font-family: "Times New Roman";
     transform: translateY(25px);
   }
-  .text.modes {
+  .text-wires.modes {
     font-family: "Times New Roman";
     font-size: 13px;
     transform: translateY(2px);
@@ -148,13 +148,13 @@
     <div class="in">
       <div class="ket">
         <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
-        <p class="text type" style="color: ${color_ik}">in ket</p>
-        <p class="text modes">${modes_ik}</p>
+        <p class="text-wires type" style="color: ${color_ik}">in ket</p>
+        <p class="text-wires modes">${modes_ik}</p>
       </div>
       <div class="bra">
         <div class="line" style="background-color: ${color_ib}; height: ${height_line_ib}"></div>
-        <p class="text type" style="color: ${color_ib}">in bra</p>
-        <p class="text modes">${modes_ib}</p>
+        <p class="text-wires type" style="color: ${color_ib}">in bra</p>
+        <p class="text-wires modes">${modes_ib}</p>
       </div>
     </div>
 
@@ -163,13 +163,13 @@
     <div class="out">
       <div class="ket">
         <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
-        <p class="text type" style="color: ${color_ok}">out ket</p>
-        <p class="text modes">${modes_ok}</p>
+        <p class="text-wires type" style="color: ${color_ok}">out ket</p>
+        <p class="text-wires modes">${modes_ok}</p>
       </div>
       <div class="bra">
         <div class="line" style="background-color: ${color_ob}; height: ${height_line_ob}"></div>
-        <p class="text type" style="color: ${color_ob}">out bra</p>
-        <p class="text modes">${modes_ob}</p>
+        <p class="text-wires type" style="color: ${color_ob}">out bra</p>
+        <p class="text-wires modes">${modes_ob}</p>
       </div>
     </div>
   </div>
