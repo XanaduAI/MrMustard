@@ -220,7 +220,9 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_gate_Abc(theta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def rotation_gate_Abc(
+    theta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of rotation gates.
 
@@ -330,10 +332,35 @@ def beamsplitter_gate_Abc(
     costheta = math.diag(math.cos(theta))
     sintheta = math.diag(math.sin(theta))
     V = math.block(
-        [[costheta, -math.exp(-1j * phi) * sintheta], [math.exp(1j * phi) * sintheta, costheta]]
+        [
+            [costheta, -math.exp(-1j * phi) * sintheta],
+            [math.exp(1j * phi) * sintheta, costheta],
+        ]
     )
 
     A = math.block([[O_n, V], [math.transpose(V), O_n]])
+    b = _vacuum_B_vector(n_modes * 2)
+    c = 1.0 + 0j
+
+    return A, b, c
+
+
+def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of identity gates.
+
+    Args:
+        n_modes: The number of modes.
+
+    Returns:
+        The ``(A, b, c)`` triple of the identities.
+    """
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    I_n = math.reshape(
+        math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
+    )
+
+    A = math.block([[O_n, I_n], [I_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
@@ -369,7 +396,7 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes)).reshape((n_modes, n_modes))
+    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes))
     eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
 
     A = math.block(
@@ -437,7 +464,7 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
     Args:
-         n_modes: The number of modes.
+        n_modes: The number of modes.
 
     Returns:
         The ``(A, b, c)`` triple of the Fock damping channels.
@@ -454,27 +481,66 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(s: int) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a single-mode ``s``\-parametrized dispalcement map :math:`D(\gamma)`.
-    Given the complex variables for this single-mode is :math:`(z^*, z)` corresponding to [out_ket, in_ket] unitary ordering,
-    the indices of the final triple correspond to the variables :math:`(\gamma^*, z^*, \gamma, z)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
+    The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
+    :math:
+        D_s(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} D(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} e^{\frac{1}{2}|\vec{z}|^2} e^{\vec{z}^*\vec{\gamma} - \vec{z} \vec{\gamma}^*}.
+    The indices of the final triple correspond to the variables :math:`(\gamma_1^*, \gamma_2^*, ..., z_1, z_2, ..., \gamma_1, \gamma_2, ..., z_1^*, z_2^*, ...)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
 
     Args:
-        s: the parametrization related to the ordering of creation and annihilation operators in the expression of any operator. :math:`s=0` is the "symmetric" ordering, which is symmetric under the exchange of creation and annihilation operators, :math:`s=-1` is the "normal" ordering, where all the creation operators are on the left and all the annihilation operators are on the right, and :math:`s=1` is the "anti-normal" ordering, which is the vice versa of the normal ordering. By using s-parametrized displacement map to generate the s-parametrized characteristic function :math:`\chi_s = Tr[\rho D_s]`, and then by doing the complex fourier transform, we get the s-parametrized quasi-probaility distribution: :math:`s=0` is the Wigner distribution, :math:`s=-1` is the Husimi Q distribution, and :math:`s=1` is the Glauber P distribution.
+        s: The phase space parameter
+        n_modes: the number of modes for this map.
 
     Returns:
-        The ``(A, b, c)`` triple of the single-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
+        The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
     A = math.block(
         [
-            [(s - 1) / 2 * math.Xmat(num_modes=1), -math.Zmat(num_modes=1)],
-            [-math.Zmat(num_modes=1), math.Xmat(num_modes=1)],
+            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
+            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
         ]
     )
-    A = A[[0, 2, 1, 3], :][
-        :, [0, 2, 1, 3]
-    ]  # Change the order of this map into the normal ordering as a single mode channel
-    b = _vacuum_B_vector(4)
+    order_list = np.arange(4 * n_modes)  # [0,3,1,2]
+    order_list = list(
+        np.concatenate(
+            (
+                np.concatenate((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
+                order_list[n_modes : 3 * n_modes],
+            ),
+            axis=0,
+        )
+    )
+
+    A = A[order_list, :][:, order_list]
+    b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
+    return A, b, c
+
+
+# ~~~~~~~~~~~~~~~~
+# Kraus operators
+# ~~~~~~~~~~~~~~~~
+
+
+def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
+    The last index is the "bond" index which should be summed/integrated over.
+
+    Args:
+        eta: The value of the transmissivity.
+
+    Returns:
+        The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
+    """
+    costheta = math.sqrt(eta)
+    sintheta = math.sqrt(1 - eta)
+
+    A = math.astensor(
+        [[0, costheta, 0], [costheta, 0, -sintheta], [0, -sintheta, 0]], math.complex128
+    )
+    b = _vacuum_B_vector(3)
+    c = 1.0 + 0j
+
     return A, b, c

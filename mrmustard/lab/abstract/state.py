@@ -122,7 +122,7 @@ class State:  # pylint: disable=too-many-public-methods
         Args:
             parameter: The parameter to add.
         """
-        if not getattr(self, "_parameter_set", None):
+        if getattr(self, "_parameter_set", None) is None:
             msg = "Cannot add a parameter to a state with no parameter set."
             raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)

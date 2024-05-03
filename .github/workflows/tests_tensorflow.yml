@@ -4,13 +4,6 @@ on:
     branches:
       - develop
   pull_request:
-    paths:
-      - '.github/workflows/tests.yml'
-      - 'mrmustard/**'
-      - 'tests/**'
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'pytest.ini'
 
 jobs:
   pytest:

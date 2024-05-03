@@ -136,7 +136,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.cosh(array)
 
     def det(self, matrix: np.ndarray) -> np.ndarray:
-        return np.linalg.det(matrix)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            det = np.linalg.det(matrix)
+        return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if len(array.shape) == 1:
@@ -312,6 +314,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             rhs = np.expand_dims(rhs, -1)
             return np.linalg.solve(matrix, rhs)[..., 0]
         return np.linalg.solve(matrix, rhs)
+
+    def sort(self, array: np.ndarray, axis: int = -1) -> np.ndarray:
+        return np.sort(array, axis)
 
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))

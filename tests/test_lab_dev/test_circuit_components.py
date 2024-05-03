@@ -20,11 +20,12 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Ket, Number, Vacuum
+from mrmustard.lab_dev.states import Ket, Number, Vacuum, DisplacedSqueezed
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -128,6 +129,40 @@ class TestCircuitComponent:
         assert d1_cp.parameter_set is d1.parameter_set
         assert d1_cp.representation is d1.representation
         assert d1_cp.wires is not d1.wires
+
+    def test_on(self):
+        assert Vacuum([1, 2]).on([3, 4]).modes == [3, 4]
+        assert Number([3], n=4).on([9]).modes == [9]
+
+        d89 = DisplacedSqueezed([8, 9], x=[1, 2], y=3, r_trainable=True)
+        d67 = d89.on([6, 7])
+        assert isinstance(d67.x, Constant)
+        assert math.allclose(d89.x.value, d67.x.value)
+        assert isinstance(d67.y, Constant)
+        assert math.allclose(d89.y.value, d67.y.value)
+        assert isinstance(d67.r, Variable)
+        assert math.allclose(d89.r.value, d67.r.value)
+        assert bool(d67.parameter_set) is True
+        assert d67._representation is None
+
+        exotic_component = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
+            modes_out_ket=[1, 2],
+            modes_in_ket=[3, 4],
+        )
+        exotic_component_01 = exotic_component.on([0, 1])
+        expected = CircuitComponent(
+            "",
+            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
+            modes_out_ket=[0, 1],
+            modes_in_ket=[0, 1],
+        )
+        assert exotic_component_01 == expected
+
+    def test_on_error(self):
+        with pytest.raises(ValueError):
+            Vacuum([1, 2]).on([3])
 
     @pytest.mark.parametrize("shape", [3, [3, 2]])
     def test_to_fock_component(self, shape):

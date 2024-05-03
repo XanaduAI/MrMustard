@@ -1,12 +1,23 @@
 # Current develop
 
 ### New features
-  
+* Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Added `sort` function to math backends.
+
 ### Breaking changes
 
 ### Improvements
 
 ### Bug fixes
+* Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
 
 ### Documentation
 
@@ -16,6 +27,7 @@
 [Samuele Ferracin](https://github.com/SamFerracin)
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
+[Austin Lund](https://github.com/aplund)
 
 
 ---
@@ -29,6 +41,9 @@
 * Added a new Abc triple for s-parametrized displacement gate. 
   [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
   
+* Added a function ``real_gaussian_integral`` as helper function to map between different representations. 
+  [(#371)](https://github.com/XanaduAI/MrMustard/pull/371)
+
 ### Breaking changes
 
 ### Improvements
@@ -156,6 +171,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Added suite to filter undesired warnings, and used it to filter tensorflow's ``ComplexWarning``s.
   [(#332)](https://github.com/XanaduAI/MrMustard/pull/332)
 
+* When re-assigning an immutable setting with the same value, no more error is raised.
+  [(#316)](https://github.com/XanaduAI/MrMustard/pull/316)
 
 ### Bug fixes
 

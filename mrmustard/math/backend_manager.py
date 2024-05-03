@@ -1031,6 +1031,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("solve", (matrix, rhs))
 
+    def sort(self, array: Tensor, axis: int = -1) -> Tensor:
+        r"""Sort the array along an axis.
+
+        Args:
+            array: The array to sort
+            axis: (optional) The axis to sort along. Defaults to last axis.
+
+        Returns:
+            A sorted version of the array in acending order.
+        """
+        return self._apply("sort", (array, axis))
+
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""The square root of ``x``.
 

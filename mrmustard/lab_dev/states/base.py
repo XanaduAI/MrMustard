@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 import os
 
+from enum import Enum
 from IPython.display import display, HTML
 from mako.template import Template
 from plotly.subplots import make_subplots
@@ -35,6 +36,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -42,9 +44,72 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatze import (
+    bargmann_Abc_to_phasespace_cov_means,
+)
+from ..circuit_components_utils import _DsMap
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import TraceOut
+from ..wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
+
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+class OperatorType(Enum):
+    r"""
+    A convenience Enum class used to tag the type operators in the ``expectation`` method
+    of ``Ket``\s and ``DM``\s.
+    """
+
+    KET_LIKE = 1
+    DM_LIKE = 2
+    UNITARY_LIKE = 3
+    INVALID_TYPE = 4
+
+
+def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
+    r"""
+    A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
+    ``DM``.
+
+    If ``operator`` is ket-like, density matrix-like, or unitary-like, returns the corresponding
+    ``OperatorType`` and an empty string. Otherwise, it returns ``INVALID_TYPE`` and an error
+    message.
+    """
+    w = operator.wires
+
+    # check if operator is ket-like
+    if w.ket.output and not w.ket.input and not w.bra:
+        return (
+            OperatorType.KET_LIKE,
+            "",
+        )
+
+    # check if operator is density matrix-like
+    if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
+        if not w.ket.output.modes == w.bra.output.modes:
+            msg = "Found DM-like operator with different modes for ket and bra wires."
+            return OperatorType.INVALID_TYPE, msg
+        return OperatorType.DM_LIKE, ""
+
+    # check if operator is unitary-like
+    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
+        if not w.ket.input.modes == w.ket.output.modes:
+            msg = "Found unitary-like operator with different modes for input and output wires."
+            return OperatorType.INVALID_TYPE, msg
+        return OperatorType.UNITARY_LIKE, ""
+
+    msg = "Cannot calculate the expectation value of the given ``operator``."
+    return OperatorType.INVALID_TYPE, msg
+
+
+# ~~~~~~~
+# Classes
+# ~~~~~~~
 
 
 class State(CircuitComponent):
@@ -246,11 +311,27 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(self) -> tuple[ComplexMatrix, ComplexVector]:
+    def phase_space(self, s: float) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
-        The covariance matrix and the vector of means that describe this state in phase space.
+        Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians each of cov, means, coeff are arranged in a batch.
+        Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
+        The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions. Note that the same ``(cov, means, coeff)`` triple can be used to parametrize the characteristic functions as well.
+
+        Args:
+            s: The phase space parameter
+
+            Returns:
+                The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        raise NotImplementedError
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+
+        new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
+        return bargmann_Abc_to_phasespace_cov_means(
+            new_state.representation.ansatz.A,
+            new_state.representation.ansatz.b,
+            new_state.representation.ansatz.c,
+        )
 
     def visualize_2d(
         self,
@@ -497,6 +578,28 @@ class State(CircuitComponent):
         template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
         display(HTML(template.render(state=self)))
 
+    def _getitem_builtin_state(self, modes: set[int]):
+        r"""
+        A convenience function to slice built-in states.
+
+        Built-in states come with a parameter set. To slice them, we simply slice the parameter
+        set, and then used the sliced parameter set to re-initialize them.
+
+        This approach avoids computing the representation, which may be expensive. Additionally,
+        it allows returning trainable states.
+        """
+        # slice the parameter set
+        items = [i for i, m in enumerate(self.modes) if m in modes]
+        kwargs = {}
+        for name, param in self._parameter_set[items].all_parameters.items():
+            kwargs[name] = param.value
+            if isinstance(param, Variable):
+                kwargs[name + "_trainable"] = True
+                kwargs[name + "_bounds"] = param.bounds
+
+        # use `mro` to return the correct state
+        return self.__class__(modes, **kwargs)
+
 
 class DM(State):
     r"""
@@ -601,6 +704,50 @@ class DM(State):
     def purity(self) -> float:
         return (self / self.probability).L2_norm
 
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this DM.
+
+        Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
+        is the density matrix of this state.
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
+
+        Args:
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_type, msg = _validate_operator(operator)
+        if op_type is OperatorType.INVALID_TYPE:
+            raise ValueError(msg)
+
+        if not operator.wires.modes.issubset(self.wires.modes):
+            msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
+            msg += f"found one defined on `{operator.modes}.`"
+            raise ValueError(msg)
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if op_type is OperatorType.KET_LIKE:
+            result = self @ operator.dual @ operator.dual.adjoint
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        elif op_type is OperatorType.DM_LIKE:
+            result = self @ operator.dual
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        else:
+            result = (self @ operator) >> TraceOut(self.modes)
+
+        rep = result.representation
+        return rep.array if isinstance(rep, Fock) else rep.c
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -617,6 +764,35 @@ class DM(State):
 
     def __repr__(self) -> str:
         return ""
+
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
+            return self._getitem_builtin_state(modes)
+
+        # if ``self`` has no parameter set, it is not a built-in state, and we must slice the
+        # representation
+        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        representation = self.representation.trace(idxz, idxz_conj)
+
+        return self.__class__._from_attributes(
+            self.name, representation, wires
+        )  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -722,6 +898,70 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
+
+    def expectation(self, operator: CircuitComponent):
+        r"""
+        The expectation value of an operator calculated over this Ket.
+
+        Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
+        where :math:`|\psi\rangle` is the vector representing this state.
+
+        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+        unitary-like wires (input and output wires on the ket side).
+
+        Args:
+            operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Raise:
+            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
+                component.
+            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
+                modes of this state.
+        """
+        op_type, msg = _validate_operator(operator)
+        if op_type is OperatorType.INVALID_TYPE:
+            raise ValueError(msg)
+
+        if not operator.wires.modes.issubset(self.wires.modes):
+            msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
+            msg += f"found one defined on `{operator.modes}.`"
+            raise ValueError(msg)
+
+        leftover_modes = self.wires.modes - operator.wires.modes
+        if op_type is OperatorType.KET_LIKE:
+            result = self @ operator.dual
+            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+        elif op_type is OperatorType.DM_LIKE:
+            result = self @ (self.adjoint @ operator.dual)
+            if leftover_modes:
+                result >>= TraceOut(leftover_modes)
+        else:
+            result = self @ operator @ self.dual
+
+        rep = result.representation
+        return rep.array if isinstance(rep, Fock) else rep.c
+
+    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+        r"""
+        Traces out all the modes, except those in the given ``modes``.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set, it is a built-in state, and we slice the
+            # parameters
+            return self._getitem_builtin_state(modes)
+
+        # if ``self`` has no parameter set, it is not a built-in state.
+        # we must turn it into a density matrix and slice the representation
+        return self.dm()[modes]
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
