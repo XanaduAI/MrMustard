@@ -72,6 +72,14 @@ class TestUnitary:
         assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
         assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
 
+    def test_init_from_bargmann(self):
+        A = np.array([[0, 1], [1, 0]])
+        b = np.array([0, 0])
+        c = 1
+        gate = Unitary.from_bargmann([2], (A, b, c), "my_unitary")
+        assert np.allclose(gate.representation.A[None, ...], A)
+        assert np.allclose(gate.representation.b[None, ...], b)
+
 
 class TestChannel:
     r"""
@@ -86,8 +94,19 @@ class TestChannel:
         assert gate.name[:2] == (name or "Ch")[:2]
         assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(
-            modes_out_bra=modes, modes_in_bra=modes, modes_out_ket=modes, modes_in_ket=modes
+            modes_out_bra=modes,
+            modes_in_bra=modes,
+            modes_out_ket=modes,
+            modes_in_ket=modes,
         )
+
+    def test_init_from_bargmann(self):
+        A = np.arange(16).reshape(4, 4)
+        b = np.array([0, 1, 2, 3])
+        c = 1
+        channel = Channel.from_bargmann([0], (A, b, c), "my_unitary")
+        assert np.allclose(channel.representation.A[None, ...], A)
+        assert np.allclose(channel.representation.b[None, ...], b)
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
@@ -208,12 +227,18 @@ class TestDgate:
         assert math.allclose(rep1.c, [0.990049833749168])
 
         rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).representation
-        assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
+        assert math.allclose(
+            rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
+        assert math.allclose(
+            rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]]
+        )
         assert math.allclose(rep2.c, [0.9656054162575665])
 
         rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).representation
-        assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
+        assert math.allclose(
+            rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
         assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
         assert math.allclose(rep3.c, [0.9753099120283327])
 
@@ -259,7 +284,12 @@ class TestRgate:
         rep1 = Rgate(modes=[0], theta=0.1).representation
         assert math.allclose(
             rep1.A,
-            [[[-0.09966799 - 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+            [
+                [
+                    [-0.09966799 - 0.0j, 0.99502075 + 0.0j],
+                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+                ]
+            ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [0.99750727])
@@ -282,7 +312,12 @@ class TestRgate:
         rep3 = Rgate(modes=[1], theta=0.1).representation
         assert math.allclose(
             rep3.A,
-            [[[-0.09966799 + 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+            [
+                [
+                    [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
+                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+                ]
+            ],
         )
         assert math.allclose(rep3.b, np.zeros((1, 2)))
         assert math.allclose(rep3.c, [0.9975072676192522])
@@ -329,7 +364,12 @@ class TestSgate:
         rep1 = Sgate(modes=[0], r=0.1, phi=0.2).representation
         assert math.allclose(
             rep1.A,
-            [[[-0.09768127 - 1.98009738e-02j, 0.99502075], [0.99502075, 0.09768127 - 0.01980097j]]],
+            [
+                [
+                    [-0.09768127 - 1.98009738e-02j, 0.99502075],
+                    [0.99502075, 0.09768127 - 0.01980097j],
+                ]
+            ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [0.9975072676192522])
@@ -352,7 +392,12 @@ class TestSgate:
         rep3 = Sgate(modes=[1], r=0.1).representation
         assert math.allclose(
             rep3.A,
-            [[[-0.09966799 + 0.0j, 0.99502075 + 0.0j], [0.99502075 + 0.0j, 0.09966799 + 0.0j]]],
+            [
+                [
+                    [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
+                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+                ]
+            ],
         )
         assert math.allclose(rep3.b, np.zeros((1, 2)))
         assert math.allclose(rep3.c, [0.9975072676192522])
@@ -398,7 +443,9 @@ class TestAttenuator:
     def test_representation(self):
         rep1 = Attenuator(modes=[0], transmissivity=0.1).representation
         e = 0.31622777
-        assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
+        assert math.allclose(
+            rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]]
+        )
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1.0])
 

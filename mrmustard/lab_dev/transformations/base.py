@@ -86,9 +86,11 @@ class Unitary(Transformation):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 2 * len(modes))
+        _shape_check(A, b, 2 * len(modes), "Bargmann")
         s = set(modes)
-        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires({}, {}, s, s))
+        return Unitary._from_attributes(
+            name, Bargmann(A, b, c), Wires(set(), set(), s, s)
+        )
 
 
 class Channel(Transformation):
@@ -136,21 +138,6 @@ class Channel(Transformation):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 4 * len(modes))
+        _shape_check(A, b, 4 * len(modes), "Bargmann")
         s = set(modes)
         return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))
-
-    @classmethod
-    def from_phase_space(
-        cls,
-        modes: Sequence[int],
-        S: ComplexMatrix,
-        d: ComplexVector,
-        coeff: complex = 1,
-        name: Optional[str] = None,
-    ) -> Channel:
-        S = math.astensor(S)
-        d = math.astensor(d)
-        coeff = math.astensor(coeff)
-        _shape_check(S, d, 2 * len(modes))
-        raise NotImplementedError
