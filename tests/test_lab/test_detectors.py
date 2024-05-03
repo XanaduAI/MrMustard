@@ -243,20 +243,6 @@ class TestHomodyneDetector:
             ]
         )
         assert np.allclose(math.asnumpy(remaining_state.cov), cov, atol=1e-5)
-        # TODO: figure out why this is not working
-        # if outcome is not None:
-        #     outcome = outcome * np.sqrt(hbar)
-        #     denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
-        #     expected_means = (
-        #         np.array(
-        #             [
-        #                 np.sqrt(s * (1 + s)) * outcome * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
-        #                 -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom
-        #             ]
-        #         )
-        #     )
-        #     means = remaining_state.means.numpy()
-        #     assert np.allclose(means, expected_means)
 
     @given(
         s=st.floats(min_value=0.0, max_value=1.0),
@@ -291,7 +277,12 @@ class TestHomodyneDetector:
         "state, kwargs, mean_expected, var_expected",
         [
             (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (
+                Coherent,
+                {"x": 2.0, "y": 0.5},
+                2.0 * np.sqrt(2 * settings.HBAR),
+                settings.HBAR / 2,
+            ),
             (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
         ],
     )

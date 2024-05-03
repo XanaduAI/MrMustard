@@ -45,6 +45,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -124,7 +125,6 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> State:
         r"""
         Initializes a state from an ``(A, b, c)`` triple defining a Bargmann representation.
@@ -147,7 +147,6 @@ class State(CircuitComponent):
             modes: The modes of this states.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
-            batched: Whether the given triple is batched.
 
         Returns:
             A state.
@@ -256,36 +255,10 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
-
-        Returns:
-            The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
-
-        Raises:
-            ValueError: If the triple cannot be calculated given the state's representation.
-        """
-        rep = self.representation
-        if isinstance(rep, Bargmann):
-            return rep.A, rep.b, rep.c
-        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
-        raise ValueError(msg)
-
-    @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        rep = self.representation
-        msg = "Method ``L2_norm`` not supported for batched representations."
-        if isinstance(rep, Fock):
-            if rep.array.shape[0] > 1:
-                raise ValueError(msg)
-        else:
-            if rep.A.shape[0] > 1:
-                raise ValueError(msg)
-
         rep = (self >> self.dual).representation
         ret = rep.c if isinstance(rep, Bargmann) else rep.array
         return math.atleast_1d(ret, math.float64)[0]
@@ -424,7 +397,11 @@ class State(CircuitComponent):
         # X-P plot
         # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
         fig_21 = go.Heatmap(
-            x=xs, y=-ps, z=math.transpose(z), colorscale=colorscale, name="Wigner function"
+            x=xs,
+            y=-ps,
+            z=math.transpose(z),
+            colorscale=colorscale,
+            name="Wigner function",
         )
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
@@ -539,7 +516,9 @@ class State(CircuitComponent):
             contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
         )
         fig.update_scenes(
-            xaxis_title_text="x", yaxis_title_text="p", zaxis_title_text="Wigner function"
+            xaxis_title_text="x",
+            yaxis_title_text="p",
+            zaxis_title_text="Wigner function",
         )
         fig.update_xaxes(title_text="x")
         fig.update_yaxes(title="p")
@@ -571,7 +550,6 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-
         state = self.to_fock_component(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
@@ -627,7 +605,7 @@ class State(CircuitComponent):
                 f"``{self.representation}`` is not available to calculate the quadrature representation."
             )
         ret = self >> BtoQMap(self.modes)
-        return ret.bargmann_triple
+        return ret.bargmann
 
 
 class DM(State):
@@ -652,19 +630,11 @@ class DM(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> DM:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-
-        n_modes = len(modes)
-        A_sh = (1, 2 * n_modes, 2 * n_modes) if batched else (2 * n_modes, 2 * n_modes)
-        b_sh = (1, 2 * n_modes) if batched else (2 * n_modes,)
-        if A.shape != A_sh or b.shape != b_sh:
-            msg = f"Given triple is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        shape_check(A, b, 2 * len(modes), "Bargmann")
         ret = DM(name, modes)
         ret._representation = Bargmann(A, b, c)
         return ret
@@ -699,15 +669,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
@@ -884,18 +846,11 @@ class Ket(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> Ket:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-
-        n_modes = len(modes)
-        A_sh = (1, n_modes, n_modes) if batched else (n_modes, n_modes)
-        b_sh = (1, n_modes) if batched else (n_modes,)
-        if A.shape != A_sh or b.shape != b_sh:
-            msg = f"Given triple is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
+        shape_check(A, b, len(modes), "Bargmann")
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(A, b, c)
@@ -931,19 +886,12 @@ class Ket(State):
     ) -> Ket:
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
+        shape_check(cov, means, 2 * len(modes), "Phase space")
 
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
+                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be at least 1.0-atol)."
                 raise ValueError(msg)
 
         ret = Ket(name, modes)

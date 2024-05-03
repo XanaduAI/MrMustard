@@ -116,8 +116,8 @@ class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
     For example, the Bargmann representation :math:`c\:\textrm{exp}(z A z / 2 + b z)` is of this
-    form (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
-    (where ``Sigma``, ``mu``, ``1`` is the triple).
+    form (where ``A``, ``b``, ``c`` is the triple), or the characteristic function of the
+    Wigner representation (where ``Sigma``, ``mu``, ``1`` is the triple).
 
     Note that this class is not initializable (despite having an initializer) because it does
     not implement all the abstract methods of ``Ansatz``, and it is in fact more general.

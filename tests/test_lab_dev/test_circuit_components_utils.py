@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Tests for circuit components utils. """
+"""Tests for circuit components utils."""
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
@@ -118,7 +118,7 @@ class TestDsMap:
 
         # get new triple by right shift
         state_after = state >> DsMap(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple
+        A1, b1, c1 = state_after.bargmann
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -146,12 +146,15 @@ class TestDsMap:
 
         # get new triple by right shift
         state_after = state >> DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple
+        A1, b1, c1 = state_after.bargmann
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
         A2, b2, c2 = contract_two_Abc(
-            state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1, 2, 3], idx2=[2, 3, 6, 7]
+            state_bargmann_triple,
+            Ds_bargmann_triple,
+            idx1=[0, 1, 2, 3],
+            idx2=[2, 3, 6, 7],
         )
 
         assert math.allclose(A1[0], A2)
