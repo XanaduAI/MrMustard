@@ -21,6 +21,7 @@ It is also capable to convert between different representations (by using the co
 
 Under the level of the representation, we define some data structures to store the data related to the quantum object, which is called ``Ansatz``. 
 ``Ansatz`` is not only the data, but also includes the linear algebras of the data. We support two different ``Ansatz``: the data is a tensor :class:`~mrmustard.physics.ansatze.ArrayAnsatz` and the data is the polynomials times an exponential function :class:`~mrmustard.physics.ansatze.PolyExpBase`. :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` is a child ``Ansatz`` of `~mrmustard.physics.ansatze.PolyExpBase` and especially work for the Bargmann representation.
+An ``Ansatz`` supports basic mathematical operations such as addition, subtraction, multiplication, division, negation, equality, etc.
 
 The bargmann triples of the objects are in triples.py.
 

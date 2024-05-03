@@ -1,8 +1,8 @@
-The Bargmann theory
+The Bargmann representation theory
 ==========================================
 
 .. toctree::
     :maxdepth: 1
 
-    physics/utils/triples
-    physics/utils/gaussian_integral
+    utils/triples
+    utils/gaussian_integral

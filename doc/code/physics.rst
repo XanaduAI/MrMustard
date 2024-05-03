@@ -4,7 +4,7 @@ mrmustard.physics
 .. currentmodule:: mrmustard.physics
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     physics/representations
     physics/ansatze
