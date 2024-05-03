@@ -1,11 +1,8 @@
 # Current develop
 
 ### New features
-* Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
-
-* Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+* Added a new Abc triple for mapping the quadrature representation into Bargmann representation. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
 
 * Added `sort` function to math backends.
 

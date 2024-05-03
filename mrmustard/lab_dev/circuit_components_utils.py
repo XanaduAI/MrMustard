@@ -20,14 +20,14 @@ perform useful mathematical calculations.
 # pylint: disable=super-init-not-called, protected-access
 
 from __future__ import annotations
-
 from typing import Sequence
 
 from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "_DsMap"]
+
+__all__ = ["TraceOut", "DsMap", "BtoQMap"]
 
 
 class TraceOut(CircuitComponent):
@@ -70,7 +70,7 @@ class TraceOut(CircuitComponent):
         return Bargmann(*triples.identity_Abc(len(self.modes)))
 
 
-class _DsMap(CircuitComponent):
+class DsMap(CircuitComponent):
     r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
 
     Used internally as a ``Channel`` for transformations between representations.
@@ -86,7 +86,7 @@ class _DsMap(CircuitComponent):
         s: float,
     ):
         super().__init__(
-            "_DsMap",
+            "DsMap",
             modes_out_bra=modes,
             modes_in_bra=modes,
             modes_out_ket=modes,
@@ -97,3 +97,30 @@ class _DsMap(CircuitComponent):
     @property
     def representation(self) -> Bargmann:
         return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
+
+
+class BtoQMap(CircuitComponent):
+    r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
+
+    Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
+
+    The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from ``Bargmann`` into quadrature on the `bra` Wire.
+    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
+
+    Args:
+        modes: The modes of this channel.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+    ):
+        super().__init__(
+            "BtoQMap",
+            modes_out_ket=modes,
+            modes_in_ket=modes,
+        )
+
+    @property
+    def representation(self) -> Bargmann:
+        return Bargmann(*triples.bargmann_to_quadrature_Abc(len(self.modes)))

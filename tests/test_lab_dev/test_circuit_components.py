@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Tests for circuit components. """
+"""Tests for circuit components."""
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
@@ -193,6 +193,12 @@ class TestCircuitComponent:
 
         d12 = d1 + d2
         assert d12.representation == d1.representation + d2.representation
+
+    def test_sub(self):
+        s1 = DisplacedSqueezed([1], x=1.0, y=0.5, r=0.1)
+        s2 = DisplacedSqueezed([1], x=0.5, y=0.2, r=0.2)
+        s12 = s1 - s2
+        assert s12.representation == s1.representation - s2.representation
 
     def test_mul(self):
         d1 = Dgate([1], x=0.1, y=0.1)

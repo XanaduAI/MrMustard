@@ -121,8 +121,8 @@ class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
     For example, the Bargmann representation :math:`c\:\textrm{exp}(z A z / 2 + b z)` is of this
-    form (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
-    (where ``Sigma``, ``mu``, ``1`` is the triple).
+    form (where ``A``, ``b``, ``c`` is the triple), or the characteristic function of the
+    Wigner representation (where ``Sigma``, ``mu``, ``1`` is the triple).
 
     Note that this class is not initializable (despite having an initializer) because it does
     not implement all the abstract methods of ``Ansatz``, and it is in fact more general.
@@ -559,12 +559,17 @@ def bargmann_Abc_to_phasespace_cov_means(
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
 
     Returns:
-        The covariance matric, mean vector and coefficient of the state in phase space.
+        The covariance matrix, mean vector and coefficient of the state in phase space.
     """
     num_modes = A.shape[-1] // 2
-    Omega = math.J(num_modes).T
-    W = math.conj(math.rotmat(num_modes)).T
+    Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
+    W = math.transpose(math.conj(math.rotmat(num_modes)))
     coeff = c
-    cov = [-Omega @ W @ Amat @ W.T @ Omega.T * settings.HBAR for Amat in A]
-    mean = [1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR) for bvec in b]
-    return cov, mean, coeff
+    cov = [
+        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
+    ]
+    mean = [
+        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
+        for bvec in b
+    ]
+    return math.astensor(cov), math.astensor(mean), coeff

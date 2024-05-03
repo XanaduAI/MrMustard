@@ -43,11 +43,13 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
+from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import _DsMap
+from ..circuit_components_utils import DsMap, BtoQMap
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..wires import Wires
@@ -123,7 +125,6 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> State:
         r"""
         Initializes a state from an ``(A, b, c)`` triple defining a Bargmann representation.
@@ -146,7 +147,6 @@ class State(CircuitComponent):
             modes: The modes of this states.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
-            batched: Whether the given triple is batched.
 
         Returns:
             A state.
@@ -231,43 +231,34 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @classmethod
-    def from_quadrature(cls) -> State:
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> State:
         r"""
-        Initializes a state from quadrature.
-        """
-        raise NotImplementedError
+        Initializes a state from quadrature with a ABC Ansatz Gaussian exponential form.
 
-    @property
-    def bargmann_triple(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
+        Args:
+            modes: The modes of this states.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
 
         Returns:
-            The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
+            A state.
 
         Raises:
-            ValueError: If the triple cannot be calculated given the state's representation.
+            ValueError: If the given triple have shapes that are inconsistent
+                with the number of modes.
         """
-        rep = self.representation
-        if isinstance(rep, Bargmann):
-            return rep.A, rep.b, rep.c
-        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
-        raise ValueError(msg)
+        raise NotImplementedError
 
     @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        rep = self.representation
-        msg = "Method ``L2_norm`` not supported for batched representations."
-        if isinstance(rep, Fock):
-            if rep.array.shape[0] > 1:
-                raise ValueError(msg)
-        else:
-            if rep.A.shape[0] > 1:
-                raise ValueError(msg)
-
         rep = (self >> self.dual).representation
         ret = rep.c if isinstance(rep, Bargmann) else rep.array
         return math.atleast_1d(ret, math.float64)[0]
@@ -326,7 +317,7 @@ class State(CircuitComponent):
         if not isinstance(self.representation, Bargmann):
             raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
-        new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
+        new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
             new_state.representation.ansatz.A,
             new_state.representation.ansatz.b,
@@ -406,7 +397,11 @@ class State(CircuitComponent):
         # X-P plot
         # note: heatmaps revert the y axes, which is why the minus in `y=-ps` is required
         fig_21 = go.Heatmap(
-            x=xs, y=-ps, z=math.transpose(z), colorscale=colorscale, name="Wigner function"
+            x=xs,
+            y=-ps,
+            z=math.transpose(z),
+            colorscale=colorscale,
+            name="Wigner function",
         )
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
@@ -521,7 +516,9 @@ class State(CircuitComponent):
             contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
         )
         fig.update_scenes(
-            xaxis_title_text="x", yaxis_title_text="p", zaxis_title_text="Wigner function"
+            xaxis_title_text="x",
+            yaxis_title_text="p",
+            zaxis_title_text="Wigner function",
         )
         fig.update_xaxes(title_text="x")
         fig.update_yaxes(title="p")
@@ -553,7 +550,6 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-
         state = self.to_fock_component(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
@@ -600,6 +596,17 @@ class State(CircuitComponent):
         # use `mro` to return the correct state
         return self.__class__(modes, **kwargs)
 
+    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
+        r"""
+        The A matrix, b vector and c scalar that describe this state in the quadrature basis for all modes.
+        """
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError(
+                f"``{self.representation}`` is not available to calculate the quadrature representation."
+            )
+        ret = self >> BtoQMap(self.modes)
+        return ret.bargmann
+
 
 class DM(State):
     r"""
@@ -623,19 +630,11 @@ class DM(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> DM:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-
-        n_modes = len(modes)
-        A_sh = (1, 2 * n_modes, 2 * n_modes) if batched else (2 * n_modes, 2 * n_modes)
-        b_sh = (1, 2 * n_modes) if batched else (2 * n_modes,)
-        if A.shape != A_sh or b.shape != b_sh:
-            msg = f"Given triple is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        shape_check(A, b, 2 * len(modes), "Bargmann")
         ret = DM(name, modes)
         ret._representation = Bargmann(A, b, c)
         return ret
@@ -670,15 +669,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
+        shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
@@ -687,6 +678,46 @@ class DM(State):
 
         ret = DM(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
+        return ret
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> DM:
+        # The representation change from quadrature into Bargmann is to use the BtoQMap.dual.
+        # Plus this map is on a single wire, here for a DM, we need to add a adjoint wire as well.
+        QtoBMap_CC = BtoQMap(modes).dual.adjoint @ BtoQMap(modes).dual
+        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
+            QtoBMap_CC.representation.A[0],
+            QtoBMap_CC.representation.b[0],
+            QtoBMap_CC.representation.c[0],
+        )
+        full_order_list = math.arange(4 * len(modes))
+        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
+            join_Abc_real(
+                triple,
+                (QtoBMap_A, QtoBMap_b, QtoBMap_c),
+                idx1=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
+                idx2=list(
+                    math.cast(
+                        math.concat(
+                            [
+                                full_order_list[len(modes) : 2 * len(modes)],
+                                full_order_list[3 * len(modes) :],
+                            ],
+                            axis=0,
+                        ),
+                        math.int32,
+                    )
+                ),
+            ),
+            idx=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
+        )
+        ret = DM(name, modes)
+        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
         return ret
 
     @property
@@ -815,18 +846,11 @@ class Ket(State):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
-        batched: bool = False,
     ) -> Ket:
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-
-        n_modes = len(modes)
-        A_sh = (1, n_modes, n_modes) if batched else (n_modes, n_modes)
-        b_sh = (1, n_modes) if batched else (n_modes,)
-        if A.shape != A_sh or b.shape != b_sh:
-            msg = f"Given triple is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
+        shape_check(A, b, len(modes), "Bargmann")
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(A, b, c)
@@ -859,26 +883,46 @@ class Ket(State):
         means: ComplexMatrix,
         name: Optional[str] = None,
         atol_purity: Optional[float] = 1e-3,
-    ):
+    ) -> Ket:
         cov = math.astensor(cov)
         means = math.astensor(means)
-
-        n_modes = len(modes)
-        if means.shape != (2 * n_modes,):
-            msg = f"Given ``means`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-        if cov.shape != (2 * n_modes, 2 * n_modes):
-            msg = f"Given ``cov`` is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
+        shape_check(cov, means, 2 * len(modes), "Phase space")
 
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
+                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be at least 1.0-atol)."
                 raise ValueError(msg)
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
+        return ret
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Ket:
+        QtoBMap_CC = BtoQMap(modes).dual
+        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
+            QtoBMap_CC.representation.A[0],
+            QtoBMap_CC.representation.b[0],
+            QtoBMap_CC.representation.c[0],
+        )
+        joinedA, joinedb, joinedc = join_Abc_real(
+            triple,
+            (QtoBMap_A, QtoBMap_b, QtoBMap_c),
+            idx1=list(np.arange(len(modes))),
+            idx2=list(np.arange(len(modes), 2 * len(modes))),
+        )
+        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
+            (joinedA, joinedb, joinedc),
+            idx=list(np.arange(len(modes))),
+        )
+        ret = Ket(name, modes)
+        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
         return ret
 
     @property
@@ -933,7 +977,7 @@ class Ket(State):
             result = self @ operator.dual
             result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
         elif op_type is OperatorType.DM_LIKE:
-            result = self @ self.adjoint @ operator.dual
+            result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
