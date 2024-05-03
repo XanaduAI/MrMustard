@@ -554,12 +554,17 @@ def bargmann_Abc_to_phasespace_cov_means(
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
 
     Returns:
-        The covariance matric, mean vector and coefficient of the state in phase space.
+        The covariance matrix, mean vector and coefficient of the state in phase space.
     """
     num_modes = A.shape[-1] // 2
-    Omega = math.J(num_modes).T
-    W = math.conj(math.rotmat(num_modes)).T
+    Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
+    W = math.transpose(math.conj(math.rotmat(num_modes)))
     coeff = c
-    cov = [-Omega @ W @ Amat @ W.T @ Omega.T * settings.HBAR for Amat in A]
-    mean = [1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR) for bvec in b]
-    return cov, mean, coeff
+    cov = [
+        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
+    ]
+    mean = [
+        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
+        for bvec in b
+    ]
+    return math.astensor(cov), math.astensor(mean), coeff

@@ -120,8 +120,18 @@ class TestKet:
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            Ket.from_quadrature()
+        modes = [0]
+        A0 = np.array([[0]])
+        b0 = np.array([0.2j])
+        c0 = np.exp(-0.5 * 0.04)  # z^*
+
+        state0 = Ket.from_bargmann(modes, (A0, b0, c0))
+        Atest, btest, ctest = state0.quadrature()
+        state1 = Ket.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        Atest2, btest2, ctest2 = state1.bargmann_triple
+        assert math.allclose(Atest2[0], A0)
+        assert math.allclose(btest2[0], b0)
+        assert math.allclose(ctest2[0], c0)
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
@@ -380,8 +390,18 @@ class TestDM:
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            DM.from_quadrature()
+        modes = [0]
+        A0 = np.array([[0, 0], [0, 0]])
+        b0 = np.array([0.1 - 0.2j, 0.1 + 0.2j])
+        c0 = 0.951229424500714  # z, z^*
+
+        state0 = DM.from_bargmann(modes, (A0, b0, c0))
+        Atest, btest, ctest = state0.quadrature()
+        state1 = DM.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        Atest2, btest2, ctest2 = state1.bargmann_triple
+        assert math.allclose(Atest2[0], A0)
+        assert math.allclose(btest2[0], b0)
+        assert math.allclose(ctest2[0], c0)
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
