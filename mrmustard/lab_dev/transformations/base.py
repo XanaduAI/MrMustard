@@ -27,7 +27,7 @@ from __future__ import annotations
 from typing import Optional, Sequence
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 from mrmustard import math
-from mrmustard.lab_dev.utils import _shape_check
+from mrmustard.lab_dev.utils import shape_check
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann
 from ..circuit_components import CircuitComponent
@@ -106,7 +106,7 @@ class Unitary(Transformation):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 2 * len(modes), "Bargmann")
+        shape_check(A, b, 2 * len(modes), "Bargmann")
         s = set(modes)
         return Unitary._from_attributes(name, Bargmann(A, b, c), Wires({}, {}, s, s))
 
@@ -157,6 +157,6 @@ class Channel(Transformation):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 4 * len(modes), "Bargmann")
+        shape_check(A, b, 4 * len(modes), "Bargmann")
         s = set(modes)
         return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))

@@ -44,7 +44,7 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.utils import _shape_check
+from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -267,7 +267,9 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+    def fock_array(
+        self, shape: Optional[Union[int, Sequence[int]]] = None
+    ) -> ComplexTensor:
         r"""
         The array that describes this state in the Fock representation.
 
@@ -297,7 +299,9 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+            raise ValueError(
+                f"Can not calculate phase space for ``{self.name}`` object."
+            )
 
         new_state = self >> _DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
@@ -391,13 +395,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -492,10 +500,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -537,7 +549,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -605,7 +619,7 @@ class DM(State):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, 2 * len(modes), "Bargmann")
+        shape_check(A, b, 2 * len(modes), "Bargmann")
         ret = DM(name, modes)
         ret._representation = Bargmann(A, b, c)
         return ret
@@ -640,7 +654,7 @@ class DM(State):
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
-        _shape_check(cov, means, 2 * len(modes), "Phase space")
+        shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
@@ -749,12 +763,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -781,7 +795,7 @@ class Ket(State):
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
-        _shape_check(A, b, len(modes), "Bargmann")
+        shape_check(A, b, len(modes), "Bargmann")
 
         ret = Ket(name, modes)
         ret._representation = Bargmann(A, b, c)
@@ -817,7 +831,7 @@ class Ket(State):
     ):
         cov = math.astensor(cov)
         means = math.astensor(means)
-        _shape_check(cov, means, 2 * len(modes), "Phase space")
+        shape_check(cov, means, 2 * len(modes), "Phase space")
 
         if atol_purity:
             p = purity(cov)
@@ -879,7 +893,11 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+            result = (
+                result >> TraceOut(leftover_modes)
+                if leftover_modes
+                else result @ result.dual
+            )
         elif op_type is OperatorType.DM_LIKE:
             result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
