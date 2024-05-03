@@ -116,7 +116,9 @@ class TestKet:
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(
+            modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes)
+        )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -199,7 +201,9 @@ class TestKet:
 
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
 
-        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
+        assert math.allclose(
+            ket.expectation(ket), (ket @ ket.dual).representation.array ** 2
+        )
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
@@ -295,7 +299,9 @@ class TestKet:
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
+        assert si == DisplacedSqueezed(
+            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
+        )
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])
@@ -380,6 +386,10 @@ class TestDM:
         with pytest.raises(NotImplementedError):
             DM.from_quadrature()
 
+    def test_L2_norms(self):
+        state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
+        assert len(state._L2_norms) == 2
+
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
         assert state.L2_norm == 1
@@ -451,8 +461,12 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
-        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
+        res_k0 = (
+            (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
+        ).representation.array
+        res_k1 = (
+            (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
+        ).representation.array
         res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
 
         assert math.allclose(dm.expectation(k0), res_k0)
@@ -582,6 +596,15 @@ class TestCoherent:
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
+    def test_linear_combinations(self):
+        state1 = Coherent([0], x=1, y=2)
+        state2 = Coherent([0], x=2, y=3)
+        state3 = Coherent([0], x=3, y=4)
+
+        lc = state1 + state2 - state3
+
+        assert lc.representation.ansatz.batch_size == 3
+
 
 class TestDisplacedSqueezed:
     r"""
@@ -625,7 +648,9 @@ class TestDisplacedSqueezed:
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_representation(self, modes, x, y, r, phi):
         rep = DisplacedSqueezed(modes, x, y, r, phi).representation
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        exp = (
+            Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)
+        ).representation
         assert rep == exp
 
     def test_representation_error(self):
@@ -760,7 +785,9 @@ class TestThermal:
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
         rep = Thermal([0, 1], nbar).representation
-        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        exp = Bargmann(
+            *thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar)
+        )
         assert rep == exp
 
     def test_representation_error(self):
@@ -781,7 +808,9 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_2d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -804,7 +833,9 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_3d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:
