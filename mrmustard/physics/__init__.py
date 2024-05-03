@@ -30,7 +30,7 @@ Check out our guides to learn more about :mod:`~mrmustard.physics` and its core 
 
 * The :mod:`~mrmustard.physics.ansatze` guide introduces the concept of an ansatz and three pre-defined ansatze.
 * The :mod:`~mrmustard.physics.representations` guide how to initialize representations and two basic representations: :class:`~mrmustard.physics.representations.Fock` and :class:`~mrmustard.physics.representations.Bargmann`.
-* The :mod:`~mrmustard.physics.converters` contains the conversion functions from one representation to another one.
+* The :mod:`~mrmustard.physics.converters` contains the conversion functions from one representation to :class:`~mrmustard.physics.representations.Fock` representation. The convert functions from wigner representation to :class:`~mrmustard.physics.representations.Bargmann` representation are stored in :mod:`~mrmustard.physics.bargmann`.
 * The :mod:`~mrmustard.physics.triples` contains the triples in the :class:`~mrmustard.physics.representations.Bargmann` representation for all quantum objects.
 * The :mod:`~mrmustard.physics.gaussian_integrals` contains the real and complex Gaussian integrals functions.
 * Other modules are used in the ``lab``, which needs to be rearranged and well documented in the future.
