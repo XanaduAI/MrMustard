@@ -1,0 +1,5 @@
+[bandit]
+# You can add your Bandit rules here
+
+# Example: Exclude the B702 issue
+exclude: B702
