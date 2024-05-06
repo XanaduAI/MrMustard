@@ -22,8 +22,8 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 
-import numpy as np
 import os
+import numpy as np
 
 from IPython.display import display, HTML
 from mako.template import Template
@@ -396,10 +396,6 @@ class CircuitComponent:
             raise ValueError(msg)
 
         raise ValueError(msg)
-
-    def ff(self):
-        template = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
-        return template
 
     def __repr__(self) -> str:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
