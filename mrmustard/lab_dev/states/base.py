@@ -980,8 +980,7 @@ class Ket(State):
         return self.L2_norm
 
     def purities(self) -> float:
-        r"""Purity of this state, where the batch dimension of the Ansatz
-        means a linear combination of states."""
+        r"""Purity of each state in the batch."""
         return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
     @property
