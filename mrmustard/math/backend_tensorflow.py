@@ -457,7 +457,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 C.astype(np.complex128),
             )
 
-            G = jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
+            G = self.astensor(
+                jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
+            )
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
@@ -565,8 +567,11 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            (poly0, poly2, poly1010, poly1001, poly1) = jl.DiagonalAmps.fock_diagonal_amps(
-                A, B, C.item(), tuple(cutoffs), precision_bits
+            (poly0, poly2, poly1010, poly1001, poly1) = (
+                self.asnumpy(val)
+                for val in jl.DiagonalAmps.fock_diagonal_amps(
+                    A, B, C.item(), tuple(cutoffs), precision_bits
+                )
             )
 
         def grad(dLdpoly):
@@ -668,8 +673,11 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 poly1010,
                 poly1001,
                 poly1,
-            ) = jl.LeftoverModeAmps.fock_1leftoverMode_amps(
-                A, B, C.item(), tuple(cutoffs), precision_bits
+            ) = (
+                self.asnumpy(val)
+                for val in jl.LeftoverModeAmps.fock_1leftoverMode_amps(
+                    A, B, C.item(), tuple(cutoffs), precision_bits
+                )
             )
 
         def grad(dLdpoly):
