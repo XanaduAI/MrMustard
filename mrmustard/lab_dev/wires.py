@@ -406,7 +406,7 @@ class Wires:
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
-    
+
     def _repr_html_(self):  # pragma: no cover
         template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
         display(HTML(template.render(wires=self)))

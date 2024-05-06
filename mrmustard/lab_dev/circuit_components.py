@@ -396,20 +396,22 @@ class CircuitComponent:
             raise ValueError(msg)
 
         raise ValueError(msg)
-    
+
     def ff(self):
         template = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
         return template
 
     def __repr__(self) -> str:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
-    
+
     def _repr_html_(self):  # pragma: no cover
         temp = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
 
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
-        wires_temp_uni = wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        wires_temp_uni = (
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        )
 
         file = "fock.txt" if isinstance(self.representation, Fock) else "bargmann.txt"
         rep_temp = Template(filename=os.path.dirname(__file__) + f"/../physics/assets/{file}")
