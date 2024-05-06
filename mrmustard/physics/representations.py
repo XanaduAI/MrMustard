@@ -272,6 +272,15 @@ class Bargmann(Representation):
         """
         return self.ansatz.c
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.A, self.b, self.c
+
     def conj(self):
         r"""
         The conjugate of this Bargmann object.
@@ -358,7 +367,7 @@ class Bargmann(Representation):
         if log_scale:
             f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
         if with_measure:
-            f_values = f_values * np.exp(-np.abs(Z) ** 2)
+            f_values = f_values * np.exp(-(np.abs(Z) ** 2))
 
         # Get phase and magnitude of F(z)
         phases = np.angle(f_values) / (2 * np.pi) % 1

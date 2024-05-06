@@ -24,8 +24,12 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional
-
+from typing import Optional, Sequence
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+from mrmustard import math
+from mrmustard.lab_dev.utils import shape_check
+from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.representations import Bargmann
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Unitary", "Channel"]
@@ -35,6 +39,25 @@ class Transformation(CircuitComponent):
     r"""
     Base class for all transformations.
     """
+
+    def inverse(self) -> Transformation:
+        r"""Returns the inverse of the transformation."""
+        if not isinstance(self.representation, Bargmann):
+            raise NotImplementedError("Only Bargmann representation is supported.")
+        if self.representation.ansatz.batch_size > 1:
+            raise NotImplementedError("Batched transformations are not supported.")
+        A, b, _ = self.dual.representation.conj().triple  # apply X
+        almost_inverse = self.__class__.from_bargmann(
+            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j)
+        )
+        almost_identity = (
+            self >> almost_inverse
+        )  # TODO: this is not efficient, need to get c from formula
+        invert_this_c = almost_identity.representation.c
+        actual_inverse = self.__class__.from_bargmann(
+            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c)
+        )
+        return actual_inverse
 
 
 class Unitary(Transformation):
@@ -48,7 +71,9 @@ class Unitary(Transformation):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "U" + "".join(str(m) for m in modes), modes_in_ket=modes, modes_out_ket=modes
+            name or "U" + "".join(str(m) for m in modes),
+            modes_in_ket=modes,
+            modes_out_ket=modes,
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -69,6 +94,21 @@ class Unitary(Transformation):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Unitary")
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Unitary:
+        r"""Initialize a Unitary from the given Bargmann ``(A, b, c)`` triple."""
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+        shape_check(A, b, 2 * len(modes), "Bargmann")
+        s = set(modes)
+        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires({}, {}, s, s))
 
 
 class Channel(Transformation):
@@ -105,3 +145,18 @@ class Channel(Transformation):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Channel")
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Channel:
+        r"""Initialize a Channel from the given Bargmann ``(A, b, c)`` triple."""
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+        shape_check(A, b, 4 * len(modes), "Bargmann")
+        s = set(modes)
+        return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))
