@@ -16,13 +16,14 @@ r"""
 The ``new`` physics module contains the representative theory of the quantum objects and all the physical propety calculations about them related to ``lab_dev``.
 
 The ``Representation`` is defined as the way to describe a quantum object in the basis. Different representations can be used to represent a quantum object: such as the Fock basis (or number basis) represenatation, Bargmann representation (holomorphic quantum computing), phase space representation (e.g. Wigner, Husimi, Glauber and their characteristic functions) and etc.
-For a quantum object, it is also powerful to be able to convert between different representations.
-The most important computation between representations is the inner product, which can be realized by gaussian integrals.
 
-The internal engine of MM is powered by the computation of the quantum circuits between Fock and Bargmann representations.
+The internal engine of MM is powered by the computation of the quantum circuits between Fock and Bargmann representations. The theory about Fock and Bargmann representations is illustrated in xx and xx.
+The most important computation between representations is the inner product, which can be realized by gaussian integrals.
 
 Under the level of the representation, the data structure has been defined to store the information to describe the quantum object, which is called ``Ansatz``. 
 ``Ansatz`` is not only the data, but also includes the basic mathematical operations of the data. Each ``Representation`` has an attribue ``Ansatz``.
+
+For a quantum object, it is also powerful to be able to convert between different representations. We support the conversion from Bargmann to Fock right now for all quantum objects. Especially, we also support the transformations from/to s-parametrized phase space representation and from/to quadrature representation for quantum states.
 
 Check out our guides to learn more about :mod:`~mrmustard.physics` and its core functionalities:
 
