@@ -448,8 +448,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), A, B, C)
         else:  # julia
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             A, B, C = (
                 A.astype(np.complex128),
@@ -457,9 +457,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 C.astype(np.complex128),
             )
 
-            G = Main_julia.Vanilla.vanilla(
-                A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
-            )
+            G = jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
@@ -564,10 +562,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
             )
         else:  # julia (higher precision than complex128)
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            (poly0, poly2, poly1010, poly1001, poly1) = Main_julia.DiagonalAmps.fock_diagonal_amps(
+            (poly0, poly2, poly1010, poly1001, poly1) = jl.DiagonalAmps.fock_diagonal_amps(
                 A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
@@ -580,7 +578,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
             else:  # julia (higher precision than complex128)
                 dpoly_dC = poly0 / C.item()
-                dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(
+                dpoly_dA, dpoly_dB = jl.DiagonalGrad.fock_diagonal_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 
@@ -661,8 +659,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 [A.dtype] * 5,
             )
         else:  # julia (higher precision than complex128)
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             (
                 poly0,
@@ -670,7 +668,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 poly1010,
                 poly1001,
                 poly1,
-            ) = Main_julia.LeftoverModeAmps.fock_1leftoverMode_amps(
+            ) = jl.LeftoverModeAmps.fock_1leftoverMode_amps(
                 A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
@@ -683,7 +681,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
             else:  # julia (higher precision than complex128)
                 dpoly_dC = poly0 / C.item()
-                (dpoly_dA, dpoly_dB) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                (dpoly_dA, dpoly_dB) = jl.LeftoverModeGrad.fock_1leftoverMode_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 
