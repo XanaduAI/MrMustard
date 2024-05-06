@@ -14,6 +14,49 @@
 
 """
 This module contains the functions to convert between different representations.
+
+Though MrMustard runs internally only with Fock and Bargmann representations, it supports different representations in the initialization and the result part.
+
+The conversions exist:
+
+* From Bargmann representation to Fock representation (for all quantum objects);
+* From Bargmann representation to phase space representation (for only quantum states);
+* From phase space representation to Bargmann representation (for only quantum states);
+
+The first one is the function ``to_fock``, while the other two conversions have been encapsuled into the CircuitComponent object ``DsMap`` and ``BtoQMap`` in order to compute the representation change on each wire.
+
+Some examples:
+1. From Bargmann representation to Fock representation conversion is realized by using the ``hermite_renormalized`` function, which can be considered as a Map gate as well.
+
+     ---------------
+----| BargmannToFock|---- 
+     ---------------
+   
+If there is a single-mode pure state :math:`|\psi\rangle`, which can be denoted as
+
+  --------------------
+ |:math:`|\psi\rangle`|----
+  --------------------
+
+2. From Bargmann representation to phase space representation, the Map on the ket wire can be illustrated as
+
+           --------
+in_ket----| BtoQMap|---- out_ket
+           --------
+
+If there is a 4-mode mixed state, wanna convert the first mode into phase space representation:
+
+  --------------------                     ---------------
+ |                    |----out_bra_1  ----|BtoQMap.adjoint|----
+ |                    |----out_bra_2       ---------------
+ |                    |----out_bra_3
+ |:math:`|\psi\rangle`|----out_bra_4       ------------
+ |                    |----out_ket_1  ----|BtoQMap.dual|----
+ |                    |----out_ket_2       ------------
+ |                    |----out_ket_3
+ |                    |----out_ket_4
+  --------------------
+
 """
 
 from typing import Iterable, Union, Optional
