@@ -21,10 +21,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Iterable, Union
+import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
 from IPython.display import display, HTML
 from mako.template import Template
