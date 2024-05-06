@@ -3,14 +3,29 @@ import plotly.graph_objects as go
 %>
 
 <style>
+
   .table-fock {
-    font-family: "Times New Roman";
     border-collapse: collapse;
     text-align: left;
   }
 
   .th-fock, td-fock {
     text-align: left;
+  }
+
+  .fig-box-fock {
+    background-color: #FBAB7E;
+    background-image: linear-gradient(to top, #FBAB7E 0%, #F7CE68 100%);
+    border-radius: 15px;
+    box-shadow: 3px 5px 10px black;
+    padding-left: 20px;
+    height: 250px;
+    max-width: 450px;
+  }
+  .fig-fock {
+    box-shadow: 3px 5px 10px black;
+    width: 430px;
+    max-width: 430px;
   }
 </style>
 
@@ -52,8 +67,8 @@ import plotly.graph_objects as go
                 text[y].append(info)
 
         layout = dict(
-            height=210 if 210 < 80*array.shape[0] else 80*array.shape[0],
-            width=500,
+            height=200,
+            width=430,
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,
             xaxis=dict(
@@ -70,7 +85,7 @@ import plotly.graph_objects as go
         )
         fig = go.Figure(
             data=go.Heatmap(
-                z=abs(array[:20]), 
+                z=abs(array), 
                 colorscale="viridis", 
                 showscale=False,
                 hoverinfo="text",
@@ -81,6 +96,10 @@ import plotly.graph_objects as go
 %>
 
 % if plot_fig:
-    <h5 style="margin: 10px;">Array</h5>
-    <div style="margin: 10px;">${fig.to_html(full_html=False, include_plotlyjs="cdn")}</div>
+    <div class="fig-box-fock">
+        <h5 style="margin: 10px;">Fock array</h5>
+        <div class="fig-fock">
+            ${fig.to_html(full_html=False, include_plotlyjs="cdn")}
+        </div>
+    </div>
 % endif

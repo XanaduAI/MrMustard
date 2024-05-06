@@ -1,4 +1,5 @@
 <style>
+
   .container-circ-comp {
     position: relative;
     width: 85%;
@@ -11,7 +12,7 @@
 </style>
 
 <body>
-<h1>Circuit Component</h1>
+<h1>${comp.name or "Circuit Component"}</h1>
 <div class="container-circ-comp">
   <div class="box">
     ${wires}

@@ -389,7 +389,8 @@ class CircuitComponent:
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
 
-        rep_temp = Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
+        file = "fock.txt" if isinstance(self.representation, Fock) else "bargmann.txt"
+        rep_temp = Template(filename=os.path.dirname(__file__) + f"/../physics/assets/{file}")
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
         rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
 
