@@ -29,9 +29,11 @@ Any Gaussian objects :math:`O` can be written in the Bargmann basis as a Gaussia
 
 Note that:
 
-*The objects in Bargmann representation uses the :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` and the information is stored in the triple (A,b,c).
-*The expression :math:` \langle\vec{\alpha}|O\rangle` is vectorized the variables vector :math:`\vec{\alpha}`, which is different for different quantum objects. 
+1. The objects in Bargmann representation uses the :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` and the information is stored in the triple (A,b,c).
+
+2. The expression :math:` \langle\vec{\alpha}|O\rangle` is vectorized the variables vector :math:`\vec{\alpha}`, which is different for different quantum objects. 
 As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
+
 .. code-block::
 
     ╔═══════╗
@@ -43,6 +45,7 @@ As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`,
 All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
     
 As for a ``n``-mode mixed Gaussian state :math:`\langle\vec{\alpha}|\rho|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n)`.
+
 .. code-block::
 
     ╔═══════╗
@@ -58,6 +61,7 @@ As for a ``n``-mode mixed Gaussian state :math:`\langle\vec{\alpha}|\rho|\vec{\b
 The wires in the diagram below correspond to the `out_bra` wires (:math:`\alpha^*`) and the `out_ket` wires (:math:`\beta`) in :class:`~mrmustard.lab_dev.wires.Wires`.
 
 As for a ``n``-mode Gaussian unitary :math:`\langle\vec{\alpha}|U|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
+
 .. code-block::
 
                 ╔═══════╗
@@ -69,6 +73,7 @@ As for a ``n``-mode Gaussian unitary :math:`\langle\vec{\alpha}|U|\vec{\beta}\ra
 The wires in the diagram below correspond to the `out_ket` wires (:math:`\alpha^*`) and the `in_ket` wires (:math:`\beta`) in :class:`~mrmustard.lab_dev.wires.Wires`.
                      
 As for a ``n``-mode Gaussian Channel :math:`\langle \vec{\alpha}|\Psi(|\vec{\gamma}\rangle\langle\vec{\delta}|)|\vec{\beta}`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n, \delta^*_0, \delta^*_1, ..., \delta^*_n, \gamma_0, \gamma_1,..., \gamma_n)`.
+
 .. code-block::
 
                    ╔═══════╗
@@ -83,7 +88,8 @@ As for a ``n``-mode Gaussian Channel :math:`\langle \vec{\alpha}|\Psi(|\vec{\gam
                    ╚═══════╝    
 The wires in the diagram below correspond to the `out_bra` wires (:math:`\alpha^*`), the `in_bra` wires (:math:`\delta^*`), `out_ket` wires (:math:`\beta`) and the `in_ket` wires (:math:`\gamma`) in :class:`~mrmustard.lab_dev.wires.Wires`.
 
-The computation of quantum circuits with Bargmann representation can be considered as the inner product of two Bargmann representations, such as applying the unitary on a state, contracting two unitaries, applying the channel on a state, and etc.
+3. The computation of quantum circuits with Bargmann representation can be considered as the inner product of two Bargmann representations (which can be realized by Gaussian integrals for all Gaussian objects computation), such as applying the unitary on a state, contracting two unitaries, applying the channel on a state, and etc.
+
 For example, applying a single-mode unitary :math:`U` on a single-mode pure state :math:`|\psi\rangle` is to multiply the Bargmann representation of the unitary and the state and then to integral the variables on the common wire between then:
 
 .. math::
@@ -100,6 +106,7 @@ For example, applying a single-mode unitary :math:`U` on a single-mode pure stat
     ╔═══════╗       ╔═════╗
     ║ |psi> ║─────▶ ║  U  ║─────▶ beta^*_0
     ╚═══════╝       ╚═════╝
+
 """
 import numpy as np
 
