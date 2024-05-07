@@ -22,13 +22,46 @@ The Bargmann basis :math:`|z\rangle_b` can be defined from the coherent state ba
 .. math:: 
     |z\rangle_b = e^\frac{|z|^2}{2}|z\rangle_c = \sum_n \frac{z^n}{\sqrt{n!}}|n\rangle_f.
 
-Any Gaussian objects :math:`O` can be written in the Bargmann basis as a Gaussian exponential function, parametrized by a matrix :math:`A`, a vector :math:`b` and a scalar :math:`c`, which is called ``triples`` through all the documentations in MM.
-The objects in Bargmann representation uses the :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` and the information is stored in the triple (A,b,c).
-
-A ``n``-mode pure Gaussian state :math:`|\psi\rangle` can be defined as
+Any Gaussian objects :math:`O` can be written in the Bargmann basis as a Gaussian exponential function, parametrized by a matrix :math:`A`, a vector :math:`b` and a scalar :math:`c`, which is called ``triples`` through all the documentations in MM:
 
 .. math::
-    \langle \alpha | \psi \rangle = 
+    <\vec{\alpha}|O\rangle = c \exp\left( \frac12 \vec{\alpha}^T A \vec{\alpha} + \vec{\alpha}^T b \right),
+
+Note that:
+
+*The objects in Bargmann representation uses the :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` and the information is stored in the triple (A,b,c).
+*The expression :math:`<\vec{\alpha}|O\rangle` is vectorized the variables vector :math:`\vec{\alpha}`, which is different for different quantum objects. 
+As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
+.. code-block::
+
+    ╔═══════╗
+    ║       ║─────▶ :math:`\alpha^*_0`
+    ║ |psi> ║─────▶ :math:`\alpha^*_1`
+    ║       ║...
+    ║       ║─────▶ :math:`\alpha^*_n`     
+    ╚═══════╝    
+All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
+    
+As for a ``n``-mode mixed Gaussian state :math:`\langle\vec{\alpha}|\rho|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n)`.
+.. code-block::
+
+    ╔═══════╗
+    ║       ║─────▶ :math:`\alpha^*_0`
+    ║       ║─────▶ :math:`\alpha^*_1`
+    ║       ║─────▶ ...
+    ║       ║─────▶ :math:`\alpha^*_n`
+    ║  rho  ║─────▶ :math:`\beta_0_1`
+    ║       ║─────▶ :math:`\beta_1`
+    ║       ║─────▶ ...
+    ║       ║─────▶ :math:`\beta_n`     
+    ╚═══════╝    
+The wires in the diagram below correspond to the `out_ket` wires (:math:`\beta`) and the `out_bra` wires ((:math:`\alpha^*`) in :class:`~mrmustard.lab_dev.wires.Wires`.
+ 
+As for a ``n``-mode Gaussian unitary :math:`\langle\vec{\alpha}|U|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
+
+As for a ``n``-mode Gaussian Channel :math:`\langle \vec{\alpha}|\Psi(|\vec{\gamma}\rangle\langle\vec{\delta}|)|\vec{\beta}`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n, \delta^*_0, \delta^*_1, ..., \delta^*_n, \gamma_0, \gamma_1,..., \gamma_n)`.
+
+
 """
 import numpy as np
 
