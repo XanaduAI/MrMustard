@@ -25,12 +25,12 @@ The Bargmann basis :math:`|z\rangle_b` can be defined from the coherent state ba
 Any Gaussian objects :math:`O` can be written in the Bargmann basis as a Gaussian exponential function, parametrized by a matrix :math:`A`, a vector :math:`b` and a scalar :math:`c`, which is called ``triples`` through all the documentations in MM:
 
 .. math::
-    <\vec{\alpha}|O\rangle = c \exp\left( \frac12 \vec{\alpha}^T A \vec{\alpha} + \vec{\alpha}^T b \right),
+    \langle\vec{\alpha}|O\rangle = c \exp\left( \frac12 \vec{\alpha}^T A \vec{\alpha} + \vec{\alpha}^T b \right),
 
 Note that:
 
 *The objects in Bargmann representation uses the :class:`~mrmustard.physics.ansatze.PolyExpAnsatz` and the information is stored in the triple (A,b,c).
-*The expression :math:`<\vec{\alpha}|O\rangle` is vectorized the variables vector :math:`\vec{\alpha}`, which is different for different quantum objects. 
+*The expression :math:` \langle\vec{\alpha}|O\rangle` is vectorized the variables vector :math:`\vec{\alpha}`, which is different for different quantum objects. 
 As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
 .. code-block::
 
@@ -46,43 +46,60 @@ As for a ``n``-mode mixed Gaussian state :math:`\langle\vec{\alpha}|\rho|\vec{\b
 .. code-block::
 
     ╔═══════╗
-    ║       ║─────▶ :math:`\alpha^*_0`
-    ║       ║─────▶ :math:`\alpha^*_1`
+    ║       ║─────▶ alpha^*_0
+    ║       ║─────▶ alpha^*_1
     ║       ║─────▶ ...
-    ║       ║─────▶ :math:`\alpha^*_n`
-    ║  rho  ║─────▶ :math:`\beta_0_1`
-    ║       ║─────▶ :math:`\beta_1`
+    ║       ║─────▶ alpha^*_n
+    ║  rho  ║─────▶ beta_0_1
+    ║       ║─────▶ beta_1
     ║       ║─────▶ ...
-    ║       ║─────▶ :math:`\beta_n`     
+    ║       ║─────▶ beta_n  
     ╚═══════╝    
 The wires in the diagram below correspond to the `out_bra` wires (:math:`\alpha^*`) and the `out_ket` wires (:math:`\beta`) in :class:`~mrmustard.lab_dev.wires.Wires`.
 
 As for a ``n``-mode Gaussian unitary :math:`\langle\vec{\alpha}|U|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
 .. code-block::
 
-                     ╔═══════╗
-:math:`\beta_0`─────▶║       ║─────▶ :math:`\alpha^*_0`
-:math:`\beta_1`─────▶║   U   ║─────▶ :math:`\alpha^*_1`
-                  ...║       ║...
-:math:`\beta_n`─────▶║       ║─────▶ :math:`\alpha^*_n`     
-                     ╚═══════╝    
+                ╔═══════╗
+    beta_0─────▶║       ║─────▶ alpha^*_0
+    beta_1─────▶║   U   ║─────▶ alpha^*_1
+             ...║       ║...
+    beta_n─────▶║       ║─────▶ alpha^*_n     
+                ╚═══════╝    
 The wires in the diagram below correspond to the `out_ket` wires (:math:`\alpha^*`) and the `in_ket` wires (:math:`\beta`) in :class:`~mrmustard.lab_dev.wires.Wires`.
                      
 As for a ``n``-mode Gaussian Channel :math:`\langle \vec{\alpha}|\Psi(|\vec{\gamma}\rangle\langle\vec{\delta}|)|\vec{\beta}`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n, \delta^*_0, \delta^*_1, ..., \delta^*_n, \gamma_0, \gamma_1,..., \gamma_n)`.
 .. code-block::
 
-                        ╔═══════╗
-:math:`\delta^*_0`─────▶║       ║─────▶ :math:`\alpha^*_0`
-:math:`\delta^*_1`─────▶║       ║─────▶ :math:`\alpha^*_1`
-                     ...║       ║...
-:math:`\delta^*_n`─────▶║  Phi  ║─────▶ :math:`\alpha^*_n`     
-:math:`\gamma_0`  ─────▶║       ║─────▶ :math:`\beta_0`
-:math:`\gamma_1`  ─────▶║       ║─────▶ :math:`\beta_1`
-                     ...║       ║...
-:math:`\gamma_n`  ─────▶║       ║─────▶ :math:`\beta_n`  
-                        ╚═══════╝    
+                   ╔═══════╗
+    delta^*_0─────▶║       ║─────▶ alpha^*_0
+    delta^*_1─────▶║       ║─────▶ alpha^*_1
+                ...║       ║...
+    delta^*_n─────▶║  Phi  ║─────▶ alpha^*_n   
+    gamma_0  ─────▶║       ║─────▶ beta_0
+    gamma_1  ─────▶║       ║─────▶ beta_1
+                ...║       ║...
+    gamma_n  ─────▶║       ║─────▶ beta_n  
+                   ╚═══════╝    
 The wires in the diagram below correspond to the `out_bra` wires (:math:`\alpha^*`), the `in_bra` wires (:math:`\delta^*`), `out_ket` wires (:math:`\beta`) and the `in_ket` wires (:math:`\gamma`) in :class:`~mrmustard.lab_dev.wires.Wires`.
 
+The computation of quantum circuits with Bargmann representation can be considered as the inner product of two Bargmann representations, such as applying the unitary on a state, contracting two unitaries, applying the channel on a state, and etc.
+For example, applying a single-mode unitary :math:`U` on a single-mode pure state :math:`|\psi\rangle` is to multiply the Bargmann representation of the unitary and the state and then to integral the variables on the common wire between then:
+
+.. math::
+    U|\psi\rangle = \int d^2 \alpha |\beta\rangle \langle\beta|U|\alpha\rangle \langle\alpha|\psi\rangle.
+
+.. code-block::
+
+    ╔═══════╗                                ╔═════╗
+    ║ |psi> ║─────▶ alpha^*_0   alpha_0─────▶║  U  ║─────▶ beta^*_0
+    ╚═══════╝                                ╚═════╝
+        |
+        | integral on alpha
+        |
+    ╔═══════╗       ╔═════╗
+    ║ |psi> ║─────▶ ║  U  ║─────▶ beta^*_0
+    ╚═══════╝       ╚═════╝
 """
 import numpy as np
 
