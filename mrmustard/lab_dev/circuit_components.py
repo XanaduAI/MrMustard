@@ -99,7 +99,7 @@ concatenated via the ``@`` and ``>>`` operators.
         >>> alpha_minus = Coherent(modes=[0], x=-1)
 
         >>> # initialize a superposition of the two states
-        >>> alpha_plus*(1/3)**0.5 + alpha_minus*(2/3)**0.5
+        >>> state = alpha_plus*(1/3)**0.5 + alpha_minus*(2/3)**0.5
 
 """
 
