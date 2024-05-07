@@ -21,41 +21,43 @@ The conversions exist:
 
 * From Bargmann representation to Fock representation (for all quantum objects);
 * From Bargmann representation to phase space representation (for only quantum states);
-* From phase space representation to Bargmann representation (for only quantum states);
+* From Bargmann representation to quadrature representation (for only quantum states);
+* From phase space representation to Bargmann representation (for all quantum objects);
+* From quadrature representation to Bargmann representation (for only quantum states);
 
 The first one is the function ``to_fock``, while the other two conversions have been encapsuled into the CircuitComponent object ``DsMap`` and ``BtoQMap`` in order to compute the representation change on each wire.
 
 Some examples:
 1. From Bargmann representation to Fock representation conversion is realized by using the ``hermite_renormalized`` function, which can be considered as a Map gate as well.
 
-     ---------------
-----| BargmannToFock|---- 
-     ---------------
-   
-If there is a single-mode pure state :math:`|\psi\rangle`, which can be denoted as
+    .. code-block::
 
-  --------------------
- |:math:`|\psi\rangle`|----
-  --------------------
+        ╔═════════╗            ╔════════════════════╗
+        ║ |\psi\rangle ║─────▶ ║ hermite_normalized ║─────▶
+        ╚═════════╝            ╚════════════════════╝
 
 2. From Bargmann representation to phase space representation, the Map on the ket wire can be illustrated as
+    .. code-block::
 
-           --------
-in_ket----| BtoQMap|---- out_ket
-           --------
+        ╔═════════╗            ╔═══════╗
+        ║ |\psi\rangle ║─────▶ ║ DsMap ║─────▶
+        ╚═════════╝            ╚═══════╝
 
-If there is a 4-mode mixed state, wanna convert the first mode into phase space representation:
+3. From Bargmann representation to quadrature representation, the Map on the ket wire can be illustrated as
+    .. code-block::
 
-  --------------------                     ---------------
- |                    |----out_bra_1  ----|BtoQMap.adjoint|----
- |                    |----out_bra_2       ---------------
- |                    |----out_bra_3
- |:math:`|\psi\rangle`|----out_bra_4       ------------
- |                    |----out_ket_1  ----|BtoQMap.dual|----
- |                    |----out_ket_2       ------------
- |                    |----out_ket_3
- |                    |----out_ket_4
-  --------------------
+        ╔═════════╗            ╔═════════╗
+        ║ |\psi\rangle ║─────▶ ║ BtoQMap ║─────▶
+        ╚═════════╝            ╚═════════╝
+
+4. From phase space representation to Bargmann representation, it uses the functions from old physics with name ``wigner_to_bargmann``.
+
+5. From quadrature representation to Bargmann representation, the Map on the ket wire uses the dual of the ``BtoQMap``
+    .. code-block::
+
+        ╔═════════╗            ╔══════════════╗
+        ║ |\psi\rangle ║─────▶ ║ BtoQMap.dual ║─────▶
+        ╚═════════╝            ╚══════════════╝
 
 """
 

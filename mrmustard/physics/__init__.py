@@ -38,4 +38,3 @@ Check out our guides to learn more about :mod:`~mrmustard.physics` and its core 
 
 from .ansatze import *
 from .representations import *
-
