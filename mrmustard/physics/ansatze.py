@@ -16,7 +16,7 @@
 This module contains the classes for the available ansatze.
 
 There are two types of ansatz: one has the data stored in the tensor :class:`ArrayAnsatz`, the other one has the form poly*exp :class:`PolyExpBase`.
-:class:`~mrmustard.physics.ansatze.PolyExpAnsatz` is a child ``Ansatz`` of `~mrmustard.physics.ansatze.PolyExpBase` and especially work for the Bargmann representation.
+:class:`~mrmustard.physics.ansatze.PolyExpAnsatz` is a child ``Ansatz`` of :class:`~mrmustard.physics.ansatze.PolyExpBase` and especially work for the Bargmann representation.
 
 Except for storing the data, an ``Ansatz`` supports basic mathematical operations such as addition, subtraction, multiplication, division, negation, equality, etc.
 """
