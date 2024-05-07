@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+r"""
 A base class for the components of quantum circuits.
 
-``CircuitComponent`` objects bring together two types of information:
+``CircuitComponent``\s bring together two types of information:
 
 * That contained in the ``Wires`` object, which identifies the modes spanned by a component.
 * That contained in the ``Representation``, which provides a mathematical description of a
@@ -54,7 +54,7 @@ states and gates.
     >>> att_modes = (16,)
     >>> att = CircuitComponent("my_att", att_rep, att_modes, att_modes, att_modes, att_modes)
 
-By accessing the information about wires and representations, ``CircuitComponent`` objects can be easily
+By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
 concatenated via the ``@`` and ``>>`` operators. 
 
 .. code-block ::
@@ -87,6 +87,20 @@ concatenated via the ``@`` and ``>>`` operators.
     >>> res2 = number >> att
     >>> assert res2.wires == Wires(modes_out_bra={3,}, modes_out_ket={3,})
     >>> assert res2 == number @ number.adjoint @ att
+
+``CircuitComponent``\s also support basic aritmetic with `+` and `-`.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev.states import Coherent
+
+        >>> # initialize two coherent states
+        >>> alpha_plus = Coherent(modes=[0], x=1)
+        >>> alpha_minus = Coherent(modes=[0], x=-1)
+
+        >>> # initialize a superposition of the two states
+        >>> alpha_plus*(1/3)**0.5 + alpha_minus*(2/3)**0.5
+
 """
 
 # pylint: disable=super-init-not-called, protected-access
