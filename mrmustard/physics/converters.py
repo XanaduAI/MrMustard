@@ -32,32 +32,32 @@ Some examples:
 
     .. code-block::
 
-        ╔═════════╗            ╔════════════════════╗
-        ║ |\psi\rangle ║─────▶ ║ hermite_normalized ║─────▶
-        ╚═════════╝            ╚════════════════════╝
+        ╔═══════╗       ╔════════════════════╗
+        ║ |psi> ║─────▶ ║ hermite_normalized ║─────▶
+        ╚═══════╝       ╚════════════════════╝
 
 2. From Bargmann representation to phase space representation, the Map on the ket wire can be illustrated as
     .. code-block::
 
-        ╔═════════╗            ╔═══════╗
-        ║ |\psi\rangle ║─────▶ ║ DsMap ║─────▶
-        ╚═════════╝            ╚═══════╝
+        ╔═══════╗       ╔═══════╗
+        ║ |psi> ║─────▶ ║ DsMap ║─────▶
+        ╚═══════╝       ╚═══════╝
 
 3. From Bargmann representation to quadrature representation, the Map on the ket wire can be illustrated as
     .. code-block::
 
-        ╔═════════╗            ╔═════════╗
-        ║ |\psi\rangle ║─────▶ ║ BtoQMap ║─────▶
-        ╚═════════╝            ╚═════════╝
+        ╔═══════╗       ╔═════════╗
+        ║ |psi> ║─────▶ ║ BtoQMap ║─────▶
+        ╚═══════╝       ╚═════════╝
 
 4. From phase space representation to Bargmann representation, it uses the functions from old physics with name ``wigner_to_bargmann``.
 
 5. From quadrature representation to Bargmann representation, the Map on the ket wire uses the dual of the ``BtoQMap``
     .. code-block::
 
-        ╔═════════╗            ╔══════════════╗
-        ║ |\psi\rangle ║─────▶ ║ BtoQMap.dual ║─────▶
-        ╚═════════╝            ╚══════════════╝
+        ╔═══════╗       ╔══════════════╗
+        ║ |psi> ║─────▶ ║ BtoQMap.dual ║─────▶
+        ╚═══════╝       ╚══════════════╝
 
 """
 
