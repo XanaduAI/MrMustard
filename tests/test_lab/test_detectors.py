@@ -401,14 +401,14 @@ class TestNormalization:
         leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=normalize)[0]
         assert np.isclose(
             expected_norm * np.sqrt(settings.AUTOCUTOFF_PROBABILITY),
-            physics.norm(leftover),
+            physics.utils.norm(leftover),
             rtol=1 - settings.AUTOCUTOFF_PROBABILITY,
         )
 
     def test_norm_2mode_gaussian_normalized(self):
         """Checks that after projection the norm of the leftover state is as expected."""
         leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
-        assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+        assert np.isclose(1.0, physics.utils.norm(leftover), atol=1e-5)
 
 
 class TestProjectionOnState:

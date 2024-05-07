@@ -257,7 +257,7 @@ We can turn any simulation in Mr Mustard into an optimization by marking which p
 ```python
 from mrmustard import math
 from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
-from mrmustard.physics import fidelity
+from mrmustard.physics.utils import fidelity
 from mrmustard.training import Optimizer
 
 math.change_backend("tensorflow")

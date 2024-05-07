@@ -33,7 +33,7 @@ except ImportError:
     ray_available = False
 
 from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
-from mrmustard.physics import fidelity
+from mrmustard.physics.utils import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 

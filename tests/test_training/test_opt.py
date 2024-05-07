@@ -39,7 +39,7 @@ from mrmustard.lab.states import (
     Vacuum,
 )
 from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics import fidelity
+from mrmustard.physics.utils import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback

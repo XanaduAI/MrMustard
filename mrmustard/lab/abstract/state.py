@@ -387,7 +387,7 @@ class State:  # pylint: disable=too-many-public-methods
         ``self``: ``other << self`` is like ``self >> other^dual``.
 
         Note that the returned state is not normalized. To normalize a state you can use
-        ``mrmustard.physics.normalize``.
+        ``mrmustard.physics.utils.normalize``.
         """
         # import pdb
 

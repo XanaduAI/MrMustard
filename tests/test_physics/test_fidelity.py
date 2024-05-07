@@ -146,7 +146,7 @@ class TestGaussianFock:
         """Test that the fidelity of these two states is what it should be"""
         state1ket = Coherent(x=1.0)
         state2ket = Fock(n=1)
-        assert np.allclose(physics.fidelity(state1ket, state2ket), 0.36787944, atol=1e-4)
+        assert np.allclose(physics.utils.fidelity(state1ket, state2ket), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_ket_dm(self):
         """Test that the fidelity of these two states is what it should be"""
@@ -154,14 +154,14 @@ class TestGaussianFock:
         state1dm = State(dm=state1ket.dm())
         state2ket = Fock(n=1)
         state2dm = State(dm=state2ket.dm(state1dm.cutoffs))
-        assert np.allclose(physics.fidelity(state1ket, state2dm), 0.36787944, atol=1e-4)
+        assert np.allclose(physics.utils.fidelity(state1ket, state2dm), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_ket(self):
         """Test that the fidelity of these two states is what it should be"""
         state1ket = Coherent(x=1.0)
         state1dm = State(dm=state1ket.dm())
         state2ket = Fock(n=1)
-        assert np.allclose(physics.fidelity(state1dm, state2ket), 0.36787944, atol=1e-4)
+        assert np.allclose(physics.utils.fidelity(state1dm, state2ket), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_dm(self):
         """Test that the fidelity of these two states is what it should be"""
@@ -169,4 +169,4 @@ class TestGaussianFock:
         state1dm = State(dm=state1ket.dm())
         state2ket = Fock(n=1)
         state2dm = State(dm=state2ket.dm(state1dm.cutoffs))
-        assert np.allclose(physics.fidelity(state1dm, state2dm), 0.36787944, atol=1e-4)
+        assert np.allclose(physics.utils.fidelity(state1dm, state2dm), 0.36787944, atol=1e-4)

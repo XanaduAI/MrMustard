@@ -422,7 +422,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
   ```python
   from mrmustard.lab import Vacuum, Dgate, Ggate
-  from mrmustard.physics import fidelity
+  from mrmustard.physics.utils import fidelity
   from mrmustard.training.trainer import map_trainer
 
   def make_circ(x=0.):

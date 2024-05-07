@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 
 from mrmustard import math, settings
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
-from mrmustard.physics import fidelity, normalize
+from mrmustard.physics.utils import fidelity, normalize
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
