@@ -10,5 +10,5 @@ The representations of quantum objects
 .. toctree::
     :maxdepth: 1
 
-    physics/bargmann
-    physics/fock
+    bargmann
+    fock
