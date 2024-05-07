@@ -39,9 +39,24 @@ As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`,
     ║ |psi> ║─────▶ :math:`\alpha^*_1`
     ║       ║...
     ║       ║─────▶ :math:`\alpha^*_n`     
-    ╚═══════╝      
+    ╚═══════╝    
+All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
+    
 As for a ``n``-mode mixed Gaussian state :math:`\langle\vec{\alpha}|\rho|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n)`.
+.. code-block::
 
+    ╔═══════╗
+    ║       ║─────▶ :math:`\alpha^*_0`
+    ║       ║─────▶ :math:`\alpha^*_1`
+    ║       ║─────▶ ...
+    ║       ║─────▶ :math:`\alpha^*_n`
+    ║  rho  ║─────▶ :math:`\beta_0_1`
+    ║       ║─────▶ :math:`\beta_1`
+    ║       ║─────▶ ...
+    ║       ║─────▶ :math:`\beta_n`     
+    ╚═══════╝    
+The wires in the diagram below correspond to the `out_ket` wires (:math:`\beta`) and the `out_bra` wires ((:math:`\alpha^*`) in :class:`~mrmustard.lab_dev.wires.Wires`.
+ 
 As for a ``n``-mode Gaussian unitary :math:`\langle\vec{\alpha}|U|\vec{\beta}\rangle`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n)`.
 
 As for a ``n``-mode Gaussian Channel :math:`\langle \vec{\alpha}|\Psi(|\vec{\gamma}\rangle\langle\vec{\delta}|)|\vec{\beta}`, the variable vector denotes :math:`\vec{\alpha} = (\alpha^*_0, \alpha^*_1, ..., \alpha^*_n, \beta_0, \beta_1,..., \beta_n, \delta^*_0, \delta^*_1, ..., \delta^*_n, \gamma_0, \gamma_1,..., \gamma_n)`.
