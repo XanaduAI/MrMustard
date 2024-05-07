@@ -37,10 +37,10 @@ As for a ``n``-mode pure Gaussian state :math:`\langle\vec{\alpha}|\psi\rangle`,
 .. code-block::
 
     ╔═══════╗
-    ║       ║─────▶ :math:`\alpha^*_0`
-    ║ |psi> ║─────▶ :math:`\alpha^*_1`
+    ║       ║─────▶ alpha^*_0
+    ║ |psi> ║─────▶ alpha^*_1
     ║       ║...
-    ║       ║─────▶ :math:`\alpha^*_n`     
+    ║       ║─────▶ alpha^*_n 
     ╚═══════╝    
 All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
     
@@ -103,9 +103,9 @@ For example, applying a single-mode unitary :math:`U` on a single-mode pure stat
         |
         | integral on alpha
         |
-    ╔═══════╗       ╔═════╗
-    ║ |psi> ║─────▶ ║  U  ║─────▶ beta^*_0
-    ╚═══════╝       ╚═════╝
+    ╔════════╗
+    ║ |psi'> ║─────▶ beta^*_0
+    ╚════════╝
 
 """
 import numpy as np
