@@ -15,7 +15,7 @@
 """
 A base class for the components of quantum circuits.
 
-``CircuitComponent``\s bring together two types of information:
+``CircuitComponent`` objects bring together two types of information:
 
 * That contained in the ``Wires`` object, which identifies the modes spanned by a component.
 * That contained in the ``Representation``, which provides a mathematical description of a
@@ -54,7 +54,7 @@ states and gates.
     >>> att_modes = (16,)
     >>> att = CircuitComponent("my_att", att_rep, att_modes, att_modes, att_modes, att_modes)
 
-By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
+By accessing the information about wires and representations, ``CircuitComponent`` objects can be easily
 concatenated via the ``@`` and ``>>`` operators. 
 
 .. code-block ::
@@ -87,9 +87,6 @@ concatenated via the ``@`` and ``>>`` operators.
     >>> res2 = number >> att
     >>> assert res2.wires == Wires(modes_out_bra={3,}, modes_out_ket={3,})
     >>> assert res2 == number @ number.adjoint @ att
-
-By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
-concatenated via the ``@`` and ``>>`` operators. 
 """
 
 # pylint: disable=super-init-not-called, protected-access
