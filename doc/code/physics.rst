@@ -12,5 +12,4 @@ mrmustard.physics
 
     physics/ansatze
     physics/representations
-    physics/bargmann_related
     physics/converters
