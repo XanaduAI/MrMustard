@@ -12,13 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+r"""
 This module contains the classes for the available ansatze.
 
-There are two types of ansatz: one has the data stored in the tensor :class:`ArrayAnsatz`, the other one has the form poly*exp :class:`PolyExpBase`.
-:class:`~mrmustard.physics.ansatze.PolyExpAnsatz` is a child ``Ansatz`` of :class:`~mrmustard.physics.ansatze.PolyExpBase` and especially work for the Bargmann representation.
+Ansatze are supposed to store the data related to the Representation and support basic mathematical operations.
 
-Except for storing the data, an ``Ansatz`` supports basic mathematical operations such as addition, subtraction, multiplication, division, negation, equality, etc.
+There are two types of ansatz: :class:`ArrayAnsatz` and :class:`PolyExpBase`.
+
+:class:`ArrayAnsatz` represents the data in the array-like form, such as the Fock representation data. 
+
+And :class:`PolyExpBase` represents the data in a special form: poly*exp, here is an example with a single variable `x`:
+
+.. math::
+    \sum_i c_i x^i \exp\left( \frac12 A x^2 + bx \right).
+
+where the coefficient of the polyomials (:math:`c_i`) stores in an array :math:`\vec{c}` and the exponential function is parametrized by a quadratic functions with a matrix :math:`A` and a vector :math:`b`.
+One special case for :class:`PolyExpBase` is the :class:`PolyExpAnsatz`, which has a triple data and works for the Bargmann representation.
+
+The ``Ansatz`` supports basic mathematical operations such as addition, subtraction, multiplication, division, negation, equality, etc.
 """
 
 from __future__ import annotations
