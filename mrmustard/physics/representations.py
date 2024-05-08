@@ -453,7 +453,9 @@ class Bargmann(Representation):
         Abc = []
         if settings.ELEMENT_WISE:
             if self.ansatz.batch_size != other.ansatz.batch_size:
-                raise ValueError(f"Batch size of the two ansatze must match since the settings.ELEMENT_WISE is {settings.ELEMENT_WISE}.")
+                raise ValueError(
+                    f"Batch size of the two ansatze must match since the settings.ELEMENT_WISE is {settings.ELEMENT_WISE}."
+                )
             for (A1, b1, c1), (A2, b2, c2) in zip(
                 zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
             ):
