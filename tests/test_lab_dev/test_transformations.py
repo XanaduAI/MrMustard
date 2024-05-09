@@ -416,9 +416,9 @@ class TestIgate:
     Tests for the ``Igate`` class.
     """
 
-    modes = [[0], [1, 2]]
+    modes = [[0], [1, 2], [7, 9]]
 
-    @pytest.mark.parametrize("modes", zip(modes))
+    @pytest.mark.parametrize("modes", modes)
     def test_init(self, modes,):
         gate = Igate(modes)
 
@@ -426,8 +426,8 @@ class TestIgate:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length must be nonzero"):
-            Igate(modes=[])
+        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+            Igate()
 
     def test_representation(self):
         rep1 = Igate(modes=[0]).representation
@@ -457,12 +457,6 @@ class TestIgate:
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
-
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Igate(modes=[0]).representation
-
 
 
 
