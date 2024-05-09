@@ -12,8 +12,66 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+r"""
 Simulators for quantum circuits.
+
+The simulator allows contracting the components stored in quantum circuits.
+
+.. code-block::
+
+    >>> from mrmustard.lab_dev import *
+    >>> import numpy as np
+
+    >>> # initialize a circuit
+    >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
+    >>> gate = BSgate([0, 1], theta=np.pi/4)
+    >>> proj1 = Number(modes=[1], n=[0]).dual
+    >>> circuit = Circuit([state, gate, proj1])
+
+    >>> # run the simulation
+    >>> result = Simulator().run(circuit)
+
+    >>> # the simulator returns a component that can be potentially be plugged
+    >>> # into another circuit
+    >>> assert isinstance(result, CircuitComponent)
+
+The simulation is carried out by contracting the components of the given circuit in pairs,
+until only one component is left and returned. In the examples above, the contractions happen
+in a "left-to-right" fashion, meaning that the left-most component in the circuit (``state``)
+is contracted with the one in its right (``gate``), and finally the resulting component is
+contracted with the projector. This provides a simple and convenient way to run simulations,
+but for large circuits, different contraction paths may be more efficient.
+
+The ``path`` attribute of ``Circuit``\s allows customising the contraction order and potentially
+speeding up the simulation. When a ``path`` of the type ``[(i, j), (l, m), ...]`` is given, the
+simulator creates a dictionary of the type ``{0: c0, ..., N: cN}``, where ``[c0, .., cN]``
+is the ``circuit.component`` list. Then:
+
+* The two components ``ci`` and ``cj`` in positions ``i`` and ``j`` are contracted. ``ci`` is
+  replaced by the resulting component ``cj >> cj``, while ``cj`` is popped.
+* The two components ``cl`` and ``cm`` in positions ``l`` and ``m`` are contracted. ``cl`` is
+  replaced by the resulting component ``cl >> cm``, while ``cm`` is popped.
+* Et cetera.
+
+Below is an example where a circuit is simulated in a "right-to-left" fashion:
+
+.. code-block::
+
+    >>> from mrmustard.lab_dev import *
+    >>> import numpy as np
+
+    >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
+    >>> gate = BSgate([0, 1], theta=np.pi/4)
+    >>> proj01 = Number(modes=[0, 1], n=[2, 0]).dual
+
+    >>> # initialize the circuit and specify a custom path
+    >>> circuit = Circuit([state, gate, proj01])
+    >>> circuit.path = [(1, 2), (0, 1)]
+
+    >>> result = Simulator().run(circuit)
+
+The setter for ``path`` also validates the path using the ``validate_path`` function of
+``Circuit``.
 """
 
 from __future__ import annotations

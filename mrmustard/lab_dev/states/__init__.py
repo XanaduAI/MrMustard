@@ -60,8 +60,8 @@ All these states are of one of two types, namely :class:`~mrmustard.lab_dev.stat
         >>> assert dm.representation.c.shape == (1,)
 
 In addition to providing these built-in states, Mr Mustard allows initializing custom
-:class:`~mrmustard.lab_dev.states.Ket`\s and :class:`~mrmustard.lab_dev.states.DM`\s via the
-appropriate constructors. The snippet belowe shows how to initialize a ``Ket`` from
+:class:`~mrmustard.lab_dev.states.Ket`\s and :class:`~mrmustard.lab_dev.states.DM`\s with the
+desired representation. The snippet belowe shows how to initialize a ``Ket`` from
 the Bargmann triple of the squeezed vacuum state. Analogous methods exist to initialize
 ``Ket``\s and ``DM``\s from Fock arrays and from quadrature.
 
@@ -71,13 +71,12 @@ the Bargmann triple of the squeezed vacuum state. Analogous methods exist to ini
         >>> from mrmustard.lab_dev.transformations import Sgate
         >>> from mrmustard.physics import triples
 
-        >>> # write the A, b, c
+        >>> # the A, b, c triple of the squeezed vacuum state
         >>> A, b, c = triples.squeezed_vacuum_state_Abc(r=0.8)
 
-        >>> # use it to generate a ``Ket``
+        >>> # use the tripls to generate a ``Ket``
         >>> my_ket = Ket.from_bargmann(modes=[0], triple=(A, b, c), name="my_ket")
 
-        >>> # let's check
         >>> assert my_ket == Vacuum([0]) >> Sgate([0], r=0.8)
         >>> assert my_ket == SqueezedVacuum([0], r=0.8)
 

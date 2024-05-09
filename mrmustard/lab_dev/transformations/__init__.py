@@ -12,8 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The classes representing transformations in quantum circuits.
+r"""
+The avaliable transformation.
+
+As for states, Mr Mustard provides a range of built-in transformations, such as:
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev.states import Dgate, Sgate, Attenuator
+
+        >>> # the displacement gate
+        >>> dgate = Dgate(modes=[0], x=1)
+
+        >>> # the squeezing gate
+        >>> sgate = Sgate(modes=[1, 2], r=0.8)
+
+        >>> # the attenuator channel
+        >>> att = Attenuator(modes=[3], eta=0.9)
+
+All these transformations are of one of two types, namely :class:`~mrmustard.lab_dev.transformations.Unitary` or
+:class:`~mrmustard.lab_dev.transformations.Channel`.
 """
 
 from .base import *

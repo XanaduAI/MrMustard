@@ -15,7 +15,39 @@
 # pylint: disable=too-many-branches
 
 """
-A class to quantum circuits.
+A class to represent quantum circuits.
+
+Quantum circuits store a list of ``CircuitComponent``s, without performing any contraction.
+
+.. code-block::
+
+    >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+
+    >>> vac = Vacuum([0, 1, 2])
+    >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+    >>> bs01 = BSgate([0, 1])
+    >>> bs12 = BSgate([1, 2])
+
+    >>> components = [vac, s01, bs01, bs12]
+    >>> circ = Circuit(components)
+    >>> assert circ.components == components
+
+The ``>>`` operator allows appending new components, or even entire circuits.
+
+.. code-block::
+
+    >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+
+    >>> vac = Vacuum([0, 1, 2])
+    >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+    >>> bs01 = BSgate([0, 1])
+    >>> bs12 = BSgate([1, 2])
+
+    >>> circ1 = Circuit() >> vac >> s01
+    >>> circ2 = Circuit([bs01]) >> bs12
+    >>> assert circ1 >> circ2 == Circuit([vac, s01, bs01, bs12])
+
+The operations in a circuit can be contracted using the :class:`~mrmustard.lab_dev.simulator.Simulator`.
 """
 
 from __future__ import annotations
