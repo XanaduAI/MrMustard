@@ -285,8 +285,7 @@ class Sgate(Unitary):
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
 
 
-
-class Igate(Unitary): 
+class Igate(Unitary):
     r"""
     The identity gate.
 
@@ -314,7 +313,6 @@ class Igate(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         return Bargmann(*triples.identity_Abc(n_modes))
-
 
 
 class Attenuator(Channel):
@@ -386,5 +384,3 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
-
-
