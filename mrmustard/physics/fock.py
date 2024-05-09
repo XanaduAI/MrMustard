@@ -28,14 +28,15 @@ As for a ``n``-mode pure state, its array/tensor has the shape :math:`(C_0, C_1,
     .. code-block::
 
         ╔═══════╗
-        ║       ║─────▶ :math:`C_0`
-        ║ |psi> ║─────▶ :math:`C_1`
+        ║       ║─────▶ C_0
+        ║ |psi> ║─────▶ C_1
         ║       ║...
-        ║       ║─────▶ :math:`C_{(n-1)}`
+        ║       ║─────▶ C_{(n-1)}
         ╚═══════╝    
-    All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
+    
+All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
         
-    As for a ``n``-mode mixed Gaussian state, its array/tensor has the shape :math:`(C_0, C_1, ...C_{n-1}, C'_0, C'_1, ...C'_{n-1})`, where ``C`` is the cutoff of the photon number in the Hilbert space.
+As for a ``n``-mode mixed Gaussian state, its array/tensor has the shape :math:`(C_0, C_1, ...C_{n-1}, C'_0, C'_1, ...C'_{n-1})`, where ``C`` is the cutoff of the photon number in the Hilbert space.
     
     .. code-block::
 
@@ -49,7 +50,8 @@ As for a ``n``-mode pure state, its array/tensor has the shape :math:`(C_0, C_1,
         ║       ║─────▶ ...
         ║       ║─────▶ C'_(n-1)  
         ╚═══════╝    
-    The wires in the diagram below correspond to the `out_bra` wires (:math:`C_i`) and the `out_ket` wires (:math:`C'_i`) in :class:`~mrmustard.lab_dev.wires.Wires`.
+    
+The wires in the diagram below correspond to the `out_bra` wires (:math:`C_i`) and the `out_ket` wires (:math:`C'_i`) in :class:`~mrmustard.lab_dev.wires.Wires`.
 
 """
 
