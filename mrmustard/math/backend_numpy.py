@@ -59,6 +59,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
 
+    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+        array1 = self.asnumpy(array1)
+        array2 = self.asnumpy(array2)
+        if array1.shape != array2.shape:
+            raise ValueError("Cannot compare arrays of different shapes.")
+        return np.allclose(array1, array2, atol=atol)
+
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
 
@@ -129,7 +136,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.cosh(array)
 
     def det(self, matrix: np.ndarray) -> np.ndarray:
-        return np.linalg.det(matrix)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            det = np.linalg.det(matrix)
+        return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if len(array.shape) == 1:
@@ -279,6 +288,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
+    def kron(self, tensor1: np.ndarray, tensor2: np.ndarray):
+        return np.kron(tensor1, tensor2)
+
+    def prod(self, x: np.ndarray, axis: Union[None, int]):
+        return np.prod(x, axis=axis)
+
     def real(self, array: np.ndarray) -> np.ndarray:
         return np.real(array)
 
@@ -300,6 +315,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return np.linalg.solve(matrix, rhs)[..., 0]
         return np.linalg.solve(matrix, rhs)
 
+    def sort(self, array: np.ndarray, axis: int = -1) -> np.ndarray:
+        return np.sort(array, axis)
+
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
@@ -320,7 +338,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.tile(array, repeats)
 
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return self.cast(np.trace(array), dtype)
+        return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
     def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> Optional[np.ndarray]:
         if a is None:
@@ -367,8 +385,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
                 self._probs = probs
 
             def sample(self):
-                array = np.random.multinomial(1, pvals=probs)
-                return np.where(array == 1)[0][0]
+                idx = [i for i, _ in enumerate(probs)]
+                return np.random.choice(idx, p=probs / sum(probs))
 
         return Generator(probs)
 
@@ -401,10 +419,15 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def eigh(tensor: np.ndarray) -> tuple:
         return np.linalg.eigh(tensor)
 
-    def sqrtm(self, tensor: np.ndarray, rtol=1e-05, atol=1e-08) -> np.ndarray:
+    def sqrtm(self, tensor: np.ndarray, dtype, rtol=1e-05, atol=1e-08) -> np.ndarray:
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return scipy_sqrtm(tensor)
+            ret = self.zeros_like(tensor)
+        else:
+            ret = scipy_sqrtm(tensor)
+
+        if dtype is None:
+            return self.cast(ret, self.complex128)
+        return self.cast(ret, dtype)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions

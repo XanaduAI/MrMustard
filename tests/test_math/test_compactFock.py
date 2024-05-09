@@ -1,6 +1,7 @@
 """
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
+
 import importlib
 
 import numpy as np

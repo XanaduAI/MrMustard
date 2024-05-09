@@ -24,8 +24,8 @@ ifndef JULIA
 	@echo "To use Mr Mustard with higher precision than complex128, it is required to have Julia installed"
 	poetry install
 else
-    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
-    poetry install
+	julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+	poetry install
 endif
 
 

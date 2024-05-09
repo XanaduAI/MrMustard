@@ -13,12 +13,10 @@
 # limitations under the License.
 
 """
-This module contains functions for performing calculations on Gaussian states.
+This module contains functions for performing calculations on objects in the Gaussian representations.
 """
 
 from typing import Any, Optional, Sequence, Tuple, Union
-
-from thewalrus.quantum import is_pure_cov
 
 from mrmustard import math, settings
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
@@ -585,11 +583,24 @@ def general_dyne(
 
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
-    pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
-    outcome = (
-        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
-    )
-    prob = pdf.prob(outcome)
+    if proj_means is None:
+        pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+        outcome = (
+            pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
+        )
+        prob = pdf.prob(outcome)
+    else:
+        # If the projector is already given: proj_means
+        # use the formula 5.139 in Serafini - Quantum Continuous Variables
+        # fixed by -0.5 on the exponential, added hbar and removed pi due to different convention
+        outcome = proj_means
+        prob = (
+            settings.HBAR**M
+            * math.exp(
+                -0.5 * math.sum(math.solve(reduced_cov, (proj_means - b)) * (proj_means - b))
+            )
+            / math.sqrt(math.det(reduced_cov))
+        )
 
     # calculate conditional output state of unmeasured modes
     num_remaining_modes = N - M
@@ -645,11 +656,6 @@ def number_cov(cov: Matrix, means: Vector) -> Matrix:
     return (
         CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
     )
-
-
-def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
-    r"""Returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
-    return not is_pure_cov(math.asnumpy(cov))
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
@@ -739,8 +745,9 @@ def symplectic_eigenvals(cov: Matrix) -> Any:
     """
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = math.matmul(1j * J, cov * (2 / settings.HBAR))
-    vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
+    vals = math.abs(math.eigvals(M))  # compute the eigenspectrum
+    vals = math.sort(vals)
+    return vals[::2]  # return the even eigenvalues
 
 
 def von_neumann_entropy(cov: Matrix) -> float:

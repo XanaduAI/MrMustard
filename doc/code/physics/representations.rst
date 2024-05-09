@@ -1,5 +1,5 @@
-Representations
-===============
+The Fock-Bargmann and Fock Representations
+==========================================
 
 .. currentmodule:: mrmustard.physics.representations
 

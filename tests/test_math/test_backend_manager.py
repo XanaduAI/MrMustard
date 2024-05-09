@@ -29,6 +29,7 @@ class TestBackendManager:
     r"""
     Tests the BackendManager.
     """
+
     l1 = [1.0]
     l2 = [1.0 + 0.0j, -2.0 + 2.0j]
     l3 = [[1.0, 2.0], [-3.0, 4.0]]
@@ -63,6 +64,30 @@ class TestBackendManager:
         arr = np.array(l)
         res = math.asnumpy(math.abs(np.array(l)))
         assert np.allclose(res, np.abs(arr))
+
+    def test_allclose(self):
+        r"""
+        Tests the ``allclose`` method.
+        """
+        arr1 = [1, 2, 3]
+        arr2 = [1, 2, 3]
+        arr3 = [1.01, 2, 3]
+        arr4 = [2, 3, 1]
+
+        assert math.allclose(arr1, arr2)
+        assert not math.allclose(arr1, arr3)
+        assert math.allclose(arr1, arr3, 1e-2)
+        assert not math.allclose(arr1, arr4)
+
+    def test_allclose_error(self):
+        r"""
+        Tests the error of ``allclose`` method.
+        """
+        arr1 = [1, 2, 3]
+        arr2 = [[1, 2, 3]]
+
+        with pytest.raises(ValueError, match="Cannot compare"):
+            math.allclose(arr1, arr2)
 
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
@@ -512,6 +537,23 @@ class TestBackendManager:
         arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.pow(arr, 2)), math.pow(arr, 2))
 
+    def test_kron(self):
+        r"""
+        Tests the ``kron`` method.
+        """
+        t1 = math.astensor([[0, 1], [1, 0]])
+        t2 = math.eye(2)
+        kron = [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]
+        assert np.allclose(math.kron(t1, t2), kron)
+
+    def test_prod(self):
+        r"""
+        Tests the ``prod`` method.
+        """
+        assert np.allclose(math.prod([1]), 1)
+        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=0), [6, 6])
+        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=1), [4, 9])
+
     def test_real(self):
         r"""
         Tests the ``real`` method.
@@ -586,3 +628,11 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sum(arr))
         assert np.allclose(res, 12)
+
+    def test_categorical(self):
+        r"""
+        Tests the ``Categorical`` method.
+        """
+        probs = np.array([1e-6 for _ in range(300)])
+        results = [math.Categorical(probs, "") for _ in range(100)]
+        assert len(set(results)) > 1
