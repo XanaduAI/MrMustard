@@ -14,8 +14,45 @@
 
 # pylint: disable=redefined-outer-name
 
-"""
+r"""
 This module contains functions for performing calculations on objects in the Fock representations.
+
+The Fock representation is to describe the quantum objects in the Fock basis or photon number basis.
+
+The objects in Fock representation uses the :class:`~mrmustard.physics.ansatze.ArrayAnsatz` and the information is stored in the array.
+
+The meaning of the indices in the array of the Fock representations objects correpond to the same meaning in the Bargmann representation:
+
+As for a ``n``-mode pure state, its array/tensor has the shape :math:`(C_0, C_1, ...C_{n-1})`, where ``C`` is the cutoff of the photon number in the Hilbert space.
+
+    .. code-block::
+
+        ╔═══════╗
+        ║       ║─────▶ C_0
+        ║ |psi> ║─────▶ C_1
+        ║       ║...
+        ║       ║─────▶ C_{(n-1)}
+        ╚═══════╝    
+    
+All the wires in the diagram below correspond to the `out_ket` wires in :class:`~mrmustard.lab_dev.wires.Wires`.
+        
+As for a ``n``-mode mixed Gaussian state, its array/tensor has the shape :math:`(C_0, C_1, ...C_{n-1}, C'_0, C'_1, ...C'_{n-1})`, where ``C`` is the cutoff of the photon number in the Hilbert space.
+    
+    .. code-block::
+
+        ╔═══════╗
+        ║       ║─────▶ C_0
+        ║       ║─────▶ C_1
+        ║       ║─────▶ ...
+        ║       ║─────▶ C_(n-1)
+        ║  rho  ║─────▶ C'_0
+        ║       ║─────▶ C'_1
+        ║       ║─────▶ ...
+        ║       ║─────▶ C'_(n-1)  
+        ╚═══════╝    
+    
+The wires in the diagram below correspond to the `out_bra` wires (:math:`C_i`) and the `out_ket` wires (:math:`C'_i`) in :class:`~mrmustard.lab_dev.wires.Wires`.
+
 """
 
 from functools import lru_cache

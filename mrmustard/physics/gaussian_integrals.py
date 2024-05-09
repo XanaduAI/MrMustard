@@ -12,8 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+r"""
 This module contains gaussian integral functions and related helper functions.
+
+The gaussian integral is important step to realize the inner product in different representations.
+
+Here we have a real gaussian integral and a complex gaussian integral, which serve in the different cases. 
+For example, the inner product in Bargmann representations needs to use the complex gaussian integral.
+
+The general complex gaussian integral is defined as
+
+.. math::
+    \int \frac{d^{2N}\alpha}{\pi^N} \exp\left( \frac12 \vec{\alpha}^T A \vec{\alpha} + \vec{\alpha}^T b \right) = \frac{1}{\sqrt{(-1)^N det A}} \exp\left(-\frac12 b^T A^{-1} b  \right).
+where `N` is how many complex variable pairs in :math:`\vec{\alpha}`.
+
+We provide the real gaussian integral as well to support the inner product in the real Hilbert space, which is defined as
+
+.. math::
+    \int \frac{d^n x}{\pi^N} \exp\left( \frac12 \vec{x}^T A \vec{x} + \vec{x}^T b \right) = \frac{(2 \pi)^n}{\sqrt{(-1)^n det A}} \exp\left(-\frac12 b^T A^{-1} b  \right).
+where `n` is how many real variables in :math:`\vec{x}`.
+
 """
 from typing import Sequence, Tuple
 import numpy as np
