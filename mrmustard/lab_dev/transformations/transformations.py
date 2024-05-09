@@ -211,7 +211,7 @@ class Rgate(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
-        return Bargmann(*triples.squeezing_gate_Abc(thetas))
+        return Bargmann(*triples.rotation_gate_Abc(thetas))
 
 
 class Sgate(Unitary):
