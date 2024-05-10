@@ -23,12 +23,12 @@ from __future__ import annotations
 from typing import Iterable, Optional, Sequence, Union
 
 import numpy as np
-from ..utils.typing import Scalar
-from ..physics.converters import to_fock
-from ..physics.representations import Representation, Bargmann, Fock
-from ..math.parameter_set import ParameterSet
-from ..math.parameters import Constant, Variable
-from .wires import Wires
+from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.physics.converters import to_fock
+from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
@@ -73,7 +73,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -151,6 +156,28 @@ class CircuitComponent:
                 f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
             )
         return self.representation.triple
+
+    def quadrature(self) -> tuple | ComplexTensor:
+        r"""
+        The quadrature representation of this circuit component.
+        """
+        from mrmustard.lab_dev.circuit_components_utils import BtoQMap  # pylint: disable=import-outside-toplevel
+
+        kets_done = (
+            BtoQMap(self.wires.input.ket.modes).dual
+            @ self
+            @ BtoQMap(self.wires.output.ket.modes)
+        )
+        all_done = (
+            BtoQMap(self.wires.input.bra.modes).dual
+            @ kets_done
+            @ BtoQMap(self.wires.output.bra.modes)
+        )
+        return (
+            all_done.representation.triple
+            if isinstance(all_done.representation, Bargmann)
+            else all_done.representation.array
+        )
 
     @property
     def representation(self) -> Representation | None:
@@ -355,10 +382,14 @@ class CircuitComponent:
         idx_zconj += other.wires.ket.input[ket_modes].indices
 
         # calculate the representation of the returned component
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
+        representation_ret = (
+            self.representation[idx_z] @ other.representation[idx_zconj]
+        )
 
         # reorder the representation
-        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
+        representation_ret = (
+            representation_ret.reorder(perm) if perm else representation_ret
+        )
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
