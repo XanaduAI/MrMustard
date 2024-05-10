@@ -363,6 +363,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             curry_pop(
                 remote_trainer,
                 **task_kwargs,
+                **kwargs.copy(),
             )[0]
             for task_kwargs in tasks
             if isinstance(task_kwargs, Mapping)
