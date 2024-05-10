@@ -275,8 +275,8 @@ class TestRgate:
             rep1.A,
             [
                 [
-                    [0.0 + 0.0j, 0.99500417+0.09983342j],
-                    [0.99500417+0.09983342j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
                 ]
             ],
         )
@@ -303,8 +303,8 @@ class TestRgate:
             rep3.A,
             [
                 [
-                    [0.0 + 0.0j, 0.99500417+0.09983342j],
-                    [0.99500417+0.09983342j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
                 ]
             ],
         )
@@ -410,7 +410,6 @@ class TestSgate:
             Sgate(modes=[0], r=[0.1, 0.2]).representation
 
 
-
 class TestIgate:
     r"""
     Tests for the ``Igate`` class.
@@ -419,7 +418,10 @@ class TestIgate:
     modes = [[0], [1, 2], [7, 9]]
 
     @pytest.mark.parametrize("modes", modes)
-    def test_init(self, modes,):
+    def test_init(
+        self,
+        modes,
+    ):
         gate = Igate(modes)
 
         assert gate.name == "Igate"
@@ -435,8 +437,8 @@ class TestIgate:
             rep1.A,
             [
                 [
-                    [0.0 + 0.0j, 1+0j],
-                    [1+0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 1 + 0j],
+                    [1 + 0j, 0.0 + 0.0j],
                 ]
             ],
         )
@@ -457,7 +459,6 @@ class TestIgate:
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
-
 
 
 class TestAttenuator:
