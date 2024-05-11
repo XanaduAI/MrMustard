@@ -25,7 +25,7 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Ket, Number, Vacuum, DisplacedSqueezed
+from mrmustard.lab_dev.states import Ket, Number, Vacuum, DisplacedSqueezed, Coherent
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
 from mrmustard.lab_dev.wires import Wires
 
@@ -402,6 +402,11 @@ class TestCircuitComponent:
 
         assert repr(c1) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
         assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+
+    def test_to_fock_component_keeps_bargmann(self):
+        coh = Coherent([0], x=1.0)
+        coh.to_fock_component(20)
+        assert coh.bargmann == Coherent([0], x=1.0).bargmann
 
 
 class TestAdjointView:

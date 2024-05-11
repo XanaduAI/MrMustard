@@ -61,5 +61,5 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
             raise ValueError(msg)
 
         array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-        return Fock(math.astensor(array), batched=True)
+        return Fock(math.astensor(array), batched=True, original_bargmann_data=rep.data)
     return rep
