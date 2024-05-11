@@ -402,7 +402,7 @@ class TestDM:
 
     def test_L2_norms(self):
         state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
-        assert len(state.L2_norms) == 2
+        assert len(state._L2_norms) == 2
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
@@ -615,9 +615,9 @@ class TestCoherent:
         assert lc.representation.ansatz.batch_size == 3
 
         assert (lc >> lc.dual).representation.ansatz.batch_size == 9
-        settings.ELEMENT_WISE = True
+        settings.UNSAFE_ZIP_BATCH = True
         assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
-        settings.ELEMENT_WISE = False
+        settings.UNSAFE_ZIP_BATCH = False
 
 
 class TestDisplacedSqueezed:

@@ -61,7 +61,7 @@ class Settings:
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
 
-        self.ELEMENT_WISE = False
+        self.UNSAFE_ZIP_BATCH = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
 
         self.DEBUG = False

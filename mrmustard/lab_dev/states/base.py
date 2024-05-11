@@ -277,13 +277,13 @@ class State(CircuitComponent):
         raise ValueError(msg)
 
     @property
-    def L2_norms(self) -> RealVector:
+    def _L2_norms(self) -> RealVector:
         r"""
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
         """
-        settings.ELEMENT_WISE = True
+        settings.UNSAFE_ZIP_BATCH = True
         rep = (self >> self.dual).representation
-        settings.ELEMENT_WISE = False
+        settings.UNSAFE_ZIP_BATCH = False
         return math.real(rep.c if isinstance(rep, Bargmann) else rep.array)
 
     @property
@@ -752,7 +752,7 @@ class DM(State):
         return ret
 
     @property
-    def probabilities(self) -> RealVector:
+    def _probabilities(self) -> RealVector:
         r"""Element-wise probabilities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states."""
         idx_ket = self.wires.output.ket.indices
@@ -766,13 +766,13 @@ class DM(State):
     def probability(self) -> float:
         r"""Probability of this DM, using the batch dimension of the Ansatz
         as a convex combination of states."""
-        return math.sum(self.probabilities)
+        return math.sum(self._probabilities)
 
     @property
-    def purities(self) -> RealVector:
+    def _purities(self) -> RealVector:
         r"""Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states."""
-        return self.L2_norms / self.probabilities
+        return self._L2_norms / self._probabilities
 
     @property
     def purity(self) -> float:
@@ -968,10 +968,10 @@ class Ket(State):
         ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
         return ret
 
-    def probabilities(self) -> RealVector:
+    def _probabilities(self) -> RealVector:
         r"""Element-wise probabilities along the batch dimension of this Ket.
         Useful for cases where the batch dimension does not mean a linear combination of states."""
-        return self.L2_norms
+        return self._L2_norms
 
     @property
     def probability(self) -> float:
@@ -979,7 +979,7 @@ class Ket(State):
         means a linear combination of states."""
         return self.L2_norm
 
-    def purities(self) -> float:
+    def _purities(self) -> float:
         r"""Purity of each state in the batch."""
         return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
