@@ -320,6 +320,20 @@ class TestKet:
         assert isinstance(si.phi, Constant)
         assert si.phi.value == s.phi.value
 
+    def test_private_batched_properties(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        assert np.allclose(cat._purities, np.ones(2))
+        assert np.allclose(cat._probabilities, np.ones(2))
+        assert np.allclose(cat._L2_norms, np.ones(2))
+
+    def test_unsafe_batch_zipping(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
+        settings.UNSAFE_ZIP_BATCH = True
+        better_cat = cat >> displacements
+        settings.UNSAFE_ZIP_BATCH = False
+        assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
+
 
 class TestDM:
     r"""
