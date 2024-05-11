@@ -21,9 +21,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
 
 
-def to_fock(
-    rep: Representation, shape: Optional[Union[int, Iterable[int]]] = None
-) -> Fock:
+def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = None) -> Fock:
     r"""A function to map ``Representation``\s to ``Fock`` representations.
 
     If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
@@ -62,9 +60,6 @@ def to_fock(
             msg += f"the number of variables of this ansatz ({rep.ansatz.num_vars})."
             raise ValueError(msg)
 
-        array = [
-            math.hermite_renormalized(A, b, c, shape)
-            for A, b, c in zip(rep.A, rep.b, rep.c)
-        ]
+        array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
         return Fock(math.astensor(array), batched=True)
     return rep

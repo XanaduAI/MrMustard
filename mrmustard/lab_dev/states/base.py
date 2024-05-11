@@ -319,9 +319,7 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(
-                f"Can not calculate phase space for ``{self.name}`` object."
-            )
+            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
 
         new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
@@ -415,17 +413,13 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(
-            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
-        )
+        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(
-            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
-        )
+        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -520,14 +514,10 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(
-                show=True, usecolormap=True, highlightcolor="red", project_y=False
-            )
+            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
         )
         fig.update_traces(
-            contours_x=dict(
-                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
-            )
+            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -569,9 +559,7 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(
-                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
-            )
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -819,12 +807,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [
-            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
-        ]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
+        return self.__class__._from_attributes(
+            self.name, representation, wires
+        )  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -974,11 +962,7 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            result = (
-                result >> TraceOut(leftover_modes)
-                if leftover_modes
-                else result @ result.dual
-            )
+            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
         elif op_type is OperatorType.DM_LIKE:
             result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
