@@ -43,7 +43,6 @@ from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
-    RealVector,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock

@@ -19,7 +19,7 @@ This module contains the classes for the available representations.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -72,14 +72,16 @@ class Representation(ABC):
         Returns a representation from an ansatz.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data(self) -> tuple | Tensor:
         r"""
         The data of the representation.
         For now, it's the triple for Bargmann and the array for Fock.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def scalar(self) -> Scalar:
         r"""
         The scalar part of the representation.
@@ -590,7 +592,7 @@ class Fock(Representation):
         I.e. the vacuum component of the Fock object, whatever it may be.
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
-        return self.array.__getitem__((slice(None),) + (0,) * self.ansatz.num_vars)
+        return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
 
     def conj(self):
         r"""

@@ -358,8 +358,6 @@ class CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
         """
-        # initialize the ``Wires`` of the returned component
-        wires_ret, perm = self.wires @ other.wires
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
         idx_z = self.wires.bra.output[bra_modes].indices
