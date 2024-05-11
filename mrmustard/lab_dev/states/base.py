@@ -39,7 +39,12 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import (
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    RealVector,
+)
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
@@ -260,8 +265,7 @@ class State(CircuitComponent):
         The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
         rep = (self >> self.dual).representation
-        ret = rep.c if isinstance(rep, Bargmann) else rep.array
-        return math.atleast_1d(ret, math.float64)[0]
+        return math.sum(math.real(rep.scalar))
 
     @property
     def probability(self) -> float:
@@ -285,7 +289,7 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
         r"""
         The array that describes this state in the Fock representation.
 
@@ -302,7 +306,7 @@ class State(CircuitComponent):
         """
         return to_fock(self.representation, shape).array
 
-    def phase_space(self, s: float) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians each of cov, means, coeff are arranged in a batch.
         Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
@@ -315,7 +319,9 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+            raise ValueError(
+                f"Can not calculate phase space for ``{self.name}`` object."
+            )
 
         new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
@@ -326,8 +332,8 @@ class State(CircuitComponent):
 
     def visualize_2d(
         self,
-        xbounds: tuple[int] = (-6, 6),
-        pbounds: tuple[int] = (-6, 6),
+        xbounds: tuple[int, int] = (-6, 6),
+        pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
         return_fig: bool = False,
@@ -409,13 +415,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -510,10 +520,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -555,7 +569,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -593,19 +609,7 @@ class State(CircuitComponent):
                 kwargs[name + "_trainable"] = True
                 kwargs[name + "_bounds"] = param.bounds
 
-        # use `mro` to return the correct state
         return self.__class__(modes, **kwargs)
-
-    def quadrature(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        The A matrix, b vector and c scalar that describe this state in the quadrature basis for all modes.
-        """
-        if not isinstance(self.representation, Bargmann):
-            raise ValueError(
-                f"``{self.representation}`` is not available to calculate the quadrature representation."
-            )
-        ret = self >> BtoQMap(self.modes)
-        return ret.bargmann
 
 
 class DM(State):
@@ -727,9 +731,7 @@ class DM(State):
 
         rep = self.representation.trace(idx_ket, idx_bra)
 
-        if isinstance(rep, Bargmann):
-            return math.real(math.sum(rep.c, axes=[0]))
-        return math.real(math.sum(rep.array, axes=[0]))
+        return math.real(math.sum(rep.scalar))
 
     @property
     def purity(self) -> float:
@@ -776,8 +778,7 @@ class DM(State):
         else:
             result = (self @ operator) >> TraceOut(self.modes)
 
-        rep = result.representation
-        return rep.array if isinstance(rep, Fock) else rep.c
+        return result.representation.scalar
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -818,12 +819,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -928,9 +929,7 @@ class Ket(State):
     @property
     def probability(self) -> float:
         rep = (self >> self.dual).representation
-        if isinstance(rep, Bargmann):
-            return math.real(math.sum(rep.c, axes=[0]))
-        return math.real(math.sum(rep.array, axes=[0]))
+        return math.sum(math.real(rep.scalar))
 
     @property
     def purity(self) -> float:
@@ -975,7 +974,11 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+            result = (
+                result >> TraceOut(leftover_modes)
+                if leftover_modes
+                else result @ result.dual
+            )
         elif op_type is OperatorType.DM_LIKE:
             result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
@@ -983,8 +986,7 @@ class Ket(State):
         else:
             result = self @ operator @ self.dual
 
-        rep = result.representation
-        return rep.array if isinstance(rep, Fock) else rep.c
+        return result.representation.scalar
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""

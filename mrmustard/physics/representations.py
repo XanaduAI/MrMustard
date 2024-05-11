@@ -19,7 +19,7 @@ This module contains the classes for the available representations.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -70,6 +70,20 @@ class Representation(ABC):
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
+        """
+
+    @abstractproperty
+    def data(self) -> tuple | Tensor:
+        r"""
+        The data of the representation.
+        For now, it's the triple for Bargmann and the array for Fock.
+        """
+
+    @abstractproperty
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the representation.
+        For now it's ``c`` for Bargmann and the array for Fock.
         """
 
     def __eq__(self, other: Representation) -> bool:
@@ -277,6 +291,22 @@ class Bargmann(Representation):
         """
         return self.A, self.b, self.c
 
+    @property
+    def data(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The data of the representation.
+        """
+        return self.triple
+
+    @property
+    def scalar(self) -> Batch[ComplexTensor]:
+        r"""
+        The scalar part of the representation.
+        """
+        return self.c
+
     def conj(self):
         r"""
         The conjugate of this Bargmann object.
@@ -302,7 +332,9 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(
+                Abci, idx_z, idx_zconj, measure=-1.0
+            )
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -379,7 +411,9 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+        ax.imshow(
+            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
+        )
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -409,9 +443,9 @@ class Bargmann(Representation):
         """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
-            if i >= self.ansatz.dim:
+            if i >= self.ansatz.num_vars:
                 raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.num_vars}."
                 )
         new = self.__class__(self.A, self.b, self.c)
         new._contract_idxs = idx
@@ -439,7 +473,9 @@ class Bargmann(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            shape = [
+                settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)
+            ]
             for i, j in zip(idx_s, idx_o):
                 shape[i] = other.array.shape[1:][j]
 
@@ -505,8 +541,11 @@ class Fock(Representation):
 
     """
 
-    def __init__(self, array: Batch[Tensor], batched=False):
+    def __init__(
+        self, array: Batch[Tensor], batched=False, original_bargmann_data=None
+    ):
         self._contract_idxs: tuple[int, ...] = ()
+        self._original_bargmann_data = original_bargmann_data
 
         array = math.astensor(array)
         if not batched:
@@ -534,6 +573,33 @@ class Fock(Representation):
         """
         return self.ansatz.array
 
+    @property
+    def data(self) -> Batch[Tensor]:
+        r"""
+        The data of the representation.
+        """
+        return self.array
+
+    @property
+    def bargmann(self) -> tuple:
+        r"""
+        The data of the original Bargmann representation if it exists
+        """
+        if self._original_bargmann_data is None:
+            raise AttributeError(
+                "This Fock object does not have an original Bargmann representation."
+            )
+        return self._original_bargmann_data
+
+    @property
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the representation.
+        I.e. the vacuum component of the Fock object, whatever it may be.
+        Given that the first axis of the array is the batch axis, this is the first element of the array.
+        """
+        return self.array.__getitem__((slice(None),) + (0,)*self.ansatz.num_vars)
+
     def conj(self):
         r"""
         The conjugate of this Fock object.
@@ -550,7 +616,7 @@ class Fock(Representation):
         for i in idx:
             if i >= len(self.array.shape):
                 raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} with {self.ansatz.num_vars} variables."
                 )
         new = self.from_ansatz(self.ansatz)
         new._contract_idxs = idx
@@ -581,7 +647,9 @@ class Fock(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
+            shape = [
+                settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(other.ansatz.num_vars)
+            ]
             for i, j in zip(idx_s, idx_o):
                 shape[j] = self.array.shape[1:][i]
 
@@ -607,12 +675,14 @@ class Fock(Representation):
 
             new_shape_s = [n_batches_s]
             new_shape_s += [
-                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
+                shape[idx_s.index(i)] if i in idx_s else idx
+                for i, idx in enumerate(shape_s)
             ]
 
             new_shape_o = [n_batches_o]
             new_shape_o += [
-                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
+                shape[idx_o.index(i)] if i in idx_o else idx
+                for i, idx in enumerate(shape_o)
             ]
 
             return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
@@ -638,7 +708,11 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [
+                i + 1
+                for i in range(len(self.array.shape) - 1)
+                if i not in idxs1 + idxs2
+            ]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -697,6 +771,8 @@ class Fock(Representation):
 
         ret = self.array
         for i, s in enumerate(shape):
-            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            slc = (
+                (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
+            )
             ret = ret[slc]
         return Fock(array=ret, batched=True)
