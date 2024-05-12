@@ -404,9 +404,18 @@ class TestCircuitComponent:
         assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
     def test_to_fock_component_keeps_bargmann(self):
+        "tests that to_fock_component doesn't lose the bargmann representation"
         coh = Coherent([0], x=1.0)
         coh.to_fock_component(20)
         assert coh.bargmann == Coherent([0], x=1.0).bargmann
+
+    def test_fock_component_no_bargmann(self):
+        "tests that a fock component doesn't have a bargmann representation by default"
+        coh = Coherent([0], x=1.0)
+        CC = CircuitComponent._from_attributes("CC", [0, 1, 2], coh.representation, coh.wires)
+        with pytest.raises(AttributeError):
+            CC.bargmann  # pylint: disable=pointless-statement
+
 
 
 class TestAdjointView:
