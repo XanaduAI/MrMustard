@@ -417,7 +417,6 @@ class TestCircuitComponent:
             CC.bargmann  # pylint: disable=pointless-statement
 
 
-
 class TestAdjointView:
     r"""
     Tests ``AdjointView`` objects.
