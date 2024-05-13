@@ -260,23 +260,6 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
-    def bargmann(self) -> tuple[ComplexMatrix, ComplexVector, complex]:
-        r"""
-        The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
-
-        Returns:
-            The ``(A, b, c)`` triple that describes this state in the Bargmann representation.
-
-        Raises:
-            ValueError: If the triple cannot be calculated given the state's representation.
-        """
-        rep = self.representation
-        if isinstance(rep, Bargmann):
-            return rep.A, rep.b, rep.c
-        msg = f"Cannot compute triple from representation of type ``{rep.__class__.__name__}``."
-        raise ValueError(msg)
-
-    @property
     def _L2_norms(self) -> RealVector:
         r"""
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
