@@ -299,8 +299,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        cls = self.__class__
-        return cls._from_attributes(
+        return self.__class__._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -332,7 +331,7 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar on the right.
         """
-        return self._from_attributes(self.name, other * self.representation, self.wires)
+        return self._from_attributes(self.name, self.representation * other, self.wires)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -356,7 +355,7 @@ class CircuitComponent:
 
     def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
+        Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
