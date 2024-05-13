@@ -17,7 +17,6 @@
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
 
-* Fixed a mistage in the Rgate of lab_dev.
 
 ### Documentation
 
