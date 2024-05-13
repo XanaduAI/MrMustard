@@ -102,13 +102,12 @@ class Unitary(Transformation):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Unitary:
-        r"""Initialize a Unitary from the given Bargmann ``(A, b, c)`` triple."""
         A = math.astensor(triple[0])
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
         shape_check(A, b, 2 * len(modes), "Bargmann")
         s = set(modes)
-        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires({}, {}, s, s))
+        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires(set(), set(), s, s))
 
 
 class Channel(Transformation):

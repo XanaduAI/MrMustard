@@ -114,14 +114,14 @@ class TestWignerDiscretized:
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
         settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
         settings.DISCRETIZATION_METHOD = method0
-        settings._force_hbar(self.hbar0)
+        settings._hbar = self.hbar0
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
         r"""Tests DWF for cat states"""
         settings.DISCRETIZATION_METHOD = method
-        settings._force_hbar(hbar)
+        settings._hbar = hbar
 
         q_vec = np.linspace(-4, 4, 100)
         p_vec = np.linspace(-1.5, 1.5, 100)
@@ -145,7 +145,7 @@ class TestWignerDiscretized:
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
         settings.DISCRETIZATION_METHOD = method
-        settings._force_hbar(hbar)
+        settings._hbar = hbar
 
         # centering the intervals around alpha--away from the center,
         # the values are small and unstable.
@@ -168,7 +168,7 @@ class TestWignerDiscretized:
     def test_fock_state(self, n, hbar, method):
         r"""Tests DWF for fock states"""
         settings.DISCRETIZATION_METHOD = method
-        settings._force_hbar(hbar)
+        settings._hbar = hbar
 
         q_vec = np.linspace(-1, 1, 20)
         p_vec = np.linspace(-1, 1, 20)

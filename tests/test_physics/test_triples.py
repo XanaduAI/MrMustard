@@ -311,7 +311,6 @@ class TestTriples:
         A1, b1, c1 = triples.displacement_map_s_parametrized_Abc(s=0, n_modes=1)
         A1_correct = np.array([[0, -0.5, -1, 0], [-0.5, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A1, A1_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
-        print(b1.shape)
         assert math.allclose(b1, np.zeros(4))
         assert math.allclose(c1, 1)
 
