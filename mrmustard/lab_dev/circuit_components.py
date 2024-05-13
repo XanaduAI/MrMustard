@@ -157,9 +157,9 @@ class CircuitComponent:
         r"""
         The quadrature representation of this circuit component.
         """
-        from mrmustard.lab_dev.circuit_components_utils import (
+        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
             BtoQMap,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
         kets_done = (
             BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
