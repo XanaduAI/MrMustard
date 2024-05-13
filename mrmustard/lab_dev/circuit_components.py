@@ -282,8 +282,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        cls = self.__class__
-        return cls._from_attributes(
+        return self.__class__._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -315,7 +314,7 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar on the right.
         """
-        return self._from_attributes(self.name, other * self.representation, self.wires)
+        return self._from_attributes(self.name, self.representation * other, self.wires)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -337,13 +336,10 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
+        Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
-        # initialized the ``Wires`` of the returned component
-        wires_ret, perm = self.wires @ other.wires
-
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
         idx_z = self.wires.bra.output[bra_modes].indices
@@ -354,10 +350,15 @@ class CircuitComponent:
         idx_z += self.wires.ket.output[ket_modes].indices
         idx_zconj += other.wires.ket.input[ket_modes].indices
 
-        # calculate the representation of the returned component
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
+        return idx_z, idx_zconj
 
-        # reorder the representation
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other``, without adding adjoints.
+        """
+        wires_ret, perm = self.wires @ other.wires
+        idx_z, idx_zconj = self._matmul_indices(other)
+        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
         representation_ret = representation_ret.reorder(perm) if perm else representation_ret
         return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
 

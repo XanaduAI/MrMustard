@@ -320,6 +320,20 @@ class TestKet:
         assert isinstance(si.phi, Constant)
         assert si.phi.value == s.phi.value
 
+    def test_private_batched_properties(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        assert np.allclose(cat._purities, np.ones(2))
+        assert np.allclose(cat._probabilities, np.ones(2))
+        assert np.allclose(cat._L2_norms, np.ones(2))
+
+    def test_unsafe_batch_zipping(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
+        settings.UNSAFE_ZIP_BATCH = True
+        better_cat = cat >> displacements
+        settings.UNSAFE_ZIP_BATCH = False
+        assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
+
 
 class TestDM:
     r"""
@@ -399,6 +413,10 @@ class TestDM:
         assert math.allclose(Atest2[0], A0)
         assert math.allclose(btest2[0], b0)
         assert math.allclose(ctest2[0], c0)
+
+    def test_L2_norms(self):
+        state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
+        assert len(state._L2_norms) == 2
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
@@ -601,6 +619,19 @@ class TestCoherent:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+    def test_linear_combinations(self):
+        state1 = Coherent([0], x=1, y=2)
+        state2 = Coherent([0], x=2, y=3)
+        state3 = Coherent([0], x=3, y=4)
+
+        lc = state1 + state2 - state3
+        assert lc.representation.ansatz.batch_size == 3
+
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 9
+        settings.UNSAFE_ZIP_BATCH = True
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
+        settings.UNSAFE_ZIP_BATCH = False
 
 
 class TestDisplacedSqueezed:

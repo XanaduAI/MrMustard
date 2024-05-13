@@ -72,6 +72,14 @@ class TestUnitary:
         assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
         assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
 
+    def test_init_from_bargmann(self):
+        A = np.array([[0, 1], [1, 0]])
+        b = np.array([0, 0])
+        c = 1
+        gate = Unitary.from_bargmann([2], (A, b, c), "my_unitary")
+        assert np.allclose(gate.representation.A[None, ...], A)
+        assert np.allclose(gate.representation.b[None, ...], b)
+
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
         should_be_identity = gate >> gate.inverse()
@@ -96,6 +104,14 @@ class TestChannel:
             modes_out_ket=modes,
             modes_in_ket=modes,
         )
+
+    def test_init_from_bargmann(self):
+        A = np.arange(16).reshape(4, 4)
+        b = np.array([0, 1, 2, 3])
+        c = 1
+        channel = Channel.from_bargmann([0], (A, b, c), "my_unitary")
+        assert np.allclose(channel.representation.A[None, ...], A)
+        assert np.allclose(channel.representation.b[None, ...], b)
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)

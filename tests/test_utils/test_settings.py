@@ -17,36 +17,10 @@ Tests for the Settings class.
 """
 
 from mrmustard import math
-from mrmustard.utils.settings import Settings, ImmutableSetting
+from mrmustard.utils.settings import Settings
 import pytest
 
 from ..conftest import skip_np
-
-
-class TestImmutableSettings:
-    """Tests the ImmutableSettings class"""
-
-    def test_init(self):
-        """Tests the default values of the immutable settings"""
-        s = ImmutableSetting("foo", "bar")
-        assert s.value == "foo"
-        assert s.name == "bar"
-
-    def test_setting_becomes_immutable(self):
-        """Tests that immutable settings become immutable"""
-        s = ImmutableSetting(1, "my_name")
-
-        s.value = 2
-        assert s.value == 2
-
-        with pytest.raises(ValueError, match=f"value of `settings.{s.name}`"):
-            s.value = 3
-
-    def test_can_set_same_value(self):
-        """Tests that the same value won't trigger an error"""
-        s = ImmutableSetting(1, "something")
-        s.value = 4
-        s.value = 4  # doesn't raise error
 
 
 class TestSettings:
@@ -70,7 +44,7 @@ class TestSettings:
         assert settings.HOMODYNE_SQUEEZING == 10.0
         assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
-        assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
+        assert settings.BS_FOCK_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
     def test_setters(self):
         settings = Settings()
@@ -85,10 +59,10 @@ class TestSettings:
         assert settings.DEBUG is True
         settings.DEBUG = db0
 
-        dbsm0 = settings.DEFAULT_BS_METHOD
-        settings.DEFAULT_BS_METHOD = "schwinger"
-        assert settings.DEFAULT_BS_METHOD == "schwinger"
-        settings.DEFAULT_BS_METHOD = dbsm0
+        dbsm0 = settings.BS_FOCK_METHOD
+        settings.BS_FOCK_METHOD = "schwinger"
+        assert settings.BS_FOCK_METHOD == "schwinger"
+        settings.BS_FOCK_METHOD = dbsm0
 
         eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
         settings.EQ_TRANSFORMATION_CUTOFF = 2
