@@ -9,7 +9,6 @@
 ### Breaking changes
 
 ### Improvements
-* Added the Igate to lab_dev
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
