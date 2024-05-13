@@ -728,7 +728,7 @@ class TestSauron:
     def test_overlap_with_fock(self):
         n1 = Number([0], n=1)
         s1 = Sauron([0], n=1, r=0.1)
-        s1b = Sauron([0], n=2, r=0.5)
+        s1b = Sauron([0], n=1, r=0.5)
         assert s1.expectation(n1) > s1b.expectation(n1)  # s1 is a better approx to n1 than s1b
 
         n2 = Number([0], n=2)
