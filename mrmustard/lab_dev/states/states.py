@@ -319,11 +319,13 @@ class Vacuum(Ket):
 
 
 class Sauron(Ket):
-    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using a ring
-    of `n+1` coherent states. The reference to the Lord of the Rings comes from the approximation
-    becoming perfect in the limit for the radius of the ring going to zero where vacuum (= darkness) is.
+    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using
+    a ring of `n+1` coherent states. The reference to the Lord of the Rings comes from
+    the approximation becoming perfect in the limit for the radius of the ring going
+    to zero where vacuum (= darkness) is.
 
-    The formula for the Sauron state is given by [CHECK!]
+    The formula for the Sauron state as a superposition of coherent states on a ring
+    is given in https://arxiv.org/abs/2305.17099:
 
     .. math::
         |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |r e^{2\pi k/(n+1)}\rangle_c,
