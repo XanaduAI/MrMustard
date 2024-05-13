@@ -33,6 +33,7 @@ We provide the real gaussian integral as well to support the inner product in th
 where `n` is how many real variables in :math:`\vec{x}`.
 
 """
+
 from typing import Sequence, Tuple
 import numpy as np
 from mrmustard import math
@@ -149,7 +150,10 @@ def complex_gaussian_integral(
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
 
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
+    c_post = (
+        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+    )
+
     if math.asnumpy(not_idx).shape != (0,):
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
         R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
@@ -157,12 +161,8 @@ def complex_gaussian_integral(
         A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
         b_post = bR - math.matvec(D, math.solve(M, bM))
     else:
-        A_post = math.astensor([])
-        b_post = math.astensor([])
-
-    c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
+        A_post = math.zeros((0, 0), dtype=A.dtype)
+        b_post = math.zeros((0,), dtype=b.dtype)
 
     return A_post, b_post, c_post
 

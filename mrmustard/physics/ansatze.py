@@ -420,19 +420,19 @@ class PolyExpAnsatz(PolyExpBase):
 
 class ArrayAnsatz(Ansatz):
     r"""
-    The ansatz of the Fock-Bargmann representation.
+      The ansatz of the Fock-Bargmann representation.
 
-    Represents the ansatz as a multidimensional array.
+      Represents the ansatz as a multidimensional array.
 
-    Args:
-        array: A batched array.
+      Args:
+          array: A batched array.
 
-    .. code-block ::
+    code-block ::
 
-        >>> from mrmustard.physics.ansatze import ArrayAnsatz
+          >>> from mrmustard.physics.ansatze import ArrayAnsatz
 
-        >>> array = np.random.random((2, 4, 5))
-        >>> ansatz = ArrayAnsatz(array)
+          >>> array = np.random.random((2, 4, 5))
+          >>> ansatz = ArrayAnsatz(array)
     """
 
     def __init__(self, array: Batch[Tensor]):
