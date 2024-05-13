@@ -9,12 +9,15 @@
 ### Breaking changes
 
 ### Improvements
+* Added the Igate to lab_dev
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
+* Fixed a mistage in the Rgate of lab_dev.
 
 ### Documentation
 
@@ -25,7 +28,7 @@
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
-
+[Kasper Nielsen](https://github.com/kaspernielsen96)
 
 ---
 
