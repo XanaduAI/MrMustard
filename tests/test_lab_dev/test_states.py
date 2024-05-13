@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
     SqueezedVacuum,
     Thermal,
     Vacuum,
+    Sauron,
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
@@ -717,6 +718,21 @@ class TestNumber:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+class TestSauron:
+    r"""
+    Tests the Sauron states.
+    """
+
+    def test_overlap_with_fock(self):
+        n1 = Number([0], n=1)
+        s1 = Sauron([0], n=1, r=0.1)
+        s1b = Sauron([0], n=2, r=0.5)
+        assert s1.expectation(n1) > s1b.expectation(n1)  # s1 is a better approx to n1 than s1b
+
+        n2 = Number([0], n=2)
+        s2 = Sauron([0], n=2, r=0.1)
+        assert np.isclose(s2.expectation(n2), 1.0)
 
 
 class TestSqueezedVacuum:

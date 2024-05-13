@@ -788,7 +788,7 @@ class DM(State):
         else:
             result = (self @ operator) >> TraceOut(self.modes)
 
-        return result.representation.scalar
+        return math.atleast_1d(math.sum(result.representation.scalar))
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -1004,7 +1004,7 @@ class Ket(State):
         else:
             result = self @ operator @ self.dual
 
-        return result.representation.scalar
+        return math.atleast_1d(math.sum(result.representation.scalar))
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""

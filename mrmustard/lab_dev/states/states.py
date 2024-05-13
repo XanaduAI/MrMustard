@@ -20,8 +20,8 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
+import numpy as np
 from typing import Optional, Sequence, Tuple, Union
-
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.fock import fock_state
@@ -29,7 +29,7 @@ from mrmustard.physics import triples
 from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum"]
+__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum", "Sauron"]
 
 
 #  ~~~~~~~~~~~
@@ -309,6 +309,31 @@ class Vacuum(Ket):
         n_modes = len(self.modes)
         return Bargmann(*triples.vacuum_state_Abc(n_modes))
 
+
+class Sauron(Ket):
+    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using a ring
+    of `n+1` coherent states. The reference to the Lord of the Rings comes from the approximation
+    becoming perfect in the limit for the radius of the ring going to zero where vacuum (= darkness) is.
+
+    The formula for the Sauron state is given by [CHECK!]
+
+    .. math::
+        |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |r e^{2\pi k/(n+1)}\rangle_c,
+
+    Args:
+        modes (Sequence[int]): The modes of the Sauron state.
+        n (int): The Fock state that is approximated.
+        r (float): The radius of the ring of coherent states, default is 0.1.
+    """
+    def __init__(self, modes, n = 0, r = 0.1):
+        phases = np.linspace(0, 2*np.pi * (1-1/(n+1)), n+1)
+        cs = np.exp(1j*phases)
+        bs = (r * cs)[...,None]
+        As = np.zeros([n+1,1,1], dtype='complex128')
+        super().__init__(f"Sauron-{n}", modes=modes)
+        R = Bargmann(As, bs, cs)
+        norm = np.sum((R.conj()[0] @ R[0]).c)
+        self._representation = Bargmann(As, bs, cs/np.sqrt(norm))
 
 #  ~~~~~~~~~~~~
 #  Mixed States
