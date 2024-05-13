@@ -39,7 +39,12 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import (
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    RealVector,
+)
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
@@ -255,13 +260,22 @@ class State(CircuitComponent):
         raise NotImplementedError
 
     @property
+    def _L2_norms(self) -> RealVector:
+        r"""
+        The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
+        """
+        settings.UNSAFE_ZIP_BATCH = True
+        rep = (self >> self.dual).representation
+        settings.UNSAFE_ZIP_BATCH = False
+        return math.real(rep.c if isinstance(rep, Bargmann) else rep.array)
+
+    @property
     def L2_norm(self) -> float:
         r"""
-        The `L2` norm of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
         rep = (self >> self.dual).representation
-        ret = rep.c if isinstance(rep, Bargmann) else rep.array
-        return math.atleast_1d(ret, math.float64)[0]
+        return math.sum(math.real(rep.c if isinstance(rep, Bargmann) else rep.array), axes=[0])
 
     @property
     def probability(self) -> float:
@@ -359,14 +373,14 @@ class State(CircuitComponent):
         Raises:
             ValueError: If this state is a multi-mode state.
         """
-        if self.n_modes != 1:
+        if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
         state = self.to_fock_component(settings.AUTOCUTOFF_MAX_CUTOFF)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
-        x, prob_x = quadrature_distribution(dm)
+        x, prob_x = quadrature_distribution(dm)  # TODO: replace with new MM methods
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
 
         mask_x = math.asnumpy([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])
@@ -721,19 +735,31 @@ class DM(State):
         return ret
 
     @property
-    def probability(self) -> float:
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise probabilities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states."""
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
-
         rep = self.representation.trace(idx_ket, idx_bra)
-
         if isinstance(rep, Bargmann):
-            return math.real(math.sum(rep.c, axes=[0]))
-        return math.real(math.sum(rep.array, axes=[0]))
+            return math.real(rep.c)
+        return math.real(rep.array)
+
+    @property
+    def probability(self) -> float:
+        r"""Probability of this DM, using the batch dimension of the Ansatz
+        as a convex combination of states."""
+        return math.sum(self._probabilities)
+
+    @property
+    def _purities(self) -> RealVector:
+        r"""Element-wise purities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states."""
+        return self._L2_norms / self._probabilities
 
     @property
     def purity(self) -> float:
-        return (self / self.probability).L2_norm
+        return self.L2_norm
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -926,11 +952,21 @@ class Ket(State):
         return ret
 
     @property
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise probabilities along the batch dimension of this Ket.
+        Useful for cases where the batch dimension does not mean a linear combination of states."""
+        return self._L2_norms
+
+    @property
     def probability(self) -> float:
-        rep = (self >> self.dual).representation
-        if isinstance(rep, Bargmann):
-            return math.real(math.sum(rep.c, axes=[0]))
-        return math.real(math.sum(rep.array, axes=[0]))
+        r"""Probability of this state, where the batch dimension of the Ansatz
+        means a linear combination of states."""
+        return self.L2_norm
+
+    @property
+    def _purities(self) -> float:
+        r"""Purity of each state in the batch."""
+        return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
     @property
     def purity(self) -> float:
