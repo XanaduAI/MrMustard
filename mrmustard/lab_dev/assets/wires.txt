@@ -143,30 +143,30 @@
   <h1>Wires</h1>
   <div class="container-wires">
     <div class="in">
-      <div class="ket">
-        <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
-        <p class="text-wires type" style="color: ${color_ik}">in ket</p>
-        <p class="text-wires modes">${modes_ik}</p>
-      </div>
       <div class="bra">
         <div class="line" style="background-color: ${color_ib}; height: ${height_line_ib}"></div>
         <p class="text-wires type" style="color: ${color_ib}">in bra</p>
         <p class="text-wires modes">${modes_ib}</p>
+      </div>
+      <div class="ket">
+        <div class="line" style="background-color: ${color_ik}; height: ${height_line_ik}"></div>
+        <p class="text-wires type" style="color: ${color_ik}">in ket</p>
+        <p class="text-wires modes">${modes_ik}</p>
       </div>
     </div>
 
     <div class="square"></div>
 
     <div class="out">
-      <div class="ket">
-        <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
-        <p class="text-wires type" style="color: ${color_ok}">out ket</p>
-        <p class="text-wires modes">${modes_ok}</p>
-      </div>
       <div class="bra">
         <div class="line" style="background-color: ${color_ob}; height: ${height_line_ob}"></div>
         <p class="text-wires type" style="color: ${color_ob}">out bra</p>
         <p class="text-wires modes">${modes_ob}</p>
+      </div>
+      <div class="ket">
+        <div class="line" style="background-color: ${color_ok}; height: ${height_line_ok}"></div>
+        <p class="text-wires type" style="color: ${color_ok}">out ket</p>
+        <p class="text-wires modes">${modes_ok}</p>
       </div>
     </div>
   </div>
