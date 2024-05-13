@@ -719,6 +719,7 @@ class TestNumber:
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
+
 class TestSauron:
     r"""
     Tests the Sauron states.

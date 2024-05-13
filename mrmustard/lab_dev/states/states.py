@@ -29,7 +29,15 @@ from mrmustard.physics import triples
 from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum", "Sauron"]
+__all__ = [
+    "Coherent",
+    "DisplacedSqueezed",
+    "Number",
+    "SqueezedVacuum",
+    "Thermal",
+    "Vacuum",
+    "Sauron",
+]
 
 
 #  ~~~~~~~~~~~
@@ -325,15 +333,17 @@ class Sauron(Ket):
         n (int): The Fock state that is approximated.
         r (float): The radius of the ring of coherent states, default is 0.1.
     """
-    def __init__(self, modes, n = 0, r = 0.1):
-        phases = np.linspace(0, 2*np.pi * (1-1/(n+1)), n+1)
-        cs = np.exp(1j*phases)
-        bs = (r * cs)[...,None]
-        As = np.zeros([n+1,1,1], dtype='complex128')
+
+    def __init__(self, modes, n=0, r=0.1):
+        phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
+        cs = np.exp(1j * phases)
+        bs = (r * cs)[..., None]
+        As = np.zeros([n + 1, 1, 1], dtype="complex128")
         super().__init__(f"Sauron-{n}", modes=modes)
         R = Bargmann(As, bs, cs)
         norm = np.sum((R.conj()[0] @ R[0]).c)
-        self._representation = Bargmann(As, bs, cs/np.sqrt(norm))
+        self._representation = Bargmann(As, bs, cs / np.sqrt(norm))
+
 
 #  ~~~~~~~~~~~~
 #  Mixed States
