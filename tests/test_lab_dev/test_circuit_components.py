@@ -359,12 +359,7 @@ class TestCircuitComponent:
         r3 = vac12 >> d1.to_fock() >> d2 >> a1 >> n12
 
         # fock only
-        r4 = (
-            vac12.to_fock()
-            >> d12.to_fock()
-            >> a1.to_fock()
-            >> n12.to_fock()
-        )
+        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
 
         assert math.allclose(r1.representation.array, r2.representation.array)
         assert math.allclose(r1.representation.array, r3.representation.array)
