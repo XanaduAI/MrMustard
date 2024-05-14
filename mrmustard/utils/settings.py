@@ -182,10 +182,12 @@ class Settings:
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             old_run = subprocess.run
             old_stdout = sys.stdout
+
             def new_run(*args, **kwargs):
                 if kwargs.get("capture_output") is not True and "stderr" not in kwargs:
                     kwargs["stderr"] = subprocess.DEVNULL
                 return old_run(*args, **kwargs)  # pylint:disable=subprocess-run-check
+
             subprocess.run = new_run
             sys.stdout = StringIO()
             try:
