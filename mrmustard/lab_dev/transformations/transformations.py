@@ -99,12 +99,16 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(modes=modes, name="BSgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds)
+        )
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(*triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value))
+        return Bargmann(
+            *triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value)
+        )
 
 
 class Dgate(Unitary):
@@ -205,13 +209,15 @@ class Rgate(Unitary):
         theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
         super().__init__(modes=modes, name="Rgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds)
+        )
 
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
-        return Bargmann(*triples.squeezing_gate_Abc(thetas))
+        return Bargmann(*triples.rotation_gate_Abc(thetas))
 
 
 class Sgate(Unitary):
