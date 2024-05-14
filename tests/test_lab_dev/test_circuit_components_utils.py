@@ -68,9 +68,9 @@ class TestTraceOut:
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        state = Coherent([0, 1, 2], x=1).to_fock_component()
-        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock_component().dm()
-        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock_component().dm()
+        state = Coherent([0, 1, 2], x=1).to_fock()
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock().dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
 
         no_state = state >> TraceOut([0, 1, 2])
         assert no_state.modes == []

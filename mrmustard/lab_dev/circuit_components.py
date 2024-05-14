@@ -274,7 +274,7 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock_component(  # TODO: rename to to_fock
+    def to_fock(
         self, shape: Optional[Union[int, Iterable[int]]] = None
     ) -> CircuitComponent:
         r"""
@@ -290,7 +290,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock_component(shape=3)
+            >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
