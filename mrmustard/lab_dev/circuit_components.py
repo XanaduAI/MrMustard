@@ -157,10 +157,12 @@ class CircuitComponent:
         r"""
         The quadrature representation of this circuit component.
         """
-        from mrmustard.lab_dev.circuit_components_utils import (
+        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
             BtoQMap,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
+        # The representation change from Bargmann into quadrature is to use the BtoQMap.
+        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual on in_bra wires.
         kets_done = (
             BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
         )
@@ -272,9 +274,7 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock_component(  # TODO: rename to to_fock
-        self, shape: Optional[Union[int, Iterable[int]]] = None
-    ) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -288,7 +288,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock_component(shape=3)
+            >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires

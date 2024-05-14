@@ -84,7 +84,7 @@ test:
 
 coverage:
 	@echo "Generating coverage report for Mr Mustard..."
-	$(PYTHON) $(TESTRUNNER) $(COVERAGE)
+	$(PYTHON3) $(TESTRUNNER) $(COVERAGE)
 
 clean-coverage:
 	rm -rf coverage_html_report

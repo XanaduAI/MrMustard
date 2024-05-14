@@ -20,7 +20,7 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Union, Optional, Sequence
+from typing import Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
