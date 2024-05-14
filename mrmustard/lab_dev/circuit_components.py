@@ -22,7 +22,12 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 
+import os
 import numpy as np
+
+from IPython.display import display, HTML
+from mako.template import Template
+
 from ..utils.typing import Scalar
 from ..physics.converters import to_fock
 from ..physics.representations import Representation, Bargmann, Fock
@@ -395,6 +400,25 @@ class CircuitComponent:
 
     def __repr__(self) -> str:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
+
+    def _repr_html_(self):  # pragma: no cover
+        temp = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
+
+        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
+        wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
+        wires_temp_uni = (
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        )
+
+        rep_temp = (
+            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
+            if isinstance(self.representation, Fock)
+            else Template(filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt")
+        )
+        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+
+        display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
 class CCView(CircuitComponent):
