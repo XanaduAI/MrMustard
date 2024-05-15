@@ -20,7 +20,11 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
+from mrmustard.physics.triples import (
+    identity_Abc,
+    displacement_map_s_parametrized_Abc,
+    complex_fourier_transform_Abc,
+)
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
@@ -30,7 +34,7 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc_real,
 )
 from mrmustard.physics.representations import Bargmann
-from mrmustard.lab_dev.circuit_components_utils import TraceOut, DsMap, BtoQMap
+from mrmustard.lab_dev.circuit_components_utils import TraceOut, DsMap, BtoQMap, CftMap
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
 
@@ -237,3 +241,31 @@ class TestBtoQMap:
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
+
+
+class TestCftMap:
+    r"""
+    Tests for the ``CftMap`` class.
+    """
+
+    def test_cftmap_contraction_with_state(self):
+        # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
+        state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
+        state_means = np.array([0.4, 0.6])
+        A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
+        state = DM.from_bargmann(modes=[0], triple=(A, b, c))
+        state_bargmann_triple = (A, b, c)
+
+        # get new triple by right shift
+        state_after = state >> CftMap(modes=[0])
+        A1, b1, c1 = state_after.bargmann_triple
+
+        # get new triple by contraction
+        Cft_bargmann_triple = complex_fourier_transform_Abc(n_modes=1)
+        A2, b2, c2 = contract_two_Abc(
+            state_bargmann_triple, Cft_bargmann_triple, idx1=[0, 1], idx2=[2, 3]
+        )
+
+        assert math.allclose(A1[0], A2)
+        assert math.allclose(b1[0], b2)
+        assert math.allclose(c1[0], c2)

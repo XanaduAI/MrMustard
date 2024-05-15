@@ -558,6 +558,50 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     return math.astensor(A), b, c
 
 
+def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of the complex fourier transform between two pairs of complex variables.
+
+    Given a function :math:`f(z^*, z)`, the complex fourier transform is defined as
+    :math:
+        \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
+
+    The indices of this triple correspond to the variables :math:`(y^*, z^*, y, z)`.
+
+    Args:
+        n_modes: the number of modes for this map.
+
+    Returns:
+        The ``(A, b, c)`` triple of the complex fourier transform.
+    """
+    O2n = math.zeros((2 * n_modes, 2 * n_modes))
+    Omega = math.J(n_modes)
+    A = math.block([[O2n, Omega], [-Omega, O2n]])
+    order_list = np.arange(4 * n_modes)  # [0,2,1,3]
+    order_list = list(
+        np.concatenate(
+            (
+                np.concatenate(
+                    (
+                        np.concatenate(
+                            (order_list[:n_modes], order_list[2 * n_modes : 3 * n_modes]), axis=0
+                        ),
+                        order_list[n_modes : 2 * n_modes],
+                    ),
+                    axis=0,
+                ),
+                order_list[3 * n_modes :],
+            ),
+            axis=0,
+        )
+    )
+
+    A = A[order_list, :][:, order_list]
+    b = _vacuum_B_vector(4 * n_modes)
+    c = 1.0 + 0j
+    return A, b, c
+
+
 # ~~~~~~~~~~~~~~~~
 # Kraus operators
 # ~~~~~~~~~~~~~~~~
