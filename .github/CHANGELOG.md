@@ -18,6 +18,7 @@
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
 
+
 ### Documentation
 
 ### Tests
@@ -27,6 +28,7 @@
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
+[Kasper Nielsen](https://github.com/kaspernielsen96)
 [Matthew Silverman](https://github.com/timmysilv)
 
 
