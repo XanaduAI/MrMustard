@@ -23,6 +23,8 @@ A base class for the components of quantum circuits.
 Together, wires and representation uniquely define individual components, as well as their
 interaction with other components.
 
+Before going into the example, if you are not familiar with the definition of :mod:`~mrmustard.lab_dev.wires` and :mod:`~mrmustard.physics.representations`, please click the link.
+
 This example shows how to define components with the same wires and representations as popular
 states and gates.
 
