@@ -23,7 +23,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Optional, Sequence, Union
 
-from mrmustard import math
+from mrmustard import math, settings
 from .circuit_components import CircuitComponent
 from mrmustard.lab_dev.opt_contraction import optimal_path, Info
 
@@ -403,7 +403,7 @@ class Circuit:
             if not comp.wires.output:
                 cc_name = f"|{cc_name})="
 
-            if comp.parameter_set.names:
+            if comp.parameter_set.names and settings.CIRCUIT_DRAW_PARAMS:
                 values = []
                 for name in comp.parameter_set.names:
                     param = comp.parameter_set.constants.get(

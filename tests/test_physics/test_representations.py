@@ -20,7 +20,10 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
-from mrmustard.physics.gaussian_integrals import contract_two_Abc, complex_gaussian_integral
+from mrmustard.physics.gaussian_integrals import (
+    contract_two_Abc,
+    complex_gaussian_integral,
+)
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
 
@@ -228,6 +231,12 @@ class TestFockRepresentation:
         fock1 = Fock(self.array5578)
         fock2 = Fock.from_ansatz(fock1.ansatz)
         assert fock1 == fock2
+
+    def test_sum_batch(self):
+        fock = Fock(self.array2578, batched=True)
+        fock_collapsed = fock.sum_batch()[0]
+        assert fock_collapsed.array.shape == (1, 5, 7, 8)
+        assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
 
     def test_and(self):
         fock1 = Fock(self.array1578, batched=True)
