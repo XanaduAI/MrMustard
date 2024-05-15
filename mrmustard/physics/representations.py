@@ -338,9 +338,7 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(
-                Abci, idx_z, idx_zconj, measure=-1.0
-            )
+            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -417,9 +415,7 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(
-            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
-        )
+        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -479,9 +475,7 @@ class Bargmann(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [
-                settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)
-            ]
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)]
             for i, j in zip(idx_s, idx_o):
                 shape[i] = other.array.shape[1:][j]
 
@@ -505,9 +499,7 @@ class Bargmann(Representation):
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(
-                        contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
-                    )
+                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -563,9 +555,7 @@ class Fock(Representation):
 
     """
 
-    def __init__(
-        self, array: Batch[Tensor], batched=False, original_bargmann_data=None
-    ):
+    def __init__(self, array: Batch[Tensor], batched=False, original_bargmann_data=None):
         self._contract_idxs: tuple[int, ...] = ()
         self._original_bargmann_data = original_bargmann_data
 
@@ -669,9 +659,7 @@ class Fock(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [
-                settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(other.ansatz.num_vars)
-            ]
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(other.ansatz.num_vars)]
             for i, j in zip(idx_s, idx_o):
                 shape[j] = self.array.shape[1:][i]
 
@@ -697,14 +685,12 @@ class Fock(Representation):
 
             new_shape_s = [n_batches_s]
             new_shape_s += [
-                shape[idx_s.index(i)] if i in idx_s else idx
-                for i, idx in enumerate(shape_s)
+                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
             ]
 
             new_shape_o = [n_batches_o]
             new_shape_o += [
-                shape[idx_o.index(i)] if i in idx_o else idx
-                for i, idx in enumerate(shape_o)
+                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
             ]
 
             return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
@@ -730,11 +716,7 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [
-                i + 1
-                for i in range(len(self.array.shape) - 1)
-                if i not in idxs1 + idxs2
-            ]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -793,9 +775,7 @@ class Fock(Representation):
 
         ret = self.array
         for i, s in enumerate(shape):
-            slc = (
-                (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
-            )
+            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
             ret = ret[slc]
         return Fock(array=ret, batched=True)
 
@@ -810,6 +790,4 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(
-            ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0))
-        )
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))

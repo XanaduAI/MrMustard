@@ -77,12 +77,7 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if (
-            ob != modes_out_bra
-            or ib != modes_in_bra
-            or ok != modes_out_ket
-            or ik != modes_in_ket
-        ):
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -173,9 +168,7 @@ class CircuitComponent:
         # The representation change from Bargmann into quadrature is to use the BtoQMap.
         # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual on in_bra wires.
         kets_done = (
-            BtoQMap(self.wires.input.ket.modes).dual
-            @ self
-            @ BtoQMap(self.wires.output.ket.modes)
+            BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
         )
         all_done = (
             BtoQMap(self.wires.input.bra.modes).adjoint.dual
@@ -285,9 +278,7 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(
-        self, shape: Optional[Union[int, Iterable[int]]] = None
-    ) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -366,9 +357,7 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(
-        self, other: CircuitComponent
-    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -434,9 +423,7 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         )
 
         rep_temp = (
@@ -447,11 +434,7 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = (
-            rep_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
-        )
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
 
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
