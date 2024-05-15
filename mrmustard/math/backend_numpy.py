@@ -461,16 +461,14 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             G = vanilla(tuple(shape), A, B, C)
         else:  # julia (with precision_bits = 512)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             A, B, C = (
                 np.array(A).astype(np.complex128),
                 np.array(B).astype(np.complex128),
                 np.array(C).astype(np.complex128),
             )
-            G = Main_julia.Vanilla.vanilla(
-                A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
-            )
+            G = jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
 
         return G
 
