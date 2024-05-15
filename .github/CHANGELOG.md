@@ -9,12 +9,15 @@
 ### Breaking changes
 
 ### Improvements
+* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
+  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
 
 ### Documentation
 
@@ -25,6 +28,8 @@
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
+[Kasper Nielsen](https://github.com/kaspernielsen96)
+[Matthew Silverman](https://github.com/timmysilv)
 
 
 ---
