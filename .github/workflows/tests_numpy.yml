@@ -34,7 +34,6 @@ jobs:
           pip install --no-cache-dir poetry==1.8.0
           poetry config virtualenvs.create false
           poetry install --extras "ray" --with dev
-          julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
         run: python -m pytest tests --backend=numpy -p no:warnings --tb=native
