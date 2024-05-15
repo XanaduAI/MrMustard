@@ -25,6 +25,7 @@ from typing import Optional, Sequence, Union
 
 from mrmustard import math
 from .circuit_components import CircuitComponent
+from mrmustard.lab_dev.opt_contraction import optimal_path, Info
 
 __all__ = ["Circuit"]
 
@@ -75,6 +76,40 @@ class Circuit:
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
+
+    def autopath(self, n_init: int = 100) -> None:
+        r"""
+        Automatically generates a path for this circuit.
+
+        The path is generated using the ``make_path`` method with the ``l2r`` strategy.
+        """
+        self.make_path()
+        _graph = {k: v for k, v in self._graph.items()}
+        # symmetrize the dict
+        for key, val in self._graph.items():
+            if val not in _graph:
+                _graph[val] = key
+
+        # now we have the initial _graph with the ids of the connected pairs
+        lookup = {id: i for i, cc in enumerate(self.components) for id in cc.wires.ids}
+        datadict = {}
+        fake_fock_index = len(self.components) + 1
+        for i, c in enumerate(self.components):
+            t = c.representation.__class__.__qualname__[0]
+            ids = []
+            for id in c.wires.ids:
+                if lookup[_graph[id]] > i:
+                    if id in _graph:
+                        ids.append(lookup[_graph[id]])
+                    else:  # it's a dangling wire
+                        ids.append("F", (fake_fock_index,))
+                        fake_fock_index += 1
+            datadict[i] = Info(t, tuple(ids))
+        print(datadict)
+
+        cost, sol = optimal_path(datadict, n_init)
+        print(sol)
+        self.path = (pair for (cost, pair) in sol)
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -265,18 +300,24 @@ class Circuit:
         # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
+            ids_dangling_wires = {
+                m: {"ket": None, "bra": None} for w in wires for m in w.modes
+            }
 
             # populate the graph
             for w in wires:
                 # if there is a dangling wire, add a contraction
                 for m in w.input.ket.modes:  # ket side
                     if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[
+                            0
+                        ]
                         ids_dangling_wires[m]["ket"] = None
                 for m in w.input.bra.modes:  # bra side
                     if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[
+                            0
+                        ]
                         ids_dangling_wires[m]["bra"] = None
 
                 # update the dangling wires
@@ -372,7 +413,9 @@ class Circuit:
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(
-                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
+                        new_values.numpy()
+                        if math.backend.name == "tensorflow"
+                        else new_values
                     )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             # some components have an empty parameter set
@@ -477,7 +520,9 @@ class Circuit:
 
         # every chunk starts with a recap of the modes
         chunk_start = [f"mode {mode}:   " for mode in modes]
-        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
+        chunk_start = [
+            s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start
+        ]
 
         # generate the drawing
         ret = ""

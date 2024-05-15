@@ -1,7 +1,5 @@
 from __future__ import annotations
-from operator import ne
 from queue import PriorityQueue
-import re
 import networkx as nx
 import random
 from typing import Sequence, Optional
@@ -16,10 +14,11 @@ Node = int
 class Info:
     type: str
     neighbors: Sequence[int]
+    # connections: dict[int, tuple[int, int]]  # node : (id, Optional[id])
 
 
-class GraphNX:
-    r"""A circuit graph with a cost and a solution.
+class CircuitGraph:
+    r"""A graph representing a circuit.
 
     Args:
         data: A dict of nodes to types and neighbors.
@@ -37,7 +36,7 @@ class GraphNX:
         self.cost = cost
         self.solution = solution
 
-    def __lt__(self, other: GraphNX) -> bool:
+    def __lt__(self, other: CircuitGraph) -> bool:
         "this is to make the priority queue work"
         return self.cost < other.cost
 
@@ -46,14 +45,16 @@ class GraphNX:
         r"""Returns the graph as a dict of nodes to types and connected nodes."""
         data = {}
         for i in self.G.nodes:
-            data[i] = Info(self.G.nodes[i]["type"], [n for n in self.G.neighbors(i) if n > i])
+            data[i] = Info(
+                self.G.nodes[i]["type"], [n for n in self.G.neighbors(i) if n > i]
+            )
         return data
 
     def is_leaf(self) -> bool:
         r"""Returns whether the graph has no edges left to contract"""
         return self.G.number_of_edges() == 0
 
-    def children(self, cost_bound: int) -> list[GraphNX]:
+    def children(self, cost_bound: int) -> list[CircuitGraph]:
         r"""Returns all the graphs obtained by contracting a single edge for all edges.
         Only children with a cost below ``cost_bound`` are returned."""
         children = []
@@ -63,7 +64,7 @@ class GraphNX:
                 children.append(child)
         return children
 
-    def grandchildren(self, cost_bound: int) -> list[GraphNX]:
+    def grandchildren(self, cost_bound: int) -> list[CircuitGraph]:
         grandchildren = []
         for i, j, _ in self.G.edges:
             i, j = sorted([i, j])
@@ -81,11 +82,11 @@ class GraphNX:
                     grandchildren.append(g)
         return grandchildren
 
-    def copy(self) -> GraphNX:
+    def copy(self) -> CircuitGraph:
         r"""Returns a copy of self."""
-        return GraphNX(self.data, self.cost, list(self.solution))
+        return CircuitGraph(self.data, self.cost, list(self.solution))
 
-    def contract(self, edge: tuple[int, int]) -> GraphNX:
+    def contract(self, edge: tuple[int, int]) -> CircuitGraph:
         r"""Returns a copy of self with the given edge = (i,j) contracted.
         The new graph does not contain j, all edges to j are now to i
         and we update cost and solution. If i and j are nodes of different types,
@@ -97,7 +98,7 @@ class GraphNX:
         delta_cost = self.edge_cost(edge)
         cost = self.cost + delta_cost
         solution = self.solution + [(delta_cost, edge)]
-        ret = GraphNX({}, cost, solution)
+        ret = CircuitGraph({}, cost, solution)
         ret.G = G
         return ret
 
@@ -122,11 +123,11 @@ class GraphNX:
             cost = 50 ** (m + n + k)  # inner product
         return cost
 
-    def __eq__(self, other: GraphNX) -> bool:
+    def __eq__(self, other: CircuitGraph) -> bool:
         return self.data == other.data
 
 
-def random_cost(g: GraphNX) -> tuple[int, list]:
+def random_cost(g: CircuitGraph) -> tuple[int, list]:
     r"""Returns the cost of a random contraction."""
     while not g.is_leaf():
         i = random.choice(list(g.G.nodes))
@@ -135,21 +136,27 @@ def random_cost(g: GraphNX) -> tuple[int, list]:
     return g.cost, g.solution
 
 
-def optimal_path(data: dict[Node, Info]) -> tuple[int, list]:
+def optimal_path(data: dict[Node, Info], n_init: int = 100) -> tuple[int, list]:
     r"""Optimizes the contraction path for a given graph.
 
     Args:
         graph: The graph to contract.
+        n_init: The number of random contractions to find an initial cost upper bound.
 
     Returns:
         The optimal contraction path given as an ordered list of edges.
     """
     print("-" * 50)
-    print("Optimal path")
+    print("Optimal contraction path algorithm")
     print("-" * 50)
     print()
-    graph = GraphNX(data, 0, [])
+    graph = CircuitGraph(data, 0, [])
+    print("Initial graph:")
+    print("Nodes:", graph.G.nodes)
+    print("Edges:", graph.G.edges)
+
     debug = False
+    print("1) Apply heuristics to simplify the graph")
     graph = reduce_1BB(graph, debug=debug)
     graph = reduce_2BB(graph, debug=debug)
     graph = reduce_1FF(graph, debug=debug)
@@ -157,17 +164,16 @@ def optimal_path(data: dict[Node, Info]) -> tuple[int, list]:
     graph = reduce_1FB(graph, debug=debug)
     graph = reduce_2FF(graph, debug=debug)
 
-    print("3) Get initial cost by 100 random contractions")
+    print(f"2) Get cost upper bound by {n_init} random contractions")
     best_cost = 1e42
-    for _ in range(100):
+    for _ in range(n_init):
         cost, sol = random_cost(graph)
         if cost < best_cost:
             print("new best cost:", cost)
             best_cost = cost
             best_solution = sol
-    print()
 
-    print("4) Branch and Bound")
+    print("3) Branch and Bound")
     graph_queue = PriorityQueue()
     graph_queue.put(graph)
     max_qsize = 1
@@ -197,12 +203,13 @@ def optimal_path(data: dict[Node, Info]) -> tuple[int, list]:
     return best_cost, best_solution
 
 
+#  TODO: move this function to the tests files
 def staircase(m: int):
-    assert m > 1
+    assert m > 1, "at least 2 mode staircase"
     data = {
         0: Info("B", (2,)),
         1: Info("B", (2,)),
-        2: Info("B", (3, 5)),
+        2: Info("B", (3,) + ((5,) if m > 2 else ())),
         3: Info("F", ()),
     }
     for i in range(m - 2):
@@ -213,7 +220,10 @@ def staircase(m: int):
     return data
 
 
-def reduce_first_1BB(graph) -> tuple[GraphNX, Optional[Edge]]:
+# Strategies for reducing the graph
+
+
+def reduce_first_1BB(graph) -> tuple[CircuitGraph, Optional[Edge]]:
     r"""Reduces the first BB pair it finds where one of the nodes has degree 1 (leaf)."""
     for node in graph.G.nodes:
         if graph.G.degree(node) == 1 and graph.G.nodes[node]["type"] == "B":
@@ -223,7 +233,7 @@ def reduce_first_1BB(graph) -> tuple[GraphNX, Optional[Edge]]:
     return graph, None
 
 
-def reduce_1BB(graph, debug=False) -> GraphNX:
+def reduce_1BB(graph, debug=False) -> CircuitGraph:
     r"""Reduces all BB pairs where one of the nodes has degree 1 (leaf)."""
     graph, info = reduce_first_1BB(graph)
     if debug and info:
@@ -259,7 +269,7 @@ def reduce_2BB(graph, debug=False):
     return graph
 
 
-def reduce_first_1FF(graph) -> tuple[GraphNX, Optional[Edge]]:
+def reduce_first_1FF(graph) -> tuple[CircuitGraph, Optional[Edge]]:
     r"""Reduces the first FF pair it finds where one of the nodes has degree 1 (leaf)."""
     for node in graph.G.nodes:
         if graph.G.degree(node) == 1 and graph.G.nodes[node]["type"] == "F":
@@ -269,7 +279,7 @@ def reduce_first_1FF(graph) -> tuple[GraphNX, Optional[Edge]]:
     return graph, None
 
 
-def reduce_1FF(graph, debug=False) -> GraphNX:
+def reduce_1FF(graph, debug=False) -> CircuitGraph:
     r"""Reduces all FF pairs where one of the nodes has degree 1 (leaf)."""
     graph, info = reduce_first_1FF(graph)
     if debug and info:
@@ -281,7 +291,7 @@ def reduce_1FF(graph, debug=False) -> GraphNX:
     return graph
 
 
-def reduce_first_1FB(graph) -> tuple[GraphNX, Optional[Edge]]:
+def reduce_first_1FB(graph) -> tuple[CircuitGraph, Optional[Edge]]:
     r"""Reduces the first FB pair it finds where one of the nodes has degree 1 (leaf)."""
     for node in graph.G.nodes:
         if graph.G.degree(node) == 1 and graph.G.nodes[node]["type"] == "F":
@@ -291,7 +301,7 @@ def reduce_first_1FB(graph) -> tuple[GraphNX, Optional[Edge]]:
     return graph, None
 
 
-def reduce_1FB(graph, debug=False) -> GraphNX:
+def reduce_1FB(graph, debug=False) -> CircuitGraph:
     r"""Reduces all FB pairs where one of the nodes has degree 1 (leaf)."""
     graph, info = reduce_first_1FB(graph)
     if debug and info:
@@ -303,7 +313,7 @@ def reduce_1FB(graph, debug=False) -> GraphNX:
     return graph
 
 
-def reduce_first_2FF(graph) -> tuple[GraphNX, Optional[Edge]]:
+def reduce_first_2FF(graph) -> tuple[CircuitGraph, Optional[Edge]]:
     r"""Reduces the first FF pair it finds where both nodes have degree 2."""
     for node in graph.G.nodes:
         if graph.G.degree(node) == 2 and graph.G.nodes[node]["type"] == "F":
@@ -315,7 +325,7 @@ def reduce_first_2FF(graph) -> tuple[GraphNX, Optional[Edge]]:
     return graph, None
 
 
-def reduce_2FF(graph, debug=False) -> GraphNX:
+def reduce_2FF(graph, debug=False) -> CircuitGraph:
     r"""Reduces all FF pairs where both nodes have degree 2."""
     graph, info = reduce_first_2FF(graph)
     if debug and info:
