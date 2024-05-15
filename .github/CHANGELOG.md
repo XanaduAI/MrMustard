@@ -9,6 +9,8 @@
 ### Breaking changes
 
 ### Improvements
+* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
+  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
@@ -27,6 +29,8 @@
 [Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
 [Kasper Nielsen](https://github.com/kaspernielsen96)
+[Matthew Silverman](https://github.com/timmysilv)
+
 
 ---
 

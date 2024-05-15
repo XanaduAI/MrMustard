@@ -84,6 +84,21 @@ class TestSettings:
         assert settings.SEED is not None
         settings.SEED = s0
 
+        hs0 = settings.HOMODYNE_SQUEEZING
+        settings.HOMODYNE_SQUEEZING = 20.1
+        assert settings.HOMODYNE_SQUEEZING == 20.1
+        settings.HOMODYNE_SQUEEZING = hs0
+
+        fock_rtol = settings.EQ_TRANSFORMATION_RTOL_FOCK
+        settings.EQ_TRANSFORMATION_RTOL_FOCK = 0.02
+        assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 0.02
+        settings.EQ_TRANSFORMATION_RTOL_FOCK = fock_rtol
+
+        gauss_rtol = settings.EQ_TRANSFORMATION_RTOL_GAUSS
+        settings.EQ_TRANSFORMATION_RTOL_GAUSS = 0.02
+        assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 0.02
+        settings.EQ_TRANSFORMATION_RTOL_GAUSS = gauss_rtol
+
         assert settings.HBAR == 2.0
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
