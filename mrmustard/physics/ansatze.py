@@ -568,3 +568,17 @@ def bargmann_Abc_to_phasespace_cov_means(
         for bvec in b
     ]
     return math.astensor(cov), math.astensor(mean), coeff
+
+
+def Abc_to_cov_and_mean(A: Matrix, b: Vector, c: Scalar) -> Union[Matrix, Vector, Scalar]:
+    r"""Function to transform for ABC Ansatz from quadratic form into the Gaussian form.
+
+    Quadratic form is defined :math:`coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
+    Gaussian form is defined :math:`c * exp(0.5*x^T A x + x^T b)`.
+
+    """
+    Ainv = math.inv(A)
+    cov = -Ainv
+    mean = b
+    coeff = c / math.exp(-0.5 * math.sum(mean.T * math.matvec(A, mean))) * math.sqrt(math.det(cov))
+    return (coeff, cov, mean)
