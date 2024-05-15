@@ -14,10 +14,6 @@
 
 """A module containing global settings."""
 
-from io import StringIO
-import subprocess
-import sys
-
 from pathlib import Path
 from rich import print
 import rich.table
@@ -180,21 +176,7 @@ class Settings:
         if (
             value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
-            old_run = subprocess.run
-            old_stdout = sys.stdout
-
-            def new_run(*args, **kwargs):
-                if kwargs.get("capture_output") is not True and "stderr" not in kwargs:
-                    kwargs["stderr"] = subprocess.DEVNULL
-                return old_run(*args, **kwargs)  # pylint:disable=subprocess-run-check
-
-            subprocess.run = new_run
-            sys.stdout = StringIO()
-            try:
-                from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-            finally:
-                subprocess.run = old_run
-                sys.stdout = old_stdout
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             # import Julia functions
             julia_directory = (
