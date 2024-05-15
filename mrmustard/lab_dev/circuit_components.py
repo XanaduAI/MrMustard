@@ -52,7 +52,7 @@ states and gates.
     >>> # the attenuator on mode `16`
     >>> att_rep = Bargmann(*attenuator_Abc(0.9))
     >>> att_modes = (16,)
-    >>> att = CircuitComponent("my_att", att_rep, att_modes, att_modes, att_modes, att_modes)
+    >>> att = CircuitComponent("my_att", att_rep, modes_out_bra=att_modes, modes_in_bra=att_modes, modes_out_ket=att_modes, modes_in_ket=att_modes)
 
 By accessing the information about wires and representations, ``CircuitComponent``\s can be easily
 concatenated via the ``@`` and ``>>`` operators. 
