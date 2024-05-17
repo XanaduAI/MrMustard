@@ -23,6 +23,7 @@ from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import (
     Attenuator,
+    Amplifier,
     BSgate,
     Channel,
     Dgate,
@@ -475,6 +476,50 @@ class TestIgate:
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
+
+
+class TestAmplifier:
+    r"""
+    Tests for the ``Amplifier`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    gain = [[1.1], 1.1, [1.1, 1.2]]
+
+    @pytest.mark.parametrize("modes,gain", zip(modes, gain))
+    def test_init(self, modes, gain):
+        gate = Amplifier(modes, gain)
+
+        assert gate.name == "Amp"
+        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``gain``"):
+            Amplifier(modes=[0, 1], gain=[1.2, 1.3, 1.4])
+
+    def test_representation(self):
+        rep1 = Amplifier(modes=[0], gain=1.1).representation
+        g1 = 0.95346258
+        g2 = 0.09090909
+        assert math.allclose(
+            rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [0.90909090])
+
+    def test_trainable_parameters(self):
+        gate1 = Amplifier([0], 1.2)
+        gate2 = Amplifier([0], 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
+
+        with pytest.raises(AttributeError):
+            gate1.gain.value = 1.7
+
+        gate2.gain.value = 1.5
+        assert gate2.gain.value == 1.5
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Amplifier(modes=[0], gain=[1.1, 1.2]).representation
 
 
 class TestAttenuator:
