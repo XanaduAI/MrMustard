@@ -384,3 +384,74 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
+
+
+class Amplifier(Channel):
+    r"""The noisy amplifier channel.
+
+    If ``gain`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
+    all the modes share the same gain.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Amplifier
+
+        >>> channel = Amplifier(modes=[1, 2], gain=1.1)
+        >>> assert channel.modes == [1, 2]
+        >>> assert np.allclose(channel.gain.value, [1.1, 1.1])
+
+    Args:
+        modes: The modes this gate is applied to.
+        gain: The gain.
+        gain_trainable: Whether the gain is a trainable variable.
+        gain_bounds: The bounds for the gain.
+
+    .. details::
+
+        The :math:`N`-mode attenuator is defined as
+
+        .. math::
+            X = /sqrt{/bar{g}}I_{2N} \text{ , }
+            Y = (/bar{g}-1)I_{2N} \text{ , and }
+            d = O_{4N}\:,
+
+        where :math:`/bar{g}` is the gain and
+        :math:`\text{diag}_N(\bar{g})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{g}`.
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \begin{bmatrix}
+                    O_N & \text{diag}_N(1/(\sqrt{\bar{g}}) & \text{diag}_N(1-1/\bar{g}) & O_N \\
+                    \text{diag}_N(1/(\sqrt{\bar{g}}) & O_N & O_N & O_N \\
+                    \text{diag}_N(1-1/\bar{g})  & O_N & O_N &  \text{diag}_N(1/(\bar{g})\\
+                    O_N & O_N &  \text{diag}_N(1/(\sqrt{\bar{g}}) & O_N
+                \end{bmatrix} \\ \\
+            b &= O_{4N} \\ \\
+            c &= 1//bar{g}\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        gain: Union[Optional[float], Optional[list[float]]] = 1.0,
+        gain_trainable: bool = False,
+        gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
+    ):
+        super().__init__(modes=modes, name="Amp")
+        self._add_parameter(
+            make_parameter(
+                gain_trainable,
+                gain,
+                "transmissivity",
+                gain_bounds,
+                None,
+            )
+        )
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        eta = list(reshape_params(n_modes, g=self.transmissivity.value))[0]
+        return Bargmann(*triples.amplifier_Abc(eta))
