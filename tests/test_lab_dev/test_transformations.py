@@ -521,6 +521,25 @@ class TestAmplifier:
         with pytest.raises(ValueError):
             Amplifier(modes=[0], gain=[1.1, 1.2]).representation
 
+    def test_operation(self):
+        amp_channel = Amplifier(modes=[0], gain=1.5)
+        att_channel = Attenuator(modes=[0], transmissivity=0.7)
+        operation = amp_channel >> att_channel
+
+        assert math.allclose(
+            operation.representation.A,
+            [
+                [
+                    [0.0 + 0.0j, 0.75903339 + 0.0j, 0.25925926 + 0.0j, 0.0 + 0.0j],
+                    [0.75903339 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.22222222 + 0.0j],
+                    [0.25925926 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.75903339 + 0.0j],
+                    [0.0 + 0.0j, 0.22222222 + 0.0j, 0.75903339 + 0.0j, 0.0 + 0.0j],
+                ]
+            ],
+        )
+        assert math.allclose(operation.representation.b, np.zeros((1, 4)))
+        assert math.allclose(operation.representation.c, [0.74074074 + 0.0j])
+
 
 class TestAttenuator:
     r"""
