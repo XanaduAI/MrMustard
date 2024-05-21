@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from .circuit_components import CircuitComponent
 from .circuits import Circuit
+from mrmustard.physics.representations import Fock, Bargmann
+from mrmustard.physics.converters import to_fock
 
 __all__ = ["Simulator"]
 
@@ -110,6 +112,20 @@ class Simulator:
 
         ret = dict(enumerate(circuit.components))
         for idx0, idx1 in circuit.path:
+            # if (
+            #     ret[idx0].representation.__class__ == Fock
+            #     and ret[idx1].representation.__class__ == Bargmann
+            # ):
+            #     ret[idx1].to_fock(
+            #         ret[idx1], shape=circuit._circuitgraph.G.nodes.data()[idx1]["shape"]
+            #     )
+            # elif (
+            #     ret[idx0].representation.__class__ == Bargmann
+            #     and ret[idx1].representation.__class__ == Fock
+            # ):
+            #     ret[idx0] = to_fock(
+            #         ret[idx0], shape=circuit._circuitgraph.G.nodes.data()[idx0]["shape"]
+            #     )
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
         return list(ret.values())[0]

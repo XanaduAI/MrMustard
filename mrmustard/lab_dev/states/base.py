@@ -46,6 +46,7 @@ from mrmustard.utils.typing import (
     RealVector,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
+from mrmustard.physics.fock import autocutoffs
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
@@ -275,7 +276,9 @@ class State(CircuitComponent):
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
         rep = (self >> self.dual).representation
-        return math.sum(math.real(rep.c if isinstance(rep, Bargmann) else rep.array), axes=[0])
+        return math.sum(
+            math.real(rep.c if isinstance(rep, Bargmann) else rep.array), axes=[0]
+        )
 
     @property
     def probability(self) -> float:
@@ -299,7 +302,7 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock_array(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
+    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
         r"""
         The array that describes this state in the Fock representation.
 
@@ -314,7 +317,7 @@ class State(CircuitComponent):
         Returns:
             The array that describes this state in the Fock representation.
         """
-        return to_fock(self.representation, shape).array
+        return to_fock(self.representation, self.autoshape).array
 
     def phase_space(self, s: float) -> tuple[ComplexMatrix, ComplexVector, complex]:
         r"""
@@ -329,7 +332,9 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+            raise ValueError(
+                f"Can not calculate phase space for ``{self.name}`` object."
+            )
 
         new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
@@ -423,13 +428,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -524,10 +533,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -569,7 +582,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -805,6 +820,24 @@ class DM(State):
         rep = result.representation
         return rep.array if isinstance(rep, Fock) else rep.c
 
+    @property
+    def autoshape(self) -> tuple[int, ...]:
+        r"""
+        The shape of this DM calculated by keeping settings.AUTOCUTOFF_PROBABILITY of the norm (default 0.999).
+        """
+        try:
+            return self.representation.array.shape[1:]
+        except AttributeError:
+            cov, means, _ = self.phase_space(0)
+            cutoffs = autocutoffs(cov, means, settings.AUTOCUTOFF_PROBABILITY)
+            return (
+                tuple(
+                    min(1 + c, self._fock_shape[i] or 1e42)
+                    for i, c in enumerate(cutoffs)
+                )
+                * 2
+            )
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -820,7 +853,7 @@ class DM(State):
         return ret
 
     def __repr__(self) -> str:
-        return ""
+        return f"DM(name={self.name}, modes={self.modes})"
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
@@ -844,12 +877,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(self.name, representation, wires)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -979,6 +1012,20 @@ class Ket(State):
         dm = self @ self.adjoint
         return DM._from_attributes(self.name, dm.representation, dm.wires)
 
+    @property
+    def autoshape(self) -> tuple[int, ...]:
+        r"""
+        The shape of this Ket calculated by keeping settings.AUTOCUTOFF_PROBABILITY of the norm.
+        """
+        try:
+            return self.representation.array.shape[1:]
+        except AttributeError:
+            cov, means, _ = self.phase_space(0)
+            cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
+            return tuple(
+                min(c + 1, self._fock_shape[i] or 1e42) for i, c in enumerate(cutoffs)
+            )
+
     def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator calculated over this Ket.
@@ -1011,7 +1058,11 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+            result = (
+                result >> TraceOut(leftover_modes)
+                if leftover_modes
+                else result @ result.dual
+            )
         elif op_type is OperatorType.DM_LIKE:
             result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
@@ -1061,4 +1112,4 @@ class Ket(State):
         return ret
 
     def __repr__(self) -> str:
-        return ""
+        return f"Ket(name={self.name}, modes={self.modes})"

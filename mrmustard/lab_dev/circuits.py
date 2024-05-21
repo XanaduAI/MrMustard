@@ -25,7 +25,8 @@ from typing import Optional, Sequence, Union
 
 from mrmustard import math, settings
 from .circuit_components import CircuitComponent
-from mrmustard.lab_dev.opt_contraction import optimal_path, Info
+from mrmustard.lab_dev.opt_contraction import optimal_path, Info, CircuitGraph
+from mrmustard.lab_dev.transformations import BSgate
 
 __all__ = ["Circuit"]
 
@@ -77,39 +78,101 @@ class Circuit:
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
 
+        # self.make_circuitgraph()
+
+    def make_circuitgraph(self) -> None:
+        data: dict[int, Info] = dict()
+        for i, opA in enumerate(self.components):
+            t = opA.representation.__class__.__qualname__[0]
+            out_idx = set(opA.wires.output.indices)
+            neighbors: dict[int, dict[int, int]] = (
+                dict()
+            )  # forward neighbours with dict of indices:indices
+            for j, opB in enumerate(self.components[i + 1 :]):
+                ovlp_bra = tuple(opA.wires.output.bra.modes & opB.wires.input.bra.modes)
+                ovlp_ket = tuple(opA.wires.output.ket.modes & opB.wires.input.ket.modes)
+                iA = (
+                    opA.wires.output.bra[ovlp_bra].indices
+                    + opA.wires.output.ket[ovlp_ket].indices
+                )
+                iB = (
+                    opB.wires.input.bra[ovlp_bra].indices
+                    + opB.wires.input.ket[ovlp_ket].indices
+                )
+                assert list(iA) == sorted(iA)
+                assert list(iB) == sorted(iB)
+                assert len(iA) == len(iB)
+                if len(iA) == 0:
+                    continue
+                out_idx -= set(iA)
+                neighbors[i + j + 1] = {iA_k: iB_k for iA_k, iB_k in zip(iA, iB)}
+                if len(out_idx) == 0:
+                    break
+            # TODO: deal with leftover indices
+            if len(out_idx) > 0:
+                raise ValueError(
+                    f"Dangling output {out_idx} of {i}-th component {opA}. For now use `Number.dual`."
+                )
+            data[i] = Info(t, neighbors, list(opA.autoshape))
+
+        def count_nones(data):
+            return sum(1 for i, info in data.items() for s in info.shape if s is None)
+
+        nones = count_nones(data)
+        self._update_shapes(data)
+        while count_nones(data) < nones:
+            nones = count_nones(data)
+            self._update_shapes(data)
+        self._circuitgraph = CircuitGraph(data, 0, [])
+
+    def _update_shapes(self, data: dict[int, Info]) -> None:
+        r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
+        If two wires are connected and one of them has shape n and the other None, the shape of the
+        wire with None is updated to n. If both wires have a shape, the minimum is taken.
+
+        For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
+        the shapes of the outputs.
+        """
+        # propagate one step
+        for i, info in data.items():
+            for j, idxdict in info.neighbors.items():
+                for a, b in idxdict.items():
+                    if data[j].shape[b] is None:
+                        data[j].shape[b] = data[i].shape[a]
+                    if data[i].shape[a] is None:
+                        data[i].shape[a] = data[j].shape[b]
+
+        # propagate through BSgates
+        for i, info in data.items():
+            if isinstance(self.components[i], BSgate):
+                a, b, c, d = info.shape
+                if c and d:
+                    if not a:
+                        a = c + d
+                    if not b:
+                        b = c + d
+                if a and b:
+                    if not c:
+                        c = a + b
+                    if not d:
+                        d = a + b
+
+                data[i].shape = [a, b, c, d]
+
+        # TODO: propagate through where A matrix is block-antidiagonal
+
+        # update components
+        for i, c in enumerate(self.components):
+            c._fock_shape = data[i].shape
+
     def autopath(self, n_init: int = 100) -> None:
         r"""
         Automatically generates a path for this circuit.
 
         The path is generated using the ``make_path`` method with the ``l2r`` strategy.
         """
-        self.make_path()
-        _graph = {k: v for k, v in self._graph.items()}
-        # symmetrize the dict
-        for key, val in self._graph.items():
-            if val not in _graph:
-                _graph[val] = key
-
-        # now we have the initial _graph with the ids of the connected pairs
-        lookup = {id: i for i, cc in enumerate(self.components) for id in cc.wires.ids}
-        datadict = {}
-        fake_fock_index = len(self.components) + 1
-        for i, c in enumerate(self.components):
-            t = c.representation.__class__.__qualname__[0]
-            ids = []
-            for id in c.wires.ids:
-                if lookup[_graph[id]] > i:
-                    if id in _graph:
-                        ids.append(lookup[_graph[id]])
-                    else:  # it's a dangling wire
-                        ids.append("F", (fake_fock_index,))
-                        fake_fock_index += 1
-            datadict[i] = Info(t, tuple(ids))
-        print(datadict)
-
-        cost, sol = optimal_path(datadict, n_init)
-        print(sol)
-        self.path = (pair for (cost, pair) in sol)
+        cost, sol = optimal_path(self._circuitgraph, n_init)
+        self.path = [tuple(pair) for (cost, pair) in sol]
 
     @property
     def components(self) -> Sequence[CircuitComponent]:

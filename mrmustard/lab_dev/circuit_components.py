@@ -298,6 +298,19 @@ class CircuitComponent:
             self.wires,
         )
 
+    @property
+    def autoshape(self) -> tuple[Optional[int], ...]:
+        r"""
+        The shape of the Fock representation of this component. If the component has a Fock representation
+        then it is just the shape of the array. If the components is a State in Bargmann
+        representation the shape can be calculated using autocutoff using the single-mode marginals.
+        If the component is not a State then the shape is a tuple of ``None``s.
+        """
+        try:
+            return self.representation.array.shape[1:]
+        except AttributeError:
+            return (None,) * self.representation.ansatz.dim
+
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the addition between circuit components.
