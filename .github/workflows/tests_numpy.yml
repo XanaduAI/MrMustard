@@ -5,6 +5,9 @@ on:
       - develop
   pull_request:
 
+env:
+  DEFAULT_BENCHMARK_OPTS: " --durations=0 -vv | grep ' call ' | awk '{print $3,$1}' > results_${{ github.sha }}.txt"
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -36,4 +39,13 @@ jobs:
           poetry install --extras "ray" --with dev
 
       - name: Run tests
-        run: python -m pytest tests --backend=numpy -p no:warnings --tb=native
+        env:
+          EXTRA_PYTEST_OPTS: "${{ github.event_name == 'push' && env.DEFAULT_BENCHMARK_OPTS || '' }}"
+        run: python -m pytest tests --backend=numpy -p no:warnings --tb=native${{ env.EXTRA_PYTEST_OPTS }}
+
+      - name: Upload benchmark results
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v3
+        with:
+          name: timings_${{ github.sha }}
+          path: results_${{ github.sha }}.txt
