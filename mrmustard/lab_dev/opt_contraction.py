@@ -2,8 +2,9 @@ from __future__ import annotations
 from queue import PriorityQueue
 import networkx as nx
 import random
-from typing import Sequence, Optional
+from typing import Optional
 from dataclasses import dataclass
+from mrmustard.physics.representations import Bargmann, Fock
 
 
 Edge = tuple[int, int]
@@ -31,7 +32,7 @@ class CircuitGraph:
     def __init__(self, data: dict[Node, Info], cost: int, solution: list[Edge]) -> None:
         self.G = nx.MultiDiGraph()
         for node, info in data.items():
-            assert info.type in ("B", "F")
+            assert info.type in ("B", "F")  # argmann, Fock)
             self.G.add_node(node, type=info.type, shape=info.shape)
             for neighbor in info.neighbors:
                 self.G.add_edge(node, neighbor)
@@ -47,19 +48,20 @@ class CircuitGraph:
         return self.G.number_of_edges() == 0
 
     def children(self, cost_bound: int, in_edges: bool = False) -> list[CircuitGraph]:
-        r"""Returns all the graphs obtained by contracting a single edge, for all edges.
+        r"""Returns all the graphs obtained by contracting a single edge, for all out_edges.
         Only children with a cost below ``cost_bound`` are returned. If ``in_edges=True``,
-        also the in-edges are contracted.
+        the in_edges are contracted.
 
         Args:
             cost_bound: The maximum cost of the children.
             in_edges: Whether to also contract in-edges.
         """
         children = []
-        for i, j, _ in self.G.out_edges:
-            child = self.contract((i, j))
-            if child.cost < cost_bound:
-                children.append(child)
+        if not in_edges:
+            for i, j, _ in self.G.out_edges:
+                child = self.contract((i, j))
+                if child.cost < cost_bound:
+                    children.append(child)
         if in_edges:
             for i, j, _ in self.G.in_edges:
                 child = self.contract((i, j))
@@ -77,8 +79,9 @@ class CircuitGraph:
             if c.is_leaf():
                 grandchildren.append(c)
             else:
-                grandchildren += c.children(cost_bound)
-        return list(set(grandchildren))
+                grandchildren += c.children(cost_bound, in_edges=False)
+                grandchildren += c.children(cost_bound, in_edges=True)
+        return grandchildren
 
     def contract(self, edge: tuple[int, int]) -> CircuitGraph:
         r"""Returns a copy of self with the given edge = (i,j) contracted.
@@ -149,11 +152,10 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     graph = reduce_pattern(graph, "2BB", debug=debug)
     graph = reduce_pattern(graph, "1BF", debug=debug)
     graph = reduce_pattern(graph, "1FF", debug=debug)
-    # 1FB is not always the best thing to do. For the staircase GBS it finds a good but not optimal solution.
-    # If these are removed however, the scaling is still factorial in the number of modes, even for the staircase.
-    # graph = reduce_pattern(graph, "1FB", debug=debug)
-    # graph = reduce_pattern(graph, "2FF", debug=debug)
-
+    graph = reduce_pattern(graph, "1FB", debug=debug)  # not always right. Good for staircase.
+    # graph = reduce_pattern(graph, "2FF", debug=debug)  # not always right.
+    print(f"Edges remaining: {graph.G.number_of_edges()}")
+    print()
     print(f"2. Getting cost upper bound by {n_init} random contractions...")
     best_cost = 1e42
     for i in range(n_init):
@@ -173,7 +175,14 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
         if qsize > max_qsize:
             max_qsize = qsize
         print(" " * 80, end="\r")
-        print(f"Queue size: {qsize}/{max_qsize}", "Current cost:", graph.cost, end="\r")
+        print(
+            f"Queue size: {qsize}/{max_qsize}",
+            "Current cost:",
+            graph.cost,
+            "Contractions left:",
+            graph.G.number_of_edges(),
+            end="\r",
+        )
         if graph.cost > best_cost:
             continue
         if graph.is_leaf() and graph.cost < best_cost:
@@ -181,16 +190,13 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
             best_cost = graph.cost
             graph_queue.queue = [g for g in graph_queue.queue if g.cost <= best_cost]
         else:
-            pool = graph.grandchildren(cost_bound=best_cost)
-            if not pool:
-                pool = graph.children(cost_bound=best_cost)
-            for child in pool:
+            for child in graph.grandchildren(cost_bound=best_cost):
                 if child not in graph_queue.queue:
                     graph_queue.put(child)
-                else:
-                    i = graph_queue.queue.index(child)
-                    if child < graph_queue.queue[i]:
-                        graph_queue.queue[i] = child
+                # else:
+                #     i = graph_queue.queue.index(child)
+                #     if child < graph_queue.queue[i]:
+                #         graph_queue.queue[i] = child
     print(" " * 80, end="\r")
     print(f"Max queue size: {max_qsize}, best cost: {best_cost}", end="\r")
     return best_cost, best_solution

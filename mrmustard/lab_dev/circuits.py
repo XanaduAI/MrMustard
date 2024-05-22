@@ -104,7 +104,7 @@ class Circuit:
     def make_circuitgraph(self) -> None:
         data: dict[int, Info] = dict()
         for i, opA in enumerate(self.components):
-            t = opA.representation.__class__.__qualname__[0]  # TODO: use actual type
+            t = opA.representation.__class__.__qualname__[0]
             out_idx = set(opA.wires.output.indices)
             neighbors: dict[int, dict[int, int]] = (
                 dict()
@@ -112,14 +112,8 @@ class Circuit:
             for j, opB in enumerate(self.components[i + 1 :]):
                 ovlp_bra = tuple(opA.wires.output.bra.modes & opB.wires.input.bra.modes)
                 ovlp_ket = tuple(opA.wires.output.ket.modes & opB.wires.input.ket.modes)
-                iA = (
-                    opA.wires.output.bra[ovlp_bra].indices
-                    + opA.wires.output.ket[ovlp_ket].indices
-                )
-                iB = (
-                    opB.wires.input.bra[ovlp_bra].indices
-                    + opB.wires.input.ket[ovlp_ket].indices
-                )
+                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
+                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
                 assert list(iA) == sorted(iA)
                 assert list(iB) == sorted(iB)
                 assert len(iA) == len(iB)
@@ -157,14 +151,10 @@ class Circuit:
         for i, info in data.items():
             for j, idxdict in info.neighbors.items():
                 for a, b in idxdict.items():
-                    if data[j].shape[b] is None or data[j].shape[b] > (
-                        data[i].shape[a] or 1e42
-                    ):
+                    if data[j].shape[b] is None or data[j].shape[b] > (data[i].shape[a] or 1e42):
                         data[j].shape[b] = data[i].shape[a]
                         changes = True
-                    if data[i].shape[a] is None or data[i].shape[a] > (
-                        data[j].shape[b] or 1e42
-                    ):
+                    if data[i].shape[a] is None or data[i].shape[a] > (data[j].shape[b] or 1e42):
                         data[i].shape[a] = data[j].shape[b]
                         changes = True
 
@@ -392,24 +382,18 @@ class Circuit:
         # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {
-                m: {"ket": None, "bra": None} for w in wires for m in w.modes
-            }
+            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
 
             # populate the graph
             for w in wires:
                 # if there is a dangling wire, add a contraction
                 for m in w.input.ket.modes:  # ket side
                     if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
                         ids_dangling_wires[m]["ket"] = None
                 for m in w.input.bra.modes:  # bra side
                     if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
                         ids_dangling_wires[m]["bra"] = None
 
                 # update the dangling wires
@@ -458,6 +442,12 @@ class Circuit:
         """
         return len(self.components)
 
+    def __iter__(self):
+        r"""
+        An iterator over the components in this circuit.
+        """
+        return iter(self.components)
+
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
@@ -505,9 +495,7 @@ class Circuit:
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(
-                        new_values.numpy()
-                        if math.backend.name == "tensorflow"
-                        else new_values
+                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
                     )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             # some components have an empty parameter set
@@ -612,9 +600,7 @@ class Circuit:
 
         # every chunk starts with a recap of the modes
         chunk_start = [f"mode {mode}:   " for mode in modes]
-        chunk_start = [
-            s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start
-        ]
+        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
 
         # generate the drawing
         ret = ""

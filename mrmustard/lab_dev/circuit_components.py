@@ -80,12 +80,7 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if (
-            ob != modes_out_bra
-            or ib != modes_in_bra
-            or ok != modes_out_ket
-            or ik != modes_in_ket
-        ):
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -370,9 +365,7 @@ class CircuitComponent:
                 return self._fock_shape
         return object.__getattribute__(self, name)
 
-    def _matmul_indices(
-        self, other: CircuitComponent
-    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -421,9 +414,7 @@ class CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
         """
-        self, other = self._to_fock_if_needed(
-            other
-        )  # turn self or other into Fock representation
+        self, other = self._to_fock_if_needed(other)  # turn self or other into Fock representation
         new_wires, perm = self.wires @ other.wires
         new_fock_shape = self._combine_fock_shapes(other, new_wires, perm)
         idx_z, idx_zconj = self._matmul_indices(other)
@@ -468,31 +459,21 @@ class CircuitComponent:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
     def _repr_html_(self):  # pragma: no cover
-        temp = Template(
-            filename=os.path.dirname(__file__) + "/assets/circuit_components.txt"
-        )
+        temp = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
 
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         )
 
         rep_temp = (
             Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
             if isinstance(self.representation, Fock)
-            else Template(
-                filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt"
-            )
+            else Template(filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt")
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = (
-            rep_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
-        )
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
 
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
