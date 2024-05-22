@@ -97,13 +97,17 @@ class TestDsMap:
 
     def test_representation(self):
         rep1 = DsMap(modes=[0], s=0).representation  # pylint: disable=protected-access
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(
+            s=0, n_modes=1
+        )
         assert math.allclose(rep1.A[0], A_correct)
         assert math.allclose(rep1.b[0], b_correct)
         assert math.allclose(rep1.c[0], c_correct)
 
         rep2 = DsMap(modes=[5, 10], s=1).representation  # pylint: disable=protected-access
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(
+            s=1, n_modes=2
+        )
         assert math.allclose(rep2.A[0], A_correct)
         assert math.allclose(rep2.b[0], b_correct)
         assert math.allclose(rep2.c[0], c_correct)
@@ -173,11 +177,11 @@ class TestBtoQMap:
         c0 = 1.0 + 0j
 
         modes = [0, 1]
-        QtoBMap_CC1 = BtoQMap(modes)
+        BtoQMap_CC1 = BtoQMap(modes)
         step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
+            BtoQMap_CC1.representation.A[0],
+            BtoQMap_CC1.representation.b[0],
+            BtoQMap_CC1.representation.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
@@ -207,11 +211,11 @@ class TestBtoQMap:
         c0 = 1.0 + 0j
 
         modes = [0]
-        QtoBMap_CC1 = BtoQMap(modes)
+        BtoQMap_CC1 = BtoQMap(modes)
         step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
+            BtoQMap_CC1.representation.A[0],
+            BtoQMap_CC1.representation.b[0],
+            BtoQMap_CC1.representation.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
