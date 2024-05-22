@@ -5,9 +5,6 @@ on:
       - develop
   pull_request:
 
-env:
-  DEFAULT_BENCHMARK_OPTS: " --durations=0 -vv | grep ' call ' | awk '{print $3,$1}' > results_${{ github.sha }}.txt"
-
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -38,14 +35,21 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --extras "ray" --with dev
 
+      - name: Record file suffix
+        id: record_suffix
+        run: echo "suffix=$(date +%s)_$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Run tests
-        env:
-          EXTRA_PYTEST_OPTS: "${{ github.event_name == 'push' && env.DEFAULT_BENCHMARK_OPTS || '' }}"
-        run: python -m pytest tests --backend=numpy -p no:warnings --tb=native${{ env.EXTRA_PYTEST_OPTS }}
+        run: |
+          if [[ ${{ github.event_name }} = "push" ]]; then
+            python -m pytest tests --backend=numpy -p no:warnings --tb=native --durations=0 -vv | grep ' call ' | awk '{print $3,$1}' > durations_${{ steps.record_suffix.outputs.suffix }}.txt
+          else
+            python -m pytest tests --backend=numpy -p no:warnings --tb=native
+          fi
 
       - name: Upload benchmark results
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v3
         with:
-          name: timings_${{ github.sha }}
-          path: results_${{ github.sha }}.txt
+          name: timings_${{ steps.record_suffix.outputs.suffix }}
+          path: durations_${{ steps.record_suffix.outputs.suffix }}.txt
