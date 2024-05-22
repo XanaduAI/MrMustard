@@ -4,18 +4,18 @@ import networkx as nx
 import random
 from typing import Optional
 from dataclasses import dataclass
-from mrmustard.physics.representations import Bargmann, Fock
 
 
-Edge = tuple[int, int]
+Index = int
+Edge = tuple[Index, Index]
 Node = int
 
 
 @dataclass
 class Info:
-    type: str
-    neighbors: list[int]
-    shape: tuple[Optional[int], ...]
+    type: type
+    neighbors: dict[Node, list[Edge]]
+    shape: tuple[int]
 
 
 class CircuitGraph:
@@ -29,13 +29,18 @@ class CircuitGraph:
         solution: The contractions that lead to this graph.
     """
 
-    def __init__(self, data: dict[Node, Info], cost: int, solution: list[Edge]) -> None:
+    def __init__(
+        self,
+        components: dict[Node, Info],
+        cost: int,
+        solution: list[tuple[Node, Node]],
+    ) -> None:
         self.G = nx.MultiDiGraph()
-        for node, info in data.items():
-            assert info.type in ("B", "F")  # argmann, Fock)
-            self.G.add_node(node, type=info.type, shape=info.shape)
-            for neighbor in info.neighbors:
-                self.G.add_edge(node, neighbor)
+        for i, info in components.items():
+            self.G.add_node(i, type=info.type, shape=info.shape)
+            for j, edges in info.neighbors.items():
+                for edge in edges:
+                    self.G.add_edge(i, j, indices=edge, shape=info.shape[edge[0]])
         self.cost = cost
         self.solution = solution
 
@@ -47,22 +52,21 @@ class CircuitGraph:
         r"""Returns whether the graph has no edges left to contract"""
         return self.G.number_of_edges() == 0
 
-    def children(self, cost_bound: int, in_edges: bool = False) -> list[CircuitGraph]:
-        r"""Returns all the graphs obtained by contracting a single edge, for all out_edges.
-        Only children with a cost below ``cost_bound`` are returned. If ``in_edges=True``,
-        the in_edges are contracted.
+    def children(self, cost_bound: int, only_out: bool = True) -> list[CircuitGraph]:
+        r"""Returns all the graphs obtained by contracting a single outgoing edge.
+        Only children with a cost below ``cost_bound`` are returned. If ``only_out=False``,
+        all edges are contracted.
 
         Args:
             cost_bound: The maximum cost of the children.
-            in_edges: Whether to also contract in-edges.
+            only_out: Whether to contract only outgoing edges (default) or all edges.
         """
         children = []
-        if not in_edges:
-            for i, j, _ in self.G.out_edges:
-                child = self.contract((i, j))
-                if child.cost < cost_bound:
-                    children.append(child)
-        if in_edges:
+        for i, j, _ in self.G.out_edges:
+            child = self.contract((i, j))
+            if child.cost < cost_bound:
+                children.append(child)
+        if not only_out:
             for i, j, _ in self.G.in_edges:
                 child = self.contract((i, j))
                 if child.cost < cost_bound:
@@ -73,14 +77,13 @@ class CircuitGraph:
         return hash(self.G)
 
     def grandchildren(self, cost_bound: int) -> list[CircuitGraph]:
-        children = self.children(cost_bound)
+        children = self.children(cost_bound, only_out=True)
         grandchildren = []
         for c in children:
             if c.is_leaf():
                 grandchildren.append(c)
             else:
-                grandchildren += c.children(cost_bound, in_edges=False)
-                grandchildren += c.children(cost_bound, in_edges=True)
+                grandchildren += c.children(cost_bound, only_out=False)
         return grandchildren
 
     def contract(self, edge: tuple[int, int]) -> CircuitGraph:
@@ -152,7 +155,9 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     graph = reduce_pattern(graph, "2BB", debug=debug)
     graph = reduce_pattern(graph, "1BF", debug=debug)
     graph = reduce_pattern(graph, "1FF", debug=debug)
-    graph = reduce_pattern(graph, "1FB", debug=debug)  # not always right. Good for staircase.
+    graph = reduce_pattern(
+        graph, "1FB", debug=debug
+    )  # not always right. Good for staircase.
     # graph = reduce_pattern(graph, "2FF", debug=debug)  # not always right.
     print(f"Edges remaining: {graph.G.number_of_edges()}")
     print()
