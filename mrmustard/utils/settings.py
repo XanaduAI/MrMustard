@@ -14,7 +14,7 @@
 
 """A module containing global settings."""
 
-import os
+from pathlib import Path
 from rich import print
 import rich.table
 import numpy as np
@@ -176,29 +176,23 @@ class Settings:
         if (
             value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
-            from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
-
-            # the next line must be run before "from julia import Main as Main_julia"
-            LibJulia.load().init_julia(
-                ["--compiled-modules=no", "--project=julia_pkg"]
-            )  # also loads julia environment
-            # the next line must be run after "LibJulia.load().init_julia()"
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             # import Julia functions
-            utils_directory = os.path.dirname(__file__)
-            Main_julia.cd(utils_directory)
-            Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
-            Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
+            julia_directory = (
+                Path(__file__)
+                .parent.parent.joinpath("math", "lattice", "strategies", "julia")
+                .resolve()
+                .absolute()
             )
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
-            )
+            jl.cd(str(julia_directory))
+            jl.include("getPrecision.jl")
+            jl.include("vanilla.jl")
+            jl.include("compactFock/helperFunctions.jl")
+            jl.include("compactFock/diagonal_amps.jl")
+            jl.include("compactFock/diagonal_grad.jl")
+            jl.include("compactFock/singleLeftoverMode_amps.jl")
+            jl.include("compactFock/singleLeftoverMode_grad.jl")
 
             self._julia_initialized = True
 

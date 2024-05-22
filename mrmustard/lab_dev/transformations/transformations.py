@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -283,6 +283,36 @@ class Sgate(Unitary):
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
+
+
+class Igate(Unitary):
+    r"""
+    The identity gate.
+
+    Applied to a single or multiple modes
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Igate
+
+        >>> unitary = Igate(modes=[1, 2])
+        >>> assert unitary.modes == [1, 2]
+
+    Args:
+        modes: The modes this gate is applied to.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+    ):
+        super().__init__(modes=modes, name="Igate")
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        return Bargmann(*triples.identity_Abc(n_modes))
 
 
 class Attenuator(Channel):

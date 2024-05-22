@@ -21,9 +21,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Iterable, Union
+import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+
+from IPython.display import display, HTML
+from mako.template import Template
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -500,6 +504,10 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")
+        display(HTML(template.render(rep=self)))
+
 
 class Fock(Representation):
     r"""
@@ -771,6 +779,10 @@ class Fock(Representation):
             ret = ret[slc]
         return Fock(array=ret, batched=True)
 
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")
+        display(HTML(template.render(rep=self)))
+
     def sum_batch(self) -> Fock:
         r"""
         Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
@@ -778,4 +790,4 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(ArrayAnsatz(math.sum(self.array, axes=[0])[None, ...]))
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))

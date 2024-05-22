@@ -28,6 +28,7 @@ from mrmustard.lab_dev.transformations import (
     Dgate,
     Rgate,
     Sgate,
+    Igate,
     Unitary,
 )
 from mrmustard.lab_dev.wires import Wires
@@ -290,41 +291,41 @@ class TestRgate:
             rep1.A,
             [
                 [
-                    [-0.09966799 - 0.0j, 0.99502075 + 0.0j],
-                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
                 ]
             ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [0.99750727])
+        assert math.allclose(rep1.c, [1.0 + 0.0j])
 
         rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).representation
         assert math.allclose(
             rep2.A,
             [
                 [
-                    [-0.09966799 - 0.0j, 0.0 - 0.0j, 0.99502075 + 0.0j, 0.0 + 0.0j],
-                    [0.0 - 0.0j, -0.29131261 - 0.0j, 0.0 + 0.0j, 0.95662791 + 0.0j],
-                    [0.99502075 + 0.0j, 0.0 + 0.0j, 0.09966799 + 0.0j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 0.95662791 + 0.0j, 0.0 + 0.0j, 0.29131261 + 0.0j],
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.99500417 + 0.09983342j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.95533649 + 0.29552021j],
+                    [0.99500417 + 0.09983342j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.95533649 + 0.29552021j, 0.0 + 0.0j, 0.0 + 0.0j],
                 ]
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [0.9756355])
+        assert math.allclose(rep2.c, [1.0 + 0.0j])
 
         rep3 = Rgate(modes=[1], theta=0.1).representation
         assert math.allclose(
             rep3.A,
             [
                 [
-                    [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
-                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
+                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
                 ]
             ],
         )
         assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [0.9975072676192522])
+        assert math.allclose(rep3.c, [1.0 + 0.0j])
 
     def test_trainable_parameters(self):
         gate1 = Rgate([0], 1)
@@ -423,6 +424,57 @@ class TestSgate:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Sgate(modes=[0], r=[0.1, 0.2]).representation
+
+
+class TestIgate:
+    r"""
+    Tests for the ``Igate`` class.
+    """
+
+    modes = [[0], [1, 2], [7, 9]]
+
+    @pytest.mark.parametrize("modes", modes)
+    def test_init(
+        self,
+        modes,
+    ):
+        gate = Igate(modes)
+
+        assert gate.name == "Igate"
+        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+            Igate()
+
+    def test_representation(self):
+        rep1 = Igate(modes=[0]).representation
+        assert math.allclose(
+            rep1.A,
+            [
+                [
+                    [0.0 + 0.0j, 1 + 0j],
+                    [1 + 0j, 0.0 + 0.0j],
+                ]
+            ],
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 2)))
+        assert math.allclose(rep1.c, [1.0 + 0.0j])
+
+        rep2 = Igate(modes=[0, 1]).representation
+        assert math.allclose(
+            rep2.A,
+            [
+                [
+                    [0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j],
+                    [1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                    [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                ]
+            ],
+        )
+        assert math.allclose(rep2.b, np.zeros((1, 4)))
+        assert math.allclose(rep2.c, [1.0 + 0.0j])
 
 
 class TestAttenuator:
