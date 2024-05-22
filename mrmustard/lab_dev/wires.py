@@ -334,6 +334,14 @@ class Wires:
         r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."
         return any(self.args)
 
+    def __len__(self) -> int:
+        r"The number of wires."
+        try:
+            return self._len
+        except AttributeError:
+            self._len = sum(map(len, self.args))
+            return self._len
+
     def __eq__(self, other) -> bool:
         return self.args == other.args
 

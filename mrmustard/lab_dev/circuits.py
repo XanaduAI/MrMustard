@@ -80,10 +80,31 @@ class Circuit:
 
         # self.make_circuitgraph()
 
+    def contract(self) -> CircuitComponent:
+        r"""
+        Contracts the circuit following the path specified by the ``path`` attribute.
+
+        Returns:
+            A circuit component representing the entire contracted circuit.
+
+        Raises:
+            ValueError: If ``circuit`` has an incomplete path.
+        """
+        if len(self.path) != len(self) - 1:
+            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
+            msg += f"found {len(self.path)}."
+            raise ValueError(msg)
+
+        ret = dict(enumerate(self.components))
+        for idx0, idx1 in self.path:
+            ret[idx0] = ret[idx0] >> ret.pop(idx1)
+
+        return list(ret.values())[0]
+
     def make_circuitgraph(self) -> None:
         data: dict[int, Info] = dict()
         for i, opA in enumerate(self.components):
-            t = opA.representation.__class__.__qualname__[0]
+            t = opA.representation.__class__.__qualname__[0]  # TODO: use actual type
             out_idx = set(opA.wires.output.indices)
             neighbors: dict[int, dict[int, int]] = (
                 dict()
@@ -115,47 +136,53 @@ class Circuit:
                 )
             data[i] = Info(t, neighbors, list(opA.autoshape))
 
-        def count_nones(data):
-            return sum(1 for i, info in data.items() for s in info.shape if s is None)
+        changes = self._update_shapes(data)
+        while changes:
+            changes = self._update_shapes(data)
 
-        nones = count_nones(data)
-        self._update_shapes(data)
-        while count_nones(data) < nones:
-            nones = count_nones(data)
-            self._update_shapes(data)
         self._circuitgraph = CircuitGraph(data, 0, [])
 
-    def _update_shapes(self, data: dict[int, Info]) -> None:
+    def _update_shapes(self, data: dict[int, Info]) -> bool:
         r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
         If two wires are connected and one of them has shape n and the other None, the shape of the
         wire with None is updated to n. If both wires have a shape, the minimum is taken.
 
         For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
         the shapes of the outputs.
+
+        It returns True if any shape was updated, False otherwise.
         """
-        # propagate one step
+        changes = False
+        # get shapes from neighbors if needed
         for i, info in data.items():
             for j, idxdict in info.neighbors.items():
                 for a, b in idxdict.items():
-                    if data[j].shape[b] is None:
+                    if data[j].shape[b] is None or data[j].shape[b] > (
+                        data[i].shape[a] or 1e42
+                    ):
                         data[j].shape[b] = data[i].shape[a]
-                    if data[i].shape[a] is None:
+                        changes = True
+                    if data[i].shape[a] is None or data[i].shape[a] > (
+                        data[j].shape[b] or 1e42
+                    ):
                         data[i].shape[a] = data[j].shape[b]
+                        changes = True
 
         # propagate through BSgates
         for i, info in data.items():
             if isinstance(self.components[i], BSgate):
                 a, b, c, d = info.shape
                 if c and d:
-                    if not a:
+                    if not a or a > c + d:
                         a = c + d
-                    if not b:
+                    if not b or b > c + d:
                         b = c + d
                 if a and b:
-                    if not c:
+                    if not c or c > a + b:
                         c = a + b
-                    if not d:
+                    if not d or d > a + b:
                         d = a + b
+                changes = changes or [a, b, c, d] != list(info.shape)
 
                 data[i].shape = [a, b, c, d]
 
@@ -163,7 +190,9 @@ class Circuit:
 
         # update components
         for i, c in enumerate(self.components):
-            c._fock_shape = data[i].shape
+            c.fock_shape = list(data[i].shape)
+
+        return changes
 
     def autopath(self, n_init: int = 100) -> None:
         r"""

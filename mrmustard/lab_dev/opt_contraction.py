@@ -46,33 +46,39 @@ class CircuitGraph:
         r"""Returns whether the graph has no edges left to contract"""
         return self.G.number_of_edges() == 0
 
-    def children(self, cost_bound: int) -> list[CircuitGraph]:
+    def children(self, cost_bound: int, in_edges: bool = False) -> list[CircuitGraph]:
         r"""Returns all the graphs obtained by contracting a single edge, for all edges.
-        Only children with a cost below ``cost_bound`` are returned."""
+        Only children with a cost below ``cost_bound`` are returned. If ``in_edges=True``,
+        also the in-edges are contracted.
+
+        Args:
+            cost_bound: The maximum cost of the children.
+            in_edges: Whether to also contract in-edges.
+        """
         children = []
-        for i, j, _ in self.G.edges:
+        for i, j, _ in self.G.out_edges:
             child = self.contract((i, j))
             if child.cost < cost_bound:
                 children.append(child)
+        if in_edges:
+            for i, j, _ in self.G.in_edges:
+                child = self.contract((i, j))
+                if child.cost < cost_bound:
+                    children.append(child)
         return children
 
+    def __hash__(self) -> int:
+        return hash(self.G)
+
     def grandchildren(self, cost_bound: int) -> list[CircuitGraph]:
+        children = self.children(cost_bound)
         grandchildren = []
-        for i, j, _ in self.G.edges:
-            # i, j = sorted([i, j])
-            g = self.contract((i, j))
-            assert j not in g.G.neighbors(i)
-            if g.cost < cost_bound:
-                # neighbors = [n for n in g.G.neighbors(i)]
-                edges = list(g.G.edges(i))  # I want only outgoing edges
-                for k in edges:
-                    g2 = g.contract(k)
-                    assert k[1] not in g2.G.neighbors(k[0])
-                    if g2.cost < cost_bound:
-                        grandchildren.append(g2)
-                if not edges:
-                    grandchildren.append(g)
-        return grandchildren
+        for c in children:
+            if c.is_leaf():
+                grandchildren.append(c)
+            else:
+                grandchildren += c.children(cost_bound)
+        return list(set(grandchildren))
 
     def contract(self, edge: tuple[int, int]) -> CircuitGraph:
         r"""Returns a copy of self with the given edge = (i,j) contracted.
@@ -137,21 +143,23 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     print("-" * 50)
     print()
 
-    debug = False
+    debug = True
     print("1. Applying heuristics to simplify the graph...")
-    graph = reduce_1BB(graph, debug=debug)
-    graph = reduce_2BB(graph, debug=debug)
-    graph = reduce_1FF(graph, debug=debug)
-    # 1FB is not always the best thing to do but it is for the staircase GBS
-    graph = reduce_1FB(graph, debug=debug)
-    graph = reduce_2FF(graph, debug=debug)
+    graph = reduce_pattern(graph, "1BB", debug=debug)
+    graph = reduce_pattern(graph, "2BB", debug=debug)
+    graph = reduce_pattern(graph, "1BF", debug=debug)
+    graph = reduce_pattern(graph, "1FF", debug=debug)
+    # 1FB is not always the best thing to do. For the staircase GBS it finds a good but not optimal solution.
+    # If these are removed however, the scaling is still factorial in the number of modes, even for the staircase.
+    # graph = reduce_pattern(graph, "1FB", debug=debug)
+    # graph = reduce_pattern(graph, "2FF", debug=debug)
 
-    print(f"2. Getting cost upper bound by {n_init} random contractions...", end=" ")
+    print(f"2. Getting cost upper bound by {n_init} random contractions...")
     best_cost = 1e42
-    for _ in range(n_init):
+    for i in range(n_init):
         cost, sol = random_cost(graph)
         if cost < best_cost:
-            print("upper bound =", cost)
+            print(f"contraction {i}: new upper bound = {cost}")
             best_cost = cost
             best_solution = sol
 
@@ -161,27 +169,30 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     max_qsize = 1
     while not graph_queue.empty():
         graph = graph_queue.get()
-        print("\033[K", end="\r")
         qsize = graph_queue.qsize()
         if qsize > max_qsize:
             max_qsize = qsize
+        print(" " * 80, end="\r")
         print(f"Queue size: {qsize}/{max_qsize}", "Current cost:", graph.cost, end="\r")
         if graph.cost > best_cost:
             continue
         if graph.is_leaf() and graph.cost < best_cost:
             best_solution = graph.solution
             best_cost = graph.cost
-            graph_queue.queue = [g for g in graph_queue.queue if g.cost < best_cost]
+            graph_queue.queue = [g for g in graph_queue.queue if g.cost <= best_cost]
         else:
-            for child in graph.grandchildren(cost_bound=best_cost):
+            pool = graph.grandchildren(cost_bound=best_cost)
+            if not pool:
+                pool = graph.children(cost_bound=best_cost)
+            for child in pool:
                 if child not in graph_queue.queue:
                     graph_queue.put(child)
                 else:
                     i = graph_queue.queue.index(child)
                     if child < graph_queue.queue[i]:
                         graph_queue.queue[i] = child
-    print("", end="\r")
-    print(f"Max queue size: {max_qsize}, best_cost: {best_cost}")
+    print(" " * 80, end="\r")
+    print(f"Max queue size: {max_qsize}, best cost: {best_cost}", end="\r")
     return best_cost, best_solution
 
 
@@ -202,125 +213,32 @@ def staircase(m: int):
     return data
 
 
-# Strategies for reducing the graph
-
-
-def reduce_first_1BB(graph) -> tuple[CircuitGraph, Optional[Edge]]:
-    r"""Reduces the first BB pair it finds where one of the nodes has degree 1 (leaf)."""
+def reduce_first(graph, pattern: str) -> tuple[CircuitGraph, Optional[Edge]]:
+    r"""Reduces the first pair of nodes that match the given pattern.
+    We use patterns: 1BB, 2BB, 1FF, 1BF, 1FB, 2FF."""
     for node in graph.G.nodes:
-        neighbors = list(graph.G.neighbors(node))
-        if len(neighbors) == 1 and graph.G.nodes[node]["type"] == "B":
-            neighbor = neighbors[0]  # there's only one
-            if graph.G.nodes[neighbor]["type"] == "B":
-                return graph.contract((node, neighbor)), (node, neighbor)
+        out_edges = list(graph.G.out_edges(node))
+        in_edges = list(graph.G.in_edges(node))
+        if (
+            len(out_edges) + len(in_edges) == int(pattern[0])
+            and graph.G.nodes[node]["type"] == pattern[1]
+        ):
+            for e in out_edges:
+                if graph.G.nodes[e[1]]["type"] == pattern[2]:
+                    return graph.contract((node, e[1])), (node, e[1])
+            for e in in_edges:
+                if graph.G.nodes[e[0]]["type"] == pattern[2]:
+                    return graph.contract((e[0], node)), (e[0], node)
     return graph, None
 
 
-def reduce_1BB(graph, debug=False) -> CircuitGraph:
-    r"""Reduces all BB pairs where one of the nodes has degree 1 (leaf)."""
-    graph, info = reduce_first_1BB(graph)
+def reduce_pattern(graph, pattern: str, debug=False) -> CircuitGraph:
+    r"""Reduces all pairs of nodes that match the given pattern."""
+    graph, info = reduce_first(graph, pattern)
     if debug and info:
-        print("Reduced 1BB", info)
+        print(f"Reduced {pattern}", info)
     while info:
-        graph, info = reduce_first_1BB(graph)
+        graph, info = reduce_first(graph, pattern)
         if debug and info:
-            print("Reduced 1BB", info)
+            print(f"Reduced {pattern}", info)
     return graph
-
-
-def reduce_first_2BB(graph):
-    r"""Reduces the first BB pair it finds where both nodes have degree 2."""
-    for node in graph.G.nodes:
-        neighbors = list(graph.G.neighbors(node))
-        if len(neighbors) == 2 and graph.G.nodes[node]["type"] == "B":
-            if graph.G.nodes[neighbors[0]]["type"] == "B":
-                return graph.contract((node, neighbors[0])), (node, neighbors[0])
-            if graph.G.nodes[neighbors[1]]["type"] == "B":
-                return graph.contract((node, neighbors[1])), (node, neighbors[1])
-    return graph, None
-
-
-def reduce_2BB(graph, debug=False):
-    r"""Reduces all BB pairs where both nodes have degree 2."""
-    graph, info = reduce_first_2BB(graph)
-    if debug and info:
-        print("Reduced 2BB", info)
-    while info:
-        graph, info = reduce_first_2BB(graph)
-        if debug and info:
-            print("Reduced 2BB", info)
-    return graph
-
-
-def reduce_first_1FF(graph) -> tuple[CircuitGraph, Optional[Edge]]:
-    r"""Reduces the first FF pair it finds where one of the nodes has degree 1 (leaf)."""
-    for node in graph.G.nodes:
-        nbrs = list(graph.G.neighbors(node))
-        if len(nbrs) == 1 and graph.G.nodes[node]["type"] == "F":
-            neighbor = nbrs[0]
-            if graph.G.nodes[neighbor]["type"] == "F":
-                return graph.contract((node, neighbor)), (node, neighbor)
-    return graph, None
-
-
-def reduce_1FF(graph, debug=False) -> CircuitGraph:
-    r"""Reduces all FF pairs where one of the nodes has degree 1 (leaf)."""
-    graph, info = reduce_first_1FF(graph)
-    if debug and info:
-        print("Reduced 1FF", info)
-    while info:
-        graph, info = reduce_first_1FF(graph)
-        if debug and info:
-            print("Reduced 1FF", info)
-    return graph
-
-
-def reduce_first_1FB(graph) -> tuple[CircuitGraph, Optional[Edge]]:
-    r"""Reduces the first FB pair it finds where one of the nodes has degree 1 (leaf)."""
-    for node in graph.G.nodes:
-        nbrs = list(graph.G.neighbors(node))
-        if len(nbrs) == 1 and graph.G.nodes[node]["type"] == "F":
-            neighbor = nbrs[0]
-            if graph.G.nodes[neighbor]["type"] == "B":
-                return graph.contract((node, neighbor)), (node, neighbor)
-    return graph, None
-
-
-def reduce_1FB(graph, debug=False) -> CircuitGraph:
-    r"""Reduces all FB pairs where one of the nodes has degree 1 (leaf)."""
-    graph, info = reduce_first_1FB(graph)
-    if debug and info:
-        print("Reduced 1FB", info)
-    while info:
-        graph, info = reduce_first_1FB(graph)
-        if debug and info:
-            print("Reduced 1FB", info)
-    return graph
-
-
-def reduce_first_2FF(graph) -> tuple[CircuitGraph, Optional[Edge]]:
-    r"""Reduces the first FF pair it finds where both nodes have degree 2."""
-    for node in graph.G.nodes:
-        nbrs = list(graph.G.neighbors(node))
-        if len(nbrs) == 2 and graph.G.nodes[node]["type"] == "F":
-            if graph.G.nodes[nbrs[0]]["type"] == "F":
-                return graph.contract((node, nbrs[0])), (node, nbrs[0])
-            if graph.G.nodes[nbrs[1]]["type"] == "F":
-                return graph.contract((node, nbrs[1])), (node, nbrs[1])
-    return graph, None
-
-
-def reduce_2FF(graph, debug=False) -> CircuitGraph:
-    r"""Reduces all FF pairs where both nodes have degree 2."""
-    graph, info = reduce_first_2FF(graph)
-    if debug and info:
-        print("Reduced 2FF", info)
-    while info:
-        graph, info = reduce_first_2FF(graph)
-        if debug and info:
-            print("Reduced 2FF", info)
-    return graph
-
-
-def propagate_shapes(graph: CircuitGraph) -> CircuitGraph:
-    r"""Propagates the known shapes where edges connect."""

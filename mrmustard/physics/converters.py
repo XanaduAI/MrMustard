@@ -21,18 +21,14 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
 
 
-def to_fock(
-    rep: Representation, shape: Optional[Union[int, Iterable[int]]] = None
-) -> Fock:
+def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
     r"""A function to map ``Representation``\s to ``Fock`` representations.
 
     If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
 
     Args:
         rep: The orginal representation of the object.
-        shape: The shape of the returned representation. If ``shape``is given as an ``int``, it is broadcasted
-            to all the dimensions. If ``None``, it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in
-            the settings.
+        shape: The shape of the returned representation.
 
     Raises:
         ValueError: If the size of the shape given is not compatible with the representation.
@@ -47,15 +43,13 @@ def to_fock(
         >>> from mrmustard.physics.triples import displacement_gate_Abc
 
         >>> bargmann = Bargmann(*displacement_gate_Abc(x=0.1, y=[0.2, 0.3]))
-        >>> fock = to_fock(bargmann, shape=10)
+        >>> fock = to_fock(bargmann, shape=[10])
         >>> assert isinstance(fock, Fock)
 
     """
     if isinstance(rep, Bargmann):
-        if not shape:
-            shape = (settings.AUTOCUTOFF_MAX_CUTOFF,) * rep.ansatz.dim
-        else:
-            shape = (shape,) * rep.ansatz.dim if isinstance(shape, int) else shape
+        if isinstance(shape, int):
+            shape = (shape,) * rep.ansatz.dim
         if rep.ansatz.dim != len(shape):
             raise ValueError(
                 f"Given shape ``{shape}`` is incompatible with the representation."
@@ -65,6 +59,5 @@ def to_fock(
             math.hermite_renormalized(A, b, c, shape)
             for A, b, c in zip(rep.A, rep.b, rep.c)
         ]
-        print("to fock with shape", shape)
         return Fock(math.astensor(array), batched=True)
     return rep

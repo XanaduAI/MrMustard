@@ -52,6 +52,8 @@ class CircuitComponent:
         modes_in_ket: The input modes on the ket side of this component.
     """
 
+    _autoshape_counter = 0
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -294,7 +296,7 @@ class CircuitComponent:
         """
         return self.__class__._from_attributes(
             self.name,
-            to_fock(self.representation, shape=shape),
+            to_fock(self.representation, shape=shape or self.autoshape),
             self.wires,
         )
 
@@ -309,7 +311,7 @@ class CircuitComponent:
         try:
             return self.representation.array.shape[1:]
         except AttributeError:
-            return (None,) * self.representation.ansatz.dim
+            return tuple(self.fock_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -359,6 +361,15 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
+    def __getattr__(self, name: str):
+        if name == "fock_shape":
+            try:
+                return self._fock_shape
+            except AttributeError:
+                self._fock_shape = [None] * len(self.wires)
+                return self._fock_shape
+        return object.__getattribute__(self, name)
+
     def _matmul_indices(
         self, other: CircuitComponent
     ) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -377,15 +388,50 @@ class CircuitComponent:
 
         return idx_z, idx_zconj
 
+    def _combine_fock_shapes(
+        self, other: CircuitComponent, new_wires: Wires, perm: tuple[int, ...]
+    ) -> tuple[int, ...]:
+        r"""
+        Combines the Fock shapes of the components being contracted.
+        """
+        new_fock_shape = []
+        for id in new_wires.ids:
+            try:
+                i = self.wires.ids.index(id)
+                s = self.fock_shape[i]
+            except ValueError:
+                i = other.wires.ids.index(id)
+                s = other.fock_shape[i]
+            new_fock_shape.append(s)
+        return [new_fock_shape[j] for j in perm]
+
+    def _to_fock_if_needed(
+        self, other: CircuitComponent
+    ) -> tuple[CircuitComponent, CircuitComponent]:
+        r"""
+        Converts the representations of ``self`` or ``other`` to Fock if the other is already in Fock.
+        """
+        if isinstance(other.representation, Fock):
+            self = self.to_fock_component()
+        elif isinstance(self.representation, Fock):
+            other = other.to_fock_component()
+        return self, other
+
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
         """
-        wires_ret, perm = self.wires @ other.wires
+        self, other = self._to_fock_if_needed(
+            other
+        )  # turn self or other into Fock representation
+        new_wires, perm = self.wires @ other.wires
+        new_fock_shape = self._combine_fock_shapes(other, new_wires, perm)
         idx_z, idx_zconj = self._matmul_indices(other)
         ret = self.representation[idx_z] @ other.representation[idx_zconj]
         ret = ret.reorder(perm) if perm else ret
-        return CircuitComponent._from_attributes(None, ret, wires_ret)
+        cc = CircuitComponent._from_attributes(None, ret, new_wires)
+        cc._fock_shape = new_fock_shape
+        return cc
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

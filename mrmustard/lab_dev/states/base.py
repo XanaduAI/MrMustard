@@ -34,6 +34,7 @@ from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
+from functools import cached_property
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
@@ -331,7 +332,7 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        if not isinstance(self.representation, Bargmann):
+        if self.representation.__class__.__qualname__ != "Bargmann":
             raise ValueError(
                 f"Can not calculate phase space for ``{self.name}`` object."
             )
@@ -828,15 +829,14 @@ class DM(State):
         try:
             return self.representation.array.shape[1:]
         except AttributeError:
+            if None not in self.fock_shape:
+                return tuple(self.fock_shape)
             cov, means, _ = self.phase_space(0)
             cutoffs = autocutoffs(cov, means, settings.AUTOCUTOFF_PROBABILITY)
-            return (
-                tuple(
-                    min(1 + c, self._fock_shape[i] or 1e42)
-                    for i, c in enumerate(cutoffs)
-                )
-                * 2
-            )
+            self.fock_shape = [
+                min(c + 1, s or 1e42) for c, s in zip(cutoffs, self.fock_shape)
+            ] * 2
+            return tuple(self.fock_shape)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -1015,16 +1015,20 @@ class Ket(State):
     @property
     def autoshape(self) -> tuple[int, ...]:
         r"""
-        The shape of this Ket calculated by keeping settings.AUTOCUTOFF_PROBABILITY of the norm.
+        The shape of this Ket calculated as the minimum of the autocutoff and
+        the fock_shape, if set.
         """
         try:
             return self.representation.array.shape[1:]
         except AttributeError:
+            if None not in self.fock_shape:
+                return tuple(self.fock_shape)
             cov, means, _ = self.phase_space(0)
             cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
-            return tuple(
-                min(c + 1, self._fock_shape[i] or 1e42) for i, c in enumerate(cutoffs)
-            )
+            self.fock_shape = [
+                min(c + 1, s or 1e42) for c, s in zip(cutoffs, self.fock_shape)
+            ]
+            return tuple(self.fock_shape)
 
     def expectation(self, operator: CircuitComponent):
         r"""
