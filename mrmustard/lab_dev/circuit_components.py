@@ -166,7 +166,9 @@ class CircuitComponent:
         )
 
         # The representation change from Bargmann into quadrature is to use the BtoQMap.
-        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual on in_bra wires.
+        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket 
+        # wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual 
+        # on in_bra wires.
         kets_done = (
             BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
         )
