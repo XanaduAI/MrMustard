@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
     SqueezedVacuum,
     Thermal,
     Vacuum,
+    Sauron,
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
@@ -83,14 +84,14 @@ class TestKet:
             Ket.from_bargmann([0], state01.bargmann, "my_ket")
 
     def test_bargmann_triple_error(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             Number([0], n=10).bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -98,9 +99,9 @@ class TestKet:
         assert state_in_fock == state_out
 
     def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).to_fock_component(5)
+        state01 = Coherent([0, 1], 1).to_fock(5)
         with pytest.raises(ValueError):
-            Ket.from_fock([0], state01.fock_array(5), "my_ket", True)
+            Ket.from_fock([0], state01.fock(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
@@ -140,11 +141,11 @@ class TestKet:
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
         assert math.allclose(state1.probability, 1 / 9)
-        assert math.allclose(state1.to_fock_component(20).probability, 1 / 9)
+        assert math.allclose(state1.to_fock(20).probability, 1 / 9)
 
         state2 = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
         assert math.allclose(state2.probability, 1.13533528)
-        assert math.allclose(state2.to_fock_component(20).probability, 1.13533528)
+        assert math.allclose(state2.to_fock(20).probability, 1.13533528)
 
         state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)
@@ -207,7 +208,7 @@ class TestKet:
     def test_expectation_fock(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
 
         assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
 
@@ -368,20 +369,20 @@ class TestDM:
 
     def test_from_fock_error(self):
         state01 = Coherent([0, 1], 1).dm()
-        state01 = state01.to_fock_component(2)
+        state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
+            DM.from_fock([0], state01.fock(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             fock.bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -425,11 +426,11 @@ class TestDM:
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
         assert state1.probability == 1
-        assert state1.to_fock_component(20).probability == 1
+        assert state1.to_fock(20).probability == 1
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert math.allclose(state2.to_fock_component(20).probability, 1)
+        assert math.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
@@ -482,7 +483,7 @@ class TestDM:
     def test_expectation_fock(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
         dm = ket.dm()
 
         k0 = Coherent([0], x=1, y=2)
@@ -717,6 +718,24 @@ class TestNumber:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+
+class TestSauron:
+    r"""
+    Tests the Sauron states.
+    """
+
+    def test_overlap_with_fock(self):
+        n1 = Number([0], n=1)
+        s1 = Sauron([0], n=1, r=0.1)
+        s1b = Sauron([0], n=1, r=0.5)
+        assert abs(s1.expectation(n1)) > abs(
+            s1b.expectation(n1)
+        )  # s1 is a better approx to n1 than s1b
+
+        n2 = Number([0], n=2)
+        s2 = Sauron([0], n=2, r=0.1)
+        assert np.isclose(s2.expectation(n2), 1.0)
 
 
 class TestSqueezedVacuum:
