@@ -61,6 +61,9 @@ class Settings:
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
 
+        self.TO_FOCK_SHOW_SHAPE = False
+        "Whether or not to print the shape of the Fock representation when converting from a Bargmann representation. Default is False."
+
         self.UNSAFE_ZIP_BATCH = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
 

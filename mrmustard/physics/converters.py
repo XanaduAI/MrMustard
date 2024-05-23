@@ -18,7 +18,7 @@ This module contains the functions to convert between different representations.
 
 from typing import Iterable
 from mrmustard.physics.representations import Representation, Bargmann, Fock
-from mrmustard import math
+from mrmustard import math, settings
 
 
 def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
@@ -54,5 +54,7 @@ def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
             raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
 
         array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
+        if settings.TO_FOCK_SHOW_SHAPE:
+            print(shape)
         return Fock(math.astensor(array), batched=True)
     return rep
