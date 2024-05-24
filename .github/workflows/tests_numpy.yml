@@ -10,7 +10,6 @@ env:
 
 jobs:
   pytest:
-    environment: testing  # determines which S3 bucket to write to [testing|production]
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT for S3 access
@@ -40,6 +39,9 @@ jobs:
           pip install --no-cache-dir poetry==1.8.0
           poetry config virtualenvs.create false
           poetry install --extras "ray" --with dev
+
+      - name: Initialize Julia project  # to keep test times stable
+        run: python -c 'from juliacall import Main as jl'
 
       - name: Create durations file name
         id: record_file
