@@ -57,8 +57,8 @@ duration_files = sorted(Path(__file__).parent.glob("durations*.txt"))
 all_timings = list(map(load_timings, duration_files))
 
 timings_dict: Dict[str, List[Tuple[int, float]]] = defaultdict(list)
-for i, timings in enumerate(all_timings):
-    for test_name, timing in timings:
+for i, commit_timings in enumerate(all_timings):
+    for test_name, timing in commit_timings:
         timings_dict[test_name].append((i, timing))
 
 # LineCollection usage taken from: https://stackoverflow.com/a/15773341
