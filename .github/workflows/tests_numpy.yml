@@ -5,9 +5,6 @@ on:
       - develop
   pull_request:
 
-env:
-  ADDITIONAL_PYTEST_ARGS: ${{ github.event_name == 'push' && '--durations=0 -vv ' || '' }}
-
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -50,7 +47,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.ADDITIONAL_PYTEST_ARGS }}| tee durations.txt
+          python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ github.event_name == 'push' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       # - name: Reformat durations file

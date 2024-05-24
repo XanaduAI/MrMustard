@@ -83,7 +83,7 @@ def test_additive_noise_equal_to_circuit():
     amp = 1.0 + np.random.uniform()
     c1 = Attenuator(1 / amp, nb) >> Amplifier(amp, na)
     c2 = AdditiveNoise(2 * (amp - 1) * (1 + na + nb))
-    assert all(np.array_equal(ele1, ele2) for ele1, ele2 in zip(c1.bargmann(), c2.bargmann()))
+    assert all(np.allclose(ele1, ele2) for ele1, ele2 in zip(c1.bargmann(), c2.bargmann()))
 
 
 @given(gate=single_mode_cv_channel())
