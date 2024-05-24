@@ -46,7 +46,10 @@ jobs:
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
       - name: Run tests
-        run: python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.ADDITIONAL_PYTEST_ARGS }}| tee durations.txt
+        run: |
+          set -o pipefail
+          python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.ADDITIONAL_PYTEST_ARGS }}| tee durations.txt
+          set +o pipefail
 
       - name: Reformat durations file
         if: github.event_name == 'push'
