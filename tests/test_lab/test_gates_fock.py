@@ -27,6 +27,8 @@ from thewalrus.fock_gradients import (
 
 from mrmustard import math, settings
 from mrmustard.lab import (
+    AdditiveNoise,
+    Amplifier,
     Attenuator,
     BSgate,
     Coherent,
@@ -73,6 +75,15 @@ def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
     assert state_out == state
+
+
+def test_additive_noise_equal_to_circuit():
+    """Test that the channel is equivalent to an amplifier followed by an attenuator."""
+    na, nb = np.random.uniform(size=2)
+    amp = 1.0 + np.random.uniform()
+    c1 = Attenuator(1 / amp, nb) >> Amplifier(amp, na)
+    c2 = AdditiveNoise(2 * (amp - 1) * (1 + na + nb))
+    assert all(np.array_equal(ele1, ele2) for ele1, ele2 in zip(c1.bargmann(), c2.bargmann()))
 
 
 @given(gate=single_mode_cv_channel())

@@ -5,9 +5,15 @@ on:
       - develop
   pull_request:
 
+env:
+  ADDITIONAL_PYTEST_ARGS: ${{ github.event_name == 'push' && '--durations=0 -vv ' || '' }}
+
 jobs:
   pytest:
+    environment: testing  # determines which S3 bucket to write to [testing|production]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting the JWT for S3 access
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
@@ -35,21 +41,33 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --extras "ray" --with dev
 
-      - name: Record file suffix
-        id: record_suffix
-        run: echo "suffix=$(date +%s)_$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Create durations file name
+        id: record_file
+        run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
       - name: Run tests
-        run: |
-          if [[ ${{ github.event_name }} = "push" ]]; then
-            python -m pytest tests --backend=numpy -p no:warnings --tb=native --durations=0 -vv | grep ' call ' | awk '{print $3,$1}' > durations_${{ steps.record_suffix.outputs.suffix }}.txt
-          else
-            python -m pytest tests --backend=numpy -p no:warnings --tb=native
-          fi
+        run: python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.ADDITIONAL_PYTEST_ARGS }}| tee durations.txt
+
+      - name: Reformat durations file
+        if: github.event_name == 'push'
+        run: grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.record_file.outputs.filename }}
 
       - name: Upload benchmark results
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v3
         with:
-          name: timings_${{ steps.record_suffix.outputs.suffix }}
-          path: durations_${{ steps.record_suffix.outputs.suffix }}.txt
+          name: timings
+          path: ${{ steps.record_file.outputs.filename }}
+
+      # - name: configure aws credentials
+      #   if: github.event_name == 'push'
+      #   uses: aws-actions/configure-aws-credentials@v3
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+      #     aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
+      # - name: Copy durations to s3
+      #   if: github.event_name == 'push'
+      #   run: |
+      #     grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.record_file.outputs.filename }}
+      #     aws s3 cp ./${{ steps.record_file.outputs.filename }} s3://${{ secrets.AWS_TIMINGS_BUCKET }}/
