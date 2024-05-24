@@ -1,5 +1,6 @@
 """Visualize timing results from many pytest runs to help identify regressions."""
 
+from argparse import ArgumentParser
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
@@ -51,27 +52,54 @@ def load_timings(file: Path):
     ]
 
 
-# sort duration files (named with epoch timestamps) then load timings
+if __name__ == "__main__":
+    parser = ArgumentParser(
+        usage=(
+            "visualize_timings.py [-h] data_folder"
+            "\n\n1. Sync files from S3 using the AWS CLI. For example:\n\t"
+            "aws s3 sync s3://top-secret-bucket-name/numpy_tests/develop/ /path/to/local/folder/\n"
+            "2. Run this script:\n\t"
+            "python .github/workflows/scripts/visualize_timings.py /path/to/local/folder"
+        ),
+        description="Visualize pytest duration data to detect regressions.",
+    )
+    parser.add_argument("data_folder", type=str, help="Folder where duration files are synced")
+    args = parser.parse_args()
+    data_folder = Path(args.data_folder)
 
-duration_files = sorted(Path(__file__).parent.glob("durations*.txt"))
-all_timings = list(map(load_timings, duration_files))
+    # sort duration files (named with epoch timestamps) then load timings
+    duration_files = sorted(data_folder.glob("durations_*.txt"))
+    all_timings = list(map(load_timings, duration_files))
 
-timings_dict: Dict[str, List[Tuple[int, float]]] = defaultdict(list)
-for i, commit_timings in enumerate(all_timings):
-    for test_name, timing in commit_timings:
-        timings_dict[test_name].append((i, timing))
+    timings_dict: Dict[str, List[Tuple[int, float]]] = defaultdict(list)
+    for i, commit_timings in enumerate(all_timings):
+        for test_name, timing in commit_timings:
+            timings_dict[test_name].append((i, timing))
 
-# LineCollection usage taken from: https://stackoverflow.com/a/15773341
+    # LineCollection usage taken from: https://stackoverflow.com/a/15773341
 
-my_cmap = plt.get_cmap("jet")
-colours = [my_cmap(random()) for _ in timings_dict]
-ln_coll = LineCollection(list(timings_dict.values()), colors=colours)
+    groups = {group_name: list(group) for group_name, group in groupby(sorted(timings_dict), key=lambda x: x.split("/")[1])}
 
-ax = plt.gca()
-ax.add_collection(ln_coll)
-ax.set_xlim(0, len(all_timings) - 1)
-ax.set_ylim(0, 25)
-plt.draw()
+    fig = plt.figure(1)
+    my_cmap = plt.get_cmap('jet')
 
-# test_times: Dict[str, List[float]] = {test_name: [t for _, t in idx_and_timing] for test_name, idx_and_timing in timings_dict.items()}
-# """Map from test name to sorted list of timings. Useful for computational analysis."""
+    tot = len(groups)
+    cols = 3
+    rows = sum(divmod(tot, cols))
+
+    for idx, (group, test_names) in enumerate(groups.items()):
+        ax = fig.add_subplot(rows, cols, idx+1)
+        ax.set_title(group)
+        colours = [my_cmap(random()) for _ in test_names]
+        values = [timings_dict[n] for n in test_names]
+        ln_coll = LineCollection(values, colors=colours)
+        ax.add_collection(ln_coll)
+        ax.set_xlim(0, len(all_timings) - 1)
+        ax.set_ylim(0, max(max(v[1] for v in value_set) for value_set in values) + 0.01)
+
+    fig.tight_layout()
+    fig.set_dpi(200)
+    plt.show()
+
+    # test_times: Dict[str, List[float]] = {test_name: [t for _, t in idx_and_timing] for test_name, idx_and_timing in timings_dict.items()}
+    # """Map from test name to sorted list of timings. Useful for computational analysis."""
