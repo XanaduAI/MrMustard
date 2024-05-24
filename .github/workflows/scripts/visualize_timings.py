@@ -44,7 +44,7 @@ def load_timings(file: Path):
 
     # now aggregate for tests known to have random params
     # sort by test name or aggregation will fail
-    timings = sorted(timings, key=lambda i: i[0])
+    timings.sort(key=lambda i: i[0])
     return [
         (test_name, sum(parse_time(t) for _, t in list(group)))
         for test_name, group in groupby(timings, key=aggregate_keyfunc)
