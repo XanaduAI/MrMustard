@@ -50,17 +50,6 @@ jobs:
           python -m pytest tests --backend=numpy -p no:warnings --tb=native ${{ github.event_name == 'push' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
-      # - name: Reformat durations file
-      #   if: github.event_name == 'push'
-      #   run: grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.record_file.outputs.filename }}
-
-      # - name: Upload benchmark results
-      #   if: github.event_name == 'push'
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: timings
-      #     path: ${{ steps.record_file.outputs.filename }}
-
       - name: configure aws credentials
         if: github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v3
