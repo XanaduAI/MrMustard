@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" ``Wires`` class for supporting tensor network functionalities."""
+"""``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
 from functools import cached_property
@@ -184,7 +184,7 @@ class Wires:
         """
         if self.original:
             return self.original.id
-        return np.random.randint(0, 2**32)
+        return np.random.randint(0, 2**31)
 
     @cached_property
     def ids(self) -> list[int]:
