@@ -25,8 +25,16 @@ from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
-from mrmustard.lab_dev.states import Ket, Number, Vacuum, DisplacedSqueezed
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
+from mrmustard.lab_dev.states import (
+    Ket,
+    DM,
+    Number,
+    Vacuum,
+    DisplacedSqueezed,
+    Coherent,
+    SqueezedVacuum,
+)
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -165,23 +173,23 @@ class TestCircuitComponent:
             Vacuum([1, 2]).on([3])
 
     @pytest.mark.parametrize("shape", [3, [3, 2]])
-    def test_to_fock_component(self, shape):
+    def test_to_fock(self, shape):
         vac = Vacuum([1, 2])
-        vac_fock = vac.to_fock_component(shape=shape)
+        vac_fock = vac.to_fock(shape=shape)
         assert vac_fock.name == vac.name
         assert vac_fock.wires == vac.wires
         assert vac_fock.representation == to_fock(vac.representation, shape)
         assert isinstance(vac_fock, Ket)
 
         n = Number([3], n=4)
-        n_fock = n.to_fock_component(shape=shape)
+        n_fock = n.to_fock(shape=shape)
         assert n_fock.name == n.name
         assert n_fock.wires == n.wires
         assert n_fock.representation == to_fock(n.representation, shape)
         assert isinstance(n_fock, Ket)
 
         d = Dgate([1], x=0.1, y=0.1)
-        d_fock = d.to_fock_component(shape=shape)
+        d_fock = d.to_fock(shape=shape)
         assert d_fock.name == d.name
         assert d_fock.wires == d.wires
         assert d_fock.representation == to_fock(d.representation, shape)
@@ -323,15 +331,15 @@ class TestCircuitComponent:
         a1 = Attenuator([1], transmissivity=0.8)
         a2 = Attenuator([2], transmissivity=0.7)
 
-        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock_component()
+        r1 = (vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2).to_fock()
         r2 = (
-            vac012.to_fock_component()
-            >> d0.to_fock_component()
-            >> d1.to_fock_component()
-            >> d2.to_fock_component()
-            >> a0.to_fock_component()
-            >> a1.to_fock_component()
-            >> a2.to_fock_component()
+            vac012.to_fock()
+            >> d0.to_fock()
+            >> d1.to_fock()
+            >> d2.to_fock()
+            >> a0.to_fock()
+            >> a1.to_fock()
+            >> a2.to_fock()
         )
 
         assert r1 == r2
@@ -353,18 +361,13 @@ class TestCircuitComponent:
         r1 = vac12 >> d1 >> d2 >> a1 >> n12
 
         # fock >> bargmann
-        r2 = vac12.to_fock_component() >> d1 >> d2 >> a1 >> n12
+        r2 = vac12.to_fock() >> d1 >> d2 >> a1 >> n12
 
         # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock_component() >> d2 >> a1 >> n12
+        r3 = vac12 >> d1.to_fock() >> d2 >> a1 >> n12
 
         # fock only
-        r4 = (
-            vac12.to_fock_component()
-            >> d12.to_fock_component()
-            >> a1.to_fock_component()
-            >> n12.to_fock_component()
-        )
+        r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
 
         assert math.allclose(r1.representation.array, r2.representation.array)
         assert math.allclose(r1.representation.array, r3.representation.array)
@@ -402,6 +405,32 @@ class TestCircuitComponent:
 
         assert repr(c1) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
         assert repr(c2) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
+
+    def test_to_fock_keeps_bargmann(self):
+        "tests that to_fock doesn't lose the bargmann representation"
+        coh = Coherent([0], x=1.0)
+        coh.to_fock(20)
+        assert coh.bargmann == Coherent([0], x=1.0).bargmann
+
+    def test_fock_component_no_bargmann(self):
+        "tests that a fock component doesn't have a bargmann representation by default"
+        coh = Coherent([0], x=1.0).to_fock(20)
+        CC = CircuitComponent._from_attributes("CC", coh.representation, coh.wires)
+        with pytest.raises(AttributeError):
+            CC.bargmann  # pylint: disable=pointless-statement
+
+    def test_quadrature_ket(self):
+        "tests that transforming to quadrature and back gives the same ket"
+        state = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
+        back = Ket.from_quadrature([0], [q[0] for q in state.quadrature()])
+        assert back == state
+
+    def test_quadrature_rho(self):
+        "tests that transforming to quadrature and back gives the same density matrix"
+        rho = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        quad = rho.quadrature()
+        back = DM.from_quadrature([0], [q[0] for q in quad])
+        assert rho == back
 
 
 class TestAdjointView:

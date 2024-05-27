@@ -68,9 +68,9 @@ class TestTraceOut:
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        state = Coherent([0, 1, 2], x=1).to_fock_component()
-        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock_component().dm()
-        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock_component().dm()
+        state = Coherent([0, 1, 2], x=1).to_fock()
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock().dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
 
         no_state = state >> TraceOut([0, 1, 2])
         assert no_state.modes == []
@@ -173,11 +173,11 @@ class TestBtoQMap:
         c0 = 1.0 + 0j
 
         modes = [0, 1]
-        QtoBMap_CC1 = BtoQMap(modes)
+        BtoQMap_CC1 = BtoQMap(modes)
         step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
+            BtoQMap_CC1.representation.A[0],
+            BtoQMap_CC1.representation.b[0],
+            BtoQMap_CC1.representation.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
@@ -207,11 +207,11 @@ class TestBtoQMap:
         c0 = 1.0 + 0j
 
         modes = [0]
-        QtoBMap_CC1 = BtoQMap(modes)
+        BtoQMap_CC1 = BtoQMap(modes)
         step1A, step1b, step1c = (
-            QtoBMap_CC1.representation.A[0],
-            QtoBMap_CC1.representation.b[0],
-            QtoBMap_CC1.representation.c[0],
+            BtoQMap_CC1.representation.A[0],
+            BtoQMap_CC1.representation.b[0],
+            BtoQMap_CC1.representation.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),

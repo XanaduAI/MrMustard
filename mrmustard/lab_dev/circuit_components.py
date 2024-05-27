@@ -24,16 +24,15 @@ from typing import Iterable, Optional, Sequence, Union
 
 import os
 import numpy as np
-
 from IPython.display import display, HTML
 from mako.template import Template
 
-from ..utils.typing import Scalar
-from ..physics.converters import to_fock
-from ..physics.representations import Representation, Bargmann, Fock
-from ..math.parameter_set import ParameterSet
-from ..math.parameters import Constant, Variable
-from .wires import Wires
+from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.physics.converters import to_fock
+from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
@@ -151,11 +150,34 @@ class CircuitComponent:
         r"""
         The Bargmann parametrization of this circuit component, if available.
         """
-        if not isinstance(self.representation, Bargmann):
-            raise ValueError(
+        try:
+            return self.representation.triple
+        except AttributeError as e:
+            raise AttributeError(
                 f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
-            )
-        return self.representation.triple
+            ) from e
+
+    def quadrature(self) -> tuple | ComplexTensor:
+        r"""
+        The quadrature representation of this circuit component.
+        """
+        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
+            BtoQMap,
+        )
+
+        # The representation change from Bargmann into quadrature is to use the BtoQMap.
+        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket
+        # wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual
+        # on in_bra wires.
+        kets_done = (
+            BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
+        )
+        all_done = (
+            BtoQMap(self.wires.input.bra.modes).adjoint.dual
+            @ kets_done
+            @ BtoQMap(self.wires.output.bra.modes).adjoint
+        )
+        return all_done.representation.data
 
     @property
     def representation(self) -> Representation | None:
@@ -248,21 +270,17 @@ class CircuitComponent:
                 msg = f"Expected ``{len(modes)}`` modes, found ``{len(subset.modes)}``."
                 raise ValueError(msg)
 
-        wires = Wires(
+        ret = self.light_copy()
+        ret._wires = Wires(
             modes_out_bra=modes if ob else set(),
             modes_in_bra=modes if ib else set(),
             modes_out_ket=modes if ok else set(),
             modes_in_ket=modes if ik else set(),
         )
 
-        ret = self.light_copy()
-        ret._wires = wires
-
         return ret
 
-    def to_fock_component(
-        self, shape: Optional[Union[int, Iterable[int]]] = None
-    ) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -276,7 +294,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock_component(shape=3)
+            >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
@@ -349,12 +367,10 @@ class CircuitComponent:
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
         idx_z = self.wires.bra.output[bra_modes].indices
         idx_zconj = other.wires.bra.input[bra_modes].indices
-
         # find the indices of the wires being contracted on the ket side
         ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
         idx_z += self.wires.ket.output[ket_modes].indices
         idx_zconj += other.wires.ket.input[ket_modes].indices
-
         return idx_z, idx_zconj
 
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
@@ -363,9 +379,9 @@ class CircuitComponent:
         """
         wires_ret, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
-        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
-        return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
+        rep = self.representation[idx_z] @ other.representation[idx_zconj]
+        rep = rep.reorder(perm) if perm else rep
+        return CircuitComponent._from_attributes(None, rep, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -402,18 +418,22 @@ class CircuitComponent:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
     def _repr_html_(self):  # pragma: no cover
-        temp = Template(filename=os.path.dirname(__file__) + "/assets/circuit_components.txt")
+        temp = Template(
+            filename=os.path.dirname(__file__) + "/assets/circuit_components.txt"
+        )  # nosec
 
-        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
+        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
             wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         )
 
         rep_temp = (
-            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")
+            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")  # nosec
             if isinstance(self.representation, Fock)
-            else Template(filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt")
+            else Template(
+                filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt"
+            )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
         rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
