@@ -27,13 +27,14 @@ from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
 from mrmustard.lab_dev.states import (
     Ket,
+    DM,
     Number,
     Vacuum,
     DisplacedSqueezed,
     Coherent,
     SqueezedVacuum,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -52,9 +53,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(
-            name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8)
-        )
+        cc = CircuitComponent(name, representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8))
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -75,9 +74,7 @@ class TestCircuitComponent:
         r3 = (cc1.adjoint @ cc1).representation
         cc3 = CircuitComponent("", r3, m2, m2, m2, m1)
         cc4 = CircuitComponent("", r3, m2, m2, m2, m2)
-        assert cc3.representation == cc4.representation.reorder(
-            [0, 1, 2, 3, 4, 5, 7, 6]
-        )
+        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -423,9 +420,17 @@ class TestCircuitComponent:
             CC.bargmann  # pylint: disable=pointless-statement
 
     def test_quadrature_ket(self):
+        "tests that transforming to quadrature and back gives the same ket"
         state = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
         back = Ket.from_quadrature([0], [q[0] for q in state.quadrature()])
         assert back == state
+
+    def test_quadrature_rho(self):
+        "tests that transforming to quadrature and back gives the same density matrix"
+        rho = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        quad = rho.quadrature()
+        back = DM.from_quadrature([0], [q[0] for q in quad])
+        assert rho == back
 
 
 class TestAdjointView:
@@ -450,9 +455,7 @@ class TestAdjointView:
         c2 = CircuitComponent("my_component", modes_out_ket=(0, 1, 2))
 
         assert repr(c1.adjoint) == "CircuitComponent(name=CC012, modes=[0, 1, 2])"
-        assert (
-            repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
-        )
+        assert repr(c2.adjoint) == "CircuitComponent(name=my_component, modes=[0, 1, 2])"
 
     def test_parameters_point_to_original_parameters(self):
         r"""
