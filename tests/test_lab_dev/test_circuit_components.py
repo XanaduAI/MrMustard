@@ -411,6 +411,10 @@ class TestCircuitComponent:
         with pytest.raises(AttributeError):
             CC.bargmann  # pylint: disable=pointless-statement
 
+    def test_quadrature_ket(self):
+        quad = (SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)).quadrature
+        CircuitComponent.from_quadrature(*quad)
+
 
 class TestAdjointView:
     r"""

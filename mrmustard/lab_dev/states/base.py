@@ -916,24 +916,20 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Ket:
-        QtoBMap_CC = BtoQMap(modes).dual
-        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
-            QtoBMap_CC.representation.A[0],
-            QtoBMap_CC.representation.b[0],
-            QtoBMap_CC.representation.c[0],
-        )
-        joinedA, joinedb, joinedc = join_Abc_real(
+        QtoBMap_rep = BtoQMap(modes).dual.representation
+        QtoBMap_triple = triple(el[0] for el in QtoBMap_rep.triple)
+        joined_triples = join_Abc_real(
             triple,
-            (QtoBMap_A, QtoBMap_b, QtoBMap_c),
-            idx1=list(np.arange(len(modes))),
-            idx2=list(np.arange(len(modes), 2 * len(modes))),
+            QtoBMap_triple,
+            idx1=list(range(len(modes))),
+            idx2=list(range(len(modes), 2 * len(modes))),
         )
-        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
-            (joinedA, joinedb, joinedc),
-            idx=list(np.arange(len(modes))),
+        bargmann_triple = real_gaussian_integral(
+            joined_triples,
+            idx=list(range(len(modes))),
         )
         ret = Ket(name, modes)
-        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
+        ret._representation = Bargmann(*bargmann_triple)
         return ret
 
     @property
