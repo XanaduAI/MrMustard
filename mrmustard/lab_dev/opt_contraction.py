@@ -184,9 +184,7 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     graph = reduce_pattern(graph, "2BB", debug=debug)
     graph = reduce_pattern(graph, "1BF", debug=debug)
     graph = reduce_pattern(graph, "1FF", debug=debug)
-    graph = reduce_pattern(
-        graph, "1FB", debug=debug
-    )  # not always right. Good for staircase.
+    graph = reduce_pattern(graph, "1FB", debug=debug)  # not always right. Good for staircase.
     # graph = reduce_pattern(graph, "2FF", debug=debug)  # not always right.
     print(f"Edges remaining: {graph.G.number_of_edges()}")
     print(f"\n2. Getting cost upper bound by {n_init} random contractions...")

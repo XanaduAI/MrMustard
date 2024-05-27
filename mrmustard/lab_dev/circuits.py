@@ -32,9 +32,16 @@ __all__ = ["Circuit"]
 
 class Circuit:
     r"""
-    A quantum circuit.
+    A quantum circuit. It is a sequence of uncontracted components, which leaves the
+    possibility of contracting them in different orders. The order in which the components
+    are contracted is specified by the ``path`` attribute.
 
-    Quantum circuits store a list of ``CircuitComponent``s.
+    Different orders of contraction lead to the same result, but the cost of the contraction
+    can vary significantly. The ``path`` attribute is used to specify the order in which the
+    components are contracted.
+
+    We supply an automatic path generator that uses a graph representation of the circuit
+    and a branch-and-bound algorithm to find the optimal path. The path can also be set manually.
 
     .. code-block::
 
@@ -76,8 +83,7 @@ class Circuit:
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
-
-        # self.make_circuitgraph()
+        self._circuitgraph: Optional[CircuitGraph] = None
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -89,7 +95,7 @@ class Circuit:
         Raises:
             ValueError: If ``circuit`` has an incomplete path.
         """
-        if len(self.path) != len(self) - 1:
+        if len(self.path) != len(self.components) - 1:
             msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
             msg += f"found {len(self.path)}."
             raise ValueError(msg)
@@ -189,7 +195,6 @@ class Circuit:
                         changes = True
                     if self.components[i].fock_shape[a] != s:
                         self.components[i].fock_shape[a] = s
-                        print(i, j, a, b, s)
                         changes = True
 
         # propagate through BSgates
