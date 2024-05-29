@@ -1,7 +1,10 @@
 {
 	"name": "MrMustard 🌭",
 	"build": {
-		"dockerfile": "../env.Dockerfile"
+		"dockerfile": "../env.Dockerfile",
+		"args": {
+			"PYTHON_VERSION": "${localEnv:MRMUSTARD_PYTHON_VERSION:3.10}"
+		}
 	},
 	"postCreateCommand": "/bin/sh ./.devcontainer/postinstall.sh",
 	"customizations": {

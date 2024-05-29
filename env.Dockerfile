@@ -1,5 +1,6 @@
 # *** Base *** #
-FROM python:3.10 AS base
+ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
