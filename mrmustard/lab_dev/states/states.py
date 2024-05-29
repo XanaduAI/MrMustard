@@ -29,7 +29,14 @@ from mrmustard.physics import triples
 from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum"]
+__all__ = [
+    "Coherent",
+    "DisplacedSqueezed",
+    "Number",
+    "SqueezedVacuum",
+    "Thermal",
+    "Vacuum",
+]
 
 
 #  ~~~~~~~~~~~
@@ -192,7 +199,7 @@ class Number(Ket):
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__("N", modes=modes)
+        super().__init__(f"{n}", modes=modes)
 
         self._n = math.atleast_1d(n)
         if len(self._n) == 1:

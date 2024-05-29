@@ -95,7 +95,9 @@ class DsMap(CircuitComponent):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
+        return Bargmann(
+            *triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes))
+        )
 
 
 class BtoQMap(CircuitComponent):
@@ -104,7 +106,6 @@ class BtoQMap(CircuitComponent):
     Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
 
     The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from ``Bargmann`` into quadrature on the `bra` Wire.
-    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
 
     Args:
         modes: The modes of this channel.

@@ -219,17 +219,33 @@ class Circuit:
                 self.components[i].fock_shape = [a, b, c, d]
 
         # TODO: propagate through where A matrix is block-antidiagonal
+        # TODO: do S2gate (easy!)
         return changes
 
-    def autopath(self, n_init: int = 100) -> None:
+    def autopath(
+        self,
+        heuristics=["1BB", "2BB", "1FF", "1BF", "2FF"],
+        n_init: int = 100,
+        debug: bool = False,
+    ) -> None:
         r"""
-        Automatically generates a path for this circuit.
+        Automa generates a path for this circuit.
+        It first applies heuristics to simplify the graph, then uses a branch-and-bound algorithm
+        to find the optimal path. Beware it scales factorially with the number of components, but
+        the heuristics can reduce the number of components significantly.
 
-        The path is generated using the ``make_path`` method with the ``l2r`` strategy.
+        The default heuristics are:
+            * ``1BB``: Contract all the Bagmann components that are connected to a Bargmann component by a single wire. This operation reduces the number of components by one and the number of wires of the remaining component by one.
+            * ``2BB``: Contract all the Bagmann components that are connected to two Bargmann components by a single wire each. This operation reduces the number of components by one and the number of wires of the remaining component does not change.
+            * ``1FF``: Same as 1BB but for Fock-Fock components.
+            * ``1BF``: Same as 1BB but for Bagmann-Fock components (bargmann will be transformed to fock).
+            * ``2FF``: Same as 2BB but for Fock-Fock components.
+
+        These are all always good, so expect to add to these if you need to. Any string in the form ``nXY`` will be interpreted as "contract all the components of type X with n wires that are connected to n components of type Y". For example sometimes 1FB can simplify very large circuits, even though it is not always the best choice, because it depends how many other wires the B part has (F has only 1 wire here).
         """
-        if not hasattr(self, "_circuitgraph"):
+        if not self._circuitgraph:
             self.make_circuitgraph()
-        cost, sol = optimal_path(self._circuitgraph, n_init)
+        cost, sol = optimal_path(self._circuitgraph, n_init, heuristics, debug)
         self.path = [tuple(pair) for (cost, pair) in sol]
 
     @property

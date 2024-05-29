@@ -2,7 +2,7 @@ from __future__ import annotations
 from queue import PriorityQueue
 import networkx as nx
 import random
-from typing import Optional
+from typing import Optional, Sequence
 from dataclasses import dataclass
 import numpy as np
 
@@ -18,12 +18,16 @@ class NodeData:
 
 
 class CircuitGraph:
-    r"""A graph representing a circuit. If it is the first graph in a contraction path,
-    initialize it with ``cost=0`` and ``solution=[]``, as we get this graph for free without
-    any contractions needed.
+    r"""A graph representing a circuit.
+    It can be initialized directly from a list of CircuitComponents or by starting with
+    Circuit() and then using the rightshift operator to add components.
+
+    The cost argument is the cost of obtaining this graph from previous contractions.
+    The solution argument is a list of contractions that lead to this graph.
+    Therefore, a brand new unoptimized graph has cost 0 and no list of contractions.
 
     Args:
-        data: A dict of nodes to types and neighbors.
+        data: A dict of nodes (ints) to NodeData objects.
         cost: The cost of obtaining this graph from previous contractions.
         solution: The contractions that lead to this graph.
     """
@@ -31,20 +35,25 @@ class CircuitGraph:
     def __init__(
         self,
         data: dict[Node, NodeData],
-        cost: int,
-        solution: list[tuple[Node, Node]],
+        cost: int = 0,
+        solution: Sequence[tuple[Node, Node]] = (),
     ) -> None:
+        solution = list(solution)
         self.G = nx.DiGraph()
         for i, nd in data.items():
-            self.G.add_node(i, type=nd.type, shape=nd.shape, indices=nd.indices)
+            self.G.add_node(i, type=nd.type, shape=nd.shape)  # , indices=nd.indices)
             for j in nd.indices:
-                self.G.add_edge(i, j)
+                self.G.add_edge(i, j, indices=nd.indices[j])
         self.cost = cost
         self.solution = solution
 
-    def nodes(self, i: Node) -> NodeData:
+    def nodes(self, i: Node) -> dict:
         r"""Returns the data of node i."""
         return self.G.nodes[i]
+
+    def edges(self, i: Node, j: Node) -> dict:
+        r"""Returns the data of the edge between i and j."""
+        return self.G.edges[i, j]
 
     def __lt__(self, other: CircuitGraph) -> bool:
         "this is to make the priority queue work"
@@ -54,21 +63,22 @@ class CircuitGraph:
         r"""Returns whether the graph has no edges left to contract"""
         return self.G.number_of_edges() == 0
 
-    def children(self, cost_bound: int, only_out: bool = True) -> list[CircuitGraph]:
+    def children(self, cost_bound: int, all_edges: bool = False) -> list[CircuitGraph]:
         r"""Returns all the graphs obtained by contracting a single outgoing edge.
-        Only children with a cost below ``cost_bound`` are returned. If ``only_out=False``,
-        all edges are contracted.
+        Only children with a cost below ``cost_bound`` are returned. If ``all_edges=True``,
+        all edges are contracted, including incoming edges.
+        Note that incoming edges should never be needed though.
 
         Args:
             cost_bound: The maximum cost of the children.
-            only_out: Whether to contract only outgoing edges (default) or all edges.
+            all_edges: Whether to consider incoming edges as well.
         """
         children = []
         for i, j in self.G.out_edges:
             child = self.contract((i, j))
             if child.cost < cost_bound:
                 children.append(child)
-        if not only_out:
+        if all_edges:
             for i, j in self.G.in_edges:
                 child = self.contract((i, j))
                 if child.cost < cost_bound:
@@ -79,13 +89,16 @@ class CircuitGraph:
         return hash(self.G)
 
     def grandchildren(self, cost_bound: int) -> list[CircuitGraph]:
-        children = self.children(cost_bound, only_out=True)
+        r"""Returns all the graphs obtained by contracting two outgoing edges.
+        Only grandchildren with a cost below ``cost_bound`` are returned."""
+
+        children = self.children(cost_bound)
         grandchildren = []
         for c in children:
             if c.is_leaf():
                 grandchildren.append(c)
             else:
-                grandchildren += c.children(cost_bound, only_out=False)
+                grandchildren += c.children(cost_bound)
         return grandchildren
 
     @classmethod
@@ -101,15 +114,15 @@ class CircuitGraph:
         and we update cost and solution. If i and j are nodes of different types,
         the result is of F type, otherwise the same as the types of i and j."""
         newG = nx.contracted_edge(self.G, edge, self_loops=False, copy=True)
-        if self.G.nodes[edge[0]]["type"] != self.G.nodes[edge[1]]["type"]:
+        if self.node_type(edge[0]) != self.node_type(edge[1]):
             newG.nodes[edge[0]]["type"] = "F"  # edge[0] is the new node now
         delta_cost = self.edge_cost(edge)
-        # remove i,j from the indices of all the nodes:
-        for i in newG.nodes:
-            newG.nodes[i]["indices"] = {
-                j: {k: v for k, v in idx.items() if j not in (edge[0], edge[1])}
-                for j, idx in newG.nodes[i]["indices"].items()
-            }
+        # remove i,j from the indices of all the remaining nodes: (now not needed because indices are in the edges)
+        # for i in newG.nodes:
+        #     newG.nodes[i]["indices"] = {
+        #         j: {k: v for k, v in idx.items() if j not in §§edge[0], edge[1])}
+        #         for j, idx in newG.nodes[i]["indices"].items()
+        #     }
 
         cost = self.cost + delta_cost
         solution = self.solution + [(delta_cost, edge)]
@@ -118,16 +131,26 @@ class CircuitGraph:
     def node_type(self, i: int) -> str:
         return self.G.nodes[i]["type"]
 
+    def node_shape(self, i: int) -> list[int]:
+        return self.G.nodes[i]["shape"]
+
     def edge_cost(self, edge: tuple[Node, Node]) -> int:
-        r"""Returns the cost of contracting the edges between two nodes."""
-        # no, we need to compute shapes lazily.
-        idx = self.nodes(edge[0])["indices"]
+        r"""Returns the cost of contracting all the wires between two nodes."""
+        indices = self.edges(*edge)["indices"]
         i, j = edge
-        iA = [k for k, v in idx[i + j + 1].items()] if i + j + 1 in idx else []
-        iB = [v for k, v in idx[i + j + 1].items()] if i + j + 1 in idx else []
-        shape_k = [s for i, s in enumerate(self.nodes(i)["shape"]) if i in iA]
-        shape_a = [s for i, s in enumerate(self.nodes(i)["shape"]) if i not in iA]
-        shape_b = [s for i, s in enumerate(self.nodes(j)["shape"]) if i not in iB]
+        shape_a = [
+            s for m, s in enumerate(self.node_shape(i)) if m not in indices.keys()
+        ]
+        shape_b = [
+            s for n, s in enumerate(self.node_shape(j)) if n not in indices.values()
+        ]
+        shape_k = [s for k, s in enumerate(self.node_shape(i)) if i in indices.keys()]
+        print(self.node_shape(i), self.node_shape(j))
+        print(shape_a, shape_k, shape_b)
+        print([s for k, s in enumerate(self.node_shape(j)) if k in indices.values()])
+        assert shape_k == [
+            s for k, s in enumerate(self.node_shape(j)) if k in indices.values()
+        ]  # shape check
         t0 = self.node_type(edge[0])
         t1 = self.node_type(edge[1])
         k = len(shape_k)
@@ -137,18 +160,18 @@ class CircuitGraph:
             cost = (2 * k) ** 3  # matrix inversion
             cost += (a + b) * (a + b) * (2 * k) * (2 * k)  # matrix multiplication
             cost += (a + b) * (a + b)  # matrix addition
-            # print(f"BB({i},{j})", cost)
+            print(f"BB({i},{j})", cost)
         elif (t0, t1) == ("B", "F"):
             cost = np.product(shape_a + shape_k)  # B->F
             cost += np.product(shape_a + shape_k + shape_b)  # inner product
-            # print(f"BF({i},{j})", cost)
+            print(f"BF({i},{j})", cost)
         elif (t0, t1) == ("F", "B"):
             cost = np.product(shape_b + shape_k)  # B->F
             cost += np.product(shape_a + shape_k + shape_b)  # inner product
-            # print(f"FB({i},{j})", cost)
+            print(f"FB({i},{j})", cost)
         elif (t0, t1) == ("F", "F"):
             cost = np.product(shape_a + shape_k + shape_b)  # inner product
-            # print(f"FF({i},{j})", cost)
+            print(f"FF({i},{j})", cost)
         return cost
 
 
@@ -163,7 +186,9 @@ def random_cost(g: CircuitGraph) -> tuple[int, list]:
     return g.cost, g.solution
 
 
-def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
+def optimal_path(
+    graph: CircuitGraph, n_init: int, heuristics: list[str], debug: bool
+) -> tuple[int, list]:
     r"""Optimizes the contraction path for a given graph.
 
     Args:
@@ -173,30 +198,15 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
     Returns:
         The optimal contraction path given as an ordered list of edges.
     """
-    print("-" * 50)
-    print("Optimal contraction path algorithm")
-    print("-" * 50)
-    print()
-
-    debug = True
-    print("1. Applying heuristics to simplify the graph...")
-    graph = reduce_pattern(graph, "1BB", debug=debug)
-    graph = reduce_pattern(graph, "2BB", debug=debug)
-    graph = reduce_pattern(graph, "1BF", debug=debug)
-    graph = reduce_pattern(graph, "1FF", debug=debug)
-    graph = reduce_pattern(graph, "1FB", debug=debug)  # not always right. Good for staircase.
-    # graph = reduce_pattern(graph, "2FF", debug=debug)  # not always right.
-    print(f"Edges remaining: {graph.G.number_of_edges()}")
-    print(f"\n2. Getting cost upper bound by {n_init} random contractions...")
+    for h in heuristics:
+        graph = reduce_pattern(graph, h, debug=debug)
     best_cost = 1e42
     for i in range(n_init):
         cost, sol = random_cost(graph)
         if cost < best_cost:
-            print(f"contraction {i}: new upper bound = {cost}")
             best_cost = cost
             best_solution = sol
 
-    print("\n3. Init Branch and Bound")
     graph_queue = PriorityQueue()
     graph_queue.put(graph)
     max_qsize = 1
@@ -205,15 +215,6 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
         qsize = graph_queue.qsize()
         if qsize > max_qsize:
             max_qsize = qsize
-        print(" " * 80, end="\r")
-        print(
-            f"Queue size: {qsize}/{max_qsize}",
-            "Current cost:",
-            graph.cost,
-            "Contractions left:",
-            graph.G.number_of_edges(),
-            end="\r",
-        )
         if graph.cost > best_cost:
             continue
         if graph.is_leaf() and graph.cost < best_cost:
@@ -228,27 +229,9 @@ def optimal_path(graph: CircuitGraph, n_init: int = 100) -> tuple[int, list]:
                 #     i = graph_queue.queue.index(child)
                 #     if child < graph_queue.queue[i]:
                 #         graph_queue.queue[i] = child
-    print()
-    print(" " * 80, end="\r")
-    print(f"Max queue size: {max_qsize}, best cost: {best_cost}", end="\r")
+    if debug:
+        print(f"Max queue size: {max_qsize}, best cost: {best_cost}")
     return best_cost, best_solution
-
-
-#  TODO: move this function to the tests files
-def staircase(m: int):
-    assert m > 1, "at least 2 mode staircase"
-    data = {
-        0: Info("B", (2,)),
-        1: Info("B", (2,)),
-        2: Info("B", (3,) + ((5,) if m > 2 else ())),
-        3: Info("F", ()),
-    }
-    for i in range(m - 2):
-        data[3 * i + 4] = Info("B", (3 * i + 5,))
-        data[3 * i + 5] = Info("B", (3 * i + 6, 3 * i + 8))
-        data[3 * i + 6] = Info("F", ())
-    data[3 * (m - 1) + 2] = Info("F", ())
-    return data
 
 
 def reduce_first(graph, pattern: str) -> tuple[CircuitGraph, Optional[Edge]]:
