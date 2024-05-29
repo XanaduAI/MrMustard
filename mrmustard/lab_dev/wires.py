@@ -223,9 +223,7 @@ class Wires:
             >>> assert w.input.indices == (2,3)
         """
         return tuple(
-            self.index_dicts[t][m]
-            for t, modes in enumerate(self.sorted_args)
-            for m in modes
+            self.index_dicts[t][m] for t, modes in enumerate(self.sorted_args) for m in modes
         )
 
     @cached_property
@@ -391,32 +389,22 @@ class Wires:
             raise ValueError(f"output ket modes {m} overlap")
         if m := sets[3] & sets[7]:
             raise ValueError(f"input ket modes {m} overlap")
-        bra_out = (
-            sets[0] | sets[4]
-        )  # (self.output.bra - other.input.bra) | other.output.bra
-        bra_in = (
-            sets[1] | sets[5]
-        )  # self.input.bra | (other.input.bra - self.output.bra)
-        ket_out = (
-            sets[2] | sets[6]
-        )  # (self.output.ket - other.input.ket) | other.output.ket
-        ket_in = (
-            sets[3] | sets[7]
-        )  # self.input.ket | (other.input.ket - self.output.ket)
+        bra_out = sets[0] | sets[4]  # (self.output.bra - other.input.bra) | other.output.bra
+        bra_in = sets[1] | sets[5]  # self.input.bra | (other.input.bra - self.output.bra)
+        ket_out = sets[2] | sets[6]  # (self.output.ket - other.input.ket) | other.output.ket
+        ket_in = sets[3] | sets[7]  # self.input.ket | (other.input.ket - self.output.ket)
         w = Wires(bra_out, bra_in, ket_out, ket_in)
 
         # preserve ids
         for t in (0, 1, 2, 3):
             for m in w.args[t]:
-                w.ids_dicts[t][m] = (
-                    self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
-                )
+                w.ids_dicts[t][m] = self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
 
         # calculate permutation
         result_ids = [id for d in w.ids_dicts for id in d.values()]
-        self_other_ids = [
-            self.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t])
-        ] + [other.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t + 4])]
+        self_other_ids = [self.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t])] + [
+            other.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t + 4])
+        ]
         perm = [self_other_ids.index(id) for id in result_ids]
         return w, perm
 
