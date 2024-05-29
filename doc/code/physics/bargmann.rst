@@ -1,8 +1,9 @@
-Bargmann
-========
+Calculations on Bargmann objects
+================================
 
-.. currentmodule:: mrmustard.physics.bargmann
+.. toctree::
+    :maxdepth: 1
 
-.. automodapi:: mrmustard.physics.bargmann
-    :no-heading:
-    :include-all-objects:
+    utils/triples
+    utils/bargmann_calculations
+    utils/gaussian_integral

@@ -14,7 +14,6 @@
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
@@ -244,20 +243,6 @@ class TestHomodyneDetector:
             ]
         )
         assert np.allclose(math.asnumpy(remaining_state.cov), cov, atol=1e-5)
-        # TODO: figure out why this is not working
-        # if outcome is not None:
-        #     outcome = outcome * np.sqrt(hbar)
-        #     denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
-        #     expected_means = (
-        #         np.array(
-        #             [
-        #                 np.sqrt(s * (1 + s)) * outcome * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
-        #                 -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom
-        #             ]
-        #         )
-        #     )
-        #     means = remaining_state.means.numpy()
-        #     assert np.allclose(means, expected_means)
 
     @given(
         s=st.floats(min_value=0.0, max_value=1.0),
@@ -292,21 +277,26 @@ class TestHomodyneDetector:
         "state, kwargs, mean_expected, var_expected",
         [
             (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (
+                Coherent,
+                {"x": 2.0, "y": 0.5},
+                2.0 * np.sqrt(2 * settings.HBAR),
+                settings.HBAR / 2,
+            ),
             (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
         ],
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
+    @pytest.mark.parametrize("normalization", [1, 1 / 3])
     def test_sampling_mean_and_var(
-        self, state, kwargs, mean_expected, var_expected, gaussian_state
+        self, state, kwargs, mean_expected, var_expected, gaussian_state, normalization
     ):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
         state = state(**kwargs)
 
-        tf.random.set_seed(123)
         if not gaussian_state:
-            state = State(dm=state.dm(cutoffs=[40]))
+            state = State(dm=state.dm(cutoffs=[40]) * normalization)
         detector = Homodyne(0.0)
 
         results = np.zeros((self.N_MEAS, 2))
@@ -419,3 +409,13 @@ class TestNormalization:
         """Checks that after projection the norm of the leftover state is as expected."""
         leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
         assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+
+class TestProjectionOnState:
+    r"""Tests the cases that the projection state is given."""
+
+    def test_vacuum_project_on_vacuum(self):
+        """Tests that the probability of Vacuum that projects on Vacuum is 1.0."""
+        assert np.allclose(Vacuum(3) << Vacuum(3), 1.0)
+        assert np.allclose(Vacuum(3) << Coherent([0, 0, 0]), 1.0)
+        assert np.allclose(Vacuum(3) << Fock([0, 0, 0]), 1.0)

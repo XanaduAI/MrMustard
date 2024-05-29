@@ -115,7 +115,7 @@ def _apply_partial_cost(device, cost_fn, **kwargs):
     if isinstance(device, Sequence):
         cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
         optimized = device
-    elif isinstance(device, Mapping):
+    elif isinstance(device, Mapping):  # pragma: no cover
         cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
         optimized = list(device.values())
     return cost_fn, kwargs, optimized
@@ -169,7 +169,7 @@ def train_device(
     cost_fn, kwargs, optimized = _apply_partial_cost(device, cost_fn, **kwargs)
 
     opt = None
-    if optimized and not skip_opt:
+    if optimized and not skip_opt:  # pragma: no cover
         opt, kwargs = curry_pop(Optimizer, **kwargs)
         _, kwargs = curry_pop(
             opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs
@@ -187,10 +187,10 @@ def train_device(
     }
 
     if callable(metric_fns):
-        results["metrics"] = metric_fns(*device)
+        results["metrics"] = metric_fns(*device)  # pragma: no cover
     elif isinstance(metric_fns, Sequence):
-        results["metrics"] = [f(*device) for f in metric_fns if callable(f)]
-    elif isinstance(metric_fns, Mapping):
+        results["metrics"] = [f(*device) for f in metric_fns if callable(f)]  # pragma: no cover
+    elif isinstance(metric_fns, Mapping):  # pragma: no cover
         results = {
             **results,
             **{k: f(*device) for k, f in metric_fns.items() if callable(f)},
@@ -363,6 +363,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             curry_pop(
                 remote_trainer,
                 **task_kwargs,
+                **kwargs.copy(),
             )[0]
             for task_kwargs in tasks
             if isinstance(task_kwargs, Mapping)
@@ -437,7 +438,7 @@ def update_pop(obj, **kwargs):
             obj[k] = kwargs.pop(k)
             updated[k] = obj[k]
     else:
-        for k in set(kwargs).intersection(dir(obj)):
+        for k in set(kwargs).intersection(dir(obj)):  # pragma: no cover
             setattr(obj, k, kwargs.pop(k))
             updated[k] = getattr(obj, k)
     return updated, kwargs

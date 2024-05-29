@@ -113,7 +113,15 @@ class Transformation(Tensor):
             State: the transformed state
         """
         X, Y, d = self.XYd(allow_none=False) if not dual else self.XYd_dual(allow_none=False)
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
+        cov, means = gaussian.CPTP(
+            math.astensor(state.cov),
+            math.astensor(state.means),
+            X,
+            Y,
+            d,
+            state.modes,
+            self.modes,
+        )
         new_state = State(
             cov=cov, means=means, modes=state.modes, _norm=state.norm
         )  # NOTE: assumes modes don't change
@@ -248,8 +256,6 @@ class Transformation(Tensor):
         Allows transformations to be used as: ``output = transf[0,1](input)``,  e.g. acting on
         modes 0 and 1.
         """
-        #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
-        # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
         if isinstance(items, int):
             modes = [items]
         elif isinstance(items, slice):

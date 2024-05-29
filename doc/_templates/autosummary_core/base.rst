@@ -4,9 +4,9 @@
 
 {% if module.split(".")[1:] | length >= 1 %}
 	{% set mod = module.split(".")[1:] | join(".") %}
-	{% set mod = "sf." + mod %}
+	{% set mod = "mm." + mod %}
 {% else %}
-	{% set mod = "sf" %}
+	{% set mod = "mm" %}
 {% endif %}
 
 {{ mod }}.{{ objname }}

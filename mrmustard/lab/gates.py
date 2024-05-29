@@ -25,7 +25,11 @@ from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 from mrmustard import math
-from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
+from mrmustard.math.parameters import (
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
 from .abstract import Channel, Unitary, State
 from .utils import make_parameter
 
@@ -95,7 +99,11 @@ class Dgate(Unitary):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value)
 
-    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
+    def U(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+    ):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
@@ -190,7 +198,11 @@ class Sgate(Unitary):
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
-    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
+    def U(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+    ):
         r"""Returns the unitary representation of the Squeezing gate.
 
         If specified, ``shape`` takes precedence over ``cutoffs``.
@@ -511,7 +523,7 @@ class BSgate(Unitary):
             method: the method used to compute the unitary matrix. Options are:
                 * 'vanilla': uses the standard method
                 * 'schwinger': slower, but numerically stable
-            default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
+            default is set in settings.BS_FOCK_METHOD (with 'vanilla' by default)
 
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
@@ -531,7 +543,7 @@ class BSgate(Unitary):
             self.theta.value,
             self.phi.value,
             shape=shape,
-            method=method or settings.DEFAULT_BS_METHOD,
+            method=method or settings.BS_FOCK_METHOD,
         )
 
     @property
@@ -732,7 +744,11 @@ class RealInterferometer(Unitary):
         )
         self._add_parameter(
             make_parameter(
-                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
+                orthogonal_trainable,
+                orthogonal,
+                "orthogonal",
+                (None, None),
+                update_orthogonal,
             )
         )
 
@@ -791,7 +807,11 @@ class Ggate(Unitary):
         )
         self._add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+                symplectic_trainable,
+                symplectic,
+                "symplectic",
+                (None, None),
+                update_symplectic,
             )
         )
 
@@ -1041,9 +1061,7 @@ class PhaseNoise(Channel):
 
         coeff = math.cast(
             math.exp(
-                -0.5
-                * self.phase_stdev.value**2
-                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+                -0.5 * self.phase_stdev.value**2 * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
             ),
             dm.dtype,
         )

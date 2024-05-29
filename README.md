@@ -5,22 +5,22 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` by default).
 
 Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
 - Riemannian optimization on the symplectic group (for Gaussian transformations) and on the unitary group (for interferometers)
 - Adam optimizer for euclidean parameters
-- single-mode gates (parallelizable):
+- Single-mode gates (parallelizable):
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise, phase noise
-- two-mode gates:
+- Two-mode gates:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Riemannian optimization):
     - Interferometer (unitary), RealInterferometer (orthogonal), Gaussian transformation (symplectic)
-- single-mode states (parallelizable):
+- Single-mode states (parallelizable):
     - Vacuum, Coherent, SqueezedVacuum, Thermal, Fock
-- two-mode states:
+- Two-mode states:
     - TMSV (two-mode squeezed vacuum)
 - N-mode states:
     - Gaussian
@@ -28,7 +28,7 @@ Mr Mustard supports:
 - PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
 - Homodyne, Heterodyne and Generaldyne measurements
 - Composable circuits
-- Plug-and-play backends (TensorFlow as default)
+- Plug-and-play backends (`numpy` as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # Increased numerical stability using Julia [optional]
@@ -36,16 +36,7 @@ Mr Mustard supports:
 Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
 To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
 an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3 recommended).
-
-* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
-
-* When installing MrMustard via `poetry install` or `pip install`, the required Julia packages have to be installed manually as follows:
-
-```
-julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
-```
-
-* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed _only_ if Julia was previously installed by the user.
+If no valid version of Julia is found, it will be installed automatically before trying to run any Julia code.
 
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
@@ -65,7 +56,7 @@ fock4 = Fock(4)                  # fock state |4>
 
 D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y
 S  = Sgate(r=0.5)                 # Squeezer with r=0.5
-R  = Rgate(phi=0.3)               # Phase rotation by 0.3
+R  = Rgate(angle=0.3)             # Phase rotation by 0.3
 A  = Amplifier(gain=2.0)          # noisy amplifier with 200% gain
 L  = Attenuator(0.5)              # pure loss channel with 50% transmissivity
 N  = AdditiveNoise(noise=0.1)     # additive noise with noise level 0.1
@@ -233,24 +224,34 @@ The physics module contains a growing number of functions that we can apply to s
 
 # The math module
 The math module is the backbone of Mr Mustard. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
+
+Here's an example where the `numpy` backend is used.
 ```python
 import mrmustard.math as math
 
 math.cos(0.1)  # numpy
+```
 
+In a different session, we can change the backend to ``tensorflow``.
+```python
+import mrmustard.math as math
 math.change_backend("tensorflow")
+
 math.cos(0.1)  # tensorflow
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
+The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a displaced squeezed state.
 
 ```python
+from mrmustard import math
 from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
+
+math.change_backend("tensorflow")
 
 D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
 L = Attenuator(transmissivity=0.5)

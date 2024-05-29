@@ -16,28 +16,11 @@
 Tests for the Settings class.
 """
 
-from mrmustard.utils.settings import Settings, ImmutableSetting
+from mrmustard import math
+from mrmustard.utils.settings import Settings
 import pytest
 
-
-class TestImmutableSettings:
-    """Tests the ImmutableSettings class"""
-
-    def test_init(self):
-        """Tests the default values of the immutable settings"""
-        s = ImmutableSetting("foo", "bar")
-        assert s.value == "foo"
-        assert s.name == "bar"
-
-    def test_setting_becomes_immutable(self):
-        """Tests that immutable settings become immutable"""
-        s = ImmutableSetting(1, "my_name")
-
-        s.value = 2
-        assert s.value == 2
-
-        with pytest.raises(ValueError, match=f"value of `settings.{s.name}`"):
-            s.value = 3
+from ..conftest import skip_np
 
 
 class TestSettings:
@@ -61,7 +44,7 @@ class TestSettings:
         assert settings.HOMODYNE_SQUEEZING == 10.0
         assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
-        assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
+        assert settings.BS_FOCK_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
     def test_setters(self):
         settings = Settings()
@@ -76,10 +59,10 @@ class TestSettings:
         assert settings.DEBUG is True
         settings.DEBUG = db0
 
-        dbsm0 = settings.DEFAULT_BS_METHOD
-        settings.DEFAULT_BS_METHOD = "schwinger"
-        assert settings.DEFAULT_BS_METHOD == "schwinger"
-        settings.DEFAULT_BS_METHOD = dbsm0
+        dbsm0 = settings.BS_FOCK_METHOD
+        settings.BS_FOCK_METHOD = "schwinger"
+        assert settings.BS_FOCK_METHOD == "schwinger"
+        settings.BS_FOCK_METHOD = dbsm0
 
         eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
         settings.EQ_TRANSFORMATION_CUTOFF = 2
@@ -100,6 +83,21 @@ class TestSettings:
         settings.SEED = None
         assert settings.SEED is not None
         settings.SEED = s0
+
+        hs0 = settings.HOMODYNE_SQUEEZING
+        settings.HOMODYNE_SQUEEZING = 20.1
+        assert settings.HOMODYNE_SQUEEZING == 20.1
+        settings.HOMODYNE_SQUEEZING = hs0
+
+        fock_rtol = settings.EQ_TRANSFORMATION_RTOL_FOCK
+        settings.EQ_TRANSFORMATION_RTOL_FOCK = 0.02
+        assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 0.02
+        settings.EQ_TRANSFORMATION_RTOL_FOCK = fock_rtol
+
+        gauss_rtol = settings.EQ_TRANSFORMATION_RTOL_GAUSS
+        settings.EQ_TRANSFORMATION_RTOL_GAUSS = 0.02
+        assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 0.02
+        settings.EQ_TRANSFORMATION_RTOL_GAUSS = gauss_rtol
 
         assert settings.HBAR == 2.0
         with pytest.raises(ValueError, match="Cannot change"):
@@ -125,3 +123,22 @@ class TestSettings:
         settings.SEED = 42
         seq1 = [settings.rng.integers(0, 2**31 - 1) for _ in range(10)]
         assert seq0 == seq1
+
+    def test_complex_warnings(self, caplog):
+        """Tests that complex warnings can be correctly activated and deactivated."""
+        skip_np()
+
+        settings = Settings()
+
+        assert settings.COMPLEX_WARNING is False
+        math.cast(1 + 1j, math.float64)
+        assert len(caplog.records) == 0
+
+        settings.COMPLEX_WARNING = True
+        math.cast(1 + 1j, math.float64)
+        assert len(caplog.records) == 1
+        assert "You are casting an input of type complex128" in caplog.records[0].msg
+
+        settings.COMPLEX_WARNING = False
+        math.cast(1 + 1j, math.float64)
+        assert len(caplog.records) == 1

@@ -1,6 +1,7 @@
 """
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
+
 import importlib
 
 import numpy as np
@@ -19,7 +20,7 @@ from ..conftest import skip_np
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
-do_julia = True if importlib.util.find_spec("julia") else False
+do_julia = bool(importlib.util.find_spec("juliacall"))
 precisions = [128, 256, 384, 512] if do_julia else [128]
 
 

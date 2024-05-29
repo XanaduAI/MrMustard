@@ -15,11 +15,11 @@
 # pylint: disable=redefined-outer-name
 
 """
-This module contains functions for performing calculations on Fock states.
+This module contains functions for performing calculations on objects in the Fock representations.
 """
 
 from functools import lru_cache
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -42,18 +42,40 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int]) -> Tensor:
-    r"""Returns a pure or mixed Fock state.
+def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = None) -> Tensor:
+    r"""
+    The Fock array of a tensor product of one-mode ``Number`` states.
 
     Args:
-        n: a list of photon numbers
+        n: The photon numbers of the number states.
+        cutoffs: The cutoffs of the arrays for the number states. If it is given as
+            an ``int``, it is broadcasted to all the states. If ``None``, it
+            defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
+            of the ``i``th mode.
 
     Returns:
-        the Fock state up to cutoffs ``n+1``
+        The Fock array of a tensor product of one-mode ``Number`` states.
     """
-    psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
-    psi[tuple(np.atleast_1d(n))] = 1
-    return psi
+    n = math.atleast_1d(n)
+    if cutoffs is None:
+        cutoffs = [ni for ni in n]
+    elif isinstance(cutoffs, int):
+        cutoffs = [cutoffs] * len(n)
+
+    if len(cutoffs) != len(n):
+        msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
+        raise ValueError(msg)
+
+    shape = tuple([c + 1 for c in cutoffs])
+    array = np.zeros(shape, dtype=np.complex128)
+
+    try:
+        array[tuple(n)] = 1
+    except IndexError:
+        msg = "Photon numbers cannot be larger than the corresponding cutoffs."
+        raise ValueError(msg)
+
+    return math.astensor(array)
 
 
 def autocutoffs(cov: Matrix, means: Vector, probability: float):

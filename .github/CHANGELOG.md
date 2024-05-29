@@ -1,4 +1,104 @@
-# Release 0.7.0 (development release)
+# Current develop
+
+### New features
+* Added a new Abc triple for mapping the quadrature representation into Bargmann representation. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
+
+* Added `sort` function to math backends.
+
+### Breaking changes
+
+### Improvements
+* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
+  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
+
+* Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
+  visualize the timing results quickly.
+  [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
+
+### Bug fixes
+* Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
+  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+
+* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin)
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+[Austin Lund](https://github.com/aplund)
+[Kasper Nielsen](https://github.com/kaspernielsen96)
+[Matthew Silverman](https://github.com/timmysilv)
+
+
+---
+
+# Release 0.7.3 (current release)
+
+### New features
+* Added a function ``to_fock`` to map different representations into Fock representation. 
+  [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
+
+* Added a new Abc triple for s-parametrized displacement gate. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
+  
+* Added a function ``real_gaussian_integral`` as helper function to map between different representations. 
+  [(#371)](https://github.com/XanaduAI/MrMustard/pull/371)
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.1
+
+### New features
+* Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
+  several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
+
+* Added support for python 3.11. [(#354)](https://github.com/XanaduAI/MrMustard/pull/354)
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+* Fixing a bug in `_transform_gaussian` in transformation.py that modifies the input state's cov and means.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
+* Fixing a bug in `general_dyne` in physics/gaussian.py that returns the wrong probability and outcomes with given projection.
+[(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
+
+### Documentation
+
+### Tests
+
+### Contributors
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil)
+
+
+---
+
+# Release 0.7.0
 
 ### New features
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
@@ -15,7 +115,7 @@
 * Added an Ansatz abstract class and PolyExpAnsatz concrete implementation. This is used in the Bargmann representation.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
-* Added `complex_gaussian_integral` and `real_gaussian_integral` methods.
+* Added `complex_gaussian_integral` method.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
 * Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
@@ -74,9 +174,11 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
-* Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
-  [(#307)](https://github.com/XanaduAI/MrMustard/pull/307)
+* Added suite to filter undesired warnings, and used it to filter tensorflow's ``ComplexWarning``s.
+  [(#332)](https://github.com/XanaduAI/MrMustard/pull/332)
 
+* When re-assigning an immutable setting with the same value, no more error is raised.
+  [(#316)](https://github.com/XanaduAI/MrMustard/pull/316)
 
 ### Bug fixes
 
@@ -88,6 +190,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
 * Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
 [(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
+* Fixing a bug where `scipy.linalg.sqrtm` returns an unsupported type.
+[(#337)](https://github.com/XanaduAI/MrMustard/pull/337)
 
 ### Documentation
 
@@ -105,7 +209,19 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 ---
 
-# Release 0.6.0 (current release)
+# Release 0.6.1-post1
+
+### Improvements
+
+* Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
+  [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+
+---
+# Release 0.6.0
 
 ### New features
 
@@ -165,7 +281,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 ---
 
-# Release 0.5.0 (current release)
+# Release 0.5.0 
 
 ### New features
 
@@ -304,7 +420,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 (current release)
+# Release 0.4.0 
 
 ### New features
 
