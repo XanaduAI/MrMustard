@@ -27,7 +27,7 @@ from mrmustard.physics.ansatze import (
 )
 from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
-from mrmustard.lab_dev.circuit_components_utils import DsMap
+from mrmustard.lab_dev.circuit_components_utils import BtoPS
 from ..random import Abc_triple
 
 
@@ -280,8 +280,12 @@ class TestArrayAnsatz:
         assert isinstance(aa1_div_aa2, ArrayAnsatz)
         assert aa1_div_aa2.array.shape == (4, 2, 2)
         assert np.allclose(aa1_div_aa2.array[0], np.array([[1.0, 1.0], [1.0, 1.0]]))
-        assert np.allclose(aa1_div_aa2.array[1], np.array([[0.2, 0.33333], [0.42857143, 0.5]]))
-        assert np.allclose(aa1_div_aa2.array[2], np.array([[5.0, 3.0], [2.33333333, 2.0]]))
+        assert np.allclose(
+            aa1_div_aa2.array[1], np.array([[0.2, 0.33333], [0.42857143, 0.5]])
+        )
+        assert np.allclose(
+            aa1_div_aa2.array[2], np.array([[5.0, 3.0], [2.33333333, 2.0]])
+        )
         assert np.allclose(aa1_div_aa2.array[3], np.array([[1.0, 1.0], [1.0, 1.0]]))
 
     def test_algebra_with_different_shape_of_array_raise_errors(self):
@@ -310,7 +314,7 @@ class TestArrayAnsatz:
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
-        state_after = state >> DsMap(modes=[0], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
         A1, b1, c1 = state_after.bargmann
         (
             new_state_cov,
@@ -333,7 +337,7 @@ class TestArrayAnsatz:
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
-        state_after = state >> DsMap(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
         A1, b1, c1 = state_after.bargmann
         (
             new_state_cov1,
@@ -341,9 +345,7 @@ class TestArrayAnsatz:
             new_state_coeff1,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
-        A22, b22, c22 = (
-            state >> DsMap([0], 0) >> DsMap([1], 0)
-        ).bargmann  # pylint: disable=protected-access
+        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann  # pylint: disable=protected-access
         (
             new_state_cov22,
             new_state_means22,

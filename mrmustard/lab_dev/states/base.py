@@ -55,7 +55,7 @@ from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import DsMap, BtoQMap
+from ..circuit_components_utils import BtoPS, BtoQ
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..wires import Wires
@@ -330,9 +330,11 @@ class State(CircuitComponent):
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.representation, Bargmann):
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+            raise ValueError(
+                f"Can not calculate phase space for ``{self.name}`` object."
+            )
 
-        new_state = self >> DsMap(self.modes, s=s)  # pylint: disable=protected-access
+        new_state = self >> BtoPS(self.modes, s=s)  # pylint: disable=protected-access
         return bargmann_Abc_to_phasespace_cov_means(
             new_state.representation.ansatz.A,
             new_state.representation.ansatz.b,
@@ -424,13 +426,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -525,10 +531,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -570,7 +580,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -622,9 +634,9 @@ class DM(State):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "DM" + "".join(str(m) for m in sorted(modes)),
             modes_out_bra=modes,
             modes_out_ket=modes,
+            name=name or "DM" + "".join(str(m) for m in sorted(modes)),
         )
 
     @classmethod
@@ -690,9 +702,9 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> DM:
-        # The representation change from quadrature into Bargmann is to use the BtoQMap.dual.
+        # The representation change from quadrature into Bargmann is to use the BtoQ.dual.
         # Plus this map is on a single wire, here for a DM, we need to add a adjoint wire as well.
-        QtoBMap_CC = BtoQMap(modes).dual.adjoint @ BtoQMap(modes).dual
+        QtoBMap_CC = BtoQ(modes).dual.adjoint @ BtoQ(modes).dual
         QtoBMap_A, QtoBMap_b, QtoBMap_c = (
             QtoBMap_CC.representation.A[0],
             QtoBMap_CC.representation.b[0],
@@ -802,7 +814,7 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes("", ret.representation, ret.wires)
+            return DM._from_attributes(ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
@@ -830,12 +842,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            self.name, representation, wires
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(representation, wires, self.name)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -849,7 +861,8 @@ class Ket(State):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "Ket" + "".join(str(m) for m in sorted(modes)), modes_out_ket=modes
+            modes_out_ket=modes,
+            name=name or "Ket" + "".join(str(m) for m in sorted(modes)),
         )
 
     @classmethod
@@ -917,11 +930,11 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: Optional[str] = None,
     ) -> Ket:
-        QtoBMap_rep = BtoQMap(modes).dual.representation
-        QtoBMap_triple = tuple(el[0] for el in QtoBMap_rep.triple)
+        QtoB_rep = BtoQ(modes).dual.representation
+        QtoB_triple = tuple(el[0] for el in QtoB_rep.triple)
         joined_triples = join_Abc_real(
             triple,
-            QtoBMap_triple,
+            QtoB_triple,
             idx1=list(range(len(modes))),
             idx2=list(range(len(modes), 2 * len(modes))),
         )
@@ -959,7 +972,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        return DM._from_attributes(self.name, dm.representation, dm.wires)
+        return DM._from_attributes(dm.representation, dm.wires, self.name)
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -993,7 +1006,11 @@ class Ket(State):
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
             result = self @ operator.dual
-            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
+            result = (
+                result >> TraceOut(leftover_modes)
+                if leftover_modes
+                else result @ result.dual
+            )
         elif op_type is OperatorType.DM_LIKE:
             result = self @ (self.adjoint @ operator.dual)
             if leftover_modes:
@@ -1036,9 +1053,9 @@ class Ket(State):
 
         if not ret.wires.input:
             if not ret.wires.bra:
-                return Ket._from_attributes("", ret.representation, ret.wires)
+                return Ket._from_attributes(ret.representation, ret.wires, "")
             if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes("", ret.representation, ret.wires)
+                return DM._from_attributes(ret.representation, ret.wires, "")
         return ret
 
     def __repr__(self) -> str:

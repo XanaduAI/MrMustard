@@ -52,11 +52,11 @@ class TestUnitary:
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
         u_component = CircuitComponent._from_attributes(
-            unitary1.name, unitary1.representation, unitary1.wires
+            unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         assert isinstance(unitary1 >> unitary2, Unitary)
@@ -67,11 +67,11 @@ class TestUnitary:
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary1.name, unitary1.representation, unitary1.wires
+            unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
 
-        assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
-        assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
+        assert repr(unitary1) == "Unitary(modes=[0, 1], name=Dgate)"
+        assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate)"
 
     def test_init_from_bargmann(self):
         A = np.array([[0, 1], [1, 0]])
@@ -117,12 +117,12 @@ class TestChannel:
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.name, channel1.representation, channel1.wires
+            channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
         assert isinstance(channel1 >> unitary, Channel)
@@ -133,11 +133,11 @@ class TestChannel:
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.name, channel1.representation, channel1.wires
+            channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
-        assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
-        assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
+        assert repr(channel1) == "Channel(modes=[0, 1], name=Att)"
+        assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att)"
 
     def test_inverse_channel(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
@@ -238,12 +238,18 @@ class TestDgate:
         assert math.allclose(rep1.c, [0.990049833749168])
 
         rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).representation
-        assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
+        assert math.allclose(
+            rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
+        assert math.allclose(
+            rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]]
+        )
         assert math.allclose(rep2.c, [0.9656054162575665])
 
         rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).representation
-        assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
+        assert math.allclose(
+            rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
         assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
         assert math.allclose(rep3.c, [0.9753099120283327])
 
@@ -499,7 +505,9 @@ class TestAttenuator:
     def test_representation(self):
         rep1 = Attenuator(modes=[0], transmissivity=0.1).representation
         e = 0.31622777
-        assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
+        assert math.allclose(
+            rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]]
+        )
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1.0])
 

@@ -99,12 +99,16 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(modes=modes, name="BSgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds)
+        )
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(*triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value))
+        return Bargmann(
+            *triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value)
+        )
 
 
 class Dgate(Unitary):
@@ -164,7 +168,7 @@ class Dgate(Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
-        super().__init__("Dgate", modes=modes)
+        super().__init__(modes=modes, name="Dgate")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -205,7 +209,9 @@ class Rgate(Unitary):
         theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
         super().__init__(modes=modes, name="Rgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds)
+        )
 
     @property
     def representation(self) -> Bargmann:
