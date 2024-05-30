@@ -18,8 +18,10 @@
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+from importlib.metadata import distribution
 import os
 import numpy as np
+from semantic_version import Version
 import tensorflow_probability as tfp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -403,14 +405,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        try:
-            return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
-        except ImportError as e:  # pragma: no cover
-            raise ImportError(
-                "Importing the legacy Adam optimizer failed. If you are using TensorFlow 2.16+ "
-                "(perhaps due to installing MrMustard with pip), you need to set an environment "
-                "variable before using this optimizer:\n\texport TF_USE_LEGACY_KERAS=True"
-            ) from e
+        use_legacy = Version(distribution("tensorflow").version) < Version("2.16.0")
+        AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
+        return AdamOpt(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: List[Trainable]
