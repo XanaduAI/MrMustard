@@ -22,6 +22,9 @@
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
 
+* Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
+  [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
+
 
 ### Documentation
 
