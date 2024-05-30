@@ -63,7 +63,7 @@ tensorflow-io-gcs-filesystem = [
     { version = ">= 0.23.1", markers = "platform_machine!='arm64' or platform_system!='Darwin'" },
     { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
 ]
-tensorflow-probability = "^0.22.0"
+tensorflow-probability = { version = ">=0.22.0,<1.0", extras = ["tf"] }
 
 [tool.poetry.extras]
 ray = ["ray", "scikit-optimize"]

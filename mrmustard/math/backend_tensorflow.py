@@ -403,7 +403,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
+        try:
+            return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
+        except ImportError as e:  # pragma: no cover
+            raise ImportError(
+                "Importing the legacy Adam optimizer failed. If you are using TensorFlow 2.16+ "
+                "(perhaps due to installing MrMustard with pip), you need to set an environment "
+                "variable before using this optimizer:\n\texport TF_USE_LEGACY_KERAS=True"
+            ) from e
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: List[Trainable]
