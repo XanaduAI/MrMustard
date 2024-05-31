@@ -408,7 +408,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        print(f"{distribution('tensorflow').version}\n{platform.system()}\n{platform.processor()}")
         use_legacy = Version(distribution("tensorflow").version) < Version("2.16.0")
         AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
         if not use_legacy and platform.system() == "Darwin" and platform.processor() == "arm":
