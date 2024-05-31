@@ -20,6 +20,9 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 from importlib.metadata import distribution
 import os
+import platform
+from warnings import warn
+
 import numpy as np
 from semantic_version import Version
 import tensorflow_probability as tfp
@@ -405,8 +408,15 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
+        print(f"{distribution('tensorflow').version}\n{platform.system()}\n{platform.processor()}")
         use_legacy = Version(distribution("tensorflow").version) < Version("2.16.0")
         AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
+        if not use_legacy and platform.system() == "Darwin" and platform.processor() == "arm":
+            warn(
+                "Mac ARM processor detected - MrMustard always trains using the latest Keras Adam "
+                "optimizer with TensorFlow 2.16+, but it is known to be slow on Mac+ARM. To use "
+                "the legacy optimizer, please downgrade TensorFlow to 2.15."
+            )
         return AdamOpt(learning_rate=0.001)
 
     def value_and_gradients(
