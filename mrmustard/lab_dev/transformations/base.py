@@ -29,7 +29,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexVector, RealMatrix, Rea
 from mrmustard import math
 from mrmustard.lab_dev.utils import shape_check
 from mrmustard.lab_dev.wires import Wires
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard import physics
 from ..circuit_components import CircuitComponent
 
@@ -87,13 +87,15 @@ class Operator(Transformation):
 
     def __init__(
         self,
-        modes_out_ket: tuple[int, ...] = (),
-        modes_in_ket: tuple[int, ...] = (),
+        representation: Bargmann | Fock = None,
+        modes_out: tuple[int, ...] = (),
+        modes_in: tuple[int, ...] = (),
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_ket=modes_in_ket,
-            modes_in_ket=modes_out_ket,
+            representation=representation,
+            modes_out_ket=modes_in,
+            modes_in_ket=modes_out,
             name=name or "Op",
         )
 
@@ -109,7 +111,7 @@ class Operator(Transformation):
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
         shape_check(A, b, len(modes_out) + len(modes_in), "Bargmann")
-        return Operator._from_attributes(
+        return cls._from_attributes(
             Bargmann(A, b, c), Wires(set(), set(), set(modes_out), set(modes_in)), name
         )
 
@@ -129,7 +131,7 @@ class Operator(Transformation):
             modes_out_ket=modes_out,
             modes_in_ket=modes_in,
         )
-        return Operator._from_attributes(
+        return cls._from_attributes(
             representation=CC.representation, wires=CC.wires, name=name
         )
 
@@ -145,8 +147,8 @@ class Unitary(Operator):
 
     def __init__(self, modes: tuple[int, ...] = (), name: Optional[str] = None):
         super().__init__(
-            modes_in_ket=modes,
-            modes_out_ket=modes,
+            modes_out=modes,
+            modes_in=modes,
             name=name or "U" + "".join(str(m) for m in modes),
         )
 
@@ -290,12 +292,10 @@ class Channel(Map):
         modes: The modes that this channel acts on.
     """
 
-    _cc_wires_type: tuple[Optional[int], ...] = (0, 0, 0, 0)
-
     def __init__(self, modes: tuple[int, ...] = (), name: Optional[str] = None):
         super().__init__(
-            modes_in=modes,
             modes_out=modes,
+            modes_in=modes,
             name=name or "Ch" + "".join(str(m) for m in modes),
         )
 

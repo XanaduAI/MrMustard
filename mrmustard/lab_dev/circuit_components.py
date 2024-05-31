@@ -121,7 +121,7 @@ class CircuitComponent:
         Returns:
             A circuit component of type ``cls`` with the given attributes.
         """
-        types = {"Ket", "DM", "Unitary", "Channel"}
+        types = {"Ket", "DM", "Unitary", "Operator", "Channel", "Map"}
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
@@ -185,7 +185,6 @@ class CircuitComponent:
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_ket: The input modes on the ket side of this component.
             name: The name of this component.
-            kwargs: keyword arguments like modes_in, modes_out and modes.
 
         Returns:
             A circuit component with the given quadrature representation.
@@ -202,14 +201,14 @@ class CircuitComponent:
             Bargmann(*triple), wires
         )  # this is actually in quadrature
         kets_done = (
-            BtoQ(wires.input.ket.modes).inverse().dual
+            BtoQ(wires.output.ket.modes).inverse()
             @ Q
-            @ BtoQ(wires.output.ket.modes).inverse()
+            @ BtoQ(wires.input.ket.modes).inverse().dual
         )
         all_done = (
-            BtoQ(wires.input.bra.modes).inverse().adjoint.dual
+            BtoQ(wires.output.bra.modes).inverse().adjoint
             @ kets_done
-            @ BtoQ(wires.output.bra.modes).inverse().adjoint
+            @ BtoQ(wires.input.bra.modes).inverse().adjoint.dual
         )
         return cls._from_attributes(all_done.representation, wires, name)
 
@@ -226,14 +225,14 @@ class CircuitComponent:
         # wires, BtoQ.dual on in_ket wires, BtoQ.adjoint on out_bra wires and BtoQ.adjoint.dual
         # on in_bra wires.
         kets_done = (
-            BtoQ(self.wires.input.ket.modes).dual
+            BtoQ(self.wires.output.ket.modes)
             @ self
-            @ BtoQ(self.wires.output.ket.modes)
+            @ BtoQ(self.wires.input.ket.modes).dual
         )
         all_done = (
-            BtoQ(self.wires.input.bra.modes).adjoint.dual
+            BtoQ(self.wires.output.bra.modes).adjoint
             @ kets_done
-            @ BtoQ(self.wires.output.bra.modes).adjoint
+            @ BtoQ(self.wires.input.bra.modes).adjoint.dual
         )
         return all_done.representation.data
 

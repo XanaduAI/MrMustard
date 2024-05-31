@@ -42,7 +42,7 @@ class TestUnitary:
     @pytest.mark.parametrize("name", [None, "my_unitary"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Unitary(name, modes)
+        gate = Unitary(modes, name=name)
 
         assert gate.name[:1] == (name or "U")[:1]
         assert list(gate.modes) == sorted(modes)
@@ -95,7 +95,7 @@ class TestChannel:
     @pytest.mark.parametrize("name", [None, "my_channel"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Channel(name, modes)
+        gate = Channel(modes, name=name)
 
         assert gate.name[:2] == (name or "Ch")[:2]
         assert list(gate.modes) == sorted(modes)
@@ -238,12 +238,18 @@ class TestDgate:
         assert math.allclose(rep1.c, [0.990049833749168])
 
         rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).representation
-        assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
+        assert math.allclose(
+            rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
+        assert math.allclose(
+            rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]]
+        )
         assert math.allclose(rep2.c, [0.9656054162575665])
 
         rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).representation
-        assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
+        assert math.allclose(
+            rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]]
+        )
         assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
         assert math.allclose(rep3.c, [0.9753099120283327])
 
@@ -499,7 +505,9 @@ class TestAttenuator:
     def test_representation(self):
         rep1 = Attenuator(modes=[0], transmissivity=0.1).representation
         e = 0.31622777
-        assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
+        assert math.allclose(
+            rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]]
+        )
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1.0])
 
