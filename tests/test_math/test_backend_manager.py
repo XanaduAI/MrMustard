@@ -17,13 +17,14 @@ Unit tests for the :class:`BackendManager`.
 """
 import math
 from importlib.metadata import Distribution
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 import tensorflow as tf
-from unittest.mock import patch, MagicMock
 
 from mrmustard import math
+from ..conftest import skip_np
 
 
 # pylint: disable=protected-access, too-many-public-methods
@@ -643,6 +644,7 @@ class TestBackendManager:
     @patch("platform.system")
     def test_euclidean_opt_warning(self, mock_system, mock_processor):
         """Test that a warning is raised for M1/M2 Mac users with TF 2.16+."""
+        skip_np()
         mock_system.return_value = "Darwin"
         mock_processor.return_value = "arm"
 
