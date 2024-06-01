@@ -322,9 +322,7 @@ class Channel(Map):
         ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            return Channel._from_attributes(
-                representation=ret.representation, wires=ret.wires
-            )
+            return Channel._from_attributes(representation=ret.representation, wires=ret.wires)
         return ret
 
     def __repr__(self) -> str:

@@ -89,9 +89,7 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann(
-                *triples.displacement_map_s_parametrized_Abc(s, len(modes))
-            ),
+            representation=Bargmann(*triples.displacement_map_s_parametrized_Abc(s, len(modes))),
             name="BtoPS",
         )
         self.s = s
