@@ -116,7 +116,9 @@ class Operation(Transformation):
         name: Optional[str] = None,
     ) -> Operation:
         r"""Initialize an Operation from the given quadrature triple."""
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ  # pylint: disable=import-outside-toplevel
+        from mrmustard.lab_dev.circuit_components_utils import (
+            BtoQ,
+        )  # pylint: disable=import-outside-toplevel
 
         wires = Wires(set(), set(), set(modes_out), set(modes_in))
         QQ = cls._from_attributes(Bargmann(*triple), wires)
@@ -320,9 +322,7 @@ class Channel(Map):
         ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            return Channel._from_attributes(
-                representation=ret.representation, wires=ret.wires
-            )
+            return Channel._from_attributes(representation=ret.representation, wires=ret.wires)
         return ret
 
     def __repr__(self) -> str:
