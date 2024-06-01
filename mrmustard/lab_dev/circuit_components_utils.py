@@ -23,8 +23,8 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
-from .circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import Map, Operation
+from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
 __all__ = ["TraceOut", "BtoPS", "BtoQ"]
@@ -89,7 +89,9 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann(*triples.displacement_map_s_parametrized_Abc(s, len(modes))),
+            representation=Bargmann(
+                *triples.displacement_map_s_parametrized_Abc(s, len(modes))
+            ),
             name="BtoPS",
         )
         self.s = s
