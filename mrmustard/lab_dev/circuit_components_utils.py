@@ -94,9 +94,7 @@ class BtoPS(Map):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(
-            *triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes))
-        )
+        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
 
 
 class BtoQ(Operator):
