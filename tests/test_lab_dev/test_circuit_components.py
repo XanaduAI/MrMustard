@@ -34,7 +34,7 @@ from mrmustard.lab_dev.states import (
     Coherent,
     SqueezedVacuum,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -53,7 +53,9 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
+        cc = CircuitComponent(
+            representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name
+        )
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -74,7 +76,9 @@ class TestCircuitComponent:
         r3 = (cc1.adjoint @ cc1).representation
         cc3 = CircuitComponent(r3, m2, m2, m2, m1)
         cc4 = CircuitComponent(r3, m2, m2, m2, m2)
-        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
+        assert cc3.representation == cc4.representation.reorder(
+            [0, 1, 2, 3, 4, 5, 7, 6]
+        )
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -424,10 +428,26 @@ class TestCircuitComponent:
 
     def test_quadrature_rho(self):
         "tests that transforming to quadrature and back gives the same density matrix"
-        rho = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        rho = (
+            SqueezedVacuum([0], 0.4, 0.5)
+            >> Dgate([0], 0.3, 0.2)
+            >> Attenuator([0], 0.9)
+        )
         quad = rho.quadrature()
         back = DM.from_quadrature([0], [q[0] for q in quad])
         assert rho == back
+
+    def test_quadrature_unitary(self):
+        U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
+        quad = U.quadrature()
+        back = Unitary.from_quadrature([0], [q[0] for q in quad])
+        assert U == back
+
+    def test_quadrature_channel(self):
+        C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        quad = C.quadrature()
+        back = Channel.from_quadrature([0], [q[0] for q in quad])
+        assert C == back
 
 
 class TestAdjointView:
@@ -452,7 +472,9 @@ class TestAdjointView:
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
         assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
+        assert (
+            repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
+        )
 
     def test_parameters_point_to_original_parameters(self):
         r"""

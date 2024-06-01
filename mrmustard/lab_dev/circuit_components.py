@@ -121,7 +121,7 @@ class CircuitComponent:
         Returns:
             A circuit component of type ``cls`` with the given attributes.
         """
-        types = {"Ket", "DM", "Unitary", "Operator", "Channel", "Map"}
+        types = {"Ket", "DM", "Unitary", "Operation", "Channel", "Map"}
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
@@ -153,10 +153,40 @@ class CircuitComponent:
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
+    @classmethod
+    def from_bargmann(
+        cls,
+        triple: tuple,
+        modes_out_bra: Sequence[int] = (),
+        modes_in_bra: Sequence[int] = (),
+        modes_out_ket: Sequence[int] = (),
+        modes_in_ket: Sequence[int] = (),
+        name: Optional[str] = None,
+    ) -> CircuitComponent:
+        r"""
+        Initializes a circuit component from its Bargmann representation.
+
+        Args:
+            triple: The Bargmann representation of the component.
+            modes_out_bra: The output modes on the bra side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_ket: The input modes on the ket side of this component.
+            name: The name of this component.
+
+        Returns:
+            A circuit component with the given Bargmann representation.
+        """
+        repr = Bargmann(*triple)
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
+        return cls._from_attributes(repr, wires, name)
+
     @property
     def bargmann(self) -> tuple:
         r"""
-        The Bargmann parametrization of this circuit component, if available.
+        The Bargmann parametrization of this component, if available.
         """
         try:
             return self.representation.triple
@@ -168,22 +198,21 @@ class CircuitComponent:
     @classmethod
     def from_quadrature(
         cls,
-        triple: tuple,
-        modes_out_bra: Sequence[int] = (),
-        modes_in_bra: Sequence[int] = (),
-        modes_out_ket: Sequence[int] = (),
-        modes_in_ket: Sequence[int] = (),
+        modes_out_bra: Sequence[int],
+        modes_in_bra: Sequence[int],
+        modes_out_ket: Sequence[int],
+        modes_in_ket: Sequence[int],
+        data: tuple,
         name: Optional[str] = None,
     ) -> CircuitComponent:
-        r"""
-        Initializes a circuit component from its quadrature representation.
+        r"""Returns a circuit component from the given CV quadrature representation.
 
         Args:
-            triple: The quadrature representation of the component.
             modes_out_bra: The output modes on the bra side of this component.
             modes_in_bra: The input modes on the bra side of this component.
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_ket: The input modes on the ket side of this component.
+            data: The quadrature representation of the component. Same type as CircuitComponent.quadrature().
             name: The name of this component.
 
         Returns:
@@ -192,25 +221,16 @@ class CircuitComponent:
         from mrmustard.lab_dev.circuit_components_utils import BtoQ  # pylint: disable=import-outside-toplevel
 
         wires = Wires(
-            set(modes_out_bra),
-            set(modes_in_bra),
-            set(modes_out_ket),
-            set(modes_in_ket),
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        Q = CircuitComponent._from_attributes(
-            Bargmann(*triple), wires
-        )  # this is actually in quadrature
-        kets_done = (
-            BtoQ(wires.output.ket.modes).inverse()
-            @ Q
-            @ BtoQ(wires.input.ket.modes).inverse().dual
-        )
-        all_done = (
-            BtoQ(wires.output.bra.modes).inverse().adjoint
-            @ kets_done
-            @ BtoQ(wires.input.bra.modes).inverse().adjoint.dual
-        )
-        return cls._from_attributes(all_done.representation, wires, name)
+        # NOTE: the representation is Bargmann because we will use the inverse of BtoQ on the B side
+        QQQQ = CircuitComponent._from_attributes(Bargmann(*data), wires)
+        QtoB_ob = BtoQ(modes_out_bra).inverse().adjoint
+        QtoB_ib = BtoQ(modes_in_bra).inverse().adjoint.dual
+        QtoB_ok = BtoQ(modes_out_ket).inverse()
+        QtoB_ik = BtoQ(modes_in_ket).inverse().dual
+        BBBB = QtoB_ib @ QtoB_ik @ QQQQ @ QtoB_ok @ QtoB_ob
+        return cls._from_attributes(BBBB.representation, wires, name)
 
     def quadrature(self) -> tuple | ComplexTensor:
         r"""
@@ -220,19 +240,15 @@ class CircuitComponent:
             BtoQ,
         )
 
-        # The representation change from Bargmann into quadrature is to use the BtoQ.
-        # Here for a CircuitComponent, we need to add this map four times: BtoQ on out_ket
-        # wires, BtoQ.dual on in_ket wires, BtoQ.adjoint on out_bra wires and BtoQ.adjoint.dual
-        # on in_bra wires.
         kets_done = (
-            BtoQ(self.wires.output.ket.modes)
+            BtoQ(self.wires.input.ket.modes).dual
             @ self
-            @ BtoQ(self.wires.input.ket.modes).dual
+            @ BtoQ(self.wires.output.ket.modes)
         )
         all_done = (
-            BtoQ(self.wires.output.bra.modes).adjoint
+            BtoQ(self.wires.input.bra.modes).adjoint.dual
             @ kets_done
-            @ BtoQ(self.wires.input.bra.modes).adjoint.dual
+            @ BtoQ(self.wires.output.bra.modes).adjoint
         )
         return all_done.representation.data
 

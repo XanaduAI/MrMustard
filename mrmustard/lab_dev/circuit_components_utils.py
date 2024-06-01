@@ -24,7 +24,7 @@ from typing import Sequence
 
 from mrmustard.physics import triples
 from .circuit_components import CircuitComponent
-from mrmustard.lab_dev.transformations import Map, Operator
+from mrmustard.lab_dev.transformations import Map, Operation
 from ..physics.representations import Bargmann
 
 __all__ = ["TraceOut", "BtoPS", "BtoQ"]
@@ -63,11 +63,12 @@ class TraceOut(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
-        super().__init__(modes_in_ket=modes, modes_in_bra=modes, name="Tr")
-
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.identity_Abc(len(self.modes)))
+        super().__init__(
+            modes_in_ket=modes,
+            modes_in_bra=modes,
+            representation=Bargmann(*triples.identity_Abc(len(modes))),
+            name="Tr",
+        )
 
 
 class BtoPS(Map):
@@ -88,16 +89,15 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
+            representation=Bargmann(
+                *triples.displacement_map_s_parametrized_Abc(s, len(modes))
+            ),
             name="BtoPS",
         )
         self.s = s
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
 
-
-class BtoQ(Operator):
+class BtoQ(Operation):
     r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
 
     Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
@@ -116,9 +116,6 @@ class BtoQ(Operator):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
+            representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
             name="BtoQ",
         )
-
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.bargmann_to_quadrature_Abc(len(self.modes)))

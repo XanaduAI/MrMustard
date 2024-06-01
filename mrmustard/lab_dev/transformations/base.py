@@ -25,15 +25,14 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, RealMatrix, RealVector
+from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard import math
-from mrmustard.lab_dev.utils import shape_check
 from mrmustard.lab_dev.wires import Wires
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import physics
 from ..circuit_components import CircuitComponent
 
-__all__ = ["Transformation", "Operator", "Unitary", "Map", "Channel"]
+__all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
 
 class Transformation(CircuitComponent):
@@ -62,17 +61,15 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Batched transformations are not supported.")
 
         # compute the inverse
-        A, b, _ = self.dual.representation.conj().triple  # apply X
-        almost_inverse = self.__class__._from_attributes(
-            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
-            self.wires,
-            "",
+        A, b, _ = self.dual.representation.conj().triple  # apply X(.)X
+        almost_inverse = self._from_attributes(
+            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
         almost_identity = (
             self @ almost_inverse
         )  # TODO: this is not efficient, need to get c from formula
         invert_this_c = almost_identity.representation.c
-        actual_inverse = self.__class__._from_attributes(
+        actual_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
             self.wires,
             self.name + "_inv",
@@ -80,63 +77,56 @@ class Transformation(CircuitComponent):
         return actual_inverse
 
 
-class Operator(Transformation):
-    r"""A CircuitComponent with input and output wires, only on the ket side.
-    This class essentially relaxes the requirement that Unitaries have that
-    the input and output modes must be the same."""
+class Operation(Transformation):
+    r"""A CircuitComponent with input and output wires, on the ket side."""
 
     def __init__(
         self,
-        representation: Bargmann | Fock = None,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
+        representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
         super().__init__(
-            representation=representation,
             modes_out_ket=modes_in,
             modes_in_ket=modes_out,
+            representation=representation,
             name=name or "Op",
         )
+        if representation is not None:
+            self._representation = representation
 
     @classmethod
     def from_bargmann(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple,
         name: Optional[str] = None,
-    ) -> Operator:
-        A = math.astensor(triple[0])
-        b = math.astensor(triple[1])
-        c = math.astensor(triple[2])
-        shape_check(A, b, len(modes_out) + len(modes_in), "Bargmann")
-        return cls._from_attributes(
-            Bargmann(A, b, c), Wires(set(), set(), set(modes_out), set(modes_in)), name
-        )
+    ) -> Operation:
+        r"""Initialize an Operation from the given Bargmann triple."""
+        return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     @classmethod
     def from_quadrature(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexMatrix, ComplexVector],
+        triple: tuple,
         name: Optional[str] = None,
-    ) -> Operator:
-        shape_check(triple[0], triple[1], len(modes_out) + len(modes_in), "Quadrature")
-        CC = super().from_quadrature(
-            triple=triple,
-            modes_out_bra=set(),
-            modes_in_bra=set(),
-            modes_out_ket=modes_out,
-            modes_in_ket=modes_in,
-        )
-        return cls._from_attributes(
-            representation=CC.representation, wires=CC.wires, name=name
-        )
+    ) -> Operation:
+        r"""Initialize an Operation from the given quadrature triple."""
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ  # pylint: disable=import-outside-toplevel
+
+        wires = Wires(set(), set(), set(modes_out), set(modes_in))
+        QQ = cls._from_attributes(Bargmann(*triple), wires)
+        QtoB_out = BtoQ(modes_out).inverse()
+        QtoB_in = BtoQ(modes_in).inverse().dual
+        BB = QtoB_in @ QQ @ QtoB_out
+        return cls._from_attributes(BB.representation, BB.wires, name)
 
 
-class Unitary(Operator):
+class Unitary(Operation):
     r"""
     Base class for all unitary transformations.
 
@@ -145,12 +135,19 @@ class Unitary(Operator):
         modes: The modes that this transformation acts on.
     """
 
-    def __init__(self, modes: tuple[int, ...] = (), name: Optional[str] = None):
+    def __init__(
+        self,
+        modes: tuple[int, ...] = (),
+        representation: Optional[Representation] = None,
+        name: Optional[str] = None,
+    ):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
             name=name or "U" + "".join(str(m) for m in modes),
         )
+        if representation is not None:
+            self._representation = representation
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -163,9 +160,9 @@ class Unitary(Operator):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary._from_attributes(ret.representation, ret.wires, "")
+            return Unitary._from_attributes(ret.representation, ret.wires)
         elif isinstance(other, Channel):
-            return Channel._from_attributes(ret.representation, ret.wires, "")
+            return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:
@@ -175,32 +172,34 @@ class Unitary(Operator):
     def from_bargmann(
         cls,
         modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple,
         name: Optional[str] = None,
     ) -> Unitary:
-        A, b, c = triple
-        shape_check(A, b, 2 * len(modes), "Bargmann")
-        s = set(modes)
-        return Unitary._from_attributes(
-            representation=Bargmann(A, b, c), wires=Wires(set(), set(), s, s), name=name
-        )
+        r"""Initialize a Unitary from the given Bargmann triple."""
+        return Unitary(modes, Bargmann(*triple), name)
 
     @classmethod
     def from_quadrature(
         cls,
         modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexMatrix, ComplexVector],
+        data: tuple,
         name: Optional[str] = None,
+        phi: float = 0,
     ) -> Unitary:
-        shape_check(triple[0], triple[1], 2 * len(modes), "Quadrature")
-        CC = super().from_quadrature(
-            triple=triple,
-            modes_out=modes,
-            modes_in=modes,
-        )
-        return Unitary._from_attributes(
-            representation=CC.representation, wires=CC.wires, name=name
-        )
+        r"""Instantiates a Unitary from the given CV quadrature data.
+
+        For the quadrature representation it is expected a tuple ``(A, b, c)``,
+        where A, b and c parametrize the wavefunction in the form
+        :math:`\psi(x) = c \exp(\frac{1}{2} x^T A x + b^T x)`.
+
+        The angle phi sets the angle of the axis with respect to which the
+        quadrature is intended.
+        For example phi=0 corresponds to the position quadrature.
+        phi=pi/2 corresponds to the momentum quadrature.
+
+        """
+        BB = super().from_quadrature(modes, modes, data)
+        return Unitary(modes, BB.representation, name)
 
     @classmethod
     def from_symplectic(
@@ -230,12 +229,11 @@ class Map(Transformation):
     r"""A CircuitComponent with input and output wires and same modes on bra and ket sides.
     More general than Channels, which need to be CPTP."""
 
-    _cc_wires_type: tuple[Optional[int], ...] = (0, 1, 0, 1)
-
     def __init__(
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
+        representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
         super().__init__(
@@ -243,6 +241,7 @@ class Map(Transformation):
             modes_in_bra=modes_in,
             modes_out_ket=modes_out,
             modes_in_ket=modes_in,
+            representation=representation,
             name=name or "Map",
         )
 
@@ -251,36 +250,23 @@ class Map(Transformation):
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple,
         name: Optional[str] = None,
     ) -> Map:
-        A, b, c = triple
-        shape_check(A, b, len(modes_out) + len(modes_in), "Bargmann")
-        return Map._from_attributes(
-            Bargmann(A, b, c),
-            Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
-            name,
-        )
+        r"""Initialize a Map from the given Bargmann triple."""
+        return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     @classmethod
     def from_quadrature(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexMatrix, ComplexVector],
+        triple: tuple,
         name: Optional[str] = None,
     ) -> Map:
-        shape_check(triple[0], triple[1], len(modes_out) + len(modes_in), "Quadrature")
-        CC = super().from_quadrature(
-            triple=triple,
-            modes_out_bra=modes_out,
-            modes_in_bra=modes_in,
-            modes_out_ket=modes_out,
-            modes_in_ket=modes_in,
-        )
-        return Map._from_attributes(
-            representation=CC.representation, wires=CC.wires, name=name
-        )
+        r"""Initialize a Map from the given quadrature data."""
+        BBBB = super().from_quadrature(modes_out, modes_in, modes_out, modes_in, triple)
+        return cls._from_attributes(BBBB.representation, BBBB.wires, name)
 
 
 class Channel(Map):
@@ -292,12 +278,36 @@ class Channel(Map):
         modes: The modes that this channel acts on.
     """
 
-    def __init__(self, modes: tuple[int, ...] = (), name: Optional[str] = None):
+    def __init__(
+        self,
+        modes: tuple[int, ...] = (),
+        representation: Optional[Representation] = None,
+        name: Optional[str] = None,
+    ):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
+            representation=representation,
             name=name or "Ch" + "".join(str(m) for m in modes),
         )
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple,
+        name: Optional[str] = None,
+    ) -> Channel:
+        r"""Initialize a Channel from the given Bargmann triple."""
+        return Channel(modes, Bargmann(*triple), name)
+
+    @classmethod
+    def from_quadrature(
+        cls, modes: Sequence[int], triple: tuple, name: Optional[str] = None
+    ) -> Channel:
+        r"""Instantiates a Channel from the given CV quadrature data."""
+        BBBB = super().from_quadrature(modes, modes, triple)
+        return Channel._from_attributes(BBBB.representation, BBBB.wires, name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -317,38 +327,3 @@ class Channel(Map):
 
     def __repr__(self) -> str:
         return super().__repr__().replace("CircuitComponent", "Channel")
-
-    @classmethod
-    def from_bargmann(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> Channel:
-        r"""Initialize a Channel from the given Bargmann ``(A, b, c)`` triple."""
-        A, b, c = triple
-        shape_check(A, b, 4 * len(modes), "Bargmann")
-        s = set(modes)
-        return Channel._from_attributes(
-            representation=Bargmann(A, b, c), wires=Wires(s, s, s, s), name=name
-        )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexMatrix, ComplexVector],
-        name: Optional[str] = None,
-    ) -> Channel:
-        r"""Initialize a Channel from the given Quadrature ``(A, b, c)`` triple
-        of the quadrature representation.
-        """
-        shape_check(triple[0], triple[1], 4 * len(modes), "Quadrature")
-        CC = super().from_quadrature(
-            modes_out=modes,
-            modes_in=modes,
-            triple=triple,
-        )
-        return Channel._from_attributes(
-            representation=CC.representation, wires=CC.wires, name=name
-        )
