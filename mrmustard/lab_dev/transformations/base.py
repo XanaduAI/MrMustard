@@ -53,7 +53,7 @@ class Transformation(CircuitComponent):
 
         # compute the inverse
         A, b, _ = self.dual.representation.conj().triple  # apply X
-        almost_inverse = self.__class__._from_attributes(
+        almost_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
             self.wires,
             "",
@@ -62,7 +62,7 @@ class Transformation(CircuitComponent):
             self >> almost_inverse
         )  # TODO: this is not efficient, need to get c from formula
         invert_this_c = almost_identity.representation.c
-        actual_inverse = self.__class__._from_attributes(
+        actual_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
             self.wires,
             self.name + "_inv",
@@ -204,7 +204,9 @@ class Channel(Transformation):
         ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            return Channel._from_attributes(representation=ret.representation, wires=ret.wires)
+            return Channel._from_attributes(
+                representation=ret.representation, wires=ret.wires
+            )
         return ret
 
     def __repr__(self) -> str:
