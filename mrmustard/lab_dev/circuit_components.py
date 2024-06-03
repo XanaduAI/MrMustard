@@ -76,7 +76,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -172,7 +177,9 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -215,7 +222,9 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()
@@ -339,7 +348,9 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -418,7 +429,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -442,6 +455,8 @@ class CircuitComponent:
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_ret, None)
 
+    # pylint: disable=too-many-return-statements
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other)
@@ -457,7 +472,9 @@ class CircuitComponent:
         if not self.wires.ket and not other.wires.ket:
             return self @ other  # bra side only
 
-        if (self.wires.bra and self.wires.ket) and (other.wires.bra and other.wires.ket):
+        if (self.wires.bra and self.wires.ket) and (
+            other.wires.bra and other.wires.ket
+        ):
             return self @ other  # both sides
 
         if not self.wires.bra and (other.wires.bra and other.wires.ket):
@@ -485,7 +502,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
@@ -496,8 +515,11 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
-
+        rep_temp_uni = (
+            rep_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
+        )
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
