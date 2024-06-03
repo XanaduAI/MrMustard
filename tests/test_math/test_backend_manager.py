@@ -16,8 +16,7 @@
 Unit tests for the :class:`BackendManager`.
 """
 import math
-from importlib.metadata import Distribution
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock, MagicMock
 
 import numpy as np
 import pytest
@@ -640,18 +639,17 @@ class TestBackendManager:
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
 
+    @patch("importlib.metadata.distribution")
     @patch("platform.processor")
     @patch("platform.system")
-    def test_euclidean_opt_warning(self, mock_system, mock_processor):
+    def test_euclidean_opt_warning(self, mock_system, mock_processor, mock_version):
         """Test that a warning is raised for M1/M2 Mac users with TF 2.16+."""
-        pytest.xfail(reason="no warnings filter applied")
         skip_np()
         mock_system.return_value = "Darwin"
         mock_processor.return_value = "arm"
+        mock_version.return_value = MagicMock(version="2.16.0")
 
         math._euclidean_opt = None  # just in case another test set it
-        with pytest.warns(
-            UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"
-        ), patch.object(Distribution, "version", "2.16.0"):
+        with pytest.warns(UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"):
             opt = math.euclidean_opt
         assert isinstance(opt, tf.keras.optimizers.Adam)
