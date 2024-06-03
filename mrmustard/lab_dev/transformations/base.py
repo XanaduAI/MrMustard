@@ -99,7 +99,7 @@ class Operator(Transformation):
         b = math.astensor(triple[1])
         c = math.astensor(triple[2])
         shape_check(A, b, len(modes_out) + len(modes_in), "Bargmann")
-        return Operator._from_attributes(
+        return cls._from_attributes(
             Bargmann(A, b, c), Wires(set(), set(), set(modes_out), set(modes_in)), name
         )
 
