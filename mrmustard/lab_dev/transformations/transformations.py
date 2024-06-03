@@ -99,16 +99,12 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
-        self._add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds)
-        )
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(
-            *triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value)
-        )
+        return Bargmann(*triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value))
 
 
 class Dgate(Unitary):
