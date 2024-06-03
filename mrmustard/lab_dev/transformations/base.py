@@ -42,7 +42,7 @@ class Transformation(CircuitComponent):
 
     def inverse(self) -> Transformation:
         r"""Returns the inverse of the transformation."""
-        if not len(self.wires.input) == len(self.wires.output):
+        if len(self.wires.input) != len(self.wires.output):
             raise NotImplementedError(
                 "Only Transformations with the same number of input and output wires are supported."
             )
