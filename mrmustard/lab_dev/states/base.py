@@ -54,10 +54,10 @@ from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import BtoPS, BtoQ
-from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
-from ..wires import Wires
+from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.transformations import Rgate
+from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -240,14 +240,16 @@ class State(CircuitComponent):
         cls,
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
         name: Optional[str] = None,
     ) -> State:
         r"""
-        Initializes a state from quadrature with a ABC Ansatz Gaussian exponential form.
+        Initializes a state from quadrature with an ABC Ansatz Gaussian exponential form.
 
         Args:
             modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
+            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
             name: The name of this state.
 
         Returns:
@@ -257,7 +259,9 @@ class State(CircuitComponent):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
-        return cls(modes, Bargmann(*triple), name) >> BtoQ(modes).inverse()
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = cls(modes, Bargmann(*triple), name)
+        return cls(modes, (Q >> QtoB).representation, name)
 
     @property
     def _L2_norms(self) -> RealVector:

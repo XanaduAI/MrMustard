@@ -26,6 +26,7 @@ from mrmustard.physics import triples
 from mrmustard.lab_dev.transformations import Map, Operation
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
+from mrmustard.lab_dev.transformations import Rgate
 
 __all__ = ["TraceOut", "BtoPS", "BtoQ"]
 
@@ -97,23 +98,28 @@ class BtoPS(Map):
 
 class BtoQ(Operation):
     r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
-
-    Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
-
-    The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from ``Bargmann`` into quadrature on the `bra` Wire.
-    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
+    By default it's defined on the output ket side.
 
     Args:
         modes: The modes of this channel.
+        phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
     """
 
     def __init__(
         self,
         modes: Sequence[int],
+        phi: float,
     ):
-        super().__init__(
+        no_phi = Operation(
             modes_out=modes,
             modes_in=modes,
             representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
+        )
+
+        Operation.__init__(
+            self,
+            modes_out=modes,
+            modes_in=modes,
+            representation=(Rgate(modes, -phi) >> no_phi).representation,
             name="BtoQ",
         )

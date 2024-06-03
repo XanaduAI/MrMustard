@@ -16,8 +16,7 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called, protected-access
-
+# pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
@@ -195,51 +194,49 @@ class CircuitComponent:
         modes_in_bra: Sequence[int],
         modes_out_ket: Sequence[int],
         modes_in_ket: Sequence[int],
-        data: tuple,
+        triple: tuple,
+        phi: float = 0.0,
         name: Optional[str] = None,
     ) -> CircuitComponent:
-        r"""Returns a circuit component from the given CV quadrature representation.
+        r"""Returns a circuit component from the given CV quadrature triple (A,b,c).
+        It assumes that the ansatz is in the form ``c exp(1/2 x^T A x + b^T x)``.
 
         Args:
             modes_out_bra: The output modes on the bra side of this component.
             modes_in_bra: The input modes on the bra side of this component.
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_ket: The input modes on the ket side of this component.
-            data: The quadrature representation of the component. Same type as CircuitComponent.quadrature().
+            triple: The (A,b,c) triple that parametrizes the wave function.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, ``phi=pi/2`` to the p quadrature.
             name: The name of this component.
 
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from mrmustard.lab_dev.circuit_components_utils import (
-            BtoQ,
-        )  # pylint: disable=import-outside-toplevel
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint
+        QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual
+        QtoB_ok = BtoQ(modes_out_ket, phi).inverse()
+        QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual
         # NOTE: the representation is Bargmann because we will use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent._from_attributes(Bargmann(*data), wires)
-        QtoB_ob = BtoQ(modes_out_bra).inverse().adjoint
-        QtoB_ib = BtoQ(modes_in_bra).inverse().adjoint.dual
-        QtoB_ok = BtoQ(modes_out_ket).inverse()
-        QtoB_ik = BtoQ(modes_in_ket).inverse().dual
+        QQQQ = CircuitComponent._from_attributes(Bargmann(*triple), wires)
         BBBB = QtoB_ib @ QtoB_ik @ QQQQ @ QtoB_ok @ QtoB_ob
         return cls._from_attributes(BBBB.representation, wires, name)
 
-    def quadrature(self) -> tuple | ComplexTensor:
+    def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
         The quadrature representation of this circuit component.
         """
-        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
-            BtoQ,
-        )
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        kets_done = BtoQ(self.wires.input.ket.modes).dual @ self @ BtoQ(self.wires.output.ket.modes)
-        all_done = (
-            BtoQ(self.wires.input.bra.modes).adjoint.dual
-            @ kets_done
-            @ BtoQ(self.wires.output.bra.modes).adjoint
-        )
-        return all_done.representation.data
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+        QQQQ = BtoQ_ib @ BtoQ_ik @ self @ BtoQ_ok @ BtoQ_ob
+        return QQQQ.representation.data
 
     @property
     def representation(self) -> Representation | None:
@@ -447,32 +444,33 @@ class CircuitComponent:
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
+        Contracts ``self`` and ``other`` (output of self going into input of other)
+        adding the adjoints when they are missing. If this can be deduced from the wires
+        of the components, the contraction is executed, otherwise an error is raised.
         """
-        msg = f"``>>`` not supported between {self} and {other}, use ``@``."
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += "whether to add bra wires. Use ``@`` instead."
 
-        wires_s = self.wires
-        wires_o = other.wires
+        if not self.wires.bra and not other.wires.bra:
+            return self @ other  # ket side only
 
-        if wires_s.ket and wires_s.bra:
-            if wires_o.ket and wires_o.bra:
-                return self @ other
-            return self @ other @ other.adjoint
+        if not self.wires.ket and not other.wires.ket:
+            return self @ other  # bra side only
 
-        if wires_s.ket:
-            if wires_o.ket and wires_o.bra:
-                return self @ self.adjoint @ other
-            if wires_o.ket:
-                return self @ other
-            raise ValueError(msg)
+        if (self.wires.bra and self.wires.ket) and (other.wires.bra and other.wires.ket):
+            return self @ other  # both sides
 
-        if wires_s.bra:
-            if wires_o.ket and wires_o.bra:
-                return self @ self.adjoint @ other
-            if wires_o.bra:
-                return self @ other
-            raise ValueError(msg)
+        if not self.wires.bra and (other.wires.bra and other.wires.ket):
+            return self.adjoint @ (self @ other)  # adding self.adjoint on the bra
+
+        if not self.wires.ket and (other.wires.bra and other.wires.ket):
+            return self.adjoint @ (self @ other)  # adding self.adjoint on the ket
+
+        if (self.wires.bra and self.wires.ket) and not other.wires.bra:
+            return (self @ other) @ other.adjoint  # adding other.adjoint on the bra
+
+        if (self.wires.bra and self.wires.ket) and not other.wires.ket:
+            return (self @ other) @ other.adjoint  # adding other.adjoint on the ket
 
         raise ValueError(msg)
 

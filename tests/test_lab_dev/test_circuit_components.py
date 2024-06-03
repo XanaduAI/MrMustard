@@ -430,12 +430,12 @@ class TestCircuitComponent:
 
     def test_quadrature_unitary(self):
         U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
-        back = Unitary.from_quadrature([0], U.quadrature())
+        back = Unitary.from_quadrature([0], [0], U.quadrature())
         assert U == back
 
     def test_quadrature_channel(self):
         C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = Channel.from_quadrature([0], C.quadrature())
+        back = Channel.from_quadrature([0], [0], C.quadrature())
         assert C == back
 
 
