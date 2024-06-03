@@ -38,7 +38,7 @@ class BSgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import BSgate
 
-        >>> unitary = BSgate(modes=[1, 2], phi=0.1)
+        >>> unitary = BSgate(modes=[1, 2], theta=0.1)
         >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.theta.value, 0.1)
         >>> assert np.allclose(unitary.phi.value, 0.0)
