@@ -16,7 +16,7 @@
 Unit tests for the :class:`BackendManager`.
 """
 import math
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pytest
@@ -650,6 +650,9 @@ class TestBackendManager:
         mock_version.return_value = MagicMock(version="2.16.0")
 
         math._euclidean_opt = None  # just in case another test set it
-        with pytest.warns(UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"):
-            opt = math.euclidean_opt
-        assert isinstance(opt, tf.keras.optimizers.Adam)
+        try:
+            with pytest.warns(UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"):
+                opt = math.euclidean_opt
+            assert isinstance(opt, tf.keras.optimizers.Adam)
+        finally:
+            math._euclidean_opt = None  # reset after test passes
