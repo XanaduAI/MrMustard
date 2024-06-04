@@ -344,6 +344,48 @@ def beamsplitter_gate_Abc(
 
     return A, b, c
 
+def twomode_squeezing_gate_Abc(
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of two-mode squeezing gates.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
+    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The amplitude parameters.
+        phi: The phase parameters.
+
+    Returns:
+        The ``(A, b, c)`` triple of the two mode squeezing gates.
+    """
+    r, phi = _reshape(r=r, phi=phi)
+    n_modes = 2 * len(r)
+
+    O_n = math.zeros((n_modes/2, n_modes/2), math.complex128)
+    tanhr = math.diag(math.exp(1j*phi)*math.tanh(r))
+    sechr = math.diag(1/math.cosh(r))
+
+    A_block1 = math.block([[O_n, tanhr],
+                           [tanhr, O_n]])
+    
+    A_block2 = math.block([[sechr, O_n],
+                           [O_n, sechr]])
+    
+    A_block3 = math.block([[O_n, -math.conj(tanhr)],
+                           [-math.conj(tanhr), O_n]])
+
+
+    A = math.block([[A_block1, A_block2], [A_block2, A_block3]])
+    b = _vacuum_B_vector(n_modes * 2)
+    c = 1/math.cosh(r) + 0j
+
+    return A, b, c
+
 
 def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
