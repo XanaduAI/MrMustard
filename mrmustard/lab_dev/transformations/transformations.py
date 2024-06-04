@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+__all__ = ["Attenuator", "Fockdamping", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -384,3 +384,64 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
+
+
+class Fockdamping(Channel):
+    r"""The Fock damping channel.
+
+    If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
+    all the modes share the same damping.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Fockdamping
+
+        >>> channel = Fockdamping(modes=[1, 2], damping=0.1)
+        >>> assert channel.modes == [1, 2]
+        >>> assert np.allclose(channel.damping.value, [0.1, 0.1])
+
+    Args:
+        modes: The modes this gate is applied to.
+        damping: The damping.
+        damping_trainable: Whether the damping is a trainable variable.
+        damping_bounds: The bounds for the damping.
+
+    .. details::
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= e^{-\beta}\begin{bmatrix}
+                    O_N & I_N & O_N & O_N \\
+                    I_N & O_N & O_N & O_N \\
+                    O_N & O_N & O_N & I_N \\
+                    O_N & O_N & I_N & O_N 
+                \end{bmatrix} \\ \\
+            b &= O_{4N} \\ \\
+            c &= 1\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        damping: Union[Optional[float], Optional[list[float]]] = 1.0,
+        damping_trainable: bool = False,
+        damping_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+    ):
+        super().__init__(modes=modes, name="Fockdamping")
+        self._add_parameter(
+            make_parameter(
+                damping_trainable,
+                damping,
+                "damping",
+                damping_bounds,
+                None,
+            )
+        )
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        beta = list(reshape_params(n_modes, beta=self.damping.value))[0]
+        return Bargmann(*triples.fock_damping_Abc(beta))
