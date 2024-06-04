@@ -476,6 +476,64 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
+def gaussian_channel_XYd_Abc(
+        X: np.typing.Arraylike, Y: np.typing.Arraylike, d: np.typing.Arraylike) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a Gaussian channel specified by XYd triple.
+
+    DOUBLE CHECK THE TYPING OF THE FUNCTION
+    DOUBLE CHECK THE NAMES BELOW
+    Args:
+        X: Sympletic matrix
+        Y: Noise matrix
+        d: Displacement
+    Returns:
+        The ``(A, b, c)`` triple of a Gaussian channel.
+    """
+    hbar = settings.HBAR
+
+    n_modes = len(X)
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    I_n = math.reshape(
+        math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
+    )
+
+    R = 1/math.sqrt(2)*math.block(
+        [
+            [I_n, 1j*I_n, O_n, O_n],
+            [O_n, O_n, I_n, -1j*I_n],
+            [I_n, -1j*I_n, O_n, O_n],
+            [O_n, O_n, I_n, 1j*I_n]
+        ]
+    )
+
+    O_2n = math.zeros((2*n_modes, 2*n_modes), math.complex128)
+    I_2n = math.reshape(
+        math.diag(math.asnumpy([1.0 + 0j for _ in range(2*n_modes)])), (2*n_modes, 2*n_modes)
+    )
+
+    P_2n = math.block(
+        [
+            [O_2n, I_2n],
+            [I_2n, O_2n]
+        ]
+    )
+
+    xi = 1/2*(I_2n+math.matmul(X,math.transpose(X)+2*Y/hbar))
+    xi_inv = math.inv(xi)
+    A_block = math.block(
+        [
+            [I_2n-xi_inv, math.matmul(xi_inv,X)],
+            [math.matmul(math.transpose(X),xi_inv), I_n-math.matmul(math.matmul(math.transpose(X),xi_inv),X)]
+        ]
+    )
+    A = math.matmul(math.matmul(math.matmul(P_2n,R),A_block),math.conj(math.transpose(R)))
+    b = 1/hbar*math.conj(R)*math.block([math.matmul(xi_inv,d),math.matmul(math.matmul(-math.transpose(X),xi_inv),d)])
+    c = math.exp(-1/(2*hbar)*math.matmul(math.matmul(math.transpose(d),xi_inv),d))/math.sqrt(math.det(xi))
+    
+    return A, b, c
+
+
 def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
