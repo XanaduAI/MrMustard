@@ -384,3 +384,71 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
+
+
+
+class Gaussian_channel_XYd(Channel):
+    r"""The general N-mode Gaussian Channel.
+
+        'X' and 'Y' must have dimensions 2N x 2N and 'd' must have dimensions 2N for an M-mode channel.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Gaussian_channel_XYd
+
+        >>> channel = Gaussian_channel_XYd(modes=[0], X=0.5*np.array(((0,1),(1,0))), Y=0.5*np.array(((0,1),(1,0))),D=np.zeros(2))
+        >>> assert channel.modes == [0]
+
+        CHECK THE NAMES OF MATRICES BELOW
+    Args:
+        modes: The modes this channel is applied to.
+        X: X matrix.
+        Y: Y matrix.
+        d: The displacement.
+
+    .. details::
+
+        A general :math:`N`-mode gaussian channel that acts on a state :math:'(V,r)' as 
+
+        .. math::
+            V \rightarrow XVX^T+Y \text{ , }
+            r \rightarrow Xr+d\:,
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= P_{2N}R \begin{bmatrix}
+                    I_N-\xi^{-1} & \xi^{-1} \\
+                    X^T\xi^{-1} & I_N-X^T\xi^{-1}X
+                \end{bmatrix} R \\ \\
+            b &= 1/\sqrt{\hbar} \begin{bmatrix}
+                    \xi^{-1}d \\
+                    -X^T\xi^{-1}d
+                    \end{bmatrix} \\ \\
+            c &= \exp(-1/2\hbard^T\xi^{-1}d)/\sqrt{\det(\xi)}\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        X: Union[Optional[float], Optional[list[float]]] = 1.0,
+        Y: Union[Optional[float], Optional[list[float]]] = 1.0,
+        d: Union[Optional[float], Optional[list[float]]] = 1.0,
+        X_trainable: bool = False,
+        Y_trainable: bool = False,
+        d_trainable: bool = False,
+        X_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        Y_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        d_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0)
+    ):
+        super().__init__(modes=modes, name="Att")
+        self._add_parameter(make_parameter(X_trainable,X,'X',X_bounds,None))
+        self._add_parameter(make_parameter(Y_trainable,Y,'X',Y_bounds,None))
+        self._add_parameter(make_parameter(d_trainable,d,'X',d_bounds,None))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
+        return Bargmann(*triples.attenuator_Abc(eta))
