@@ -436,10 +436,7 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
         if math.real(g_val) < 1:
             msg = "Found amplifier with gain ``g`` smaller than `1`."
             raise ValueError(msg)
-
-    g = math.atleast_1d(g, math.complex128)
-    n_modes = len(g)
-
+        
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
     g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
