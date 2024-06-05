@@ -15,9 +15,9 @@
 """
 This module contains gaussian integral functions and related helper functions.
 """
+
 from typing import Sequence, Tuple
 import numpy as np
-
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
@@ -70,7 +70,8 @@ def real_gaussian_integral(
 
     c_post = (
         c
-        * math.sqrt((2 * np.pi) ** len(idx) / math.det(M))
+        * math.sqrt((2 * np.pi) ** len(idx), math.complex128)
+        * math.sqrt((-1) ** len(idx) / math.det(M), math.complex128)
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
@@ -131,7 +132,10 @@ def complex_gaussian_integral(
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
 
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
+    c_post = (
+        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+    )
+
     if math.asnumpy(not_idx).shape != (0,):
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
         R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
@@ -139,12 +143,8 @@ def complex_gaussian_integral(
         A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
         b_post = bR - math.matvec(D, math.solve(M, bM))
     else:
-        A_post = math.astensor([])
-        b_post = math.astensor([])
-
-    c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
+        A_post = math.zeros((0, 0), dtype=A.dtype)
+        b_post = math.zeros((0,), dtype=b.dtype)
 
     return A_post, b_post, c_post
 
@@ -168,6 +168,74 @@ def join_Abc(
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
     c12 = math.outer(c1, c2)
+    return A12, b12, c12
+
+
+def join_Abc_real(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+):
+    r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together", by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2 will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same, rather than a pair of conjugate variables for complex Gaussian integrals.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+        idx1: the indices of the first ``(A,b,c)`` triple to fuse
+        idx2: the indices of the second ``(A,b,c)`` triple to fuse
+
+    Returns:
+        The joined ``(A,b,c)`` triple with the order [idx1(or idx2), not_idx2].
+    """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    if len(idx1) != len(idx2):
+        raise ValueError(
+            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}"
+        )
+
+    if (len(idx1) > A1.shape[-1]) or (len(idx2) > A2.shape[-1]):
+        raise ValueError(f"idx1 and idx2 must be valid, got {len(idx1)} and {len(idx2)}")
+
+    not_idx1 = tuple(i for i in range(A1.shape[-1]) if i not in idx1)
+    not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
+
+    A1_idx_idx = math.gather(math.gather(A1, idx1, axis=-1), idx1, axis=-2)
+    b1_idx = math.gather(b1, idx1, axis=-1)
+    if not_idx1:
+        A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
+        A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
+        A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
+        b1_notidx = math.gather(b1, not_idx1, axis=-1)
+    A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
+    b2_idx = math.gather(b2, idx2, axis=-1)
+    if not_idx2:
+        A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
+        A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
+        A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+        b2_notidx = math.gather(b2, not_idx2, axis=-1)
+
+    if math.asnumpy(not_idx1).shape == (0,):
+        A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
+        b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
+        c12 = math.outer(c1, c2)
+    elif math.asnumpy(not_idx2).shape == (0,):
+        A12 = math.block([[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]])
+        b12 = math.concat([b2 + b1_idx, b1_notidx], axis=-1)
+        c12 = math.outer(c1, c2)
+    else:
+        O_n = math.zeros((len(not_idx1), len(not_idx2)), math.complex128)
+        A12 = math.block(
+            [
+                [A1_idx_idx + A2_idx_idx, A1_idx_notidx, A2_idx_notidx],
+                [A1_notidx_idx, A1_notidx_notidx, O_n],
+                [A2_notidx_idx, O_n.T, A2_notidx_notidx],
+            ]
+        )
+        b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
+        c12 = math.outer(c1, c2)
     return A12, b12, c12
 
 

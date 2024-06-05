@@ -21,9 +21,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Iterable, Union
+import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+
+from IPython.display import display, HTML
+from mako.template import Template
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -70,6 +74,22 @@ class Representation(ABC):
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
+        """
+
+    @property
+    @abstractmethod
+    def data(self) -> tuple | Tensor:
+        r"""
+        The data of the representation.
+        For now, it's the triple for Bargmann and the array for Fock.
+        """
+
+    @property
+    @abstractmethod
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the representation.
+        For now it's ``c`` for Bargmann and the array for Fock.
         """
 
     def __eq__(self, other: Representation) -> bool:
@@ -268,6 +288,31 @@ class Bargmann(Representation):
         """
         return self.ansatz.c
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.A, self.b, self.c
+
+    @property
+    def data(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The data of the representation.
+        """
+        return self.triple
+
+    @property
+    def scalar(self) -> Batch[ComplexTensor]:
+        r"""
+        The scalar part of the representation.
+        """
+        return self.c
+
     def conj(self):
         r"""
         The conjugate of this Bargmann object.
@@ -354,7 +399,7 @@ class Bargmann(Representation):
         if log_scale:
             f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
         if with_measure:
-            f_values = f_values * np.exp(-np.abs(Z) ** 2)
+            f_values = f_values * np.exp(-(np.abs(Z) ** 2))
 
         # Get phase and magnitude of F(z)
         phases = np.angle(f_values) / (2 * np.pi) % 1
@@ -400,9 +445,9 @@ class Bargmann(Representation):
         """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
-            if i >= self.ansatz.dim:
+            if i >= self.ansatz.num_vars:
                 raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.num_vars}."
                 )
         new = self.__class__(self.A, self.b, self.c)
         new._contract_idxs = idx
@@ -430,7 +475,7 @@ class Bargmann(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)]
             for i, j in zip(idx_s, idx_o):
                 shape[i] = other.array.shape[1:][j]
 
@@ -442,12 +487,26 @@ class Bargmann(Representation):
             )
 
         Abc = []
-        for A1, b1, c1 in zip(self.A, self.b, self.c):
-            for A2, b2, c2 in zip(other.A, other.b, other.c):
+        if settings.UNSAFE_ZIP_BATCH:
+            if self.ansatz.batch_size != other.ansatz.batch_size:
+                raise ValueError(
+                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                )
+            for (A1, b1, c1), (A2, b2, c2) in zip(
+                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
+            ):
                 Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+        else:
+            for A1, b1, c1 in zip(self.A, self.b, self.c):
+                for A2, b2, c2 in zip(other.A, other.b, other.c):
+                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
+
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")  # nosec
+        display(HTML(template.render(rep=self)))
 
 
 class Fock(Representation):
@@ -498,6 +557,7 @@ class Fock(Representation):
 
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
+        self._original_bargmann_data = None
 
         array = math.astensor(array)
         if not batched:
@@ -525,6 +585,33 @@ class Fock(Representation):
         """
         return self.ansatz.array
 
+    @property
+    def data(self) -> Batch[Tensor]:
+        r"""
+        The data of the representation.
+        """
+        return self.array
+
+    @property
+    def bargmann(self) -> tuple:
+        r"""
+        The data of the original Bargmann representation if it exists
+        """
+        if self._original_bargmann_data is None:
+            raise AttributeError(
+                "This Fock object does not have an original Bargmann representation."
+            )
+        return self._original_bargmann_data
+
+    @property
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the representation.
+        I.e. the vacuum component of the Fock object, whatever it may be.
+        Given that the first axis of the array is the batch axis, this is the first element of the array.
+        """
+        return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+
     def conj(self):
         r"""
         The conjugate of this Fock object.
@@ -541,7 +628,7 @@ class Fock(Representation):
         for i in idx:
             if i >= len(self.array.shape):
                 raise IndexError(
-                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} with {self.ansatz.num_vars} variables."
                 )
         new = self.from_ansatz(self.ansatz)
         new._contract_idxs = idx
@@ -572,7 +659,7 @@ class Fock(Representation):
 
             # set same shape along the contracted axes, and default shape along the
             # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
+            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(other.ansatz.num_vars)]
             for i, j in zip(idx_s, idx_o):
                 shape[j] = self.array.shape[1:][i]
 
@@ -691,3 +778,16 @@ class Fock(Representation):
             slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
             ret = ret[slc]
         return Fock(array=ret, batched=True)
+
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")  # nosec
+        display(HTML(template.render(rep=self)))
+
+    def sum_batch(self) -> Fock:
+        r"""
+        Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
+
+        Returns:
+            The collapsed Fock object.
+        """
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))

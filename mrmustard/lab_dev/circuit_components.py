@@ -22,13 +22,17 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
 
+import os
 import numpy as np
-from ..utils.typing import Scalar
-from ..physics.converters import to_fock
-from ..physics.representations import Representation, Bargmann, Fock
-from ..math.parameter_set import ParameterSet
-from ..math.parameters import Constant, Variable
-from .wires import Wires
+from IPython.display import display, HTML
+from mako.template import Template
+
+from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.physics.converters import to_fock
+from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
@@ -142,6 +146,40 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
+    def bargmann(self) -> tuple:
+        r"""
+        The Bargmann parametrization of this circuit component, if available.
+        """
+        try:
+            return self.representation.triple
+        except AttributeError as e:
+            raise AttributeError(
+                f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
+            ) from e
+
+    def quadrature(self) -> tuple | ComplexTensor:
+        r"""
+        The quadrature representation of this circuit component.
+        """
+        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
+            BtoQMap,
+        )
+
+        # The representation change from Bargmann into quadrature is to use the BtoQMap.
+        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket
+        # wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual
+        # on in_bra wires.
+        kets_done = (
+            BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
+        )
+        all_done = (
+            BtoQMap(self.wires.input.bra.modes).adjoint.dual
+            @ kets_done
+            @ BtoQMap(self.wires.output.bra.modes).adjoint
+        )
+        return all_done.representation.data
+
+    @property
     def representation(self) -> Representation | None:
         r"""
         A representation of this circuit component.
@@ -232,21 +270,17 @@ class CircuitComponent:
                 msg = f"Expected ``{len(modes)}`` modes, found ``{len(subset.modes)}``."
                 raise ValueError(msg)
 
-        wires = Wires(
+        ret = self.light_copy()
+        ret._wires = Wires(
             modes_out_bra=modes if ob else set(),
             modes_in_bra=modes if ib else set(),
             modes_out_ket=modes if ok else set(),
             modes_in_ket=modes if ik else set(),
         )
 
-        ret = self.light_copy()
-        ret._wires = wires
-
         return ret
 
-    def to_fock_component(
-        self, shape: Optional[Union[int, Iterable[int]]] = None
-    ) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -260,7 +294,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
 
             >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock_component(shape=3)
+            >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
@@ -271,8 +305,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        cls = self.__class__
-        return cls._from_attributes(
+        return self.__class__._from_attributes(
             self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
@@ -289,11 +322,22 @@ class CircuitComponent:
         name = self.name if self.name == other.name else ""
         return self._from_attributes(name, rep, self.wires)
 
+    def __sub__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Implements the subtraction between circuit components.
+        """
+        if self.wires != other.wires:
+            msg = "Cannot subtract components with different wires."
+            raise ValueError(msg)
+        rep = self.representation - other.representation
+        name = self.name if self.name == other.name else ""
+        return self._from_attributes(name, rep, self.wires)
+
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar on the right.
         """
-        return self._from_attributes(self.name, other * self.representation, self.wires)
+        return self._from_attributes(self.name, self.representation * other, self.wires)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -315,29 +359,29 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
+        Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
-        # initialized the ``Wires`` of the returned component
-        wires_ret, perm = self.wires @ other.wires
-
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
         idx_z = self.wires.bra.output[bra_modes].indices
         idx_zconj = other.wires.bra.input[bra_modes].indices
-
         # find the indices of the wires being contracted on the ket side
         ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
         idx_z += self.wires.ket.output[ket_modes].indices
         idx_zconj += other.wires.ket.input[ket_modes].indices
+        return idx_z, idx_zconj
 
-        # calculate the representation of the returned component
-        representation_ret = self.representation[idx_z] @ other.representation[idx_zconj]
-
-        # reorder the representation
-        representation_ret = representation_ret.reorder(perm) if perm else representation_ret
-        return CircuitComponent._from_attributes(None, representation_ret, wires_ret)
+    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other``, without adding adjoints.
+        """
+        wires_ret, perm = self.wires @ other.wires
+        idx_z, idx_zconj = self._matmul_indices(other)
+        rep = self.representation[idx_z] @ other.representation[idx_zconj]
+        rep = rep.reorder(perm) if perm else rep
+        return CircuitComponent._from_attributes(None, rep, wires_ret)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -373,18 +417,55 @@ class CircuitComponent:
     def __repr__(self) -> str:
         return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
 
+    def _repr_html_(self):  # pragma: no cover
+        temp = Template(
+            filename=os.path.dirname(__file__) + "/assets/circuit_components.txt"
+        )  # nosec
 
-class AdjointView(CircuitComponent):
+        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
+        wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
+        wires_temp_uni = (
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        )
+
+        rep_temp = (
+            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")  # nosec
+            if isinstance(self.representation, Fock)
+            else Template(
+                filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt"
+            )  # nosec
+        )
+        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+
+        display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
+
+
+class CCView(CircuitComponent):
+    r"""A base class for views of circuit components.
+    Args:
+        component: The circuit component to take the view of.
+    """
+
+    def __init__(self, component: CircuitComponent) -> None:
+        self.__dict__ = component.__dict__.copy()
+        self._component = component.light_copy()
+
+    def __getattr__(self, name):
+        r"""send calls to the component"""
+        return getattr(self._component, name)
+
+    def __repr__(self) -> str:
+        return repr(self._component)
+
+
+class AdjointView(CCView):
     r"""
     Adjoint view of a circuit component.
 
     Args:
         component: The circuit component to take the view of.
     """
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.light_copy().__dict__.copy()
-        self._component = component.light_copy()
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -409,21 +490,14 @@ class AdjointView(CircuitComponent):
         """
         return self._component.wires.adjoint
 
-    def __repr__(self) -> str:
-        return repr(self._component)
 
-
-class DualView(CircuitComponent):
+class DualView(CCView):
     r"""
     Dual view of a circuit component.
 
     Args:
         component: The circuit component to take the view of.
     """
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.__dict__.copy()
-        self._component = component.light_copy()
 
     @property
     def dual(self) -> CircuitComponent:
@@ -437,9 +511,11 @@ class DualView(CircuitComponent):
         r"""
         A representation of this circuit component.
         """
-        outs = self._component.wires.output.indices
-        ins = self._component.wires.input.indices
-        return self._component.representation.reorder(ins + outs).conj()
+        ok = self._component.wires.ket.output.indices
+        ik = self._component.wires.ket.input.indices
+        ib = self._component.wires.bra.input.indices
+        ob = self._component.wires.bra.output.indices
+        return self._component.representation.reorder(ib + ob + ik + ok).conj()
 
     @property
     def wires(self):
@@ -447,6 +523,3 @@ class DualView(CircuitComponent):
         The ``Wires`` in this component.
         """
         return self._component.wires.dual
-
-    def __repr__(self) -> str:
-        return repr(self._component)

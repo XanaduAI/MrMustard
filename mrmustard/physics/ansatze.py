@@ -116,8 +116,8 @@ class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
     For example, the Bargmann representation :math:`c\:\textrm{exp}(z A z / 2 + b z)` is of this
-    form (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
-    (where ``Sigma``, ``mu``, ``1`` is the triple).
+    form (where ``A``, ``b``, ``c`` is the triple), or the characteristic function of the
+    Wigner representation (where ``Sigma``, ``mu``, ``1`` is the triple).
 
     Note that this class is not initializable (despite having an initializer) because it does
     not implement all the abstract methods of ``Ansatz``, and it is in fact more general.
@@ -143,7 +143,7 @@ class PolyExpBase(Ansatz):
         self.vec = math.atleast_2d(math.astensor(vec))
         self.array = math.atleast_1d(math.astensor(array))
         self.batch_size = self.mat.shape[0]
-        self.dim = self.mat.shape[-1]
+        self.num_vars = self.mat.shape[-1]
         self._simplified = False
 
     def __neg__(self) -> PolyExpBase:
@@ -290,9 +290,6 @@ class PolyExpAnsatz(PolyExpBase):
         A = math.astensor(A)
         b = math.astensor(b)
         c = math.astensor(c)
-        dim = b[0].shape[-1] if A is None else A[0].shape[-1]
-        A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
-        b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
         super().__init__(mat=A, vec=b, array=c)
 
     @property
@@ -404,23 +401,24 @@ class PolyExpAnsatz(PolyExpBase):
 
 class ArrayAnsatz(Ansatz):
     r"""
-    The ansatz of the Fock-Bargmann representation.
+      The ansatz of the Fock-Bargmann representation.
 
-    Represents the ansatz as a multidimensional array.
+      Represents the ansatz as a multidimensional array.
 
-    Args:
-        array: A batched array.
+      Args:
+          array: A batched array.
 
-    .. code-block ::
+    code-block ::
 
-        >>> from mrmustard.physics.ansatze import ArrayAnsatz
+          >>> from mrmustard.physics.ansatze import ArrayAnsatz
 
-        >>> array = np.random.random((2, 4, 5))
-        >>> ansatz = ArrayAnsatz(array)
+          >>> array = np.random.random((2, 4, 5))
+          >>> ansatz = ArrayAnsatz(array)
     """
 
     def __init__(self, array: Batch[Tensor]):
         self.array = math.astensor(array)
+        self.num_vars = len(self.array.shape) - 1
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -534,7 +532,7 @@ class ArrayAnsatz(Ansatz):
 
 def bargmann_Abc_to_phasespace_cov_means(
     A: Matrix, b: Vector, c: Scalar
-) -> Union[Matrix, Vector, Scalar]:
+) -> tuple[Matrix, Vector, Scalar]:
     r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
@@ -554,12 +552,17 @@ def bargmann_Abc_to_phasespace_cov_means(
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
 
     Returns:
-        The covariance matric, mean vector and coefficient of the state in phase space.
+        The covariance matrix, mean vector and coefficient of the state in phase space.
     """
     num_modes = A.shape[-1] // 2
-    Omega = math.J(num_modes).T
-    W = math.conj(math.rotmat(num_modes)).T
+    Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
+    W = math.transpose(math.conj(math.rotmat(num_modes)))
     coeff = c
-    cov = [-Omega @ W @ Amat @ W.T @ Omega.T * settings.HBAR for Amat in A]
-    mean = [1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR) for bvec in b]
-    return cov, mean, coeff
+    cov = [
+        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
+    ]
+    mean = [
+        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
+        for bvec in b
+    ]
+    return math.astensor(cov), math.astensor(mean), coeff

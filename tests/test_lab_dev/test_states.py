@@ -68,29 +68,29 @@ class TestKet:
         ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
-        triple_in = state_in.bargmann_triple
+        triple_in = state_in.bargmann
 
         assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
         assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
         assert np.allclose(triple_in[2], coherent_state_Abc(xs, ys)[2])
 
-        state_out = Ket.from_bargmann(modes, triple_in, "my_ket", True)
+        state_out = Ket.from_bargmann(modes, triple_in, "my_ket")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
         state01 = Coherent([0, 1], 1)
         with pytest.raises(ValueError):
-            Ket.from_bargmann([0], state01.bargmann_triple, "my_ket", True)
+            Ket.from_bargmann([0], state01.bargmann, "my_ket")
 
     def test_bargmann_triple_error(self):
-        with pytest.raises(ValueError):
-            Number([0], n=10).bargmann_triple
+        with pytest.raises(AttributeError):
+            Number([0], n=10).bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -98,9 +98,9 @@ class TestKet:
         assert state_in_fock == state_out
 
     def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).to_fock_component(5)
+        state01 = Coherent([0, 1], 1).to_fock(5)
         with pytest.raises(ValueError):
-            Ket.from_fock([0], state01.fock_array(5), "my_ket", True)
+            Ket.from_fock([0], state01.fock(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
@@ -120,28 +120,31 @@ class TestKet:
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            Ket.from_quadrature()
+        modes = [0]
+        A0 = np.array([[0]])
+        b0 = np.array([0.2j])
+        c0 = np.exp(-0.5 * 0.04)  # z^*
+
+        state0 = Ket.from_bargmann(modes, (A0, b0, c0))
+        Atest, btest, ctest = state0.quadrature()
+        state1 = Ket.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        Atest2, btest2, ctest2 = state1.bargmann
+        assert math.allclose(Atest2[0], A0)
+        assert math.allclose(btest2[0], b0)
+        assert math.allclose(ctest2[0], c0)
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
         assert state.L2_norm == 1
 
-        state_sup = Coherent([0], x=1) + Coherent([0], x=-1)
-        with pytest.raises(ValueError):
-            state_sup.L2_norm
-
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).L2_norm
-
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
         assert math.allclose(state1.probability, 1 / 9)
-        assert math.allclose(state1.to_fock_component(20).probability, 1 / 9)
+        assert math.allclose(state1.to_fock(20).probability, 1 / 9)
 
         state2 = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
         assert math.allclose(state2.probability, 1.13533528)
-        assert math.allclose(state2.to_fock_component(20).probability, 1.13533528)
+        assert math.allclose(state2.to_fock(20).probability, 1.13533528)
 
         state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)
@@ -204,7 +207,7 @@ class TestKet:
     def test_expectation_fock(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
 
         assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
 
@@ -317,6 +320,20 @@ class TestKet:
         assert isinstance(si.phi, Constant)
         assert si.phi.value == s.phi.value
 
+    def test_private_batched_properties(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        assert np.allclose(cat._purities, np.ones(2))
+        assert np.allclose(cat._probabilities, np.ones(2))
+        assert np.allclose(cat._L2_norms, np.ones(2))
+
+    def test_unsafe_batch_zipping(self):
+        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
+        displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
+        settings.UNSAFE_ZIP_BATCH = True
+        better_cat = cat >> displacements
+        settings.UNSAFE_ZIP_BATCH = False
+        assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
+
 
 class TestDM:
     r"""
@@ -334,33 +351,37 @@ class TestDM:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
-        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.8)
-        triple_in = state_in.bargmann_triple
+        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
+        triple_in = state_in.bargmann
 
-        state_out = DM.from_bargmann(modes, triple_in, "my_dm", True)
+        state_out = DM.from_bargmann(modes, triple_in, "my_dm")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
         state01 = Coherent([0, 1], 1).dm()
         with pytest.raises(ValueError):
-            DM.from_bargmann([0], state01.bargmann_triple, "my_dm", True)
+            DM.from_bargmann(
+                [0],
+                state01.bargmann,
+                "my_dm",
+            )
 
     def test_from_fock_error(self):
         state01 = Coherent([0, 1], 1).dm()
-        state01 = state01.to_fock_component(2)
+        state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
+            DM.from_fock([0], state01.fock(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
-        with pytest.raises(ValueError):
-            fock.bargmann_triple
+        with pytest.raises(AttributeError):
+            fock.bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -380,28 +401,35 @@ class TestDM:
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
-        with pytest.raises(NotImplementedError):
-            DM.from_quadrature()
+        modes = [0]
+        A0 = np.array([[0, 0], [0, 0]])
+        b0 = np.array([0.1 - 0.2j, 0.1 + 0.2j])
+        c0 = 0.951229424500714  # z, z^*
+
+        state0 = DM.from_bargmann(modes, (A0, b0, c0))
+        Atest, btest, ctest = state0.quadrature()
+        state1 = DM.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        Atest2, btest2, ctest2 = state1.bargmann
+        assert math.allclose(Atest2[0], A0)
+        assert math.allclose(btest2[0], b0)
+        assert math.allclose(ctest2[0], c0)
+
+    def test_L2_norms(self):
+        state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
+        assert len(state._L2_norms) == 2
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
         assert state.L2_norm == 1
 
-        state_sup = (Coherent([0], x=1) + Coherent([0], x=-1)).dm()
-        with pytest.raises(ValueError):
-            state_sup.L2_norm
-
-        with pytest.raises(ValueError):
-            state_sup.to_fock_component(5).L2_norm
-
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
         assert state1.probability == 1
-        assert state1.to_fock_component(20).probability == 1
+        assert state1.to_fock(20).probability == 1
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert math.allclose(state2.to_fock_component(20).probability, 1)
+        assert math.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
@@ -454,7 +482,7 @@ class TestDM:
     def test_expectation_fock(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
 
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
         dm = ket.dm()
 
         k0 = Coherent([0], x=1, y=2)
@@ -591,6 +619,19 @@ class TestCoherent:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
+
+    def test_linear_combinations(self):
+        state1 = Coherent([0], x=1, y=2)
+        state2 = Coherent([0], x=2, y=3)
+        state3 = Coherent([0], x=3, y=4)
+
+        lc = state1 + state2 - state3
+        assert lc.representation.ansatz.batch_size == 3
+
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 9
+        settings.UNSAFE_ZIP_BATCH = True
+        assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
+        settings.UNSAFE_ZIP_BATCH = False
 
 
 class TestDisplacedSqueezed:

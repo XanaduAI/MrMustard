@@ -134,7 +134,7 @@ class TestWires:
         assert w[1] == w1
         assert w._mode_cache == {0: w0, 1: w1}  # pylint: disable=protected-access
 
-        w2 = Wires({}, {2})
+        w2 = Wires(set(), {2})
         assert w[2] == w2
         assert w._mode_cache == {0: w0, 1: w1, 2: w2}  # pylint: disable=protected-access
 

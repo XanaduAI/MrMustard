@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" ``Wires`` class for supporting tensor network functionalities."""
+"""``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
 from functools import cached_property
 from typing import Optional
+import os
 import numpy as np
+
+from IPython.display import display, HTML
+from mako.template import Template
 
 __all__ = ["Wires"]
 
@@ -180,7 +184,7 @@ class Wires:
         """
         if self.original:
             return self.original.id
-        return np.random.randint(0, 2**32)
+        return np.random.randint(0, 2**31)
 
     @cached_property
     def ids(self) -> list[int]:
@@ -402,3 +406,7 @@ class Wires:
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
+
+    def _repr_html_(self):  # pragma: no cover
+        template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
+        display(HTML(template.render(wires=self)))

@@ -15,6 +15,7 @@
 """
 This module contains the functions to convert between different representations.
 """
+
 from typing import Iterable, Union, Optional
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard import math, settings
@@ -49,13 +50,18 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
 
     """
     if isinstance(rep, Bargmann):
-        len_shape = len(rep.b[0])
         if not shape:
-            shape = settings.AUTOCUTOFF_MAX_CUTOFF
-        shape = (shape,) * len_shape if isinstance(shape, int) else shape
-        if len_shape != len(shape):
-            raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
+            shape = (settings.AUTOCUTOFF_MAX_CUTOFF,) * rep.ansatz.num_vars
+        else:
+            shape = (shape,) * rep.ansatz.num_vars if isinstance(shape, int) else shape
+        if rep.ansatz.num_vars != len(shape):
+            msg = f"Given shape ``{shape}`` has length {len(shape)} which is "
+            msg += f"{'less' if len(shape) < rep.ansatz.num_vars else 'more'} than "
+            msg += f"the number of variables of this ansatz ({rep.ansatz.num_vars})."
+            raise ValueError(msg)
 
         array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-        return Fock(math.astensor(array), batched=True)
+        fock = Fock(math.astensor(array), batched=True)
+        fock._original_bargmann_data = rep.data
+        return fock
     return rep

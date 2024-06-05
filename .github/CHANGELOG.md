@@ -1,23 +1,30 @@
 # Current develop
 
 ### New features
-* Added one new private CircuitComponent ``_DsMap`` to convert the representations. 
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
-
-* Added the function `phase_space(s)` for `State` class to take out the s-parametrized phase space representations' variables covariance matrix and means vector of the state. 
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
+* Added a new Abc triple for mapping the quadrature representation into Bargmann representation. 
+  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
 
 * Added `sort` function to math backends.
 
 ### Breaking changes
 
 ### Improvements
+* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
+  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
+
+* Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
+  visualize the timing results quickly.
+  [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
+* Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
+  [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
+
 
 ### Documentation
 
@@ -28,6 +35,8 @@
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
+[Kasper Nielsen](https://github.com/kaspernielsen96)
+[Matthew Silverman](https://github.com/timmysilv)
 
 
 ---
