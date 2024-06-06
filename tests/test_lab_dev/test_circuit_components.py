@@ -60,6 +60,9 @@ class TestCircuitComponent:
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
 
+    def test_from_bargmann(self):
+        cc = CircuitComponent.from_bargmann(Bargmann(*displacement_gate_Abc(0.1, 0.2)), [1, 8])
+
     def test_modes_init_out_of_order(self):
         m1 = (8, 1)
         m2 = (1, 8)
