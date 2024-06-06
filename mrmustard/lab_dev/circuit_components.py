@@ -38,8 +38,9 @@ __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
 class CircuitComponent:
     r"""
-    A base class for the components (states, transformations, and measurements, or potentially
-    unphysical ``wired'' objects) that can be placed in Mr Mustard's quantum circuits.
+    A base class for the components (states, transformations, measurements, and
+    any component made by combining simpler objects). CircuitComponents are
+    defined by their representation and the wires they act on.
 
     Args:
         representation: A representation for this circuit component.
@@ -76,7 +77,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -95,12 +101,11 @@ class CircuitComponent:
         name: Optional[str] = None,
     ) -> CircuitComponent:
         r"""
-        Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``).
+        Initializes a circuit component from its attributes (a ``Representation``, a name, a ``Wires`` object).
 
-        If the Method Resolution Order (MRO) of ``cls`` contains one between ``Ket``, ``DM``,
-        ``Unitary``, and ``Channel``, then the returned component is of that type. Otherwise,
-        it is of type ``CircuitComponent``.
+        If the Method Resolution Order (MRO) of ``cls`` contains one between ``Ket``, ``DM``, ``Operation``,
+        ``Unitary``, ``Map`` or ``Channel``, then the returned component is of the first matching type found.
+        Otherwise it is of type ``CircuitComponent``.
 
         This function needs to be used with caution, as it does not check that the attributes
         provided are consistent with the type of the returned component. If used improperly it
@@ -172,7 +177,9 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -215,7 +222,9 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()
@@ -339,7 +348,9 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -418,7 +429,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -459,7 +472,9 @@ class CircuitComponent:
         if not self.wires.ket and not other.wires.ket:
             return self @ other  # bra side only
 
-        if (self.wires.bra and self.wires.ket) and (other.wires.bra and other.wires.ket):
+        if (self.wires.bra and self.wires.ket) and (
+            other.wires.bra and other.wires.ket
+        ):
             return self @ other  # both sides
 
         if not self.wires.bra and (other.wires.bra and other.wires.ket):
@@ -487,7 +502,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
@@ -498,7 +515,11 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        rep_temp_uni = (
+            rep_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
+        )
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
