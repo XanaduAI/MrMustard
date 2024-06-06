@@ -43,22 +43,22 @@ class CircuitComponent:
     unphysical ``wired'' objects) that can be placed in Mr Mustard's quantum circuits.
 
     Args:
-        name: The name of this component.
         representation: A representation for this circuit component.
         modes_out_bra: The output modes on the bra side of this component.
         modes_in_bra: The input modes on the bra side of this component.
         modes_out_ket: The output modes on the ket side of this component.
         modes_in_ket: The input modes on the ket side of this component.
+        name: The name of this component.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
         representation: Optional[Bargmann | Fock] = None,
         modes_out_bra: Optional[Sequence[int]] = None,
         modes_in_bra: Optional[Sequence[int]] = None,
         modes_out_ket: Optional[Sequence[int]] = None,
         modes_in_ket: Optional[Sequence[int]] = None,
+        name: Optional[str] = None,
     ) -> None:
         modes_out_bra = modes_out_bra or ()
         modes_in_bra = modes_in_bra or ()
@@ -90,7 +90,10 @@ class CircuitComponent:
 
     @classmethod
     def _from_attributes(
-        cls, name: str, representation: Representation, wires: Wires
+        cls,
+        representation: Representation,
+        wires: Wires,
+        name: Optional[str] = None,
     ) -> CircuitComponent:
         r"""
         Initializes a circuit component from its attributes (a name, a ``Wires``,
@@ -106,9 +109,9 @@ class CircuitComponent:
         wires on the bra side.
 
         Args:
-            name: The name of this component.
             representation: A representation for this circuit component.
             wires: The wires of this component.
+            name: The name of this component.
 
         Returns:
             A circuit component of type ``cls`` with the given attributes.
@@ -121,7 +124,7 @@ class CircuitComponent:
         else:
             ret = CircuitComponent()
 
-        ret._name = name
+        ret._name = name or tp.__name__ + "".join(str(m) for m in sorted(wires.modes))
         ret._representation = representation
         ret._wires = wires
 
@@ -162,20 +165,18 @@ class CircuitComponent:
         The quadrature representation of this circuit component.
         """
         from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
-            BtoQMap,
+            BtoQ,
         )
 
-        # The representation change from Bargmann into quadrature is to use the BtoQMap.
-        # Here for a CircuitComponent, we need to add this map four times: BtoQMap on out_ket
-        # wires, BtoQMap.dual on in_ket wires, BtoQMap.adjoint on out_bra wires and BtoQMap.adjoint.dual
+        # The representation change from Bargmann into quadrature is to use the BtoQ.
+        # Here for a CircuitComponent, we need to add this map four times: BtoQ on out_ket
+        # wires, BtoQ.dual on in_ket wires, BtoQ.adjoint on out_bra wires and BtoQ.adjoint.dual
         # on in_bra wires.
-        kets_done = (
-            BtoQMap(self.wires.input.ket.modes).dual @ self @ BtoQMap(self.wires.output.ket.modes)
-        )
+        kets_done = BtoQ(self.wires.input.ket.modes).dual @ self @ BtoQ(self.wires.output.ket.modes)
         all_done = (
-            BtoQMap(self.wires.input.bra.modes).adjoint.dual
+            BtoQ(self.wires.input.bra.modes).adjoint.dual
             @ kets_done
-            @ BtoQMap(self.wires.output.bra.modes).adjoint
+            @ BtoQ(self.wires.output.bra.modes).adjoint
         )
         return all_done.representation.data
 
@@ -306,9 +307,9 @@ class CircuitComponent:
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
         return self.__class__._from_attributes(
-            self.name,
             to_fock(self.representation, shape=shape),
             self.wires,
+            self.name,
         )
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
@@ -320,7 +321,7 @@ class CircuitComponent:
             raise ValueError(msg)
         rep = self.representation + other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(name, rep, self.wires)
+        return self._from_attributes(rep, self.wires, name)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -331,13 +332,13 @@ class CircuitComponent:
             raise ValueError(msg)
         rep = self.representation - other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(name, rep, self.wires)
+        return self._from_attributes(rep, self.wires, name)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar on the right.
         """
-        return self._from_attributes(self.name, self.representation * other, self.wires)
+        return self._from_attributes(self.representation * other, self.wires, self.name)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -349,7 +350,7 @@ class CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(self.name, self.representation / other, self.wires)
+        return self._from_attributes(self.representation / other, self.wires, self.name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -381,7 +382,7 @@ class CircuitComponent:
         idx_z, idx_zconj = self._matmul_indices(other)
         rep = self.representation[idx_z] @ other.representation[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(None, rep, wires_ret)
+        return CircuitComponent._from_attributes(rep, wires_ret, None)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -415,7 +416,7 @@ class CircuitComponent:
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        return f"CircuitComponent(name={self.name or None}, modes={self.modes})"
+        return f"CircuitComponent(modes={self.modes}, name={self.name or None})"
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(

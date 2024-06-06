@@ -421,9 +421,7 @@ def CPTP(
         Y = math.single_mode_to_multimode_mat(Y, len(transf_modes))
     if d is not None and d.shape[-1] == 2:
         d = math.single_mode_to_multimode_vec(d, len(transf_modes))
-    indices = [
-        state_modes.index(i) for i in transf_modes
-    ]  # TODO: do this when calling the method instead of here?
+    indices = [state_modes.index(i) for i in transf_modes]
     cov = math.left_matmul_at_modes(X, cov, indices)
     cov = math.right_matmul_at_modes(cov, math.transpose(X), indices)
     cov = math.add_at_modes(cov, Y, indices)
