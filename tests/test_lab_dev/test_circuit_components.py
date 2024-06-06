@@ -61,7 +61,10 @@ class TestCircuitComponent:
         assert cc.representation == representation
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(Bargmann(*displacement_gate_Abc(0.1, 0.2)), [1, 8])
+        cc = CircuitComponent.from_bargmann(
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)), {}, {}, {0}, {0}
+        )
+        assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
 
     def test_modes_init_out_of_order(self):
         m1 = (8, 1)
