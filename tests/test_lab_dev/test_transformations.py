@@ -30,8 +30,23 @@ from mrmustard.lab_dev.transformations import (
     Sgate,
     Igate,
     Unitary,
+    Operator,
 )
 from mrmustard.lab_dev.wires import Wires
+
+
+class TestOperator:
+    r"""
+    Tests the Operator class.
+    """
+
+    def test_init_from_bargmann(self):
+        A = np.array([[0, 1, 2], [1, 0, 0], [0, 4, 2]])
+        b = np.array([0, 1, 5])
+        c = 1
+        operator = Operator.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
+        assert np.allclose(operator.representation.A[None, ...], A)
+        assert np.allclose(operator.representation.b[None, ...], b)
 
 
 class TestUnitary:
