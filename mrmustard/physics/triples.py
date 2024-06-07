@@ -22,8 +22,6 @@ from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar, ComplexMatrix, ComplexVector
 
 import numpy as np
-import tensorflow as tf
-
 
 #  ~~~~~~~~~
 #  Utilities
