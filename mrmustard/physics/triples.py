@@ -478,7 +478,8 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 
 def gaussian_channel_XYd_Abc(
-        X: ComplexMatrix, Y: ComplexMatrix, d: ComplexVector) -> Union[Matrix, Vector, Scalar]:
+    X: ComplexMatrix, Y: ComplexMatrix, d: ComplexVector
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a Gaussian channel specified by XYd triple.
 
@@ -491,45 +492,57 @@ def gaussian_channel_XYd_Abc(
     """
     hbar = settings.HBAR
 
-    n_modes = len(X)
+    n_modes = int(X.shape[0] / 2)
+
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     I_n = math.reshape(
         math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
     )
-
-    R = 1/math.sqrt(2)*math.block(
-        [
-            [I_n, 1j*I_n, O_n, O_n],
-            [O_n, O_n, I_n, -1j*I_n],
-            [I_n, -1j*I_n, O_n, O_n],
-            [O_n, O_n, I_n, 1j*I_n]
-        ]
+    R = (
+        1
+        / math.sqrt(2)
+        * math.block(
+            [
+                [I_n, 1j * I_n, O_n, O_n],
+                [O_n, O_n, I_n, -1j * I_n],
+                [I_n, -1j * I_n, O_n, O_n],
+                [O_n, O_n, I_n, 1j * I_n],
+            ]
+        )
     )
 
-    O_2n = math.zeros((2*n_modes, 2*n_modes), math.complex128)
+    O_2n = math.zeros((2 * n_modes, 2 * n_modes), math.complex128)
     I_2n = math.reshape(
-        math.diag(math.asnumpy([1.0 + 0j for _ in range(2*n_modes)])), (2*n_modes, 2*n_modes)
+        math.diag(math.asnumpy([1.0 + 0j for _ in range(2 * n_modes)])), (2 * n_modes, 2 * n_modes)
     )
+    P_2n = math.block([[O_2n, I_2n], [I_2n, O_2n]])
 
-    P_2n = math.block(
-        [
-            [O_2n, I_2n],
-            [I_2n, O_2n]
-        ]
-    )
-
-    xi = 1/2*(I_2n+math.matmul(X,math.transpose(X)+2*Y/hbar))
+    xi = 1 / 2 * (I_2n + math.matmul(X, math.transpose(X)) + 2 * Y / hbar)
     xi_inv = math.inv(xi)
     A_block = math.block(
         [
-            [I_2n-xi_inv, math.matmul(xi_inv,X)],
-            [math.matmul(math.transpose(X),xi_inv), I_n-math.matmul(math.matmul(math.transpose(X),xi_inv),X)]
+            [I_2n - xi_inv, math.matmul(xi_inv, X)],
+            [
+                math.matmul(math.transpose(X), xi_inv),
+                I_2n - math.matmul(math.matmul(math.transpose(X), xi_inv), X),
+            ],
         ]
     )
-    A = math.matmul(math.matmul(math.matmul(P_2n,R),A_block),math.conj(math.transpose(R)))
-    b = 1/hbar*math.conj(R)*math.block([math.matmul(xi_inv,d),math.matmul(math.matmul(-math.transpose(X),xi_inv),d)])
-    c = math.exp(-1/(2*hbar)*math.matmul(math.matmul(math.transpose(d),xi_inv),d))/math.sqrt(math.det(xi))
-    
+    A = math.matmul(math.matmul(math.matmul(P_2n, R), A_block), math.conj(math.transpose(R)))
+    b = (
+        1
+        / hbar
+        * np.matmul(
+            math.conj(R),
+            math.concat(
+                [math.matmul(xi_inv, d), math.matmul(math.matmul(-math.transpose(X), xi_inv), d)],
+                axis=0,
+            ),
+        )
+    )
+    c = math.exp(
+        -1 / (2 * hbar) * math.matmul(math.matmul(math.transpose(d), xi_inv), d)
+    ) / math.sqrt(math.det(xi))
     return A, b, c
 
 

@@ -18,16 +18,17 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union, ComplexMatrix, ComplexVector
+from typing import Optional, Sequence, Tuple, Union
 
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
+from ...utils.typing import ComplexMatrix, ComplexVector
 
 import numpy as np
 
-__all__ = ["Attenuator", 'Gaussian_XYd', "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+__all__ = ["Attenuator", "Gaussian_XYd", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -388,7 +389,6 @@ class Attenuator(Channel):
         return Bargmann(*triples.attenuator_Abc(eta))
 
 
-
 class Gaussian_XYd(Channel):
     r"""The general N-mode Gaussian Channel.
 
@@ -433,25 +433,31 @@ class Gaussian_XYd(Channel):
     def __init__(
         self,
         modes: Sequence[int],
-        X: ComplexMatrix = np.array(((1,0),(0,1))),
-        Y: ComplexMatrix = np.array(((1,0),(0,1))),
-        d: ComplexVector = np.array((0,0)),
-        X_trainable: bool = False,
-        Y_trainable: bool = False,
-        d_trainable: bool = False,
-        X_bounds = None,
-        Y_bounds = None,
-        d_bounds = None
+        X: ComplexMatrix = np.array(((1, 0), (0, 1))),
+        Y: ComplexMatrix = np.array(((1, 0), (0, 1))),
+        d: ComplexVector = np.array((0, 0)),
     ):
-        super().__init__(modes=modes, name="Att")
-        self._add_parameter(make_parameter(X_trainable,X,'X',X_bounds,None))
-        self._add_parameter(make_parameter(Y_trainable,Y,'X',Y_bounds,None))
-        self._add_parameter(make_parameter(d_trainable,d,'X',d_bounds,None))
+        super().__init__(modes=modes, name="XYd")
+        self.X = X
+        self.Y = Y
+        self.d = d
+
+        if self.X.shape[0] != 2 * len(self.modes) or self.X.shape[1] != 2 * len(self.modes):
+            msg = f"Length of ``X`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
+
+        if self.Y.shape[0] != 2 * len(self.modes) or self.Y.shape[1] != 2 * len(self.modes):
+            msg = f"Length of ``Y`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
+
+        if len(self.d) != 2 * len(self.modes):
+            msg = f"Length of ``d`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
 
     @property
     def representation(self) -> Bargmann:
-        X_matrix = X_matrix.self.X.value
-        Y_matrix = X_matrix.self.X.value
-        d_vector = X_matrix.self.X.value
+        X_matrix = self.X
+        Y_matrix = self.Y
+        d_vector = self.d
 
-        return Bargmann(*triples.gaussian_channel_XYd_Abc(X_matrix,Y_matrix,d_vector))
+        return Bargmann(*triples.gaussian_channel_XYd_Abc(X_matrix, Y_matrix, d_vector))

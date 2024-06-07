@@ -23,6 +23,7 @@ from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import (
     Attenuator,
+    Gaussian_XYd,
     BSgate,
     Channel,
     Dgate,
@@ -518,3 +519,76 @@ class TestAttenuator:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Attenuator(modes=[0], transmissivity=[0.1, 0.2]).representation
+
+
+class TestGaussian_XYd:
+    r"""
+    Tests for the ``Gaussian_XYd`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    X = [
+        np.array(((1, 0), (0, 1))) * 1.2,
+        np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 0.5,
+        np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 0.9,
+    ]
+    Y = [
+        np.array(((1, 0), (0, 1))) * 0.5,
+        np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 1.5,
+        np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 1,
+    ]
+    d = [np.array((0, 0)), np.array((0, 0, 0, 0)), np.array((1, 1, 1, 1))]
+
+    @pytest.mark.parametrize("modes,X,Y,d", zip(modes, X, Y, d))
+    def test_init(self, modes, X, Y, d):
+        gate = Gaussian_XYd(modes, X, Y, d)
+
+        assert gate.name == "XYd"
+        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``X``"):
+            Gaussian_XYd(
+                modes=[0, 1],
+                X=np.array(((1, 0), (0, 1))),
+                Y=np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 1.5,
+                d=np.array((0, 0, 0, 0)),
+            )
+
+        with pytest.raises(ValueError, match="Length of ``Y``"):
+            Gaussian_XYd(
+                modes=[0],
+                X=np.array(((1, 0), (0, 1))),
+                Y=np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))),
+                d=np.array((0, 0)),
+            )
+
+        with pytest.raises(ValueError, match="Length of ``d``"):
+            Gaussian_XYd(
+                modes=[0, 1],
+                X=np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 0.5,
+                Y=np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 1.5,
+                d=np.array((0, 0, 0, 0, 0, 0)),
+            )
+
+    def test_representation(self):
+        rep1 = Attenuator(modes=[0], transmissivity=0.5).representation
+        rep2 = Gaussian_XYd(
+            modes=[0],
+            X=np.sqrt(0.5) * np.array(((1, 0), (0, 1))),
+            Y=(1 - 0.5) * np.array(((1, 0), (0, 1))),
+            d=np.array((0, 0)),
+        ).representation
+
+        assert math.allclose(rep1.A, rep2.A)
+        assert math.allclose(rep1.b, rep2.b)
+        assert math.allclose(rep1.c, rep2.c)
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Gaussian_XYd(
+                modes=[0, 1],
+                X=np.array(((1, 0), (0, 1))),
+                Y=np.array(((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) * 1.5,
+                d=np.array((0, 0, 0, 0)),
+            ).representation
