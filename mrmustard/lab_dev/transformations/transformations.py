@@ -20,12 +20,16 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
+from ...utils.typing import ComplexMatrix, ComplexVector
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+
+__all__ = ["Attenuator", "Gaussian_XYd", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -384,3 +388,77 @@ class Attenuator(Channel):
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
         return Bargmann(*triples.attenuator_Abc(eta))
+
+
+class Gaussian_XYd(Channel):
+    r"""The general N-mode Gaussian Channel.
+
+        'X' and 'Y' must have dimensions 2N x 2N and 'd' must have dimensions 2N for an M-mode channel.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Gaussian_channel_XYd
+
+        >>> channel = Gaussian_channel_XYd(modes=[0], X=0.5*np.array(((1,0),(0,1))), Y=0.5*np.array(((1,0),(0,1))),D=np.zeros(2))
+        >>> assert channel.modes == [0]
+
+    Args:
+        modes: The modes this channel is applied to.
+        X: X matrix.
+        Y: Y matrix.
+        d: displacement vector.
+
+    .. details::
+
+        A general :math:`N`-mode gaussian channel that acts on a state :math:'(V,r)' as 
+
+        .. math::
+            V \rightarrow XVX^T+Y \text{ , }
+            r \rightarrow Xr+d\:,
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= P_{2N}R \begin{bmatrix}
+                    I_N-\xi^{-1} & \xi^{-1} \\
+                    X^T\xi^{-1} & I_N-X^T\xi^{-1}X
+                \end{bmatrix} R \\ \\
+            b &= 1/\sqrt{\hbar} \begin{bmatrix}
+                    \xi^{-1}d \\
+                    -X^T\xi^{-1}d
+                    \end{bmatrix} \\ \\
+            c &= \exp(-1/2\hbar d^T\xi^{-1}d)/\sqrt{\det(\xi)}\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        X: ComplexMatrix = np.array(((1, 0), (0, 1))),
+        Y: ComplexMatrix = np.array(((1, 0), (0, 1))),
+        d: ComplexVector = np.array((0, 0)),
+    ):
+        super().__init__(modes=modes, name="XYd")
+        self.X = X
+        self.Y = Y
+        self.d = d
+
+        if self.X.shape[0] != 2 * len(self.modes) or self.X.shape[1] != 2 * len(self.modes):
+            msg = f"Length of ``X`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
+
+        if self.Y.shape[0] != 2 * len(self.modes) or self.Y.shape[1] != 2 * len(self.modes):
+            msg = f"Length of ``Y`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
+
+        if len(self.d) != 2 * len(self.modes):
+            msg = f"Length of ``d`` must be two times {len(self.modes)}."
+            raise ValueError(msg)
+
+    @property
+    def representation(self) -> Bargmann:
+        X_matrix = self.X
+        Y_matrix = self.Y
+        d_vector = self.d
+
+        return Bargmann(*triples.gaussian_channel_XYd_Abc(X_matrix, Y_matrix, d_vector))
