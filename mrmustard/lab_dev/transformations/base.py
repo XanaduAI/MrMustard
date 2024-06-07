@@ -138,6 +138,7 @@ class Unitary(Operation):
         name: The name of this transformation.
         modes: The modes that this transformation acts on.
     """
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
