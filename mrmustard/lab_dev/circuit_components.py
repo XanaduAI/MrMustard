@@ -79,7 +79,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -174,7 +179,11 @@ class CircuitComponent:
         # Here for a CircuitComponent, we need to add this map four times: BtoQ on out_ket
         # wires, BtoQ.dual on in_ket wires, BtoQ.adjoint on out_bra wires and BtoQ.adjoint.dual
         # on in_bra wires.
-        kets_done = BtoQ(self.wires.input.ket.modes).dual @ self @ BtoQ(self.wires.output.ket.modes)
+        kets_done = (
+            BtoQ(self.wires.input.ket.modes).dual
+            @ self
+            @ BtoQ(self.wires.output.ket.modes)
+        )
         all_done = (
             BtoQ(self.wires.input.bra.modes).adjoint.dual
             @ kets_done
@@ -283,7 +292,9 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -309,7 +320,7 @@ class CircuitComponent:
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
         return self.__class__._from_attributes(
-            to_fock(self.representation, shape=shape or self.autoshape,
+            to_fock(self.representation, shape=shape or self.autoshape),
             self.wires,
             self.name,
         )
@@ -384,7 +395,9 @@ class CircuitComponent:
                 return self._fock_shape
         return object.__getattribute__(self, name)
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted on the bra and ket sides of the components.
         """
@@ -431,13 +444,15 @@ class CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
         """
-        self, other = self._to_fock_if_needed(other)  # turn self or other into Fock representation
+        self, other = self._to_fock_if_needed(
+            other
+        )  # turn self or other into Fock representation
         new_wires, perm = self.wires @ other.wires
         new_fock_shape = self._combine_fock_shapes(other, new_wires, perm)
         idx_z, idx_zconj = self._matmul_indices(other)
         rep = self.representation[idx_z] @ other.representation[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        cc = CircuitComponent._from_attributes(rep, wires_ret, None)
+        cc = CircuitComponent._from_attributes(rep, new_wires, None)
         cc._fock_shape = new_fock_shape
         return cc
 
@@ -483,7 +498,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
@@ -494,7 +511,11 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        rep_temp_uni = (
+            rep_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
+        )
 
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
