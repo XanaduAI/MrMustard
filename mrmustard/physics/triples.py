@@ -19,9 +19,10 @@ various states and transformations.
 
 from typing import Generator, Iterable, Union
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.utils.typing import Matrix, Vector, Scalar, ComplexMatrix, ComplexVector
 
 import numpy as np
+import tensorflow as tf
 
 
 #  ~~~~~~~~~
@@ -477,16 +478,14 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 
 
 def gaussian_channel_XYd_Abc(
-        X: np.typing.Arraylike, Y: np.typing.Arraylike, d: np.typing.Arraylike) -> Union[Matrix, Vector, Scalar]:
+        X: ComplexMatrix, Y: ComplexMatrix, d: ComplexVector) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a Gaussian channel specified by XYd triple.
 
-    DOUBLE CHECK THE TYPING OF THE FUNCTION
-    DOUBLE CHECK THE NAMES BELOW
     Args:
-        X: Sympletic matrix
-        Y: Noise matrix
-        d: Displacement
+        X: X matrix.
+        Y: Y matrix.
+        d: displacement vector.
     Returns:
         The ``(A, b, c)`` triple of a Gaussian channel.
     """

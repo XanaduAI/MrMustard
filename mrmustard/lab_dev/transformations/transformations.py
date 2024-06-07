@@ -18,14 +18,16 @@ The classes representing transformations in quantum circuits.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, ComplexMatrix, ComplexVector
 
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+import numpy as np
+
+__all__ = ["Attenuator", 'Gaussian_XYd', "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -387,7 +389,7 @@ class Attenuator(Channel):
 
 
 
-class Gaussian_channel_XYd(Channel):
+class Gaussian_XYd(Channel):
     r"""The general N-mode Gaussian Channel.
 
         'X' and 'Y' must have dimensions 2N x 2N and 'd' must have dimensions 2N for an M-mode channel.
@@ -397,15 +399,14 @@ class Gaussian_channel_XYd(Channel):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Gaussian_channel_XYd
 
-        >>> channel = Gaussian_channel_XYd(modes=[0], X=0.5*np.array(((0,1),(1,0))), Y=0.5*np.array(((0,1),(1,0))),D=np.zeros(2))
+        >>> channel = Gaussian_channel_XYd(modes=[0], X=0.5*np.array(((1,0),(0,1))), Y=0.5*np.array(((1,0),(0,1))),D=np.zeros(2))
         >>> assert channel.modes == [0]
 
-        CHECK THE NAMES OF MATRICES BELOW
     Args:
         modes: The modes this channel is applied to.
         X: X matrix.
         Y: Y matrix.
-        d: The displacement.
+        d: displacement vector.
 
     .. details::
 
@@ -426,21 +427,21 @@ class Gaussian_channel_XYd(Channel):
                     \xi^{-1}d \\
                     -X^T\xi^{-1}d
                     \end{bmatrix} \\ \\
-            c &= \exp(-1/2\hbard^T\xi^{-1}d)/\sqrt{\det(\xi)}\:.
+            c &= \exp(-1/2\hbar d^T\xi^{-1}d)/\sqrt{\det(\xi)}\:.
     """
 
     def __init__(
         self,
         modes: Sequence[int],
-        X: Union[Optional[float], Optional[list[float]]] = 1.0,
-        Y: Union[Optional[float], Optional[list[float]]] = 1.0,
-        d: Union[Optional[float], Optional[list[float]]] = 1.0,
+        X: ComplexMatrix = np.array(((1,0),(0,1))),
+        Y: ComplexMatrix = np.array(((1,0),(0,1))),
+        d: ComplexVector = np.array((0,0)),
         X_trainable: bool = False,
         Y_trainable: bool = False,
         d_trainable: bool = False,
-        X_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        Y_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        d_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0)
+        X_bounds = None,
+        Y_bounds = None,
+        d_bounds = None
     ):
         super().__init__(modes=modes, name="Att")
         self._add_parameter(make_parameter(X_trainable,X,'X',X_bounds,None))
@@ -449,6 +450,8 @@ class Gaussian_channel_XYd(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
-        return Bargmann(*triples.attenuator_Abc(eta))
+        X_matrix = X_matrix.self.X.value
+        Y_matrix = X_matrix.self.X.value
+        d_vector = X_matrix.self.X.value
+
+        return Bargmann(*triples.gaussian_channel_XYd_Abc(X_matrix,Y_matrix,d_vector))
