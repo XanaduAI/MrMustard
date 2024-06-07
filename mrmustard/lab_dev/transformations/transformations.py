@@ -20,13 +20,14 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 from .base import Unitary, Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 from ...utils.typing import ComplexMatrix, ComplexVector
 
-import numpy as np
 
 __all__ = ["Attenuator", "Gaussian_XYd", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
