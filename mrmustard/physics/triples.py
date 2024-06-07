@@ -472,16 +472,11 @@ def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vecto
     beta = math.atleast_1d(beta, math.complex128)
     n_modes = len(beta)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)    
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
     B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
 
     A = math.block(
-        [
-            [O_n,B_n,O_n,O_n],
-            [B_n,O_n,O_n,O_n],
-            [O_n,O_n,O_n,B_n],
-            [O_n,O_n,B_n,O_n]
-        ]
+        [[O_n, B_n, O_n, O_n], [B_n, O_n, O_n, O_n], [O_n, O_n, O_n, B_n], [O_n, O_n, B_n, O_n]]
     )
     b = _vacuum_B_vector(n_modes * 4)
     c = 1.0 + 0j

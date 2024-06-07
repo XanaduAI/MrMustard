@@ -425,7 +425,7 @@ class Fockdamping(Channel):
     def __init__(
         self,
         modes: Sequence[int],
-        damping: Union[Optional[float], Optional[list[float]]] = 1.0,
+        damping: Union[Optional[float], Optional[list[float]]] = 0.0,
         damping_trainable: bool = False,
         damping_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
