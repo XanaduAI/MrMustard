@@ -55,9 +55,9 @@ class Transformation(CircuitComponent):
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
         QQ = cls(modes_out, modes_in, Bargmann(*triple))
-        BB = QtoB_in.dual >> QQ >> QtoB_out
+        BB = QtoB_in >> QQ >> QtoB_out
         return cls(modes_out, modes_in, BB.representation, name)
 
     @classmethod

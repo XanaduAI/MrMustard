@@ -68,7 +68,7 @@ class Circuit:
     """
 
     def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
-        self._components = [c.light_copy() for c in components] if components else []
+        self._components = [c._light_copy() for c in components] if components else []
         self._path = []
 
         # a dictionary to keep track of the underlying graph, mapping the ``ids`` of output wires

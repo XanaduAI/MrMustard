@@ -258,8 +258,9 @@ class State(CircuitComponent):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
+        print("\nstate from_quadrature", f"cls is {cls.__name__}")
         QtoB = BtoQ(modes, phi).inverse()
-        Q = cls(modes, Bargmann(*triple), name)
+        Q = cls(modes, Bargmann(*triple))
         return cls(modes, (Q >> QtoB).representation, name)
 
     @property
@@ -912,6 +913,7 @@ class Ket(State):
         Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
         with those of a ``DM`` or of a ``Ket``, a ``CircuitComponent`` otherwise.
         """
+        print("in Ket __rshift__")
         ret = super().__rshift__(other)
 
         if not ret.wires.input:
