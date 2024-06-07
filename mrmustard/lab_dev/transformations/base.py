@@ -138,7 +138,6 @@ class Unitary(Operation):
         name: The name of this transformation.
         modes: The modes that this transformation acts on.
     """
-
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -226,7 +225,6 @@ class Channel(Map):
         Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
         """
         ret = super().__rshift__(other)
-
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
