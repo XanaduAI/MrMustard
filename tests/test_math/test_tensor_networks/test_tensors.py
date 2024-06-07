@@ -166,9 +166,13 @@ class TestTensor:
         assert t1.modes_in == [1]
         assert t1.modes_out == [2]
 
-        t1 = TComplex("t", [1], [2], [1], [2])
-        assert t1.modes_in == [1]
-        assert t1.modes_out == [2]
+        t2 = TComplex("t", [1], [2], [1], [2])
+        assert t2.modes_in == [1]
+        assert t2.modes_out == [2]
+
+        t3 = TComplex("t", [], [], [3], [4])
+        assert t3.modes_in == [3]
+        assert t3.modes_out == [4]
 
     @pytest.mark.parametrize("modes_in_ket", [None, [1, 2, 3]])
     @pytest.mark.parametrize("modes_out_ket", [None, [4]])

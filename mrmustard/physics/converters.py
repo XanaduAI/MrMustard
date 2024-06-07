@@ -47,14 +47,17 @@ def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
         >>> assert isinstance(fock, Fock)
 
     """
-    if isinstance(rep, Bargmann):
-        if isinstance(shape, int):
-            shape = (shape,) * rep.ansatz.dim
-        if rep.ansatz.dim != len(shape):
-            raise ValueError(f"Given shape ``{shape}`` is incompatible with the representation.")
+    if isinstance(rep, Fock):
+      return rep
+    # now assume Bargmann
+    if isinstance(shape, int):
+        shape = (shape,) * rep.ansatz.num_vars
+    if len(shape) != rep.ansatz.num_vars:
+        raise ValueError(f"shape ``{shape}`` should have length {rep.ansatz.num_vars}.")
 
-        array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-        if settings.TO_FOCK_SHOW_SHAPE:
-            print(shape)
-        return Fock(math.astensor(array), batched=True)
-    return rep
+    array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
+    if settings.TO_FOCK_SHOW_SHAPE:
+        print(shape)
+    fock = Fock(math.astensor(array), batched=True)
+    fock._original_bargmann_data = rep.data
+    return fock

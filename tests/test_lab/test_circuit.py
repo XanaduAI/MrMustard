@@ -61,6 +61,11 @@ def test_is_unitary():
     assert not (Ggate(2) >> Attenuator([0.1, 0.2])).is_unitary
 
 
+def test_len():
+    "test the len"
+    assert len(Ggate(1) >> Attenuator(0.1)) == 2
+
+
 @given(
     r=r,
     phi1=angle,

@@ -90,7 +90,7 @@ class Coherent(Ket):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("Coherent", modes=modes)
+        super().__init__(modes=modes, name="Coherent")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -146,7 +146,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("DisplacedSqueezed", modes=modes)
+        super().__init__(modes=modes, name="DisplacedSqueezed")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
@@ -199,7 +199,7 @@ class Number(Ket):
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__(f"{n}", modes=modes)
+        super().__init__(modes=modes, name=f"{n}")
 
         self._n = math.atleast_1d(n)
         if len(self._n) == 1:
@@ -267,7 +267,7 @@ class SqueezedVacuum(Ket):
         r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("SqueezedVacuum", modes=modes)
+        super().__init__(modes=modes, name="SqueezedVacuum")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
@@ -309,7 +309,7 @@ class Vacuum(Ket):
         self,
         modes: Sequence[int],
     ) -> None:
-        super().__init__("Vac", modes=modes)
+        super().__init__(modes=modes, name="Vac")
 
     @property
     def representation(self) -> Bargmann:
@@ -350,7 +350,7 @@ class Thermal(DM):
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ) -> None:
-        super().__init__("Thermal", modes=modes)
+        super().__init__(modes=modes, name="Thermal")
         self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property

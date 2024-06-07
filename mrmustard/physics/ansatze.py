@@ -143,7 +143,7 @@ class PolyExpBase(Ansatz):
         self.vec = math.atleast_2d(math.astensor(vec))
         self.array = math.atleast_1d(math.astensor(array))
         self.batch_size = self.mat.shape[0]
-        self.dim = self.mat.shape[-1]
+        self.num_vars = self.mat.shape[-1]
         self._simplified = False
 
     def __neg__(self) -> PolyExpBase:
@@ -290,9 +290,6 @@ class PolyExpAnsatz(PolyExpBase):
         A = math.astensor(A)
         b = math.astensor(b)
         c = math.astensor(c)
-        dim = b[0].shape[-1] if A is None else A[0].shape[-1]
-        A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
-        b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
         super().__init__(mat=A, vec=b, array=c)
 
     @property
@@ -421,7 +418,7 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor]):
         self.array = math.astensor(array)
-        self.dim = len(self.array.shape) - 1
+        self.num_vars = len(self.array.shape) - 1
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -535,7 +532,7 @@ class ArrayAnsatz(Ansatz):
 
 def bargmann_Abc_to_phasespace_cov_means(
     A: Matrix, b: Vector, c: Scalar
-) -> Union[Matrix, Vector, Scalar]:
+) -> tuple[Matrix, Vector, Scalar]:
     r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state

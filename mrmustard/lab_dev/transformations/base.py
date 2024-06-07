@@ -32,7 +32,7 @@ from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann
 from ..circuit_components import CircuitComponent
 
-__all__ = ["Transformation", "Unitary", "Channel"]
+__all__ = ["Transformation", "Operator", "Unitary", "Map", "Channel"]
 
 
 class Transformation(CircuitComponent):
@@ -42,25 +42,69 @@ class Transformation(CircuitComponent):
 
     def inverse(self) -> Transformation:
         r"""Returns the inverse of the transformation."""
+        if len(self.wires.input) != len(self.wires.output):
+            raise NotImplementedError(
+                "Only Transformations with the same number of input and output wires are supported."
+            )
         if not isinstance(self.representation, Bargmann):
             raise NotImplementedError("Only Bargmann representation is supported.")
         if self.representation.ansatz.batch_size > 1:
             raise NotImplementedError("Batched transformations are not supported.")
+
+        # compute the inverse
         A, b, _ = self.dual.representation.conj().triple  # apply X
-        almost_inverse = self.__class__.from_bargmann(
-            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j)
+        almost_inverse = self._from_attributes(
+            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
+            self.wires,
+            "",
         )
         almost_identity = (
             self >> almost_inverse
         )  # TODO: this is not efficient, need to get c from formula
         invert_this_c = almost_identity.representation.c
-        actual_inverse = self.__class__.from_bargmann(
-            [0], (math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c)
+        actual_inverse = self._from_attributes(
+            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
+            self.wires,
+            self.name + "_inv",
         )
         return actual_inverse
 
 
-class Unitary(Transformation):
+class Operator(Transformation):
+    r"""A CircuitComponent with input and output wires, only on the ket side.
+    This class essentially relaxes the requirement that Unitaries have that
+    the input and output modes must be the same."""
+
+    def __init__(
+        self,
+        modes_out: tuple[int, ...] = (),
+        modes_in: tuple[int, ...] = (),
+        name: Optional[str] = None,
+    ):
+        super().__init__(
+            modes_out_ket=modes_in,
+            modes_in_ket=modes_out,
+            name=name or "Op" + "".join(str(m) for m in modes_in),
+        )
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: Optional[str] = None,
+    ) -> Operator:
+        A = math.astensor(triple[0])
+        b = math.astensor(triple[1])
+        c = math.astensor(triple[2])
+        shape_check(A, b, len(modes_out) + len(modes_in), "Bargmann")
+        return cls._from_attributes(
+            Bargmann(A, b, c), Wires(set(), set(), set(modes_out), set(modes_in)), name
+        )
+
+
+class Unitary(Operator):
     r"""
     Base class for all unitary transformations.
 
@@ -71,9 +115,9 @@ class Unitary(Transformation):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "U" + "".join(str(m) for m in modes),
-            modes_in_ket=modes,
-            modes_out_ket=modes,
+            modes_in=modes,
+            modes_out=modes,
+            name=name or "U" + "".join(str(m) for m in modes),
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -87,9 +131,9 @@ class Unitary(Transformation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary._from_attributes("", ret.representation, ret.wires)
+            return Unitary._from_attributes(ret.representation, ret.wires, "")
         elif isinstance(other, Channel):
-            return Channel._from_attributes("", ret.representation, ret.wires)
+            return Channel._from_attributes(ret.representation, ret.wires, "")
         return ret
 
     def __repr__(self) -> str:
@@ -107,7 +151,28 @@ class Unitary(Transformation):
         c = math.astensor(triple[2])
         shape_check(A, b, 2 * len(modes), "Bargmann")
         s = set(modes)
-        return Unitary._from_attributes(name, Bargmann(A, b, c), Wires(set(), set(), s, s))
+        return Unitary._from_attributes(
+            representation=Bargmann(A, b, c), wires=Wires(set(), set(), s, s), name=name
+        )
+
+
+class Map(Transformation):
+    r"""A CircuitComponent with input and output wires and same modes on bra and ket sides.
+    More general than Channels, which need to be CPTP."""
+
+    def __init__(
+        self,
+        modes_out: tuple[int, ...] = (),
+        modes_in: tuple[int, ...] = (),
+        name: Optional[str] = None,
+    ):
+        super().__init__(
+            modes_out_bra=modes_in,
+            modes_in_bra=modes_out,
+            modes_out_ket=modes_in,
+            modes_in_ket=modes_out,
+            name=name or "Map",
+        )
 
 
 class Channel(Transformation):
@@ -121,11 +186,11 @@ class Channel(Transformation):
 
     def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
         super().__init__(
-            name or "Ch" + "".join(str(m) for m in modes),
             modes_in_ket=modes,
             modes_out_ket=modes,
             modes_in_bra=modes,
             modes_out_bra=modes,
+            name=name or "Ch" + "".join(str(m) for m in modes),
         )
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -139,7 +204,7 @@ class Channel(Transformation):
         ret = super().__rshift__(other)
 
         if isinstance(other, (Unitary, Channel)):
-            return Channel._from_attributes("", ret.representation, ret.wires)
+            return Channel._from_attributes(representation=ret.representation, wires=ret.wires)
         return ret
 
     def __repr__(self) -> str:
@@ -158,4 +223,6 @@ class Channel(Transformation):
         c = math.astensor(triple[2])
         shape_check(A, b, 4 * len(modes), "Bargmann")
         s = set(modes)
-        return Channel._from_attributes(name, Bargmann(A, b, c), Wires(s, s, s, s))
+        return Channel._from_attributes(
+            representation=Bargmann(A, b, c), wires=Wires(s, s, s, s), name=name
+        )
