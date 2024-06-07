@@ -33,6 +33,7 @@ from mrmustard.lab_dev.transformations import (
     Unitary,
 )
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.states import Coherent
 
 
 class TestUnitary:
@@ -539,6 +540,20 @@ class TestAmplifier:
         )
         assert math.allclose(operation.representation.b, np.zeros((1, 4)))
         assert math.allclose(operation.representation.c, [0.74074074 + 0.0j])
+
+    def test_circuit_identity(self):
+        amp_channel = Amplifier(modes=[0], gain=2)
+        att_channel = Attenuator(modes=[0], transmissivity=0.5)
+        input_state = Coherent(modes=[0], x=0.5, y=0.7)
+
+        assert math.allclose(
+            (input_state >> amp_channel).representation.A,
+            (input_state >> att_channel.dual).representation.A,
+        )
+        assert math.allclose(
+            (input_state >> amp_channel).representation.b,
+            (input_state >> att_channel.dual).representation.b,
+        )
 
 
 class TestAttenuator:
