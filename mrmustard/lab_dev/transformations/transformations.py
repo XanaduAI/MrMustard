@@ -325,7 +325,7 @@ class TMSgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import TMSgate
 
-        >>> unitary = BSgate(modes=[1, 2], r=1)
+        >>> unitary = TMSgate(modes=[1, 2], r=1)
         >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.r.value, 1)
         >>> assert np.allclose(unitary.phi.value, 0.0)
@@ -333,8 +333,8 @@ class TMSgate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         r: The squeezing amplitude.
-        r_bounds: The bounds for the transmissivity angle.
-        r_trainable: Whether theta is a trainable variable.
+        r_bounds: The bounds for the squeezing amplitude.
+        r_trainable: Whether r is a trainable variable.
         phi: The phase angle.
         phi_bounds: The bounds for the phase angle.
         phi_trainable: Whether phi is a trainable variable.
@@ -377,7 +377,6 @@ class TMSgate(Unitary):
     @property
     def representation(self) -> Bargmann:
         return Bargmann(*triples.twomode_squeezing_gate_Abc(self.r.value, self.phi.value))
-
 
 
 class Attenuator(Channel):
