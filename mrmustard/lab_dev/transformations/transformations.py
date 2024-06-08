@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Identity"]
 
 
 class BSgate(Unitary):
@@ -98,17 +98,13 @@ class BSgate(Unitary):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
-        super().__init__(modes=modes, name="BSgate")
-        self._add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds)
-        )
+        super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(
-            *triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value)
-        )
+        return Bargmann(*triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value))
 
 
 class Dgate(Unitary):
@@ -168,14 +164,13 @@ class Dgate(Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
-        super().__init__(modes=modes, name="Dgate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
+        xs, ys = list(reshape_params(len(self.modes), x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
 
@@ -191,7 +186,7 @@ class Rgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Rgate
 
-        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
+        >>> unitary = Rgate(modes=[1, 2], phi=0.1)
         >>> assert unitary.modes == [1, 2]
 
     Args:
@@ -204,20 +199,18 @@ class Rgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        theta: Union[float, list[float]] = 0.0,
-        theta_trainable: bool = False,
-        theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        phi: Union[float, list[float]] = 0.0,
+        phi_trainable: bool = False,
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
-        super().__init__(modes=modes, name="Rgate")
-        self._add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds)
-        )
+        super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
-        return Bargmann(*triples.rotation_gate_Abc(thetas))
+        phis = list(reshape_params(n_modes, phi=self.phi.value))[0]
+        return Bargmann(*triples.rotation_gate_Abc(phis))
 
 
 class Sgate(Unitary):
@@ -280,7 +273,7 @@ class Sgate(Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__(modes_in=modes, modes_out=modes, name="Sgate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Sgate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
@@ -291,7 +284,7 @@ class Sgate(Unitary):
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
 
 
-class Igate(Unitary):
+class Identity(Unitary):
     r"""
     The identity gate.
 
@@ -300,9 +293,9 @@ class Igate(Unitary):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import Igate
+        >>> from mrmustard.lab_dev import Identity
 
-        >>> unitary = Igate(modes=[1, 2])
+        >>> unitary = Identity(modes=[1, 2])
         >>> assert unitary.modes == [1, 2]
 
     Args:
@@ -313,7 +306,7 @@ class Igate(Unitary):
         self,
         modes: Sequence[int],
     ):
-        super().__init__(modes=modes, name="Igate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Identity")
 
     @property
     def representation(self) -> Bargmann:
@@ -374,7 +367,7 @@ class Attenuator(Channel):
         transmissivity_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
     ):
-        super().__init__(modes=modes, name="Att")
+        super().__init__(modes_out=modes, modes_in=modes, name="Att")
         self._add_parameter(
             make_parameter(
                 transmissivity_trainable,

@@ -48,7 +48,7 @@ def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
 
     """
     if isinstance(rep, Fock):
-      return rep
+        return rep
     # now assume Bargmann
     if isinstance(shape, int):
         shape = (shape,) * rep.ansatz.num_vars

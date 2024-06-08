@@ -51,16 +51,14 @@ from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargman
 from mrmustard.physics.fock import autocutoffs
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.gaussian_integrals import join_Abc_real, real_gaussian_integral
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from ..circuit_components_utils import BtoPS, BtoQ
-from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
-from ..wires import Wires
+from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -163,7 +161,7 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        raise NotImplementedError
+        return cls(modes, Bargmann(*triple), name)
 
     @classmethod
     def from_fock(
@@ -203,7 +201,7 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
-        raise NotImplementedError
+        return cls(modes, Fock(array, batched), name)
 
     @classmethod
     def from_phase_space(
@@ -243,24 +241,45 @@ class State(CircuitComponent):
         cls,
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
         name: Optional[str] = None,
     ) -> State:
         r"""
-        Initializes a state from quadrature with a ABC Ansatz Gaussian exponential form.
+        Initializes a state from quadrature with an ABC Ansatz Gaussian exponential form.
 
         Args:
-            modes: The modes of this states.
+            modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
+            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
             name: The name of this state.
 
         Returns:
             A state.
 
         Raises:
-            ValueError: If the given triple have shapes that are inconsistent
+            ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
-        raise NotImplementedError
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = cls(modes, Bargmann(*triple))
+        return cls(modes, (Q >> QtoB).representation, name)
+
+    @property
+    def autoshape(self) -> tuple[int, ...]:
+        r"""
+        The recommended Fock shape of this State calculated as the minimum
+        of the autocutoff and the fock_shape. The autocutoff of a state aims
+        at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
+        mass of the state (99.9% by default).
+        """
+        if None not in self.fock_shape:
+            return tuple(self.fock_shape)
+        cov, means, _ = self.phase_space(0)
+        cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
+        if len(cutoffs) == len(self.wires) // 2:
+            cutoffs = cutoffs + cutoffs
+        self._fock_shape = [s if s else c + 1 for s, c in zip(self.fock_shape, cutoffs)]
+        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.fock_shape, cutoffs)])
 
     @property
     def _L2_norms(self) -> RealVector:
@@ -317,7 +336,7 @@ class State(CircuitComponent):
         Returns:
             The array that describes this state in the Fock representation.
         """
-        return to_fock(self.representation, self.autoshape).array
+        return to_fock(self.representation, shape or self.autoshape).array
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -331,15 +350,11 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        if self.representation.__class__.__qualname__ != "Bargmann":
-            raise ValueError(f"Can not calculate phase space for ``{self.name}`` object.")
+        if not isinstance(self.representation, Bargmann):
+            raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self >> BtoPS(self.modes, s=s)  # pylint: disable=protected-access
-        return bargmann_Abc_to_phasespace_cov_means(
-            new_state.representation.ansatz.A,
-            new_state.representation.ansatz.b,
-            new_state.representation.ansatz.c,
-        )
+        new_state = self >> BtoPS(self.modes, s=s)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.representation.triple)
 
     def visualize_2d(
         self,
@@ -622,46 +637,23 @@ class DM(State):
         modes: The modes of this state.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+    def __init__(
+        self,
+        modes: tuple[int, ...] = (),
+        representation: Optional[Bargmann | Fock] = None,
+        name: Optional[str] = None,
+    ):
+        if representation and representation.ansatz.num_vars != 2 * len(modes):
+            raise ValueError(
+                f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
+            )
         super().__init__(
             modes_out_bra=modes,
             modes_out_ket=modes,
             name=name or "DM" + "".join(str(m) for m in sorted(modes)),
         )
-
-    @classmethod
-    def from_bargmann(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> DM:
-        A = math.astensor(triple[0])
-        b = math.astensor(triple[1])
-        c = math.astensor(triple[2])
-        shape_check(A, b, 2 * len(modes), "Bargmann")
-        ret = DM(name, modes)
-        ret._representation = Bargmann(A, b, c)
-        return ret
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Sequence[int],
-        array: ComplexTensor,
-        name: Optional[str] = None,
-        batched: bool = False,
-    ) -> DM:
-        array = math.astensor(array)
-
-        n_modes = len(modes)
-        if len(array.shape) != 2 * n_modes + (1 if batched else 0):
-            msg = f"Given array is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
-        ret = DM(name, modes)
-        ret._representation = Fock(array, batched)
-        return ret
+        if representation is not None:
+            self._representation = representation
 
     @classmethod
     def from_phase_space(
@@ -670,60 +662,12 @@ class DM(State):
         cov: ComplexMatrix,
         means: ComplexMatrix,
         name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-3,
+        atol_purity: Optional[float] = 1e-5,
     ) -> DM:
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        if atol_purity:
-            p = purity(cov)
-            if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be 1.0)."
-                raise ValueError(msg)
-
-        ret = DM(name, modes)
-        ret._representation = Bargmann(*wigner_to_bargmann_rho(cov, means))
-        return ret
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> DM:
-        # The representation change from quadrature into Bargmann is to use the BtoQ.dual.
-        # Plus this map is on a single wire, here for a DM, we need to add a adjoint wire as well.
-        QtoBMap_CC = BtoQ(modes).dual.adjoint @ BtoQ(modes).dual
-        QtoBMap_A, QtoBMap_b, QtoBMap_c = (
-            QtoBMap_CC.representation.A[0],
-            QtoBMap_CC.representation.b[0],
-            QtoBMap_CC.representation.c[0],
-        )
-        full_order_list = math.arange(4 * len(modes))
-        bargmann_A, bargmann_b, bargmann_c = real_gaussian_integral(
-            join_Abc_real(
-                triple,
-                (QtoBMap_A, QtoBMap_b, QtoBMap_c),
-                idx1=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
-                idx2=list(
-                    math.cast(
-                        math.concat(
-                            [
-                                full_order_list[len(modes) : 2 * len(modes)],
-                                full_order_list[3 * len(modes) :],
-                            ],
-                            axis=0,
-                        ),
-                        math.int32,
-                    )
-                ),
-            ),
-            idx=list(math.cast(full_order_list[: 2 * len(modes)], math.int32)),
-        )
-        ret = DM(name, modes)
-        ret._representation = Bargmann(bargmann_A, bargmann_b, bargmann_c)
-        return ret
+        return DM(modes, Bargmann(*wigner_to_bargmann_rho(cov, means)), name)
 
     @property
     def _probabilities(self) -> RealVector:
@@ -793,21 +737,6 @@ class DM(State):
 
         return result.representation.scalar
 
-    @property
-    def autoshape(self) -> tuple[int, ...]:
-        r"""
-        The shape of this DM calculated by keeping settings.AUTOCUTOFF_PROBABILITY of the norm (default 0.999).
-        """
-        try:
-            return self.representation.array.shape[1:]
-        except AttributeError:
-            if None not in self.fock_shape:
-                return tuple(self.fock_shape)
-            cov, means, _ = self.phase_space(0)
-            cutoffs = autocutoffs(cov, means, settings.AUTOCUTOFF_PROBABILITY)
-            self.fock_shape = [min(c + 1, s or 1e42) for c, s in zip(cutoffs, self.fock_shape)] * 2
-            return tuple(self.fock_shape)
-
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
@@ -864,46 +793,22 @@ class Ket(State):
         modes: The modes of this states.
     """
 
-    def __init__(self, name: Optional[str] = None, modes: tuple[int, ...] = ()):
+    def __init__(
+        self,
+        modes: tuple[int, ...] = (),
+        representation: Optional[Bargmann | Fock] = None,
+        name: Optional[str] = None,
+    ):
+        if representation and representation.ansatz.num_vars != len(modes):
+            raise ValueError(
+                f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
+            )
         super().__init__(
             modes_out_ket=modes,
             name=name or "Ket" + "".join(str(m) for m in sorted(modes)),
         )
-
-    @classmethod
-    def from_bargmann(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> Ket:
-        A = math.astensor(triple[0])
-        b = math.astensor(triple[1])
-        c = math.astensor(triple[2])
-        shape_check(A, b, len(modes), "Bargmann")
-
-        ret = Ket(name, modes)
-        ret._representation = Bargmann(A, b, c)
-        return ret
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Sequence[int],
-        array: ComplexTensor,
-        name: Optional[str] = None,
-        batched: bool = False,
-    ) -> Ket:
-        array = math.astensor(array)
-
-        n_modes = len(modes)
-        if len(array.shape) != n_modes + (1 if batched else 0):
-            msg = f"Given array is inconsistent with modes=``{modes}``."
-            raise ValueError(msg)
-
-        ret = Ket(name, modes)
-        ret._representation = Fock(array, batched)
-        return ret
+        if representation is not None:
+            self._representation = representation
 
     @classmethod
     def from_phase_space(
@@ -912,44 +817,17 @@ class Ket(State):
         cov: RealMatrix,
         means: RealVector,
         name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-3,
+        atol_purity: Optional[float] = 1e-5,
     ) -> Ket:
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-
         if atol_purity:
             p = purity(cov)
             if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a ket: purity is {p:.3f} (must be at least 1.0-atol)."
+                msg = f"Cannot initialize a ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-
-        ret = Ket(name, modes)
-        ret._representation = Bargmann(*wigner_to_bargmann_psi(cov, means))
-        return ret
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
-    ) -> Ket:
-        QtoB_rep = BtoQ(modes).dual.representation
-        QtoB_triple = tuple(el[0] for el in QtoB_rep.triple)
-        joined_triples = join_Abc_real(
-            triple,
-            QtoB_triple,
-            idx1=list(range(len(modes))),
-            idx2=list(range(len(modes), 2 * len(modes))),
-        )
-        bargmann_triple = real_gaussian_integral(
-            joined_triples,
-            idx=list(range(len(modes))),
-        )
-        ret = Ket(name, modes)
-        ret._representation = Bargmann(*bargmann_triple)
-        return ret
+        return Ket(modes, Bargmann(*wigner_to_bargmann_psi(cov, means)), name)
 
     @property
     def _probabilities(self) -> RealVector:
@@ -965,7 +843,7 @@ class Ket(State):
 
     @property
     def _purities(self) -> float:
-        r"""Purity of each state in the batch."""
+        r"""Purity of each ket in the batch."""
         return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
     @property
@@ -978,22 +856,6 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         return DM._from_attributes(dm.representation, dm.wires, self.name)
-
-    @property
-    def autoshape(self) -> tuple[int, ...]:
-        r"""
-        The shape of this Ket calculated as the minimum of the autocutoff and
-        the fock_shape, if set.
-        """
-        try:
-            return self.representation.array.shape[1:]
-        except AttributeError:
-            if None not in self.fock_shape:
-                return tuple(self.fock_shape)
-            cov, means, _ = self.phase_space(0)
-            cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
-            self.fock_shape = [min(c + 1, s or 1e42) for c, s in zip(cutoffs, self.fock_shape)]
-            return tuple(self.fock_shape)
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -1070,9 +932,9 @@ class Ket(State):
 
         if not ret.wires.input:
             if not ret.wires.bra:
-                return Ket._from_attributes(ret.representation, ret.wires, "")
+                return Ket._from_attributes(ret.representation, ret.wires)
             if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes(ret.representation, ret.wires, "")
+                return DM._from_attributes(ret.representation, ret.wires)
         return ret
 
     def __repr__(self) -> str:

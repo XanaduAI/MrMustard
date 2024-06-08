@@ -471,12 +471,12 @@ class Bargmann(Representation):
 
         # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
         if isinstance(other, Fock):
-            raise NotImplementedError("Only contract Bargmann with Bargmann.")
+            raise NotImplementedError("only bargmann with bargmann")
             # from .converters import to_fock  # pylint: disable=import-outside-toplevel
             #
             # # set same shape along the contracted axes, and default shape along the
             # # axes that are not being contracted
-            # shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(self.b[0]))]
+            # shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in self.autoshape]
             # for i, j in zip(idx_s, idx_o):
             #     shape[i] = other.array.shape[1:][j]
             #
@@ -491,7 +491,7 @@ class Bargmann(Representation):
         if settings.UNSAFE_ZIP_BATCH:
             if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
-                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                    "Batch size of the two ansatze must match since settings.UNSAFE_ZIP_BATCH is True."
                 )
             for (A1, b1, c1), (A2, b2, c2) in zip(
                 zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
@@ -637,13 +637,16 @@ class Fock(Representation):
 
     def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
         r"""
-        Implements the inner product of ansatze across the marked indices.
+        Implements the inner product of fock arrays over the marked indices.
+        ..code-block::
+            >>> from mrmustard.physics.representations import Fock
+            >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
+            >>> g = Fock(np.random.random((2, 5, 8)))
+            >>> h = f[1,2] @ g[1,2]
+            >>> assert h.array.shape == (3, 2)
 
-        If ``other`` is ``Fock``, the two representations are automatically reduced
-        before being contracted. The array of the returned representation has the largest
-        possible dimension along every axis.
-
-        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction.
+        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
+        using autoshape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
 
         Args:
             other: Another representation.
@@ -655,16 +658,16 @@ class Fock(Representation):
         idx_o = list(other._contract_idxs)
         # if ``other`` is ``Bargmann``, convert it to ``Fock``
         if isinstance(other, Bargmann):
-            raise NotImplementedError("Only contract Fock with Fock.")
+            raise NotImplementedError("only fock with fock")
             # from .converters import to_fock  # pylint: disable=import-outside-toplevel
             #
             # # set same shape along the contracted axes, and default shape along the
             # # axes that are not being contracted
-            # shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(len(other.b[0]))]
+            # shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in self.autoshape]
             # for i, j in zip(idx_s, idx_o):
             #     shape[j] = self.array.shape[1:][i]
 
-            # return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
+            return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
 
         # the number of batches in self and other
         n_batches_s = self.array.shape[0]

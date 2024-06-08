@@ -43,7 +43,7 @@ from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 
 # original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)
 
 
 class TestKet:
@@ -54,11 +54,23 @@ class TestKet:
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
-        state = Ket(name, modes)
+        state = Ket(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
+
+    def test_fock_shape(self):
+        ket = Coherent([0, 1], x=[1, 2])
+        assert ket.fock_shape == [None, None]
+        ket.fock_shape[0] = 19
+        assert ket.fock_shape == [19, None]
+
+    def test_autoshape(self):
+        ket = Coherent([0, 1], x=[1, 2])
+        assert ket.autoshape == (7, 13)
+        ket.fock_shape[0] = 19
+        assert ket.autoshape == (19, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -151,7 +163,7 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
-        state = Ket("my_ket", modes)
+        state = Ket(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
@@ -345,11 +357,23 @@ class TestDM:
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM(name, modes)
+        state = DM(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+    def test_fock_shape(self):
+        dm = Coherent([0, 1], x=[1, 2]).dm()
+        assert dm.fock_shape == [None, None, None, None]
+        dm.fock_shape[0] = 19
+        assert dm.fock_shape == [19, None, None, None]
+
+    def test_autoshape(self):
+        dm = Coherent([0, 1], x=[1, 2]).dm()
+        assert dm.autoshape == (7, 13, 7, 13)
+        dm.fock_shape[0] = 19
+        assert dm.autoshape == (19, 13, 7, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -699,7 +723,7 @@ class TestNumber:
     def test_init(self, modes, n, cutoffs):
         state = Number(modes, n, cutoffs)
 
-        assert state.name == "N"
+        assert state.name == str(n)
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):

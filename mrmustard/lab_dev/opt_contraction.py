@@ -138,12 +138,8 @@ class CircuitGraph:
         r"""Returns the cost of contracting all the wires between two nodes."""
         indices = self.edges(*edge)["indices"]
         i, j = edge
-        shape_a = [
-            s for m, s in enumerate(self.node_shape(i)) if m not in indices.keys()
-        ]
-        shape_b = [
-            s for n, s in enumerate(self.node_shape(j)) if n not in indices.values()
-        ]
+        shape_a = [s for m, s in enumerate(self.node_shape(i)) if m not in indices.keys()]
+        shape_b = [s for n, s in enumerate(self.node_shape(j)) if n not in indices.values()]
         shape_k = [s for k, s in enumerate(self.node_shape(i)) if i in indices.keys()]
         print(self.node_shape(i), self.node_shape(j))
         print(shape_a, shape_k, shape_b)

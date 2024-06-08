@@ -20,8 +20,13 @@ import pytest
 
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number
-from mrmustard.lab_dev.transformations import BSgate, Sgate, Dgate, Attenuator
+from mrmustard.lab_dev.states import Vacuum, Number, SqueezedVacuum
+from mrmustard.lab_dev.transformations import (
+    BSgate,
+    Sgate,
+    Dgate,
+    Attenuator,
+)
 
 
 class TestCircuit:
@@ -271,10 +276,13 @@ class TestCircuit:
         r"""
         Test the optimal path for a staircase circuit.
         """
+
         def staircase_n_modes(n):
-            return Circuit([SqueezedVacuum([i]) for i in range(n)]+
-                   [BSgate([i-1,i]) for i in range(1,n)]+
-                   [Number([i], 8).dual for i in range(1,n)])
+            return Circuit(
+                [SqueezedVacuum([i]) for i in range(n)]
+                + [BSgate([i - 1, i]) for i in range(1, n)]
+                + [Number([i], 8).dual for i in range(1, n)]
+            )
 
         for n in range(2, 6):
-            
+            pass
