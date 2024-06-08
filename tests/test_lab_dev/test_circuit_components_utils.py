@@ -66,18 +66,14 @@ class TestTraceOut:
         assert np.allclose(no_state.representation.c, 1)
 
     def test_trace_out_fock_states(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
-
-        state = Coherent([0, 1, 2], x=1).to_fock()
-        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock().dm()
-        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
+        state = Coherent([0, 1, 2], x=1).to_fock(10)
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock(7).dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock(7).dm()
 
         no_state = state >> TraceOut([0, 1, 2])
         assert no_state.modes == []
         assert no_state.wires == Wires()
         assert np.allclose(no_state.representation.array, [])
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
 
 class TestBtoPS:

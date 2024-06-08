@@ -310,6 +310,7 @@ class Vacuum(Ket):
         modes: Sequence[int],
     ) -> None:
         super().__init__(modes=modes, name="Vac")
+        self._fock_shape = [1] * len(modes)
 
     @property
     def representation(self) -> Bargmann:

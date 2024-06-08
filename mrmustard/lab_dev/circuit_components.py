@@ -411,24 +411,22 @@ class CircuitComponent:
         return self._from_attributes(
             to_fock(
                 self.representation,
-                shape=shape or [s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in self.autoshape],
+                shape=shape or self.autoshape,
             ),
             self.wires,
             self.name,
         )
 
     @property
-    def autoshape(self) -> tuple[Optional[int], ...]:
+    def autoshape(self) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
         representation the shape can be calculated using autocutoff using the single-mode marginals.
-        If the component is not a State then the shape is a tuple of ``None``s.
+        If the component is not a State then the shape is a tuple of ``AUTOCUTOFF_MAX_CUTOFF``.
         """
-        try:
-            return self.representation.array.shape[1:]
-        except AttributeError:
-            return tuple(self.fock_shape)
+        MAX = settings.AUTOCUTOFF_MAX_CUTOFF
+        return tuple(s if s else MAX for s in self.fock_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -501,52 +499,40 @@ class CircuitComponent:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
-    def _combine_fock_shapes(
-        self, other: CircuitComponent, new_wires: Wires, perm: tuple[int, ...]
-    ) -> tuple[int, ...]:
-        r"""
-        Combines the Fock shapes of the components being contracted.
-        """
-        new_fock_shape = []
-        for id in new_wires.ids:
-            try:
-                i = self.wires.ids.index(id)
-                s = self.fock_shape[i]
-            except ValueError:
-                i = other.wires.ids.index(id)
-                s = other.fock_shape[i]
-            new_fock_shape.append(s)
-        return [new_fock_shape[j] for j in perm]
-
-    def _to_fock_if_needed(
-        self, other: CircuitComponent
-    ) -> tuple[CircuitComponent, CircuitComponent]:
-        r"""
-        Converts the representations of ``self`` or ``other`` to Fock if the other is already in Fock.
-        """
-        if isinstance(other.representation, Fock):
-            self = self.to_fock_component()
-        elif isinstance(self.representation, Fock):
-            other = other.to_fock_component()
-        return self, other
-
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other``, without adding adjoints.
+        The outputs of self go into the inputs of other.
         """
+        try:
+            return other._rrshift_(self)
+        except AttributeError:
+            pass
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if isinstance(self.representation, Fock) and not isinstance(other.representation, Fock):
-            other_shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF + 1 for s in other.autoshape]
-            for i, j in zip(idx_z, idx_zconj):
-                other_shape[j] = self.fock_shape[i]
-            other = other.to_fock(other_shape)
-        elif isinstance(other.representation, Fock) and not isinstance(self.representation, Fock):
-            self_shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF + 1 for s in self.autoshape]
-            for i, j in zip(idx_z, idx_zconj):
-                self_shape[i] = other.fock_shape[j]
-            self = self.to_fock(self_shape)
-        rep = self.representation[idx_z] @ other.representation[idx_zconj]
+
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+            rep = self.representation[idx_z] @ other.representation[idx_zconj]
+            rep = rep.reorder(perm) if perm else rep
+            return CircuitComponent._from_attributes(rep, wires_result, None)
+
+        self_shape = list(self.autoshape)
+        other_shape = list(other.autoshape)
+        for z, zc in zip(idx_z, idx_zconj):
+            self_shape[z] = min(self_shape[z], other_shape[zc])
+            other_shape[zc] = self_shape[z]
+
+        if isinstance(self.representation, Fock):
+            self_rep = self.representation.reduce(self_shape)
+        else:
+            self_rep = self.to_fock(self_shape).representation
+        if isinstance(other.representation, Fock):
+            other_rep = other.representation.reduce(other_shape)
+        else:
+            print(other_shape)
+            other_rep = other.to_fock(other_shape).representation
+
+        rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 
@@ -558,11 +544,8 @@ class CircuitComponent:
         For example, in the expression ``Ket >> Channel`` the adjoint of ``Ket`` is added on
         the bra side of the input of the channel because ``Ket`` is a ket-side only component.
         """
-        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
-
+        if hasattr(other, "_rrshift_"):
+            return other._rrshift_(self)
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
         both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
@@ -579,6 +562,10 @@ class CircuitComponent:
         if other_needs_bra or other_needs_ket:
             return (self @ other) @ other.adjoint
 
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += (
+            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        )
         raise ValueError(msg)
 
     def __repr__(self) -> str:

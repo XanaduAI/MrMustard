@@ -71,6 +71,22 @@ class TraceOut(CircuitComponent):
             name="Tr",
         )
 
+    def _rrshift_(self, other: CircuitComponent) -> CircuitComponent:
+        """Special method called first in the ``__rshift__`` of ``other``.
+        Remember ``other >> self`` is the original order, with ``other``
+        on the left of the >> operator."""
+        if not other.wires.bra or not other.wires.ket:
+            m = tuple(other.wires.output.modes & self.wires.input.modes)
+            idx = other.wires.output[m].indices
+            rep = other.representation.conj()[idx] @ other.representation[idx]
+            w, _ = other.adjoint.wires @ other.wires
+            return CircuitComponent._from_attributes(rep, (w @ self.wires)[0])
+        else:
+            idx_bk, _ = other._matmul_indices(self)
+            idx_b, idx_k = idx_bk[: len(idx_bk) // 2], idx_bk[len(idx_bk) // 2 :]
+            rep = other.representation.trace(idx_b, idx_k)
+        return CircuitComponent._from_attributes(rep, (other.wires @ self.wires)[0])
+
 
 class BtoPS(Map):
     r"""The `s`-parametrized ``Dgate`` as a ``Map``.

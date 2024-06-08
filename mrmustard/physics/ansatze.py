@@ -435,10 +435,10 @@ class ArrayAnsatz(Ansatz):
         Raises:
             ValueError: If the arrays don't have the same shape.
         """
-        try:
-            return np.allclose(self.array, other.array)
-        except Exception as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+        slices = (slice(0, None),) + tuple(
+            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+        )
+        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""

@@ -217,15 +217,13 @@ class TestKet:
         assert math.allclose(ket.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
-
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
         assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
 
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
+        k0 = Coherent([0], x=1, y=2).to_fock(10)
+        k1 = Coherent([1], x=1, y=3).to_fock(10)
+        k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
         res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array
         res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array
@@ -506,14 +504,12 @@ class TestDM:
         assert math.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
-
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
+        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
         dm = ket.dm()
 
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
+        k0 = Coherent([0], x=1, y=2).to_fock(10)
+        k1 = Coherent([1], x=1, y=3).to_fock(10)
+        k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
         res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
         res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
@@ -523,9 +519,9 @@ class TestDM:
         assert math.allclose(dm.expectation(k1), res_k1)
         assert math.allclose(dm.expectation(k01), res_k01)
 
-        dm0 = Coherent([0], x=1, y=2).dm()
-        dm1 = Coherent([1], x=1, y=3).dm()
-        dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
+        dm0 = Coherent([0], x=1, y=2).to_fock(10).dm()
+        dm1 = Coherent([1], x=1, y=3).to_fock(10).dm()
+        dm01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10).dm()
 
         res_dm0 = ((dm @ dm0.dual) >> TraceOut([1])).representation.array
         res_dm1 = ((dm @ dm1.dual) >> TraceOut([0])).representation.array
@@ -535,9 +531,9 @@ class TestDM:
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
 
-        u0 = Dgate([0], x=0.1)
-        u1 = Dgate([1], x=0.2)
-        u01 = Dgate([0, 1], x=[0.3, 0.4])
+        u0 = Dgate([0], x=0.1).to_fock(10)
+        u1 = Dgate([1], x=0.2).to_fock(10)
+        u01 = Dgate([0, 1], x=[0.3, 0.4]).to_fock(10)
 
         res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.array
         res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.array
