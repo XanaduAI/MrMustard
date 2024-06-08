@@ -472,9 +472,6 @@ class CircuitComponent:
         For example, in the expression ``Ket >> Channel`` the adjoint of ``Ket`` is added on
         the bra side of the input of the channel because ``Ket`` is a ket-side only component.
         """
-        print(
-            f"in CircuitComponent __rshift__ (self is {self.__class__}, other is {other.__class__})"
-        )
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
         msg += (
             "whether or where to add bra wires. Use ``@`` instead and specify all the components."
@@ -484,19 +481,16 @@ class CircuitComponent:
         only_bra = not self.wires.ket and not other.wires.ket
         both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
         if only_ket or only_bra or both_sides:
-            print(f"onl_ket: {only_ket}, only_bra: {only_bra}, both_sides: {both_sides}")
             return self @ other
 
         self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
         self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
         if self_needs_bra or self_needs_ket:
-            print(f"self_needs_bra: {self_needs_bra}, self_needs_ket: {self_needs_ket}")
             return self.adjoint @ (self @ other)
 
         other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
         other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
         if other_needs_bra or other_needs_ket:
-            print(f"other_needs_bra: {other_needs_bra}, other_needs_ket: {other_needs_ket}")
             return (self @ other) @ other.adjoint
 
         raise ValueError(msg)
