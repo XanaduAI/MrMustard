@@ -34,7 +34,6 @@ from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-from functools import cached_property
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
@@ -49,7 +48,6 @@ from mrmustard.utils.typing import (
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.fock import autocutoffs
-from mrmustard.physics.converters import to_fock
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -320,23 +318,6 @@ class State(CircuitComponent):
         Whether this state is pure.
         """
         return math.allclose(self.purity, 1.0)
-
-    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        The array that describes this state in the Fock representation.
-
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation into a ``Fock`` object.
-
-        Args:
-            shape: The shape of the returned array. If ``shape``is given as an ``int``, it is
-            broadcasted to all the dimensions. If ``None``, it defaults to the value of
-            ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
-
-        Returns:
-            The array that describes this state in the Fock representation.
-        """
-        return to_fock(self.representation, shape or self.autoshape).array
 
     def phase_space(self, s: float) -> tuple:
         r"""

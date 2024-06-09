@@ -21,7 +21,6 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView

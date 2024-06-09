@@ -382,7 +382,34 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> CircuitComponent:
+    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> CircuitComponent:
+        r"""
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``autoshape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+        Returns:
+            array: The Fock representation of this component.
+        """
+        if shape is None:
+            shape = self.autoshape
+        elif isinstance(shape, int):
+            shape = (shape,) * self.representation.ansatz.num_vars
+        else:
+            shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
+
+        assert len(shape) == len(self.fock_shape)
+        try:
+            As, bs, cs = self.bargmann
+            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+        except AttributeError:
+            array = self.representation.reduce(shape).array
+        return array
+
+    def to_fock(self, shape=None):
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -407,18 +434,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        if shape is None:
-            shape = self.autoshape
-        elif isinstance(shape, int):
-            shape = (shape,) * self.representation.ansatz.num_vars
-        else:
-            shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
-        try:
-            As, bs, cs = self.bargmann
-            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
-        except AttributeError:
-            array = self.representation.reduce(shape).array
-        fock = Fock(math.astensor(array), batched=True)
+        fock = Fock(math.astensor(self.fock(shape)), batched=True)
         fock._original_bargmann_data = self.representation.data
         return self._from_attributes(fock, self.wires, self.name)
 

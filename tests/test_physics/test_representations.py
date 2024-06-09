@@ -18,8 +18,6 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.converters import to_fock
-from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
