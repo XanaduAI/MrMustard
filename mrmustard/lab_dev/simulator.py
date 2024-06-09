@@ -20,8 +20,6 @@ from __future__ import annotations
 
 from .circuit_components import CircuitComponent
 from .circuits import Circuit
-from mrmustard.physics.representations import Fock, Bargmann
-from mrmustard.physics.converters import to_fock
 
 __all__ = ["Simulator"]
 

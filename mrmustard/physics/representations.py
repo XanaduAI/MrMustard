@@ -466,21 +466,11 @@ class Bargmann(Representation):
             A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
             if ``other`` is ``Fock``.
         """
+        if isinstance(other, Fock):
+            raise NotImplementedError("Only matmul Bargmann with Bargmann")
+
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
-
-        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
-        if isinstance(other, Fock):
-            raise NotImplementedError("only bargmann with bargmann")
-            # from .converters import to_fock  # pylint: disable=import-outside-toplevel
-            #
-            # # set same shape along the contracted axes, and default shape along the
-            # # axes that are not being contracted
-            # shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in self.autoshape]
-            # for i, j in zip(idx_s, idx_o):
-            #     shape[i] = other.array.shape[1:][j]
-            #
-            # return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
 
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
@@ -654,20 +644,11 @@ class Fock(Representation):
         Returns:
             A ``Fock``representation.
         """
+        if isinstance(other, Bargmann):
+            raise NotImplementedError("only matmul Fock with Fock")
+
         idx_s = list(self._contract_idxs)
         idx_o = list(other._contract_idxs)
-        # if ``other`` is ``Bargmann``, convert it to ``Fock``
-        if isinstance(other, Bargmann):
-            raise NotImplementedError("only fock with fock")
-            # from .converters import to_fock  # pylint: disable=import-outside-toplevel
-            #
-            # # set same shape along the contracted axes, and default shape along the
-            # # axes that are not being contracted
-            # shape = [s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in self.autoshape]
-            # for i, j in zip(idx_s, idx_o):
-            #     shape[j] = self.array.shape[1:][i]
-
-            return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
 
         # the number of batches in self and other
         n_batches_s = self.array.shape[0]
