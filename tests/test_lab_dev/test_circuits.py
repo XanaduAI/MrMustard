@@ -271,18 +271,3 @@ class TestCircuit:
         r1 += "\nmode 1:   ──Sgate(-1.0,-2.0)"
         r1 += "\n\n"
         assert repr(circ1) == r1
-
-    def test_optimal_path_staircase(self):
-        r"""
-        Test the optimal path for a staircase circuit.
-        """
-
-        def staircase_n_modes(n):
-            return Circuit(
-                [SqueezedVacuum([i]) for i in range(n)]
-                + [BSgate([i - 1, i]) for i in range(1, n)]
-                + [Number([i], 8).dual for i in range(1, n)]
-            )
-
-        for n in range(2, 6):
-            pass
