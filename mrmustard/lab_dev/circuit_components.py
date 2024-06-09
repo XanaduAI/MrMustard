@@ -414,20 +414,17 @@ class CircuitComponent:
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
 
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation.
-
         .. code-block::
 
-            >>> from mrmustard.physics.converters import to_fock
             >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Fock
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert d_fock.representation == to_fock(d.representation, shape=3)
+            >>> assert isintance(d_fock.representation, Fock)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
