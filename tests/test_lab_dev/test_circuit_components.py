@@ -23,7 +23,7 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.triples import displacement_gate_Abc
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
 from mrmustard.lab_dev.states import (
     Ket,
@@ -173,28 +173,22 @@ class TestCircuitComponent:
         with pytest.raises(ValueError):
             Vacuum([1, 2]).on([3])
 
-    @pytest.mark.parametrize("shape", [3, [3, 2]])
-    def test_to_fock(self, shape):
+    def test_to_fock_ket(self):
         vac = Vacuum([1, 2])
-        vac_fock = vac.to_fock(shape=shape)
-        assert vac_fock.name == vac.name
-        assert vac_fock.wires == vac.wires
-        assert vac_fock.representation == to_fock(vac.representation, shape)
-        assert isinstance(vac_fock, Ket)
+        vac_fock = vac.to_fock(shape=[1, 2])
+        assert vac_fock.representation == Fock(np.array([[1], [0]]))
 
-        n = Number([3], n=4)
-        n_fock = n.to_fock(shape=shape)
-        assert n_fock.name == n.name
-        assert n_fock.wires == n.wires
-        assert n_fock.representation == to_fock(n.representation, shape)
-        assert isinstance(n_fock, Ket)
+    def test_to_fock_Number(self):
+        num = Number([3], n=4)
+        num_f = num.to_fock(shape=(6,))
+        assert num_f.representation == Fock(np.array([0, 0, 0, 0, 1, 0]))
 
+    def test_to_fock_Dgate(self):
         d = Dgate([1], x=0.1, y=0.1)
-        d_fock = d.to_fock(shape=shape)
-        assert d_fock.name == d.name
-        assert d_fock.wires == d.wires
-        assert d_fock.representation == to_fock(d.representation, shape)
-        assert isinstance(d_fock, Unitary)
+        d_fock = d.to_fock(shape=(4, 6))
+        assert d_fock.representation == Fock(
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+        )
 
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)

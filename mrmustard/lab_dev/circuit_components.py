@@ -19,16 +19,15 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import os
 import numpy as np
 from IPython.display import display, HTML
 from mako.template import Template
 
-from mrmustard import settings
+from mrmustard import settings, math
 from mrmustard.utils.typing import Scalar, ComplexTensor
-from mrmustard.physics.converters import to_fock
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
@@ -383,7 +382,7 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -408,14 +407,20 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return self._from_attributes(
-            to_fock(
-                self.representation,
-                shape=shape or self.autoshape,
-            ),
-            self.wires,
-            self.name,
-        )
+        if shape is None:
+            shape = self.autoshape
+        elif isinstance(shape, int):
+            shape = (shape,) * self.representation.ansatz.num_vars
+        else:
+            shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
+        try:
+            As, bs, cs = self.bargmann
+            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+        except AttributeError:
+            array = self.representation.reduce(shape).array
+        fock = Fock(math.astensor(array), batched=True)
+        fock._original_bargmann_data = self.representation.data
+        return self._from_attributes(fock, self.wires, self.name)
 
     @property
     def autoshape(self) -> tuple[int, ...]:

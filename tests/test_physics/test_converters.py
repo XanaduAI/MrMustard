@@ -36,7 +36,7 @@ class TestToFock:
     def test_tofock_from_a_fock(self):
         r"""Tests that the to_fock function works for Fock representation."""
         fock_original = Fock(np.arange(16).reshape((4, 4)), batched=False)
-        fock_after = to_fock(fock_original)
+        fock_after = to_fock(fock_original, fock_original.autoshape)
         assert fock_original == fock_after
 
         fock_after = to_fock(fock_original, shape=50)
@@ -45,7 +45,7 @@ class TestToFock:
     def test_tofock_from_a_bargmann_vacuum_state(self):
         r"""Tests that the to_fock function works for a vacuum state in Bargmann representation."""
         vacuum_bargmann = Bargmann(*vacuum_state_Abc(n_modes=2))
-        vacuum_fock_no_shape = to_fock(vacuum_bargmann)
+        vacuum_fock_no_shape = to_fock(vacuum_bargmann, vacuum_bargmann.autoshape)
         assert vacuum_fock_no_shape.array[0, 0, 0] == 1
         assert vacuum_fock_no_shape.array.shape[-1] == settings.AUTOCUTOFF_MAX_CUTOFF
         assert vacuum_fock_no_shape.array.shape == (1, 100, 100)
@@ -64,7 +64,7 @@ class TestToFock:
     def test_tofock_from_a_bargmann_coherent_state(self):
         r"""Tests that the to_fock function works for a coherent state in Bargmann representation."""
         coherent_bargmann = Bargmann(*coherent_state_Abc(x=[0.3], y=[0.1]))
-        coherent_fock_no_shape = to_fock(coherent_bargmann)
+        coherent_fock_no_shape = to_fock(coherent_bargmann, coherent_bargmann.autoshape)
         assert math.allclose(coherent_fock_no_shape.array[0, 0], math.exp(-0.5 * (0.3**2 + 0.1**2)))
         assert math.allclose(
             coherent_fock_no_shape.array[0, 1],
@@ -78,7 +78,9 @@ class TestToFock:
         assert coherent_fock_no_shape.array.shape == (1, 100)
 
         coherent_twomode_bargmann = Bargmann(*coherent_state_Abc(x=[0.3, 0.2], y=[0.1]))
-        coherent_twomode_fock_no_shape = to_fock(coherent_twomode_bargmann)
+        coherent_twomode_fock_no_shape = to_fock(
+            coherent_twomode_bargmann, coherent_twomode_bargmann.autoshape
+        )
         assert math.allclose(
             coherent_twomode_fock_no_shape.array[0, 0, 0],
             math.exp(-0.5 * (0.3**2 + 0.1**2 + 0.2**2 + 0.1**2)),

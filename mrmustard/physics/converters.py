@@ -16,12 +16,12 @@
 This module contains the functions to convert between different representations.
 """
 
-from typing import Iterable
-from mrmustard.physics.representations import Representation, Bargmann, Fock
+from typing import Iterable, Optional
+from mrmustard.physics.representations import Representation, Fock
 from mrmustard import math, settings
 
 
-def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
+def to_fock(rep: Representation, shape: Optional[Iterable[int]] = None) -> Fock:
     r"""A function to map ``Representation``\s to ``Fock`` representations.
 
     If the given ``rep`` is ``Fock``, this function simply returns ``rep``.
@@ -50,13 +50,15 @@ def to_fock(rep: Representation, shape: Iterable[int]) -> Fock:
     if isinstance(rep, Fock):
         return rep
     # now assume Bargmann
+    if shape is None:
+        shape = (settings.AUTOCUTOFF_MAX_CUTOFF,) * rep.ansatz.num_vars
     if isinstance(shape, int):
         shape = (shape,) * rep.ansatz.num_vars
     if len(shape) != rep.ansatz.num_vars:
         raise ValueError(f"shape ``{shape}`` should have length {rep.ansatz.num_vars}.")
 
     array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
-    if settings.TO_FOCK_SHOW_SHAPE:
+    if settings.TO_FOCK_SHOW_SHAPE:  # TODO: remove
         print(shape)
     fock = Fock(math.astensor(array), batched=True)
     fock._original_bargmann_data = rep.data
