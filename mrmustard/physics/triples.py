@@ -208,7 +208,6 @@ def two_mode_squeezed_vacuum_state_Abc(
     """
     r, phi = list(_reshape(r=r, phi=phi))
     n_modes = 2 * len(r)
-    print(len(r))
     O = math.zeros((len(r), len(r)), math.complex128)
     tanhr = math.diag(-math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
 
