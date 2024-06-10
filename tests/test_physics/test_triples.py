@@ -300,11 +300,17 @@ class TestTriples:
         with pytest.raises(ValueError, match="smaller than"):
             triples.amplifier_Abc(0.1)
 
-    @pytest.mark.parametrize("n_modes", [1, 2, 3])
-    def test_fock_damping_Abc(self, n_modes):
-        A1, b1, c1 = triples.fock_damping_Abc(n_modes)
-        assert math.allclose(A1, np.kron(math.astensor([[0, 1], [1, 0]]), math.eye(2 * n_modes)))
-        assert math.allclose(b1, np.zeros((4 * n_modes)))
+    def test_fock_damping_Abc(self):
+        A1, b1, c1 = triples.fock_damping_Abc(0.5)
+        assert math.allclose(A1,
+            [
+                [0, 0.60653065, 0, 0],
+                [0.60653065, 0, 0, 0],
+                [0, 0, 0, 0.60653065],
+                [0, 0, 0.60653065, 0],
+            ]
+        )
+        assert math.allclose(b1, np.zeros(4))
         assert math.allclose(c1, 1)
 
     def test_displacement_gate_s_parametrized_Abc(self):
