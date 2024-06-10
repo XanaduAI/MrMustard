@@ -29,7 +29,15 @@ from mrmustard.physics import triples
 from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "TwoModeSqueezedVacuum", "Vacuum"]
+__all__ = [
+    "Coherent",
+    "DisplacedSqueezed",
+    "Number",
+    "SqueezedVacuum",
+    "Thermal",
+    "TwoModeSqueezedVacuum",
+    "Vacuum",
+]
 
 #  ~~~~~~~~~~~
 #  Pure States
