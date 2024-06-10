@@ -285,7 +285,7 @@ class TwoModeSqueezedVacuum(Ket):
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum
+        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, TMSgate
 
         >>> state = TwoModeSqueezedVacuum(modes=[0, 1], r=0.3, phi=0.2)
         >>> assert state == Vacuum([0, 1]) >> TMSgate([0, 1], r=0.3, phi=0.2)
