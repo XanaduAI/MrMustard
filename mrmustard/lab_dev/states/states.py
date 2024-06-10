@@ -34,9 +34,9 @@ __all__ = [
     "DisplacedSqueezed",
     "Number",
     "SqueezedVacuum",
-    "TwoModeSqueezedVacuum",
     "Thermal",
     "Vacuum",
+    "TwoModeSqueezedVacuum",
 ]
 
 
