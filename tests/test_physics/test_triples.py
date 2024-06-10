@@ -302,13 +302,14 @@ class TestTriples:
 
     def test_fock_damping_Abc(self):
         A1, b1, c1 = triples.fock_damping_Abc(0.5)
-        assert math.allclose(A1,
+        assert math.allclose(
+            A1,
             [
                 [0, 0.60653065, 0, 0],
                 [0.60653065, 0, 0, 0],
                 [0, 0, 0, 0.60653065],
                 [0, 0, 0.60653065, 0],
-            ]
+            ],
         )
         assert math.allclose(b1, np.zeros(4))
         assert math.allclose(c1, 1)
