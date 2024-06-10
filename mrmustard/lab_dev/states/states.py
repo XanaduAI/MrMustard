@@ -35,8 +35,8 @@ __all__ = [
     "Number",
     "SqueezedVacuum",
     "Thermal",
-    "Vacuum",
     "TwoModeSqueezedVacuum",
+    "Vacuum",
 ]
 
 
@@ -309,7 +309,7 @@ class TwoModeSqueezedVacuum(Ket):
         phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         super().__init__("TwoModeSqueezedVacuum", modes=modes)
