@@ -31,9 +31,24 @@ from mrmustard.lab_dev.transformations import (
     Igate,
     TMSgate,
     Unitary,
+    Operator,
 )
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.lab_dev.states import Vacuum, TwoModeSqueezedVacuum
+
+
+class TestOperator:
+    r"""
+    Tests the Operator class.
+    """
+
+    def test_init_from_bargmann(self):
+        A = np.array([[0, 1, 2], [1, 0, 0], [0, 4, 2]])
+        b = np.array([0, 1, 5])
+        c = 1
+        operator = Operator.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
+        assert np.allclose(operator.representation.A[None, ...], A)
+        assert np.allclose(operator.representation.b[None, ...], b)
 
 
 class TestUnitary:
@@ -54,11 +69,11 @@ class TestUnitary:
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
         u_component = CircuitComponent._from_attributes(
-            unitary1.name, unitary1.representation, unitary1.wires
+            unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         assert isinstance(unitary1 >> unitary2, Unitary)
@@ -69,11 +84,11 @@ class TestUnitary:
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary1.name, unitary1.representation, unitary1.wires
+            unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
 
-        assert repr(unitary1) == "Unitary(name=Dgate, modes=[0, 1])"
-        assert repr(u_component) == "CircuitComponent(name=Dgate, modes=[0, 1])"
+        assert repr(unitary1) == "Unitary(modes=[0, 1], name=Dgate)"
+        assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate)"
 
     def test_init_from_bargmann(self):
         A = np.array([[0, 1], [1, 0]])
@@ -119,12 +134,12 @@ class TestChannel:
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.name, channel1.representation, channel1.wires
+            channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
         assert isinstance(channel1 >> unitary, Channel)
@@ -135,11 +150,11 @@ class TestChannel:
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.name, channel1.representation, channel1.wires
+            channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
-        assert repr(channel1) == "Channel(name=Att, modes=[0, 1])"
-        assert repr(ch_component) == "CircuitComponent(name=Att, modes=[0, 1])"
+        assert repr(channel1) == "Channel(modes=[0, 1], name=Att)"
+        assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att)"
 
     def test_inverse_channel(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)

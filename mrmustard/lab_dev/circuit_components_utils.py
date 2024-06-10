@@ -23,10 +23,11 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
+from mrmustard.lab_dev.transformations import Map, Operator
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "DsMap", "BtoQMap"]
+__all__ = ["TraceOut", "BtoPS", "BtoQ"]
 
 
 class TraceOut(CircuitComponent):
@@ -62,15 +63,15 @@ class TraceOut(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
-        super().__init__("Tr", modes_in_ket=modes, modes_in_bra=modes)
+        super().__init__(modes_in_ket=modes, modes_in_bra=modes, name="Tr")
 
     @property
     def representation(self) -> Bargmann:
         return Bargmann(*triples.identity_Abc(len(self.modes)))
 
 
-class DsMap(CircuitComponent):
-    r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
+class BtoPS(Map):
+    r"""The `s`-parametrized ``Dgate`` as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 
@@ -85,11 +86,9 @@ class DsMap(CircuitComponent):
         s: float,
     ):
         super().__init__(
-            "DsMap",
-            modes_out_bra=modes,
-            modes_in_bra=modes,
-            modes_out_ket=modes,
-            modes_in_ket=modes,
+            modes_out=modes,
+            modes_in=modes,
+            name="BtoPS",
         )
         self.s = s
 
@@ -98,7 +97,7 @@ class DsMap(CircuitComponent):
         return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
 
 
-class BtoQMap(CircuitComponent):
+class BtoQ(Operator):
     r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
 
     Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
@@ -115,9 +114,9 @@ class BtoQMap(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            "BtoQMap",
-            modes_out_ket=modes,
-            modes_in_ket=modes,
+            modes_out=modes,
+            modes_in=modes,
+            name="BtoQ",
         )
 
     @property

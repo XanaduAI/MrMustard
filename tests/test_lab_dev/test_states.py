@@ -257,7 +257,7 @@ class TestKet:
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -269,11 +269,13 @@ class TestKet:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation,
+            channel.wires,
+            channel.name,
         )  # pylint: disable=protected-access
 
         # gates
@@ -531,7 +533,7 @@ class TestDM:
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -543,11 +545,11 @@ class TestDM:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         dm = ket >> channel

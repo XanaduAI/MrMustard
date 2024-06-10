@@ -175,6 +175,10 @@ class Wires:
         # Adds elements to the cache when calling ``__getitem__``
         self._mode_cache = {}
 
+    def __len__(self) -> int:
+        r"The number of wires."
+        return sum(len(s) for s in self.args)
+
     @cached_property
     def id(self) -> int:
         r"""
