@@ -38,10 +38,10 @@ __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
 class CircuitComponent:
     r"""
-    A base class for the components (states, transformations, measurements, and
-    any component made by combining CircuitComponents). CircuitComponents are
-    defined by their ``representation`` and ``wires`` attributes.
-    See the Representation and Wires classes for more details.
+    A base class for the circuit components (states, transformations, measurements,
+    and any component made by combining CircuitComponents). CircuitComponents are
+    defined by their ``representation`` and ``wires`` attributes. See the ``Wires``
+    and ``Representation`` classes (and their subclasses) for more details.
 
     Args:
         representation: A representation for this circuit component.
@@ -78,7 +78,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -98,17 +103,11 @@ class CircuitComponent:
     ) -> CircuitComponent:
         r"""
         Initializes a circuit component from its attributes (a ``Representation``, a ``Wires``
-        object, a name). It is like the init method, but it takes a Wires object rather than
-        the wires specification.
-
-        If the Method Resolution Order (MRO) of ``cls`` contains at least one of ``Ket``,
-        ``DM``, ``Operation``, ``Unitary``, ``Map`` or ``Channel``, then the returned component
-        is of the first matching type found. Otherwise it is of type ``CircuitComponent``.
-
-        This function needs to be used with caution, as it does not check that the attributes
-        provided are consistent with the type of the returned component. If used improperly it
-        may initialize, e.g., ``Ket``s with both input and output wires or ``Unitary``s with
-        wires on the bra side.
+        object, a name). If the class is a subclass of Ket, DM, Unitary, Operation, Channel, or Map,
+        it goes up the MRO of ``cls`` to find the first class in this list and returns an object of that
+        type. Otherwise, it returns a generic ``CircuitComponent`` object.
+        Note there are (deliberately) no checks in place to ensure types and wires are compatible
+        in the standard way.
 
         Args:
             representation: A representation for this circuit component.
@@ -126,7 +125,7 @@ class CircuitComponent:
         else:
             ret = CircuitComponent()
 
-        ret._name = name or tp.__name__ + "".join(str(m) for m in sorted(wires.modes))
+        ret._name = name or cls.__name__ + "".join(str(m) for m in sorted(wires.modes))
         ret._representation = representation
         ret._wires = wires
 
@@ -141,7 +140,7 @@ class CircuitComponent:
 
         Raises:
             ValueError: If the length of the given parameter is incompatible with the number
-                of modes.
+                of modes (e.g. for parallel gates).
         """
         if parameter.value.shape != ():
             if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
@@ -175,7 +174,9 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -226,7 +227,9 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -361,7 +364,9 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component with the same attributes as this component, but
         with ``Fock`` representation.
@@ -440,7 +445,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -473,13 +480,13 @@ class CircuitComponent:
         the bra side of the input of the channel because ``Ket`` is a ket-side only component.
         """
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
+        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        both_sides = (
+            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        )
         if only_ket or only_bra or both_sides:
             return self @ other
 
@@ -506,7 +513,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
@@ -517,7 +526,11 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        rep_temp_uni = (
+            rep_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
+        )
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
