@@ -179,6 +179,9 @@ class Wires:
         r"The number of wires."
         return sum(len(s) for s in self.args)
 
+    def __hash__(self) -> int:
+        return hash(tuple(self.ids))
+
     @cached_property
     def id(self) -> int:
         r"""

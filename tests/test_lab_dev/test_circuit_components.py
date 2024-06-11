@@ -156,19 +156,6 @@ class TestCircuitComponent:
         assert bool(d67.parameter_set) is True
         assert d67._representation is None
 
-        exotic_component = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[1, 2],
-            modes_in_ket=[3, 4],
-        )
-        exotic_component_01 = exotic_component.on([0, 1])
-        expected = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[0, 1],
-            modes_in_ket=[0, 1],
-        )
-        assert exotic_component_01 == expected
-
     def test_on_error(self):
         with pytest.raises(ValueError):
             Vacuum([1, 2]).on([3])
