@@ -38,8 +38,7 @@ __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
 class Transformation(CircuitComponent):
     r"""
-    Base class for all transformations. Currently provides the ability to compute the inverse
-    of the transformation.
+    Base class for all transformations.
     """
 
     @classmethod
@@ -51,7 +50,9 @@ class Transformation(CircuitComponent):
         phi: float = 0,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize an Operation from the given quadrature triple."""
+        r"""Initialize an Operation from the given quadrature triple (A, b, c).
+        The triple parametrizes the quadrature representation of the transformation as
+        ``c * exp(0.5*x^T A x + b^T x)``."""
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
@@ -68,7 +69,9 @@ class Transformation(CircuitComponent):
         triple: tuple,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize a Transformation from the given Bargmann triple."""
+        r"""Initialize a Transformation from the given Bargmann triple (A,b,c)
+        which parametrizes the Bargmann function of the transformation as
+        ``c * exp(0.5*z^T A z + b^T z)``."""
         return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     def inverse(self) -> Transformation:
@@ -111,7 +114,8 @@ class Transformation(CircuitComponent):
 
 
 class Operation(Transformation):
-    r"""A CircuitComponent with input and output wires, on the ket side."""
+    r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
+    to have a different number of input and output wires."""
 
     def __init__(
         self,
@@ -133,16 +137,22 @@ class Operation(Transformation):
 class Unitary(Operation):
     r"""
     Base class for all unitary transformations.
+    Note the default initializer is in the parent class ``Operation``.
 
     Arguments:
-        name: The name of this transformation.
-        modes: The modes that this transformation acts on.
+        modes_out: The output modes of this Unitary.
+        modes_in: The input modes of this Unitary.
+        representation: The representation of this Unitary.
+        name: The name of this Unitary.
     """
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
+
+        For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
+        channel requires an input on the bra side as well.
 
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
         ``Channel``, and a ``CircuitComponent`` otherwise.
@@ -163,7 +173,7 @@ class Unitary(Operation):
         displacement: RealVector,
         name: Optional[str] = None,
     ) -> Unitary:
-        r"""Initialize a Unitary from the given symplectic matrix in qqpp basis.
+        r"""Initialize a Unitary from the given symplectic matrix and displacement in qqpp basis.
         I.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
         """
         if symplectic.shape[-2:] != (2 * len(modes), 2 * len(modes)):
@@ -181,7 +191,7 @@ class Unitary(Operation):
 
 
 class Map(Transformation):
-    r"""A CircuitComponent more general than Channels, which are CPTP maps.
+    r"""A CircuitComponent more general than Channels, which are CPTP Maps.
 
     Arguments:
         modes_out: The output modes of this Map.
