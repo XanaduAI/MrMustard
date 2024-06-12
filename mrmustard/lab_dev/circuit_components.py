@@ -40,8 +40,8 @@ class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
-    defined by their ``representation`` and ``wires`` attributes. See the ``Wires``
-    and ``Representation`` classes (and their subclasses) for more details.
+    defined by their ``representation`` and ``wires`` attributes. See the :class:`Wires`
+    and :class:`Representation` classes (and their subclasses) for more details.
 
     Args:
         representation: A representation for this circuit component.
