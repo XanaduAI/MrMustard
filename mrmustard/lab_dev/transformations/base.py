@@ -26,7 +26,6 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard import math
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
