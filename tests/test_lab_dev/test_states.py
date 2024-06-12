@@ -111,12 +111,14 @@ class TestKet:
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(
+            modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
+        )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -399,7 +401,7 @@ class TestDM:
 
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phase_space([0], cov, means)
+        state1 = DM.from_phase_space([0], (cov, means, 1.0))
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
