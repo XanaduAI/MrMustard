@@ -40,7 +40,6 @@ from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
-    RealMatrix,
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
@@ -651,7 +650,7 @@ class DM(State):
         modes: Sequence[int],
         triple: tuple,
         name: Optional[str] = None,
-        s: float = 0,
+        s: float = 0,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
@@ -662,7 +661,7 @@ class DM(State):
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
             name: The name of this state.
-            s: The phase space parameter
+            s: The phase space parameter, defaults to 0 (Wigner).
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)
