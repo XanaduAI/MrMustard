@@ -223,7 +223,7 @@ class CircuitComponent:
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_ket: The input modes on the ket side of this component.
             triple: The (A,b,c) triple that parametrizes the wave function.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, ``phi=pi/2`` to the p quadrature.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, ``phi=pi/2`` to the p quadrature. The default value is ``0``.
             name: The name of this component.
 
         Returns:
