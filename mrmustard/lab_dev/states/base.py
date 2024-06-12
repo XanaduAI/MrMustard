@@ -386,7 +386,7 @@ class State(CircuitComponent):
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
-        x, prob_x = quadrature_distribution(dm)  # TODO: replace with new MM methods
+        x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
 
         mask_x = math.asnumpy([xi >= xbounds[0] and xi <= xbounds[1] for xi in x])

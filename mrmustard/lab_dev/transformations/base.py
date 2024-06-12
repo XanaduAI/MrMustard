@@ -98,9 +98,7 @@ class Transformation(CircuitComponent):
         almost_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
-        almost_identity = (
-            self @ almost_inverse
-        )  # TODO: this is not efficient, need to get c from formula
+        almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.representation.c
         actual_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
