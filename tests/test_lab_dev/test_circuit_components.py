@@ -97,6 +97,12 @@ class TestCircuitComponent:
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
 
+    def test_from_to_quadrature(self):
+        c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
+        cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
+        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        assert cc == ccc
+
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_adj = d1.adjoint
