@@ -109,7 +109,7 @@ class CircuitComponent:
         coherent states we don't get a generic ``CircuitComponent`` but a ``Ket``:
 
         .. code-block::
-            >>> from mrmustard.lab_dev import Coherent
+            >>> from mrmustard.lab_dev import Coherent, Ket
             >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
             >>> assert isinstance(cat, Ket)
 
