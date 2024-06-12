@@ -746,6 +746,10 @@ class TestSqueezedVacuum:
         with pytest.raises(ValueError, match="Length of ``phi``"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
+    def test_modes_slice_params(self):
+        psi = SqueezedVacuum([0, 1], r=[1, 2], phi=[3, 4])
+        assert psi[0] == SqueezedVacuum([0], r=1, phi=3)
+
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum([0], 1, 1)
         state2 = SqueezedVacuum([0], 1, 1, r_trainable=True, r_bounds=(-2, 2))
