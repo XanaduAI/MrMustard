@@ -96,6 +96,12 @@ class TestUnitary:
         assert np.allclose(gate.representation.A[None, ...], A)
         assert np.allclose(gate.representation.b[None, ...], b)
 
+    def test_init_from_symplectic(self):
+        S = math.random_symplectic(2)
+        u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
+        assert u >> u.dual == Identity([0, 1])
+        assert u.dual >> u == Identity([0, 1])
+
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
         should_be_identity = gate >> gate.inverse()

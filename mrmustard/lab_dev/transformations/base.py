@@ -161,24 +161,23 @@ class Unitary(Operation):
     @classmethod
     def from_symplectic(
         cls,
-        modes: Sequence[int],
-        symplectic: RealMatrix,
-        displacement: RealVector,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        symplectic: tuple,
         name: Optional[str] = None,
     ) -> Unitary:
-        r"""Initialize a Unitary from the given symplectic matrix and displacement in qqpp basis.
-        I.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
-        """
-        if symplectic.shape[-2:] != (2 * len(modes), 2 * len(modes)):
+        r"""Initialize a Unitary from the given symplectic matrix in qqpp basis, i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...]."""
+        M = len(modes_in) + len(modes_out)
+        if symplectic.shape[-2:] != (M, M):
             raise ValueError(
                 "Symplectic matrix and number of modes don't match. "
-                + f"Modes imply shape {(2 * len(modes), 2 * len(modes))}, "
+                + f"Modes imply shape {(M,M)}, "
                 + f"but shape is {symplectic.shape[-2:]}."
             )
-        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, displacement)
+        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, math.zeros(M))
         return Unitary._from_attributes(
             representation=Bargmann(A, b, c),
-            wires=Wires(set(), set(), set(modes), set(modes)),
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
