@@ -128,7 +128,7 @@ class CircuitComponent:
                 break
         else:
             ret = CircuitComponent()
-        ret._name = name or cls.__name__ + "".join(str(m) for m in sorted(wires.modes))
+        ret._name = name or tp.__name__ + "".join(str(m) for m in sorted(wires.modes))
         ret._representation = representation
         ret._wires = wires
 
