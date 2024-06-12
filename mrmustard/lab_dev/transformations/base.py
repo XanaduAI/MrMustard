@@ -127,8 +127,6 @@ class Operation(Transformation):
             representation=representation,
             name=name or self.__class__.__name__,
         )
-        if representation is not None:
-            self._representation = representation
 
 
 class Unitary(Operation):

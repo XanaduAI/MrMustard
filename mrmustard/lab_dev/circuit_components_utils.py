@@ -117,7 +117,6 @@ class BtoQ(Operation):
         )
 
         super().__init__(
-            self,
             modes_out=modes,
             modes_in=modes,
             representation=(Rgate(modes, -phi) >> no_phi).representation,
