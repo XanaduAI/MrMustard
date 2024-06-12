@@ -182,11 +182,9 @@ class CircuitComponent:
 
     @property
     def bargmann(self) -> tuple:
-        r"""
-        The Bargmann parametrization of this component, if available.
-        It returns a triple (A, b, c) such that the Bargmann representation of this component is
-        ``F(z) = c exp(1/2 z^T A z + b^T z)``.
-        The triple can be used to initialize a new component with the same representation:
+        r"""The Bargmann parametrization of this component, if available.
+        It returns a triple (A, b, c) such that the Bargmann function of this component is
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
 
         .. code-block:: pycon
 
