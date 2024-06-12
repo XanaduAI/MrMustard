@@ -194,7 +194,7 @@ class CircuitComponent:
             >>> coh = Coherent(modes=[0], x=1.0)
             >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann, modes_out_ket=[0])
             >>> assert isinstance(coh_cc, CircuitComponent)
-            >>> assert coh == coh2  # equality looks at representation and wires!
+            >>> assert coh == coh_cc  # equality looks at representation and wires
         """
         try:
             return self.representation.triple
