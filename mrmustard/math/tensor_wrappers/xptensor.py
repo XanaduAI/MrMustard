@@ -110,7 +110,6 @@ class XPTensor(ABC):
 
     @property
     def num_modes(self) -> int:
-        # TODO: raise warning for coherence blocks?
         return len(self.outmodes)
 
     @property
@@ -241,7 +240,6 @@ class XPTensor(ABC):
             raise TypeError(
                 f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
             )
-        # TODO: move mode-check at beginning?
 
         # both are None
         if self.tensor is None and other.tensor is None:
@@ -276,7 +274,7 @@ class XPTensor(ABC):
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
 
-        See documentation for a visual explanation with blocks.  #TODO: add link to figure
+        See documentation for a visual explanation with blocks.
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = math.tensordot(

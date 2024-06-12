@@ -164,7 +164,7 @@ class Dgate(Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
-        super().__init__("Dgate", modes=modes)
+        super().__init__(modes=modes, name="Dgate")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 

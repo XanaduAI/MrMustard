@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" ``Wires`` class for supporting tensor network functionalities."""
+"""``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
 from functools import cached_property
@@ -175,6 +175,10 @@ class Wires:
         # Adds elements to the cache when calling ``__getitem__``
         self._mode_cache = {}
 
+    def __len__(self) -> int:
+        r"The number of wires."
+        return sum(len(s) for s in self.args)
+
     @cached_property
     def id(self) -> int:
         r"""
@@ -184,7 +188,7 @@ class Wires:
         """
         if self.original:
             return self.original.id
-        return np.random.randint(0, 2**32)
+        return np.random.randint(0, 2**31)
 
     @cached_property
     def ids(self) -> list[int]:
