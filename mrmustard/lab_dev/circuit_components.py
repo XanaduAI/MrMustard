@@ -187,7 +187,9 @@ class CircuitComponent:
         It returns a triple (A, b, c) such that the Bargmann representation of this component is
         ``F(z) = c exp(1/2 z^T A z + b^T z)``.
         The triple can be used to initialize a new component with the same representation:
-        .. code-block::
+
+        .. code-block:: pycon
+
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
             >>> coh = Coherent(modes=[0], x=1.0)
             >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann, modes_out_ket=[0])
