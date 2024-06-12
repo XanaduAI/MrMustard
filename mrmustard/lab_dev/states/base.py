@@ -754,9 +754,6 @@ class DM(State):
             return DM._from_attributes(ret.representation, ret.wires)
         return ret
 
-    def __repr__(self) -> str:
-        return ""
-
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
         Traces out all the modes except those given.
@@ -945,6 +942,3 @@ class Ket(State):
             if ret.wires.bra.modes == ret.wires.ket.modes:
                 return DM._from_attributes(ret.representation, ret.wires)
         return ret
-
-    def __repr__(self) -> str:
-        return ""

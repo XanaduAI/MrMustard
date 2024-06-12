@@ -510,7 +510,7 @@ class CircuitComponent:
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        return f"CircuitComponent(modes={self.modes}, name={self.name or None})"
+        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(

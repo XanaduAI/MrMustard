@@ -109,9 +109,6 @@ class Transformation(CircuitComponent):
         )
         return actual_inverse
 
-    def __repr__(self) -> str:
-        return super().__repr__().replace("CircuitComponent", self.__class__.__name__)
-
 
 class Operation(Transformation):
     r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
