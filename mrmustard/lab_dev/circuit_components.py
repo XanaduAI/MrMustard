@@ -481,7 +481,7 @@ class CircuitComponent:
         the result is a ``DM``:
 
         .. code-block::
-            >>> from mrmustard.lab_dev import Coherent, Attenuator
+            >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
