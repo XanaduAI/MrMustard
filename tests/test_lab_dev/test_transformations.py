@@ -35,7 +35,7 @@ from mrmustard.lab_dev.transformations import (
     Operation,
 )
 from mrmustard.lab_dev.wires import Wires
-from mrmustard.lab_dev.states import Coherent,Vacuum, TwoModeSqueezedVacuum
+from mrmustard.lab_dev.states import Coherent, Vacuum, TwoModeSqueezedVacuum
 
 
 class TestOperation:
@@ -500,6 +500,68 @@ class TestIdentity:
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
 
+
+class TestS2gate:
+    r"""
+    Tests for the ``S2gate`` class.
+    """
+
+    modes = [[0, 8], [1, 2], [9, 7]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    def test_init(self):
+        gate = S2gate([0, 1], 2, 1)
+
+        assert gate.name == "S2gate"
+        assert gate.modes == [0, 1]
+        assert gate.r.value == 2
+        assert gate.phi.value == 1
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Expected a pair"):
+            S2gate([1, 2, 3])
+
+    def test_representation(self):
+        rep1 = S2gate([0, 1], 0.1, 0.2).representation
+        tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
+        sechr = 1 / np.cosh(0.1)
+
+        A_exp = [
+            [
+                [0, -tanhr, sechr, 0],
+                [-tanhr, 0, 0, sechr],
+                [sechr, 0, 0, np.conj(tanhr)],
+                [0, sechr, np.conj(tanhr), 0],
+            ]
+        ]
+        assert math.allclose(rep1.A, A_exp)
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
+
+    def test_trainable_parameters(self):
+        gate1 = S2gate([0, 1], 1, 1)
+        gate2 = S2gate([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
+        gate3 = S2gate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            gate1.r.value = 3
+
+        gate2.r.value = 2
+        assert gate2.r.value == 2
+
+        gate3.phi.value = 2
+        assert gate3.phi.value == 2
+
+    def test_operation(self):
+        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).representation
+        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).representation
+
+        assert math.allclose(rep1.A, rep2.A)
+        assert math.allclose(rep1.b, rep2.b)
+        assert math.allclose(rep1.c, rep2.c)
+
+
 class TestAmplifier:
     r"""
     Tests for the ``Amplifier`` class.
@@ -575,66 +637,7 @@ class TestAmplifier:
             (input_state >> amp_channel).representation.b,
             (input_state >> att_channel.dual).representation.b,
         )
-        
-class TestS2gate:
-    r"""
-    Tests for the ``S2gate`` class.
-    """
 
-    modes = [[0, 8], [1, 2], [9, 7]]
-    r = [[1], 1, [1, 2]]
-    phi = [[3], [3, 4], [3, 4]]
-
-    def test_init(self):
-        gate = S2gate([0, 1], 2, 1)
-
-        assert gate.name == "S2gate"
-        assert gate.modes == [0, 1]
-        assert gate.r.value == 2
-        assert gate.phi.value == 1
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Expected a pair"):
-            S2gate([1, 2, 3])
-
-    def test_representation(self):
-        rep1 = S2gate([0, 1], 0.1, 0.2).representation
-        tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
-        sechr = 1 / np.cosh(0.1)
-
-        A_exp = [
-            [
-                [0, -tanhr, sechr, 0],
-                [-tanhr, 0, 0, sechr],
-                [sechr, 0, 0, np.conj(tanhr)],
-                [0, sechr, np.conj(tanhr), 0],
-            ]
-        ]
-        assert math.allclose(rep1.A, A_exp)
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
-
-    def test_trainable_parameters(self):
-        gate1 = S2gate([0, 1], 1, 1)
-        gate2 = S2gate([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
-        gate3 = S2gate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            gate1.r.value = 3
-
-        gate2.r.value = 2
-        assert gate2.r.value == 2
-
-        gate3.phi.value = 2
-        assert gate3.phi.value == 2
-
-    def test_operation(self):
-        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).representation
-        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).representation
-
-        assert math.allclose(rep1.A, rep2.A)
-        assert math.allclose(rep1.b, rep2.b)
-        assert math.allclose(rep1.c, rep2.c)
 
 class TestAttenuator:
     r"""

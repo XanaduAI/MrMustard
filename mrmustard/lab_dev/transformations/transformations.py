@@ -324,6 +324,7 @@ class Identity(Unitary):
         n_modes = len(self.modes)
         return Bargmann(*triples.identity_Abc(n_modes))
 
+
 class S2gate(Unitary):
     r"""The two mode squeezing gate.
 
@@ -451,6 +452,13 @@ class Amplifier(Channel):
                 None,
             )
         )
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        g = list(reshape_params(n_modes, g=self.gain.value))[0]
+        return Bargmann(*triples.amplifier_Abc(g))
+
 
 class Attenuator(Channel):
     r"""The noisy attenuator channel.
