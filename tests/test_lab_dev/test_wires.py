@@ -62,6 +62,25 @@ class TestWires:
         assert w.output.ket.indices == (6, 7)
         assert w.input.ket.indices == (8,)
 
+    def test_like(self):
+        ket = Wires(set(), set(), {0, 1}, set())
+        assert ket.ket_like
+
+        dm = Wires({0, 1}, set(), {0, 1}, set())
+        assert dm.dm_like
+
+        op = Wires(set(), set(), {2}, {0, 1})
+        assert op.op_like
+
+        u = Wires(set(), (), {2}, {3})
+        assert u.u_like
+
+        map = Wires({2}, {0, 1}, {2}, {0, 1})
+        assert map.map_like
+
+        channel = Wires({2}, {1}, {2}, {1})
+        assert channel.channel_like
+
     def test_wire_subsets(self):
         w = Wires({0}, {1}, {2}, {3})
         assert w.output.bra.modes == {0}
