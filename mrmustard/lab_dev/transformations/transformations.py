@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate", "TMSgate"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Igate", "S2gate"]
 
 
 class BSgate(Unitary):
@@ -315,7 +315,7 @@ class Igate(Unitary):
         return Bargmann(*triples.identity_Abc(n_modes))
 
 
-class TMSgate(Unitary):
+class S2gate(Unitary):
     r"""The two mode squeezing gate.
 
     It applies to a single pair of modes.
@@ -325,7 +325,7 @@ class TMSgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import TMSgate
 
-        >>> unitary = TMSgate(modes=[1, 2], r=1)
+        >>> unitary = S2gate(modes=[1, 2], r=1)
         >>> assert unitary.modes == [1, 2]
         >>> assert np.allclose(unitary.r.value, 1)
         >>> assert np.allclose(unitary.phi.value, 0.0)

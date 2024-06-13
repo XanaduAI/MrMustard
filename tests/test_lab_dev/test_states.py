@@ -40,7 +40,7 @@ from mrmustard.lab_dev.states import (
     Thermal,
     Vacuum,
 )
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate, TMSgate
+from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate, S2gate
 from mrmustard.lab_dev.wires import Wires
 
 # original settings
@@ -813,7 +813,7 @@ class TestTwoModeSqueezedVacuum:
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_representation(self, modes, r, phi):
         rep = TwoModeSqueezedVacuum(modes, r, phi).representation
-        exp = (Vacuum(modes) >> TMSgate(modes, r, phi)).representation
+        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).representation
         assert rep == exp
 
     def test_representation_error(self):
