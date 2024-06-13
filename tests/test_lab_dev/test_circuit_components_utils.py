@@ -167,7 +167,7 @@ class TestBtoQ:
         c0 = 1.0 + 0j
 
         modes = [0, 1]
-        BtoQ_CC1 = BtoQ(modes)
+        BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
             BtoQ_CC1.representation.A[0],
             BtoQ_CC1.representation.b[0],
@@ -179,7 +179,7 @@ class TestBtoQ:
             idx_zconj=[4, 5],
             measure=-1,
         )
-        QtoBMap_CC2 = BtoQ(modes).dual
+        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
             QtoBMap_CC2.representation.A[0],
             QtoBMap_CC2.representation.b[0],
@@ -201,7 +201,7 @@ class TestBtoQ:
         c0 = 1.0 + 0j
 
         modes = [0]
-        BtoQ_CC1 = BtoQ(modes)
+        BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
             BtoQ_CC1.representation.A[0],
             BtoQ_CC1.representation.b[0],
@@ -215,7 +215,7 @@ class TestBtoQ:
             idx_zconj=[2],
             measure=-1,
         )
-        QtoBMap_CC2 = BtoQ(modes).dual
+        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
             QtoBMap_CC2.representation.A[0],
             QtoBMap_CC2.representation.b[0],

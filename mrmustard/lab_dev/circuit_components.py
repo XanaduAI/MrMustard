@@ -16,8 +16,7 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called, protected-access
-
+# pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
@@ -39,8 +38,10 @@ __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
 class CircuitComponent:
     r"""
-    A base class for the components (states, transformations, and measurements, or potentially
-    unphysical ``wired'' objects) that can be placed in Mr Mustard's quantum circuits.
+    A base class for the circuit components (states, transformations, measurements,
+    and any component made by combining CircuitComponents). CircuitComponents are
+    defined by their ``representation`` and ``wires`` attributes. See the :class:`Wires`
+    and :class:`Representation` classes (and their subclasses) for more details.
 
     Args:
         representation: A representation for this circuit component.
@@ -77,7 +78,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -96,34 +102,37 @@ class CircuitComponent:
         name: Optional[str] = None,
     ) -> CircuitComponent:
         r"""
-        Initializes a circuit component from its attributes (a name, a ``Wires``,
-        and a ``Representation``).
+        Initializes a circuit component from a ``Representation``, a set of ``Wires``, a name.
+        It differs from the __init__ in that it takes a set of wires directly.
+        Note there are deliberately no checks to ensure types and wires are compatible
+        in the standard way (e.g. one could pass a representation for a single mode ket
+        and wires for a two-mode one).
 
-        If the Method Resolution Order (MRO) of ``cls`` contains one between ``Ket``, ``DM``,
-        ``Unitary``, and ``Channel``, then the returned component is of that type. Otherwise,
-        it is of type ``CircuitComponent``.
+        The return type is the closest parent among the types ``Ket``, ``DM``, ``Unitary``,
+        ``Operation``, ``Channel``, and ``Map``. This is to ensure the right properties
+        are used when calling methods on the returned object, e.g. when adding two
+        coherent states we don't get a generic ``CircuitComponent`` but a ``Ket``:
 
-        This function needs to be used with caution, as it does not check that the attributes
-        provided are consistent with the type of the returned component. If used improperly it
-        may initialize, e.g., ``Ket``s with both input and output wires or ``Unitary``s with
-        wires on the bra side.
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Ket
+            >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
+            >>> assert isinstance(cat, Ket)
 
         Args:
             representation: A representation for this circuit component.
             wires: The wires of this component.
-            name: The name of this component.
+            name: The name for this component (optional).
 
         Returns:
-            A circuit component of type ``cls`` with the given attributes.
+            A circuit component with the given attributes.
         """
-        types = {"Ket", "DM", "Unitary", "Channel"}
+        types = {"Ket", "DM", "Unitary", "Operation", "Channel", "Map"}
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
                 break
         else:
             ret = CircuitComponent()
-
         ret._name = name or tp.__name__ + "".join(str(m) for m in sorted(wires.modes))
         ret._representation = representation
         ret._wires = wires
@@ -132,14 +141,14 @@ class CircuitComponent:
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
-        Adds a parameter to this circuit component.
+        Adds a parameter to this circuit component and makes it accessible as an attribute.
 
         Args:
             parameter: The parameter to add.
 
         Raises:
-            ValueError: If the length of the given parameter is incompatible with the number
-                of modes.
+            ValueError: If the the given parameter is incompatible with the number
+                of modes (e.g. for parallel gates).
         """
         if parameter.value.shape != ():
             if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
@@ -148,10 +157,49 @@ class CircuitComponent:
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
+    @classmethod
+    def from_bargmann(
+        cls,
+        triple: tuple,
+        modes_out_bra: Sequence[int] = (),
+        modes_in_bra: Sequence[int] = (),
+        modes_out_ket: Sequence[int] = (),
+        modes_in_ket: Sequence[int] = (),
+        name: Optional[str] = None,
+    ) -> CircuitComponent:
+        r"""
+        Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
+
+        Args:
+            triple: The Bargmann representation of the component.
+            modes_out_bra: The output modes on the bra side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_ket: The input modes on the ket side of this component.
+            name: The name of this component.
+
+        Returns:
+            A circuit component with the given Bargmann representation.
+        """
+        repr = Bargmann(*triple)
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
+        return cls._from_attributes(repr, wires, name)
+
     @property
     def bargmann(self) -> tuple:
-        r"""
-        The Bargmann parametrization of this circuit component, if available.
+        r"""The Bargmann parametrization of this component, if available.
+        It returns a triple (A, b, c) such that the Bargmann function of this component is
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
+
+        .. code-block:: pycon
+
+            >>> from mrmustard.lab_dev import CircuitComponent, Coherent
+            >>> coh = Coherent(modes=[0], x=1.0)
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann, modes_out_ket=[0])
+            >>> assert isinstance(coh_cc, CircuitComponent)
+            >>> assert coh == coh_cc  # equality looks at representation and wires
         """
         try:
             return self.representation.triple
@@ -160,25 +208,58 @@ class CircuitComponent:
                 f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
             ) from e
 
-    def quadrature(self) -> tuple | ComplexTensor:
-        r"""
-        The quadrature representation of this circuit component.
-        """
-        from mrmustard.lab_dev.circuit_components_utils import (  # pylint: disable=import-outside-toplevel
-            BtoQ,
-        )
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes_out_bra: Sequence[int],
+        modes_in_bra: Sequence[int],
+        modes_out_ket: Sequence[int],
+        modes_in_ket: Sequence[int],
+        triple: tuple,
+        phi: float = 0.0,
+        name: Optional[str] = None,
+    ) -> CircuitComponent:
+        r"""Returns a circuit component from the given triple (A,b,c) that parametrizes the
+        quadrature wavefunction of this component in the form ``c exp(1/2 x^T A x + b^T x)``.
 
-        # The representation change from Bargmann into quadrature is to use the BtoQ.
-        # Here for a CircuitComponent, we need to add this map four times: BtoQ on out_ket
-        # wires, BtoQ.dual on in_ket wires, BtoQ.adjoint on out_bra wires and BtoQ.adjoint.dual
-        # on in_bra wires.
-        kets_done = BtoQ(self.wires.input.ket.modes).dual @ self @ BtoQ(self.wires.output.ket.modes)
-        all_done = (
-            BtoQ(self.wires.input.bra.modes).adjoint.dual
-            @ kets_done
-            @ BtoQ(self.wires.output.bra.modes).adjoint
+        Args:
+            modes_out_bra: The output modes on the bra side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_ket: The input modes on the ket side of this component.
+            triple: The (A,b,c) triple that parametrizes the wave function.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+            name: The name of this component.
+
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        return all_done.representation.data
+        QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
+        QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
+        QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
+        QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
+        # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
+        QQQQ = CircuitComponent._from_attributes(Bargmann(*triple), wires)
+        BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
+        return cls._from_attributes(BBBB.representation, wires, name)
+
+    def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The quadrature representation data of this circuit component.
+        """
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+        return QQQQ.representation.data
 
     @property
     def representation(self) -> Representation | None:
@@ -197,7 +278,7 @@ class CircuitComponent:
     @property
     def n_modes(self) -> list[int]:
         r"""
-        The number of modes in this component.
+        The number of modes spanned by this component across all wires.
         """
         return len(self.modes)
 
@@ -206,12 +287,16 @@ class CircuitComponent:
         r"""
         The name of this component.
         """
+        if self._name is None:
+            name = self.__class__.__name__
+            modes = "".join(str(m) for m in sorted(self.wires.modes))
+            self._name = name + modes if len(modes) < 5 else name
         return self._name
 
     @property
     def parameter_set(self) -> ParameterSet:
         r"""
-        The set of parameters characterizing this component.
+        The set of parameters of this component.
         """
         return self._parameter_set
 
@@ -225,31 +310,40 @@ class CircuitComponent:
     @property
     def adjoint(self) -> AdjointView:
         r"""
-        The ``AdjointView`` of this component.
+        The adjoint of this component obtained by conjugating the representation and swapping
+        the ket and bra wires. The returned object is a view of the original component which
+        applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
         return AdjointView(self)
 
     @property
     def dual(self) -> DualView:
         r"""
-        The ``DualView`` of this component.
+        The dual of this component obtained by conjugating the representation and swapping
+        the input and output wires. The returned object is a view of the original component which
+        applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
         return DualView(self)
 
-    def light_copy(self) -> CircuitComponent:
+    def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
-        Creates a copy of this component by copying every data stored in memory for
-        it by reference, except for its wires, which are copied by value.
+        Creates a "light" copy of this component by referencing its __dict__, except for the wires,
+        which are a new object or the given one.
+        This is useful when one needs the same component acting on different modes, for example.
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = Wires(*self.wires.args)
+        instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
         return instance
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
         r"""
-        Creates a copy of this component that acts on the given ``modes`` instead of on the
-        original modes.
+        Creates a light copy of this component that acts on the given ``modes`` instead of the
+        original modes. It only works if the component's wires are all defined on the same modes.
+        As a light copy, the returned component shares the representation with the original one.
+
+        If a more general rewiring is needed, while maintaining a light copy to the original, use
+        ``._light_copy(new_wires)`` and pass the desired wires.
 
         Args:
             modes: The new modes that this component acts on.
@@ -258,20 +352,25 @@ class CircuitComponent:
             The component acting on the specified modes.
 
         Raises:
-            ValueError: If ``modes`` contains more or less modes than the original component.
+            ValueError: If the component's wires are not all defined on the same modes or if the
+            length of the given modes is different from the length of the original modes.
         """
+        ob = self.wires.output.bra.modes
+        ib = self.wires.input.bra.modes
+        ok = self.wires.output.ket.modes
+        ik = self.wires.input.ket.modes
+        subsets = [s for s in (ob, ib, ok, ik) if s]
+        if any(s != subsets[0] for s in subsets):
+            raise ValueError(
+                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik})."
+            )
+        for subset in subsets:
+            if subset and len(subset) != len(modes):
+                raise ValueError(
+                    f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``."
+                )
+        ret = self._light_copy()
         modes = set(modes)
-
-        ob = self.wires.output.bra
-        ib = self.wires.input.bra
-        ok = self.wires.output.ket
-        ik = self.wires.input.ket
-        for subset in [ob, ib, ok, ik]:
-            if subset and len(subset.modes) != len(modes):
-                msg = f"Expected ``{len(modes)}`` modes, found ``{len(subset.modes)}``."
-                raise ValueError(msg)
-
-        ret = self.light_copy()
         ret._wires = Wires(
             modes_out_bra=modes if ob else set(),
             modes_in_bra=modes if ib else set(),
@@ -281,10 +380,11 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def to_fock(
+        self, shape: Optional[Union[int, Iterable[int]]] = None
+    ) -> CircuitComponent:
         r"""
-        Returns a circuit component with the same attributes as this component, but
-        with ``Fock`` representation.
+        Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
         Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
         representation.
@@ -336,13 +436,13 @@ class CircuitComponent:
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
-        Implements the multiplication by a scalar on the right.
+        Implements the multiplication by a scalar from the right.
         """
         return self._from_attributes(self.representation * other, self.wires, self.name)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
-        Implements the multiplication by a scalar on the left.
+        Implements the multiplication by a scalar from the left.
         """
         return self.__mul__(other)
 
@@ -356,13 +456,15 @@ class CircuitComponent:
         r"""
         Whether this component is equal to another component.
 
-        Compares representations and wires, but not the other attributes (including name and parameter set).
+        Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Finds the indices of the wires being contracted on the bra and ket sides of the components.
+        Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
         # find the indices of the wires being contracted on the bra side
         bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
@@ -376,47 +478,59 @@ class CircuitComponent:
 
     def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Contracts ``self`` and ``other``, without adding adjoints.
+        Contracts ``self`` and ``other`` without adding adjoints.
+        It allows for a more custom way of contracting components.
         """
-        wires_ret, perm = self.wires @ other.wires
+        wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
         rep = self.representation[idx_z] @ other.representation[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_ret, None)
+        return CircuitComponent._from_attributes(rep, wires_result, None)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
+        Contracts ``self`` and ``other`` (output of self going into input of other).
+        It adds the adjoints when they are missing. An error is raised if these
+        cannot be deduced from the wires of the components. For example this
+        allows ``Ket``s to be right-shifted into ``Channel``s and automatically
+        the result is a ``DM``:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
+            >>> assert issubclass(Coherent, Ket)
+            >>> assert issubclass(Attenuator, Channel)
+            >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
         """
-        msg = f"``>>`` not supported between {self} and {other}, use ``@``."
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
 
-        wires_s = self.wires
-        wires_o = other.wires
+        only_ket = not self.wires.bra and not other.wires.bra
+        only_bra = not self.wires.ket and not other.wires.ket
+        both_sides = (
+            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        )
+        if only_ket or only_bra or both_sides:
+            ret = self @ other
+            return ret.representation.scalar if len(ret.wires) == 0 else ret
 
-        if wires_s.ket and wires_s.bra:
-            if wires_o.ket and wires_o.bra:
-                return self @ other
-            return self @ other @ other.adjoint
+        self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
+        self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
+        if self_needs_bra or self_needs_ket:
+            ret = self.adjoint @ (self @ other)
+            return ret.representation.scalar if len(ret.wires) == 0 else ret
 
-        if wires_s.ket:
-            if wires_o.ket and wires_o.bra:
-                return self @ self.adjoint @ other
-            if wires_o.ket:
-                return self @ other
-            raise ValueError(msg)
-
-        if wires_s.bra:
-            if wires_o.ket and wires_o.bra:
-                return self @ self.adjoint @ other
-            if wires_o.bra:
-                return self @ other
-            raise ValueError(msg)
+        other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
+        other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
+        if other_needs_bra or other_needs_ket:
+            ret = (self @ other) @ other.adjoint
+            return ret.representation.scalar if len(ret.wires) == 0 else ret
 
         raise ValueError(msg)
 
     def __repr__(self) -> str:
-        return f"CircuitComponent(modes={self.modes}, name={self.name or None})"
+        return (
+            f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
+        )
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(
@@ -426,7 +540,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
@@ -437,20 +553,25 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
-
+        rep_temp_uni = (
+            rep_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
+        )
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
 class CCView(CircuitComponent):
-    r"""A base class for views of circuit components.
+    r"""A base class for views of circuit components. It allows for a more efficient
+    use of components when we need the same component on different wires.
+
     Args:
         component: The circuit component to take the view of.
     """
 
     def __init__(self, component: CircuitComponent) -> None:
         self.__dict__ = component.__dict__.copy()
-        self._component = component.light_copy()
+        self._component = component._light_copy()
 
     def __getattr__(self, name):
         r"""send calls to the component"""
@@ -462,7 +583,10 @@ class CCView(CircuitComponent):
 
 class AdjointView(CCView):
     r"""
-    Adjoint view of a circuit component.
+    Adjoint view of a circuit component obtained by swapping the ket/bra wires
+    and conjugating the representation. Note the representation is a wrapper
+    property around the original one, so it can work also for classes whose
+    representation attribute is a computed property like the trainable components.
 
     Args:
         component: The circuit component to take the view of.
@@ -473,12 +597,13 @@ class AdjointView(CCView):
         r"""
         Returns a light-copy of the component that was used to generate the view.
         """
-        return self._component.light_copy()
+        return self._component._light_copy()
 
     @property
     def representation(self):
         r"""
-        A representation of this circuit component.
+        A representation of this circuit component. Note that ket and bra indices
+        have been swapped.
         """
         bras = self._component.wires.bra.indices
         kets = self._component.wires.ket.indices
@@ -494,7 +619,10 @@ class AdjointView(CCView):
 
 class DualView(CCView):
     r"""
-    Dual view of a circuit component.
+    Dual view of a circuit component obtained by swapping the input/output wires
+    and conjugating the representation. Note the representation is a wrapper
+    property around the original one, so it can work also for classes whose
+    representation attribute is a computed property like the trainable components.
 
     Args:
         component: The circuit component to take the view of.
@@ -505,12 +633,13 @@ class DualView(CCView):
         r"""
         Returns a light-copy of the component that was used to generate the view.
         """
-        return self._component.light_copy()
+        return self._component._light_copy()
 
     @property
     def representation(self):
         r"""
-        A representation of this circuit component.
+        A representation of this circuit component. Note that input and output indices
+        have been swapped.
         """
         ok = self._component.wires.ket.output.indices
         ik = self._component.wires.ket.input.indices
