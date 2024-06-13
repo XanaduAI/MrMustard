@@ -24,7 +24,6 @@ from collections import defaultdict
 from typing import Optional, Sequence, Union
 from mrmustard import math, settings
 from .circuit_components import CircuitComponent
-from mrmustard.lab_dev.opt_contraction import optimal_path, NodeData, CircuitGraph
 from mrmustard.lab_dev.transformations import BSgate
 
 __all__ = ["Circuit"]
@@ -83,7 +82,6 @@ class Circuit:
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
-        self._circuitgraph: Optional[CircuitGraph] = None
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -153,19 +151,6 @@ class Circuit:
         while changes:
             changes = self._update_shapes()
 
-    def make_circuitgraph(self) -> None:
-        self.propagate_shapes()
-        data = dict()
-        idx = self.indices_dict  # to keep lines shorter
-        for i, opA in enumerate(self.components):
-            data[i] = NodeData(
-                opA.representation.__class__.__qualname__[0],
-                opA.fock_shape,
-                idx[i],
-            )
-
-        self._circuitgraph = CircuitGraph(data, 0, [])
-
     def _update_shapes(self) -> bool:
         r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
         If two wires are connected and one of them has shape n and the other None, the shape of the
@@ -215,32 +200,6 @@ class Circuit:
         # TODO: propagate through where A matrix is block-antidiagonal
         # TODO: do S2gate (easy!)
         return changes
-
-    def autopath(
-        self,
-        heuristics=["1BB", "2BB", "1FF", "1BF", "2FF"],
-        n_init: int = 100,
-        debug: bool = False,
-    ) -> None:
-        r"""
-        Automa generates a path for this circuit.
-        It first applies heuristics to simplify the graph, then uses a branch-and-bound algorithm
-        to find the optimal path. Beware it scales factorially with the number of components, but
-        the heuristics can reduce the number of components significantly.
-
-        The default heuristics are:
-            * ``1BB``: Contract all the Bagmann components that are connected to a Bargmann component by a single wire. This operation reduces the number of components by one and the number of wires of the remaining component by one.
-            * ``2BB``: Contract all the Bagmann components that are connected to two Bargmann components by a single wire each. This operation reduces the number of components by one and the number of wires of the remaining component does not change.
-            * ``1FF``: Same as 1BB but for Fock-Fock components.
-            * ``1BF``: Same as 1BB but for Bagmann-Fock components (bargmann will be transformed to fock).
-            * ``2FF``: Same as 2BB but for Fock-Fock components.
-
-        These are all always good, so expect to add to these if you need to. Any string in the form ``nXY`` will be interpreted as "contract all the components of type X with n wires that are connected to n components of type Y". For example sometimes 1FB can simplify very large circuits, even though it is not always the best choice, because it depends how many other wires the B part has (F has only 1 wire here).
-        """
-        if not self._circuitgraph:
-            self.make_circuitgraph()
-        cost, sol = optimal_path(self._circuitgraph, n_init, heuristics, debug)
-        self.path = [tuple(pair) for (cost, pair) in sol]
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
