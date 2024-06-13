@@ -54,7 +54,7 @@ class TestKet:
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
-        state = Ket(name, modes)
+        state = Ket(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -111,13 +111,13 @@ class TestKet:
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
         state2 = Ket.from_phase_space(
-            modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes)
+            modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
         )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
@@ -153,7 +153,7 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
-        state = Ket("my_ket", modes)
+        state = Ket(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
@@ -211,9 +211,7 @@ class TestKet:
 
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock()
 
-        assert math.allclose(
-            ket.expectation(ket), (ket @ ket.dual).representation.array ** 2
-        )
+        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
@@ -311,9 +309,7 @@ class TestKet:
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(
-            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
-        )
+        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])
@@ -351,7 +347,7 @@ class TestDM:
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM(modes=modes, name=name)
+        state = DM(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -405,7 +401,7 @@ class TestDM:
 
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phase_space([0], cov, means)
+        state1 = DM.from_phase_space([0], (cov, means, 1.0))
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
@@ -497,12 +493,8 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (
-            (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
-        ).representation.array
-        res_k1 = (
-            (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
-        ).representation.array
+        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
+        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
         res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
 
         assert math.allclose(dm.expectation(k0), res_k0)
@@ -688,9 +680,7 @@ class TestDisplacedSqueezed:
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_representation(self, modes, x, y, r, phi):
         rep = DisplacedSqueezed(modes, x, y, r, phi).representation
-        exp = (
-            Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)
-        ).representation
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
         assert rep == exp
 
     def test_representation_error(self):
@@ -755,6 +745,10 @@ class TestSqueezedVacuum:
 
         with pytest.raises(ValueError, match="Length of ``phi``"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_modes_slice_params(self):
+        psi = SqueezedVacuum([0, 1], r=[1, 2], phi=[3, 4])
+        assert psi[0] == SqueezedVacuum([0], r=1, phi=3)
 
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum([0], 1, 1)
@@ -825,9 +819,7 @@ class TestThermal:
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
         rep = Thermal([0, 1], nbar).representation
-        exp = Bargmann(
-            *thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar)
-        )
+        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
         assert rep == exp
 
     def test_representation_error(self):
@@ -848,9 +840,7 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(
-            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
-        )
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -873,9 +863,7 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(
-            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
-        )
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
         if self.regenerate_assets:
