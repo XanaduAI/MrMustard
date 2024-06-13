@@ -570,6 +570,7 @@ class AdjointView(CCView):
 
     @property
     def short_name(self) -> str:
+        "short name that appears in the circuit"
         return self._component.short_name + "_adj"
 
     @property
@@ -610,6 +611,7 @@ class DualView(CCView):
 
     @property
     def short_name(self) -> str:
+        "short name that appears in the circuit"
         return self._component.short_name + "_dual"
 
     @property
