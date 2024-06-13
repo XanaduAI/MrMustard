@@ -215,7 +215,7 @@ class CircuitComponent:
         name: Optional[str] = None,
     ) -> CircuitComponent:
         r"""Returns a circuit component from the given triple (A,b,c) that parametrizes the
-        quadrature wavefunction of this component in the form ``c exp(1/2 x^T A x + b^T x)``.
+        quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
 
         Args:
             modes_out_bra: The output modes on the bra side of this component.
