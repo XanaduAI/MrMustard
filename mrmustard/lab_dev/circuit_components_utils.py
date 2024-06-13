@@ -73,8 +73,8 @@ class TraceOut(CircuitComponent):
 
     def _rrshift_(self, other: CircuitComponent) -> CircuitComponent:
         """Special method called first in the ``__rshift__`` of ``other``.
-        Remember ``other >> self`` is the original order, with ``other``
-        on the left of the >> operator."""
+        Remember ``other >> TraceOut`` is the original order, with ``other``
+        on the left of the ``>>`` operator."""
         if not other.wires.bra or not other.wires.ket:
             m = tuple(other.wires.output.modes & self.wires.input.modes)
             idx = other.wires.output[m].indices
