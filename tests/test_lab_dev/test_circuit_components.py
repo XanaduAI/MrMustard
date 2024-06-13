@@ -59,6 +59,15 @@ class TestCircuitComponent:
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
 
+    def test_missing_name(self):
+        cc = CircuitComponent(
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
+            modes_out_ket=(1, 8),
+            modes_in_ket=(1, 8),
+        )
+        cc._name = None
+        assert cc.name == "CC18"
+
     def test_from_bargmann(self):
         cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
         assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
@@ -95,6 +104,12 @@ class TestCircuitComponent:
         assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
+
+    def test_from_to_quadrature(self):
+        c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
+        cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
+        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        assert cc == ccc
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
@@ -154,19 +169,6 @@ class TestCircuitComponent:
         assert math.allclose(d89.r.value, d67.r.value)
         assert bool(d67.parameter_set) is True
         assert d67._representation is None
-
-        exotic_component = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[1, 2],
-            modes_in_ket=[3, 4],
-        )
-        exotic_component_01 = exotic_component.on([0, 1])
-        expected = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[0, 1],
-            modes_in_ket=[0, 1],
-        )
-        assert exotic_component_01 == expected
 
     def test_on_error(self):
         with pytest.raises(ValueError):

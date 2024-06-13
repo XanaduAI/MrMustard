@@ -26,7 +26,6 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard import math
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
@@ -38,8 +37,7 @@ __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
 class Transformation(CircuitComponent):
     r"""
-    Base class for all transformations. Currently provides the ability to compute the inverse
-    of the transformation.
+    Base class for all transformations.
     """
 
     @classmethod
@@ -51,7 +49,9 @@ class Transformation(CircuitComponent):
         phi: float = 0,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize an Operation from the given quadrature triple."""
+        r"""Initialize an Operation from the given quadrature triple (A, b, c).
+        The triple parametrizes the quadrature representation of the transformation as
+        ``c * exp(0.5*x^T A x + b^T x)``."""
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
@@ -68,7 +68,9 @@ class Transformation(CircuitComponent):
         triple: tuple,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize a Transformation from the given Bargmann triple."""
+        r"""Initialize a Transformation from the given Bargmann triple (A,b,c)
+        which parametrizes the Bargmann function of the transformation as
+        ``c * exp(0.5*z^T A z + b^T z)``."""
         return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     def inverse(self) -> Transformation:
@@ -95,9 +97,7 @@ class Transformation(CircuitComponent):
         almost_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
-        almost_identity = (
-            self @ almost_inverse
-        )  # TODO: this is not efficient, need to get c from formula
+        almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.representation.c
         actual_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
@@ -106,12 +106,12 @@ class Transformation(CircuitComponent):
         )
         return actual_inverse
 
-    def __repr__(self) -> str:
-        return super().__repr__().replace("CircuitComponent", self.__class__.__name__)
-
 
 class Operation(Transformation):
-    r"""A CircuitComponent with input and output wires, on the ket side."""
+    r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
+    to have a different number of input and output wires."""
+
+    short_name = "Op"
 
     def __init__(
         self,
@@ -124,25 +124,31 @@ class Operation(Transformation):
             modes_out_ket=modes_in,
             modes_in_ket=modes_out,
             representation=representation,
-            name=name or self.__class__.__name__,
+            name=name,
         )
-        if representation is not None:
-            self._representation = representation
 
 
 class Unitary(Operation):
     r"""
     Base class for all unitary transformations.
+    Note the default initializer is in the parent class ``Operation``.
 
     Arguments:
-        name: The name of this transformation.
-        modes: The modes that this transformation acts on.
+        modes_out: The output modes of this Unitary.
+        modes_in: The input modes of this Unitary.
+        representation: The representation of this Unitary.
+        name: The name of this Unitary.
     """
+
+    short_name = "U"
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
+
+        For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
+        channel requires an input on the bra side as well.
 
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
         ``Channel``, and a ``CircuitComponent`` otherwise.
@@ -158,30 +164,29 @@ class Unitary(Operation):
     @classmethod
     def from_symplectic(
         cls,
-        modes: Sequence[int],
-        symplectic: RealMatrix,
-        displacement: RealVector,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        symplectic: tuple,
         name: Optional[str] = None,
     ) -> Unitary:
-        r"""Initialize a Unitary from the given symplectic matrix in qqpp basis.
-        I.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
-        """
-        if symplectic.shape[-2:] != (2 * len(modes), 2 * len(modes)):
+        r"""Initialize a Unitary from the given symplectic matrix in qqpp basis, i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...]."""
+        M = len(modes_in) + len(modes_out)
+        if symplectic.shape[-2:] != (M, M):
             raise ValueError(
                 "Symplectic matrix and number of modes don't match. "
-                + f"Modes imply shape {(2 * len(modes), 2 * len(modes))}, "
+                + f"Modes imply shape {(M,M)}, "
                 + f"but shape is {symplectic.shape[-2:]}."
             )
-        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, displacement)
+        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, math.zeros(M))
         return Unitary._from_attributes(
             representation=Bargmann(A, b, c),
-            wires=Wires(set(), set(), set(modes), set(modes)),
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
 
 class Map(Transformation):
-    r"""A CircuitComponent more general than Channels, which are CPTP maps.
+    r"""A CircuitComponent more general than Channels, which are CPTP Maps.
 
     Arguments:
         modes_out: The output modes of this Map.
@@ -189,6 +194,8 @@ class Map(Transformation):
         representation: The representation of this Map.
         name: The name of this Map.
     """
+
+    short_name = "Map"
 
     def __init__(
         self,
@@ -217,6 +224,8 @@ class Channel(Map):
         representation: The representation of this Channel.
         name: The name of this Channel
     """
+
+    short_name = "Ch"
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

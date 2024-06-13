@@ -85,6 +85,8 @@ class BSgate(Unitary):
             c = 1
     """
 
+    short_name = "BS"
+
     def __init__(
         self,
         modes: Tuple[int, int],
@@ -154,6 +156,8 @@ class Dgate(Unitary):
             c &= \text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
+    short_name = "D"
+
     def __init__(
         self,
         modes: Sequence[int] = None,
@@ -195,6 +199,8 @@ class Rgate(Unitary):
         theta_bounds: The bounds for ``theta``.
         theta_trainable: Whether ``theta`` is a trainable variable.
     """
+
+    short_name = "R"
 
     def __init__(
         self,
@@ -263,6 +269,8 @@ class Sgate(Unitary):
             c &= \prod_{i=1}^N\sqrt{\text{sech}{\:r_i}}\:.
     """
 
+    short_name = "S"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -301,6 +309,8 @@ class Identity(Unitary):
     Args:
         modes: The modes this gate is applied to.
     """
+
+    short_name = "I"
 
     def __init__(
         self,
@@ -359,6 +369,8 @@ class Attenuator(Channel):
             b &= O_{4N} \\ \\
             c &= 1\:.
     """
+
+    short_name = "Att"
 
     def __init__(
         self,

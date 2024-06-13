@@ -123,12 +123,14 @@ class TestKet:
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(
+            modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
+        )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -419,9 +421,13 @@ class TestDM:
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 
+        # test error
+        with pytest.raises(ValueError):
+            DM.from_phase_space([0, 1], (cov, means, 1.0))
+
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phase_space([0], cov, means)
+        state1 = DM.from_phase_space([0], (cov, means, 1.0))
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
@@ -763,6 +769,10 @@ class TestSqueezedVacuum:
 
         with pytest.raises(ValueError, match="Length of ``phi``"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_modes_slice_params(self):
+        psi = SqueezedVacuum([0, 1], r=[1, 2], phi=[3, 4])
+        assert psi[0] == SqueezedVacuum([0], r=1, phi=3)
 
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum([0], 1, 1)

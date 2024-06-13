@@ -132,8 +132,7 @@ class BtoQ(Operation):
             representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
         )
 
-        Operation.__init__(
-            self,
+        super().__init__(
             modes_out=modes,
             modes_in=modes,
             representation=(Rgate(modes, -phi) >> no_phi).representation,
