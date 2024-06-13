@@ -399,6 +399,10 @@ class TestDM:
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 
+        # test error
+        with pytest.raises(ValueError):
+            DM.from_phase_space([0, 1], (cov, means, 1.0))
+
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
         state1 = DM.from_phase_space([0], (cov, means, 1.0))
