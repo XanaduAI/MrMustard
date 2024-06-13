@@ -386,7 +386,7 @@ class Attenuator(Channel):
         return Bargmann(*triples.attenuator_Abc(eta))
 
 
-class Fockdamping(Channel):
+class FockDamping(Channel):
     r"""The Fock damping channel.
 
     If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
