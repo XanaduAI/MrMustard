@@ -51,7 +51,7 @@ class Transformation(CircuitComponent):
     ) -> Operation:
         r"""Initialize an Operation from the given quadrature triple (A, b, c).
         The triple parametrizes the quadrature representation of the transformation as
-        ``c * exp(0.5*x^T A x + b^T x)``."""
+        :math:`c * exp(0.5*x^T A x + b^T x)`."""
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
