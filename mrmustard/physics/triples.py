@@ -65,8 +65,9 @@ def _reshape(**kwargs) -> Generator:
             var = math.tile(var, (n_modes,))
         else:
             if len(var) != n_modes:
-                msg = f"Parameter {names[i]} has an incompatible shape."
-                raise ValueError(msg)
+                raise ValueError(
+                    f"Parameter {names[i]} has ({len(var)} variables (expected {n_modes})."
+                )
         yield var
 
 
@@ -495,7 +496,10 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     In = math.eye(n_modes, math.complex128)
     A = math.block(
         [
-            [In, -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128)],
+            [
+                In,
+                -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
+            ],
             [
                 -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
                 -1 / hbar * In,
@@ -506,7 +510,10 @@ def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     # Reorder it as a Unitary
     full_order = math.arange(n_modes * 2)
     order = list(
-        math.cast(math.concat((full_order[n_modes:], full_order[:n_modes]), axis=0), math.int32)
+        math.cast(
+            math.concat((full_order[n_modes:], full_order[:n_modes]), axis=0),
+            math.int32,
+        )
     )
     A = math.astensor(math.asnumpy(A)[order, :][:, order])
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
