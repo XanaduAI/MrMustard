@@ -58,12 +58,8 @@ class TestTraceOut:
         assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
 
-        no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.A, [])
-        assert np.allclose(no_state.representation.b, [])
-        assert np.allclose(no_state.representation.c, 1)
+        trace = state >> TraceOut([0, 1, 2])
+        assert np.isclose(trace, 1.0)
 
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
@@ -73,9 +69,7 @@ class TestTraceOut:
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
 
         no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.array, [])
+        assert np.isclose(no_state, 1.0)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 

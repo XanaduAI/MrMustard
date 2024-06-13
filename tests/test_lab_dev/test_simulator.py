@@ -16,6 +16,7 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
+import numpy as np
 import pytest
 
 from mrmustard import settings
@@ -35,7 +36,11 @@ class TestSimulator:
 
     @pytest.mark.parametrize(
         "path",
-        [[], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)], [(4, 5), (3, 4), (2, 3), (1, 2), (0, 1)]],
+        [
+            [],
+            [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)],
+            [(4, 5), (3, 4), (2, 3), (1, 2), (0, 1)],
+        ],
     )
     def test_run(self, path):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
@@ -53,6 +58,6 @@ class TestSimulator:
         res = Simulator().run(circuit)
         exp = vac12 >> d1 >> d2 >> d12 >> a1 >> n12
 
-        assert res == exp
+        assert np.isclose(res, exp)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0

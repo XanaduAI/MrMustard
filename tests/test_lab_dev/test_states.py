@@ -630,9 +630,9 @@ class TestCoherent:
         lc = state1 + state2 - state3
         assert lc.representation.ansatz.batch_size == 3
 
-        assert (lc >> lc.dual).representation.ansatz.batch_size == 9
+        assert (lc >> lc.dual).shape[0] == 9
         settings.UNSAFE_ZIP_BATCH = True
-        assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
+        assert (lc >> lc.dual).shape[0] == 3  # not 9
         settings.UNSAFE_ZIP_BATCH = False
 
 

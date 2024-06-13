@@ -266,17 +266,16 @@ class State(CircuitComponent):
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``, element-wise along the batch dimension.
         """
         settings.UNSAFE_ZIP_BATCH = True
-        rep = (self >> self.dual).representation
+        rep = self >> self.dual
         settings.UNSAFE_ZIP_BATCH = False
-        return math.real(rep.c if isinstance(rep, Bargmann) else rep.array)
+        return rep
 
     @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm (squared) of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        rep = (self >> self.dual).representation
-        return math.sum(math.real(rep.scalar))
+        return math.sum(math.real(self >> self.dual))
 
     @property
     def probability(self) -> float:
@@ -802,8 +801,8 @@ class DM(State):
         ret = super().__rshift__(other)
 
         if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes(ret.representation, ret.wires)
-        return ret
+            ret = DM._from_attributes(ret.representation, ret.wires)
+        return ret.representation.scalar if len(ret.wires) == 0 else ret
 
     def __repr__(self) -> str:
         return ""
@@ -1037,10 +1036,10 @@ class Ket(State):
 
         if not ret.wires.input:
             if not ret.wires.bra:
-                return Ket._from_attributes(ret.representation, ret.wires, "")
-            if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes(ret.representation, ret.wires, "")
-        return ret
+                ret = Ket._from_attributes(ret.representation, ret.wires, "")
+            elif ret.wires.bra.modes == ret.wires.ket.modes:
+                ret = DM._from_attributes(ret.representation, ret.wires, "")
+        return ret.representation.scalar if len(ret.wires) == 0 else ret
 
     def __repr__(self) -> str:
         return ""
