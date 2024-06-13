@@ -80,6 +80,8 @@ class Coherent(Ket):
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
+    short_name = "Coh"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -129,6 +131,8 @@ class DisplacedSqueezed(Ket):
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
     """
+
+    short_name = "DSq"
 
     def __init__(
         self,
@@ -193,6 +197,8 @@ class Number(Ket):
 
     """
 
+    short_name = "N"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -256,6 +262,8 @@ class SqueezedVacuum(Ket):
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
     """
+
+    short_name = "Sq"
 
     def __init__(
         self,
@@ -349,6 +357,8 @@ class Vacuum(Ket):
             A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
     """
 
+    short_name = "Vac"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -386,6 +396,8 @@ class Thermal(DM):
         nbar_trainable: Whether ``nbar`` is trainable.
         nbar_bounds: The bounds of ``nbar``.
     """
+
+    short_name = "Th"
 
     def __init__(
         self,
