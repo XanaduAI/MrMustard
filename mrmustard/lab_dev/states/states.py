@@ -311,7 +311,7 @@ class TwoModeSqueezedVacuum(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: Tuple[int, int],
         r: float = 0.0,
         phi: float = 0.0,
         r_trainable: bool = False,
@@ -319,7 +319,7 @@ class TwoModeSqueezedVacuum(Ket):
         r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("TwoModeSqueezedVacuum", modes=modes)
+        super().__init__(modes=modes, name="TwoModeSqueezedVacuum")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 

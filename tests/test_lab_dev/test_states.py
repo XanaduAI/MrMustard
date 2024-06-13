@@ -785,12 +785,9 @@ class TestTwoModeSqueezedVacuum:
     Tests for the ``TwoModeSqueezedVacuum`` class.
     """
 
-    modes = [[0, 1], [1, 2]]
-    r = [
-        [1],
-        1,
-    ]
-    phi = [3, [4]]
+    modes = [[0, 1], [1, 2], [1, 5]]
+    r = [[1], 1, [2]]
+    phi = [3, [4], 1]
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_init(self, modes, r, phi):
@@ -807,9 +804,9 @@ class TestTwoModeSqueezedVacuum:
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_trainable_parameters(self):
-        state1 = TwoModeSqueezedVacuum([0], 1, 1)
-        state2 = TwoModeSqueezedVacuum([0], 1, 1, r_trainable=True, r_bounds=(0, 2))
-        state3 = TwoModeSqueezedVacuum([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        state1 = TwoModeSqueezedVacuum([0, 1], 1, 1)
+        state2 = TwoModeSqueezedVacuum([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
+        state3 = TwoModeSqueezedVacuum([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             state1.r.value = 3
@@ -828,7 +825,7 @@ class TestTwoModeSqueezedVacuum:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            SqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+            TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
 
 
 class TestVacuum:

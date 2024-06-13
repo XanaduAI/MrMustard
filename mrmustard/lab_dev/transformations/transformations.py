@@ -380,7 +380,7 @@ class S2gate(Unitary):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
-        super().__init__(modes=modes, name="S2gate")
+        super().__init__(modes_out=modes, modes_in=modes, name="S2gate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
