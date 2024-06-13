@@ -70,7 +70,7 @@ class Transformation(CircuitComponent):
     ) -> Operation:
         r"""Initialize a Transformation from the given Bargmann triple (A,b,c)
         which parametrizes the Bargmann function of the transformation as
-        ``c * exp(0.5*z^T A z + b^T z)``."""
+        :math:`c * exp(0.5*z^T A z + b^T z)`."""
         return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     def inverse(self) -> Transformation:
