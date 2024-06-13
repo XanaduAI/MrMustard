@@ -333,7 +333,7 @@ class S2gate(Unitary):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import TMSgate
+        >>> from mrmustard.lab_dev import S2gate
 
         >>> unitary = S2gate(modes=[1, 2], r=1)
         >>> assert unitary.modes == [1, 2]
@@ -380,7 +380,7 @@ class S2gate(Unitary):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
-        super().__init__(modes=modes, name="TMSgate")
+        super().__init__(modes=modes, name="S2gate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
