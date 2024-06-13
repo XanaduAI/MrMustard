@@ -378,7 +378,7 @@ class Amplifier(Channel):
         gain_trainable: bool = False,
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
     ):
-        super().__init__(modes=modes, name="Amp")
+        super().__init__(modes_out=modes, modes_in=modes, name="Amp")
         self._add_parameter(
             make_parameter(
                 gain_trainable,
