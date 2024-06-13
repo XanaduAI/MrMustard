@@ -626,6 +626,8 @@ class DM(State):
         name: The name of this density matrix.
     """
 
+    short_name = "DM"
+
     def __init__(
         self,
         modes: Sequence[int, ...] = (),
@@ -639,7 +641,7 @@ class DM(State):
         super().__init__(
             modes_out_bra=modes,
             modes_out_ket=modes,
-            name=name or "DM" + "".join(str(m) for m in sorted(modes)),
+            name=name,
         )
         if representation is not None:
             self._representation = representation
@@ -794,6 +796,8 @@ class Ket(State):
         name: The name of this ket.
     """
 
+    short_name = "Ket"
+
     def __init__(
         self,
         modes: tuple[int, ...] = (),
@@ -806,7 +810,7 @@ class Ket(State):
             )
         super().__init__(
             modes_out_ket=modes,
-            name=name or "Ket" + "".join(str(m) for m in sorted(modes)),
+            name=name,
         )
         if representation is not None:
             self._representation = representation

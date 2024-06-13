@@ -52,6 +52,8 @@ class CircuitComponent:
         name: The name of this component.
     """
 
+    short_name = "CC"
+
     def __init__(
         self,
         representation: Optional[Bargmann | Fock] = None,
@@ -69,7 +71,7 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._name = name or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
+        self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
 
@@ -128,7 +130,7 @@ class CircuitComponent:
                 break
         else:
             ret = CircuitComponent()
-        ret._name = name or tp.__name__ + "".join(str(m) for m in sorted(wires.modes))
+        ret._name = name
         ret._representation = representation
         ret._wires = wires
 
@@ -279,7 +281,7 @@ class CircuitComponent:
         The name of this component.
         """
         if self._name is None:
-            name = self.__class__.__name__
+            name = self.short_name
             modes = "".join(str(m) for m in sorted(self.wires.modes))
             self._name = name + modes if len(modes) < 5 else name
         return self._name
@@ -567,6 +569,10 @@ class AdjointView(CCView):
     """
 
     @property
+    def short_name(self) -> str:
+        return self._component.short_name + "_adj"
+
+    @property
     def adjoint(self) -> CircuitComponent:
         r"""
         Returns a light-copy of the component that was used to generate the view.
@@ -601,6 +607,10 @@ class DualView(CCView):
     Args:
         component: The circuit component to take the view of.
     """
+
+    @property
+    def short_name(self) -> str:
+        return self._component.short_name + "_dual"
 
     @property
     def dual(self) -> CircuitComponent:

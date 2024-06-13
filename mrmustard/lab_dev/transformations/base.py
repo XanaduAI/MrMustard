@@ -111,6 +111,8 @@ class Operation(Transformation):
     r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
     to have a different number of input and output wires."""
 
+    short_name = "Op"
+
     def __init__(
         self,
         modes_out: tuple[int, ...] = (),
@@ -122,7 +124,7 @@ class Operation(Transformation):
             modes_out_ket=modes_in,
             modes_in_ket=modes_out,
             representation=representation,
-            name=name or self.__class__.__name__,
+            name=name,
         )
 
 
@@ -137,6 +139,8 @@ class Unitary(Operation):
         representation: The representation of this Unitary.
         name: The name of this Unitary.
     """
+
+    short_name = "U"
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -191,6 +195,8 @@ class Map(Transformation):
         name: The name of this Map.
     """
 
+    short_name = "Map"
+
     def __init__(
         self,
         modes_out: tuple[int, ...] = (),
@@ -218,6 +224,8 @@ class Channel(Map):
         representation: The representation of this Channel.
         name: The name of this Channel
     """
+
+    short_name = "Ch"
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

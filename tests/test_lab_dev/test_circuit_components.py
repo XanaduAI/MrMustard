@@ -66,6 +66,7 @@ class TestCircuitComponent:
             modes_out_ket=(1, 8),
             modes_in_ket=(1, 8),
         )
+        cc._name = None
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
