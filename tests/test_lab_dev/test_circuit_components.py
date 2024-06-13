@@ -60,6 +60,14 @@ class TestCircuitComponent:
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
 
+    def test_missing_name(self):
+        cc = CircuitComponent(
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
+            modes_out_ket=(1, 8),
+            modes_in_ket=(1, 8),
+        )
+        assert cc.name == "CC18"
+
     def test_from_bargmann(self):
         cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
         assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
