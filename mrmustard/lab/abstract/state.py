@@ -300,7 +300,6 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
-        # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
         if self.is_gaussian:
             self._ket = fock.wigner_to_fock_state(
                 self.cov,
