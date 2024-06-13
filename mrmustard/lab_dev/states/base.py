@@ -268,7 +268,7 @@ class State(CircuitComponent):
         settings.UNSAFE_ZIP_BATCH = True
         rep = self >> self.dual
         settings.UNSAFE_ZIP_BATCH = False
-        return rep
+        return math.real(rep)
 
     @property
     def L2_norm(self) -> float:
