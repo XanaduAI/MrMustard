@@ -221,6 +221,8 @@ class Number(Ket):
             msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
             raise ValueError(msg)
 
+        self._custom_shape = list(c + 1 for c in self.cutoffs)
+
     @property
     def representation(self) -> Fock:
         return Fock(fock_state(self.n, self.cutoffs))

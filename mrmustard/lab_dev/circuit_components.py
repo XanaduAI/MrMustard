@@ -71,8 +71,8 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._custom_shape = [] * len(self.wires)
-        self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
+        self._custom_shape = [None] * len(self.wires)
+        self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
 
@@ -499,15 +499,6 @@ class CircuitComponent:
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
         return self.representation == other.representation and self.wires == other.wires
-
-    def __getattr__(self, name: str):
-        if name == "custom_shape":
-            try:
-                return self._custom_shape
-            except AttributeError:
-                self._custom_shape = [None] * len(self.wires)
-                return self._custom_shape
-        return object.__getattribute__(self, name)
 
     def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""

@@ -58,6 +58,7 @@ class TestCircuitComponent:
         assert list(cc.modes) == [1, 8]
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
+        assert cc._custom_shape == [None] * 4
 
     def test_missing_name(self):
         cc = CircuitComponent(
@@ -143,7 +144,7 @@ class TestCircuitComponent:
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
-    def test__light_copy(self):
+    def test_light_copy(self):
         d1 = CircuitComponent(
             Bargmann(*displacement_gate_Abc(0.1, 0.1)),
             modes_out_ket=[1],
