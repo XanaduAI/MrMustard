@@ -184,7 +184,7 @@ class State(CircuitComponent):
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array)
+            >>> assert coh.representation == Fock(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:
