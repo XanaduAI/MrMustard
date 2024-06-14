@@ -120,8 +120,9 @@ class BtoPS(Map):
 
 
 class BtoQ(Operation):
-    r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
-    By default it's defined on the output ket side.
+    r"""The Operation that changse the representation of an object from ``Bargmann`` into quadrature.
+    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
+    ones unless they support inner products in quadrature representation.
 
     Args:
         modes: The modes of this channel.
