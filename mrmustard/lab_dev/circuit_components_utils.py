@@ -133,18 +133,10 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float,
     ):
-        no_phi = Operation(
-            modes_out=modes,
-            modes_in=modes,
-            representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
-        )
+        repr = Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes), phi))
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=(
-                (Rgate(modes, -phi) >> no_phi).representation
-                if len(modes) > 0
-                else no_phi.representation
-            ),
+            representation=repr,
             name="BtoQ",
         )
