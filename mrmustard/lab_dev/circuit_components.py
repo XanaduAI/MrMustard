@@ -340,6 +340,13 @@ class CircuitComponent:
                 self._custom_shape = [None] * len(self.wires)
         return self._custom_shape
 
+    @custom_shape.setter
+    def custom_shape(self, shape: list[Optional[int]]):
+        r"""
+        Sets the custom shape of this component in the Fock representation.
+        """
+        self._custom_shape = shape
+
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,

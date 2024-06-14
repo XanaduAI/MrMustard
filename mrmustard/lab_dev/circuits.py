@@ -83,12 +83,13 @@ class Circuit:
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
 
-    def contract(self) -> CircuitComponent:
+    def contract(self) -> CircuitComponent | complex:
         r"""
-        Contracts the circuit following the path specified by the ``path`` attribute.
+        Contracts the circuit following the path specified in the ``path`` attribute.
 
         Returns:
-            A circuit component representing the entire contracted circuit.
+            A circuit component representing the contracted circuit or a complex number if the
+            circuit is a scalar (no wires).
 
         Raises:
             ValueError: If ``circuit`` has an incomplete path.
@@ -107,9 +108,13 @@ class Circuit:
     @property
     def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
         r"""
-        A dictionary that maps the index of a component to a dictionary that maps the index of another
-        component to a dictionary that maps the indices of the first component to the indices of the
-        second component that they are being contracted with.
+        A dictionary that maps the index of each component to all the components it is connected to.
+        For each connected component, the value is a dictionary with a key-value pair per component
+        connected to the first one, where the key is the index of this component and the value is
+        a dictionary with all the wire index pairs that are being contracted between the two components.
+
+        For example, if components[i] is connected to components[j] and they are contracting two wires
+        at index pairs (a, b) and (c, d), then indices_dict[i][j] = {a: b, c:d}.
 
         This dictionary is used to propagate the shapes of the components in the circuit.
         """
@@ -142,7 +147,23 @@ class Circuit:
         return ret
 
     def propagate_shapes(self):
-        # initialize custom_shapes
+        r"""Propagates the shape information so that the shapes of the components are better
+        than those provided by the auto_shape attribute.
+
+        .. code-block::
+
+        >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit
+        >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        >>> assert [op.auto_shape for op in circ] == [(7,), (100,100)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape for op in circ] == [(7,), (100, 7)]
+
+        >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
+        >>> assert [op.auto_shape for op in circ] == [(8, 8), (100, 100, 100, 100)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape for op in circ] == [(8, 8), (16, 16, 8, 8)]
+        """
+
         for component in self:
             component.custom_shape = list(component.auto_shape)
 
