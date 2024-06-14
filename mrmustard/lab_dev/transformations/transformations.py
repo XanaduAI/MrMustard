@@ -456,8 +456,7 @@ class Amplifier(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        g = list(reshape_params(n_modes, g=self.gain.value))[0]
+        g = list(reshape_params(len(self.modes), g=self.gain.value))[0]
         return Bargmann(*triples.amplifier_Abc(g))
 
 
