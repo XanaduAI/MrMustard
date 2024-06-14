@@ -329,6 +329,8 @@ class CircuitComponent:
         is the dimension of the corresponding Fock space. If it is ``None``, it means
         the best shape is not known yet. ``None``s automatically become integers when
         ``auto_shape`` is called, but the integers already set are not changed.
+        The order of the elements in the shape is intended the same order as the wires
+        in the `.wires` attribute.
         """
         if not hasattr(self, "_custom_shape"):
             try:  # to read it
