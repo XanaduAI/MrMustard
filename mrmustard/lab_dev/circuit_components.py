@@ -392,7 +392,7 @@ class CircuitComponent:
 
         return ret
 
-    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> CircuitComponent:
+    def fock(self, shape: Optional[int | Sequence[int]] = None) -> CircuitComponent:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
