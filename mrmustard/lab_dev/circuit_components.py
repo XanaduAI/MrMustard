@@ -404,8 +404,7 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        if shape is None:
-            shape = self.auto_shape
+        shape = shape or self.auto_shape
         elif isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
         else:
