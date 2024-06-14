@@ -207,39 +207,21 @@ class Number(Ket):
     ) -> None:
         super().__init__(modes=modes, name=f"{n}")
 
-        self._n = math.atleast_1d(n)
-        if len(self._n) == 1:
-            self._n = math.tile(self._n, [len(modes)])
-        if len(self._n) != len(modes):
-            msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
+        if isinstance(n, int):
+            n = (n,) * len(modes)
+        if isinstance(cutoffs, int):
+            cutoffs = (cutoffs,) * len(modes)
+        self.n = n
+        self._custom_shape = (
+            [n + 1 for n in self.n] if cutoffs is None else list(cutoffs)
+        )
+        if len(self._custom_shape) != len(modes):
+            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(cutoffs)}."
             raise ValueError(msg)
-
-        self._cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
-        if len(self._cutoffs) == 1:
-            self._cutoffs = math.tile(self._cutoffs, [len(modes)])
-        if len(self._cutoffs) != len(modes):
-            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
-            raise ValueError(msg)
-
-        self._custom_shape = list(c + 1 for c in self.cutoffs)
 
     @property
     def representation(self) -> Fock:
-        return Fock(fock_state(self.n, self.cutoffs))
-
-    @property
-    def cutoffs(self):
-        r"""
-        The cutoffs.
-        """
-        return self._cutoffs
-
-    @property
-    def n(self):
-        r"""
-        The number of photons in each mode.
-        """
-        return self._n
+        return Fock(fock_state(self.n, [s - 1 for s in self.custom_shape]))
 
 
 class SqueezedVacuum(Ket):
@@ -328,7 +310,9 @@ class TwoModeSqueezedVacuum(Ket):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
+        rs, phis = list(
+            reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value)
+        )
         return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
