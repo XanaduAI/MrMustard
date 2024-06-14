@@ -625,7 +625,9 @@ class DM(State):
         representation: The representation of this density matrix.
         name: The name of this density matrix.
     """
-
+    
+    short_name = "DM"
+    
     def __init__(
         self,
         modes: Sequence[int, ...] | CircuitComponent = (),
@@ -638,6 +640,8 @@ class DM(State):
                 raise ValueError("Expected a density matrix-like circuit component.")
             return DM._from_attributes(cc.representation, cc.wires)
 
+    
+
         if representation and representation.ansatz.num_vars != 2 * len(modes):
             raise ValueError(
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
@@ -645,7 +649,7 @@ class DM(State):
         super().__init__(
             modes_out_bra=modes,
             modes_out_ket=modes,
-            name=name or "DM" + "".join(str(m) for m in sorted(modes)),
+            name=name,
         )
         if representation is not None:
             self._representation = representation
@@ -661,7 +665,7 @@ class DM(State):
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
-        ``coeff * exp((x-means)^T cov^-1 (x-means))``.
+        :math:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
         Args:
             modes: The modes of this states.
@@ -800,6 +804,8 @@ class Ket(State):
         name: The name of this ket.
     """
 
+    short_name = "Ket"
+
     def __init__(
         self,
         modes: tuple[int, ...] | CircuitComponent = (),
@@ -818,7 +824,7 @@ class Ket(State):
             )
         super().__init__(
             modes_out_ket=modes,
-            name=name or "Ket" + "".join(str(m) for m in sorted(modes)),
+            name=name,
         )
         if representation is not None:
             self._representation = representation

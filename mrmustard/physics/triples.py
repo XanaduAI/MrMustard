@@ -188,6 +188,37 @@ def displaced_squeezed_vacuum_state_Abc(
     return A, b, c
 
 
+def two_mode_squeezed_vacuum_state_Abc(
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of two mode squeezed vacuum states.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``r=[1,2,3,4]`` and ``phi=1`` is equivalent to
+    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing angles.
+
+    Returns:
+        The ``(A, b, c)`` triple of the squeezed vacuum states.
+    """
+    r, phi = list(_reshape(r=r, phi=phi))
+    n_modes = 2 * len(r)
+    O = math.zeros((len(r), len(r)), math.complex128)
+    tanhr = math.diag(-math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
+
+    A = math.block([[O, tanhr], [tanhr, O]])
+    b = _vacuum_B_vector(n_modes)
+    c = math.prod(1 / math.cosh(r))
+
+    return A, b, c
+
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
@@ -342,6 +373,45 @@ def beamsplitter_gate_Abc(
     A = math.block([[O_n, V], [math.transpose(V), O_n]])
     b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
+
+    return A, b, c
+
+
+def twomode_squeezing_gate_Abc(
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of two-mode squeezing gates.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
+    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing phase.
+
+    Returns:
+        The ``(A, b, c)`` triple of the two mode squeezing gates.
+    """
+    r, phi = _reshape(r=r, phi=phi)
+    n_modes = 2 * len(r)
+
+    O = math.zeros((len(r), len(r)), math.complex128)
+    tanhr = math.diag(math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
+    sechr = math.diag(1 / math.cosh(r))
+
+    A_block1 = math.block([[O, -tanhr], [-tanhr, O]])
+
+    A_block2 = math.block([[O, math.conj(tanhr)], [math.conj(tanhr), O]])
+
+    A_block3 = math.block([[sechr, O], [O, sechr]])
+
+    A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
+    b = _vacuum_B_vector(n_modes * 2)
+    c = math.prod(1 / math.cosh(r))
 
     return A, b, c
 
