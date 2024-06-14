@@ -425,10 +425,8 @@ def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the identities.
     """
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    I_n = math.reshape(
-        math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
-    )
+    O_n = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    I_n = math.eye(n_modes, dtype=math.complex128)
 
     A = math.block([[O_n, I_n], [I_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
