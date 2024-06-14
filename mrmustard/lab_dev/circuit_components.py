@@ -20,6 +20,7 @@ A base class for the components of quantum circuits.
 from __future__ import annotations
 
 from typing import Iterable, Optional, Sequence, Union
+import numbers
 
 import os
 import numpy as np
@@ -466,7 +467,7 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for a more custom way of contracting components.
         """
-        if isinstance(other, (float, complex, np.ndarray)):
+        if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
@@ -500,7 +501,7 @@ class CircuitComponent:
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
 
-        if isinstance(other, float | complex | np.ndarray):
+        if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
