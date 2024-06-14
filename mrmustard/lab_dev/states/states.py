@@ -209,15 +209,20 @@ class Number(Ket):
 
         if isinstance(n, int):
             n = (n,) * len(modes)
+        if len(n) != len(modes):
+            raise ValueError(
+                f"The number of modes is {len(modes)}, but found {len(n)} photon numbers."
+            )
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
+        if cutoffs is not None and len(cutoffs) != len(modes):
+            raise ValueError(
+                f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
+            )
         self.n = n
         self._custom_shape = (
-            [n + 1 for n in self.n] if cutoffs is None else list(cutoffs)
+            [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
         )
-        if len(self._custom_shape) != len(modes):
-            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(cutoffs)}."
-            raise ValueError(msg)
 
     @property
     def representation(self) -> Fock:
@@ -310,9 +315,7 @@ class TwoModeSqueezedVacuum(Ket):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        rs, phis = list(
-            reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value)
-        )
+        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
