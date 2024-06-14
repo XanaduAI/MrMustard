@@ -53,9 +53,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(
-            representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name
-        )
+        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -63,9 +61,7 @@ class TestCircuitComponent:
         assert cc.representation == representation
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(
-            displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0}
-        )
+        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
         assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
 
     def test_modes_init_out_of_order(self):
@@ -82,9 +78,7 @@ class TestCircuitComponent:
         r3 = (cc1.adjoint @ cc1).representation
         cc3 = CircuitComponent(r3, m2, m2, m2, m1)
         cc4 = CircuitComponent(r3, m2, m2, m2, m2)
-        assert cc3.representation == cc4.representation.reorder(
-            [0, 1, 2, 3, 4, 5, 7, 6]
-        )
+        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -427,11 +421,7 @@ class TestCircuitComponent:
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
-        dm = (
-            SqueezedVacuum([0], 0.4, 0.5)
-            >> Dgate([0], 0.3, 0.2)
-            >> Attenuator([0], 0.9)
-        )
+        dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
         back = DM.from_quadrature([0], dm.quadrature())
         assert dm == back
 
@@ -468,9 +458,7 @@ class TestAdjointView:
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
         assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert (
-            repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
-        )
+        assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
 
     def test_parameters_point_to_original_parameters(self):
         r"""

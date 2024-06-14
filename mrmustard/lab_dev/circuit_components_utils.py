@@ -25,6 +25,7 @@ from typing import Sequence
 from mrmustard.physics import triples
 from mrmustard.lab_dev.transformations import Map, Operation
 from mrmustard.lab_dev.transformations import Rgate
+from mrmustard.lab_dev.wires import Wires
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
@@ -71,6 +72,28 @@ class TraceOut(CircuitComponent):
             name="Tr",
         )
 
+    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+        r"""A custom ``>>`` operator for the ``TraceOut`` component.
+        It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
+        We know that the trace in Bargmann is a Gaussian integral, and in
+        Fock it's a trace (rather than an inner product with the identity).
+        So we write two shortcuts here, and ``__rrshift__`` will be called first if
+        present in the ``__rshift__`` method of the first object (``other`` here).
+        """
+        ket = other.wires.output.ket
+        bra = other.wires.output.bra
+        idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
+        idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
+        if not ket or not bra:
+            repr = other.representation.conj()[idx_z] @ other.representation[idx_z]
+            wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
+        else:
+            repr = other.representation.trace(idx_z, idx_zconj)
+            wires, _ = other.wires @ self.wires
+
+        cpt = other._from_attributes(repr, wires)
+        return cpt.representation.scalar if len(cpt.wires) == 0 else cpt
+
 
 class BtoPS(Map):
     r"""The `s`-parametrized ``Dgate`` as a ``Map``.
@@ -90,9 +113,7 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann(
-                *triples.displacement_map_s_parametrized_Abc(s, len(modes))
-            ),
+            representation=Bargmann(*triples.displacement_map_s_parametrized_Abc(s, len(modes))),
             name="BtoPS",
         )
         self.s = s
@@ -117,12 +138,13 @@ class BtoQ(Operation):
             modes_in=modes,
             representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
         )
-        print(Rgate(modes, -phi) >> no_phi)
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=(Rgate(modes, -phi) >> no_phi).representation
-            if len(modes) > 0
-            else Operation().representation,
+            representation=(
+                (Rgate(modes, -phi) >> no_phi).representation
+                if len(modes) > 0
+                else no_phi.representation
+            ),
             name="BtoQ",
         )

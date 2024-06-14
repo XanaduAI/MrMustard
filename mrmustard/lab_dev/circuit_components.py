@@ -78,12 +78,7 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if (
-            ob != modes_out_bra
-            or ib != modes_in_bra
-            or ok != modes_out_ket
-            or ik != modes_in_ket
-        ):
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -182,9 +177,7 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
+        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -236,9 +229,7 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
+        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -366,9 +357,7 @@ class CircuitComponent:
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
-                raise ValueError(
-                    f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``."
-                )
+                raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
         modes = set(modes)
         ret._wires = Wires(
@@ -380,9 +369,7 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(
-        self, shape: Optional[Union[int, Iterable[int]]] = None
-    ) -> CircuitComponent:
+    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
@@ -444,7 +431,7 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the left.
         """
-        return self.__mul__(other)
+        return self * other
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -460,9 +447,7 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(
-        self, other: CircuitComponent
-    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -476,39 +461,56 @@ class CircuitComponent:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+    def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for a more custom way of contracting components.
         """
+        if isinstance(other, (float, complex, np.ndarray)):
+            return self * other
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
         rep = self.representation[idx_z] @ other.representation[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rmatmul__(self, other: Scalar) -> CircuitComponent:
+        r"""
+        Multiplies a scalar with a circuit component when written as ``scalar @ component``.
+        """
+        return self * other
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
-        It adds the adjoints when they are missing. An error is raised if these
-        cannot be deduced from the wires of the components. For example this
-        allows ``Ket``s to be right-shifted into ``Channel``s and automatically
-        the result is a ``DM``:
+        It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
+        ``other`` is a Channel). An error is raised if these cannot be deduced from
+        the wires of the components. For example this allows ``Ket``s to be right-shifted
+        into ``Channel``s and automatically the result is a ``DM``. If the result has
+        no wires left, it returns the (batched) scalar value of the representation.
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
+            >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
+            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, np.array)
         """
+        if hasattr(other, "__custom_rrshift__"):
+            return other.__custom_rrshift__(self)
+
+        if isinstance(other, float | complex | np.ndarray):
+            return self * other
+
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        msg += (
+            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        )
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = (
-            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
-        )
+        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
         if only_ket or only_bra or both_sides:
             ret = self @ other
             return ret.representation.scalar if len(ret.wires) == 0 else ret
@@ -527,10 +529,20 @@ class CircuitComponent:
 
         raise ValueError(msg)
 
+    def __rrshift__(self, other: Scalar) -> CircuitComponent | np.array:
+        r"""
+        Multiplies a scalar with a circuit component when written as ``scalar >> component``.
+        This is needed when the "component" on the left is the result of a contraction that leaves
+        no wires and the component is returned as a scalar.
+        """
+        ret = self * other
+        try:
+            return ret.representation.scalar
+        except AttributeError:
+            return ret
+
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
-        )
+        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(
@@ -540,9 +552,7 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         )
 
         rep_temp = (
@@ -553,11 +563,7 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = (
-            rep_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
-        )
+        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
