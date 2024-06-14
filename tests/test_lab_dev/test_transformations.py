@@ -638,6 +638,18 @@ class TestAmplifier:
             (input_state >> att_channel.dual).representation.b,
         )
 
+    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+    def test_swap_with_attenuator(self, n):
+        def Amp(gain):
+            return Amplifier([0], gain)
+
+        def Att(transmissivity):
+            return Attenuator([0], transmissivity)
+
+        assert Amp((n + 1) / n) >> Att(n / (n + 1)) == Att((n + 1) / (n + 2)) >> Amp(
+            (n + 2) / (n + 1)
+        )
+
 
 class TestAttenuator:
     r"""
