@@ -24,7 +24,6 @@ from typing import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.lab_dev.transformations import Map, Operation
-from mrmustard.lab_dev.transformations import Rgate
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
