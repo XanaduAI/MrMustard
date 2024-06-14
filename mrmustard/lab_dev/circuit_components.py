@@ -405,12 +405,9 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        shape = shape or self.auto_shape
         if isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
-        else:
-            shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
-
+        shape = shape or self.auto_shape
         assert len(shape) == len(self.custom_shape)
         try:
             As, bs, cs = self.bargmann
@@ -556,7 +553,6 @@ class CircuitComponent:
         if isinstance(other.representation, Fock):
             other_rep = other.representation.reduce(other_shape)
         else:
-            print(other_shape)
             other_rep = other.to_fock(other_shape).representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]

@@ -36,17 +36,17 @@ class Simulator:
         >>> import numpy as np
 
         >>> # initialize a circuit
-        >>> state = Number(modes=[0, 1], n=[2, 0], cutoffs=2)
-        >>> gate = BSgate([0, 1], theta=np.pi/4)
-        >>> proj1 = Number(modes=[1], n=[0]).dual
-        >>> circuit = Circuit([state, gate, proj1])
+        >>> state = number(modes=[0, 1], n=[2, 0], cutoffs=2)
+        >>> gate = bsgate([0, 1], theta=np.pi/4)
+        >>> proj1 = number(modes=[1], n=[0]).dual
+        >>> circuit = circuit([state, gate, proj1])
 
         >>> # run the simulation
-        >>> result = Simulator().run(circuit)
+        >>> result = simulator().run(circuit)
 
         >>> # the simulator returns a component that can be potentially be plugged
         >>> # into another circuit
-        >>> assert isinstance(result, CircuitComponent)
+        >>> assert isinstance(result, circuitcomponent)
 
     The simulation is carried out by contracting the components of the given circuit in pairs,
     until only one component is left and returned. In the examples above, the contractions happen
