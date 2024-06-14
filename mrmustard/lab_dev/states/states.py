@@ -35,9 +35,9 @@ __all__ = [
     "Number",
     "SqueezedVacuum",
     "Thermal",
+    "TwoModeSqueezedVacuum",
     "Vacuum",
 ]
-
 
 #  ~~~~~~~~~~~
 #  Pure States
@@ -254,7 +254,7 @@ class SqueezedVacuum(Ket):
         >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
 
     Args:
-        modes: The modes of the coherent state.
+        modes: The modes of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angles.
         r_trainable: Whether `r` is trainable.
@@ -284,6 +284,50 @@ class SqueezedVacuum(Ket):
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.squeezed_vacuum_state_Abc(rs, phis))
+
+
+class TwoModeSqueezedVacuum(Ket):
+    r"""The two-mode squeezed vacuum state.
+
+    If ``r`` and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate
+
+        >>> state = TwoModeSqueezedVacuum(modes=[0, 1], r=0.3, phi=0.2)
+        >>> assert state == Vacuum([0, 1]) >> S2gate([0, 1], r=0.3, phi=0.2)
+
+
+    Args:
+        modes: The modes of the coherent state.
+        r: The squeezing magnitude.
+        phi: The squeezing angles.
+        r_trainable: Whether `r` is trainable.
+        phi_trainable: Whether `phi` is trainable.
+        r_bounds: The bounds of `r`.
+        phi_bounds: The bounds of `phi`.
+    """
+
+    def __init__(
+        self,
+        modes: Tuple[int, int],
+        r: float = 0.0,
+        phi: float = 0.0,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        super().__init__(modes=modes, name="TwoModeSqueezedVacuum")
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
+        return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
 class Vacuum(Ket):
