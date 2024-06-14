@@ -625,9 +625,9 @@ class DM(State):
         representation: The representation of this density matrix.
         name: The name of this density matrix.
     """
-    
+
     short_name = "DM"
-    
+
     def __init__(
         self,
         modes: Sequence[int, ...] | CircuitComponent = (),
@@ -639,8 +639,6 @@ class DM(State):
             if not cc.wires.dm_like:
                 raise ValueError("Expected a density matrix-like circuit component.")
             return DM._from_attributes(cc.representation, cc.wires)
-
-    
 
         if representation and representation.ansatz.num_vars != 2 * len(modes):
             raise ValueError(
