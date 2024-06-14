@@ -127,14 +127,8 @@ class Circuit:
                 ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
                 if not (ovlp_bra or ovlp_ket):
                     continue
-                iA = (
-                    opA.wires.output.bra[ovlp_bra].indices
-                    + opA.wires.output.ket[ovlp_ket].indices
-                )
-                iB = (
-                    opB.wires.input.bra[ovlp_bra].indices
-                    + opB.wires.input.ket[ovlp_ket].indices
-                )
+                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
+                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
                 if not out_idx.intersection(iA):
                     continue
                 assert list(iA) == sorted(iA)
@@ -148,11 +142,11 @@ class Circuit:
         return ret
 
     def propagate_shapes(self):
-        # initialize fock_shapes
+        # initialize custom_shapes
         for component in self:
-            component.fock_shape = list(component.autoshape)
+            component.custom_shape = list(component.auto_shape)
 
-        # update the fock_shapes until convergence
+        # update the custom_shapes until convergence
         changes = self._update_shapes()
         while changes:
             changes = self._update_shapes()
@@ -172,20 +166,20 @@ class Circuit:
         for i, component in enumerate(self.components):
             for j, indices in self.indices_dict[i].items():
                 for a, b in indices.items():
-                    s_ia = self.components[i].fock_shape[a]
-                    s_jb = self.components[j].fock_shape[b]
+                    s_ia = self.components[i].custom_shape[a]
+                    s_jb = self.components[j].custom_shape[b]
                     s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                    if self.components[j].fock_shape[b] != s:
-                        self.components[j].fock_shape[b] = s
+                    if self.components[j].custom_shape[b] != s:
+                        self.components[j].custom_shape[b] = s
                         changes = True
-                    if self.components[i].fock_shape[a] != s:
-                        self.components[i].fock_shape[a] = s
+                    if self.components[i].custom_shape[a] != s:
+                        self.components[i].custom_shape[a] = s
                         changes = True
 
         # propagate through BSgates
         for i, component in enumerate(self.components):
             if isinstance(component, BSgate):
-                a, b, c, d = component.fock_shape
+                a, b, c, d = component.custom_shape
                 if c and d:
                     if not a or a > c + d:
                         a = c + d
@@ -201,7 +195,7 @@ class Circuit:
                         d = a + b
                         changes = True
 
-                self.components[i].fock_shape = [a, b, c, d]
+                self.components[i].custom_shape = [a, b, c, d]
 
         # TODO: propagate through where A matrix is block-antidiagonal
         # TODO: do S2gate (easy!)
@@ -396,24 +390,18 @@ class Circuit:
         # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {
-                m: {"ket": None, "bra": None} for w in wires for m in w.modes
-            }
+            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
 
             # populate the graph
             for w in wires:
                 # if there is a dangling wire, add a contraction
                 for m in w.input.ket.modes:  # ket side
                     if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
                         ids_dangling_wires[m]["ket"] = None
                 for m in w.input.bra.modes:  # bra side
                     if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
                         ids_dangling_wires[m]["bra"] = None
 
                 # update the dangling wires
@@ -515,9 +503,7 @@ class Circuit:
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(
-                        new_values.numpy()
-                        if math.backend.name == "tensorflow"
-                        else new_values
+                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
                     )
                 return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
             # some components have an empty parameter set
@@ -622,9 +608,7 @@ class Circuit:
 
         # every chunk starts with a recap of the modes
         chunk_start = [f"mode {mode}:   " for mode in modes]
-        chunk_start = [
-            s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start
-        ]
+        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
 
         # generate the drawing
         ret = ""

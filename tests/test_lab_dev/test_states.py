@@ -60,17 +60,17 @@ class TestKet:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
 
-    def test_fock_shape(self):
+    def test_custom_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.fock_shape == [None, None]
-        ket.fock_shape[0] = 19
-        assert ket.fock_shape == [19, None]
+        assert ket.custom_shape == [None, None]
+        ket.custom_shape[0] = 19
+        assert ket.custom_shape == [19, None]
 
-    def test_autoshape(self):
+    def test_auto_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.autoshape == (7, 13)
-        ket.fock_shape[0] = 19
-        assert ket.autoshape == (19, 13)
+        assert ket.auto_shape == (7, 13)
+        ket.custom_shape[0] = 19
+        assert ket.auto_shape == (19, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -363,17 +363,17 @@ class TestDM:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
-    def test_fock_shape(self):
+    def test_custom_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.fock_shape == [None, None, None, None]
-        dm.fock_shape[0] = 19
-        assert dm.fock_shape == [19, None, None, None]
+        assert dm.custom_shape == [None, None, None, None]
+        dm.custom_shape[0] = 19
+        assert dm.custom_shape == [19, None, None, None]
 
-    def test_autoshape(self):
+    def test_auto_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.autoshape == (7, 13, 7, 13)
-        dm.fock_shape[0] = 19
-        assert dm.autoshape == (19, 13, 7, 13)
+        assert dm.auto_shape == (7, 13, 7, 13)
+        dm.custom_shape[0] = 19
+        assert dm.auto_shape == (19, 13, 7, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):

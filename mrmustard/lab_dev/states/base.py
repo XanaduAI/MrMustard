@@ -269,21 +269,21 @@ class State(CircuitComponent):
         return cls(modes, (Q >> QtoB).representation, name)
 
     @property
-    def autoshape(self) -> tuple[int, ...]:
+    def auto_shape(self) -> tuple[int, ...]:
         r"""
         The recommended Fock shape of this State calculated as the minimum
-        of the autocutoff and the fock_shape. The autocutoff of a state aims
+        of the autocutoff and the custom_shape. The autocutoff of a state aims
         at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
         mass of the state (99.9% by default).
         """
-        if None not in self.fock_shape:
-            return tuple(self.fock_shape)
+        if None not in self.custom_shape:
+            return tuple(self.custom_shape)
         cov, means, _ = self.phase_space(0)
         cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
         if len(cutoffs) == len(self.wires) // 2:
             cutoffs = cutoffs + cutoffs
-        self._fock_shape = [s if s else c + 1 for s, c in zip(self.fock_shape, cutoffs)]
-        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.fock_shape, cutoffs)])
+        self._custom_shape = [s if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)]
+        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)])
 
     @property
     def _L2_norms(self) -> RealVector:

@@ -636,7 +636,7 @@ class Fock(Representation):
             >>> assert h.array.shape == (3, 2)
 
         If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
-        using autoshape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
+        using auto_shape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
 
         Args:
             other: Another representation.

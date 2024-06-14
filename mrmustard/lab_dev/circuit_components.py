@@ -320,23 +320,23 @@ class CircuitComponent:
         return DualView(self)
 
     @property
-    def fock_shape(self) -> list[Optional[int]]:
+    def custom_shape(self) -> list[Optional[int]]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
         it is a list of M ``None``s where M is the number of wires of the component.
-        The fock_shape is a list and therefore it is mutable. In fact, it can evolve
+        The custom_shape is a list and therefore it is mutable. In fact, it can evolve
         over time as we learn more about the component or its neighbours. For
         each wire, the entry is either an integer or ``None``. If it is an integer, it
         is the dimension of the corresponding Fock space. If it is ``None``, it means
         the best shape is not known yet. ``None``s automatically become integers when
-        ``autoshape`` is called, but the integers already set are not changed.
+        ``auto_shape`` is called, but the integers already set are not changed.
         """
-        if not hasattr(self, "_fock_shape"):
+        if not hasattr(self, "_custom_shape"):
             try:  # to read it
-                self._fock_shape = list(self.representation.array.shape[1:])
+                self._custom_shape = list(self.representation.array.shape[1:])
             except AttributeError:
-                self._fock_shape = [None] * len(self.wires)
-        return self._fock_shape
+                self._custom_shape = [None] * len(self.wires)
+        return self._custom_shape
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
@@ -394,7 +394,7 @@ class CircuitComponent:
     def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> CircuitComponent:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
-        If the shape is not given, it defaults to the ``autoshape`` of the component if it is
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
 
         Args:
@@ -404,13 +404,13 @@ class CircuitComponent:
             array: The Fock representation of this component.
         """
         if shape is None:
-            shape = self.autoshape
+            shape = self.auto_shape
         elif isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
         else:
             shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
 
-        assert len(shape) == len(self.fock_shape)
+        assert len(shape) == len(self.custom_shape)
         try:
             As, bs, cs = self.bargmann
             array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
@@ -444,7 +444,7 @@ class CircuitComponent:
         return self._from_attributes(fock, self.wires, self.name)
 
     @property
-    def autoshape(self) -> tuple[int, ...]:
+    def auto_shape(self) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
@@ -452,7 +452,7 @@ class CircuitComponent:
         If the component is not a State then the shape is a tuple of ``AUTOCUTOFF_MAX_CUTOFF``.
         """
         MAX = settings.AUTOCUTOFF_MAX_CUTOFF
-        return tuple(s if s else MAX for s in self.fock_shape)
+        return tuple(s if s else MAX for s in self.custom_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -503,12 +503,12 @@ class CircuitComponent:
         return self.representation == other.representation and self.wires == other.wires
 
     def __getattr__(self, name: str):
-        if name == "fock_shape":
+        if name == "custom_shape":
             try:
-                return self._fock_shape
+                return self._custom_shape
             except AttributeError:
-                self._fock_shape = [None] * len(self.wires)
-                return self._fock_shape
+                self._custom_shape = [None] * len(self.wires)
+                return self._custom_shape
         return object.__getattribute__(self, name)
 
     def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -542,8 +542,8 @@ class CircuitComponent:
             rep = rep.reorder(perm) if perm else rep
             return CircuitComponent._from_attributes(rep, wires_result, None)
 
-        self_shape = list(self.autoshape)
-        other_shape = list(other.autoshape)
+        self_shape = list(self.auto_shape)
+        other_shape = list(other.auto_shape)
         for z, zc in zip(idx_z, idx_zconj):
             self_shape[z] = min(self_shape[z], other_shape[zc])
             other_shape[zc] = self_shape[z]
