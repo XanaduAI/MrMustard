@@ -23,7 +23,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Optional, Sequence, Union
 from mrmustard import math, settings
-from .circuit_components import CircuitComponent
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import BSgate
 
 __all__ = ["Circuit"]
