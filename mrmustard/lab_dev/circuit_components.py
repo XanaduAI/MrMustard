@@ -405,7 +405,7 @@ class CircuitComponent:
             array: The Fock representation of this component.
         """
         shape = shape or self.auto_shape
-        elif isinstance(shape, int):
+        if isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
         else:
             shape = tuple(s if s else settings.AUTOCUTOFF_MAX_CUTOFF for s in shape)
