@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Identity"]
+__all__ = ["Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "Identity", "S2gate"]
 
 
 class BSgate(Unitary):
@@ -84,6 +84,8 @@ class BSgate(Unitary):
             b = O_{4} \text{, and }
             c = 1
     """
+
+    short_name = "BS"
 
     def __init__(
         self,
@@ -154,6 +156,8 @@ class Dgate(Unitary):
             c &= \text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
+    short_name = "D"
+
     def __init__(
         self,
         modes: Sequence[int] = None,
@@ -196,6 +200,8 @@ class Rgate(Unitary):
         theta_bounds: The bounds for ``theta``.
         theta_trainable: Whether ``theta`` is a trainable variable.
     """
+
+    short_name = "R"
 
     def __init__(
         self,
@@ -264,6 +270,8 @@ class Sgate(Unitary):
             c &= \prod_{i=1}^N\sqrt{\text{sech}{\:r_i}}\:.
     """
 
+    short_name = "S"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -303,6 +311,8 @@ class Identity(Unitary):
         modes: The modes this gate is applied to.
     """
 
+    short_name = "I"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -313,6 +323,70 @@ class Identity(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         return Bargmann(*triples.identity_Abc(n_modes))
+
+
+class S2gate(Unitary):
+    r"""The two mode squeezing gate.
+
+    It applies to a single pair of modes.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import S2gate
+
+        >>> unitary = S2gate(modes=[1, 2], r=1)
+        >>> assert unitary.modes == [1, 2]
+        >>> assert np.allclose(unitary.r.value, 1)
+        >>> assert np.allclose(unitary.phi.value, 0.0)
+
+    Args:
+        modes: The modes this gate is applied to.
+        r: The squeezing amplitude.
+        r_bounds: The bounds for the squeezing amplitude.
+        r_trainable: Whether r is a trainable variable.
+        phi: The phase angle.
+        phi_bounds: The bounds for the phase angle.
+        phi_trainable: Whether phi is a trainable variable.
+
+    Raises:
+        ValueError: If ``modes`` is not a pair of modes.
+
+    .. details::
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A = \begin{bmatrix}
+                    O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
+                    e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
+                    \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
+                    O & \sech(r) & e^{i\phi}\tanh(r) & 0     
+                \end{bmatrix} \text{, }
+            b = O_{4} \text{, and }
+            c = \sech(r)
+    """
+
+    def __init__(
+        self,
+        modes: Tuple[int, int],
+        r: float = 0.0,
+        phi: float = 0.0,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        if len(modes) != 2:
+            raise ValueError(f"Expected a pair of modes, found {modes}.")
+
+        super().__init__(modes_out=modes, modes_in=modes, name="S2gate")
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        return Bargmann(*triples.twomode_squeezing_gate_Abc(self.r.value, self.phi.value))
 
 
 class Attenuator(Channel):
@@ -360,6 +434,8 @@ class Attenuator(Channel):
             b &= O_{4N} \\ \\
             c &= 1\:.
     """
+
+    short_name = "Att"
 
     def __init__(
         self,
