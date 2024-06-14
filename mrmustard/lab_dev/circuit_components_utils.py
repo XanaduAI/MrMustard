@@ -52,7 +52,7 @@ class TraceOut(CircuitComponent):
 
         >>> # use the trace out to estimate expectation values of operators
         >>> op = Dgate([0], x=1)
-        >>> expectation = ((state.dm() @ op) >> TraceOut([0, 1, 2])).representation.c
+        >>> expectation = (state.dm() @ op) >> TraceOut([0, 1, 2])
 
         >>> assert np.allclose(expectation, state.expectation(op))
 
