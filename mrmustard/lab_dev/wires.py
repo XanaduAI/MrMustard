@@ -332,10 +332,12 @@ class Wires:
 
     @cached_property
     def u_like(self) -> bool:
+        r"Returns ``True`` if the wires are compatible with a unitary."
         return self.op_like and len(self.args[2]) == len(self.args[3])
 
     @cached_property
     def channel_like(self) -> bool:
+        r"Returns ``True`` if the wires are compatible with a channel."
         return (
             self.map_like
             and len(self.args[0]) == len(self.args[1])
