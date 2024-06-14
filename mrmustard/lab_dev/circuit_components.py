@@ -498,7 +498,7 @@ class CircuitComponent:
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
-            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, np.array)
+            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, np.ndarray)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
