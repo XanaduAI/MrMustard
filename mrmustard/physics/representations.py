@@ -633,7 +633,11 @@ class Fock(Representation):
             >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
             >>> g = Fock(np.random.random((2, 5, 8)))
             >>> h = f[1,2] @ g[1,2]
-            >>> assert h.array.shape == (3, 2)
+            >>> assert h.array.shape == (1,3,2)  # batch size is 1
+            >>> f = Fock(np.random.random((3, 5, 10)), batched=True)
+            >>> g = Fock(np.random.random((2, 5, 8)), batched=True)
+            >>> h = f[0,1] @ g[0,1]
+            >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
 
         If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
         using auto_shape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
@@ -658,34 +662,21 @@ class Fock(Representation):
         shape_s = self.array.shape[1:]
         shape_o = other.array.shape[1:]
 
-        # the shapes of the axes being contracted
-        shape_s_contr = [shape_s[i] for i in idx_s]
-        shape_o_contr = [shape_o[i] for i in idx_o]
+        new_shape_s = list(shape_s)
+        new_shape_o = list(shape_o)
+        for s, o in zip(idx_s, idx_o):
+            new_shape_s[s] = min(shape_s[s], shape_o[o])
+            new_shape_o[o] = min(shape_s[s], shape_o[o])
 
-        # compare the shapes along the axes being contracted
-        if shape_o_contr != shape_s_contr:
-            # calculate new shapes that maintain the largest possible dimension
-            # along each of the contracted axes
-            shape = [min(s, o) for s, o in zip(shape_s_contr, shape_o_contr)]
-
-            new_shape_s = [n_batches_s]
-            new_shape_s += [
-                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
-            ]
-
-            new_shape_o = [n_batches_o]
-            new_shape_o += [
-                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
-            ]
-
-            return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
+        reduced_s = self.reduce(new_shape_s)[idx_s]
+        reduced_o = other.reduce(new_shape_o)[idx_o]
 
         axes = [list(idx_s), list(idx_o)]
-        new_array = []
+        batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                new_array.append(math.tensordot(self.array[i], other.array[j], axes))
-        return self.from_ansatz(ArrayAnsatz(new_array))
+                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+        return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""Implements the partial trace over the given index pairs.
@@ -744,7 +735,7 @@ class Fock(Representation):
             >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
             >>> assert fock3 == Fock(array3)
 
-            >>> fock4 = fock1.reduce((2, 1, 3, 1))
+            >>> fock4 = fock1.reduce((1, 3, 1))
             >>> array4 = [[[0], [3], [6]]]
             >>> assert fock4 == Fock(array4)
 

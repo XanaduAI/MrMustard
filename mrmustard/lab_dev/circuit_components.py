@@ -71,6 +71,7 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
+        self._custom_shape = [] * len(self.wires)
         self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
@@ -332,10 +333,10 @@ class CircuitComponent:
         The order of the elements in the shape is intended the same order as the wires
         in the `.wires` attribute.
         """
-        if not hasattr(self, "_custom_shape"):
-            try:  # to read it
+        if not self._custom_shape:
+            try:  # to read it from array ansatz
                 self._custom_shape = list(self.representation.array.shape[1:])
-            except AttributeError:
+            except AttributeError:  # bargmann
                 self._custom_shape = [None] * len(self.wires)
         return self._custom_shape
 
