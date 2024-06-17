@@ -748,7 +748,7 @@ class DM(State):
         ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
 
         Returns a ``DM`` when the wires of the resulting components are compatible with
-        those of a ``DM``, a ``CircuitComponent`` otherwise.
+        those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
         """
         ret = super().__rshift__(other)
         if not isinstance(ret, CircuitComponent):
