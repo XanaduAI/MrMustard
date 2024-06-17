@@ -656,7 +656,7 @@ class DM(State):
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
-        ``coeff * exp((x-means)^T cov^-1 (x-means))``.
+        ``coeff * exp((-1/2)*(x-means)^T cov^-1 (x-means))``.
         :math:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
 
