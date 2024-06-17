@@ -31,6 +31,7 @@ from mrmustard.physics.gaussian_integrals import (
 )
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
 
@@ -60,6 +61,18 @@ class TestTraceOut:
 
         trace = state >> TraceOut([0, 1, 2])
         assert np.isclose(trace, 1.0)
+
+    def test_trace_out_complex(self):
+        cc = CircuitComponent.from_bargmann(
+            (
+                np.array([[0.1 + 0.2j, 0.3 + 0.4j], [0.3 + 0.4j, 0.5 - 0.6j]]),
+                np.array([0.7 + 0.8j, -0.9 + 0.10j]),
+                0.11 - 0.12j,
+            ),
+            modes_out_ket=[0],
+            modes_out_bra=[0],
+        )
+        assert (cc >> TraceOut([0])).dtype == math.complex128
 
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10

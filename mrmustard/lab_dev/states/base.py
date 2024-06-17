@@ -40,10 +40,12 @@ from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
+    Batch,
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
     RealVector,
+    Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
@@ -927,7 +929,7 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which
@@ -938,7 +940,8 @@ class Ket(State):
         not needed and the method returns a new ``Ket``.
 
         Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` otherwise and a (batched) scalar if there are no wires left.
+        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
+        and a (batched) scalar if there are no wires left, for convenience.
         """
         ret = super().__rshift__(other)
         if not isinstance(ret, CircuitComponent):
