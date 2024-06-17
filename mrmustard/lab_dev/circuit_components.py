@@ -483,7 +483,7 @@ class CircuitComponent:
         """
         return self * other
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent | np.ndarray:
+    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
         It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
