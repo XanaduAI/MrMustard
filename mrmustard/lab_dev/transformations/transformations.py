@@ -400,10 +400,10 @@ class Amplifier(Channel):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Amplifier, Coherent
 
-        >>> amp = Amplifier([0], gain=2)
+        >>> amp = Amplifier([0], gain=4)
         >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
         >>> _, mu, _ = (coh >> amp).phase_space(0)
-        >>> assert np.allclose(mu[0], np.array([2.0, 4.0]))
+        >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
 
     Args:
         modes: The modes this gate is applied to.
