@@ -27,6 +27,7 @@ import numpy as np
 from IPython.display import display, HTML
 from mako.template import Template
 
+from mrmustard import math, settings
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.representations import Representation, Bargmann, Fock
@@ -508,30 +509,34 @@ class CircuitComponent:
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
+        msg += "whether or where to add missing wires. Use ``@`` and specify all the components."
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
         both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
         if only_ket or only_bra or both_sides:
-            ret = self @ other
-            return ret.representation.scalar if len(ret.wires) == 0 else ret
+            return self._rshift_return(self @ other)
 
         self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
         self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
         if self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
-            return ret.representation.scalar if len(ret.wires) == 0 else ret
+            return self._rshift_return(self.adjoint @ (self @ other))
 
         other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
         other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
         if other_needs_bra or other_needs_ket:
-            ret = (self @ other) @ other.adjoint
-            return ret.representation.scalar if len(ret.wires) == 0 else ret
+            return self._rshift_return((self @ other) @ other.adjoint)
 
         raise ValueError(msg)
+
+    def _rshift_return(
+        self, ret: CircuitComponent | np.ndarray | complex
+    ) -> CircuitComponent | np.ndarray | complex:
+        "internal convenience method for right-shift, to return the right type of object"
+        if len(ret.wires) > 0:
+            return ret
+        scalar = ret.representation.scalar
+        return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __rrshift__(self, other: Scalar) -> CircuitComponent | np.array:
         r"""

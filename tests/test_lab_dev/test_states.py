@@ -169,7 +169,7 @@ class TestKet:
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
 
-        assert math.allclose(ket.expectation(ket), [1])
+        assert math.allclose(ket.expectation(ket), 1.0)
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
@@ -181,7 +181,7 @@ class TestKet:
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), res_k01.representation.c)
+        assert math.allclose(ket.expectation(k01), math.sum(res_k01.representation.c))
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -193,7 +193,7 @@ class TestKet:
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01.representation.c)
+        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.representation.c))
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
@@ -236,7 +236,7 @@ class TestKet:
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
+        assert math.allclose(ket.expectation(dm01), res_dm01[0])
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
@@ -246,9 +246,9 @@ class TestKet:
         res_u1 = (ket @ u1 @ ket.dual).representation.array
         res_u01 = (ket @ u01 @ ket.dual).representation.array
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        assert math.allclose(ket.expectation(u0), res_u0[0])
+        assert math.allclose(ket.expectation(u1), res_u1[0])
+        assert math.allclose(ket.expectation(u01), res_u01[0])
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -462,7 +462,7 @@ class TestDM:
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c)
+        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -474,11 +474,11 @@ class TestDM:
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c)
+        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c)
+        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -490,7 +490,7 @@ class TestDM:
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c)
+        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
 
         u0 = Dgate([0], x=0.1)
         u1 = Dgate([1], x=0.2)
@@ -611,9 +611,9 @@ class TestCoherent:
         lc = state1 + state2 - state3
         assert lc.representation.ansatz.batch_size == 3
 
-        assert (lc >> lc.dual).shape[0] == 9
+        assert (lc @ lc.dual).representation.ansatz.batch_size == 9
         settings.UNSAFE_ZIP_BATCH = True
-        assert (lc >> lc.dual).shape[0] == 3  # not 9
+        assert (lc @ lc.dual).representation.ansatz.batch_size == 3  # not 9
         settings.UNSAFE_ZIP_BATCH = False
 
 

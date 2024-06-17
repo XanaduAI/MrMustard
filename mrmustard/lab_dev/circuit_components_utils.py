@@ -22,6 +22,7 @@ perform useful mathematical calculations.
 from __future__ import annotations
 from typing import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.lab_dev.transformations import Map, Operation
 from .circuit_components import CircuitComponent
@@ -90,7 +91,7 @@ class TraceOut(CircuitComponent):
             wires, _ = other.wires @ self.wires
 
         cpt = other._from_attributes(repr, wires)
-        return cpt.representation.scalar if len(cpt.wires) == 0 else cpt
+        return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
 
 
 class BtoPS(Map):
