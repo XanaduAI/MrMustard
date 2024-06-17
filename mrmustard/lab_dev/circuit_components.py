@@ -492,7 +492,8 @@ class CircuitComponent:
         the wires of the components. For example this allows ``Ket``s to be right-shifted
         into ``Channel``s and automatically the result is a ``DM``. If the result has
         no wires left, it returns the (batched) scalar value of the representation.
-        Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar part may result from an automated contraction subroutine that involves several components).
+        Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar
+        part may result from an automated contraction subroutine that involves several components).
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
@@ -500,7 +501,7 @@ class CircuitComponent:
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
-            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, np.ndarray)
+            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
