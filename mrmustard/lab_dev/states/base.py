@@ -938,7 +938,7 @@ class Ket(State):
         not needed and the method returns a new ``Ket``.
 
         Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` otherwise and a scalar if there are no wires left.
+        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` otherwise and a (batched) scalar if there are no wires left.
         """
         ret = super().__rshift__(other)
         if not isinstance(ret, CircuitComponent):
