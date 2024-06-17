@@ -398,7 +398,7 @@ class Amplifier(Channel):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import Amplifier
+        >>> from mrmustard.lab_dev import Amplifier, Coherent
 
         >>> amp = Amplifier([0], gain=2)
         >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
