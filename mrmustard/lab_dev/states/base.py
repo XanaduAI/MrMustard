@@ -658,8 +658,7 @@ class DM(State):
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
-        ``coeff * exp((-1/2)*(x-means)^T cov^-1 (x-means))``.
-        :math:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
+        :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
 
         Args:
@@ -752,13 +751,14 @@ class DM(State):
         Returns a ``DM`` when the wires of the resulting components are compatible with
         those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
         """
-        ret = super().__rshift__(other)
-        if not isinstance(ret, CircuitComponent):
-            return ret
+        result = super().__rshift__(other)
+        if not isinstance(result, CircuitComponent):
+            return result  # scalar case handled here
 
-        if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            ret = DM._from_attributes(ret.representation, ret.wires)
-        return ret.representation.scalar if len(ret.wires) == 0 else ret
+        w = result.wires
+        if not w.input and w.bra.modes == w.ket.modes:
+            return DM(w.modes, result.representation)
+        return result
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
@@ -943,13 +943,13 @@ class Ket(State):
         with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
-        ret = super().__rshift__(other)
-        if not isinstance(ret, CircuitComponent):
-            return ret
+        result = super().__rshift__(other)
+        if not isinstance(result, CircuitComponent):
+            return result  # scalar case handled here
 
-        if not ret.wires.input:
-            if not ret.wires.bra:
-                ret = Ket._from_attributes(ret.representation, ret.wires, "")
-            elif ret.wires.bra.modes == ret.wires.ket.modes:
-                ret = DM._from_attributes(ret.representation, ret.wires, "")
-        return ret.representation.scalar if len(ret.wires) == 0 else ret
+        if not result.wires.input:
+            if not result.wires.bra:
+                return Ket(result.wires.modes, result.representation)
+            elif result.wires.bra.modes == result.wires.ket.modes:
+                result = DM(result.wires.modes, result.representation)
+        return result
