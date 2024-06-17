@@ -118,7 +118,7 @@ class BtoPS(Map):
 
 
 class BtoQ(Operation):
-    r"""The Operation that changse the representation of an object from ``Bargmann`` into quadrature.
+    r"""The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
     By default it's defined on the output ket side. Note that beyond such gate we cannot place further
     ones unless they support inner products in quadrature representation.
 
