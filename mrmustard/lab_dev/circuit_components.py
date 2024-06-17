@@ -537,7 +537,7 @@ class CircuitComponent:
         r"""
         Multiplies a scalar with a circuit component when written as ``scalar >> component``.
         This is needed when the "component" on the left is the result of a contraction that leaves
-        no wires and the component is returned as a scalar.
+        no wires and the component is returned as a scalar. Note that there is an edge case if the object on the left happens to have the ``__rshift__`` method, but it's not the one we want (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with types ``np.ndarray >> CircuitComponent`` the method ``__rrshift__`` will not be called, and something else will be returned.
         """
         ret = self * other
         try:
