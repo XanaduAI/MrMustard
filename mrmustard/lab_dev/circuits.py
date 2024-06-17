@@ -83,33 +83,11 @@ class Circuit:
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
 
-    def contract(self) -> CircuitComponent | complex:
-        r"""
-        Contracts the circuit following the path specified in the ``path`` attribute.
-
-        Returns:
-            A circuit component representing the contracted circuit or a complex number if the
-            circuit is a scalar (no wires).
-
-        Raises:
-            ValueError: If ``circuit`` has an incomplete path.
-        """
-        if len(self.path) != len(self.components) - 1:
-            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
-            msg += f"found {len(self.path)}."
-            raise ValueError(msg)
-
-        ret = dict(enumerate(self.components))
-        for idx0, idx1 in self.path:
-            ret[idx0] = ret[idx0] >> ret.pop(idx1)
-
-        return list(ret.values())[0]
-
     @property
     def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
         r"""
         A dictionary that maps the index of each component to all the components it is connected to.
-        For each connected component, the value is a dictionary with a key-value pair per component
+        For each connected component, the value is a dictionary with a key-value pair for each component
         connected to the first one, where the key is the index of this component and the value is
         a dictionary with all the wire index pairs that are being contracted between the two components.
 
