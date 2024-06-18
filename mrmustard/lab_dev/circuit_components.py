@@ -506,7 +506,7 @@ class CircuitComponent:
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
 
-        if isinstance(other, numbers.Number | np.ndarray):
+        if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
