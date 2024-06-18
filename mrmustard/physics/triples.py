@@ -426,10 +426,8 @@ def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the identities.
     """
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    I_n = math.reshape(
-        math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
-    )
+    O_n = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    I_n = math.eye(n_modes, dtype=math.complex128)
 
     A = math.block([[O_n, I_n], [I_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
@@ -547,45 +545,31 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
+    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
 
-    The indices of the triple correspond to the variables :math:`(\vec{z}, \vec{p})` of the kernel here and it is used to transform from quadrature representation in Bargmann.
-
-    If one wants to transformation from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component.
+    If one wants to transform from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component, but be careful that the inner product will then have to use the real integral.
 
     Args:
          n_modes: The number of modes.
+         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
 
     Returns:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
     hbar = settings.HBAR
-    In = math.eye(n_modes, math.complex128)
-    A = math.block(
+    Id = np.eye(n_modes, dtype=np.complex128)
+    e = np.exp(1j * phi / 2)
+    A = np.kron(
         [
-            [
-                In,
-                -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
-            ],
-            [
-                -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
-                -1 / hbar * In,
-            ],
-        ]
+            [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
+            [-1j * e * np.sqrt(2 / hbar), e * e],
+        ],
+        Id,
     )
     b = _vacuum_B_vector(2 * n_modes)
-    # Reorder it as a Unitary
-    full_order = math.arange(n_modes * 2)
-    order = list(
-        math.cast(
-            math.concat((full_order[n_modes:], full_order[:n_modes]), axis=0),
-            math.int32,
-        )
-    )
-    A = math.astensor(math.asnumpy(A)[order, :][:, order])
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
     return A, b, c
 
