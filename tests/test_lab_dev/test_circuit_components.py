@@ -372,9 +372,9 @@ class TestCircuitComponent:
         # fock only
         r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
 
-        assert math.allclose(r1.representation.array, r2.representation.array)
-        assert math.allclose(r1.representation.array, r3.representation.array)
-        assert math.allclose(r1.representation.array, r4.representation.array)
+        assert math.allclose(r1, r2)
+        assert math.allclose(r1, r3)
+        assert math.allclose(r1, r4)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
