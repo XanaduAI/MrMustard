@@ -49,6 +49,7 @@ from mrmustard.utils.typing import (
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.fock import autocutoffs
+from mrmustard.math.strategies.vanilla import vanilla_norm
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -276,16 +277,29 @@ class State(CircuitComponent):
         The recommended Fock shape of this State calculated as the minimum
         of the autocutoff and the custom_shape. The autocutoff of a state aims
         at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
-        mass of the state (99.9% by default).
+        mass of the state (99.9% by default). If the state has a Fock representation,
+        the shape elements are the minimum of the array shape and the custom shape.
         """
-        if None not in self.custom_shape:
-            return tuple(self.custom_shape)
-        cov, means, _ = self.phase_space(0)
-        cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
-        if len(cutoffs) == len(self.wires) // 2:
-            cutoffs = cutoffs + cutoffs
-        self._custom_shape = [s if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)]
-        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)])
+        # if None not in self.custom_shape:
+        #     return tuple(self.custom_shape)
+        try:  # bargmann
+            cutoffs = vanilla_norm(A, b, c, settings.AUTOCUTOFF_PROBABILITY, settings.AUTOCUTOFF_MAX_CUTOFF)
+            if len(cutoffs) == len(self.wires) // 2:
+                cutoffs = cutoffs + cutoff     def test_auto_shape(self):
+             ket = Coherent([0, 1], x=[1, 2])
+             assert ket.auto_shape == (7, 13)
+             ket.custom_shape[0] = 19
+             assert ket.auto_shape == (19, 13)
+    
+        except ValueError:  # fock
+            cutoffs = [
+                s - 1 for s in self.representation.array.shape[1:]
+            ]  # skip batch dimension
+        for i, (s, c) in enumerate(zip(self.custom_shape, cutoffs)):
+            self.custom_shape[i] = (
+                c + 1 if s is None else s
+            )  # we don't change existing custom shapes
+        return tuple(min(s, c + 1) for s, c in zip(self.custom_shape, cutoffs))
 
     @property
     def _L2_norms(self) -> RealVector:
@@ -430,13 +444,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -531,10 +549,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -576,7 +598,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -783,12 +807,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            representation, wires, self.name
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(representation, wires, self.name)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -929,7 +953,9 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
+    def __rshift__(
+        self, other: CircuitComponent | Scalar
+    ) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which

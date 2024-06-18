@@ -52,7 +52,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     index_u_iter = np.ndindex(shape)
     next(index_u_iter)
 
-    # write vacuum amplitude
+    # write vacuum amplitude /
     ret[0] = c
 
     # iterate over the rest of the indices
@@ -136,7 +136,9 @@ def vanilla_jacobian(
 
 
 @njit
-def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+def vanilla_vjp(
+    G, c, dLdG
+) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -178,7 +180,9 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
         for i, _ in enumerate(db):
             _, n = next(ns)
             db[i] = np.sqrt(index_u[i]) * G_lin[n]
-            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
+            dA[i, i] = (
+                0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
+            )
             for j in range(i + 1, len(db)):
                 dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n - strides[j]]
 
@@ -188,3 +192,51 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
 
     return dLdA, dLdb, dLdc
+
+
+@njit
+def vanilla_norm_ket(A, b, c, norm_bound, max_len=100) -> tuple[int, ...]:
+    r"""Strategy to compute the shape of the Fock representation of
+    a Gaussian ket such that its norm is above a given bound.
+
+    Args:
+        A (np.ndarray): A 1x1 matrix of the Fock-Bargmann representation
+        b (np.ndarray): B 1-dim vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        norm_bound (float): the norm bound
+    """
+    d = A.shape[-1]
+    shape = np.zeros(d, dtype=np.int32)
+    for i in range(d):
+        G = np.zeros((max_len,), dtype=np.complex128)
+        G[0] = c
+
+        k = 0
+        norm = 0
+        while norm < norm_bound and k < max_len - 1:
+            G[k + 1] = (b[i] * G[k] + A[i, i] * np.sqrt(k) * G[k - 1]) / np.sqrt(k + 1)
+            norm += np.abs(G[k + 1]) ** 2
+            k += 1
+        shape[i] = k
+    return shape
+
+
+@njit
+def vanilla_norm_dm(A, b, c, norm_bound, max_len=100) -> tuple[int, ...]:
+    r"""Strategy to compute the shape fd the Fock represenation of a Gaussian dm
+    such that its trace is above a certain bound. This is effectively a 1-mode
+    adaptation of Robbe's diagonal strategy with early stopping."""
+    d = A.shape[-1]
+    shape = np.zeros(d, dtype=np.int32)
+    for i in range(d):
+        G = np.zeros((3, max_len), dtype=np.complex128)
+        G[1, 0] = c  # 1 is diagonal, 0 is subdiagonal, 2 is superdiagonal
+        norm = 0
+        k = 0
+        while norm < norm_bound and k < max_len - 1:
+            # next 2 (at  0,1)
+            G[0, k + 1] = (
+                b[i] * G[0, k] + A[1, 0] * np.sqrt(k) * G[0, k - 1] + A[0, 1]
+            ) / np.sqrt(k + 1)
+
+    # next 3

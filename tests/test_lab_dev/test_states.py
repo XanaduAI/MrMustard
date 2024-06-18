@@ -498,7 +498,7 @@ class TestDM:
         assert math.allclose(dm01.expectation(dm0), res_dm0)
         assert math.allclose(dm01.expectation(dm1), res_dm1)
         assert math.allclose(dm01.expectation(dm01), res_dm01)
-        
+
     def test_expectation_bargmann_u(self):
         dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
         u0 = Dgate([0], x=0.1)

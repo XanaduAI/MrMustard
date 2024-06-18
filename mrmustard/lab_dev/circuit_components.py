@@ -82,7 +82,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -181,7 +186,9 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -233,7 +240,9 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -389,7 +398,9 @@ class CircuitComponent:
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
-                raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
+                raise ValueError(
+                    f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``."
+                )
         ret = self._light_copy()
         modes = set(modes)
         ret._wires = Wires(
@@ -419,7 +430,9 @@ class CircuitComponent:
         assert len(shape) == len(self.custom_shape)
         try:
             As, bs, cs = self.bargmann
-            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+            array = [
+                math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)
+            ]
         except AttributeError:
             array = self.representation.reduce(shape).array
         return array
@@ -508,7 +521,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -537,7 +552,9 @@ class CircuitComponent:
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
-        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+        if isinstance(self.representation, Bargmann) and isinstance(
+            other.representation, Bargmann
+        ):
             rep = self.representation[idx_z] @ other.representation[idx_zconj]
             rep = rep.reorder(perm) if perm else rep
             return CircuitComponent._from_attributes(rep, wires_result, None)
@@ -567,7 +584,9 @@ class CircuitComponent:
         """
         return self * other
 
-    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
+    def __rshift__(
+        self, other: CircuitComponent | numbers.Number
+    ) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
         It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
@@ -597,8 +616,11 @@ class CircuitComponent:
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        both_sides = (
+            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        )
         if only_ket or only_bra or both_sides:
+            # print(self.auto_shape)
             return self._rshift_return(self @ other)
 
         self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
@@ -612,9 +634,7 @@ class CircuitComponent:
             return self._rshift_return((self @ other) @ other.adjoint)
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
+        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
         raise ValueError(msg)
 
     def _rshift_return(
@@ -639,7 +659,7 @@ class CircuitComponent:
             return ret
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
+        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None}, repr={self.representation.__class__.__name__})"
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(
@@ -649,7 +669,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
