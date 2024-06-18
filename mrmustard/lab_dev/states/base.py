@@ -40,10 +40,12 @@ from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
+    Batch,
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
     RealVector,
+    Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
 from mrmustard.physics.converters import to_fock
@@ -275,17 +277,16 @@ class State(CircuitComponent):
         element-wise along the batch dimension.
         """
         settings.UNSAFE_ZIP_BATCH = True
-        rep = (self >> self.dual).representation
+        rep = self >> self.dual
         settings.UNSAFE_ZIP_BATCH = False
-        return math.real(rep.c if isinstance(rep, Bargmann) else rep.array)
+        return math.real(rep)
 
     @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        rep = (self >> self.dual).representation
-        return math.sum(math.real(rep.scalar))
+        return math.sum(math.real(self >> self.dual))
 
     @property
     def probability(self) -> float:
@@ -657,7 +658,8 @@ class DM(State):
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
-        :math:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
+        :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
+
 
         Args:
             modes: The modes of this states.
@@ -727,17 +729,17 @@ class DM(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self @ operator.dual @ operator.dual.adjoint
+            result = self >> operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = self @ operator.dual
+            result = self >> operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
             result = (self @ operator) >> TraceOut(self.modes)
 
-        return result.representation.scalar
+        return result
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -747,13 +749,16 @@ class DM(State):
         ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
 
         Returns a ``DM`` when the wires of the resulting components are compatible with
-        those of a ``DM``, a ``CircuitComponent`` otherwise.
+        those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
         """
-        ret = super().__rshift__(other)
+        result = super().__rshift__(other)
+        if not isinstance(result, CircuitComponent):
+            return result  # scalar case handled here
 
-        if not ret.wires.input and ret.wires.bra.modes == ret.wires.ket.modes:
-            return DM._from_attributes(ret.representation, ret.wires)
-        return ret
+        w = result.wires
+        if not w.input and w.bra.modes == w.ket.modes:
+            return DM(w.modes, result.representation)
+        return result
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
@@ -891,16 +896,16 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self @ operator.dual
-            result = result >> TraceOut(leftover_modes) if leftover_modes else result @ result.dual
-        elif op_type is OperatorType.DM_LIKE:
-            result = self @ (self.adjoint @ operator.dual)
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
-        else:
-            result = self @ operator @ self.dual
+            result = (self @ operator.dual) >> TraceOut(leftover_modes)
+            result = math.abs(result) ** 2 if not leftover_modes else result
 
-        return result.representation.scalar
+        elif op_type is OperatorType.DM_LIKE:
+            result = (self.adjoint @ (self @ operator.dual)) >> TraceOut(leftover_modes)
+
+        else:
+            result = (self @ operator) >> self.dual
+
+        return result
 
     def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
         r"""
@@ -924,7 +929,7 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which
@@ -935,13 +940,16 @@ class Ket(State):
         not needed and the method returns a new ``Ket``.
 
         Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` otherwise.
+        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
+        and a (batched) scalar if there are no wires left, for convenience.
         """
-        ret = super().__rshift__(other)
+        result = super().__rshift__(other)
+        if not isinstance(result, CircuitComponent):
+            return result  # scalar case handled here
 
-        if not ret.wires.input:
-            if not ret.wires.bra:
-                return Ket._from_attributes(ret.representation, ret.wires)
-            if ret.wires.bra.modes == ret.wires.ket.modes:
-                return DM._from_attributes(ret.representation, ret.wires)
-        return ret
+        if not result.wires.input:
+            if not result.wires.bra:
+                return Ket(result.wires.modes, result.representation)
+            elif result.wires.bra.modes == result.wires.ket.modes:
+                result = DM(result.wires.modes, result.representation)
+        return result
