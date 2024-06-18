@@ -31,6 +31,7 @@ from mrmustard.physics.gaussian_integrals import (
 )
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
 
@@ -58,12 +59,20 @@ class TestTraceOut:
         assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
 
-        no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.A, [])
-        assert np.allclose(no_state.representation.b, [])
-        assert np.allclose(no_state.representation.c, 1)
+        trace = state >> TraceOut([0, 1, 2])
+        assert np.isclose(trace, 1.0)
+
+    def test_trace_out_complex(self):
+        cc = CircuitComponent.from_bargmann(
+            (
+                np.array([[0.1 + 0.2j, 0.3 + 0.4j], [0.3 + 0.4j, 0.5 - 0.6j]]),
+                np.array([0.7 + 0.8j, -0.9 + 0.10j]),
+                0.11 - 0.12j,
+            ),
+            modes_out_ket=[0],
+            modes_out_bra=[0],
+        )
+        assert (cc >> TraceOut([0])).dtype == math.complex128
 
     def test_trace_out_fock_states(self):
         state = Coherent([0, 1, 2], x=1).to_fock(10)
@@ -71,9 +80,7 @@ class TestTraceOut:
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock(7).dm()
 
         no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.array, [])
+        assert np.isclose(no_state, 1.0)
 
 
 class TestBtoPS:

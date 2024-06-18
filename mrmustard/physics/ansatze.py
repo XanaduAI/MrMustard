@@ -109,7 +109,7 @@ class Ansatz(ABC):
         r"""
         Multiplies this ansatz by a scalar.
         """
-        return self.__mul__(other=other)
+        return self * other
 
 
 class PolyExpBase(Ansatz):
@@ -353,7 +353,7 @@ class PolyExpAnsatz(PolyExpBase):
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:
-                return self.__class__(self.A, self.b, other * self.c)
+                return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
