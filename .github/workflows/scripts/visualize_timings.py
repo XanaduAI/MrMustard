@@ -216,4 +216,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     folder = Path(args.data_folder)
-    main(folder, args.mode, args.ncols, args.use_short_name)
+    main(folder, args.mode, args.ncols, args.short_name)
