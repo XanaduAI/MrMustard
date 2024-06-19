@@ -76,6 +76,9 @@ class Settings:
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         r"""The minimum value for autocutoff. Default is ``1``."""
 
+        self.AUTOSHAPE_MAX = 100
+        r"""The max shape for the autoshape. Default is ``100``."""
+
         self.CIRCUIT_DRAW_PARAMS = True
         "Whether or not to draw the parameters of a circuit."
 

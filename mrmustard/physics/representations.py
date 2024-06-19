@@ -338,7 +338,9 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(
+                Abci, idx_z, idx_zconj, measure=-1.0
+            )
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -415,7 +417,9 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+        ax.imshow(
+            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
+        )
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -490,7 +494,9 @@ class Bargmann(Representation):
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                    Abc.append(
+                        contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
+                    )
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -640,7 +646,7 @@ class Fock(Representation):
             >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
 
         If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
-        using auto_shape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
+        using auto_shape where possible, or settings.AUTOSHAPE_MAX where not.
 
         Args:
             other: Another representation.
@@ -675,7 +681,9 @@ class Fock(Representation):
         batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+                batched_array.append(
+                    math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
+                )
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
@@ -692,7 +700,11 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [
+                i + 1
+                for i in range(len(self.array.shape) - 1)
+                if i not in idxs1 + idxs2
+            ]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -763,4 +775,6 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
+        return self.from_ansatz(
+            ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0))
+        )

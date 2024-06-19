@@ -21,6 +21,8 @@ from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strid
 
 __all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
 
+SQRT = np.sqrt(np.arange(1000))
+
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
@@ -195,48 +197,96 @@ def vanilla_vjp(
 
 
 @njit
-def vanilla_norm_ket(A, b, c, norm_bound, max_len=100) -> tuple[int, ...]:
-    r"""Strategy to compute the shape of the Fock representation of
-    a Gaussian ket such that its norm is above a given bound.
+def autoshape(A, b, c, max_prob, max_shape=100) -> int:
+    r"""Strategy to compute the shape of the Fock represenation of a Gaussian DM
+    such that its trace is above a certain bound given as ``max_prob``.
+    This is effectively a 1-mode adaptation of Robbe's diagonal strategy, with early stopping.
 
     Args:
         A (np.ndarray): A 1x1 matrix of the Fock-Bargmann representation
         b (np.ndarray): B 1-dim vector of the Fock-Bargmann representation
         c (complex): vacuum amplitude
-        norm_bound (float): the norm bound
+        max_prob (float): the probability value to stop at
+        max_shape (int): stop if loop runs beyond this value
+
+    Details:
+
+    Here's how it works. We maintain two buffers: buf3 and buf2, of size 2x3 and 2x2 respectively.
+    The buffers contain the following elements of the density matrix:
+
+                     ┌────┐                           ┌────┐
+                     │buf3│                           │buf2│
+                     └────┘                           └────┘
+            ┌────┬────┬────┬────┬────┐      ┌────┬────┬────┬────┬────┐
+            │  c │    │ b3 │    │    │      │    │ b2 │    │    │    │
+            ├────┼────┼────┼────┼────┤      ├────┼────┼────┼────┼────┤
+            │    │ b3 │    │ b3 │    │      │ b2 │    │ b2 │    │    │
+            ├────┼────┼────┼────┼────┤      ├────┼────┼────┼────┼────┤
+            │ b3 │    │ b3 │    │ b3 │      │    │ b2 │    │ b2 │    │
+            ├────┼────┼────┼────┼────┤      ├────┼────┼────┼────┼────┤
+            │    │ b3 │    │ b3 │    │      │    │    │ b2 │    │ b2 │
+            ├────┼────┼────┼────┼────┤      ├────┼────┼────┼────┼────┤
+            │    │    │ b3 │    │etc │      │    │    │    │ b2 │etc │
+            └────┴────┴────┴────┴────┘      └────┴────┴────┴────┴────┘
+
+    Note that the buffers don't have shape (n,3) and (n,2) because they only need to keep
+    two consecutive groups of elements, because the recursion only needs the previous two groups.
+    By using indices mod 2, the data needed at each iteration is in the columns not being updated.
+
+    The updates roughly look like this:
+
+                    ┌───────┐                     ┌───────┐
+                    │k even │                     │ k odd │
+                    └───────┘                     └───────┘
+                 ┌──────┬──────┐               ┌──────┬──────┐
+                 │  A───▶      │               │      ◀───A  │
+        ┌────┐   │      │      │               │      │      │
+        │buf2│   ├──────┼──────┤               ├──────┼──────┤
+        └────┘   │  A───▶      │               │      ◀───A  │
+                 │      │      │               │      │      │
+                 └───┬──┴───▲──┘               └───▲──┴───┬──┘
+                     └──b──┐│                     ┌┼──b───┘
+                           ││                     ││
+                     ┌──b──┼┘                     │└──b───┐
+                 ┌───┴──┬──▼───┐               ┌──▼───┬───┴──┐
+        ┌────┐   │  A───▶      │               │      ◀───A  │
+        │buf3│   │      │      │               │      │      │
+        └────┘   ├──────┼──────┤               ├──────┼──────┤
+                 │  A───▶      │               │      ◀───A  │
+                 │      │      │               │      │      │
+                 ├──────┼──────┤               ├──────┼──────┤
+                 │  A───▶      │               │      ◀───A  │
+                 │      │      │               │      │      │
+                 └──────┴──────┘               └──────┴──────┘
+
+    A and b mean that the contribution is multiplied by some element of A or b.
+    There are also diagonal A-arrows between the columns of the same buffer, but they are not shown here.
+    For pivot in (k,k) buf2 is updated, for pivots in (k+1,k) and (k,k+1) buf3 is updated.
     """
-    d = A.shape[-1]
-    shape = np.zeros(d, dtype=np.int32)
-    for i in range(d):
-        G = np.zeros((max_len,), dtype=np.complex128)
-        G[0] = c
-
-        k = 0
-        norm = 0
-        while norm < norm_bound and k < max_len - 1:
-            G[k + 1] = (b[i] * G[k] + A[i, i] * np.sqrt(k) * G[k - 1]) / np.sqrt(k + 1)
-            norm += np.abs(G[k + 1]) ** 2
-            k += 1
-        shape[i] = k
-    return shape
-
-
-@njit
-def vanilla_norm_dm(A, b, c, norm_bound, max_len=100) -> tuple[int, ...]:
-    r"""Strategy to compute the shape fd the Fock represenation of a Gaussian dm
-    such that its trace is above a certain bound. This is effectively a 1-mode
-    adaptation of Robbe's diagonal strategy with early stopping."""
-    d = A.shape[-1]
-    shape = np.zeros(d, dtype=np.int32)
-    for i in range(d):
-        G = np.zeros((3, max_len), dtype=np.complex128)
-        G[1, 0] = c  # 1 is diagonal, 0 is subdiagonal, 2 is superdiagonal
-        norm = 0
-        k = 0
-        while norm < norm_bound and k < max_len - 1:
-            # next 2 (at  0,1)
-            G[0, k + 1] = (
-                b[i] * G[0, k] + A[1, 0] * np.sqrt(k) * G[0, k - 1] + A[0, 1]
-            ) / np.sqrt(k + 1)
-
-    # next 3
+    buf2 = np.zeros(
+        (2, 2), dtype=np.complex128
+    )  # this is transposed with respect to the diagram
+    buf3 = np.zeros(
+        (2, 3), dtype=np.complex128
+    )  # this is transposed with respect to the diagram
+    buf3[0, 1] = c  # vacuum probability at (0,0)
+    norm = np.abs(c)
+    k = 0
+    while norm < max_norm and k < max_shape:
+        # pivot at (k, k), write (k+1, k) and (k, k+1)
+        buf2[(k + 1) % 2] = (b * buf3[k % 2, 1] + A @ buf2[k % 2] * SQRT[k]) / SQRT[
+            k + 1
+        ]
+        # pivot at (k+1, k), write (k+2, k) and (k+1, k+1)
+        buf3[(k + 1) % 2, :2] = (
+            b * buf2[(k + 1) % 2, 0]
+            + A @ (buf3[k % 2, :2] * np.array([SQRT[k + 1], SQRT[k]]))
+        ) / np.array([SQRT[k + 2], SQRT[k + 1]])
+        # pivot at (k, k+1), write (k, k+2) only
+        buf3[(k + 1) % 2, 2] = (
+            b[1] * buf2[(k + 1) % 2, 1]
+            + A[1] @ (buf3[k % 2, 1:] * np.array([SQRT[k], SQRT[k + 1]]))
+        ) / SQRT[k + 2]
+        norm += np.abs(buf3[(k + 1) % 2, 1])
+        k += 1
+    return k

@@ -48,8 +48,7 @@ from mrmustard.utils.typing import (
     Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.physics.fock import autocutoffs
-from mrmustard.math.strategies.vanilla import vanilla_norm
+from mrmustard.math.lattice.strategies.vanilla import autoshape
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -272,36 +271,6 @@ class State(CircuitComponent):
         return cls(modes, (Q >> QtoB).representation, name)
 
     @property
-    def auto_shape(self) -> tuple[int, ...]:
-        r"""
-        The recommended Fock shape of this State calculated as the minimum
-        of the autocutoff and the custom_shape. The autocutoff of a state aims
-        at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
-        mass of the state (99.9% by default). If the state has a Fock representation,
-        the shape elements are the minimum of the array shape and the custom shape.
-        """
-        # if None not in self.custom_shape:
-        #     return tuple(self.custom_shape)
-        try:  # bargmann
-            cutoffs = vanilla_norm(A, b, c, settings.AUTOCUTOFF_PROBABILITY, settings.AUTOCUTOFF_MAX_CUTOFF)
-            if len(cutoffs) == len(self.wires) // 2:
-                cutoffs = cutoffs + cutoff     def test_auto_shape(self):
-             ket = Coherent([0, 1], x=[1, 2])
-             assert ket.auto_shape == (7, 13)
-             ket.custom_shape[0] = 19
-             assert ket.auto_shape == (19, 13)
-    
-        except ValueError:  # fock
-            cutoffs = [
-                s - 1 for s in self.representation.array.shape[1:]
-            ]  # skip batch dimension
-        for i, (s, c) in enumerate(zip(self.custom_shape, cutoffs)):
-            self.custom_shape[i] = (
-                c + 1 if s is None else s
-            )  # we don't change existing custom shapes
-        return tuple(min(s, c + 1) for s, c in zip(self.custom_shape, cutoffs))
-
-    @property
     def _L2_norms(self) -> RealVector:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
@@ -340,6 +309,34 @@ class State(CircuitComponent):
         Whether this state is pure.
         """
         return math.allclose(self.purity, 1.0)
+
+    @property
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        The recommended Fock shape of this state calculated as the minimum of the numba ``autoshape``
+        and the ``custom_shape`` where not None. The ``autoshape`` function aims at capturing at
+        least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of the state
+        (99.9% by default). If the state has a Fock representation, the auto_shape elements are
+        the minimum of the array shape and the custom shape.
+        """
+        try:  # bargmann
+            shape = []
+            for i in range(len(self.modes)):
+                A, b, c = self[i].representation.triple
+                k = autoshape(
+                    A[0],
+                    b[0],
+                    c[0],
+                    settings.AUTOCUTOFF_PROBABILITY,
+                    settings.AUTOSHAPE_MAX,
+                )
+                shape.append(k)  # gonna be half the length for DM
+            shape = shape + shape if 2 * len(shape) == len(self.wires) else shape
+        except ValueError:  # fock
+            shape = self.representation.array.shape[1:]
+        for i, (c, s) in enumerate(zip(self.custom_shape, shape)):
+            self.custom_shape[i] = s if c is None else c
+        return tuple(min(c, s) for c, s in zip(self.custom_shape, shape))
 
     def phase_space(self, s: float) -> tuple:
         r"""

@@ -355,6 +355,10 @@ class CircuitComponent:
         r"""
         Sets the custom shape of this component in the Fock representation.
         """
+        if len(shape) > len(self.wires):
+            raise ValueError(
+                f"expected a shape of length {len(self.wires)}, got {len(shape)}"
+            )
         self._custom_shape = shape
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
@@ -456,7 +460,7 @@ class CircuitComponent:
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         fock = Fock(math.astensor(self.fock(shape)), batched=True)
         fock._original_bargmann_data = self.representation.data
@@ -468,9 +472,9 @@ class CircuitComponent:
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
         representation the shape can be calculated using autocutoff using the single-mode marginals.
-        If the component is not a State then the shape is a tuple of ``AUTOCUTOFF_MAX_CUTOFF``.
+        If the component is not a State then the shape is a tuple of ``AUTOSHAPE_MAX``.
         """
-        MAX = settings.AUTOCUTOFF_MAX_CUTOFF
+        MAX = settings.AUTOSHAPE_MAX
         return tuple(s if s else MAX for s in self.custom_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
