@@ -96,9 +96,9 @@ def draw_plotly(timings_dict, use_short_name):
         yaxis={"title": "Test Duration (s)"},
     )
     lines = []
-    timings_sorted = dict(sorted(
-        timings_dict.items(), key=lambda item: max(val[1] for val in item[1]), reverse=True
-    ))
+    timings_sorted = dict(
+        sorted(timings_dict.items(), key=lambda item: max(val[1] for val in item[1]), reverse=True)
+    )
     for test_name, data in timings_sorted.items():
         x, y = list(zip(*data))
         if use_short_name:
