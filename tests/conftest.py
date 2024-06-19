@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 import pytest
 
 from mrmustard import math
@@ -50,6 +51,13 @@ def backend(request):
     Extracts ``backend`` from request.
     """
     return request.config.getoption("--backend")
+
+
+def pytest_ignore_collect(path, config):
+    backend = config.getoption("--backend")
+    if backend == "numpy" and "test_training" in Path(path).parts:
+        return True
+    return False
 
 
 @pytest.fixture(autouse=True)
