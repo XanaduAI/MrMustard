@@ -154,6 +154,7 @@ def remove_n_largest_plotly(fig, n):
 
 
 def main(data_folder, mode, ncols, use_short_name):
+    """Load durations by commit, then draw them using the appropriate backend."""
     # sort duration files (named with epoch timestamps) then load timings
     duration_files = sorted(data_folder.glob("durations_*.txt"))
     all_timings = list(map(load_timings, duration_files))
