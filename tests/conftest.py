@@ -54,8 +54,8 @@ def backend(request):
 
 
 def pytest_ignore_collect(path, config):
-    backend = config.getoption("--backend")
-    if backend == "numpy" and "test_training" in Path(path).parts:
+    """Skip test_training when using the numpy backend."""
+    if config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts:
         return True
     return False
 

@@ -55,7 +55,7 @@ def load_timings(file: Path):
     ]
 
 
-def draw_mpl(timings_dict, ncols=3):
+def draw_mpl(timings_dict, ncols, num_commits):
     """
     Draw using the Matplotlib backend.
 
@@ -80,7 +80,7 @@ def draw_mpl(timings_dict, ncols=3):
         values = [timings_dict[n] for n in test_names]
         ln_coll = LineCollection(values, colors=colours)
         ax.add_collection(ln_coll)
-        ax.set_xlim(0, len(all_timings) - 1)
+        ax.set_xlim(0, num_commits - 1)
         ax.set_ylim(0, max(max(v[1] for v in value_set) for value_set in values) + 0.01)
 
     fig.tight_layout()
@@ -110,7 +110,7 @@ def draw_plotly(timings_dict, use_short_name):
     return fig
 
 
-def draw_plotly_group(timings_dict, use_short_name, ncols=3):
+def draw_plotly_group(timings_dict, use_short_name, ncols):
     """Draw using the plotly backend, grouping by test module."""
 
     groups = {
@@ -173,7 +173,7 @@ def main(data_folder, mode, ncols, use_short_name):
         del timings_dict[test_name]
 
     if mode == "mpl":
-        draw_mpl(timings_dict, ncols)
+        draw_mpl(timings_dict, ncols, len(all_timings))
     elif mode == "plotly":
         draw_plotly(timings_dict, use_short_name)
     elif mode == "plotly-grouped":
@@ -214,6 +214,5 @@ if __name__ == "__main__":
         "--short-name", action="store_true", help="Show only the test name without the file path"
     )
     args = parser.parse_args()
-    data_folder = Path(args.data_folder)
-    mode, ncols, use_short_name = args.mode, args.ncols, args.short_name
-    main(data_folder, mode, ncols, use_short_name)
+    folder = Path(args.data_folder)
+    main(folder, args.mode, args.ncols, args.use_short_name)
