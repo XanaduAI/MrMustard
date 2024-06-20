@@ -371,6 +371,58 @@ class Vacuum(Ket):
         return Bargmann(*triples.vacuum_state_Abc(n_modes))
 
 
+class QuadratureEigenstate(Ket):
+    r"""
+    The `N`-mode Quadrature eigenstate .
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import QuadratureEigenstate
+
+        >>> state = QuadratureEigenstate([1, 2])
+        >>> assert state.modes == [1, 2]
+
+    Args:
+        modes: A list of modes.
+
+    .. details::
+        TO BE DONE...
+        The :math:`N`-mode quadrature eigenstate state is defined by
+
+        .. math::
+            V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        x: Union[float, Sequence[float]] = 0.0,
+        phi: Union[float, Sequence[float]] = 0.0,
+        x_trainable: bool = False,
+        phi_trainable: bool = False,
+        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        super().__init__(modes=modes, name="QuadratureEigenstate")
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        xs, phis = list(reshape_params(n_modes, x=self.x.value, phi=self.phi.value))
+        return Bargmann(*triples.quadrature_eigenstates_Abc(xs, phis))
+
+    @property
+    def probability(self) -> float:
+        return math.inf
+
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
