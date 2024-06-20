@@ -23,7 +23,7 @@ from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import (
     Attenuator,
-    Fockdamping,
+    FockDamping,
     BSgate,
     Channel,
     Dgate,
@@ -536,9 +536,9 @@ class TestAttenuator:
             Attenuator(modes=[0], transmissivity=[0.1, 0.2]).representation
 
 
-class TestFockdamping:
+class TestFockDamping:
     r"""
-    Tests for the ``Fockdamping`` class.
+    Tests for the ``FockDamping`` class.
     """
 
     modes = [[0], [1, 2], [9, 7]]
@@ -546,25 +546,25 @@ class TestFockdamping:
 
     @pytest.mark.parametrize("modes,damping", zip(modes, damping))
     def test_init(self, modes, damping):
-        gate = Fockdamping(modes, damping)
+        gate = FockDamping(modes, damping)
 
-        assert gate.name == "Fockdamping"
+        assert gate.name == "FockDamping"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="Length of ``damping``"):
-            Fockdamping(modes=[0, 1], damping=[0.2, 0.3, 0.4])
+            FockDamping(modes=[0, 1], damping=[0.2, 0.3, 0.4])
 
     def test_representation(self):
-        rep1 = Fockdamping(modes=[0], damping=0.1).representation
+        rep1 = FockDamping(modes=[0], damping=0.1).representation
         e = np.exp(-0.1)
         assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0], [0, 0, 0, e], [0, 0, e, 0]]])
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):
-        gate1 = Fockdamping([0], 0.1)
-        gate2 = Fockdamping([0], 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
+        gate1 = FockDamping([0], 0.1)
+        gate2 = FockDamping([0], 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
 
         with pytest.raises(AttributeError):
             gate1.damping.value = 0.3
@@ -574,10 +574,10 @@ class TestFockdamping:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Fockdamping(modes=[0], damping=[0.1, 0.2]).representation
+            FockDamping(modes=[0], damping=[0.1, 0.2]).representation
 
     def test_identity(self):
-        rep1 = Fockdamping(modes=[0], damping=0.0).representation
+        rep1 = FockDamping(modes=[0], damping=0.0).representation
         rep2 = Attenuator(modes=[0], transmissivity=1.0).representation
 
         assert math.allclose(rep1.A, rep2.A)

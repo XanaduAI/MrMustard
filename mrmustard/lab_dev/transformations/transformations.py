@@ -20,12 +20,12 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
 
-from .base import Unitary, Channel
+from .base import Unitary, Channel, Operator
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "Fockdamping", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+__all__ = ["Attenuator", "FockDamping", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
 
 
 class BSgate(Unitary):
@@ -386,8 +386,8 @@ class Attenuator(Channel):
         return Bargmann(*triples.attenuator_Abc(eta))
 
 
-class FockDamping(Channel):
-    r"""The Fock damping channel.
+class FockDamping(Operator):
+    r"""The Fock damping operator.
 
     If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
     all the modes share the same damping.
@@ -395,11 +395,11 @@ class FockDamping(Channel):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import Fockdamping
+        >>> from mrmustard.lab_dev import FockDamping
 
-        >>> channel = Fockdamping(modes=[1, 2], damping=0.1)
-        >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.damping.value, [0.1, 0.1])
+        >>> operator = FockDamping(modes=[1, 2], damping=0.1)
+        >>> assert operator.modes == [1, 2]
+        >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
 
     Args:
         modes: The modes this gate is applied to.
@@ -413,12 +413,11 @@ class FockDamping(Channel):
 
         .. math::
             A &= e^{-\beta}\begin{bmatrix}
-                    O_N & I_N & O_N & O_N \\
-                    I_N & O_N & O_N & O_N \\
-                    O_N & O_N & O_N & I_N \\
-                    O_N & O_N & I_N & O_N 
+                    O_N & I_N & \\
+                    I_N & O_N &
+
                 \end{bmatrix} \\ \\
-            b &= O_{4N} \\ \\
+            b &= O_{2N} \\ \\
             c &= 1\:.
     """
 
@@ -429,7 +428,7 @@ class FockDamping(Channel):
         damping_trainable: bool = False,
         damping_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
-        super().__init__(modes=modes, name="Fockdamping")
+        super().__init__(modes=modes, name="FockDamping")
         self._add_parameter(
             make_parameter(
                 damping_trainable,

@@ -467,7 +467,7 @@ def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vecto
         beta: The damping parameter.
 
     Returns:
-        The ``(A, b, c)`` triple of the Fock damping channels.
+        The ``(A, b, c)`` triple of the Fock damping operator.
     """
     beta = math.atleast_1d(beta, math.complex128)
     n_modes = len(beta)
@@ -476,9 +476,9 @@ def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vecto
     B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
 
     A = math.block(
-        [[O_n, B_n, O_n, O_n], [B_n, O_n, O_n, O_n], [O_n, O_n, O_n, B_n], [O_n, O_n, B_n, O_n]]
+        [[O_n, B_n], [B_n, O_n]]
     )
-    b = _vacuum_B_vector(n_modes * 4)
+    b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
     return A, b, c
