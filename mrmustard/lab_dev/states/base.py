@@ -423,6 +423,7 @@ class State(CircuitComponent):
             z=math.transpose(z),
             colorscale=colorscale,
             name="Wigner function",
+            autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
@@ -631,7 +632,7 @@ class DM(State):
 
     def __init__(
         self,
-        modes: Sequence[int, ...] = (),
+        modes: Sequence[int] = (),
         representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
