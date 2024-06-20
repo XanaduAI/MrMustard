@@ -428,7 +428,7 @@ class FockDamping(Operator):
         damping_trainable: bool = False,
         damping_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
-        super().__init__(modes=modes, name="FockDamping")
+        super().__init__(modes_out=modes, modes_in=modes, name="FockDamping")
         self._add_parameter(
             make_parameter(
                 damping_trainable,

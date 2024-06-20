@@ -558,8 +558,8 @@ class TestFockDamping:
     def test_representation(self):
         rep1 = FockDamping(modes=[0], damping=0.1).representation
         e = np.exp(-0.1)
-        assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0], [0, 0, 0, e], [0, 0, e, 0]]])
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.A, [[[0, e], [e, 0,]]])
+        assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):
@@ -577,7 +577,7 @@ class TestFockDamping:
             FockDamping(modes=[0], damping=[0.1, 0.2]).representation
 
     def test_identity(self):
-        rep1 = FockDamping(modes=[0], damping=0.0).representation
+        rep1 = FockDamping(modes=[0,1], damping=0.0).representation
         rep2 = Attenuator(modes=[0], transmissivity=1.0).representation
 
         assert math.allclose(rep1.A, rep2.A)
