@@ -654,7 +654,6 @@ class DM(State):
         except AttributeError:  # bargmann
             repr = self.representation
             shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
-        # update fock_shape `None`s
         for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
             self.fock_shape[i] = f or s  # replace the `None`s
         return tuple(min(f, s) for c, s in zip(self.fock_shape, shape))
@@ -842,11 +841,10 @@ class Ket(State):
         Note that in a linear superposition the ``auto_shape`` is calculated for the first element.
         """
         try:  # fock
-            return self.representation.array.shape[1:]
+            return self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             repr = self.representation.conj() & self.representation
             shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
-        # update fock_shape `None`s
         for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
             self.fock_shape[i] = f or s  # replace the `None`s
         return tuple(min(f, s) for c, s in zip(self.fock_shape, shape))
