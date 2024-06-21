@@ -196,22 +196,56 @@ def vanilla_vjp(
     return dLdA, dLdb, dLdc
 
 
-@njit
-def autoshape(A, b, c, max_prob, max_shape=100) -> int:
-    r"""Strategy to compute the shape of the Fock represenation of a Gaussian DM
+# @njit
+def dm_marginals_generator(A, b, c):
+    r"""Generator to compute the marginals of a Gaussian density matrix.
+    yields all the single-mode marginals obtained by tracing away the rest.
+    """
+    # reduced DM
+    M = len(b) // 2
+    A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
+    b = b.reshape((2, M)).transpose()  # (M,2)
+    X = np.kron(np.array([[0, 1], [1, 0]]), np.eye(M - 1, dtype=np.complex128))
+    for m in range(M):
+        idx_m = np.array([m])
+        idx_n = np.delete(np.arange(M), m)
+        A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
+        A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
+        A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
+        A_nm = np.transpose(A_mn)
+        b_m = b[idx_m].reshape((2,))
+        b_n = b[idx_n].reshape((2 * M - 2,))
+
+        # single-mode A,b,c
+        A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
+        b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
+        c_ = (
+            c
+            * np.exp(-0.5 * b_n @ np.linalg.inv(A_nn - X) @ b_n)
+            / np.sqrt(np.linalg.det(A_nn - X))
+        )
+        yield A_, b_, c_
+
+
+# @njit
+def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
+    r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
-    This is effectively a 1-mode adaptation of Robbe's diagonal strategy, with early stopping.
+    This is an adaptation of Robbe's diagonal strategy, with early stopping.
+    Details in https://quantum-journal.org/papers/q-2023-08-29-1097/.
+
 
     Args:
-        A (np.ndarray): A 1x1 matrix of the Fock-Bargmann representation
-        b (np.ndarray): B 1-dim vector of the Fock-Bargmann representation
-        c (complex): vacuum amplitude
-        max_prob (float): the probability value to stop at
-        max_shape (int): stop if loop runs beyond this value
+        A (np.ndarray): 2Mx2M matrix of the Bargmann ansatz
+        b (np.ndarray): 2M-dim vector of the Bargmann ansatz
+        c (float): vacuum amplitude
+        max_prob (float): the probability value to stop at (default 0.999)
+        max_shape (int): max value before stopping (default 100)
 
     Details:
 
-    Here's how it works. We maintain two buffers: buf3 and buf2, of size 2x3 and 2x2 respectively.
+    Here's how it works. First we get the reduced density matrix at the given mode.
+    Then we maintain two buffers: buf3 and buf2, of size 2x3 and 2x2 respectively.
     The buffers contain the following elements of the density matrix:
 
                      ┌────┐                           ┌────┐
@@ -262,31 +296,39 @@ def autoshape(A, b, c, max_prob, max_shape=100) -> int:
     A and b mean that the contribution is multiplied by some element of A or b.
     There are also diagonal A-arrows between the columns of the same buffer, but they are not shown here.
     For pivot in (k,k) buf2 is updated, for pivots in (k+1,k) and (k,k+1) buf3 is updated.
+
+    The rules for updating are in https://quantum-journal.org/papers/q-2023-08-29-1097/
     """
-    buf2 = np.zeros(
-        (2, 2), dtype=np.complex128
-    )  # this is transposed with respect to the diagram
-    buf3 = np.zeros(
-        (2, 3), dtype=np.complex128
-    )  # this is transposed with respect to the diagram
-    buf3[0, 1] = c  # vacuum probability at (0,0)
-    norm = np.abs(c)
-    k = 0
-    while norm < max_norm and k < max_shape:
-        # pivot at (k, k), write (k+1, k) and (k, k+1)
-        buf2[(k + 1) % 2] = (b * buf3[k % 2, 1] + A @ buf2[k % 2] * SQRT[k]) / SQRT[
-            k + 1
-        ]
-        # pivot at (k+1, k), write (k+2, k) and (k+1, k+1)
-        buf3[(k + 1) % 2, :2] = (
-            b * buf2[(k + 1) % 2, 0]
-            + A @ (buf3[k % 2, :2] * np.array([SQRT[k + 1], SQRT[k]]))
-        ) / np.array([SQRT[k + 2], SQRT[k + 1]])
-        # pivot at (k, k+1), write (k, k+2) only
-        buf3[(k + 1) % 2, 2] = (
-            b[1] * buf2[(k + 1) % 2, 1]
-            + A[1] @ (buf3[k % 2, 1:] * np.array([SQRT[k], SQRT[k + 1]]))
-        ) / SQRT[k + 2]
-        norm += np.abs(buf3[(k + 1) % 2, 1])
-        k += 1
-    return k
+    shape = []
+    for A, b, c in dm_marginals_generator(A, b, c):
+        # buffers are transposed with respect to the diagram
+        buf2 = np.zeros((2, 2), dtype=np.complex128)
+        buf3 = np.zeros((2, 3), dtype=np.complex128)
+        buf3[0, 1] = c  # vacuum probability at (0,0)
+        norm = np.abs(c)
+        k = 0
+        while norm < max_prob and k < max_shape:
+            buf2[(k + 1) % 2] = (b * buf3[k % 2, 1] + A @ buf2[k % 2] * SQRT[k]) / SQRT[
+                k + 1
+            ]
+            buf3[(k + 1) % 2, 0] = (
+                b[0] * buf2[(k + 1) % 2, 0]
+                + A[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
+                + A[0, 1] * buf3[k % 2, 0] * SQRT[k]
+            ) / SQRT[k + 2]
+
+            buf3[(k + 1) % 2, 1] = (
+                b[1] * buf2[(k + 1) % 2, 0]
+                + A[1, 0] * buf3[k % 2, 1] * SQRT[k + 1]
+                + A[1, 1] * buf3[k % 2, 0] * SQRT[k]
+            ) / SQRT[k + 1]
+
+            buf3[(k + 1) % 2, 2] = (
+                b[1] * buf2[(k + 1) % 2, 1]
+                + A[1, 0] * buf3[k % 2, 2] * SQRT[k]
+                + A[1, 1] * buf3[k % 2, 1] * SQRT[k + 1]
+            ) / SQRT[k + 2]
+            norm += np.abs(buf3[(k + 1) % 2, 1])
+            k += 1
+        shape.append(k)
+    return shape

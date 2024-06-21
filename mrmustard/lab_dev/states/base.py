@@ -48,7 +48,7 @@ from mrmustard.utils.typing import (
     Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.math.lattice.strategies.vanilla import autoshape
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -309,34 +309,6 @@ class State(CircuitComponent):
         Whether this state is pure.
         """
         return math.allclose(self.purity, 1.0)
-
-    @property
-    def auto_shape(self) -> tuple[int, ...]:
-        r"""
-        The recommended Fock shape of this state calculated as the minimum of the numba ``autoshape``
-        and the ``custom_shape`` where not None. The ``autoshape`` function aims at capturing at
-        least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of the state
-        (99.9% by default). If the state has a Fock representation, the auto_shape elements are
-        the minimum of the array shape and the custom shape.
-        """
-        try:  # bargmann
-            shape = []
-            for i in range(len(self.modes)):
-                A, b, c = self[i].representation.triple
-                k = autoshape(
-                    A[0],
-                    b[0],
-                    c[0],
-                    settings.AUTOCUTOFF_PROBABILITY,
-                    settings.AUTOSHAPE_MAX,
-                )
-                shape.append(k)  # gonna be half the length for DM
-            shape = shape + shape if 2 * len(shape) == len(self.wires) else shape
-        except ValueError:  # fock
-            shape = self.representation.array.shape[1:]
-        for i, (c, s) in enumerate(zip(self.custom_shape, shape)):
-            self.custom_shape[i] = s if c is None else c
-        return tuple(min(c, s) for c, s in zip(self.custom_shape, shape))
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -668,6 +640,25 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        The recommended Fock shape of this DM calculated as the minimum of the numba ``autoshape``
+        and the ``fock_shape`` where not None. The ``autoshape`` function aims at capturing at
+        least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of the state
+        (99.9% by default). If the state has a Fock representation, the auto_shape elements are
+        the minimum of the array shape and the custom shape.
+        Note that in a linear superposition the ``auto_shape`` is calculated for the first element.
+        """
+        try:  # fock
+            return self._representation.array.shape[1:]
+        except AttributeError:  # bargmann
+            repr = self.representation
+            shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
+        # update fock_shape `None`s
+        for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
+            self.fock_shape[i] = f or s  # replace the `None`s
+        return tuple(min(f, s) for c, s in zip(self.fock_shape, shape))
+
     @classmethod
     def from_phase_space(
         cls,
@@ -840,6 +831,25 @@ class Ket(State):
         )
         if representation is not None:
             self._representation = representation
+
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        The recommended Fock shape of this Ket calculated as the minimum of the numba ``autoshape``
+        and the ``fock_shape`` where not None. The ``autoshape`` function aims at capturing at
+        least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of the state
+        (99.9% by default). If the state has a Fock representation, the auto_shape elements are
+        the minimum of the array shape and the custom shape.
+        Note that in a linear superposition the ``auto_shape`` is calculated for the first element.
+        """
+        try:  # fock
+            return self.representation.array.shape[1:]
+        except AttributeError:  # bargmann
+            repr = self.representation.conj() & self.representation
+            shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
+        # update fock_shape `None`s
+        for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
+            self.fock_shape[i] = f or s  # replace the `None`s
+        return tuple(min(f, s) for c, s in zip(self.fock_shape, shape))
 
     @classmethod
     def from_phase_space(

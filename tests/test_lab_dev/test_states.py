@@ -61,16 +61,16 @@ class TestKet:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
 
-    def test_custom_shape(self):
+    def test_fock_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.custom_shape == [None, None]
-        ket.custom_shape[0] = 19
-        assert ket.custom_shape == [19, None]
+        assert ket.fock_shape == [None, None]
+        ket.fock_shape[0] = 19
+        assert ket.fock_shape == [19, None]
 
     def test_auto_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
         assert ket.auto_shape == (7, 13)
-        ket.custom_shape[0] = 19
+        ket.fock_shape[0] = 19
         assert ket.auto_shape == (19, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -124,7 +124,9 @@ class TestKet:
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
+        state1 = Ket.from_phase_space(
+            modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0)
+        )
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
@@ -320,7 +322,9 @@ class TestKet:
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
+        assert si == DisplacedSqueezed(
+            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
+        )
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])
@@ -364,16 +368,16 @@ class TestDM:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
-    def test_custom_shape(self):
+    def test_fock_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.custom_shape == [None, None, None, None]
-        dm.custom_shape[0] = 19
-        assert dm.custom_shape == [19, None, None, None]
+        assert dm.fock_shape == [None, None, None, None]
+        dm.fock_shape[0] = 19
+        assert dm.fock_shape == [19, None, None, None]
 
     def test_auto_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
         assert dm.auto_shape == (7, 13, 7, 13)
-        dm.custom_shape[0] = 19
+        dm.fock_shape[0] = 19
         assert dm.auto_shape == (19, 13, 7, 13)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -708,7 +712,9 @@ class TestDisplacedSqueezed:
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_representation(self, modes, x, y, r, phi):
         rep = DisplacedSqueezed(modes, x, y, r, phi).representation
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        exp = (
+            Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)
+        ).representation
         assert rep == exp
 
     def test_representation_error(self):
@@ -829,7 +835,9 @@ class TestTwoModeSqueezedVacuum:
     def test_trainable_parameters(self):
         state1 = TwoModeSqueezedVacuum([0, 1], 1, 1)
         state2 = TwoModeSqueezedVacuum([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
-        state3 = TwoModeSqueezedVacuum([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        state3 = TwoModeSqueezedVacuum(
+            [0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2)
+        )
 
         with pytest.raises(AttributeError):
             state1.r.value = 3
@@ -895,7 +903,9 @@ class TestThermal:
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
         rep = Thermal([0, 1], nbar).representation
-        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        exp = Bargmann(
+            *thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar)
+        )
         assert rep == exp
 
     def test_representation_error(self):
@@ -916,7 +926,9 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_2d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -939,7 +951,9 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_3d(
+            resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True
+        )
         data = fig.to_dict()
 
         if self.regenerate_assets:

@@ -15,6 +15,7 @@
 """
 This module contains functions for performing calculations on objects in the Bargmann representations.
 """
+
 import numpy as np
 
 from mrmustard import math, settings
@@ -88,10 +89,12 @@ def wigner_to_bargmann_Choi(X, Y, d):
     A = math.matmul(math.matmul(R, A), math.dagger(R))
     A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
-    B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
-        settings.HBAR, dtype=R.dtype
+    B = math.matvec(
+        math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)
+    ) / math.sqrt(settings.HBAR, dtype=R.dtype)
+    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(
+        detxi, dtype=b.dtype
     )
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
