@@ -557,7 +557,7 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
     """
     hbar = settings.HBAR
     Id = np.eye(n_modes, dtype=np.complex128)
-    e = np.exp(1j * phi / 2)
+    e = np.exp(-1j * phi + 1j * np.pi / 2)
     A = np.kron(
         [
             [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
