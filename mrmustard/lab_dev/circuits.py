@@ -133,14 +133,14 @@ class Circuit:
         >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
 
         >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
-        >>> assert [op.auto_shape() for op in circ] == [(7,), (100,100)]
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (100,100)]
         >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape() for op in circ] == [(7,), (100, 7)]
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (100, 5)]
 
         >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
-        >>> assert [op.auto_shape() for op in circ] == [(8, 8), (100, 100, 100, 100)]
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (100, 100, 100, 100)]
         >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape() for op in circ] == [(8, 8), (16, 16, 8, 8)]
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
         """
 
         for component in self:
