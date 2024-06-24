@@ -210,9 +210,7 @@ class Number(Ket):
         if isinstance(n, int):
             n = (n,) * len(modes)
         if len(n) != len(modes):
-            raise ValueError(
-                f"The number of modes is {len(modes)}, but found {len(n)} photon numbers."
-            )
+            raise ValueError(f"The number of modes is {len(modes)}, but{n} has length {len(n)}.")
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
         if cutoffs is not None and len(cutoffs) != len(modes):
@@ -224,6 +222,14 @@ class Number(Ket):
             [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
         )
 
+    # def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
+    #     # find common wires
+    #     m = other.wires.output.ket.modes & self.wires.input.ket.modes
+    #     ket_idx = other.wires.output.ket[m].indices
+    #     for i in ket_idx:
+    #         other.fock_shape[i] = self.fock_shape[i]
+    #     other.to_fock()
+    #
     @property
     def representation(self) -> Fock:
         return Fock(fock_state(self.n, [s - 1 for s in self.fock_shape]))
@@ -315,9 +321,7 @@ class TwoModeSqueezedVacuum(Ket):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        rs, phis = list(
-            reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value)
-        )
+        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 

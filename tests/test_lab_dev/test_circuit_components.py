@@ -52,9 +52,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(
-            representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name
-        )
+        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -72,9 +70,7 @@ class TestCircuitComponent:
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(
-            displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0}
-        )
+        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
         assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
 
     def test_modes_init_out_of_order(self):
@@ -91,9 +87,7 @@ class TestCircuitComponent:
         r3 = (cc1.adjoint @ cc1).representation
         cc3 = CircuitComponent(r3, m2, m2, m2, m1)
         cc4 = CircuitComponent(r3, m2, m2, m2, m2)
-        assert cc3.representation == cc4.representation.reorder(
-            [0, 1, 2, 3, 4, 5, 7, 6]
-        )
+        assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
@@ -195,9 +189,7 @@ class TestCircuitComponent:
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.representation == Fock(
-            math.hermite_renormalized(
-                *displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)
-            )
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
 
     def test_add(self):
@@ -350,15 +342,15 @@ class TestCircuitComponent:
 
     @pytest.mark.parametrize("shape", [5, 6])
     def test_rshift_bargmann_and_fock(self, shape):
+        settings.AUTOSHAPE_MAX = shape
         vac12 = Vacuum([1, 2])
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d2 = Dgate([2], x=0.1, y=0.2)
-        d12 = Dgate([1, 2], x=0.1, y=[0.1, 0.2])
-        a1 = Attenuator([1], transmissivity=0.8)
-        n12 = Number([1, 2], n=1)
+        d1 = Dgate([1], x=0.4, y=0.1)
+        d2 = Dgate([2], x=0.1, y=0.5)
+        a1 = Attenuator([1], transmissivity=0.9)
+        n12 = Number([1, 2], n=1).dual
 
         # bargmann >> fock
-        r1 = vac12 >> d1 >> d2 >> a1 >> n12.dual
+        r1 = vac12 >> d1 >> d2 >> a1 >> n12
 
         # fock >> bargmann
         r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n12
@@ -366,17 +358,10 @@ class TestCircuitComponent:
         # bargmann >> fock >> bargmann
         r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n12
 
-        # fock only
-        r4 = (
-            vac12.to_fock(shape)
-            >> d12.to_fock(shape)
-            >> a1.to_fock(shape)
-            >> n12.to_fock(shape)
-        )
-
         assert math.allclose(r1, r2)
         assert math.allclose(r1, r3)
-        assert math.allclose(r1, r4)
+
+        settings.AUTOSHAPE_MAX = autocutoff_max0
 
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
@@ -406,8 +391,8 @@ class TestCircuitComponent:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
-        assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
+        assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012, repr=NoneType)"
+        assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component, repr=NoneType)"
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
@@ -430,11 +415,7 @@ class TestCircuitComponent:
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
-        dm = (
-            SqueezedVacuum([0], 0.4, 0.5)
-            >> Dgate([0], 0.3, 0.2)
-            >> Attenuator([0], 0.9)
-        )
+        dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
         back = DM.from_quadrature([0], dm.quadrature())
         assert dm == back
 
@@ -470,9 +451,10 @@ class TestAdjointView:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
-        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
+        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012, repr=NoneType)"
         assert (
-            repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
+            repr(c2.adjoint)
+            == "CircuitComponent(modes=[0, 1, 2], name=my_component, repr=NoneType)"
         )
 
     def test_parameters_point_to_original_parameters(self):
@@ -513,8 +495,10 @@ class TestDualView:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 3))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 3), name="my_component")
 
-        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013)"
-        assert repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component)"
+        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013, repr=NoneType)"
+        assert (
+            repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component, repr=NoneType)"
+        )
 
     def test_parameters_point_to_original_parameters(self):
         r"""

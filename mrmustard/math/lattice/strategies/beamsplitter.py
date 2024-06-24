@@ -184,9 +184,7 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
     """
     c1, c2, c3, c4 = shape
     if c1 != c3 or c2 != c4:
-        raise ValueError(
-            "The Schwinger method only supports shapes of the form (i,k,i,k)."
-        )
+        raise ValueError("The Schwinger method only supports shapes of the form (i,k,i,k).")
     # create output tensor
     U = np.zeros(shape, dtype="complex128")
 
