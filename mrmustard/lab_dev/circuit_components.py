@@ -19,14 +19,16 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union
+import numbers
 
 import os
 import numpy as np
 from IPython.display import display, HTML
 from mako.template import Template
 
-from mrmustard import settings, math
+from mrmustard import math, settings
+
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
@@ -491,7 +493,7 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the left.
         """
-        return self.__mul__(other)
+        return self * other
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -521,7 +523,7 @@ class CircuitComponent:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
-    def __matmul__(self, other: CircuitComponent) -> CircuitComponent:
+    def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for a more custom way of contracting components.
@@ -530,6 +532,8 @@ class CircuitComponent:
             return other._rrshift_(self)
         except AttributeError:
             pass
+        if isinstance(other, (numbers.Number, np.ndarray)):
+            return self * other
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
@@ -557,43 +561,82 @@ class CircuitComponent:
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rmatmul__(self, other: Scalar) -> CircuitComponent:
+        r"""
+        Multiplies a scalar with a circuit component when written as ``scalar @ component``.
+        """
+        return self * other
+
+    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
-        It adds the adjoints when they are missing. An error is raised if these
-        cannot be deduced from the wires of the components. For example this
-        allows ``Ket``s to be right-shifted into ``Channel``s and automatically
-        the result is a ``DM``:
+        It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
+        ``other`` is a Channel). An error is raised if these cannot be deduced from
+        the wires of the components. For example this allows ``Ket``s to be right-shifted
+        into ``Channel``s and automatically the result is a ``DM``. If the result has
+        no wires left, it returns the (batched) scalar value of the representation.
+        Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar
+        part may result from an automated contraction subroutine that involves several components).
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
+            >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
+            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
         """
-        if hasattr(other, "_rrshift_"):
-            return other._rrshift_(self)
+        if hasattr(other, "__custom_rrshift__"):
+            return other.__custom_rrshift__(self)
+
+        if isinstance(other, (numbers.Number, np.ndarray)):
+            return self * other
+
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += "whether or where to add missing wires. Use ``@`` and specify all the components."
+
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
         both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
         if only_ket or only_bra or both_sides:
-            return self @ other
+            return self._rshift_return(self @ other)
 
         self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
         self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
         if self_needs_bra or self_needs_ket:
-            return self.adjoint @ (self @ other)
+            return self._rshift_return(self.adjoint @ (self @ other))
 
         other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
         other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
         if other_needs_bra or other_needs_ket:
-            return (self @ other) @ other.adjoint
+            return self._rshift_return((self @ other) @ other.adjoint)
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
         msg += (
             "whether or where to add bra wires. Use ``@`` instead and specify all the components."
         )
         raise ValueError(msg)
+
+    def _rshift_return(
+        self, ret: CircuitComponent | np.ndarray | complex
+    ) -> CircuitComponent | np.ndarray | complex:
+        "internal convenience method for right-shift, to return the right type of object"
+        if len(ret.wires) > 0:
+            return ret
+        scalar = ret.representation.scalar
+        return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
+
+    def __rrshift__(self, other: Scalar) -> CircuitComponent | np.array:
+        r"""
+        Multiplies a scalar with a circuit component when written as ``scalar >> component``.
+        This is needed when the "component" on the left is the result of a contraction that leaves
+        no wires and the component is returned as a scalar. Note that there is an edge case if the object on the left happens to have the ``__rshift__`` method, but it's not the one we want (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with types ``np.ndarray >> CircuitComponent`` the method ``__rrshift__`` will not be called, and something else will be returned.
+        """
+        ret = self * other
+        try:
+            return ret.representation.scalar
+        except AttributeError:
+            return ret
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"

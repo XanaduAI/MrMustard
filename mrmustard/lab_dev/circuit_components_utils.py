@@ -22,9 +22,9 @@ perform useful mathematical calculations.
 from __future__ import annotations
 from typing import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.lab_dev.transformations import Map, Operation
-from mrmustard.lab_dev.transformations import Rgate
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
@@ -52,7 +52,7 @@ class TraceOut(CircuitComponent):
 
         >>> # use the trace out to estimate expectation values of operators
         >>> op = Dgate([0], x=1)
-        >>> expectation = ((state.dm() @ op) >> TraceOut([0, 1, 2])).representation.c
+        >>> expectation = (state.dm() @ op) >> TraceOut([0, 1, 2])
 
         >>> assert np.allclose(expectation, state.expectation(op))
 
@@ -71,21 +71,27 @@ class TraceOut(CircuitComponent):
             name="Tr",
         )
 
-    def _rrshift_(self, other: CircuitComponent) -> CircuitComponent:
-        """Special method called first in the ``__rshift__`` of ``other``.
-        Remember ``other >> TraceOut`` is the original order, with ``other``
-        on the left of the ``>>`` operator."""
-        if not other.wires.bra or not other.wires.ket:
-            m = tuple(other.wires.output.modes & self.wires.input.modes)
-            idx = other.wires.output[m].indices
-            rep = other.representation.conj()[idx] @ other.representation[idx]
-            w, _ = other.adjoint.wires @ other.wires
-            return CircuitComponent._from_attributes(rep, (w @ self.wires)[0])
+    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+        r"""A custom ``>>`` operator for the ``TraceOut`` component.
+        It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
+        We know that the trace in Bargmann is a Gaussian integral, and in
+        Fock it's a trace (rather than an inner product with the identity).
+        So we write two shortcuts here, and ``__rrshift__`` will be called first if
+        present in the ``__rshift__`` method of the first object (``other`` here).
+        """
+        ket = other.wires.output.ket
+        bra = other.wires.output.bra
+        idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
+        idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
+        if not ket or not bra:
+            repr = other.representation.conj()[idx_z] @ other.representation[idx_z]
+            wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
-            idx_bk, _ = other._matmul_indices(self)
-            idx_b, idx_k = idx_bk[: len(idx_bk) // 2], idx_bk[len(idx_bk) // 2 :]
-            rep = other.representation.trace(idx_b, idx_k)
-        return CircuitComponent._from_attributes(rep, (other.wires @ self.wires)[0])
+            repr = other.representation.trace(idx_z, idx_zconj)
+            wires, _ = other.wires @ self.wires
+
+        cpt = other._from_attributes(repr, wires)
+        return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
 
 
 class BtoPS(Map):
@@ -113,8 +119,9 @@ class BtoPS(Map):
 
 
 class BtoQ(Operation):
-    r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
-    By default it's defined on the output ket side.
+    r"""The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
+    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
+    ones unless they support inner products in quadrature representation.
 
     Args:
         modes: The modes of this channel.
@@ -126,15 +133,10 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float,
     ):
-        no_phi = Operation(
-            modes_out=modes,
-            modes_in=modes,
-            representation=Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes))),
-        )
-
+        repr = Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes), phi))
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=(Rgate(modes, -phi) >> no_phi).representation,
+            representation=repr,
             name="BtoQ",
         )
