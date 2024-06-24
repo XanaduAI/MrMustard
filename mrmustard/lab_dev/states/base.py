@@ -645,6 +645,7 @@ class DM(State):
         except AttributeError:  # bargmann
             repr = self.representation
             shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
+            shape = tuple(shape) + tuple(shape)
         for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
             self.fock_shape[i] = f or s  # replace the `None`s
         return tuple(min(c, s) for c, s in zip(self.fock_shape, shape))

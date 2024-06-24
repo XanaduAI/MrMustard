@@ -192,34 +192,36 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     return dLdA, dLdb, dLdc
 
 
-def dm_marginals_generator(A, b, c):
-    r"""Generator to compute the marginals of a Gaussian density matrix.
-    yields all the single-mode marginals obtained by tracing away the rest.
-    """
-    # reduced DM
-    M = len(b) // 2
-    A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
-    b = b.reshape((2, M)).transpose()  # (M,2)
-    X = np.kron(np.array([[0, 1], [1, 0]]), np.eye(M - 1, dtype=np.complex128))
-    for m in range(M):
-        idx_m = np.array([m])
-        idx_n = np.delete(np.arange(M), m)
-        A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
-        A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
-        A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
-        A_nm = np.transpose(A_mn)
-        b_m = b[idx_m].reshape((2,))
-        b_n = b[idx_n].reshape((2 * M - 2,))
-
-        # single-mode A,b,c
-        A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
-        b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
-        c_ = (
-            c
-            * np.exp(-0.5 * b_n @ np.linalg.inv(A_nn - X) @ b_n)
-            / np.sqrt(np.linalg.det(A_nn - X))
-        )
-        yield A_, b_, c_
+#
+# @njit
+# def dm_marginals_generator(A, b, c):
+#     r"""Generator to compute the marginals of a Gaussian density matrix.
+#     yields all the single-mode marginals obtained by tracing away the rest.
+#     """
+#     # reduced DM
+#     M = len(b) // 2
+#     A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
+#     b = b.reshape((2, M)).transpose()  # (M,2)
+#     X = np.kron(np.array([[0, 1], [1, 0]]), np.eye(M - 1, dtype=np.complex128))
+#     for m in range(M):
+#         idx_m = np.array([m])
+#         idx_n = np.delete(np.arange(M), m)
+#         A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
+#         A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
+#         A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
+#         A_nm = np.transpose(A_mn)
+#         b_m = b[idx_m].reshape((2,))
+#         b_n = b[idx_n].reshape((2 * M - 2,))
+#
+#         # single-mode A,b,c
+# A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
+# b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
+# c_ = (
+#     c
+#     * np.exp(-0.5 * b_n @ np.linalg.inv(A_nn - X) @ b_n)
+#     / np.sqrt(np.linalg.det(A_nn - X))
+# )
+# yield A_, b_, c_
 
 
 @njit
@@ -228,7 +230,6 @@ def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
     such that its trace is above a certain bound given as ``max_prob``.
     This is an adaptation of Robbe's diagonal strategy, with early stopping.
     Details in https://quantum-journal.org/papers/q-2023-08-29-1097/.
-
 
     Args:
         A (np.ndarray): 2Mx2M matrix of the Bargmann ansatz
@@ -239,9 +240,9 @@ def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
 
     Details:
 
-    Here's how it works. First we get the reduced density matrix at the given mode.
-    Then we maintain two buffers: buf3 and buf2, of size 2x3 and 2x2 respectively.
-    The buffers contain the following elements of the density matrix:
+    Here's how it works. First we get the reduced density matrix at the given mode. Then we
+    maintain two buffers that contain values around the diagonal: buf3 and buf2, of size 2x3
+    and 2x2 respectively. The buffers contain the following elements of the density matrix:
 
                      ┌────┐                           ┌────┐
                      │buf3│                           │buf2│
@@ -294,34 +295,55 @@ def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
 
     The rules for updating are in https://quantum-journal.org/papers/q-2023-08-29-1097/
     """
-    shape = []
-    for A, b, c in dm_marginals_generator(A, b, c):
+    # reduced DMs
+    M = len(b) // 2
+    shape = np.ones(M, dtype=np.int64)
+    A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
+    b = b.reshape((2, M)).transpose()  # (M,2)
+    zero = np.zeros((M - 1, M - 1), dtype=np.complex128)
+    id = np.eye(M - 1, dtype=np.complex128)
+    X = np.vstack((np.hstack((zero, id)), np.hstack((id, zero))))
+    for t, m in enumerate(range(M)):
+        idx_m = np.array([m])
+        idx_n = np.delete(np.arange(M), m)
+        A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
+        A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
+        A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
+        A_nm = np.transpose(A_mn)
+        b_m = b[idx_m].reshape((2,))
+        b_n = b[idx_n].reshape((2 * M - 2,))
+        # single-mode A,b,c
+        A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
+        b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
+        c_ = (
+            c
+            * np.exp(-0.5 * b_n @ np.linalg.inv(A_nn - X) @ b_n)
+            / np.sqrt(np.linalg.det(A_nn - X))
+        )
         # buffers are transposed with respect to the diagram
         buf2 = np.zeros((2, 2), dtype=np.complex128)
         buf3 = np.zeros((2, 3), dtype=np.complex128)
-        buf3[0, 1] = c  # vacuum probability at (0,0)
-        norm = np.abs(c)
+        buf3[0, 1] = c_  # vacuum probability at (0,0)
+        norm = np.abs(c_)
         k = 0
         while norm < max_prob and k < max_shape:
-            buf2[(k + 1) % 2] = (b * buf3[k % 2, 1] + A @ buf2[k % 2] * SQRT[k]) / SQRT[k + 1]
+            buf2[(k + 1) % 2] = (b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]) / SQRT[k + 1]
             buf3[(k + 1) % 2, 0] = (
-                b[0] * buf2[(k + 1) % 2, 0]
-                + A[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
-                + A[0, 1] * buf3[k % 2, 0] * SQRT[k]
+                b_[0] * buf2[(k + 1) % 2, 0]
+                + A_[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
+                + A_[0, 1] * buf3[k % 2, 0] * SQRT[k]
             ) / SQRT[k + 2]
-
             buf3[(k + 1) % 2, 1] = (
-                b[1] * buf2[(k + 1) % 2, 0]
-                + A[1, 0] * buf3[k % 2, 1] * SQRT[k + 1]
-                + A[1, 1] * buf3[k % 2, 0] * SQRT[k]
+                b_[1] * buf2[(k + 1) % 2, 0]
+                + A_[1, 0] * buf3[k % 2, 1] * SQRT[k + 1]
+                + A_[1, 1] * buf3[k % 2, 0] * SQRT[k]
             ) / SQRT[k + 1]
-
             buf3[(k + 1) % 2, 2] = (
-                b[1] * buf2[(k + 1) % 2, 1]
-                + A[1, 0] * buf3[k % 2, 2] * SQRT[k]
-                + A[1, 1] * buf3[k % 2, 1] * SQRT[k + 1]
+                b_[1] * buf2[(k + 1) % 2, 1]
+                + A_[1, 0] * buf3[k % 2, 2] * SQRT[k]
+                + A_[1, 1] * buf3[k % 2, 1] * SQRT[k + 1]
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-        shape.append(k)
-    return shape + shape
+        shape[t] = k
+    return shape
