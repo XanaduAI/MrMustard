@@ -644,7 +644,11 @@ class DM(State):
             return self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             repr = self.representation
-            shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
+            shape = autoshape_numba(
+                math.asnumpy(repr.A[0]),
+                math.asnumpy(repr.b[0]),
+                math.asnumpy(repr.c[0]),
+            )
             shape = tuple(shape) + tuple(shape)
         for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
             self.fock_shape[i] = f or s  # replace the `None`s
@@ -825,7 +829,7 @@ class Ket(State):
 
     def auto_shape(self) -> tuple[int, ...]:
         r"""
-        A pretty enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
+        A pretty enough estimate of the Fock shape of this Ket, define)d as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
@@ -838,7 +842,11 @@ class Ket(State):
             if None not in self.fock_shape:  # try the fock_shape if ready
                 return tuple(self.fock_shape)
             repr = self.representation.conj() & self.representation
-            shape = autoshape_numba(repr.A[0], repr.b[0], repr.c[0])
+            shape = autoshape_numba(
+                math.asnumpy(repr.A[0]),
+                math.asnumpy(repr.b[0]),
+                math.asnumpy(repr.c[0]),
+            )
         for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
             self.fock_shape[i] = f or s  # replace the `None`s
         return tuple(min(f, s) for f, s in zip(self.fock_shape, shape))
