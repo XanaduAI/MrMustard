@@ -192,7 +192,6 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     return dLdA, dLdb, dLdc
 
 
-# @njit
 def dm_marginals_generator(A, b, c):
     r"""Generator to compute the marginals of a Gaussian density matrix.
     yields all the single-mode marginals obtained by tracing away the rest.
