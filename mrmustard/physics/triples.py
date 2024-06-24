@@ -505,9 +505,6 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
             msg = "Found amplifier with gain ``g`` smaller than `1`."
             raise ValueError(msg)
 
-    g = math.atleast_1d(g, math.complex128)
-    n_modes = len(g)
-
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
     g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
@@ -560,7 +557,7 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
     """
     hbar = settings.HBAR
     Id = np.eye(n_modes, dtype=np.complex128)
-    e = np.exp(1j * phi / 2)
+    e = np.exp(-1j * phi + 1j * np.pi / 2)
     A = np.kron(
         [
             [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
