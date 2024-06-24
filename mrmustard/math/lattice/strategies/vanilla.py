@@ -222,7 +222,7 @@ def dm_marginals_generator(A, b, c):
         yield A_, b_, c_
 
 
-# @njit
+@njit
 def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
