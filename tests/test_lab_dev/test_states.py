@@ -87,6 +87,16 @@ class TestKet:
         with pytest.raises(AttributeError):
             Number([0], n=10).bargmann
 
+    def test_normalize(self):
+        # Bargmann
+        coh = Coherent([0], x=1.0, y=1.0) * 0.5
+        normalized = coh.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+        # Fock
+        coh.to_fock(5)  # truncated
+        normalized = coh.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
@@ -381,6 +391,16 @@ class TestDM:
         fock = Number([0], n=10).dm()
         with pytest.raises(AttributeError):
             fock.bargmann
+
+    def test_normalize(self):
+        # Bargmann
+        coh = Coherent([0], x=1.0, y=1.0).dm() * 0.5
+        normalized = coh.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+        # Fock
+        coh.to_fock(5)  # truncated
+        normalized = coh.normalize()
+        assert np.isclose(normalized.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
