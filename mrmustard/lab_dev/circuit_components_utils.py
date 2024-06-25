@@ -22,11 +22,13 @@ perform useful mathematical calculations.
 from __future__ import annotations
 from typing import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
+from mrmustard.lab_dev.transformations import Map, Operation
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "DsMap", "BtoQMap", "CftMap"]
+__all__ = ["TraceOut", "BtoPS", "BtoQ", "CFT"]
 
 
 class TraceOut(CircuitComponent):
@@ -50,7 +52,7 @@ class TraceOut(CircuitComponent):
 
         >>> # use the trace out to estimate expectation values of operators
         >>> op = Dgate([0], x=1)
-        >>> expectation = ((state.dm() @ op) >> TraceOut([0, 1, 2])).representation.c
+        >>> expectation = (state.dm() @ op) >> TraceOut([0, 1, 2])
 
         >>> assert np.allclose(expectation, state.expectation(op))
 
@@ -62,15 +64,38 @@ class TraceOut(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
-        super().__init__("Tr", modes_in_ket=modes, modes_in_bra=modes)
+        super().__init__(
+            modes_in_ket=modes,
+            modes_in_bra=modes,
+            representation=Bargmann(*triples.identity_Abc(len(modes))),
+            name="Tr",
+        )
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.identity_Abc(len(self.modes)))
+    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+        r"""A custom ``>>`` operator for the ``TraceOut`` component.
+        It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
+        We know that the trace in Bargmann is a Gaussian integral, and in
+        Fock it's a trace (rather than an inner product with the identity).
+        So we write two shortcuts here, and ``__rrshift__`` will be called first if
+        present in the ``__rshift__`` method of the first object (``other`` here).
+        """
+        ket = other.wires.output.ket
+        bra = other.wires.output.bra
+        idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
+        idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
+        if not ket or not bra:
+            repr = other.representation.conj()[idx_z] @ other.representation[idx_z]
+            wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
+        else:
+            repr = other.representation.trace(idx_z, idx_zconj)
+            wires, _ = other.wires @ self.wires
+
+        cpt = other._from_attributes(repr, wires)
+        return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
 
 
-class DsMap(CircuitComponent):
-    r"""The `s`-parametrized ``Dgate`` as a ``Channel``.
+class BtoPS(Map):
+    r"""The `s`-parametrized ``Dgate`` as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 
@@ -85,47 +110,38 @@ class DsMap(CircuitComponent):
         s: float,
     ):
         super().__init__(
-            "DsMap",
-            modes_out_bra=modes,
-            modes_in_bra=modes,
-            modes_out_ket=modes,
-            modes_in_ket=modes,
+            modes_out=modes,
+            modes_in=modes,
+            representation=Bargmann(*triples.displacement_map_s_parametrized_Abc(s, len(modes))),
+            name="BtoPS",
         )
         self.s = s
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.displacement_map_s_parametrized_Abc(self.s, len(self.modes)))
 
-
-class BtoQMap(CircuitComponent):
-    r"""The kernel for the change of representation from ``Bargmann`` into quadrature.
-
-    Used internally as a ``Unitary`` for transformations between representations on the ``Ket`` Wire.
-
-    The ``adjoint`` of this ``CircuitComponent`` denotes the change of representation kernel from ``Bargmann`` into quadrature on the `bra` Wire.
-    The ``dual`` of this ``CircuitComponent`` denotes the change of representation kernel from quadrature into Bargmann.
+class BtoQ(Operation):
+    r"""The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
+    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
+    ones unless they support inner products in quadrature representation.
 
     Args:
         modes: The modes of this channel.
+        phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
     """
 
     def __init__(
         self,
         modes: Sequence[int],
+        phi: float,
     ):
+        repr = Bargmann(*triples.bargmann_to_quadrature_Abc(len(modes), phi))
         super().__init__(
-            "BtoQMap",
-            modes_out_ket=modes,
-            modes_in_ket=modes,
+            modes_out=modes,
+            modes_in=modes,
+            representation=repr,
+            name="BtoQ",
         )
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.bargmann_to_quadrature_Abc(len(self.modes)))
-
-
-class CftMap(CircuitComponent):
+class CFT(CircuitComponent):
     r"""The Complex Fourier Transformation as a channel.
     This will be used as an internal Channel for representation transformation.
 
@@ -137,14 +153,12 @@ class CftMap(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
+        repr = Bargmann(*triples.complex_fourier_transform_Abc(len(self.modes)))
         super().__init__(
-            "CftMap",
+            name="CFT",
+            :wrepresentation=repr,
             modes_out_bra=modes,
             modes_in_bra=modes,
             modes_out_ket=modes,
             modes_in_ket=modes,
         )
-
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.complex_fourier_transform_Abc(len(self.modes)))

@@ -80,8 +80,8 @@ def shape_check(mat, vec, dim: int, name: str):
     Check that the given Gaussian representation is consistent with the given modes.
 
     Args:
-        mat: Bargmann A matrix
-        vec: Bargmann b vector
+        mat: matrix (e.g. A or cov, etc.)
+        vec: vector (e.g. b or means, etc.)
         dim: The required dimension of the representation
         name: The name of the representation for error messages
     """

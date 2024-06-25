@@ -36,10 +36,11 @@ from mrmustard.lab_dev.states import (
     Ket,
     Number,
     SqueezedVacuum,
+    TwoModeSqueezedVacuum,
     Thermal,
     Vacuum,
 )
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
+from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate, S2gate
 from mrmustard.lab_dev.wires import Wires
 
 # original settings
@@ -54,7 +55,7 @@ class TestKet:
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
-        state = Ket(name, modes)
+        state = Ket(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -83,14 +84,14 @@ class TestKet:
             Ket.from_bargmann([0], state01.bargmann, "my_ket")
 
     def test_bargmann_triple_error(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             Number([0], n=10).bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -98,9 +99,9 @@ class TestKet:
         assert state_in_fock == state_out
 
     def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).to_fock_component(5)
+        state01 = Coherent([0, 1], 1).to_fock(5)
         with pytest.raises(ValueError):
-            Ket.from_fock([0], state01.fock_array(5), "my_ket", True)
+            Ket.from_fock([0], state01.fock(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
@@ -111,12 +112,14 @@ class TestKet:
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, vacuum_cov(n_modes), vacuum_means(n_modes))
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
         phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(modes, squeezed_vacuum_cov(r, phi), vacuum_means(n_modes))
+        state2 = Ket.from_phase_space(
+            modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
+        )
         assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
 
     def test_to_from_quadrature(self):
@@ -140,18 +143,18 @@ class TestKet:
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
         assert math.allclose(state1.probability, 1 / 9)
-        assert math.allclose(state1.to_fock_component(20).probability, 1 / 9)
+        assert math.allclose(state1.to_fock(20).probability, 1 / 9)
 
         state2 = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
         assert math.allclose(state2.probability, 1.13533528)
-        assert math.allclose(state2.to_fock_component(20).probability, 1.13533528)
+        assert math.allclose(state2.to_fock(20).probability, 1.13533528)
 
         state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
-        state = Ket("my_ket", modes)
+        state = Ket(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
@@ -166,74 +169,74 @@ class TestKet:
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
 
-        assert math.allclose(ket.expectation(ket), [1])
+        assert math.allclose(ket.expectation(ket), 1.0)
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.c
-        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.c
-        res_k01 = (ket @ k01.dual).representation.c
+        res_k0 = (ket @ k0.dual) >> TraceOut([1])
+        res_k1 = (ket @ k1.dual) >> TraceOut([0])
+        res_k01 = ket @ k01.dual
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), res_k01)
+        assert math.allclose(ket.expectation(k01), math.sum(res_k01.representation.c))
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = ((ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])).representation.c
-        res_dm1 = ((ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])).representation.c
-        res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.c
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
+        res_dm01 = ket @ ket.adjoint @ dm01.dual
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
+        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.representation.c))
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = (ket @ u0 @ ket.dual).representation.c
-        res_u1 = (ket @ u1 @ ket.dual).representation.c
-        res_u01 = (ket @ u01 @ ket.dual).representation.c
+        res_u0 = ket @ u0 >> ket.dual
+        res_u1 = ket @ u1 >> ket.dual
+        res_u01 = ket @ u01 >> ket.dual
 
         assert math.allclose(ket.expectation(u0), res_u0)
         assert math.allclose(ket.expectation(u1), res_u1)
         assert math.allclose(ket.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+        settings.AUTOCUTOFF_MAX_CUTOFF = 30
 
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
+        ket = Coherent([0, 1], x=1, y=[0.2, 0.3]).to_fock()
 
-        assert math.allclose(ket.expectation(ket), (ket @ ket.dual).representation.array ** 2)
+        assert math.allclose(ket.expectation(ket), (ket >> ket.dual) ** 2)
 
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
+        k0 = Coherent([0], x=1, y=0.2)
+        k1 = Coherent([1], x=1, y=0.3)
+        k01 = Coherent([0, 1], x=1, y=[0.2, 0.3])
 
-        res_k0 = ((ket @ k0.dual) >> TraceOut([1])).representation.array
-        res_k1 = ((ket @ k1.dual) >> TraceOut([0])).representation.array
-        res_k01 = (ket @ k01.dual).representation.array ** 2
+        res_k0 = (ket @ k0.dual) >> TraceOut([1])
+        res_k1 = (ket @ k1.dual) >> TraceOut([0])
+        res_k01 = (ket >> k01.dual) ** 2
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
         assert math.allclose(ket.expectation(k01), res_k01)
 
-        dm0 = Coherent([0], x=1, y=2).dm()
-        dm1 = Coherent([1], x=1, y=3).dm()
-        dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
+        dm0 = Coherent([0], x=1, y=0.2).dm()
+        dm1 = Coherent([1], x=1, y=0.3).dm()
+        dm01 = Coherent([0, 1], x=1, y=[0.2, 0.3]).dm()
 
-        res_dm0 = ((ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])).representation.array
-        res_dm1 = ((ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])).representation.array
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
         res_dm01 = (ket @ ket.adjoint @ dm01.dual).representation.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
+        assert math.allclose(ket.expectation(dm01), res_dm01[0])
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
@@ -243,9 +246,9 @@ class TestKet:
         res_u1 = (ket @ u1 @ ket.dual).representation.array
         res_u01 = (ket @ u01 @ ket.dual).representation.array
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        assert math.allclose(ket.expectation(u0), res_u0[0])
+        assert math.allclose(ket.expectation(u1), res_u1[0])
+        assert math.allclose(ket.expectation(u01), res_u01[0])
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -256,7 +259,7 @@ class TestKet:
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -268,11 +271,13 @@ class TestKet:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation,
+            channel.wires,
+            channel.name,
         )  # pylint: disable=protected-access
 
         # gates
@@ -343,7 +348,7 @@ class TestDM:
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM(name, modes)
+        state = DM(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -368,20 +373,20 @@ class TestDM:
 
     def test_from_fock_error(self):
         state01 = Coherent([0, 1], 1).dm()
-        state01 = state01.to_fock_component(2)
+        state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
+            DM.from_fock([0], state01.fock(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             fock.bargmann
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
-        state_in_fock = state_in.to_fock_component(5)
-        array_in = state_in.fock_array(5)
+        state_in_fock = state_in.to_fock(5)
+        array_in = state_in.fock(5)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
@@ -395,9 +400,13 @@ class TestDM:
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 
+        # test error
+        with pytest.raises(ValueError):
+            DM.from_phase_space([0, 1], (cov, means, 1.0))
+
         cov = vacuum_cov(1)
         means = [1.78885438, 3.57770876]
-        state1 = DM.from_phase_space([0], cov, means)
+        state1 = DM.from_phase_space([0], (cov, means, 1.0))
         assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
 
     def test_to_from_quadrature(self):
@@ -425,11 +434,11 @@ class TestDM:
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
         assert state1.probability == 1
-        assert state1.to_fock_component(20).probability == 1
+        assert state1.to_fock(20).probability == 1
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
         assert state2.probability == 1
-        assert math.allclose(state2.to_fock_component(20).probability, 1)
+        assert math.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
@@ -447,75 +456,49 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.c
-        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.c
-        res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.c
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
+        res_k01 = dm @ k01.dual @ k01.dual.adjoint
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = ((dm @ dm0.dual) >> TraceOut([1])).representation.c
-        res_dm1 = ((dm @ dm1.dual) >> TraceOut([0])).representation.c
-        res_dm01 = (dm @ dm01.dual).representation.c
+        res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
+        res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
+        res_dm01 = dm @ dm01.dual
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
-
-        u0 = Dgate([0], x=0.1)
-        u1 = Dgate([1], x=0.2)
-        u01 = Dgate([0, 1], x=[0.3, 0.4])
-
-        res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.c
-        res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.c
-        res_u01 = ((dm @ u01) >> TraceOut([0, 1])).representation.c
-
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
-
-    def test_expectation_fock(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
-
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock_component()
-        dm = ket.dm()
-
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
-
-        res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
-        res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
-        res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
+        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = ((dm @ dm0.dual) >> TraceOut([1])).representation.array
-        res_dm1 = ((dm @ dm1.dual) >> TraceOut([0])).representation.array
-        res_dm01 = (dm @ dm01.dual).representation.array
+        res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
+        res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
+        res_dm01 = dm @ dm01.dual
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
+        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
 
         u0 = Dgate([0], x=0.1)
         u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.array
-        res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.array
-        res_u01 = ((dm @ u01) >> TraceOut([0, 1])).representation.array
+        res_u0 = (dm @ u0) >> TraceOut([0, 1])
+        res_u1 = (dm @ u1) >> TraceOut([0, 1])
+        res_u01 = (dm @ u01) >> TraceOut([0, 1])
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -530,7 +513,7 @@ class TestDM:
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent("", None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -542,11 +525,11 @@ class TestDM:
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.name, unitary.representation, unitary.wires
+            unitary.representation, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.name, channel.representation, channel.wires
+            channel.representation, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         dm = ket >> channel
@@ -628,9 +611,9 @@ class TestCoherent:
         lc = state1 + state2 - state3
         assert lc.representation.ansatz.batch_size == 3
 
-        assert (lc >> lc.dual).representation.ansatz.batch_size == 9
+        assert (lc @ lc.dual).representation.ansatz.batch_size == 9
         settings.UNSAFE_ZIP_BATCH = True
-        assert (lc >> lc.dual).representation.ansatz.batch_size == 3  # not 9
+        assert (lc @ lc.dual).representation.ansatz.batch_size == 3  # not 9
         settings.UNSAFE_ZIP_BATCH = False
 
 
@@ -742,6 +725,10 @@ class TestSqueezedVacuum:
         with pytest.raises(ValueError, match="Length of ``phi``"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
+    def test_modes_slice_params(self):
+        psi = SqueezedVacuum([0, 1], r=[1, 2], phi=[3, 4])
+        assert psi[0] == SqueezedVacuum([0], r=1, phi=3)
+
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum([0], 1, 1)
         state2 = SqueezedVacuum([0], 1, 1, r_trainable=True, r_bounds=(-2, 2))
@@ -765,6 +752,54 @@ class TestSqueezedVacuum:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             SqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+
+
+class TestTwoModeSqueezedVacuum:
+    r"""
+    Tests for the ``TwoModeSqueezedVacuum`` class.
+    """
+
+    modes = [[0, 1], [1, 2], [1, 5]]
+    r = [[1], 1, [2]]
+    phi = [3, [4], 1]
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_init(self, modes, r, phi):
+        state = TwoModeSqueezedVacuum(modes, r, phi)
+
+        assert state.name == "TwoModeSqueezedVacuum"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``r``"):
+            TwoModeSqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``phi``"):
+            SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = TwoModeSqueezedVacuum([0, 1], 1, 1)
+        state2 = TwoModeSqueezedVacuum([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
+        state3 = TwoModeSqueezedVacuum([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.r.value = 3
+
+        state2.r.value = 2
+        assert state2.r.value == 2
+
+        state3.phi.value = 2
+        assert state3.phi.value == 2
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_representation(self, modes, r, phi):
+        rep = TwoModeSqueezedVacuum(modes, r, phi).representation
+        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
 
 
 class TestVacuum:

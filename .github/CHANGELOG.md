@@ -12,11 +12,19 @@
 * Switch from the `julia` Python package to `juliacall` for easier installation and usage.
   [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
 
+* Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
+  visualize the timing results quickly.
+  [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
+  [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
+
+* Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
+  [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
 
 
 ### Documentation

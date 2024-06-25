@@ -187,6 +187,37 @@ def displaced_squeezed_vacuum_state_Abc(
     return A, b, c
 
 
+def two_mode_squeezed_vacuum_state_Abc(
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of two mode squeezed vacuum states.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``r=[1,2,3,4]`` and ``phi=1`` is equivalent to
+    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing angles.
+
+    Returns:
+        The ``(A, b, c)`` triple of the squeezed vacuum states.
+    """
+    r, phi = list(_reshape(r=r, phi=phi))
+    n_modes = 2 * len(r)
+    O = math.zeros((len(r), len(r)), math.complex128)
+    tanhr = math.diag(-math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
+
+    A = math.block([[O, tanhr], [tanhr, O]])
+    b = _vacuum_B_vector(n_modes)
+    c = math.prod(1 / math.cosh(r))
+
+    return A, b, c
+
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
@@ -345,6 +376,45 @@ def beamsplitter_gate_Abc(
     return A, b, c
 
 
+def twomode_squeezing_gate_Abc(
+    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of two-mode squeezing gates.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
+    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing phase.
+
+    Returns:
+        The ``(A, b, c)`` triple of the two mode squeezing gates.
+    """
+    r, phi = _reshape(r=r, phi=phi)
+    n_modes = 2 * len(r)
+
+    O = math.zeros((len(r), len(r)), math.complex128)
+    tanhr = math.diag(math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
+    sechr = math.diag(1 / math.cosh(r))
+
+    A_block1 = math.block([[O, -tanhr], [-tanhr, O]])
+
+    A_block2 = math.block([[O, math.conj(tanhr)], [math.conj(tanhr), O]])
+
+    A_block3 = math.block([[sechr, O], [O, sechr]])
+
+    A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
+    b = _vacuum_B_vector(n_modes * 2)
+    c = math.prod(1 / math.cosh(r))
+
+    return A, b, c
+
+
 def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of identity gates.
@@ -355,10 +425,8 @@ def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the identities.
     """
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    I_n = math.reshape(
-        math.diag(math.asnumpy([1.0 + 0j for _ in range(n_modes)])), (n_modes, n_modes)
-    )
+    O_n = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    I_n = math.eye(n_modes, dtype=math.complex128)
 
     A = math.block([[O_n, I_n], [I_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
@@ -437,9 +505,6 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
             msg = "Found amplifier with gain ``g`` smaller than `1`."
             raise ValueError(msg)
 
-    g = math.atleast_1d(g, math.complex128)
-    n_modes = len(g)
-
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
     g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
@@ -476,39 +541,31 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def bargmann_to_quadrature_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between quadrature representation with ABC Ansatz form and Bargmann representation with ABC Ansatz.
+    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
 
-    The indices of the triple correspond to the variables :math:`(\vec{z}, \vec{p})` of the kernel here and it is used to transform from quadrature representation in Bargmann.
-
-    If one wants to transformation from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component.
+    If one wants to transform from quadrature representation to Bargmann representation, the kernel will be the `dual` of this component, but be careful that the inner product will then have to use the real integral.
 
     Args:
          n_modes: The number of modes.
+         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
 
     Returns:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
     hbar = settings.HBAR
-    In = math.eye(n_modes, math.complex128)
-    A = math.block(
+    Id = np.eye(n_modes, dtype=np.complex128)
+    e = np.exp(-1j * phi + 1j * np.pi / 2)
+    A = np.kron(
         [
-            [In, -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128)],
-            [
-                -1j * math.cast(math.sqrt(2 / hbar, math.complex128) * In, math.complex128),
-                -1 / hbar * In,
-            ],
-        ]
+            [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
+            [-1j * e * np.sqrt(2 / hbar), e * e],
+        ],
+        Id,
     )
     b = _vacuum_B_vector(2 * n_modes)
-    # Reorder it as a Unitary
-    full_order = math.arange(n_modes * 2)
-    order = list(
-        math.cast(math.concat((full_order[n_modes:], full_order[:n_modes]), axis=0), math.int32)
-    )
-    A = math.astensor(math.asnumpy(A)[order, :][:, order])
     c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
     return A, b, c
 

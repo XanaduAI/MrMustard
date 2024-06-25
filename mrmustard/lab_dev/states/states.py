@@ -29,8 +29,15 @@ from mrmustard.physics import triples
 from .base import Ket, DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Coherent", "DisplacedSqueezed", "Number", "SqueezedVacuum", "Thermal", "Vacuum"]
-
+__all__ = [
+    "Coherent",
+    "DisplacedSqueezed",
+    "Number",
+    "SqueezedVacuum",
+    "Thermal",
+    "TwoModeSqueezedVacuum",
+    "Vacuum",
+]
 
 #  ~~~~~~~~~~~
 #  Pure States
@@ -73,6 +80,8 @@ class Coherent(Ket):
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
+    short_name = "Coh"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -83,7 +92,7 @@ class Coherent(Ket):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("Coherent", modes=modes)
+        super().__init__(modes=modes, name="Coherent")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -123,6 +132,8 @@ class DisplacedSqueezed(Ket):
         phi_bounds: The bounds of `phi`.
     """
 
+    short_name = "DSq"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -139,7 +150,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("DisplacedSqueezed", modes=modes)
+        super().__init__(modes=modes, name="DisplacedSqueezed")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
@@ -186,13 +197,15 @@ class Number(Ket):
 
     """
 
+    short_name = "N"
+
     def __init__(
         self,
         modes: Sequence[int],
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__("N", modes=modes)
+        super().__init__(modes=modes, name="N")
 
         self._n = math.atleast_1d(n)
         if len(self._n) == 1:
@@ -241,7 +254,7 @@ class SqueezedVacuum(Ket):
         >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
 
     Args:
-        modes: The modes of the coherent state.
+        modes: The modes of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angles.
         r_trainable: Whether `r` is trainable.
@@ -249,6 +262,8 @@ class SqueezedVacuum(Ket):
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
     """
+
+    short_name = "Sq"
 
     def __init__(
         self,
@@ -260,7 +275,7 @@ class SqueezedVacuum(Ket):
         r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__("SqueezedVacuum", modes=modes)
+        super().__init__(modes=modes, name="SqueezedVacuum")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
@@ -269,6 +284,50 @@ class SqueezedVacuum(Ket):
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.squeezed_vacuum_state_Abc(rs, phis))
+
+
+class TwoModeSqueezedVacuum(Ket):
+    r"""The two-mode squeezed vacuum state.
+
+    If ``r`` and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate
+
+        >>> state = TwoModeSqueezedVacuum(modes=[0, 1], r=0.3, phi=0.2)
+        >>> assert state == Vacuum([0, 1]) >> S2gate([0, 1], r=0.3, phi=0.2)
+
+
+    Args:
+        modes: The modes of the coherent state.
+        r: The squeezing magnitude.
+        phi: The squeezing angles.
+        r_trainable: Whether `r` is trainable.
+        phi_trainable: Whether `phi` is trainable.
+        r_bounds: The bounds of `r`.
+        phi_bounds: The bounds of `phi`.
+    """
+
+    def __init__(
+        self,
+        modes: Tuple[int, int],
+        r: float = 0.0,
+        phi: float = 0.0,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        super().__init__(modes=modes, name="TwoModeSqueezedVacuum")
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
+        return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
 class Vacuum(Ket):
@@ -298,11 +357,13 @@ class Vacuum(Ket):
             A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
     """
 
+    short_name = "Vac"
+
     def __init__(
         self,
         modes: Sequence[int],
     ) -> None:
-        super().__init__("Vac", modes=modes)
+        super().__init__(modes=modes, name="Vac")
 
     @property
     def representation(self) -> Bargmann:
@@ -336,6 +397,8 @@ class Thermal(DM):
         nbar_bounds: The bounds of ``nbar``.
     """
 
+    short_name = "Th"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -343,7 +406,7 @@ class Thermal(DM):
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ) -> None:
-        super().__init__("Thermal", modes=modes)
+        super().__init__(modes=modes, name="Thermal")
         self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
