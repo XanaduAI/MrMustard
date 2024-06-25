@@ -210,9 +210,7 @@ class Number(Ket):
         if isinstance(n, int):
             n = (n,) * len(modes)
         if len(n) != len(modes):
-            raise ValueError(
-                f"The number of modes is {len(modes)}, but found {len(n)} photon numbers."
-            )
+            raise ValueError(f"The number of modes is {len(modes)}, but{n} has length {len(n)}.")
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
         if cutoffs is not None and len(cutoffs) != len(modes):
@@ -220,13 +218,13 @@ class Number(Ket):
                 f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
             )
         self.n = n
-        self._custom_shape = (
+        self._fock_shape = (
             [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
         )
 
     @property
     def representation(self) -> Fock:
-        return Fock(fock_state(self.n, [s - 1 for s in self.custom_shape]))
+        return Fock(fock_state(self.n, [s - 1 for s in self.fock_shape]))
 
 
 class SqueezedVacuum(Ket):
@@ -353,7 +351,7 @@ class Vacuum(Ket):
         modes: Sequence[int],
     ) -> None:
         super().__init__(modes=modes, name="Vac")
-        self._custom_shape = [1] * len(modes)
+        self._fock_shape = [1] * len(modes)
 
     @property
     def representation(self) -> Bargmann:

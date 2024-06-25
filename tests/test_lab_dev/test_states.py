@@ -61,17 +61,17 @@ class TestKet:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
 
-    def test_custom_shape(self):
+    def test_fock_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.custom_shape == [None, None]
-        ket.custom_shape[0] = 19
-        assert ket.custom_shape == [19, None]
+        assert ket.fock_shape == [None, None]
+        ket.fock_shape[0] = 19
+        assert ket.fock_shape == [19, None]
 
     def test_auto_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.auto_shape == (7, 13)
-        ket.custom_shape[0] = 19
-        assert ket.auto_shape == (19, 13)
+        assert ket.auto_shape() == (5, 11)
+        ket.fock_shape[0] = 19
+        assert ket.auto_shape() == (19, 11)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -221,9 +221,15 @@ class TestKet:
 
     def test_expectation_fock(self):
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+<<<<<<< HEAD
 
         assert math.allclose(ket.expectation(ket), (ket >> ket.dual) ** 2)
 
+=======
+
+        assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
+
+>>>>>>> opt_contraction
         k0 = Coherent([0], x=1, y=2).to_fock(10)
         k1 = Coherent([1], x=1, y=3).to_fock(10)
         k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
@@ -364,17 +370,17 @@ class TestDM:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
-    def test_custom_shape(self):
+    def test_fock_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.custom_shape == [None, None, None, None]
-        dm.custom_shape[0] = 19
-        assert dm.custom_shape == [19, None, None, None]
+        assert dm.fock_shape == [None, None, None, None]
+        dm.fock_shape[0] = 19
+        assert dm.fock_shape == [19, None, None, None]
 
     def test_auto_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.auto_shape == (7, 13, 7, 13)
-        dm.custom_shape[0] = 19
-        assert dm.auto_shape == (19, 13, 7, 13)
+        assert dm.auto_shape() == (5, 11, 5, 11)
+        dm.fock_shape[0] = 1
+        assert dm.auto_shape() == (1, 11, 5, 11)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -470,7 +476,7 @@ class TestDM:
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
-    def test_expectation_bargmann(self):
+    def test_expectation_bargmann_ket(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
         dm = ket.dm()
 
@@ -486,25 +492,34 @@ class TestDM:
         assert math.allclose(dm.expectation(k1), res_k1)
         assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
 
+    def test_expectation_bargmann_dm(self):
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
-        res_dm01 = dm @ dm01.dual
+        res_dm0 = (dm01 @ dm0.dual) >> TraceOut([1])
+        res_dm1 = (dm01 @ dm1.dual) >> TraceOut([0])
+        res_dm01 = dm01 >> dm01.dual
 
+<<<<<<< HEAD
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
+=======
+        assert math.allclose(dm01.expectation(dm0), res_dm0)
+        assert math.allclose(dm01.expectation(dm1), res_dm1)
+        assert math.allclose(dm01.expectation(dm01), res_dm01)
+>>>>>>> opt_contraction
 
+    def test_expectation_bargmann_u(self):
+        dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
         u0 = Dgate([0], x=0.1)
         u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ((dm @ u0) >> TraceOut([0, 1])).representation.c
-        res_u1 = ((dm @ u1) >> TraceOut([0, 1])).representation.c
-        res_u01 = ((dm @ u01) >> TraceOut([0, 1])).representation.c
+        res_u0 = (dm @ u0) >> TraceOut([0, 1])
+        res_u1 = (dm @ u1) >> TraceOut([0, 1])
+        res_u01 = (dm @ u01) >> TraceOut([0, 1])
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -518,13 +533,19 @@ class TestDM:
         k1 = Coherent([1], x=1, y=3).to_fock(10)
         k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
+<<<<<<< HEAD
         res_k0 = ((dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])).representation.array
         res_k1 = ((dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])).representation.array
         res_k01 = (dm @ k01.dual @ k01.dual.adjoint).representation.array
+=======
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
+        res_k01 = dm @ k01.dual >> k01.dual.adjoint
+>>>>>>> opt_contraction
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
+        assert math.allclose(dm.expectation(k01), res_k01)
 
         dm0 = Coherent([0], x=1, y=2).to_fock(10).dm()
         dm1 = Coherent([1], x=1, y=3).to_fock(10).dm()
@@ -532,11 +553,11 @@ class TestDM:
 
         res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
         res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
-        res_dm01 = dm @ dm01.dual
+        res_dm01 = dm >> dm01.dual
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
+        assert math.allclose(dm.expectation(dm01), res_dm01)
 
         u0 = Dgate([0], x=0.1).to_fock(10)
         u1 = Dgate([1], x=0.2).to_fock(10)

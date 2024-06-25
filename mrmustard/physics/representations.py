@@ -640,7 +640,7 @@ class Fock(Representation):
             >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
 
         If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
-        using auto_shape where possible, or settings.AUTOCUTOFF_MAX_CUTOFF where not.
+        using auto_shape where possible, or settings.AUTOSHAPE_MAX where not.
 
         Args:
             other: Another representation.

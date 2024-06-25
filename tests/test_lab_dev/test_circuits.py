@@ -20,7 +20,7 @@ import pytest
 
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number, SqueezedVacuum
+from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
 from mrmustard.lab_dev.transformations import (
     BSgate,
     Sgate,
@@ -47,6 +47,17 @@ class TestCircuit:
         circ2 = Circuit() >> vac >> s01 >> bs01 >> bs12
         assert circ2.components == [vac, s01, bs01, bs12]
         assert circ2.path == []
+
+    def test_propagate_shapes(self):
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        assert [op.auto_shape() for op in circ] == [(5,), (100, 100)]
+        circ.propagate_shapes()
+        assert [op.auto_shape() for op in circ] == [(5,), (100, 5)]
+
+        circ = Circuit([SqueezedVacuum([0, 1], r=[0.5, -0.5]), BSgate([0, 1], 0.9)])
+        assert [op.auto_shape() for op in circ] == [(6, 6), (100, 100, 100, 100)]
+        circ.propagate_shapes()
+        assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
 
     def test_make_path(self):
         vac = Vacuum([0, 1, 2])

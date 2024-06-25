@@ -83,33 +83,11 @@ class Circuit:
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
 
-    def contract(self) -> CircuitComponent | complex:
-        r"""
-        Contracts the circuit following the path specified in the ``path`` attribute.
-
-        Returns:
-            A circuit component representing the contracted circuit or a complex number if the
-            circuit is a scalar (no wires).
-
-        Raises:
-            ValueError: If ``circuit`` has an incomplete path.
-        """
-        if len(self.path) != len(self.components) - 1:
-            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
-            msg += f"found {len(self.path)}."
-            raise ValueError(msg)
-
-        ret = dict(enumerate(self.components))
-        for idx0, idx1 in self.path:
-            ret[idx0] = ret[idx0] >> ret.pop(idx1)
-
-        return list(ret.values())[0]
-
     @property
     def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
         r"""
         A dictionary that maps the index of each component to all the components it is connected to.
-        For each connected component, the value is a dictionary with a key-value pair per component
+        For each connected component, the value is a dictionary with a key-value pair for each component
         connected to the first one, where the key is the index of this component and the value is
         a dictionary with all the wire index pairs that are being contracted between the two components.
 
@@ -155,20 +133,20 @@ class Circuit:
         >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
 
         >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
-        >>> assert [op.auto_shape for op in circ] == [(7,), (100,100)]
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (100,100)]
         >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape for op in circ] == [(7,), (100, 7)]
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (100, 5)]
 
         >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
-        >>> assert [op.auto_shape for op in circ] == [(8, 8), (100, 100, 100, 100)]
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (100, 100, 100, 100)]
         >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape for op in circ] == [(8, 8), (16, 16, 8, 8)]
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
         """
 
         for component in self:
-            component.custom_shape = list(component.auto_shape)
+            component.fock_shape = list(component.auto_shape())
 
-        # update the custom_shapes until convergence
+        # update the fock_shapes until convergence
         changes = self._update_shapes()
         while changes:
             changes = self._update_shapes()
@@ -188,20 +166,20 @@ class Circuit:
         for i, component in enumerate(self.components):
             for j, indices in self.indices_dict[i].items():
                 for a, b in indices.items():
-                    s_ia = self.components[i].custom_shape[a]
-                    s_jb = self.components[j].custom_shape[b]
+                    s_ia = self.components[i].fock_shape[a]
+                    s_jb = self.components[j].fock_shape[b]
                     s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                    if self.components[j].custom_shape[b] != s:
-                        self.components[j].custom_shape[b] = s
+                    if self.components[j].fock_shape[b] != s:
+                        self.components[j].fock_shape[b] = s
                         changes = True
-                    if self.components[i].custom_shape[a] != s:
-                        self.components[i].custom_shape[a] = s
+                    if self.components[i].fock_shape[a] != s:
+                        self.components[i].fock_shape[a] = s
                         changes = True
 
         # propagate through BSgates
         for i, component in enumerate(self.components):
             if isinstance(component, BSgate):
-                a, b, c, d = component.custom_shape
+                a, b, c, d = component.fock_shape
                 if c and d:
                     if not a or a > c + d:
                         a = c + d
@@ -217,7 +195,7 @@ class Circuit:
                         d = a + b
                         changes = True
 
-                self.components[i].custom_shape = [a, b, c, d]
+                self.components[i].fock_shape = [a, b, c, d]
 
         # TODO: propagate through where A matrix is block-antidiagonal
         # TODO: do S2gate (easy!)

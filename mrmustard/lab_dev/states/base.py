@@ -48,7 +48,7 @@ from mrmustard.utils.typing import (
     Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.physics.fock import autocutoffs
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -269,23 +269,6 @@ class State(CircuitComponent):
         QtoB = BtoQ(modes, phi).inverse()
         Q = cls(modes, Bargmann(*triple))
         return cls(modes, (Q >> QtoB).representation, name)
-
-    @property
-    def auto_shape(self) -> tuple[int, ...]:
-        r"""
-        The recommended Fock shape of this State calculated as the minimum
-        of the autocutoff and the custom_shape. The autocutoff of a state aims
-        at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
-        mass of the state (99.9% by default).
-        """
-        if None not in self.custom_shape:
-            return tuple(self.custom_shape)
-        cov, means, _ = self.phase_space(0)
-        cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
-        if len(cutoffs) == len(self.wires) // 2:
-            cutoffs = cutoffs + cutoffs
-        self._custom_shape = [s if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)]
-        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)])
 
     @property
     def _L2_norms(self) -> RealVector:
@@ -648,6 +631,29 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        A pretty enough estimate of the Fock shape of this DM, defined as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+        Note that it overwrites any ``None``s appearing in the ``fock_shape`` attribute and that
+        if a state is batched, the auto_shape is calculated for the first element.
+        """
+        try:  # fock
+            return self._representation.array.shape[1:]
+        except AttributeError:  # bargmann
+            repr = self.representation
+            shape = autoshape_numba(
+                math.asnumpy(repr.A[0]),
+                math.asnumpy(repr.b[0]),
+                math.asnumpy(repr.c[0]),
+            )
+            shape = tuple(shape) + tuple(shape)
+        for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
+            self.fock_shape[i] = f or s  # replace the `None`s
+        return tuple(min(c, s) for c, s in zip(self.fock_shape, shape))
+
     @classmethod
     def from_phase_space(
         cls,
@@ -821,6 +827,30 @@ class Ket(State):
         if representation is not None:
             self._representation = representation
 
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        A pretty enough estimate of the Fock shape of this Ket, define)d as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+        Note that it overwrites any ``None``s appearing in the ``fock_shape`` attribute and that
+        if a state is batched, the auto_shape is calculated for the first element.
+        """
+        try:  # fock
+            return self._representation.array.shape[1:]
+        except AttributeError:  # bargmann
+            if None not in self.fock_shape:  # try the fock_shape if ready
+                return tuple(self.fock_shape)
+            repr = self.representation.conj() & self.representation
+            shape = autoshape_numba(
+                math.asnumpy(repr.A[0]),
+                math.asnumpy(repr.b[0]),
+                math.asnumpy(repr.c[0]),
+            )
+        for i, (f, s) in enumerate(zip(self.fock_shape, shape)):
+            self.fock_shape[i] = f or s  # replace the `None`s
+        return tuple(min(f, s) for f, s in zip(self.fock_shape, shape))
+
     @classmethod
     def from_phase_space(
         cls,
@@ -897,8 +927,9 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = (self @ operator.dual) >> TraceOut(leftover_modes)
-            result = math.abs(result) ** 2 if not leftover_modes else result
+            result = self @ operator.dual
+            result @= result.adjoint
+            result >>= TraceOut(leftover_modes)
 
         elif op_type is OperatorType.DM_LIKE:
             result = (self.adjoint @ (self @ operator.dual)) >> TraceOut(leftover_modes)

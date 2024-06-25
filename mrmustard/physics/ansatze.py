@@ -432,8 +432,6 @@ class ArrayAnsatz(Ansatz):
 
         Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
 
-        Raises:
-            ValueError: If the arrays don't have the same shape.
         """
         slices = (slice(0, None),) + tuple(
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])

@@ -15,6 +15,7 @@
 """
 This module contains functions for performing calculations on objects in the Bargmann representations.
 """
+
 import numpy as np
 
 from mrmustard import math, settings
