@@ -141,7 +141,8 @@ class BtoQ(Operation):
             name="BtoQ",
         )
 
-class CFT(CircuitComponent):
+
+class CFT(Map):
     r"""The Complex Fourier Transformation as a channel.
     This will be used as an internal Channel for representation transformation.
 
@@ -153,12 +154,10 @@ class CFT(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
-        repr = Bargmann(*triples.complex_fourier_transform_Abc(len(self.modes)))
+        repr = Bargmann(*triples.complex_fourier_transform_Abc(len(modes)))
         super().__init__(
+            modes_out=modes,
+            modes_in=modes,
+            representation=repr,
             name="CFT",
-            :wrepresentation=repr,
-            modes_out_bra=modes,
-            modes_in_bra=modes,
-            modes_out_ket=modes,
-            modes_in_ket=modes,
         )

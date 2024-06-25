@@ -249,7 +249,7 @@ class TestBtoQ:
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
-        
+
     def test_BtoQ_with_displacement(self):
         v = Vacuum([0])
         x = 2
@@ -287,13 +287,11 @@ class TestCFT:
 
         # get new triple by right shift
         state_after = state >> CFT(modes=[0])
-        A1, b1, c1 = state_after.triple
+        A1, b1, c1 = state_after.bargmann
 
         # get new triple by contraction
-        Cft_bargmann_triple = complex_fourier_transform_Abc(n_modes=1)
-        A2, b2, c2 = contract_two_Abc(
-            state_bargmann_triple, Cft_bargmann_triple, idx1=[0, 1], idx2=[2, 3]
-        )
+        CFT_triple = complex_fourier_transform_Abc(n_modes=1)
+        A2, b2, c2 = contract_two_Abc(Abc, CFT_triple, idx1=[0, 1], idx2=[2, 3])
 
         assert math.allclose(A1[0], A2)
         assert math.allclose(b1[0], b2)
