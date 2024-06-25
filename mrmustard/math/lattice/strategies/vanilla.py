@@ -192,40 +192,10 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     return dLdA, dLdb, dLdc
 
 
-#
-# @njit
-# def dm_marginals_generator(A, b, c):
-#     r"""Generator to compute the marginals of a Gaussian density matrix.
-#     yields all the single-mode marginals obtained by tracing away the rest.
-#     """
-#     # reduced DM
-#     M = len(b) // 2
-#     A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
-#     b = b.reshape((2, M)).transpose()  # (M,2)
-#     X = np.kron(np.array([[0, 1], [1, 0]]), np.eye(M - 1, dtype=np.complex128))
-#     for m in range(M):
-#         idx_m = np.array([m])
-#         idx_n = np.delete(np.arange(M), m)
-#         A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
-#         A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
-#         A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
-#         A_nm = np.transpose(A_mn)
-#         b_m = b[idx_m].reshape((2,))
-#         b_n = b[idx_n].reshape((2 * M - 2,))
-#
-#         # single-mode A,b,c
-# A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
-# b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
-# c_ = (
-#     c
-#     * np.exp(-0.5 * b_n @ np.linalg.inv(A_nn - X) @ b_n)
-#     / np.sqrt(np.linalg.det(A_nn - X))
-# )
-# yield A_, b_, c_
-
-
 @njit
-def autoshape_numba(A, b, c, max_prob=0.999, max_shape=100) -> int:
+def autoshape_numba(
+    A, b, c, max_prob=0.999, max_shape=100
+) -> int:  # pragma: no covera(A, b, c, max_prob=0.999, max_shape=100) -> int:
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
     This is an adaptation of Robbe's diagonal strategy, with early stopping.
