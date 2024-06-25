@@ -32,7 +32,8 @@ from mrmustard.physics.gaussian_integrals import (
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM
+from mrmustard.lab_dev.states import Coherent, DM, Vacuum
+from mrmustard.lab_dev.transformations import Dgate
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -244,3 +245,25 @@ class TestBtoQ:
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
+
+    def test_BtoQ_with_displacement(self):
+        v = Vacuum([0])
+        x = 2
+        y = 1
+        d = Dgate([0], x, y)
+        state = v >> d
+        btq_q = BtoQ([0], 0)
+        btq_p = BtoQ([0], np.pi / 2)
+        btq_nq = BtoQ([0], np.pi)
+        btq_np = BtoQ([0], 3 * np.pi / 2)
+
+        height = 1 / np.sqrt(2 * np.pi)
+        obj_q = Bargmann(*(state >> btq_q).representation.data)
+        obj_p = Bargmann(*(state >> btq_p).representation.data)
+        obj_nq = Bargmann(*(state >> btq_nq).representation.data)
+        obj_np = Bargmann(*(state >> btq_np).representation.data)
+
+        assert np.allclose(np.abs(obj_q(2 * x)) ** 2, height)
+        assert np.allclose(np.abs(obj_p(2 * y)) ** 2, height)
+        assert np.allclose(np.abs(obj_nq(2 * (-x))) ** 2, height)
+        assert np.allclose(np.abs(obj_np(2 * (-y))) ** 2, height)

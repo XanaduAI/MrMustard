@@ -15,6 +15,7 @@
 * Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
   visualize the timing results quickly.
   [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
+  [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
