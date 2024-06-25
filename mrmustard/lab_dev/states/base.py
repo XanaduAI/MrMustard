@@ -846,7 +846,7 @@ class Ket(State):
 
     def normalize(self) -> Ket:
         r"""
-        Normalizes this ket.
+        Returns a rescaled version of the state such that its probability is 1
         """
         return self / math.sqrt(self.probability)
 
