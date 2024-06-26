@@ -266,7 +266,7 @@ class TestBackendManager:
         arr2 = np.array([[5, 6], [7, 8]])
         params = ((arr1, arr2), axis)
         res = math.asnumpy(math.concat(*params))
-        return np.allclose(res, np.concatenate(*params))
+        assert np.allclose(res, np.concatenate(*params))
 
     @pytest.mark.parametrize("l", lists)
     def test_conj(self, l):

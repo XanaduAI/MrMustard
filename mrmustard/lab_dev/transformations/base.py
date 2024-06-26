@@ -49,9 +49,11 @@ class Transformation(CircuitComponent):
         phi: float = 0,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize an Operation from the given quadrature triple (A, b, c).
+        r"""
+        Initialize an Operation from the given quadrature triple (A, b, c).
         The triple parametrizes the quadrature representation of the transformation as
-        :math:`c * exp(0.5*x^T A x + b^T x)`."""
+        :math:`c * exp(0.5*x^T A x + b^T x)`.
+        """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
@@ -68,13 +70,16 @@ class Transformation(CircuitComponent):
         triple: tuple,
         name: Optional[str] = None,
     ) -> Operation:
-        r"""Initialize a Transformation from the given Bargmann triple (A,b,c)
+        r"""
+        Initialize a Transformation from the given Bargmann triple (A,b,c)
         which parametrizes the Bargmann function of the transformation as
-        :math:`c * exp(0.5*z^T A z + b^T z)`."""
+        :math:`c * exp(0.5*z^T A z + b^T z)`.
+        """
         return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     def inverse(self) -> Transformation:
-        r"""Returns the mathematical inverse of the transformation, if it exists.
+        r"""
+        Returns the mathematical inverse of the transformation, if it exists.
         Note that it can be unphysical, for example when the original is not unitary.
 
         Returns:
@@ -108,8 +113,10 @@ class Transformation(CircuitComponent):
 
 
 class Operation(Transformation):
-    r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
-    to have a different number of input and output wires."""
+    r"""
+    A CircuitComponent with input and output wires on the ket side. Operation are allowed
+    to have a different number of input and output wires.
+    """
 
     short_name = "Op"
 
@@ -169,7 +176,10 @@ class Unitary(Operation):
         symplectic: tuple,
         name: Optional[str] = None,
     ) -> Unitary:
-        r"""Initialize a Unitary from the given symplectic matrix in qqpp basis, i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...]."""
+        r"""
+        Initialize a Unitary from the given symplectic matrix in qqpp basis,
+        i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
+        """
         M = len(modes_in) + len(modes_out)
         if symplectic.shape[-2:] != (M, M):
             raise ValueError(
@@ -184,9 +194,12 @@ class Unitary(Operation):
             name=name,
         )
 
+    def inverse(self) -> Transformation:
+        return self.dual
 
 class Map(Transformation):
-    r"""A CircuitComponent more general than Channels, which are CPTP Maps.
+    r"""
+    A CircuitComponent more general than Channels, which are CPTP Maps.
 
     Arguments:
         modes_out: The output modes of this Map.
