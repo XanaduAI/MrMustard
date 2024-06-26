@@ -399,6 +399,218 @@ class PolyExpAnsatz(PolyExpBase):
         return self.__class__(As, bs, cs)
 
 
+
+class DiffOpPolyExpAnsatz(PolyExpBase):
+    r"""
+    The ansatz of the Fock-Bargmann representation.
+
+    Represents the ansatz function:
+
+        :math:`F(z) = \sum_i [\sum_k c^(i)_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
+
+    with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
+
+    .. code-block::
+
+        >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
+
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array((1.0,2.0,3.0))
+
+        >>> F = DiffOpPolyExpAnsatz(A, b, c)
+        >>> z = np.array([1.0, 2.0])
+
+        >>> # calculate the value of the function at ``z``
+        >>> val = F(z)
+
+    Args:
+        A: The list of square matrices :math:`A_i`
+        b: The list of vectors :math:`b_i`
+        c: The array of coefficients for the polynomial terms in the ansatz.
+
+    """
+
+    def __init__(
+        self,
+        A: Optional[Batch[Matrix]] = None,
+        b: Optional[Batch[Vector]] = None,
+        c: Batch[Tensor | Scalar] = 1.0,
+        name: str = "",
+    ):
+        self.name = name
+
+        if A is None and b is None:
+            raise ValueError("Please provide either A or b.")
+        A = math.astensor(A)
+        b = math.astensor(b)
+        c = math.astensor(c)
+        super().__init__(mat=A, vec=b, array=c)
+
+    @property
+    def A(self) -> Batch[ComplexMatrix]:
+        r"""
+        The list of square matrices :math:`A_i`.
+        """
+        return self.mat
+
+    @property
+    def b(self) -> Batch[ComplexVector]:
+        r"""
+        The list of vectors :math:`b_i`.
+        """
+        return self.vec
+
+    @property
+    def c(self) -> Batch[ComplexTensor]:
+        r"""
+        The array of coefficients for the polynomial terms in the ansatz.
+        """
+        return self.array
+
+    def __call__(self, z: Batch[Vector]) -> Scalar:
+        r"""
+        Value of this ansatz at ``z``.
+
+        Args:
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The value of the function.
+        """
+        dim_alpha = z.shape[-1]
+        dim_beta = self.A.shape[-1]-dim_alpha
+
+        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]
+
+
+        A_part = math.sum(self.A[...,:dim_alpha,:dim_alpha] * zz,axes=[-1,-2])
+        b_part = math.sum(self.b[...,:dim_alpha] * z[..., None, :], axes=[-1])
+
+        exp_sum = np.exp(1/2 * A_part + b_part)
+        b_poly = np.array([math.sum(self.A[...,dim_alpha:,:dim_alpha]*z[i,None,:], axes=[-1]) + self.b[...,dim_alpha:] for i in range(z.shape[0])])
+        b_poly = np.moveaxis(b_poly,0,-1)
+        A_poly = self.A[...,dim_alpha:,dim_alpha:]
+        poly = np.array([math.hermite_renormalized_batch(A_poly[i],b_poly[i],1,self.c.shape[1:]+(b_poly.shape[-1],)) for i in range(A_poly.shape[0])])
+        poly = np.moveaxis(poly,-1,0)
+        val = np.sum(exp_sum * np.sum(poly*self.c,axis=tuple(np.arange(2,2+dim_beta))),axis=-1)
+        return val
+
+    def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+        r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            TypeError: If other is neither a scalar nor an ansatz.
+
+        Returns:
+            PolyExpAnsatz: The product of this ansatz and other.
+        """
+        def mulA(A1,A2,dim_alpha,dim_beta1,dim_beta2):
+            A3 = np.block([
+            [A1[:dim_alpha,:dim_alpha]+A2[:dim_alpha,:dim_alpha],A1[:dim_alpha,dim_alpha:],A2[:dim_alpha,dim_alpha:]],
+            [A1[dim_alpha:,:dim_alpha],A1[dim_alpha:,dim_alpha:],np.zeros((dim_beta1,dim_beta2))],
+            [A2[dim_alpha:,:dim_alpha],np.zeros((dim_beta2,dim_beta1)),A2[dim_alpha:,dim_alpha:]]
+            ])
+            return A3
+            
+        def mulb(b1,b2,dim_alpha):
+            b3 = np.concatenate((b1[:dim_alpha]+b2[:dim_alpha],b1[dim_alpha:],b2[dim_alpha:]))
+            return b3
+    
+        def mulc(c1,c2):
+            c3 = np.outer(c1,c2).reshape(c1.shape+c2.shape)
+            return c3
+            
+        if isinstance(other, DiffOpPolyExpAnsatz):
+            if self.c[1:].shape==(1,):
+                dim_beta1 = 0
+            else:
+                dim_beta1 = len(self.c[1:].shape) 
+                        
+            if other.c[1:].shape==(1,):
+                dim_beta2 = 0
+            else:
+                dim_beta2 = len(other.c[1:].shape)   
+
+            dim_alpha1 = self.A.shape[-1]-dim_beta1
+            dim_alpha2 = other.A.shape[-1]-dim_beta2
+            assert dim_alpha1==dim_alpha2
+            dim_alpha = dim_alpha1
+
+            new_a = [mulA(A1,A2,dim_alpha,dim_beta1,dim_beta2) for A1, A2 in itertools.product(self.A, other.A)]
+            new_b = [mulb(b1,b2,dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [mulc(c1,c2) for c1, c2 in itertools.product(self.c, other.c)]
+
+            return self.__class__(A=new_a, b=new_b, c=new_c)
+        else:
+            try:
+                return self.__class__(self.A, self.b, self.c * other)
+            except Exception as e:
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+        r"""Divides this ansatz by a scalar or another ansatz or a plain scalar.
+        """
+        raise NotImplementedError("Not implemented.")
+
+
+    def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
+        r"""Tensor product of this ansatz with another ansatz.
+        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
+        As it distributes over addition on both self and other,
+        the batch size of the result is the product of the batch
+        size of this anzatz and the other one.
+
+        Args:
+            other: Another ansatz.
+
+        Returns:
+            The tensor product of this ansatz and other.
+        """
+
+        def andA(A1,A2,dim_alpha1,dim_alpha2,dim_beta1,dim_beta2):
+            A3 = np.block([
+            [A1[:dim_alpha1,:dim_alpha1],np.zeros((dim_alpha1,dim_alpha2)),A1[:dim_alpha1,dim_alpha1:],np.zeros((dim_alpha1,dim_beta2))],
+            [np.zeros((dim_alpha2,dim_alpha1)),A2[:dim_alpha2:,:dim_alpha2],np.zeros((dim_alpha2,dim_beta1)),A2[:dim_alpha2,dim_alpha2:]],
+            [A1[dim_alpha1:,:dim_alpha1],np.zeros((dim_beta1,dim_alpha2)),A1[dim_alpha1:,dim_alpha1:],np.zeros((dim_beta1,dim_beta2))],
+            [np.zeros((dim_beta2,dim_alpha1)),A2[dim_alpha2:,:dim_alpha2],np.zeros((dim_beta2,dim_beta1)),A2[dim_alpha2:,dim_alpha2:]]        
+            ])
+            return A3
+        
+        def andb(b1,b2,dim_alpha1,dim_alpha2):
+            b3 = np.concatenate((b1[:dim_alpha1],b2[:dim_alpha2],b1[dim_alpha1:],b2[dim_alpha2:]))
+            return b3
+        
+        def andc(c1,c2):
+            if c1.shape==(1,) and c2.shape==(1,):
+                c3 = c1*c2
+            else:
+                c3 = np.outer(c1,c2).reshape(c1.shape+c2.shape)
+            return c3
+
+        if self.c.shape[1:]==(1,):
+            dim_beta1 = 0
+        else:
+            dim_beta1 = len(self.c[1:].shape)
+
+        if other.c.shape[1:]==(1,):
+            dim_beta2 = 0
+        else:
+            dim_beta2 = len(other.c[1:].shape)
+
+        dim_alpha1 = self.A.shape[-1]-dim_beta1
+        dim_alpha2 = other.A.shape[-1]-dim_beta2
+
+
+        As = [andA(A1,A2,dim_alpha1,dim_alpha2,dim_beta1,dim_beta2) for A1, A2 in itertools.product(self.A, other.A)]
+        bs = [andb(b1,b2,dim_alpha1,dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
+        cs = [andc(c1,c2) for c1, c2 in itertools.product(self.c, other.c)]
+        return self.__class__(As, bs, cs)
+
 class ArrayAnsatz(Ansatz):
     r"""
       The ansatz of the Fock-Bargmann representation.
