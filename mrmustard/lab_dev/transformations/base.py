@@ -197,6 +197,7 @@ class Unitary(Operation):
     def inverse(self) -> Transformation:
         return self.dual
 
+
 class Map(Transformation):
     r"""
     A CircuitComponent more general than Channels, which are CPTP Maps.
