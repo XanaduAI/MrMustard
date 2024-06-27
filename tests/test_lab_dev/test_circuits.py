@@ -20,8 +20,13 @@ import pytest
 
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number
-from mrmustard.lab_dev.transformations import BSgate, Sgate, Dgate, Attenuator
+from mrmustard.lab_dev.states import Vacuum, Number, SqueezedVacuum
+from mrmustard.lab_dev.transformations import (
+    BSgate,
+    Sgate,
+    Dgate,
+    Attenuator,
+)
 
 
 class TestCircuit:
@@ -226,8 +231,8 @@ class TestCircuit:
 
         circ2 = Circuit([vac012, s01, bs01, bs12, cc, n12.dual])
         r2 = ""
-        r2 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
-        r2 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
+        r2 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|3)="
+        r2 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|3)="
         r2 += "\nmode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)─────────────"
         assert repr(circ2) == r2 + "\n\n"
 
@@ -245,9 +250,9 @@ class TestCircuit:
 
         circ4 = Circuit([vac01, s01, vac2, bs01, bs12, n2.dual, cc, n12.dual])
         r4 = ""
-        r4 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
-        r4 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
-        r4 += "\nmode 2:            ◖Vac◗─────────────────────────────╰BSgate(0.0,0.0)──|N)=       "
+        r4 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|3)="
+        r4 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|3)="
+        r4 += "\nmode 2:            ◖Vac◗─────────────────────────────╰BSgate(0.0,0.0)──|3)=       "
         assert repr(circ4) == r4 + "\n\n"
 
         circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual

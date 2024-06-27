@@ -22,18 +22,25 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import Optional, Sequence, Union
-
 from mrmustard import math, settings
-from .circuit_components import CircuitComponent
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.transformations import BSgate
 
 __all__ = ["Circuit"]
 
 
 class Circuit:
     r"""
-    A quantum circuit.
+    A quantum circuit. It is a sequence of uncontracted components, which leaves the
+    possibility of contracting them in different orders. The order in which the components
+    are contracted is specified by the ``path`` attribute.
 
-    Quantum circuits store a list of ``CircuitComponent``s.
+    Different orders of contraction lead to the same result, but the cost of the contraction
+    can vary significantly. The ``path`` attribute is used to specify the order in which the
+    components are contracted.
+
+    We supply an automatic path generator that uses a graph representation of the circuit
+    and a branch-and-bound algorithm to find the optimal path. The path can also be set manually.
 
     .. code-block::
 
@@ -75,6 +82,146 @@ class Circuit:
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
+
+    def contract(self) -> CircuitComponent | complex:
+        r"""
+        Contracts the circuit following the path specified in the ``path`` attribute.
+
+        Returns:
+            A circuit component representing the contracted circuit or a complex number if the
+            circuit is a scalar (no wires).
+
+        Raises:
+            ValueError: If ``circuit`` has an incomplete path.
+        """
+        if len(self.path) != len(self.components) - 1:
+            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
+            msg += f"found {len(self.path)}."
+            raise ValueError(msg)
+
+        ret = dict(enumerate(self.components))
+        for idx0, idx1 in self.path:
+            ret[idx0] = ret[idx0] >> ret.pop(idx1)
+
+        return list(ret.values())[0]
+
+    @property
+    def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
+        r"""
+        A dictionary that maps the index of each component to all the components it is connected to.
+        For each connected component, the value is a dictionary with a key-value pair per component
+        connected to the first one, where the key is the index of this component and the value is
+        a dictionary with all the wire index pairs that are being contracted between the two components.
+
+        For example, if components[i] is connected to components[j] and they are contracting two wires
+        at index pairs (a, b) and (c, d), then indices_dict[i][j] = {a: b, c:d}.
+
+        This dictionary is used to propagate the shapes of the components in the circuit.
+        """
+        if not hasattr(self, "_idxdict"):
+            self._idxdict = self._indices_dict()
+        return self._idxdict
+
+    def _indices_dict(self):
+        ret = dict()
+        for i, opA in enumerate(self.components):
+            out_idx = set(opA.wires.output.indices)
+            indices: dict[int, dict[int, int]] = dict()
+            for j, opB in enumerate(self.components[i + 1 :]):
+                ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
+                ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
+                if not (ovlp_bra or ovlp_ket):
+                    continue
+                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
+                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
+                if not out_idx.intersection(iA):
+                    continue
+                assert list(iA) == sorted(iA)
+                assert list(iB) == sorted(iB)
+                assert len(iA) == len(iB)
+                indices[i + j + 1] = dict(zip(iA, iB))
+                out_idx -= set(iA)
+                if not out_idx:
+                    break
+            ret[i] = indices
+        return ret
+
+    def propagate_shapes(self):
+        r"""Propagates the shape information so that the shapes of the components are better
+        than those provided by the auto_shape attribute.
+
+        .. code-block::
+
+        >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
+
+        >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        >>> assert [op.auto_shape for op in circ] == [(7,), (100,100)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape for op in circ] == [(7,), (100, 7)]
+
+        >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
+        >>> assert [op.auto_shape for op in circ] == [(8, 8), (100, 100, 100, 100)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape for op in circ] == [(8, 8), (16, 16, 8, 8)]
+        """
+
+        for component in self:
+            component.custom_shape = list(component.auto_shape)
+
+        # update the custom_shapes until convergence
+        changes = self._update_shapes()
+        while changes:
+            changes = self._update_shapes()
+
+    def _update_shapes(self) -> bool:
+        r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
+        If two wires are connected and one of them has shape n and the other None, the shape of the
+        wire with None is updated to n. If both wires have a shape, the minimum is taken.
+
+        For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
+        the shapes of the outputs.
+
+        It returns True if any shape was updated, False otherwise.
+        """
+        changes = False
+        # get shapes from neighbors if needed
+        for i, component in enumerate(self.components):
+            for j, indices in self.indices_dict[i].items():
+                for a, b in indices.items():
+                    s_ia = self.components[i].custom_shape[a]
+                    s_jb = self.components[j].custom_shape[b]
+                    s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
+                    if self.components[j].custom_shape[b] != s:
+                        self.components[j].custom_shape[b] = s
+                        changes = True
+                    if self.components[i].custom_shape[a] != s:
+                        self.components[i].custom_shape[a] = s
+                        changes = True
+
+        # propagate through BSgates
+        for i, component in enumerate(self.components):
+            if isinstance(component, BSgate):
+                a, b, c, d = component.custom_shape
+                if c and d:
+                    if not a or a > c + d:
+                        a = c + d
+                        changes = True
+                    if not b or b > c + d:
+                        b = c + d
+                        changes = True
+                if a and b:
+                    if not c or c > a + b:
+                        c = a + b
+                        changes = True
+                    if not d or d > a + b:
+                        d = a + b
+                        changes = True
+
+                self.components[i].custom_shape = [a, b, c, d]
+
+        # TODO: propagate through where A matrix is block-antidiagonal
+        # TODO: do S2gate (easy!)
+        return changes
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -324,6 +471,12 @@ class Circuit:
         The number of components in this circuit.
         """
         return len(self.components)
+
+    def __iter__(self):
+        r"""
+        An iterator over the components in this circuit.
+        """
+        return iter(self.components)
 
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""

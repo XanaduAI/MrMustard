@@ -28,8 +28,8 @@ from IPython.display import display, HTML
 from mako.template import Template
 
 from mrmustard import math, settings
+
 from mrmustard.utils.typing import Scalar, ComplexTensor
-from mrmustard.physics.converters import to_fock
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
@@ -73,7 +73,8 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
+        self._custom_shape = [None] * len(self.wires)
+        self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
 
@@ -320,6 +321,34 @@ class CircuitComponent:
         """
         return DualView(self)
 
+    @property
+    def custom_shape(self) -> list[Optional[int]]:
+        r"""
+        The shape of this Component in the Fock representation. If not manually set,
+        it is a list of M ``None``s where M is the number of wires of the component.
+        The custom_shape is a list and therefore it is mutable. In fact, it can evolve
+        over time as we learn more about the component or its neighbours. For
+        each wire, the entry is either an integer or ``None``. If it is an integer, it
+        is the dimension of the corresponding Fock space. If it is ``None``, it means
+        the best shape is not known yet. ``None``s automatically become integers when
+        ``auto_shape`` is called, but the integers already set are not changed.
+        The order of the elements in the shape is intended the same order as the wires
+        in the `.wires` attribute.
+        """
+        if not self._custom_shape:
+            try:  # to read it from array ansatz
+                self._custom_shape = list(self.representation.array.shape[1:])
+            except AttributeError:  # bargmann
+                self._custom_shape = [None] * len(self.wires)
+        return self._custom_shape
+
+    @custom_shape.setter
+    def custom_shape(self, shape: list[Optional[int]]):
+        r"""
+        Sets the custom shape of this component in the Fock representation.
+        """
+        self._custom_shape = shape
+
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
@@ -373,35 +402,64 @@ class CircuitComponent:
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def fock(self, shape: Optional[int | Sequence[int]] = None) -> CircuitComponent:
+        r"""
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+        Returns:
+            array: The Fock representation of this component.
+        """
+        if isinstance(shape, int):
+            shape = (shape,) * self.representation.ansatz.num_vars
+        shape = shape or self.auto_shape
+        assert len(shape) == len(self.custom_shape)
+        try:
+            As, bs, cs = self.bargmann
+            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+        except AttributeError:
+            array = self.representation.reduce(shape).array
+        return array
+
+    def to_fock(self, shape=None):
         r"""
         Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation.
-
         .. code-block::
 
-            >>> from mrmustard.physics.converters import to_fock
             >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Fock
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert d_fock.representation == to_fock(d.representation, shape=3)
+            >>> assert isinstance(d_fock.representation, Fock)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
         """
-        return self.__class__._from_attributes(
-            to_fock(self.representation, shape=shape),
-            self.wires,
-            self.name,
-        )
+        fock = Fock(math.astensor(self.fock(shape)), batched=True)
+        fock._original_bargmann_data = self.representation.data
+        return self._from_attributes(fock, self.wires, self.name)
+
+    @property
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        The shape of the Fock representation of this component. If the component has a Fock representation
+        then it is just the shape of the array. If the components is a State in Bargmann
+        representation the shape can be calculated using autocutoff using the single-mode marginals.
+        If the component is not a State then the shape is a tuple of ``AUTOCUTOFF_MAX_CUTOFF``.
+        """
+        MAX = settings.AUTOCUTOFF_MAX_CUTOFF
+        return tuple(s if s else MAX for s in self.custom_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -470,11 +528,36 @@ class CircuitComponent:
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for a more custom way of contracting components.
         """
+        try:
+            return other._rrshift_(self)
+        except AttributeError:
+            pass
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        rep = self.representation[idx_z] @ other.representation[idx_zconj]
+
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+            rep = self.representation[idx_z] @ other.representation[idx_zconj]
+            rep = rep.reorder(perm) if perm else rep
+            return CircuitComponent._from_attributes(rep, wires_result, None)
+
+        self_shape = list(self.auto_shape)
+        other_shape = list(other.auto_shape)
+        for z, zc in zip(idx_z, idx_zconj):
+            self_shape[z] = min(self_shape[z], other_shape[zc])
+            other_shape[zc] = self_shape[z]
+
+        if isinstance(self.representation, Fock):
+            self_rep = self.representation.reduce(self_shape)
+        else:
+            self_rep = self.to_fock(self_shape).representation
+        if isinstance(other.representation, Fock):
+            other_rep = other.representation.reduce(other_shape)
+        else:
+            other_rep = other.to_fock(other_shape).representation
+
+        rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 
@@ -528,6 +611,10 @@ class CircuitComponent:
         if other_needs_bra or other_needs_ket:
             return self._rshift_return((self @ other) @ other.adjoint)
 
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += (
+            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        )
         raise ValueError(msg)
 
     def _rshift_return(
@@ -573,7 +660,6 @@ class CircuitComponent:
             )  # nosec
         )
         rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 

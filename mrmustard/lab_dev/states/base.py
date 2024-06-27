@@ -48,7 +48,7 @@ from mrmustard.utils.typing import (
     Scalar,
 )
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.physics.converters import to_fock
+from mrmustard.physics.fock import autocutoffs
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -186,7 +186,7 @@ class State(CircuitComponent):
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array)
+            >>> assert coh.representation == Fock(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -271,6 +271,23 @@ class State(CircuitComponent):
         return cls(modes, (Q >> QtoB).representation, name)
 
     @property
+    def auto_shape(self) -> tuple[int, ...]:
+        r"""
+        The recommended Fock shape of this State calculated as the minimum
+        of the autocutoff and the custom_shape. The autocutoff of a state aims
+        at capturing at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability
+        mass of the state (99.9% by default).
+        """
+        if None not in self.custom_shape:
+            return tuple(self.custom_shape)
+        cov, means, _ = self.phase_space(0)
+        cutoffs = autocutoffs(cov[0], means[0], settings.AUTOCUTOFF_PROBABILITY)
+        if len(cutoffs) == len(self.wires) // 2:
+            cutoffs = cutoffs + cutoffs
+        self._custom_shape = [s if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)]
+        return tuple([min(s, c + 1) if s else c + 1 for s, c in zip(self.custom_shape, cutoffs)])
+
+    @property
     def _L2_norms(self) -> RealVector:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
@@ -310,23 +327,6 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        The array that describes this state in the Fock representation.
-
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation into a ``Fock`` object.
-
-        Args:
-            shape: The shape of the returned array. If ``shape``is given as an ``int``, it is
-            broadcasted to all the dimensions. If ``None``, it defaults to the value of
-            ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
-
-        Returns:
-            The array that describes this state in the Fock representation.
-        """
-        return to_fock(self.representation, shape).array
-
     def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.
@@ -343,7 +343,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.representation.triple)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
 
     def visualize_2d(
         self,
