@@ -1,4 +1,4 @@
-# Copyright 2024 Xanadu Quantum Technologies Inc.
+# Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ from mrmustard import math
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard import physics
-from ..circuit_components import CircuitComponent
+from ..circuit_components import CircuitComponent, DualView
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
@@ -194,7 +194,7 @@ class Unitary(Operation):
             name=name,
         )
 
-    def inverse(self) -> Transformation:
+    def inverse(self) -> DualView:
         return self.dual
 
 
