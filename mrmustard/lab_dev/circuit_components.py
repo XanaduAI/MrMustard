@@ -27,12 +27,7 @@ import numpy as np
 from IPython.display import display, HTML
 from mako.template import Template
 
-<<<<<<< HEAD
-from mrmustard import math, settings
-
-=======
 from mrmustard import settings, math
->>>>>>> opt_contraction
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
@@ -541,10 +536,7 @@ class CircuitComponent:
             pass
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-<<<<<<< HEAD
-=======
 
->>>>>>> opt_contraction
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
