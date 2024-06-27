@@ -239,6 +239,23 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
+    def polynomial_dimensions(self):
+        if self.batch_size == 1:
+            if self.array.shape==(1,):
+                dim_poly = 0
+                shape_poly = (1,)
+            else:
+                dim_poly = len(self.array.shape)
+                shape_poly = self.array.shape
+
+        elif self.batch_size > 1:
+            if self.array.shape[1:] == (1,):
+                dim_poly = 0
+                shape_poly = (1,)
+            else:
+                dim_poly = len(self.array.shape)-1
+                shape_poly = self.array.shape[1:]
+        return dim_poly,shape_poly
 
 class PolyExpAnsatz(PolyExpBase):
     r"""
@@ -436,7 +453,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor | Scalar] = 1.0,
+        c: Batch[Tensor] = 1.0,
         name: str = "",
     ):
         self.name = name
@@ -468,7 +485,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         The array of coefficients for the polynomial terms in the ansatz.
         """
         return self.array
-
+        
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
         Value of this ansatz at ``z``.
@@ -479,20 +496,25 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         Returns:
             The value of the function.
         """
+        dim_beta,shape_beta = self.polynomial_dimensions()
         dim_alpha = z.shape[-1]
-        dim_beta = self.A.shape[-1]-dim_alpha
+        dim_beta_alt = self.A.shape[-1]-dim_alpha
+        assert dim_beta==dim_beta_alt
 
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]
-
+        z = z[...,None,:]
 
         A_part = math.sum(self.A[...,:dim_alpha,:dim_alpha] * zz,axes=[-1,-2])
         b_part = math.sum(self.b[...,:dim_alpha] * z[..., None, :], axes=[-1])
 
         exp_sum = np.exp(1/2 * A_part + b_part)
+        # if dim_beta==0:
+            # val = np.sum(exp_sum * self.c,axis=-1)
+        # else:
         b_poly = np.array([math.sum(self.A[...,dim_alpha:,:dim_alpha]*z[i,None,:], axes=[-1]) + self.b[...,dim_alpha:] for i in range(z.shape[0])])
         b_poly = np.moveaxis(b_poly,0,-1)
         A_poly = self.A[...,dim_alpha:,dim_alpha:]
-        poly = np.array([math.hermite_renormalized_batch(A_poly[i],b_poly[i],1,self.c.shape[1:]+(b_poly.shape[-1],)) for i in range(A_poly.shape[0])])
+        poly = np.array([math.hermite_renormalized_batch(A_poly[i],b_poly[i],1,shape_beta+(b_poly.shape[-1],)) for i in range(A_poly.shape[0])])
         poly = np.moveaxis(poly,-1,0)
         val = np.sum(exp_sum * np.sum(poly*self.c,axis=tuple(np.arange(2,2+dim_beta))),axis=-1)
         return val
@@ -524,17 +546,12 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         def mulc(c1,c2):
             c3 = np.outer(c1,c2).reshape(c1.shape+c2.shape)
             return c3
-            
+        
         if isinstance(other, DiffOpPolyExpAnsatz):
-            if self.c[1:].shape==(1,):
-                dim_beta1 = 0
-            else:
-                dim_beta1 = len(self.c[1:].shape) 
-                        
-            if other.c[1:].shape==(1,):
-                dim_beta2 = 0
-            else:
-                dim_beta2 = len(other.c[1:].shape)   
+
+            dim_beta1,_ = self.polynomial_dimensions()
+            dim_beta2,_ = other.polynomial_dimensions()
+
 
             dim_alpha1 = self.A.shape[-1]-dim_beta1
             dim_alpha2 = other.A.shape[-1]-dim_beta2
@@ -591,20 +608,12 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             else:
                 c3 = np.outer(c1,c2).reshape(c1.shape+c2.shape)
             return c3
-
-        if self.c.shape[1:]==(1,):
-            dim_beta1 = 0
-        else:
-            dim_beta1 = len(self.c[1:].shape)
-
-        if other.c.shape[1:]==(1,):
-            dim_beta2 = 0
-        else:
-            dim_beta2 = len(other.c[1:].shape)
+            
+        dim_beta1,_ = self.polynomial_dimensions()
+        dim_beta2,_ = other.polynomial_dimensions()
 
         dim_alpha1 = self.A.shape[-1]-dim_beta1
         dim_alpha2 = other.A.shape[-1]-dim_beta2
-
 
         As = [andA(A1,A2,dim_alpha1,dim_alpha2,dim_beta1,dim_beta2) for A1, A2 in itertools.product(self.A, other.A)]
         bs = [andb(b1,b2,dim_alpha1,dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
