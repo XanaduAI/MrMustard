@@ -28,7 +28,7 @@ from mrmustard.lab_dev.transformations import Map, Operation
 from .circuit_components import CircuitComponent
 from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "BtoPS", "BtoQ"]
+__all__ = ["TraceOut", "BtoPS", "BtoQ", "CFT"]
 
 
 class TraceOut(CircuitComponent):
@@ -139,4 +139,25 @@ class BtoQ(Operation):
             modes_in=modes,
             representation=repr,
             name="BtoQ",
+        )
+
+
+class CFT(Map):
+    r"""The Complex Fourier Transformation as a channel.
+    This will be used as an internal Channel for representation transformation.
+
+    Args:
+        num_modes: number of modes of this channel.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+    ):
+        repr = Bargmann(*triples.complex_fourier_transform_Abc(len(modes)))
+        super().__init__(
+            modes_out=modes,
+            modes_in=modes,
+            representation=repr,
+            name="CFT",
         )

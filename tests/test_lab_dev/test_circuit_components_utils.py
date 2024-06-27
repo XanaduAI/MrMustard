@@ -20,7 +20,11 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
+from mrmustard.physics.triples import (
+    identity_Abc,
+    displacement_map_s_parametrized_Abc,
+    complex_fourier_transform_Abc,
+)
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
@@ -30,7 +34,7 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc_real,
 )
 from mrmustard.physics.representations import Bargmann
-from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
+from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ, CFT
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Vacuum
 from mrmustard.lab_dev.transformations import Dgate
@@ -267,3 +271,28 @@ class TestBtoQ:
         assert np.allclose(np.abs(obj_p(2 * y)) ** 2, height)
         assert np.allclose(np.abs(obj_nq(2 * (-x))) ** 2, height)
         assert np.allclose(np.abs(obj_np(2 * (-y))) ** 2, height)
+
+
+class TestCFT:
+    r"""
+    Tests for the ``CFT`` class.
+    """
+
+    def test_cftmap_contraction_with_state(self):
+        # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
+        state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
+        state_means = np.array([0.4, 0.6])
+        Abc = wigner_to_bargmann_rho(state_cov, state_means)
+        state = DM.from_bargmann(modes=[0], triple=Abc)
+
+        # get new triple by right shift
+        state_after = state >> CFT(modes=[0])
+        A1, b1, c1 = state_after.bargmann
+
+        # get new triple by contraction
+        CFT_triple = complex_fourier_transform_Abc(n_modes=1)
+        A2, b2, c2 = contract_two_Abc(Abc, CFT_triple, idx1=[0, 1], idx2=[2, 3])
+
+        assert math.allclose(A1[0], A2)
+        assert math.allclose(b1[0], b2)
+        assert math.allclose(c1[0], c2)
