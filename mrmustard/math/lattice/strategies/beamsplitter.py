@@ -184,7 +184,9 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
     """
     c1, c2, c3, c4 = shape
     if c1 != c3 or c2 != c4:
-        raise ValueError("The Schwinger method only supports shapes of the form (i,k,i,k).")
+        raise ValueError(
+            "The Schwinger method only supports shapes of the form (i,k,i,k)."
+        )
     # create output tensor
     U = np.zeros(shape, dtype="complex128")
 
@@ -202,3 +204,76 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
             for j in range(max(0, N + 1 - c1), min(N + 1, c2)):
                 U[N - i, i, N - j, j] = block[i, j]
     return U
+
+
+def sector_idx(N: int, shape: tuple):
+    """The action of a BSgate breaks down into N-dim unitaries acting
+    on each total photon number subspace, because the BS commutes with the
+    total photon number operator.
+
+    e.g. we have a two-mode ket of initial shape (4,4) (i.e. 0 to 3 photons in each mode)
+    The 3x3 BS unitary on the 2-photon subspace acts on indices [2,5,8] of
+    the flattened ket array.
+    Here is the ordered basis vectors |m,n> by total photons m+n for the example:
+
+    flat index  |m,n>
+    0            0,0  |-- 0 photons
+
+    1            1,0  |-- 1 photons
+    4            0,1  |
+
+    2            2,0  |-- 2 photons  <-- 2-photon subspace at indices [2,5,8]
+    5            1,1  |
+    8            0,2  |
+
+    3            3,0  |-- 3 photons
+    6            2,1  |
+    9            1,2  |
+    12           0,3  |
+
+    7            3,1  |-- 4 photons
+    10           2,2  |
+    13           1,3  |
+
+    11           3,2  |-- 5 photons
+    14           2,3  |
+
+    15           3,3  |-- 6 photons
+
+    The left column is the flattened order. This function returns the indices in
+    left column for the N-th block. E.g. sector_idx(3, (4,4)) is [3,6,9,12].
+    """
+    return [
+        np.ravel_multi_index((i, N - i), shape)
+        for i in range(N + 1)
+        if max(i, N - i) < max(shape)
+    ]
+
+
+def sector_u(N, theta, phi):
+    """Unitary of the BSgate acting on the (N+1)-dimensional N-photon subspace.
+    Each subspace is an irrep of SU(2) (Schwinger representation)."""
+    diag = np.exp(1j * phi) * np.sqrt(np.arange(N, 0, -1) * np.arange(1, N + 1, 1))
+    iJy = np.diag(diag, k=-1) - np.diag(np.conj(diag), k=1)  # we want exp(i theta J_y)
+    E, V = np.linalg.eigh(-1j * theta * iJy)
+    return V @ np.diag(np.exp(1j * E)) @ np.conj(V.T)
+
+
+def apply_BS_schwinger(theta, phi, i, j, array):
+    """Applies the BS with given theta, phi to indices i,j of the given array.
+    Note that it modifies the array in place."""
+    # step 1: reshape the pair of indices to which the BS is attached
+    order = [k for k in range(array.ndim) if k not in [i, j]] + [i, j]
+    array = array.transpose(order)  # move the indices to the end
+    shape_rest, shape = array.shape[:-2], array.shape[-2:]
+    array = array.reshape(shape_rest + (-1,))  # flatten the last two dimensions
+    # step 2: apply each unitary to the corresponding indices
+    for N in range(sum(shape) - 1):  # is this right?
+        flat_idx = sector_idx(N, shape)
+        u = sector_u(N, theta, phi)
+        subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
+        array[..., flat_idx] @= u[subset, :][:, subset] if 0 < len(subset) < N else u
+    # step 3: reshape back and reorder
+    array = array.reshape(shape_rest + shape)
+    array = array.transpose(np.argsort(order))
+    return array
