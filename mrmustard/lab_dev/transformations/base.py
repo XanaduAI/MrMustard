@@ -30,7 +30,7 @@ from mrmustard import math
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard import physics
-from ..circuit_components import CircuitComponent, DualView
+from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
@@ -194,8 +194,13 @@ class Unitary(Operation):
             name=name,
         )
 
-    def inverse(self) -> DualView:
-        return self.dual
+    def inverse(self) -> Unitary:
+        unitary_dual = self.dual
+        return Unitary._from_attributes(
+            representation=unitary_dual.representation,
+            wires=unitary_dual.wires,
+            name=unitary_dual.name,
+        )
 
 
 class Map(Transformation):
