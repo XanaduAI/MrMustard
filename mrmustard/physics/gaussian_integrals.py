@@ -170,14 +170,14 @@ def join_Abc(
     # c12 = math.outer(c1, c2)
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
-    if c1.shape==(1,) and c2.shape==(1,):
-        c12 = math.outer(c1,c2).reshape(-1)
-    elif c1.shape==(1,):
-        c12 = math.outer(c1,c2).reshape(c2.shape)
-    elif c2.shape==(1,):
-        c12 = math.outer(c1,c2).reshape(c1.shape)
+    if c1.shape == (1,) and c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(-1)
+    elif c1.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c2.shape)
+    elif c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c1.shape)
     else:
-        c12 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
+        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
     return A12, b12, c12
 
 
@@ -233,28 +233,28 @@ def join_Abc_real(
         # c12 = math.outer(c1, c2)
         c1 = math.astensor(c1)
         c2 = math.astensor(c2)
-        if c1.shape==(1,) and c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(-1)
-        elif c1.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c2.shape)
-        elif c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c1.shape)
+        if c1.shape == (1,) and c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(-1)
+        elif c1.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c2.shape)
+        elif c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c1.shape)
         else:
-            c12 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
+            c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
     elif math.asnumpy(not_idx2).shape == (0,):
         A12 = math.block([[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]])
         b12 = math.concat([b2 + b1_idx, b1_notidx], axis=-1)
         # c12 = math.outer(c1, c2)
         c1 = math.astensor(c1)
         c2 = math.astensor(c2)
-        if c1.shape==(1,) and c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(-1)
-        elif c1.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c2.shape)
-        elif c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c1.shape)
+        if c1.shape == (1,) and c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(-1)
+        elif c1.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c2.shape)
+        elif c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c1.shape)
         else:
-            c12 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
+            c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
     else:
         O_n = math.zeros((len(not_idx1), len(not_idx2)), math.complex128)
         A12 = math.block(
@@ -268,14 +268,14 @@ def join_Abc_real(
         # c12 = math.outer(c1, c2)
         c1 = math.astensor(c1)
         c2 = math.astensor(c2)
-        if c1.shape==(1,) and c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(-1)
-        elif c1.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c2.shape)
-        elif c2.shape==(1,):
-            c12 = math.outer(c1,c2).reshape(c1.shape)
+        if c1.shape == (1,) and c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(-1)
+        elif c1.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c2.shape)
+        elif c2.shape == (1,):
+            c12 = math.outer(c1, c2).reshape(c1.shape)
         else:
-            c12 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
+            c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
     return A12, b12, c12
 
 

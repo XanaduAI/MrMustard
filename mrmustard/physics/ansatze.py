@@ -393,15 +393,16 @@ class PolyExpAnsatz(PolyExpBase):
         Returns:
             The tensor product of this ansatz and other.
         """
-        def andc(c1,c2):
-            if c1.shape==(1,) and c2.shape==(1,):
-                c3 = math.outer(c1,c2).reshape(-1)
-            elif c1.shape==(1,):
-                c3 = math.outer(c1,c2).reshape(c2.shape)
-            elif c2.shape==(1,):
-                c3 = math.outer(c1,c2).reshape(c1.shape)
+
+        def andc(c1, c2):
+            if c1.shape == (1,) and c2.shape == (1,):
+                c3 = math.outer(c1, c2).reshape(-1)
+            elif c1.shape == (1,):
+                c3 = math.outer(c1, c2).reshape(c2.shape)
+            elif c2.shape == (1,):
+                c3 = math.outer(c1, c2).reshape(c1.shape)
             else:
-                c3 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
+                c3 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
             return c3
 
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
