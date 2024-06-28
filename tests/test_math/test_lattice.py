@@ -116,13 +116,13 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
 
 def test_bs_schwinger():
     "test that the schwinger method to apply a BS works correctly"
-    G = Gaussian(2).ket(cutoffs=[20, 20])
+    G = np.array(Gaussian(2).ket(cutoffs=[20, 20]))
     BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
     manual = np.einsum("ab, cdab", G, BS)
     new_array = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
     assert np.allclose(manual, new_array)
 
-    Gg = Ggate(2).U([20, 20])
+    Gg = np.array(Ggate(2).U([20, 20]))
     BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
     manual = np.einsum("cdab, abef", BS, Gg)
     new_array = apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
