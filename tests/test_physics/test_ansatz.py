@@ -151,16 +151,16 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(
             A=[np.array([[0]]), np.array([[1]])],
             b=[np.array([1]), np.array([0])],
-            c=[1, 2],
+            c=[np.array([1]), np.array([2])],
         )
         ansatz._order_batch()  # pylint: disable=protected-access
 
         assert np.allclose(ansatz.A[0], np.array([[1]]))
         assert np.allclose(ansatz.b[0], np.array([0]))
-        assert ansatz.c[0] == 2
+        assert ansatz.c[0] == np.array([2])
         assert np.allclose(ansatz.A[1], np.array([[0]]))
         assert np.allclose(ansatz.b[1], np.array([1]))
-        assert ansatz.c[1] == 1
+        assert ansatz.c[1] == np.array([1])
 
 
 class TestArrayAnsatz:
@@ -319,7 +319,7 @@ class TestArrayAnsatz:
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
         assert math.allclose(state_cov, new_state_cov[0])
         assert math.allclose(state_means, new_state_means[0])
-        assert math.allclose(1.0, new_state_coeff[0])
+        assert math.allclose(np.array([1.0]), new_state_coeff[0])
 
         state_cov = np.array(
             [
@@ -353,5 +353,5 @@ class TestArrayAnsatz:
         assert math.allclose(new_state_cov1[0], state_cov)
         assert math.allclose(new_state_means1[0], state_means)
         assert math.allclose(new_state_means22[0], state_means)
-        assert math.allclose(new_state_coeff1[0], 1.0)
-        assert math.allclose(new_state_coeff22[0], 1.0)
+        assert math.allclose(new_state_coeff1[0], np.array([1.0]))
+        assert math.allclose(new_state_coeff22[0], np.array([1.0]))

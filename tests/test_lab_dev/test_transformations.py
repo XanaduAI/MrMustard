@@ -205,7 +205,7 @@ class TestBSgate:
         ]
         assert math.allclose(rep1.A, A_exp)
         assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1])
+        assert math.allclose(rep1.c, [[1]])
 
         rep2 = BSgate([0, 1], 0.1).representation
         A_exp = [
@@ -218,7 +218,7 @@ class TestBSgate:
         ]
         assert math.allclose(rep2.A, A_exp)
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1])
+        assert math.allclose(rep2.c, [[1]])
 
     def test_trainable_parameters(self):
         gate1 = BSgate([0, 1], 1, 1)
@@ -262,17 +262,17 @@ class TestDgate:
         rep1 = Dgate(modes=[0], x=0.1, y=0.1).representation
         assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
         assert math.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
-        assert math.allclose(rep1.c, [0.990049833749168])
+        assert math.allclose(rep1.c, [[0.990049833749168]])
 
         rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).representation
         assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
         assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
-        assert math.allclose(rep2.c, [0.9656054162575665])
+        assert math.allclose(rep2.c, [[0.9656054162575665]])
 
         rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).representation
         assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
         assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
-        assert math.allclose(rep3.c, [0.9753099120283327])
+        assert math.allclose(rep3.c, [[0.9753099120283327]])
 
     def test_trainable_parameters(self):
         gate1 = Dgate([0], 1, 1)
@@ -324,7 +324,7 @@ class TestRgate:
             ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [1.0 + 0.0j])
+        assert math.allclose(rep1.c, [[1.0 + 0.0j]])
 
         rep2 = Rgate(modes=[0, 1], phi=[0.1, 0.3]).representation
         assert math.allclose(
@@ -339,7 +339,7 @@ class TestRgate:
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1.0 + 0.0j])
+        assert math.allclose(rep2.c, [[1.0 + 0.0j]])
 
         rep3 = Rgate(modes=[1], phi=0.1).representation
         assert math.allclose(
@@ -352,7 +352,7 @@ class TestRgate:
             ],
         )
         assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [1.0 + 0.0j])
+        assert math.allclose(rep3.c, [[1.0 + 0.0j]])
 
     def test_trainable_parameters(self):
         gate1 = Rgate([0], 1)
@@ -404,7 +404,7 @@ class TestSgate:
             ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [0.9975072676192522])
+        assert math.allclose(rep1.c, [[0.9975072676192522]])
 
         rep2 = Sgate(modes=[0, 1], r=[0.1, 0.3], phi=0.2).representation
         assert math.allclose(
@@ -419,7 +419,7 @@ class TestSgate:
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [0.9756354961606032])
+        assert math.allclose(rep2.c, [[0.9756354961606032]])
 
         rep3 = Sgate(modes=[1], r=0.1).representation
         assert math.allclose(
@@ -432,7 +432,7 @@ class TestSgate:
             ],
         )
         assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [0.9975072676192522])
+        assert math.allclose(rep3.c, [[0.9975072676192522]])
 
     def test_trainable_parameters(self):
         gate1 = Sgate([0], 1, 1)
@@ -486,7 +486,7 @@ class TestIdentity:
             ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [1.0 + 0.0j])
+        assert math.allclose(rep1.c, [[1.0 + 0.0j]])
 
         rep2 = Identity(modes=[0, 1]).representation
         assert math.allclose(
@@ -501,7 +501,7 @@ class TestIdentity:
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1.0 + 0.0j])
+        assert math.allclose(rep2.c, [[1.0 + 0.0j]])
 
 
 class TestS2gate:
@@ -540,7 +540,7 @@ class TestS2gate:
         ]
         assert math.allclose(rep1.A, A_exp)
         assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
+        assert math.allclose(rep1.c, [[1 / np.cosh(0.1)]])
 
     def test_trainable_parameters(self):
         gate1 = S2gate([0, 1], 1, 1)
@@ -592,7 +592,7 @@ class TestAmplifier:
             rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
         )
         assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [0.90909090])
+        assert math.allclose(rep1.c, [[0.90909090]])
 
     def test_trainable_parameters(self):
         gate1 = Amplifier([0], 1.2)
@@ -625,7 +625,7 @@ class TestAmplifier:
             ],
         )
         assert math.allclose(operation.representation.b, np.zeros((1, 4)))
-        assert math.allclose(operation.representation.c, [0.74074074 + 0.0j])
+        assert math.allclose(operation.representation.c, [[0.74074074 + 0.0j]])
 
     def test_circuit_identity(self):
         amp_channel = Amplifier(modes=[0], gain=2)
@@ -678,7 +678,7 @@ class TestAttenuator:
         e = 0.31622777
         assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
         assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1.0])
+        assert math.allclose(rep1.c, [[1.0]])
 
     def test_trainable_parameters(self):
         gate1 = Attenuator([0], 0.1)

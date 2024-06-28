@@ -108,13 +108,13 @@ class TestBtoPS:
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
         assert math.allclose(rep1.A[0], A_correct)
         assert math.allclose(rep1.b[0], b_correct)
-        assert math.allclose(rep1.c[0], c_correct)
+        assert math.allclose(rep1.c[0], np.array([c_correct]))
 
         rep2 = BtoPS(modes=[5, 10], s=1).representation  # pylint: disable=protected-access
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
         assert math.allclose(rep2.A[0], A_correct)
         assert math.allclose(rep2.b[0], b_correct)
-        assert math.allclose(rep2.c[0], c_correct)
+        assert math.allclose(rep2.c[0], np.array([c_correct]))
 
     def testBtoPS_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
@@ -136,7 +136,7 @@ class TestBtoPS:
 
         assert math.allclose(A1[0], A2)
         assert math.allclose(b1[0], b2)
-        assert math.allclose(c1[0], c2)
+        assert math.allclose(c1[0], np.array([c2]))
 
         # The init state cov and means comes from the random state 'state = Gaussian(2) >> Dgate([0.2], [0.3])'
         state_cov = np.array(
@@ -167,7 +167,7 @@ class TestBtoPS:
 
         assert math.allclose(A1[0], A2)
         assert math.allclose(b1[0], b2)
-        assert math.allclose(c1[0], c2)
+        assert math.allclose(c1[0], np.array([c2]))
 
 
 class TestBtoQ:
