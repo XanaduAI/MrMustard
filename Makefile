@@ -67,7 +67,7 @@ lint:
 
 test:
 	@echo "Testing Mr Mustard..."
-	$(PYTHON) $(TESTRUNNER)
+	$(PYTHON3) $(TESTRUNNER)
 
 coverage:
 	@echo "Generating coverage report for Mr Mustard..."
