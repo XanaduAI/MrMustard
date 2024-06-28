@@ -184,9 +184,7 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
     """
     c1, c2, c3, c4 = shape
     if c1 != c3 or c2 != c4:
-        raise ValueError(
-            "The Schwinger method only supports shapes of the form (i,k,i,k)."
-        )
+        raise ValueError("The Schwinger method only supports shapes of the form (i,k,i,k).")
     # create output tensor
     U = np.zeros(shape, dtype="complex128")
 
@@ -244,9 +242,7 @@ def sector_idx(N: int, shape: tuple):
     left column for the N-th block. E.g. sector_idx(3, (4,4)) is [3,6,9,12].
     """
     return [
-        np.ravel_multi_index((i, N - i), shape)
-        for i in range(N + 1)
-        if max(i, N - i) < max(shape)
+        np.ravel_multi_index((i, N - i), shape) for i in range(N + 1) if max(i, N - i) < max(shape)
     ]
 
 
