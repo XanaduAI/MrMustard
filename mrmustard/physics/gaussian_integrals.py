@@ -167,7 +167,15 @@ def join_Abc(
     A2, b2, c2 = Abc2
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
-    c12 = math.outer(c1, c2)
+    # c12 = math.outer(c1, c2)
+    if c1.shape==(1,) and c2.shape==(1,):
+        c12 = math.outer(c1,c2).reshape(-1)
+    elif c1.shape==(1,):
+        c12 = math.outer(c1,c2).reshape(c2.shape)
+    elif c2.shape==(1,):
+        c12 = math.outer(c1,c2).reshape(c1.shape)
+    else:
+        c12 = math.outer(c1,c2).reshape(c1.shape+c2.shape)
     return A12, b12, c12
 
 
