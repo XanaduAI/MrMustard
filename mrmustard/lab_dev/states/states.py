@@ -205,39 +205,26 @@ class Number(Ket):
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__(modes=modes, name="N")
+        super().__init__(modes=modes, name=f"{n}")
 
-        self._n = math.atleast_1d(n)
-        if len(self._n) == 1:
-            self._n = math.tile(self._n, [len(modes)])
-        if len(self._n) != len(modes):
-            msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
-            raise ValueError(msg)
-
-        self._cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
-        if len(self._cutoffs) == 1:
-            self._cutoffs = math.tile(self._cutoffs, [len(modes)])
-        if len(self._cutoffs) != len(modes):
-            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
-            raise ValueError(msg)
+        if isinstance(n, int):
+            n = (n,) * len(modes)
+        if len(n) != len(modes):
+            raise ValueError(f"The number of modes is {len(modes)}, but{n} has length {len(n)}.")
+        if isinstance(cutoffs, int):
+            cutoffs = (cutoffs,) * len(modes)
+        if cutoffs is not None and len(cutoffs) != len(modes):
+            raise ValueError(
+                f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
+            )
+        self.n = n
+        self._fock_shape = (
+            [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
+        )
 
     @property
     def representation(self) -> Fock:
-        return Fock(fock_state(self.n, self.cutoffs))
-
-    @property
-    def cutoffs(self):
-        r"""
-        The cutoffs.
-        """
-        return self._cutoffs
-
-    @property
-    def n(self):
-        r"""
-        The number of photons in each mode.
-        """
-        return self._n
+        return Fock(fock_state(self.n, [s - 1 for s in self.fock_shape]))
 
 
 class SqueezedVacuum(Ket):
@@ -364,6 +351,7 @@ class Vacuum(Ket):
         modes: Sequence[int],
     ) -> None:
         super().__init__(modes=modes, name="Vac")
+        self._fock_shape = [1] * len(modes)
 
     @property
     def representation(self) -> Bargmann:

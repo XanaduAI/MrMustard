@@ -40,6 +40,5 @@ jobs:
         run: |
           python -m pytest --doctest-modules mrmustard/math/parameter_set.py
           python -m pytest --doctest-modules mrmustard/physics/ansatze.py
-          python -m pytest --doctest-modules mrmustard/physics/converters.py
           python -m pytest --doctest-modules mrmustard/physics/representations.py 
           python -m pytest --doctest-modules mrmustard/lab_dev

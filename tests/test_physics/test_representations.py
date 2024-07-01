@@ -18,8 +18,6 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.converters import to_fock
-from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
@@ -189,24 +187,6 @@ class TestBargmannRepresentation:
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
 
-    @pytest.mark.parametrize("n1", [1, 2])
-    @pytest.mark.parametrize("n2", [1, 2])
-    def test_matmul_barg_fock(self, n1, n2):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 3
-
-        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
-        a0_barg = Bargmann(*attenuator_Abc(0.7))
-
-        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
-        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
-
-        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
-
-        res = (d01_barg[0] @ a0_fock[0]).array
-        assert res.shape == (n1 * n2, 3, 3, 3, 3, 4, 5)
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-
 
 class TestFockRepresentation:
     r"""Tests the Fock Representation."""
@@ -294,25 +274,6 @@ class TestFockRepresentation:
             math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
         )
 
-    @pytest.mark.parametrize("n1", [1, 2])
-    @pytest.mark.parametrize("n2", [1, 2])
-    def test_matmul_fock_barg(self, n1, n2):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 3
-
-        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
-        a0_barg = Bargmann(*attenuator_Abc(0.7))
-
-        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
-        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
-
-        d01_fock = to_fock(d01_barg, shape=(2, 3, 4, 5))
-        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
-
-        assert (d01_fock[0] @ a0_barg[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 3, 3)
-        assert (d01_fock[0] @ a0_fock[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 4, 5)
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-
     def test_add(self):
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
@@ -358,7 +319,7 @@ class TestFockRepresentation:
         array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
         assert fock3 == Fock(array3)
 
-        fock4 = fock1.reduce((2, 1, 3, 1))
+        fock4 = fock1.reduce((1, 3, 1))
         array4 = math.astensor([[[0], [3], [6]]])
         assert fock4 == Fock(array4)
 

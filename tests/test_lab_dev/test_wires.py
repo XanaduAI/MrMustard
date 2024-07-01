@@ -128,15 +128,15 @@ class TestWires:
 
         w0 = Wires({0}, {0})
         assert w[0] == w0
-        assert w._mode_cache == {0: w0}  # pylint: disable=protected-access
+        assert w._mode_cache == {(0,): w0}  # pylint: disable=protected-access
 
         w1 = Wires({1})
         assert w[1] == w1
-        assert w._mode_cache == {0: w0, 1: w1}  # pylint: disable=protected-access
+        assert w._mode_cache == {(0,): w0, (1,): w1}  # pylint: disable=protected-access
 
         w2 = Wires(set(), {2})
         assert w[2] == w2
-        assert w._mode_cache == {0: w0, 1: w1, 2: w2}  # pylint: disable=protected-access
+        assert w._mode_cache == {(0,): w0, (1,): w1, (2,): w2}  # pylint: disable=protected-access
 
         assert w[0].indices == (0, 2)
         assert w[1].indices == (1,)

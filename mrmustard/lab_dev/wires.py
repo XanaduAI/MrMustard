@@ -312,12 +312,12 @@ class Wires:
 
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
-        modes_set = {modes} if isinstance(modes, int) else set(modes)
-        if modes not in self._mode_cache:
-            w = Wires(*(self.args[t] & modes_set for t in (0, 1, 2, 3)))
+        modes = {modes} if isinstance(modes, int) else set(modes)
+        if tuple(modes) not in self._mode_cache:
+            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3)))
             w._original = self.original or self
-            self._mode_cache[modes] = w
-        return self._mode_cache[modes]
+            self._mode_cache[tuple(modes)] = w
+        return self._mode_cache[tuple(modes)]
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -335,6 +335,14 @@ class Wires:
     def __bool__(self) -> bool:
         r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."
         return any(self.args)
+
+    def __len__(self) -> int:
+        r"The number of wires."
+        try:
+            return self._len
+        except AttributeError:
+            self._len = sum(map(len, self.args))
+            return self._len
 
     def __eq__(self, other) -> bool:
         return self.args == other.args
@@ -366,6 +374,14 @@ class Wires:
         an order where we start from juxtaposing the objects and then removing pairs of contracted
         indices, i.e. A-D, B, C, D-A and then the same for a-d, b, c, d-a. The returned permutation
         is the one that takes the result of multiplying representations to the standard order.
+
+        This way it is possible to write:
+
+        .. code-block::
+
+            repr = repr1[idx1] @ repr2[idx2]  # not in standard order
+            wires, perm = wires1 @ wires2  # matmul the wires of each component
+            repr = repr.reorder(perm)  # now in standard order
 
         Args:
             other: The wires of the other circuit component.

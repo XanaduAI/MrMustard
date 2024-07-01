@@ -88,8 +88,8 @@ class TestUnitary:
             unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
 
-        assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate)"
-        assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate)"
+        assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate, repr=Bargmann)"
+        assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate, repr=Bargmann)"
 
     def test_init_from_bargmann(self):
         A = np.array([[0, 1], [1, 0]])
@@ -163,8 +163,8 @@ class TestChannel:
             channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
-        assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att)"
-        assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att)"
+        assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att, repr=Bargmann)"
+        assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att, repr=Bargmann)"
 
     def test_inverse_channel(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)

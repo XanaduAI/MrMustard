@@ -174,8 +174,7 @@ class Dgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
+        xs, ys = list(reshape_params(len(self.modes), x=self.x.value, y=self.y.value))
         return Bargmann(*triples.displacement_gate_Abc(xs, ys))
 
 
