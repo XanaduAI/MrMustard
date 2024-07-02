@@ -222,10 +222,12 @@ class PolyExpBase(Ansatz):
         self._simplified = True
 
     def _order_batch(self):
-        r"""This method orders the batch dimension by the lexicographical order of the
+        r"""
+        This method orders the batch dimension by the lexicographical order of the
         flattened arrays (mat, vec, array). This is a very cheap way to enforce
         an ordering of the batch dimension, which is useful for simplification and for
-        determining (in)equality between two Bargmann representations."""
+        determining (in)equality between two Bargmann representations.
+        """
         generators = [
             itertools.chain(
                 math.asnumpy(self.vec[i]).flat,
@@ -287,9 +289,6 @@ class PolyExpAnsatz(PolyExpBase):
 
         if A is None and b is None:
             raise ValueError("Please provide either A or b.")
-        A = math.astensor(A)
-        b = math.astensor(b)
-        c = math.astensor(c)
         super().__init__(mat=A, vec=b, array=c)
 
     @property
@@ -335,7 +334,8 @@ class PolyExpAnsatz(PolyExpBase):
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
+        r"""
+        Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
             other: A scalar or another ansatz.
@@ -358,7 +358,8 @@ class PolyExpAnsatz(PolyExpBase):
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        r"""Divides this ansatz by a scalar or another ansatz or a plain scalar.
+        r"""
+        Divides this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
             other: A scalar or another ansatz.
@@ -381,7 +382,8 @@ class PolyExpAnsatz(PolyExpBase):
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        r"""Tensor product of this ansatz with another ansatz.
+        r"""
+        Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,
         the batch size of the result is the product of the batch
@@ -510,7 +512,8 @@ class ArrayAnsatz(Ansatz):
             return self.__class__(array=self.array * other)
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        r"""Tensor product of this ansatz with another ansatz.
+        r"""
+        Tensor product of this ansatz with another ansatz.
 
         Args:
             other: Another ansatz.
@@ -533,7 +536,8 @@ class ArrayAnsatz(Ansatz):
 def bargmann_Abc_to_phasespace_cov_means(
     A: Matrix, b: Vector, c: Scalar
 ) -> tuple[Matrix, Vector, Scalar]:
-    r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
+    r"""
+    Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
     :math:

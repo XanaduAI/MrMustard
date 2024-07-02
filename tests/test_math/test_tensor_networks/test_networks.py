@@ -107,5 +107,5 @@ class TestDraw:
         connect(t1.output.ket[2], t3.input.ket[2])
         connect(t1.output.ket[1], t2.input.ket[1])
 
-        fig = draw([t1, t2, t3], layout, figsize)
+        fig = draw([t1, t2, t3], layout, figsize, block=False)
         assert isinstance(fig, Figure)
