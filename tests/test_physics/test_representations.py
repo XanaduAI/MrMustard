@@ -76,7 +76,7 @@ class TestBargmannRepresentation:
 
         assert bargmann.A.shape == (1, 2 * n, 2 * n)
         assert bargmann.b.shape == (1, 2 * n)
-        assert bargmann.c.shape == (1,)
+        assert bargmann.c.shape == (1, 1)
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])

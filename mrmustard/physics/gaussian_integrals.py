@@ -19,7 +19,7 @@ This module contains gaussian integral functions and related helper functions.
 from typing import Sequence, Tuple
 import numpy as np
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 
 
 def real_gaussian_integral(
@@ -150,8 +150,8 @@ def complex_gaussian_integral(
 
 
 def join_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -167,13 +167,22 @@ def join_Abc(
     A2, b2, c2 = Abc2
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
-    c12 = math.outer(c1, c2)
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
+    if c1.shape == (1,) and c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(-1)
+    elif c1.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c2.shape)
+    elif c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c1.shape)
+    else:
+        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
     return A12, b12, c12
 
 
 def join_Abc_real(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -217,14 +226,25 @@ def join_Abc_real(
         A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
         b2_notidx = math.gather(b2, not_idx2, axis=-1)
 
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
+    if c1.shape == (1,) and c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(-1)
+    elif c1.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c2.shape)
+    elif c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c1.shape)
+    else:
+        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
+
     if math.asnumpy(not_idx1).shape == (0,):
         A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
         b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
+
     elif math.asnumpy(not_idx2).shape == (0,):
         A12 = math.block([[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]])
         b12 = math.concat([b2 + b1_idx, b1_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
+
     else:
         O_n = math.zeros((len(not_idx1), len(not_idx2)), math.complex128)
         A12 = math.block(
@@ -235,7 +255,7 @@ def join_Abc_real(
             ]
         )
         b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
+
     return A12, b12, c12
 
 
@@ -260,8 +280,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
 
 def contract_two_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):

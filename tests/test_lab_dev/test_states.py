@@ -106,7 +106,7 @@ class TestKet:
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
         cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
-        assert math.allclose(coeff[0], 1.0)
+        assert math.allclose(coeff[0], np.array([1.0]))
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 
@@ -126,7 +126,7 @@ class TestKet:
         modes = [0]
         A0 = np.array([[0]])
         b0 = np.array([0.2j])
-        c0 = np.exp(-0.5 * 0.04)  # z^*
+        c0 = np.array(np.exp(-0.5 * 0.04))  # z^*
 
         state0 = Ket.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature()
@@ -134,7 +134,7 @@ class TestKet:
         Atest2, btest2, ctest2 = state1.bargmann
         assert math.allclose(Atest2[0], A0)
         assert math.allclose(btest2[0], b0)
-        assert math.allclose(ctest2[0], c0)
+        assert math.allclose(ctest2[0], np.array([c0]))
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
@@ -421,7 +421,7 @@ class TestDM:
         Atest2, btest2, ctest2 = state1.bargmann
         assert math.allclose(Atest2[0], A0)
         assert math.allclose(btest2[0], b0)
-        assert math.allclose(ctest2[0], c0)
+        assert math.allclose(ctest2[0], np.array([c0]))
 
     def test_L2_norms(self):
         state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
@@ -462,7 +462,7 @@ class TestDM:
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
+        assert math.allclose(np.array([dm.expectation(k01)]), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -474,11 +474,11 @@ class TestDM:
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
+        assert math.allclose(np.array([dm.expectation(dm01)]), res_dm01.representation.c[0])
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
+        assert math.allclose(np.array([dm.expectation(k01)]), res_k01.representation.c[0])
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -490,7 +490,7 @@ class TestDM:
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01.representation.c[0])
+        assert math.allclose(np.array([dm.expectation(dm01)]), res_dm01.representation.c[0])
 
         u0 = Dgate([0], x=0.1)
         u1 = Dgate([1], x=0.2)
@@ -587,17 +587,17 @@ class TestCoherent:
         rep1 = Coherent(modes=[0], x=0.1, y=0.2).representation
         assert math.allclose(rep1.A, np.zeros((1, 1, 1)))
         assert math.allclose(rep1.b, [[0.1 + 0.2j]])
-        assert math.allclose(rep1.c, [0.97530991])
+        assert math.allclose(rep1.c, [[0.97530991]])
 
         rep2 = Coherent(modes=[0, 1], x=0.1, y=[0.2, 0.3]).representation
         assert math.allclose(rep2.A, np.zeros((1, 2, 2)))
         assert math.allclose(rep2.b, [[0.1 + 0.2j, 0.1 + 0.3j]])
-        assert math.allclose(rep2.c, [0.9277434863])
+        assert math.allclose(rep2.c, [[0.9277434863]])
 
         rep3 = Coherent(modes=[1], x=0.1).representation
         assert math.allclose(rep3.A, np.zeros((1, 1, 1)))
         assert math.allclose(rep3.b, [[0.1]])
-        assert math.allclose(rep3.c, [0.9950124791926823])
+        assert math.allclose(rep3.c, [[0.9950124791926823]])
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
@@ -821,7 +821,7 @@ class TestVacuum:
 
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))
-        assert math.allclose(rep.c, [1.0])
+        assert math.allclose(rep.c, [[1.0]])
 
 
 class TestThermal:
