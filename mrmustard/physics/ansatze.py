@@ -419,7 +419,7 @@ class ArrayAnsatz(Ansatz):
         batched: Whether the array input has a batch dimension.
 
     Note: The args can be passed non-batched, as they will be automatically broadcasted to the
-    correct batch shape if `batched` is set to `False`.
+    correct batch shape if ``batched`` is set to ``False``.
     """
 
     def __init__(self, array: Batch[Tensor], batched: bool = True):
