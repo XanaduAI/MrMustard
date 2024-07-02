@@ -149,6 +149,24 @@ def complex_gaussian_integral(
     return A_post, b_post, c_post
 
 
+def join_cs(
+    c1: ComplexTensor,
+    c2: ComplexTensor,
+):
+    r"""Joins two multivariate polynomial arrays into a single multivariate polynomial array."""
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
+    if c1.shape == (1,) and c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(-1)
+    elif c1.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c2.shape)
+    elif c2.shape == (1,):
+        c12 = math.outer(c1, c2).reshape(c1.shape)
+    else:
+        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
+    return c12
+
+
 def join_Abc(
     Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
@@ -167,16 +185,7 @@ def join_Abc(
     A2, b2, c2 = Abc2
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
-    if c1.shape == (1,) and c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(-1)
-    elif c1.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c2.shape)
-    elif c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c1.shape)
-    else:
-        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
+    c12 = join_cs(c1, c2)
     return A12, b12, c12
 
 
@@ -185,7 +194,7 @@ def join_Abc_real(
     Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
-):  # noqa: C901
+):
     r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together", by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2 will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same, rather than a pair of conjugate variables for complex Gaussian integrals.
 
     Arguments:
@@ -226,17 +235,6 @@ def join_Abc_real(
         A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
         b2_notidx = math.gather(b2, not_idx2, axis=-1)
 
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
-    if c1.shape == (1,) and c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(-1)
-    elif c1.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c2.shape)
-    elif c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c1.shape)
-    else:
-        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
-
     if math.asnumpy(not_idx1).shape == (0,):
         A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
         b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
@@ -256,6 +254,7 @@ def join_Abc_real(
         )
         b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
 
+    c12 = join_cs(c1, c2)
     return A12, b12, c12
 
 
