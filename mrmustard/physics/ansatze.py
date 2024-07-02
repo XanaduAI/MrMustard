@@ -407,7 +407,7 @@ class ArrayAnsatz(Ansatz):
 
     Represents the ansatz as a multidimensional array.
 
-    code-block ::
+    .. code-block::
 
           >>> from mrmustard.physics.ansatze import ArrayAnsatz
 
