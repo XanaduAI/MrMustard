@@ -455,6 +455,7 @@ class TestAdjointView:
         d1_adj = AdjointView(d1)
 
         assert d1_adj.name == d1.name
+        assert d1_adj.short_name == d1.short_name + "_adj"
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.representation == d1.representation.conj()
 
