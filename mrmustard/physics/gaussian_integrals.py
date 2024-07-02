@@ -180,7 +180,7 @@ def join_Abc(
     return A12, b12, c12
 
 
-def join_Abc_real( # noqa: max-complexity=24
+def join_Abc_real(  # noqa: C901
     Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
