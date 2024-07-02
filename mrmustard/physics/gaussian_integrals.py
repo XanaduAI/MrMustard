@@ -167,7 +167,6 @@ def join_Abc(
     A2, b2, c2 = Abc2
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
-    # c12 = math.outer(c1, c2)
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
     if c1.shape == (1,) and c2.shape == (1,):
@@ -186,7 +185,7 @@ def join_Abc_real(
     Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
     idx1: Sequence[int],
     idx2: Sequence[int],
-):
+): # noqa: C901 
     r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together", by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2 will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same, rather than a pair of conjugate variables for complex Gaussian integrals.
 
     Arguments:
@@ -285,7 +284,7 @@ def contract_two_Abc(
     Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
     idx1: Sequence[int],
     idx2: Sequence[int],
-):
+): 
     r"""
     Returns the contraction of two ``(A,b,c)`` triples with given indices.
 
