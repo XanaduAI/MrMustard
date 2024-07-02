@@ -186,7 +186,6 @@ def join_Abc_real(
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
-    # pylint: disable=R1260
     r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together", by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2 will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same, rather than a pair of conjugate variables for complex Gaussian integrals.
 
     Arguments:
