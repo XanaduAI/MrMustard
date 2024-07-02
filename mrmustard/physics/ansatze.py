@@ -394,7 +394,6 @@ class PolyExpAnsatz(PolyExpBase):
             The tensor product of this ansatz and other.
         """
 
-
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [math.outer(c1, c2).reshape(-1) for c1 in self.c for c2 in other.c]
