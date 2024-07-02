@@ -284,7 +284,7 @@ def contract_two_Abc(
     Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
     idx1: Sequence[int],
     idx2: Sequence[int],
-): 
+):
     r"""
     Returns the contraction of two ``(A,b,c)`` triples with given indices.
 
