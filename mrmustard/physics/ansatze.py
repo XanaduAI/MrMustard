@@ -403,12 +403,9 @@ class PolyExpAnsatz(PolyExpBase):
 
 class ArrayAnsatz(Ansatz):
     r"""
-      The ansatz of the Fock-Bargmann representation.
+    The ansatz of the Fock-Bargmann representation.
 
-      Represents the ansatz as a multidimensional array.
-
-      Args:
-          array: A batched array.
+    Represents the ansatz as a multidimensional array.
 
     code-block ::
 
@@ -416,10 +413,21 @@ class ArrayAnsatz(Ansatz):
 
           >>> array = np.random.random((2, 4, 5))
           >>> ansatz = ArrayAnsatz(array)
+
+    Args:
+        array: A (potentially) batched array.
+        batched: Whether the array input has a batch dimension.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
     """
 
-    def __init__(self, array: Batch[Tensor]):
-        self.array = math.astensor(array)
+
+    def __init__(self, array: Batch[Tensor], batched: bool = True):
+        array = math.astensor(array)
+        if not batched:
+            array = array[None, ...]
+        self.array = array
         self.num_vars = len(self.array.shape) - 1
 
     def __neg__(self) -> ArrayAnsatz:

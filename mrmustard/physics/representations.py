@@ -558,10 +558,7 @@ class Fock(Representation):
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
         self._original_bargmann_data = None
-        array = math.astensor(array)
-        if not batched:
-            array = array[None, ...]
-        self._ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array, batched=batched)
 
     @property
     def ansatz(self) -> ArrayAnsatz:
