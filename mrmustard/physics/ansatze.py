@@ -422,7 +422,6 @@ class ArrayAnsatz(Ansatz):
     correct batch shape.
     """
 
-
     def __init__(self, array: Batch[Tensor], batched: bool = True):
         array = math.astensor(array)
         if not batched:
