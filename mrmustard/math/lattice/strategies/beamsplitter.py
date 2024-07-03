@@ -184,7 +184,9 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
     """
     c1, c2, c3, c4 = shape
     if c1 != c3 or c2 != c4:
-        raise ValueError("The Schwinger method only supports shapes of the form (i,k,i,k).")
+        raise ValueError(
+            "The Schwinger method only supports shapes of the form (i,k,i,k)."
+        )
     # create output tensor
     U = np.zeros(shape, dtype="complex128")
 
@@ -241,9 +243,13 @@ def sector_idx(N: int, shape: tuple):
     The left column is the flattened order. This function returns the indices in
     left column for the N-th block. E.g. sector_idx(3, (4,4)) is [3,6,9,12].
     """
-    return [
-        np.ravel_multi_index((i, N - i), shape) for i in range(N + 1) if max(i, N - i) < max(shape)
+    flat_indices = [
+        np.ravel_multi_index((i, N - i), shape, mode="clip") for i in range(N + 1)
     ]
+    return [idx for idx in flat_indices if idx != 0]
+    # return [
+    #     np.ravel_multi_index((i, N - i), shape) for i in range(N + 1) if max(i, N - i) < max(shape)
+    # ]
 
 
 def sector_u(N, theta, phi):
@@ -268,7 +274,9 @@ def apply_BS_schwinger(theta, phi, i, j, array):
         flat_idx = sector_idx(N, shape)
         u = sector_u(N, theta, phi)
         subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
-        array[..., flat_idx] @= u[subset, :][:, subset] if 0 < len(subset) < N else u
+        array[..., flat_idx] @= (
+            u[subset, ...][..., subset] if 0 < len(subset) < N else u
+        )
     # step 3: reshape back and reorder
     array = array.reshape(shape_rest + shape)
     array = array.transpose(np.argsort(order))
