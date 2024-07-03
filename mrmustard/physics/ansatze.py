@@ -359,7 +359,7 @@ class PolyExpAnsatz(PolyExpBase):
 
     def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""
-        Divides this ansatz by a scalar or another ansatz or a plain scalar.
+        Divides this ansatz by a scalar or another ansatz.
 
         Args:
             other: A scalar or another ansatz.
