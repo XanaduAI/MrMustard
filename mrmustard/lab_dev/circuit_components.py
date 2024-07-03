@@ -418,7 +418,8 @@ class CircuitComponent:
         if isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
         shape = shape or self.auto_shape()
-        assert len(shape) == len(self.fock_shape)
+        if len(shape) != len(self.fock_shape):
+            raise ValueError(f"Expected Fock shape of length {len(self.fock_shape)}, got length {len(shape)}")
         try:
             As, bs, cs = self.bargmann
             array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
