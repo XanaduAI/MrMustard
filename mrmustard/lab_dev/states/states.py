@@ -36,6 +36,7 @@ __all__ = [
     "SqueezedVacuum",
     "Thermal",
     "TwoModeSqueezedVacuum",
+    "QuadratureEigenstate",
     "Vacuum",
 ]
 
