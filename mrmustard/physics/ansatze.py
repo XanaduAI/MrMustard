@@ -335,7 +335,7 @@ class PolyExpAnsatz(PolyExpBase):
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""
-        Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
+        Multiplies this ansatz by a scalar or another ansatz.
 
         Args:
             other: A scalar or another ansatz.
