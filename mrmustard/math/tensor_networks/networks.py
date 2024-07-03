@@ -27,7 +27,8 @@ from .tensors import Wire, Tensor
 
 
 def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
-    r"""Connects two wires in a tensor network.
+    r"""
+    Connects two wires in a tensor network.
 
     Args:
         wire1: The first wire.
@@ -52,7 +53,8 @@ def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
 
 
 def contract(tensors: list[Tensor], default_dim: int):
-    r"""Contract a list of tensors.
+    r"""
+    Contract a list of tensors.
 
     Args:
         tensors: The tensors to contract.
@@ -69,13 +71,20 @@ def contract(tensors: list[Tensor], default_dim: int):
     return opt_contract(*opt_einsum_args)
 
 
-def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
-    r"""Draws a tensor network.
+def draw(
+    tensors: list[Tensor],
+    layout: str = "spring_layout",
+    figsize: tuple[int, int] = (10, 6),
+    block: bool = True,
+):
+    r"""
+    Draws a tensor network.
 
     Args:
         tensors: The tensors to draw.
         layout: The layout method. Must be one of the methods in ``nx.drawing.layout``.
         figsize: The size of the returned figure.
+        block: Whether to have the figure block execution.
 
     Returns:
         A figure showing the tensor network.
@@ -165,5 +174,5 @@ def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[in
     )
 
     plt.title("Mr Mustard Network")
-    plt.show()
+    plt.show(block=block)
     return fig
