@@ -419,7 +419,9 @@ class CircuitComponent:
             shape = (shape,) * self.representation.ansatz.num_vars
         shape = shape or self.auto_shape()
         if len(shape) != len(self.fock_shape):
-            raise ValueError(f"Expected Fock shape of length {len(self.fock_shape)}, got length {len(shape)}")
+            raise ValueError(
+                f"Expected Fock shape of length {len(self.fock_shape)}, got length {len(shape)}"
+            )
         try:
             As, bs, cs = self.bargmann
             array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
@@ -647,10 +649,16 @@ class CircuitComponent:
             return ret
 
     def __repr__(self) -> str:
-        cls = self.__class__.__name__
         repr = self.representation
         repr_name = repr.__class__.__name__
-        return cls + f"(modes={self.modes}, name={self.name or None}" + ("repr=" + repr_name if repr else "")
+        if repr_name == "NoneType":
+            return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
+        else:
+            return (
+                self.__class__.__name__
+                + f"(modes={self.modes}, name={self.name}"
+                + f", {repr_name}={repr})"
+            )
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(
