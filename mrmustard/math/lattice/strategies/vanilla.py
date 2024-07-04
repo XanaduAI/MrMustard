@@ -273,7 +273,7 @@ def autoshape_numba(
     zero = np.zeros((M - 1, M - 1), dtype=np.complex128)
     id = np.eye(M - 1, dtype=np.complex128)
     X = np.vstack((np.hstack((zero, id)), np.hstack((id, zero))))
-    for t, m in enumerate(range(M)):
+    for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
         A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
@@ -315,5 +315,5 @@ def autoshape_numba(
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-        shape[t] = k
+        shape[m] = k
     return shape
