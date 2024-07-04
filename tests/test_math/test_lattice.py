@@ -110,7 +110,9 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=1)
 
-    G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
+    G_batched = math.hermite_renormalized_diagonal_batch(
+        A, B_batched, C, cutoffs=cutoffs[:-1]
+    )
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])
@@ -141,6 +143,7 @@ def test_sector_idx():
 
 
 def test_sector_u():
+    "tests that the unitary of a few sectors is indeed unitary"
     for i in range(1, 10):
-        u = sector_u(i, theta=0.4, phi=0.3)
+        u = sector_u(i, theta=1.129, phi=0.318)
         assert u @ u.conj().T == pytest.approx(np.eye(i + 1))
