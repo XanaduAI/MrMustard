@@ -641,7 +641,7 @@ class DM(State):
         if a state is batched, the auto_shape is calculated for the first element.
         """
         try:  # fock
-            return self._representation.array.shape[1:]
+            shape = self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             repr = self.representation
             shape = autoshape_numba(
@@ -837,7 +837,7 @@ class Ket(State):
         if a state is batched, the auto_shape is calculated for the first element.
         """
         try:  # fock
-            return self._representation.array.shape[1:]
+            shape = self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             if None not in self.fock_shape:  # try the fock_shape if ready
                 return tuple(self.fock_shape)
