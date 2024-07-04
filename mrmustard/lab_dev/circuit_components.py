@@ -186,7 +186,8 @@ class CircuitComponent:
 
     @property
     def bargmann(self) -> tuple:
-        r"""The Bargmann parametrization of this component, if available.
+        r"""
+        The Bargmann parametrization of this component, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this component is
         :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
 
@@ -216,7 +217,8 @@ class CircuitComponent:
         phi: float = 0.0,
         name: Optional[str] = None,
     ) -> CircuitComponent:
-        r"""Returns a circuit component from the given triple (A,b,c) that parametrizes the
+        r"""
+        Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
 
         Args:
@@ -685,7 +687,8 @@ class CircuitComponent:
 
 
 class CCView(CircuitComponent):
-    r"""A base class for views of circuit components. It allows for a more efficient
+    r"""
+    A base class for views of circuit components. It allows for a more efficient
     use of components when we need the same component on different wires.
 
     Args:
@@ -695,10 +698,6 @@ class CCView(CircuitComponent):
     def __init__(self, component: CircuitComponent) -> None:
         self.__dict__ = component.__dict__.copy()
         self._component = component._light_copy()
-
-    def __getattr__(self, name):
-        r"""send calls to the component"""
-        return getattr(self._component, name)
 
     def __repr__(self) -> str:
         return repr(self._component)
@@ -717,7 +716,9 @@ class AdjointView(CCView):
 
     @property
     def short_name(self) -> str:
-        "short name that appears in the circuit"
+        r"""
+        Returns a short name that appears in the circuit.
+        """
         return self._component.short_name + "_adj"
 
     @property
@@ -730,8 +731,8 @@ class AdjointView(CCView):
     @property
     def representation(self):
         r"""
-        A representation of this circuit component. Note that ket and bra indices
-        have been swapped.
+        Returns a representation of this circuit component. Note that ket and bra
+        indices have been swapped.
         """
         bras = self._component.wires.bra.indices
         kets = self._component.wires.ket.indices
@@ -740,7 +741,7 @@ class AdjointView(CCView):
     @property
     def wires(self):
         r"""
-        The ``Wires`` in this component.
+        Returns the ``Wires`` in this component.
         """
         return self._component.wires.adjoint
 
@@ -758,7 +759,9 @@ class DualView(CCView):
 
     @property
     def short_name(self) -> str:
-        "short name that appears in the circuit"
+        r"""
+        Returns a short name that appears in the circuit.
+        """
         return self._component.short_name + "_dual"
 
     @property
@@ -771,8 +774,8 @@ class DualView(CCView):
     @property
     def representation(self):
         r"""
-        A representation of this circuit component. Note that input and output indices
-        have been swapped.
+        Returns a representation of this circuit component. Note that input and
+        output indices have been swapped.
         """
         ok = self._component.wires.ket.output.indices
         ik = self._component.wires.ket.input.indices
@@ -783,6 +786,6 @@ class DualView(CCView):
     @property
     def wires(self):
         r"""
-        The ``Wires`` in this component.
+        Returns the ``Wires`` in this component.
         """
         return self._component.wires.dual
