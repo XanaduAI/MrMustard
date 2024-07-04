@@ -72,7 +72,7 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._fock_shape = [None] * len(self.wires)
+        self._fock_shape = None  # Lazy
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
@@ -599,7 +599,9 @@ class CircuitComponent:
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += "whether or where to add missing wires. Use ``@`` and specify all the components."
+        msg += (
+            "whether or where to add missing components. Use ``@`` and specify all the components."
+        )
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
