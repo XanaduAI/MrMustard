@@ -558,11 +558,7 @@ class Fock(Representation):
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
         self._original_bargmann_data = None
-
-        array = math.astensor(array)
-        if not batched:
-            array = array[None, ...]
-        self._ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array, batched=batched)
 
     @property
     def ansatz(self) -> ArrayAnsatz:
@@ -703,7 +699,8 @@ class Fock(Representation):
         return self.from_ansatz(ArrayAnsatz(new_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
-        r"""Implements the partial trace over the given index pairs.
+        r"""
+        Implements the partial trace over the given index pairs.
 
         Args:
             idxs1: The first part of the pairs of indices to trace over.
