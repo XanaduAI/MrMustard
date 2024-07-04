@@ -55,7 +55,6 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     # write vacuum amplitude
     ret[0] = c
 
-
     # iterate over the rest of the indices
     for index_u in index_u_iter:
         # update index

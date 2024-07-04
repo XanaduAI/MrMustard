@@ -60,7 +60,10 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
             msg += f"the number of variables of this ansatz ({rep.ansatz.num_vars})."
             raise ValueError(msg)
 
-        array = [math.hermite_renormalized(A, b, complex(c), shape) for A, b, c in zip(rep.A, rep.b, rep.c)]
+        array = [
+            math.hermite_renormalized(A, b, complex(c), shape)
+            for A, b, c in zip(rep.A, rep.b, rep.c)
+        ]
         fock = Fock(math.astensor(array), batched=True)
         fock._original_bargmann_data = rep.data
         return fock
