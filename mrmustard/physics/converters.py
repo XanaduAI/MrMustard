@@ -61,7 +61,7 @@ def to_fock(rep: Representation, shape: Optional[Union[int, Iterable[int]]] = No
             raise ValueError(msg)
 
         array = [
-            math.hermite_renormalized(A, b, complex(c), shape)
+            math.hermite_renormalized(A, b, c[0], shape)
             for A, b, c in zip(rep.A, rep.b, rep.c)
         ]
         fock = Fock(math.astensor(array), batched=True)
