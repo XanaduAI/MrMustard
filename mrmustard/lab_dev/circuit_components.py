@@ -647,7 +647,10 @@ class CircuitComponent:
             return ret
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None}, repr={self.representation.__class__.__name__})"
+        cls = self.__class__.__name__
+        repr = self.representation
+        repr_name = repr.__class__.__name__
+        return cls + f"(modes={self.modes}, name={self.name or None}" + ("repr=" + repr_name if repr else "")
 
     def _repr_html_(self):  # pragma: no cover
         temp = Template(
