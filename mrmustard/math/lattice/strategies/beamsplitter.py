@@ -243,13 +243,11 @@ def sector_idx(N: int, shape: tuple):
     The left column is the flattened order. This function returns the indices in
     left column for the N-th block. E.g. sector_idx(3, (4,4)) is [3,6,9,12].
     """
-    flat_indices = [
-        np.ravel_multi_index((i, N - i), shape, mode="clip") for i in range(N + 1)
+    return [
+        np.ravel_multi_index((i, N - i), shape)
+        for i in range(N + 1)
+        if max(i, N - i) < max(shape)
     ]
-    return [idx for idx in flat_indices if idx != 0]
-    # return [
-    #     np.ravel_multi_index((i, N - i), shape) for i in range(N + 1) if max(i, N - i) < max(shape)
-    # ]
 
 
 def sector_u(N, theta, phi):
