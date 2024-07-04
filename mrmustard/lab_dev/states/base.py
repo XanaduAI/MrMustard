@@ -633,7 +633,7 @@ class DM(State):
 
     def auto_shape(self) -> tuple[int, ...]:
         r"""
-        A pretty enough estimate of the Fock shape of this DM, defined as the shape of the Fock
+        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).

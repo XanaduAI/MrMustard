@@ -209,8 +209,8 @@ class Number(Ket):
 
         if isinstance(n, int):
             n = (n,) * len(modes)
-        if len(n) != len(modes):
-            raise ValueError(f"The number of modes is {len(modes)}, but{n} has length {len(n)}.")
+        elif len(n) != len(modes):
+            raise ValueError(f"The number of modes is {len(modes)}, but {n} has length {len(n)}.")
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
         if cutoffs is not None and len(cutoffs) != len(modes):

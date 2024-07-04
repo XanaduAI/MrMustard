@@ -628,7 +628,8 @@ class Fock(Representation):
     def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
         r"""
         Implements the inner product of fock arrays over the marked indices.
-        ..code-block::
+
+        .. code-block::
             >>> from mrmustard.physics.representations import Fock
             >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
             >>> g = Fock(np.random.random((2, 5, 8)))

@@ -346,7 +346,7 @@ class CircuitComponent:
         r"""
         Sets the custom shape of this component in the Fock representation.
         """
-        if len(shape) > len(self.wires):
+        if len(shape) != len(self.wires):
             raise ValueError(f"expected a shape of length {len(self.wires)}, got {len(shape)}")
         self._fock_shape = shape
 
@@ -635,7 +635,7 @@ class CircuitComponent:
         Multiplies a scalar with a circuit component when written as ``scalar >> component``.
         This is needed when the "component" on the left is the result of a contraction that leaves
         no wires and the component is returned as a scalar. Note that there is an edge case if the
-        object on the leftchappens to have the ``__rshift__`` method, but it's not the one we want
+        object on the left happens to have the ``__rshift__`` method, but it's not the one we want
         (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with
         types ``np.ndarray >> CircuitComponent`` the method ``__rrshift__`` will not be called, and
         something else will be returned.
