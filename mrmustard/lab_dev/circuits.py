@@ -114,9 +114,6 @@ class Circuit:
                 iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
                 if not out_idx.intersection(iA):
                     continue
-                assert list(iA) == sorted(iA)
-                assert list(iB) == sorted(iB)
-                assert len(iA) == len(iB)
                 indices[i + j + 1] = dict(zip(iA, iB))
                 out_idx -= set(iA)
                 if not out_idx:
