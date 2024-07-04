@@ -53,8 +53,8 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     next(index_u_iter)
 
     # write vacuum amplitude
-    # ret[0] = c
-    ret[0] = 1
+    ret[0] = c
+
 
     # iterate over the rest of the indices
     for index_u in index_u_iter:
@@ -73,7 +73,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
             value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
         ret[index] = value_at_index / np.sqrt(index_u[i])
 
-    return ret.reshape(shape) * c
+    return ret.reshape(shape)
 
 
 @njit
