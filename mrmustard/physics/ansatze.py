@@ -139,12 +139,48 @@ class PolyExpBase(Ansatz):
     """
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
-        self.mat = math.atleast_3d(math.astensor(mat))
-        self.vec = math.atleast_2d(math.astensor(vec))
-        self.array = math.atleast_1d(math.astensor(array))
-        self.batch_size = self.mat.shape[0]
-        self.num_vars = self.mat.shape[-1]
+        self._mat = mat
+        self._vec = vec
+        self._array = array
         self._simplified = False
+
+    @property
+    def batch_size(self):
+        return self.mat.shape[0]
+
+    @property
+    def num_vars(self):
+        return self.mat.shape[-1]
+
+    @property
+    def mat(self) -> Batch[ComplexMatrix]:
+        r"""
+        """
+        return math.atleast_3d(self._mat)
+
+    @mat.setter
+    def mat(self, array):
+        self._mat = array 
+
+    @property
+    def vec(self) -> Batch[ComplexMatrix]:
+        r"""
+        """
+        return math.atleast_2d(self._vec)
+
+    @vec.setter
+    def vec(self, array):
+        self._vec = array
+
+    @property
+    def array(self) -> Batch[ComplexMatrix]:
+        r"""
+        """
+        return math.atleast_1d(self._array)
+
+    @array.setter
+    def array(self, array):
+        self._array = array
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -423,11 +459,19 @@ class ArrayAnsatz(Ansatz):
     """
 
     def __init__(self, array: Batch[Tensor], batched: bool = True):
-        array = math.astensor(array)
-        if not batched:
-            array = array[None, ...]
-        self.array = array
-        self.num_vars = len(self.array.shape) - 1
+        self._array = array if batched else [array]
+
+    @property
+    def array(self) -> Batch[Tensor]:
+        r"""
+        """
+        return math.astensor(self._array)
+
+    @property
+    def num_vars(self) -> int:
+        r"""
+        """
+        return len(self.array.shape) - 1
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
