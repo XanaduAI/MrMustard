@@ -142,6 +142,11 @@ class PolyExpBase(Ansatz):
         self._mat = mat
         self._vec = vec
         self._array = array
+
+        self._backend_mat = None
+        self._backend_vec = None
+        self._backend_array = None
+
         self._simplified = False
 
     @property
@@ -156,31 +161,40 @@ class PolyExpBase(Ansatz):
     def mat(self) -> Batch[ComplexMatrix]:
         r"""
         """
-        return math.atleast_3d(self._mat)
+        if self._backend_mat is None:
+            self._backend_mat = math.atleast_3d(self._mat)
+        return self._backend_mat
 
     @mat.setter
     def mat(self, array):
-        self._mat = array 
+        self._mat = array
+        self._backend_mat = None
 
     @property
     def vec(self) -> Batch[ComplexMatrix]:
         r"""
         """
-        return math.atleast_2d(self._vec)
+        if self._backend_vec is None:
+            self._backend_vec = math.atleast_2d(self._vec)
+        return self._backend_vec
 
     @vec.setter
     def vec(self, array):
         self._vec = array
+        self._backend_vec = None
 
     @property
     def array(self) -> Batch[ComplexMatrix]:
         r"""
         """
-        return math.atleast_1d(self._array)
+        if self._backend_array is None:
+            self._backend_array = math.atleast_1d(self._array)
+        return self._backend_array
 
     @array.setter
     def array(self, array):
         self._array = array
+        self._backend_array = None
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -460,12 +474,15 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor], batched: bool = True):
         self._array = array if batched else [array]
+        self._backend_array = None
 
     @property
     def array(self) -> Batch[Tensor]:
         r"""
         """
-        return math.astensor(self._array)
+        if self._backend_array is None:
+            self._backend_array = math.astensor(self._array)
+        return self._backend_array
 
     @property
     def num_vars(self) -> int:
@@ -508,7 +525,7 @@ class ArrayAnsatz(Ansatz):
         """
         try:
             new_array = [a + b for a in self.array for b in other.array]
-            return self.__class__(array=math.astensor(new_array))
+            return self.__class__(array=new_array)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
@@ -534,7 +551,7 @@ class ArrayAnsatz(Ansatz):
         if isinstance(other, ArrayAnsatz):
             try:
                 new_array = [a / b for a in self.array for b in other.array]
-                return self.__class__(array=math.astensor(new_array))
+                return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
@@ -556,7 +573,7 @@ class ArrayAnsatz(Ansatz):
         if isinstance(other, ArrayAnsatz):
             try:
                 new_array = [a * b for a in self.array for b in other.array]
-                return self.__class__(array=math.astensor(new_array))
+                return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
@@ -574,7 +591,7 @@ class ArrayAnsatz(Ansatz):
             Batch size is the product of two batches.
         """
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return self.__class__(array=math.astensor(new_array))
+        return self.__class__(array=new_array)
 
     @property
     def conj(self):
