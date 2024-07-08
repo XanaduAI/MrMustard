@@ -249,9 +249,11 @@ class Bargmann(Representation):
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
+        fn = None,
+        **kwargs
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self._ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A=A, b=b, c=c, fn=fn, **kwargs)
 
     @property
     def ansatz(self) -> PolyExpAnsatz:

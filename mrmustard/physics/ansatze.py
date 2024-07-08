@@ -138,7 +138,7 @@ class PolyExpBase(Ansatz):
         array: the array-like data
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
+    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor], fn = None, **kwargs):
         self._mat = mat
         self._vec = vec
         self._array = array
@@ -148,6 +148,18 @@ class PolyExpBase(Ansatz):
         self._backend_array = None
 
         self._simplified = False
+
+        self._fn = fn
+        self._kwargs = kwargs
+
+    def _compute_abc(self):
+        A,b,c = self._fn(**self._kwargs)
+        self._mat = A
+        self._backend_mat = A
+        self._vec = b
+        self._backend_vec = b
+        self._array = c
+        self._backend_array = c
 
     @property
     def batch_size(self):
@@ -161,6 +173,8 @@ class PolyExpBase(Ansatz):
     def mat(self) -> Batch[ComplexMatrix]:
         r"""
         """
+        if self._mat is None:
+            self._compute_abc()
         if self._backend_mat is None:
             self._backend_mat = math.atleast_3d(self._mat)
         return self._backend_mat
@@ -174,6 +188,8 @@ class PolyExpBase(Ansatz):
     def vec(self) -> Batch[ComplexMatrix]:
         r"""
         """
+        if self._vec is None:
+            self._compute_abc()
         if self._backend_vec is None:
             self._backend_vec = math.atleast_2d(self._vec)
         return self._backend_vec
@@ -187,6 +203,8 @@ class PolyExpBase(Ansatz):
     def array(self) -> Batch[ComplexMatrix]:
         r"""
         """
+        if self._array is None:
+            self._compute_abc()
         if self._backend_array is None:
             self._backend_array = math.atleast_1d(self._array)
         return self._backend_array
@@ -334,12 +352,15 @@ class PolyExpAnsatz(PolyExpBase):
         b: Optional[Batch[Vector]] = None,
         c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
+        fn = None,
+        **kwargs
     ):
         self.name = name
 
-        if A is None and b is None:
-            raise ValueError("Please provide either A or b.")
-        super().__init__(mat=A, vec=b, array=c)
+        if A is None and b is None and fn is None:
+            print (fn)
+            raise ValueError("Please provide either A or b or a function to generate (A, b, c).")
+        super().__init__(mat=A, vec=b, array=c, fn=fn, **kwargs)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:

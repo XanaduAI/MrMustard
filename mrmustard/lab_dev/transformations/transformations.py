@@ -530,4 +530,4 @@ class Attenuator(Channel):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
-        return Bargmann(*triples.attenuator_Abc(eta))
+        return Bargmann(A=None, b=None, c=None, fn=triples.attenuator_Abc, eta=eta)
