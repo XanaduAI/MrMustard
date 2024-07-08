@@ -444,6 +444,29 @@ class TestCircuitComponent:
         back = Channel.from_quadrature([0], [0], C.quadrature())
         assert C == back
 
+    def test_copy_on_write(self):
+        """Test that copy-on-write occurs when light-copy occurs."""
+        coh1 = Coherent([1, 2], x=1)
+        coh2 = coh1._light_copy()
+
+        assert coh1.x is coh2.x
+        assert coh1._frozen and coh2._frozen
+        idx = id(coh1.x)
+        orig_name = coh2.name
+
+        coh1._name = "foo"
+        assert not coh1._frozen
+        assert coh2._frozen  # was not mutated, does not deep-copy
+        assert id(coh1.x) != idx
+        assert id(coh2.x) == idx
+        assert coh1.name == "foo"
+        assert coh2.name == orig_name
+
+        coh2._name = "bar"
+        assert not coh2._frozen  # now it is deep-copied
+        assert id(coh2.x) != idx
+        assert coh2.name == "bar"
+
 
 class TestAdjointView:
     r"""

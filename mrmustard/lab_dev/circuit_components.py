@@ -19,6 +19,7 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Iterable, Optional, Sequence, Union
 import numbers
 
@@ -76,6 +77,7 @@ class CircuitComponent:
         self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
         self._parameter_set = ParameterSet()
         self._representation = representation
+        self._frozen = False
 
         # handle out-of-order modes
         ob = tuple(sorted(modes_out_bra))
@@ -287,7 +289,7 @@ class CircuitComponent:
         if self._name is None:
             name = self.short_name
             modes = "".join(str(m) for m in sorted(self.wires.modes))
-            self._name = name + modes if len(modes) < 5 else name
+            object.__setattr__(self, "_name", name + modes if len(modes) < 5 else name)
         return self._name
 
     @property
@@ -331,6 +333,8 @@ class CircuitComponent:
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
+        self.__dict__["_frozen"] = True
+        instance.__dict__["_frozen"] = True
         return instance
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
@@ -364,13 +368,14 @@ class CircuitComponent:
         for subset in subsets:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        ret = self._light_copy()
         modes = set(modes)
-        ret._wires = Wires(
-            modes_out_bra=modes if ob else set(),
-            modes_in_bra=modes if ib else set(),
-            modes_out_ket=modes if ok else set(),
-            modes_in_ket=modes if ik else set(),
+        ret = self._light_copy(
+            wires=Wires(
+                modes_out_bra=modes if ob else set(),
+                modes_in_bra=modes if ib else set(),
+                modes_out_ket=modes if ok else set(),
+                modes_in_ket=modes if ik else set(),
+            )
         )
 
         return ret
@@ -404,6 +409,13 @@ class CircuitComponent:
             self.wires,
             self.name,
         )
+
+    def __setattr__(self, attr, value):
+        """Freeze the object when creating a _light_copy."""
+        if getattr(self, "_frozen", False) and hasattr(self, attr):
+            self.__dict__["_frozen"] = False
+            self.__dict__ = deepcopy(self.__dict__)
+        return super().__setattr__(attr, value)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -590,7 +602,7 @@ class CCView(CircuitComponent):
 
     def __init__(self, component: CircuitComponent) -> None:
         self.__dict__ = component.__dict__.copy()
-        self._component = component._light_copy()
+        object.__setattr__(self, "_component", component._light_copy())
 
     def __repr__(self) -> str:
         return repr(self._component)

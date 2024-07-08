@@ -26,6 +26,7 @@
 * Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
   [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
 
+* Implemented copy-on-write for `CircuitComponent` whenever `_light_copy` is called.
 
 ### Documentation
 
