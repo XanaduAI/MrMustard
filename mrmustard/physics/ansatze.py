@@ -155,11 +155,8 @@ class PolyExpBase(Ansatz):
     def _compute_abc(self):
         A,b,c = self._fn(**self._kwargs)
         self._mat = A
-        self._backend_mat = A
         self._vec = b
-        self._backend_vec = b
         self._array = c
-        self._backend_array = c
 
     @property
     def batch_size(self):
