@@ -465,7 +465,7 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
-    eta2 = math.eye(n_modes, dtype=math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
+    eta2 = math.eye(n_modes, math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
 
     A = math.block(
         [
