@@ -556,7 +556,7 @@ class FockDamping(Operation):
         >>> from mrmustard.lab_dev import FockDamping, Coherent
 
         >>> operator = FockDamping(modes=[0], damping=0.1)
-        >>> input_state = Coherent(modes=[0], x=1, y=0.5).dm
+        >>> input_state = Coherent(modes=[0], x=1, y=0.5)
         >>> output_state = input_state >> operator
         >>> assert operator.modes == [0]
         >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
