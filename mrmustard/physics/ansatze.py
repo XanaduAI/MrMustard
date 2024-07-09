@@ -378,7 +378,6 @@ class PolyExpAnsatz(PolyExpBase):
         self.name = name
 
         if A is None and b is None and fn is None:
-            print(fn)
             raise ValueError("Please provide either A or b or a function to generate (A, b, c).")
         super().__init__(mat=A, vec=b, array=c, fn=fn, **kwargs)
 
