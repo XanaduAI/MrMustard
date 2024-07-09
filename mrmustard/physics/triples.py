@@ -464,8 +464,8 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes))
-    eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
+    eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
+    eta2 = math.eye(n_modes, math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
 
     A = math.block(
         [
@@ -506,9 +506,8 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
-    g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
-
+    g1 = math.reshape(math.diag(1 / math.sqrt(g)), (n_modes, n_modes))
+    g2 = math.reshape(math.diag(1 - 1 / g), (n_modes, n_modes))
     A = math.block(
         [
             [O_n, g1, g2, O_n],
