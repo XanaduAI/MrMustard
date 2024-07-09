@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Union, Optional
+from typing import Any, Callable, Union, Optional
 
 import numpy as np
 
@@ -136,9 +136,11 @@ class PolyExpBase(Ansatz):
         mat: the matrix-like data
         vec: the vector-like data
         array: the array-like data
+        fn: an optional function to generate ``mat``, ``vec`` and ``array``.
+        **kwargs: arguments for ``fn``.
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor], fn = None, **kwargs):
+    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor], fn: Optional[Callable] = None, **kwargs: Any):
         self._mat = mat
         self._vec = vec
         self._array = array
@@ -151,65 +153,6 @@ class PolyExpBase(Ansatz):
 
         self._fn = fn
         self._kwargs = kwargs
-
-    def _compute_abc(self):
-        A,b,c = self._fn(**self._kwargs)
-        self._mat = A
-        self._vec = b
-        self._array = c
-
-    @property
-    def batch_size(self):
-        return self.mat.shape[0]
-
-    @property
-    def num_vars(self):
-        return self.mat.shape[-1]
-
-    @property
-    def mat(self) -> Batch[ComplexMatrix]:
-        r"""
-        """
-        if self._mat is None:
-            self._compute_abc()
-        if self._backend_mat is None:
-            self._backend_mat = math.atleast_3d(self._mat)
-        return self._backend_mat
-
-    @mat.setter
-    def mat(self, array):
-        self._mat = array
-        self._backend_mat = None
-
-    @property
-    def vec(self) -> Batch[ComplexMatrix]:
-        r"""
-        """
-        if self._vec is None:
-            self._compute_abc()
-        if self._backend_vec is None:
-            self._backend_vec = math.atleast_2d(self._vec)
-        return self._backend_vec
-
-    @vec.setter
-    def vec(self, array):
-        self._vec = array
-        self._backend_vec = None
-
-    @property
-    def array(self) -> Batch[ComplexMatrix]:
-        r"""
-        """
-        if self._array is None:
-            self._compute_abc()
-        if self._backend_array is None:
-            self._backend_array = math.atleast_1d(self._array)
-        return self._backend_array
-
-    @array.setter
-    def array(self, array):
-        self._array = array
-        self._backend_array = None
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -232,6 +175,29 @@ class PolyExpBase(Ansatz):
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
     @property
+    def array(self) -> Batch[ComplexMatrix]:
+        r"""
+        The array of this ansatz.
+        """
+        if self._array is None:
+            self._compute_abc()
+        if self._backend_array is None:
+            self._backend_array = math.atleast_1d(self._array)
+        return self._backend_array
+
+    @array.setter
+    def array(self, array):
+        self._array = array
+        self._backend_array = None
+
+    @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.mat.shape[0]
+
+    @property
     def degree(self) -> int:
         r"""
         The degree of this ansatz.
@@ -239,6 +205,45 @@ class PolyExpBase(Ansatz):
         if self.array.ndim == 1:
             return 0
         return self.array.shape[-1] - 1
+
+    @property
+    def mat(self) -> Batch[ComplexMatrix]:
+        r"""
+        The matrix of this ansatz.
+        """
+        if self._mat is None:
+            self._compute_abc()
+        if self._backend_mat is None:
+            self._backend_mat = math.atleast_3d(self._mat)
+        return self._backend_mat
+
+    @mat.setter
+    def mat(self, array):
+        self._mat = array
+        self._backend_mat = None
+
+    @property
+    def num_vars(self):
+        r"""
+        The number of variables in this ansatz.
+        """
+        return self.mat.shape[-1]
+
+    @property
+    def vec(self) -> Batch[ComplexMatrix]:
+        r"""
+        The vector of this ansatz.
+        """
+        if self._vec is None:
+            self._compute_abc()
+        if self._backend_vec is None:
+            self._backend_vec = math.atleast_2d(self._vec)
+        return self._backend_vec
+
+    @vec.setter
+    def vec(self, array):
+        self._vec = array
+        self._backend_vec = None
 
     def simplify(self) -> None:
         r"""
@@ -285,6 +290,16 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, to_keep, axis=0)
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
+
+    def _compute_abc(self):
+        r"""
+        This method computes and sets the matrix, vector and array given a function 
+        and some kwargs.
+        """
+        A,b,c = self._fn(**self._kwargs)
+        self._mat = A
+        self._vec = b
+        self._array = c
 
     def _order_batch(self):
         r"""
@@ -340,7 +355,8 @@ class PolyExpAnsatz(PolyExpBase):
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
         c: The array of coefficients for the polynomial terms in the ansatz.
-
+        fn: an optional function to generate ``(A, b, c)``.
+        **kwargs: arguments for ``fn``.
     """
 
     def __init__(
@@ -349,8 +365,8 @@ class PolyExpAnsatz(PolyExpBase):
         b: Optional[Batch[Vector]] = None,
         c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
-        fn = None,
-        **kwargs
+        fn: Optional[Callable] = None,
+        **kwargs: Any
     ):
         self.name = name
 
@@ -497,6 +513,7 @@ class ArrayAnsatz(Ansatz):
     @property
     def array(self) -> Batch[Tensor]:
         r"""
+        The array of this ansatz.
         """
         if self._backend_array is None:
             self._backend_array = math.astensor(self._array)
@@ -505,6 +522,7 @@ class ArrayAnsatz(Ansatz):
     @property
     def num_vars(self) -> int:
         r"""
+        The number of variables in this ansatz.
         """
         return len(self.array.shape) - 1
 
