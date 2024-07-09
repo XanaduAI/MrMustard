@@ -560,9 +560,7 @@ class FockDamping(Operation):
         >>> output_state = input_state >> operator
         >>> assert operator.modes == [0]
         >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
-        >>> assert input_state.L2_norm > output_state.L2_norm 
-        >>> assert input_state.representation.b > input_state.representation.b
-
+        >>> assert output_state.L2_norm < 1
     Args:
         modes: The modes this gate is applied to.
         damping: The damping.
