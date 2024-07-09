@@ -163,7 +163,16 @@ class DisplacedSqueezed(Ket):
             n_modes, x=self.x.value, y=self.y.value, r=self.r.value, phi=self.phi.value
         )
         xs, ys, rs, phis = list(params)
-        return Bargmann(A=None, b=None, c=None, fn=triples.displaced_squeezed_vacuum_state_Abc, x=xs, y=ys, r=rs, phi=phis)
+        return Bargmann(
+            A=None,
+            b=None,
+            c=None,
+            fn=triples.displaced_squeezed_vacuum_state_Abc,
+            x=xs,
+            y=ys,
+            r=rs,
+            phi=phis,
+        )
 
 
 class Number(Ket):
@@ -283,7 +292,9 @@ class SqueezedVacuum(Ket):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
-        return Bargmann(A=None, b=None, c=None, fn=triples.squeezed_vacuum_state_Abc, r=rs, phi=phis)
+        return Bargmann(
+            A=None, b=None, c=None, fn=triples.squeezed_vacuum_state_Abc, r=rs, phi=phis
+        )
 
 
 class TwoModeSqueezedVacuum(Ket):
@@ -327,7 +338,9 @@ class TwoModeSqueezedVacuum(Ket):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
-        return Bargmann(A=None, b=None, c=None, fn=triples.two_mode_squeezed_vacuum_state_Abc, r=rs, phi=phis)
+        return Bargmann(
+            A=None, b=None, c=None, fn=triples.two_mode_squeezed_vacuum_state_Abc, r=rs, phi=phis
+        )
 
 
 class Vacuum(Ket):

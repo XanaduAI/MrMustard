@@ -140,7 +140,14 @@ class PolyExpBase(Ansatz):
         **kwargs: arguments for ``fn``.
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor], fn: Optional[Callable] = None, **kwargs: Any):
+    def __init__(
+        self,
+        mat: Batch[Matrix],
+        vec: Batch[Vector],
+        array: Batch[Tensor],
+        fn: Optional[Callable] = None,
+        **kwargs: Any,
+    ):
         self._mat = mat
         self._vec = vec
         self._array = array
@@ -293,10 +300,10 @@ class PolyExpBase(Ansatz):
 
     def _compute_abc(self):
         r"""
-        This method computes and sets the matrix, vector and array given a function 
+        This method computes and sets the matrix, vector and array given a function
         and some kwargs.
         """
-        A,b,c = self._fn(**self._kwargs)
+        A, b, c = self._fn(**self._kwargs)
         self._mat = A
         self._vec = b
         self._array = c
@@ -366,12 +373,12 @@ class PolyExpAnsatz(PolyExpBase):
         c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
         fn: Optional[Callable] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         self.name = name
 
         if A is None and b is None and fn is None:
-            print (fn)
+            print(fn)
             raise ValueError("Please provide either A or b or a function to generate (A, b, c).")
         super().__init__(mat=A, vec=b, array=c, fn=fn, **kwargs)
 

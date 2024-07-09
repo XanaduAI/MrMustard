@@ -106,7 +106,14 @@ class BSgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(A=None, b=None, c=None, fn=triples.beamsplitter_gate_Abc, theta=self.theta.value, phi=self.phi.value)
+        return Bargmann(
+            A=None,
+            b=None,
+            c=None,
+            fn=triples.beamsplitter_gate_Abc,
+            theta=self.theta.value,
+            phi=self.phi.value,
+        )
 
 
 class Dgate(Unitary):
@@ -386,7 +393,14 @@ class S2gate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(A=None, b=None, c=None, fn=triples.twomode_squeezing_gate_Abc, r=self.r.value, phi=self.phi.value)
+        return Bargmann(
+            A=None,
+            b=None,
+            c=None,
+            fn=triples.twomode_squeezing_gate_Abc,
+            r=self.r.value,
+            phi=self.phi.value,
+        )
 
 
 class Amplifier(Channel):
