@@ -157,13 +157,13 @@ def join_cs(
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
     if c1.shape == (1,) and c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(-1)
+        c12 = math.reshape(math.outer(c1, c2), -1)
     elif c1.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c2.shape)
+        c12 = math.reshape(math.outer(c1, c2), c2.shape)
     elif c2.shape == (1,):
-        c12 = math.outer(c1, c2).reshape(c1.shape)
+        c12 = math.reshape(math.outer(c1, c2), c1.shape)
     else:
-        c12 = math.outer(c1, c2).reshape(c1.shape + c2.shape)
+        c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
     return c12
 
 
