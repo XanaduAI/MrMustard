@@ -20,13 +20,23 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
 
-from .base import Unitary, Channel, Operator
+from .base import Unitary, Channel, Operation
 from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
 
-__all__ = ["Amplifier", "Attenuator", "FockDamping", "BSgate", "Dgate", "Rgate", "Sgate", "S2gate", "Identity"]
+__all__ = [
+    "Amplifier",
+    "Attenuator",
+    "FockDamping",
+    "BSgate",
+    "Dgate",
+    "Rgate",
+    "Sgate",
+    "S2gate",
+    "Identity",
+]
 
 
 class BSgate(Unitary):
@@ -534,7 +544,7 @@ class Attenuator(Channel):
         return Bargmann(*triples.attenuator_Abc(eta))
 
 
-class FockDamping(Operator):
+class FockDamping(Operation):
     r"""The Fock damping operator.
 
     If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
@@ -543,11 +553,15 @@ class FockDamping(Operator):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import FockDamping
+        >>> from mrmustard.lab_dev import FockDamping, Coherent
 
-        >>> operator = FockDamping(modes=[1, 2], damping=0.1)
-        >>> assert operator.modes == [1, 2]
+        >>> operator = FockDamping(modes=[0], damping=0.1)
+        >>> input_state = Coherent(modes=[0], x=1, y=0.5).dm
+        >>> output_state = state >> operator
+        >>> assert operator.modes == [0]
         >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
+        >>> assert input_state.L2_norm > output_state.L2_norm 
+        >>> assert input_state.representation.b > input_state.representation.b
 
     Args:
         modes: The modes this gate is applied to.

@@ -305,13 +305,11 @@ class TestTriples:
         assert math.allclose(
             A1,
             [
-                [0, 0.60653065, 0, 0],
-                [0.60653065, 0, 0, 0],
-                [0, 0, 0, 0.60653065],
-                [0, 0, 0.60653065, 0],
+                [0, 0.60653065],
+                [0.60653065, 0],
             ],
         )
-        assert math.allclose(b1, np.zeros(4))
+        assert math.allclose(b1, np.zeros(2))
         assert math.allclose(c1, 1)
 
     def test_displacement_gate_s_parametrized_Abc(self):
