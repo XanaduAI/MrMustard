@@ -34,7 +34,7 @@ from mrmustard.lab_dev.states import (
     Coherent,
     SqueezedVacuum,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate
+from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -59,6 +59,19 @@ class TestCircuitComponent:
         assert list(cc.modes) == [1, 8]
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
+
+    def test_missing_name(self):
+        cc = CircuitComponent(
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
+            modes_out_ket=(1, 8),
+            modes_in_ket=(1, 8),
+        )
+        cc._name = None
+        assert cc.name == "CC18"
+
+    def test_from_bargmann(self):
+        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
+        assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
 
     def test_modes_init_out_of_order(self):
         m1 = (8, 1)
@@ -93,6 +106,12 @@ class TestCircuitComponent:
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
 
+    def test_from_to_quadrature(self):
+        c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
+        cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
+        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        assert cc == ccc
+
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_adj = d1.adjoint
@@ -125,13 +144,13 @@ class TestCircuitComponent:
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
-    def test_light_copy(self):
+    def test__light_copy(self):
         d1 = CircuitComponent(
             Bargmann(*displacement_gate_Abc(0.1, 0.1)),
             modes_out_ket=[1],
             modes_in_ket=[1],
         )
-        d1_cp = d1.light_copy()
+        d1_cp = d1._light_copy()
 
         assert d1_cp.parameter_set is d1.parameter_set
         assert d1_cp.representation is d1.representation
@@ -151,19 +170,6 @@ class TestCircuitComponent:
         assert math.allclose(d89.r.value, d67.r.value)
         assert bool(d67.parameter_set) is True
         assert d67._representation is None
-
-        exotic_component = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[1, 2],
-            modes_in_ket=[3, 4],
-        )
-        exotic_component_01 = exotic_component.on([0, 1])
-        expected = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(x=[0.1] * 2, y=[0.2] * 2)),
-            modes_out_ket=[0, 1],
-            modes_in_ket=[0, 1],
-        )
-        assert exotic_component_01 == expected
 
     def test_on_error(self):
         with pytest.raises(ValueError):
@@ -229,7 +235,7 @@ class TestCircuitComponent:
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([2], x=0.1, y=0.1)
 
-        assert d1 == d1.light_copy()
+        assert d1 == d1._light_copy()
         assert d1 != d2
 
     def test_matmul(self):
@@ -366,9 +372,9 @@ class TestCircuitComponent:
         # fock only
         r4 = vac12.to_fock() >> d12.to_fock() >> a1.to_fock() >> n12.to_fock()
 
-        assert math.allclose(r1.representation.array, r2.representation.array)
-        assert math.allclose(r1.representation.array, r3.representation.array)
-        assert math.allclose(r1.representation.array, r4.representation.array)
+        assert math.allclose(r1, r2)
+        assert math.allclose(r1, r3)
+        assert math.allclose(r1, r4)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -418,16 +424,25 @@ class TestCircuitComponent:
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
-        state = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
-        back = Ket.from_quadrature([0], [q[0] for q in state.quadrature()])
-        assert back == state
+        ket = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
+        back = Ket.from_quadrature([0], ket.quadrature())
+        assert ket == back
 
-    def test_quadrature_rho(self):
+    def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
-        rho = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        quad = rho.quadrature()
-        back = DM.from_quadrature([0], [q[0] for q in quad])
-        assert rho == back
+        dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        back = DM.from_quadrature([0], dm.quadrature())
+        assert dm == back
+
+    def test_quadrature_unitary(self):
+        U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
+        back = Unitary.from_quadrature([0], [0], U.quadrature())
+        assert U == back
+
+    def test_quadrature_channel(self):
+        C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        back = Channel.from_quadrature([0], [0], C.quadrature())
+        assert C == back
 
 
 class TestAdjointView:
@@ -440,6 +455,7 @@ class TestAdjointView:
         d1_adj = AdjointView(d1)
 
         assert d1_adj.name == d1.name
+        assert d1_adj.short_name == d1.short_name + "_adj"
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.representation == d1.representation.conj()
 

@@ -31,7 +31,9 @@ from mrmustard.physics.gaussian_integrals import (
 )
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
-from mrmustard.lab_dev.states import Coherent, DM
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.states import Coherent, DM, Vacuum
+from mrmustard.lab_dev.transformations import Dgate
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -58,12 +60,20 @@ class TestTraceOut:
         assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
 
-        no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.A, [])
-        assert np.allclose(no_state.representation.b, [])
-        assert np.allclose(no_state.representation.c, 1)
+        trace = state >> TraceOut([0, 1, 2])
+        assert np.isclose(trace, 1.0)
+
+    def test_trace_out_complex(self):
+        cc = CircuitComponent.from_bargmann(
+            (
+                np.array([[0.1 + 0.2j, 0.3 + 0.4j], [0.3 + 0.4j, 0.5 - 0.6j]]),
+                np.array([0.7 + 0.8j, -0.9 + 0.10j]),
+                0.11 - 0.12j,
+            ),
+            modes_out_ket=[0],
+            modes_out_bra=[0],
+        )
+        assert (cc >> TraceOut([0])).dtype == math.complex128
 
     def test_trace_out_fock_states(self):
         settings.AUTOCUTOFF_MAX_CUTOFF = 10
@@ -73,9 +83,7 @@ class TestTraceOut:
         assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
 
         no_state = state >> TraceOut([0, 1, 2])
-        assert no_state.modes == []
-        assert no_state.wires == Wires()
-        assert np.allclose(no_state.representation.array, [])
+        assert np.isclose(no_state, 1.0)
 
         settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
@@ -173,7 +181,7 @@ class TestBtoQ:
         c0 = 1.0 + 0j
 
         modes = [0, 1]
-        BtoQ_CC1 = BtoQ(modes)
+        BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
             BtoQ_CC1.representation.A[0],
             BtoQ_CC1.representation.b[0],
@@ -185,7 +193,7 @@ class TestBtoQ:
             idx_zconj=[4, 5],
             measure=-1,
         )
-        QtoBMap_CC2 = BtoQ(modes).dual
+        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
             QtoBMap_CC2.representation.A[0],
             QtoBMap_CC2.representation.b[0],
@@ -207,7 +215,7 @@ class TestBtoQ:
         c0 = 1.0 + 0j
 
         modes = [0]
-        BtoQ_CC1 = BtoQ(modes)
+        BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
             BtoQ_CC1.representation.A[0],
             BtoQ_CC1.representation.b[0],
@@ -221,7 +229,7 @@ class TestBtoQ:
             idx_zconj=[2],
             measure=-1,
         )
-        QtoBMap_CC2 = BtoQ(modes).dual
+        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
             QtoBMap_CC2.representation.A[0],
             QtoBMap_CC2.representation.b[0],
@@ -237,3 +245,25 @@ class TestBtoQ:
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
+
+    def test_BtoQ_with_displacement(self):
+        v = Vacuum([0])
+        x = 2
+        y = 1
+        d = Dgate([0], x, y)
+        state = v >> d
+        btq_q = BtoQ([0], 0)
+        btq_p = BtoQ([0], np.pi / 2)
+        btq_nq = BtoQ([0], np.pi)
+        btq_np = BtoQ([0], 3 * np.pi / 2)
+
+        height = 1 / np.sqrt(2 * np.pi)
+        obj_q = Bargmann(*(state >> btq_q).representation.data)
+        obj_p = Bargmann(*(state >> btq_p).representation.data)
+        obj_nq = Bargmann(*(state >> btq_nq).representation.data)
+        obj_np = Bargmann(*(state >> btq_np).representation.data)
+
+        assert np.allclose(np.abs(obj_q(2 * x)) ** 2, height)
+        assert np.allclose(np.abs(obj_p(2 * y)) ** 2, height)
+        assert np.allclose(np.abs(obj_nq(2 * (-x))) ** 2, height)
+        assert np.allclose(np.abs(obj_np(2 * (-y))) ** 2, height)

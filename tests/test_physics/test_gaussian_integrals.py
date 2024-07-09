@@ -33,9 +33,21 @@ def test_real_gaussian_integral():
     A = math.astensor(
         np.array(
             [
-                [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j, 0.05349344 - 0.13728068j],
-                [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j, 0.18954838 - 0.42959383j],
-                [0.05349344 - 0.13728068j, 0.18954838 - 0.42959383j, -0.16931712 - 0.09205837j],
+                [
+                    0.35307718 - 0.09738001j,
+                    -0.01297994 + 0.26050244j,
+                    0.05349344 - 0.13728068j,
+                ],
+                [
+                    -0.01297994 + 0.26050244j,
+                    0.05696707 - 0.2351408j,
+                    0.18954838 - 0.42959383j,
+                ],
+                [
+                    0.05349344 - 0.13728068j,
+                    0.18954838 - 0.42959383j,
+                    -0.16931712 - 0.09205837j,
+                ],
             ]
         )
     )
@@ -87,11 +99,6 @@ def test_join_Abc():
     assert np.allclose(joined_Abc[0], math.block_diag(A1, A2))
     assert np.allclose(joined_Abc[1], math.concat([b1, b2], axis=-1))
     assert np.allclose(joined_Abc[2], math.outer(c1, c2))
-
-    A12 = math.block_diag(A1, A2)
-    b12 = math.concat([b1, b2], axis=-1)
-    c12 = math.outer(c1, c2)
-    return A12, b12, c12
 
 
 def test_join_Abc_real():
