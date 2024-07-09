@@ -358,7 +358,6 @@ class TestArrayAnsatz:
         assert math.allclose(new_state_coeff22[0], 1.0)
 
 
-
 class TestDiffOpPolyExpAnsatz:
     r"""
     Tests the ``DiffOpPolyExpAnsatz`` class.
