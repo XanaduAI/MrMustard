@@ -340,7 +340,6 @@ def number_means(tensor, is_dm: bool):
     r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
-    # print("aa", [modes[:k] + modes[k + 1 :] for k in range(len(modes))])
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
@@ -720,27 +719,25 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
 
         where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
     """
-    omega_over_hbar = math.cast(1 / settings.HBAR, "float64")
-    x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
+    hbar = settings.HBAR
+    x = math.cast(q / np.sqrt(hbar), math.complex128)  # unit-less vector
 
     # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(
-        math.pow(1 / 2, math.arange(0, cutoff))
+    prefactor = math.cast(
+        (np.pi * hbar) ** (-0.25) * math.pow(0.5, math.arange(0, cutoff) / 2),
+        math.complex128,
     )
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(
-            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
-        )
-        return math.cast(poly, "float64")
+        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, [cutoff])
 
-    hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
+    hermite_polys = math.map_fn(f_hermite_polys, x)
 
     # (real) wavefunction
-    psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
+    psi = math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
     return psi
 
 
@@ -866,7 +863,7 @@ def quadrature_distribution(
         else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
     )
 
-    return x, math.cast(pdf, "float64")
+    return x, math.real(pdf)
 
 
 def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:

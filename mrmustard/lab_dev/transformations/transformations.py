@@ -25,7 +25,8 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Attenuator", "Fockdamping", "BSgate", "Dgate", "Rgate", "Sgate", "Igate"]
+
+__all__ = ["Amplifier", "Attenuator", "Fockdamping", "BSgate", "Dgate", "Rgate", "Sgate", "S2gate", "Identity"]
 
 
 class BSgate(Unitary):
@@ -85,6 +86,8 @@ class BSgate(Unitary):
             c = 1
     """
 
+    short_name = "BS"
+
     def __init__(
         self,
         modes: Tuple[int, int],
@@ -98,7 +101,7 @@ class BSgate(Unitary):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
-        super().__init__(modes=modes, name="BSgate")
+        super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
         self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
@@ -154,6 +157,8 @@ class Dgate(Unitary):
             c &= \text{exp}\big(-|\bar{\alpha}^2|/2\big).
     """
 
+    short_name = "D"
+
     def __init__(
         self,
         modes: Sequence[int] = None,
@@ -164,7 +169,7 @@ class Dgate(Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
-        super().__init__(modes=modes, name="Dgate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
@@ -187,7 +192,7 @@ class Rgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Rgate
 
-        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
+        >>> unitary = Rgate(modes=[1, 2], phi=0.1)
         >>> assert unitary.modes == [1, 2]
 
     Args:
@@ -197,21 +202,23 @@ class Rgate(Unitary):
         theta_trainable: Whether ``theta`` is a trainable variable.
     """
 
+    short_name = "R"
+
     def __init__(
         self,
         modes: Sequence[int],
-        theta: Union[float, list[float]] = 0.0,
-        theta_trainable: bool = False,
-        theta_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        phi: Union[float, list[float]] = 0.0,
+        phi_trainable: bool = False,
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
-        super().__init__(modes=modes, name="Rgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        thetas = list(reshape_params(n_modes, theta=self.theta.value))[0]
-        return Bargmann(*triples.rotation_gate_Abc(thetas))
+        phis = list(reshape_params(n_modes, phi=self.phi.value))[0]
+        return Bargmann(*triples.rotation_gate_Abc(phis))
 
 
 class Sgate(Unitary):
@@ -264,6 +271,8 @@ class Sgate(Unitary):
             c &= \prod_{i=1}^N\sqrt{\text{sech}{\:r_i}}\:.
     """
 
+    short_name = "S"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -274,7 +283,7 @@ class Sgate(Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        super().__init__(modes=modes, name="Sgate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Sgate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
@@ -285,7 +294,7 @@ class Sgate(Unitary):
         return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
 
 
-class Igate(Unitary):
+class Identity(Unitary):
     r"""
     The identity gate.
 
@@ -294,25 +303,162 @@ class Igate(Unitary):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import Igate
+        >>> from mrmustard.lab_dev import Identity
 
-        >>> unitary = Igate(modes=[1, 2])
+        >>> unitary = Identity(modes=[1, 2])
         >>> assert unitary.modes == [1, 2]
 
     Args:
         modes: The modes this gate is applied to.
     """
 
+    short_name = "I"
+
     def __init__(
         self,
         modes: Sequence[int],
     ):
-        super().__init__(modes=modes, name="Igate")
+        super().__init__(modes_out=modes, modes_in=modes, name="Identity")
 
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         return Bargmann(*triples.identity_Abc(n_modes))
+
+
+class S2gate(Unitary):
+    r"""The two mode squeezing gate.
+
+    It applies to a single pair of modes.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import S2gate
+
+        >>> unitary = S2gate(modes=[1, 2], r=1)
+        >>> assert unitary.modes == [1, 2]
+        >>> assert np.allclose(unitary.r.value, 1)
+        >>> assert np.allclose(unitary.phi.value, 0.0)
+
+    Args:
+        modes: The modes this gate is applied to.
+        r: The squeezing amplitude.
+        r_bounds: The bounds for the squeezing amplitude.
+        r_trainable: Whether r is a trainable variable.
+        phi: The phase angle.
+        phi_bounds: The bounds for the phase angle.
+        phi_trainable: Whether phi is a trainable variable.
+
+    Raises:
+        ValueError: If ``modes`` is not a pair of modes.
+
+    .. details::
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A = \begin{bmatrix}
+                    O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
+                    e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
+                    \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
+                    O & \sech(r) & e^{i\phi}\tanh(r) & 0     
+                \end{bmatrix} \text{, }
+            b = O_{4} \text{, and }
+            c = \sech(r)
+    """
+
+    def __init__(
+        self,
+        modes: Tuple[int, int],
+        r: float = 0.0,
+        phi: float = 0.0,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        if len(modes) != 2:
+            raise ValueError(f"Expected a pair of modes, found {modes}.")
+
+        super().__init__(modes_out=modes, modes_in=modes, name="S2gate")
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        return Bargmann(*triples.twomode_squeezing_gate_Abc(self.r.value, self.phi.value))
+
+
+class Amplifier(Channel):
+    r"""The noisy amplifier channel.
+
+    If ``gain`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
+    all the modes share the same gain.
+
+    .. code-block ::
+
+        >>> import numpy as np
+        >>> from mrmustard.lab_dev import Amplifier, Coherent
+
+        >>> amp = Amplifier([0], gain=4)
+        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
+        >>> _, mu, _ = (coh >> amp).phase_space(0)
+        >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
+
+    Args:
+        modes: The modes this gate is applied to.
+        gain: The gain.
+        gain_trainable: Whether the gain is a trainable variable.
+        gain_bounds: The bounds for the gain.
+
+    .. details::
+
+        The :math:`N`-mode attenuator is defined as
+
+        .. math::
+            X = /sqrt{/bar{g}}I_{2N} \text{ , }
+            Y = (/bar{g}-1)I_{2N} \text{ , and }
+            d = O_{4N}\:,
+
+        where :math:`/bar{g}` is the gain and
+        :math:`\text{diag}_N(\bar{g})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{g}`.
+
+        Its ``(A,b,c)`` triple is given by 
+
+        .. math::
+            A &= \begin{bmatrix}
+                    O_N & \text{diag}_N(1/(\sqrt{\bar{g}}) & \text{diag}_N(1-1/\bar{g}) & O_N \\
+                    \text{diag}_N(1/(\sqrt{\bar{g}}) & O_N & O_N & O_N \\
+                    \text{diag}_N(1-1/\bar{g})  & O_N & O_N &  \text{diag}_N(1/(\bar{g})\\
+                    O_N & O_N &  \text{diag}_N(1/(\sqrt{\bar{g}}) & O_N
+                \end{bmatrix} \\ \\
+            b &= O_{4N} \\ \\
+            c &= 1//bar{g}\:.
+    """
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        gain: Union[Optional[float], Optional[list[float]]] = 1.0,
+        gain_trainable: bool = False,
+        gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
+    ):
+        super().__init__(modes_out=modes, modes_in=modes, name="Amp")
+        self._add_parameter(
+            make_parameter(
+                gain_trainable,
+                gain,
+                "gain",
+                gain_bounds,
+                None,
+            )
+        )
+
+    @property
+    def representation(self) -> Bargmann:
+        g = list(reshape_params(len(self.modes), g=self.gain.value))[0]
+        return Bargmann(*triples.amplifier_Abc(g))
 
 
 class Attenuator(Channel):
@@ -361,6 +507,8 @@ class Attenuator(Channel):
             c &= 1\:.
     """
 
+    short_name = "Att"
+
     def __init__(
         self,
         modes: Sequence[int],
@@ -368,7 +516,7 @@ class Attenuator(Channel):
         transmissivity_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
     ):
-        super().__init__(modes=modes, name="Att")
+        super().__init__(modes_out=modes, modes_in=modes, name="Att")
         self._add_parameter(
             make_parameter(
                 transmissivity_trainable,

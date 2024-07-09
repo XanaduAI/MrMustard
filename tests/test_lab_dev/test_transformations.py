@@ -23,29 +23,32 @@ from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import (
     Attenuator,
+    Amplifier,
     Fockdamping,
     BSgate,
     Channel,
     Dgate,
     Rgate,
     Sgate,
-    Igate,
+    S2gate,
+    Identity,
     Unitary,
-    Operator,
+    Operation,
 )
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.states import Coherent, Vacuum, TwoModeSqueezedVacuum
 
 
-class TestOperator:
+class TestOperation:
     r"""
-    Tests the Operator class.
+    Tests the Operation class.
     """
 
     def test_init_from_bargmann(self):
         A = np.array([[0, 1, 2], [1, 0, 0], [0, 4, 2]])
         b = np.array([0, 1, 5])
         c = 1
-        operator = Operator.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
+        operator = Operation.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
         assert np.allclose(operator.representation.A[None, ...], A)
         assert np.allclose(operator.representation.b[None, ...], b)
 
@@ -58,7 +61,7 @@ class TestUnitary:
     @pytest.mark.parametrize("name", [None, "my_unitary"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Unitary(name, modes)
+        gate = Unitary(modes, modes, name=name)
 
         assert gate.name[:1] == (name or "U")[:1]
         assert list(gate.modes) == sorted(modes)
@@ -86,20 +89,29 @@ class TestUnitary:
             unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
 
-        assert repr(unitary1) == "Unitary(modes=[0, 1], name=Dgate)"
+        assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate)"
         assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate)"
 
     def test_init_from_bargmann(self):
         A = np.array([[0, 1], [1, 0]])
         b = np.array([0, 0])
         c = 1
-        gate = Unitary.from_bargmann([2], (A, b, c), "my_unitary")
+        gate = Unitary.from_bargmann([2], [2], (A, b, c), "my_unitary")
         assert np.allclose(gate.representation.A[None, ...], A)
         assert np.allclose(gate.representation.b[None, ...], b)
 
+    def test_init_from_symplectic(self):
+        S = math.random_symplectic(2)
+        u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
+        assert u >> u.dual == Identity([0, 1])
+        assert u.dual >> u == Identity([0, 1])
+
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
-        should_be_identity = gate >> gate.inverse()
+        gate_inv = gate.inverse()
+        gate_inv_inv = gate_inv.inverse()
+        assert gate_inv_inv == gate
+        should_be_identity = gate >> gate_inv
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
 
@@ -111,7 +123,7 @@ class TestChannel:
     @pytest.mark.parametrize("name", [None, "my_channel"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Channel(name, modes)
+        gate = Channel(modes, modes, name=name)
 
         assert gate.name[:2] == (name or "Ch")[:2]
         assert list(gate.modes) == sorted(modes)
@@ -126,7 +138,7 @@ class TestChannel:
         A = np.arange(16).reshape(4, 4)
         b = np.array([0, 1, 2, 3])
         c = 1
-        channel = Channel.from_bargmann([0], (A, b, c), "my_unitary")
+        channel = Channel.from_bargmann([0], [0], (A, b, c), "my_channel")
         assert np.allclose(channel.representation.A[None, ...], A)
         assert np.allclose(channel.representation.b[None, ...], b)
 
@@ -152,7 +164,7 @@ class TestChannel:
             channel1.representation, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
-        assert repr(channel1) == "Channel(modes=[0, 1], name=Att)"
+        assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att)"
         assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att)"
 
     def test_inverse_channel(self):
@@ -288,21 +300,21 @@ class TestRgate:
     """
 
     modes = [[0], [1, 2], [9, 7]]
-    theta = [[1], 1, [1, 2]]
+    phis = [[1], 1, [1, 2]]
 
-    @pytest.mark.parametrize("modes,theta", zip(modes, theta))
-    def test_init(self, modes, theta):
-        gate = Rgate(modes, theta)
+    @pytest.mark.parametrize("modes,phi", zip(modes, phis))
+    def test_init(self, modes, phi):
+        gate = Rgate(modes, phi)
 
         assert gate.name == "Rgate"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``theta``"):
-            Rgate(modes=[0, 1], theta=[2, 3, 4])
+        with pytest.raises(ValueError, match="Length of ``phi``"):
+            Rgate(modes=[0, 1], phi=[2, 3, 4])
 
     def test_representation(self):
-        rep1 = Rgate(modes=[0], theta=0.1).representation
+        rep1 = Rgate(modes=[0], phi=0.1).representation
         assert math.allclose(
             rep1.A,
             [
@@ -315,7 +327,7 @@ class TestRgate:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0 + 0.0j])
 
-        rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).representation
+        rep2 = Rgate(modes=[0, 1], phi=[0.1, 0.3]).representation
         assert math.allclose(
             rep2.A,
             [
@@ -330,7 +342,7 @@ class TestRgate:
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
 
-        rep3 = Rgate(modes=[1], theta=0.1).representation
+        rep3 = Rgate(modes=[1], phi=0.1).representation
         assert math.allclose(
             rep3.A,
             [
@@ -348,14 +360,14 @@ class TestRgate:
         gate2 = Rgate([0], 1, True, (-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.theta.value = 3
+            gate1.phi.value = 3
 
-        gate2.theta.value = 2
-        assert gate2.theta.value == 2
+        gate2.phi.value = 2
+        assert gate2.phi.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Rgate(modes=[0], theta=[0.1, 0.2]).representation
+            Rgate(modes=[0], phi=[0.1, 0.2]).representation
 
 
 class TestSgate:
@@ -442,9 +454,9 @@ class TestSgate:
             Sgate(modes=[0], r=[0.1, 0.2]).representation
 
 
-class TestIgate:
+class TestIdentity:
     r"""
-    Tests for the ``Igate`` class.
+    Tests for the ``Identity`` class.
     """
 
     modes = [[0], [1, 2], [7, 9]]
@@ -454,17 +466,17 @@ class TestIgate:
         self,
         modes,
     ):
-        gate = Igate(modes)
+        gate = Identity(modes)
 
-        assert gate.name == "Igate"
+        assert gate.name == "Identity"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            Igate()
+            Identity()
 
     def test_representation(self):
-        rep1 = Igate(modes=[0]).representation
+        rep1 = Identity(modes=[0]).representation
         assert math.allclose(
             rep1.A,
             [
@@ -477,7 +489,7 @@ class TestIgate:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0 + 0.0j])
 
-        rep2 = Igate(modes=[0, 1]).representation
+        rep2 = Identity(modes=[0, 1]).representation
         assert math.allclose(
             rep2.A,
             [
@@ -491,6 +503,156 @@ class TestIgate:
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
+
+
+class TestS2gate:
+    r"""
+    Tests for the ``S2gate`` class.
+    """
+
+    modes = [[0, 8], [1, 2], [9, 7]]
+    r = [[1], 1, [1, 2]]
+    phi = [[3], [3, 4], [3, 4]]
+
+    def test_init(self):
+        gate = S2gate([0, 1], 2, 1)
+
+        assert gate.name == "S2gate"
+        assert gate.modes == [0, 1]
+        assert gate.r.value == 2
+        assert gate.phi.value == 1
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Expected a pair"):
+            S2gate([1, 2, 3])
+
+    def test_representation(self):
+        rep1 = S2gate([0, 1], 0.1, 0.2).representation
+        tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
+        sechr = 1 / np.cosh(0.1)
+
+        A_exp = [
+            [
+                [0, -tanhr, sechr, 0],
+                [-tanhr, 0, 0, sechr],
+                [sechr, 0, 0, np.conj(tanhr)],
+                [0, sechr, np.conj(tanhr), 0],
+            ]
+        ]
+        assert math.allclose(rep1.A, A_exp)
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
+
+    def test_trainable_parameters(self):
+        gate1 = S2gate([0, 1], 1, 1)
+        gate2 = S2gate([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
+        gate3 = S2gate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            gate1.r.value = 3
+
+        gate2.r.value = 2
+        assert gate2.r.value == 2
+
+        gate3.phi.value = 2
+        assert gate3.phi.value == 2
+
+    def test_operation(self):
+        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).representation
+        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).representation
+
+        assert math.allclose(rep1.A, rep2.A)
+        assert math.allclose(rep1.b, rep2.b)
+        assert math.allclose(rep1.c, rep2.c)
+
+
+class TestAmplifier:
+    r"""
+    Tests for the ``Amplifier`` class.
+    """
+
+    modes = [[0], [1, 2], [9, 7]]
+    gain = [[1.1], 1.1, [1.1, 1.2]]
+
+    @pytest.mark.parametrize("modes,gain", zip(modes, gain))
+    def test_init(self, modes, gain):
+        gate = Amplifier(modes, gain)
+
+        assert gate.name == "Amp"
+        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``gain``"):
+            Amplifier(modes=[0, 1], gain=[1.2, 1.3, 1.4])
+
+    def test_representation(self):
+        rep1 = Amplifier(modes=[0], gain=1.1).representation
+        g1 = 0.95346258
+        g2 = 0.09090909
+        assert math.allclose(
+            rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [0.90909090])
+
+    def test_trainable_parameters(self):
+        gate1 = Amplifier([0], 1.2)
+        gate2 = Amplifier([0], 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
+
+        with pytest.raises(AttributeError):
+            gate1.gain.value = 1.7
+
+        gate2.gain.value = 1.5
+        assert gate2.gain.value == 1.5
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            Amplifier(modes=[0], gain=[1.1, 1.2]).representation
+
+    def test_operation(self):
+        amp_channel = Amplifier(modes=[0], gain=1.5)
+        att_channel = Attenuator(modes=[0], transmissivity=0.7)
+        operation = amp_channel >> att_channel
+
+        assert math.allclose(
+            operation.representation.A,
+            [
+                [
+                    [0.0 + 0.0j, 0.75903339 + 0.0j, 0.25925926 + 0.0j, 0.0 + 0.0j],
+                    [0.75903339 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.22222222 + 0.0j],
+                    [0.25925926 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.75903339 + 0.0j],
+                    [0.0 + 0.0j, 0.22222222 + 0.0j, 0.75903339 + 0.0j, 0.0 + 0.0j],
+                ]
+            ],
+        )
+        assert math.allclose(operation.representation.b, np.zeros((1, 4)))
+        assert math.allclose(operation.representation.c, [0.74074074 + 0.0j])
+
+    def test_circuit_identity(self):
+        amp_channel = Amplifier(modes=[0], gain=2)
+        att_channel = Attenuator(modes=[0], transmissivity=0.5)
+        input_state = Coherent(modes=[0], x=0.5, y=0.7)
+
+        assert math.allclose(
+            (input_state >> amp_channel).representation.A,
+            (input_state >> att_channel.dual).representation.A,
+        )
+        assert math.allclose(
+            (input_state >> amp_channel).representation.b,
+            (input_state >> att_channel.dual).representation.b,
+        )
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+    def test_swap_with_attenuator(self, n):
+        def Amp(gain):
+            return Amplifier([0], gain)
+
+        def Att(transmissivity):
+            return Attenuator([0], transmissivity)
+
+        assert Amp((n + 1) / n) >> Att(n / (n + 1)) == Att((n + 1) / (n + 2)) >> Amp(
+            (n + 2) / (n + 1)
+        )
 
 
 class TestAttenuator:
