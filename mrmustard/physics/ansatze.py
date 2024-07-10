@@ -379,7 +379,6 @@ class PolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c / other)
             except Exception as e:
-                print(e)
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:

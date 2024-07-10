@@ -250,7 +250,7 @@ class CircuitComponent:
         The quadrature representation data of this circuit component.
         """
         if isinstance(self.representation, Fock):
-            raise NotImplementedError("not implemented with Fock representation")
+            raise NotImplementedError("Not implemented with Fock representation.")
 
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 

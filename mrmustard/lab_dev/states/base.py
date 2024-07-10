@@ -675,7 +675,9 @@ class DM(State):
         return coeff * DM(modes, Bargmann(*wigner_to_bargmann_rho(cov, means)), name)
 
     def normalize(self) -> DM:
-        r"""Returns a rescaled version of the state such that its probability is 1."""
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
         return self / self.probability
 
     @property
