@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 from functools import cached_property
-from typing import Optional
+from typing import Optional, Sequence
 import os
 import numpy as np
 
@@ -28,130 +28,130 @@ __all__ = ["Wires"]
 
 class Wires:
     r"""
-    A class with wire functionality for tensor network applications.
+     A class with wire functionality for tensor network applications.
 
-    In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
-    The wires describe how they connect with the surrounding components in a tensor network picture,
-    where states flow from left to right. ``CircuitComponent``\s can have wires on the
-    bra and/or on the ket side. Here are some examples for the types of components available on
-    ``mrmustard.lab_dev``:
+     In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
+     The wires describe how they connect with the surrounding components in a tensor network picture,
+     where states flow from left to right. ``CircuitComponent``\s can have wires on the
+     bra and/or on the ket side. Here are some examples for the types of components available on
+     ``mrmustard.lab_dev``:
 
-    .. code-block::
+     .. code-block::
 
-        A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
+         A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
 
-        ┌──────┐   1  ╔═════════╗   1  ┌───────┐
-        │Bra in│─────▶║         ║─────▶│Bra out│
-        └──────┘      ║ Channel ║      └───────┘
-        ┌──────┐   1  ║         ║   1  ┌───────┐
-        │Ket in│─────▶║         ║─────▶│Ket out│
-        └──────┘      ╚═════════╝      └───────┘
-
-
-        A unitary acting on mode ``2`` has input and output wires on the ket side:
-
-        ┌──────┐   2  ╔═════════╗   2  ┌───────┐
-        │Ket in│─────▶║ Unitary ║─────▶│Ket out│
-        └──────┘      ╚═════════╝      └───────┘
+         ┌──────┐   1  ╔═════════╗   1  ┌───────┐
+         │Bra in│─────▶║         ║─────▶│Bra out│
+         └──────┘      ║ Channel ║      └───────┘
+         ┌──────┐   1  ║         ║   1  ┌───────┐
+         │Ket in│─────▶║         ║─────▶│Ket out│
+         └──────┘      ╚═════════╝      └───────┘
 
 
-        A density matrix representing the state of mode ``0`` has only output wires:
+         A unitary acting on mode ``2`` has input and output wires on the ket side:
 
-                        ╔═════════╗   0  ┌───────┐
-                        ║         ║─────▶│Bra out│
-                        ║ Density ║      └───────┘
-                        ║ Matrix  ║   0  ┌───────┐
-                        ║         ║─────▶│Ket out│
-                        ╚═════════╝      └───────┘
+         ┌──────┐   2  ╔═════════╗   2  ┌───────┐
+         │Ket in│─────▶║ Unitary ║─────▶│Ket out│
+         └──────┘      ╚═════════╝      └───────┘
 
 
-        Also a ket representing the state of mode ``1`` has only output wires:
+         A density matrix representing the state of mode ``0`` has only output wires:
 
-                        ╔═════════╗   1  ┌───────┐
-                        ║   Ket   ║─────▶│Ket out│
-                        ╚═════════╝      └───────┘
+                         ╔═════════╗   0  ┌───────┐
+                         ║         ║─────▶│Bra out│
+                         ║ Density ║      └───────┘
+                         ║ Matrix  ║   0  ┌───────┐
+                         ║         ║─────▶│Ket out│
+                         ╚═════════╝      └───────┘
 
-    The ``Wires`` class can then be used to create subsets of wires:
 
-    .. code-block::
+         Also a ket representing the state of mode ``1`` has only output wires:
 
-        >>> from mrmustard.lab_dev.wires import Wires
+                         ╔═════════╗   1  ┌───────┐
+                         ║   Ket   ║─────▶│Ket out│
+                         ╚═════════╝      └───────┘
 
-        >>> modes_out_bra={0, 1}
-        >>> modes_in_bra={1, 2}
-        >>> modes_out_ket={0, 13}
-        >>> modes_in_ket={1, 2, 13}
-        >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+     The ``Wires`` class can then be used to create subsets of wires:
 
-        >>> # all the modes
-        >>> modes = w.modes
-        >>> assert w.modes == {0, 1, 2, 13}
+     .. code-block::
 
-        >>> # input/output modes
-        >>> assert w.input.modes == {1, 2, 13}
-        >>> assert w.output.modes == {0, 1, 13}
+         >>> from mrmustard.lab_dev.wires import Wires
 
-        >>> # get ket/bra modes
-        >>> assert w.ket.modes == {0, 1, 2, 13}
-        >>> assert w.bra.modes == {0, 1, 2}
+         >>> modes_out_bra={0, 1}
+         >>> modes_in_bra={1, 2}
+         >>> modes_out_ket={0, 13}
+         >>> modes_in_ket={1, 2, 13}
+         >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
 
-        >>> # combined subsets
-        >>> assert w.output.ket.modes == {0, 13}
-        >>> assert w.input.bra.modes == {1, 2}
+         >>> # all the modes
+         >>> modes = w.modes
+         >>> assert w.modes == {0, 1, 2, 13}
 
-    Here's a diagram of the original ``Wires`` object in the example above,
-    with the indices of the wires (the number in parenthesis) given in the "standard" order
-    (``bra_out``, ``bra_in``, ``ket_out``, ``ket_in``, and the modes in sorted increasing order):
+         >>> # input/output modes
+         >>> assert w.input.modes == {1, 2, 13}
+         >>> assert w.output.modes == {0, 1, 13}
 
-    .. code-block::
+         >>> # get ket/bra modes
+         >>> assert w.ket.modes == {0, 1, 2, 13}
+         >>> assert w.bra.modes == {0, 1, 2}
 
-                     ╔═════════╗
-        1 (2) ─────▶ ║         ║─────▶ 0 (0)
-        2 (3) ─────▶ ║         ║─────▶ 1 (1)
-                     ║         ║
-                     ║  ``Wires``  ║
-        1 (6) ─────▶ ║         ║
-        2 (7) ─────▶ ║         ║─────▶ 0 (4)
-       13 (8) ─────▶ ║         ║─────▶ 13 (5)
-                     ╚═════════╝
+         >>> # combined subsets
+         >>> assert w.output.ket.modes == {0, 13}
+         >>> assert w.input.bra.modes == {1, 2}
 
-    To access the index of a subset of wires in standard order we can use the ``indices``
-    property:
+     Here's a diagram of the original ``Wires`` object in the example above,
+     with the indices of the wires (the number in parenthesis) given in the "standard" order
+     (``bra_out``, ``bra_in``, ``ket_out``, ``ket_in``, and the modes in sorted increasing order):
 
     .. code-block::
 
-        >>> assert w.indices == (0,1,2,3,4,5,6,7,8)
-        >>> assert w.input.indices == (2,3,6,7,8)
+                      ╔═════════╗
+         1 (2) ─────▶ ║         ║─────▶ 0 (0)
+         2 (3) ─────▶ ║         ║─────▶ 1 (1)
+                      ║         ║
+                      ║  ``Wires``  ║
+         1 (6) ─────▶ ║         ║
+         2 (7) ─────▶ ║         ║─────▶ 0 (4)
+        13 (8) ─────▶ ║         ║─────▶ 13 (5)
+                      ╚═════════╝
 
-    Another important application of the ``Wires`` class is to contract the wires of two components.
-    This is done using the ``@`` operator. The result is a new ``Wires`` object that combines the wires
-    of the two components. Here's an example of a contraction of a single-mode density matrix going
-    into a single-mode channel:
+     To access the index of a subset of wires in standard order we can use the ``indices``
+     property:
 
-    .. code-block::
+     .. code-block::
 
-        >>> rho = Wires(modes_out_bra={0}, modes_in_bra={0})
-        >>> Phi = Wires(modes_out_bra={0}, modes_in_bra={0}, modes_out_ket={0}, modes_in_ket={0})
-        >>> rho_out, perm = rho @ Phi
-        >>> assert rho_out.modes == {0}
+         >>> assert w.indices == (0,1,2,3,4,5,6,7,8)
+         >>> assert w.input.indices == (2,3,6,7,8)
 
-    Here's a diagram of the result of the contraction:
+     Another important application of the ``Wires`` class is to contract the wires of two components.
+     This is done using the ``@`` operator. The result is a new ``Wires`` object that combines the wires
+     of the two components. Here's an example of a contraction of a single-mode density matrix going
+     into a single-mode channel:
 
-    .. code-block::
+     .. code-block::
 
-        ╔═══════╗      ╔═══════╗
-        ║       ║─────▶║       ║─────▶ 0
-        ║  rho  ║      ║  Phi  ║
-        ║       ║─────▶║       ║─────▶ 0
-        ╚═══════╝      ╚═══════╝
+         >>> rho = Wires(modes_out_bra={0}, modes_in_bra={0})
+         >>> Phi = Wires(modes_out_bra={0}, modes_in_bra={0}, modes_out_ket={0}, modes_in_ket={0})
+         >>> rho_out, perm = rho @ Phi
+         >>> assert rho_out.modes == {0}
 
-    The permutation that takes the contracted representations to the standard order is also returned.
+     Here's a diagram of the result of the contraction:
 
-    Args:
-        modes_out_bra: The output modes on the bra side.
-        modes_in_bra: The input modes on the bra side.
-        modes_out_ket: The output modes on the ket side.
-        modes_in_ket: The input modes on the ket side.
+     .. code-block::
+
+         ╔═══════╗      ╔═══════╗
+         ║       ║─────▶║       ║─────▶ 0
+         ║  rho  ║      ║  Phi  ║
+         ║       ║─────▶║       ║─────▶ 0
+         ╚═══════╝      ╚═══════╝
+
+     The permutation that takes the contracted representations to the standard order is also returned.
+
+     Args:
+         modes_out_bra: The output modes on the bra side.
+         modes_in_bra: The input modes on the bra side.
+         modes_out_ket: The output modes on the ket side.
+         modes_in_ket: The input modes on the ket side.
     """
 
     def __init__(
@@ -174,10 +174,6 @@ class Wires:
 
         # Adds elements to the cache when calling ``__getitem__``
         self._mode_cache = {}
-
-    def __len__(self) -> int:
-        r"The number of wires."
-        return sum(len(s) for s in self.args)
 
     @cached_property
     def id(self) -> int:
@@ -312,14 +308,14 @@ class Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
-    def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
+    def __getitem__(self, modes: Sequence[int] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
-        modes = {modes} if isinstance(modes, int) else set(modes)
-        if tuple(modes) not in self._mode_cache:
-            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3)))
+        modes_set = {modes} if isinstance(modes, int) else set(modes)
+        if tuple(modes_set) not in self._mode_cache:
+            w = Wires(*(self.args[t] & modes_set for t in (0, 1, 2, 3)))
             w._original = self.original or self
-            self._mode_cache[tuple(modes)] = w
-        return self._mode_cache[tuple(modes)]
+            self._mode_cache[tuple(modes_set)] = w
+        return self._mode_cache[tuple(modes_set)]
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -442,3 +438,11 @@ class Wires:
     def _repr_html_(self):  # pragma: no cover
         template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
         display(HTML(template.render(wires=self)))
+
+    def contracted_indices(self, other: Wires):
+        """Returns the indices being contracted on self and other"""
+        ovlp_bra = sorted(self.output.bra.modes & other.input.bra.modes)
+        ovlp_ket = sorted(self.output.ket.modes & other.input.ket.modes)
+        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
+        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
+        return idxA, idxB
