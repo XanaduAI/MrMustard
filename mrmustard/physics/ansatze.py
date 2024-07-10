@@ -37,7 +37,7 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-__all__ = ["Ansatz", "ArrayAnsatz", "PolyExpBase", "PolyExpAnsatz"]
+__all__ = ["Ansatz", "ArrayAnsatz", "PolyExpBase", "PolyExpAnsatz", ]
 
 
 class Ansatz(ABC):
