@@ -377,8 +377,9 @@ class PolyExpAnsatz(PolyExpBase):
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:
-                return self.__class__(self.A, self.b, self.c / other)
+                return self.__class__(self.A, self.b, self.c / math.cast(other, math.complex128))
             except Exception as e:
+                print(e)
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -494,7 +495,7 @@ class ArrayAnsatz(Ansatz):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            return self.__class__(array=self.array / other)
+            return self.__class__(array=self.array / math.cast(other, math.complex128))
 
     def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
         r"""
