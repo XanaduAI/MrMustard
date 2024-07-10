@@ -353,9 +353,7 @@ class TwoModeSqueezedVacuum(Ket):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        rs, phis = list(
-            reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value)
-        )
+        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
         return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
