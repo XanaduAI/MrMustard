@@ -419,6 +419,7 @@ class TestDM:
         state = state.to_fock(5)  # truncated
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
