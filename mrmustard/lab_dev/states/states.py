@@ -21,6 +21,7 @@ The classes representing states in quantum circuits.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
+import numpy as np
 
 from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
@@ -37,6 +38,7 @@ __all__ = [
     "Thermal",
     "TwoModeSqueezedVacuum",
     "Vacuum",
+    "Sauron",
 ]
 
 #  ~~~~~~~~~~~
@@ -240,6 +242,31 @@ class Number(Ket):
         return self._n
 
 
+class Sauron(Ket):
+    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using
+    a ring of `n+1` coherent states. The reference to the Lord of the Rings comes from
+    the approximation becoming perfect in the limit for the radius of the ring going
+    to zero where vacuum (= darkness) is.
+    The formula for the Sauron state as a superposition of coherent states on a ring
+    is given in https://arxiv.org/abs/2305.17099:
+    .. math::
+        |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |r e^{2\pi k/(n+1)}\rangle_c,
+    Args:
+        modes (Sequence[int]): The modes of the Sauron state.
+        n (int): The Fock state that is approximated.
+        r (float): The radius of the ring of coherent states, default is 0.1.
+    """
+
+    def __init__(self, modes, n=0, r=0.1):
+        phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
+        cs = np.exp(1j * phases)
+        bs = (r * cs)[..., None]
+        As = np.zeros([n + 1, 1, 1], dtype="complex128")
+        super().__init__(name=f"Sauron-{n}", modes=modes)
+        prob = Ket.from_bargmann(modes, (As, bs, cs)).probability
+        self._representation = Bargmann(As, bs, cs / np.sqrt(prob))
+
+
 class SqueezedVacuum(Ket):
     r"""The `N`-mode squeezed vacuum state.
 
@@ -326,7 +353,9 @@ class TwoModeSqueezedVacuum(Ket):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
+        rs, phis = list(
+            reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value)
+        )
         return Bargmann(*triples.two_mode_squeezed_vacuum_state_Abc(rs, phis))
 
 
