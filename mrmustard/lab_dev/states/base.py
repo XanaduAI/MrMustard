@@ -680,6 +680,12 @@ class DM(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM(modes, Bargmann(*wigner_to_bargmann_rho(cov, means)), name)
 
+    def normalize(self) -> DM:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        return self / self.probability
+
     @property
     def _probabilities(self) -> RealVector:
         r"""Element-wise probabilities along the batch dimension of this DM.
@@ -869,6 +875,12 @@ class Ket(State):
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
         return Ket(modes, coeff * Bargmann(*wigner_to_bargmann_psi(cov, means)), name)
+
+    def normalize(self) -> Ket:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1
+        """
+        return self / math.sqrt(self.probability)
 
     @property
     def _probabilities(self) -> RealVector:
