@@ -416,7 +416,7 @@ class TestDiffOpPolyExpAnsatz:
     def test_call(self):
         A, b, c = Abc_triple(5)
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
-    
+
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
     def test_and(self):
