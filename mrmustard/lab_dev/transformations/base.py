@@ -30,6 +30,7 @@ from mrmustard import math
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard import physics
+from mrmustard.physics.bargmann import Au2Symplectic, Symplectic2Au
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
@@ -201,6 +202,28 @@ class Unitary(Operation):
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
+
+    @property
+    def symplectic(self):
+        batch = self.representation.A.shape[0]
+        m = self.representation.A.shape[-1]
+        S = math.zeros([batch, m, m])
+        for bat in range(batch):
+            S[bat, :, :] = Au2Symplectic(self.representation.A[bat, :, :])
+        return S
+
+    @classmethod
+    def from_symplectic_directly(cls, modes, S) -> Unitary:
+        m = len(S)
+        num_modes = m // 2
+        A = Symplectic2Au(S)
+        b = [0] * m
+        c = 1  # change after poly*exp ansatz
+        u = Unitary.from_bargmann(modes, modes, [A, b, c])
+        v = u >> u.dual
+        a_prime, b_prime, c_prime = v.bargmann
+        c = 1 / math.sqrt(c_prime[0])
+        return Unitary.from_bargmann(modes, modes, [A, b, c])
 
 
 class Map(Transformation):

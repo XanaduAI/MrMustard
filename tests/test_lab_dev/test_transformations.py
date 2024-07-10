@@ -113,6 +113,31 @@ class TestUnitary:
         should_be_identity = gate >> gate_inv
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
+    @pytest.mark.parametrize("n", [1, 2, 3])
+    def test_from_symplectic_directly(self, n):
+        S = math.random_symplectic(n)
+        u = Unitary.from_symplectic_directly(range(n), S)
+        assert u >> u.dual == Identity(range(n))
+
+    def test_Au2Symplectic(self):
+        A = np.array([[[0, 1], [1, 0]]])
+        b = np.array([[0, 0]])
+        c = np.array([1])
+        u = Unitary.from_bargmann([0], [0], [A, b, c])
+        S = u.symplectic
+        S_by_hand = np.eye(2)
+        assert np.allclose(S, S_by_hand)
+
+        # checking batch thingy
+
+        A = np.array([[[0, 1], [1, 0]], [[0, 1], [1, 0]]])
+        b = np.array([[0, 0], [0, 0]])
+        c = np.array([0, 0])
+        u = Unitary.from_bargmann([0], [0], [A, b, c])
+        S = u.symplectic
+        S_by_hand = np.array([[[1, 0], [0, 1]], [[1, 0], [0, 1]]])
+        assert np.allclose(S, S_by_hand)
+
 
 class TestChannel:
     r"""

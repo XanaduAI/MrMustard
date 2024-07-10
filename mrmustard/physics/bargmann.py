@@ -103,3 +103,58 @@ def wigner_to_bargmann_U(X, d):
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+
+
+def Au2Symplectic(A):
+    # A represents the A matrix corresponding to unitary U
+    m = A.shape[-1]
+    m = m // 2
+
+    # identifying blocks of A_u
+    u_1 = A[..., :m, :m]
+    u_2 = A[..., :m, m:]
+    u_3 = A[..., m:, m:]
+
+    # The formula to apply comes here
+    S_1 = math.conj(math.inv(u_2.T))
+    S_2 = -S_1 @ math.conj(u_3)
+    S_3 = math.conj(S_2)
+    S_4 = math.conj(S_1)
+
+    S = math.block([[S_1, S_2], [S_3, S_4]])
+
+    Transformation = (
+        1
+        / math.sqrt(2)
+        * math.block([[math.eye(m), math.eye(m)], [-1j * math.eye(m), 1j * math.eye(m)]])
+    )
+
+    return math.real(Transformation @ S @ math.conj(Transformation.T))
+
+
+def Symplectic2Au(S):
+    m = S.shape[-1]
+    m = m // 2
+    # the following lines of code transform the quadrature symplectic matrix to
+    # the annihilation one
+    Transformation = (
+        1
+        / math.sqrt(2)
+        * math.block([[math.eye(m), math.eye(m)], [-1j * math.eye(m), 1j * math.eye(m)]])
+    )
+    S = np.conjugate(Transformation.T) @ S @ Transformation
+    # identifying blocks of S
+    S_1 = S[:m, :m]
+    S_2 = S[:m, m:]
+
+    # TODO: broadcasting/batch stuff consider a batch dimension
+
+    # the formula to apply comes here
+    A_1 = S_2 @ np.conjugate(np.linalg.pinv(S_1))  # use solve for inverse
+    A_2 = np.conjugate(np.linalg.pinv(S_1.T))
+    A_3 = A_2.T
+    A_4 = -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
+
+    A = math.block([[A_1, A_2], [A_3, A_4]])
+
+    return A
