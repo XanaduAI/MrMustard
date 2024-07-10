@@ -19,7 +19,13 @@ from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
 
-__all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
+__all__ = [
+    "vanilla",
+    "vanilla_batch",
+    "vanilla_jacobian",
+    "vanilla_vjp",
+    "autoshape_numba",
+]
 
 SQRT = np.sqrt(np.arange(1000))
 
@@ -208,11 +214,13 @@ def autoshape_numba(
         max_prob (float): the probability value to stop at (default 0.999)
         max_shape (int): max value before stopping (default 100)
 
-    Details:
+    **Details:**
 
     Here's how it works. First we get the reduced density matrix at the given mode. Then we
     maintain two buffers that contain values around the diagonal: buf3 and buf2, of size 2x3
     and 2x2 respectively. The buffers contain the following elements of the density matrix:
+
+    .. code-block::
 
                      ┌────┐                           ┌────┐
                      │buf3│                           │buf2│
@@ -234,6 +242,8 @@ def autoshape_numba(
     By using indices mod 2, the data needed at each iteration is in the columns not being updated.
 
     The updates roughly look like this:
+
+    .. code-block::
 
                     ┌───────┐                     ┌───────┐
                     │k even │                     │ k odd │
