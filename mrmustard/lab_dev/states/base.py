@@ -818,7 +818,7 @@ class Ket(State):
 
     def __init__(
         self,
-        modes: tuple[int, ...] = (),
+        modes: Sequence[int] = (),
         representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):

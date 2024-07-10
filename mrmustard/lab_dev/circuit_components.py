@@ -19,8 +19,9 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 import numbers
+from functools import cached_property
 
 import os
 import numpy as np
@@ -72,7 +73,6 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._fock_shape = None  # Lazy
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
@@ -325,7 +325,7 @@ class CircuitComponent:
         """
         return DualView(self)
 
-    @property
+    @cached_property
     def fock_shape(self) -> list[Optional[int]]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
@@ -339,21 +339,10 @@ class CircuitComponent:
         The order of the elements in the shape is intended the same order as the wires
         in the `.wires` attribute.
         """
-        if not self._fock_shape:
-            try:  # to read it from array ansatz
-                self._fock_shape = list(self.representation.array.shape[1:])
-            except AttributeError:  # bargmann
-                self._fock_shape = [None] * len(self.wires)
-        return self._fock_shape
-
-    @fock_shape.setter
-    def fock_shape(self, shape: list[Optional[int]]):
-        r"""
-        Sets the custom shape of this component in the Fock representation.
-        """
-        if len(shape) != len(self.wires):
-            raise ValueError(f"expected a shape of length {len(self.wires)}, got {len(shape)}")
-        self._fock_shape = shape
+        try:  # to read it from array ansatz
+            return list(self.representation.array.shape[1:])
+        except AttributeError:  # bargmann
+            return [None] * len(self.wires)
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
@@ -398,12 +387,11 @@ class CircuitComponent:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
-        modes = set(modes)
         ret._wires = Wires(
-            modes_out_bra=modes if ob else set(),
-            modes_in_bra=modes if ib else set(),
-            modes_out_ket=modes if ok else set(),
-            modes_in_ket=modes if ik else set(),
+            modes_out_bra=set(modes) if ob else set(),
+            modes_in_bra=set(modes) if ib else set(),
+            modes_out_ket=set(modes) if ok else set(),
+            modes_in_ket=set(modes) if ik else set(),
         )
 
         return ret
@@ -664,7 +652,7 @@ class CircuitComponent:
             return (
                 self.__class__.__name__
                 + f"(modes={self.modes}, name={self.name}"
-                + f", {repr_name}={repr})"
+                + f", repr={repr_name})"
             )
 
     def _repr_html_(self):  # pragma: no cover

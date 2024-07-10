@@ -218,13 +218,10 @@ class Number(Ket):
                 f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
             )
         self.n = n
-        self._fock_shape = (
-            [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
-        )
+        for i, num in enumerate(n):
+            self.fock_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
 
-    @property
-    def representation(self) -> Fock:
-        return Fock(fock_state(self.n, [s - 1 for s in self.fock_shape]))
+        self._representation = Fock(fock_state(self.n, [s - 1 for s in self.fock_shape]))
 
 
 class SqueezedVacuum(Ket):
@@ -350,8 +347,9 @@ class Vacuum(Ket):
         self,
         modes: Sequence[int],
     ) -> None:
-        super().__init__(modes=modes, name="Vac")
-        self._fock_shape = [1] * len(modes)
+        super().__init__(modes=tuple(modes), name="Vac")
+        for i in range(len(modes)):
+            self.fock_shape[i] = 1
 
     @property
     def representation(self) -> Bargmann:

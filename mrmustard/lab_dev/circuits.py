@@ -194,8 +194,6 @@ class Circuit:
 
                 self.components[i].fock_shape = [a, b, c, d]
 
-        # TODO: propagate through where A matrix is block-antidiagonal
-        # TODO: do S2gate (easy!)
         return changes
 
     @property
