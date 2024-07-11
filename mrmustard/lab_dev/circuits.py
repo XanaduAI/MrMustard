@@ -174,7 +174,6 @@ class Circuit:
                 for a, b in indices.items():  # for every connected pair between i and j
                     s_ia = self.components[i].fock_shape[a]
                     s_jb = self.components[j].fock_shape[b]
-                    print(i, j, s_ia, s_jb)
                     if not s_ia and not s_jb:
                         continue
                     changes = changes or s_ia != s_jb
@@ -203,8 +202,6 @@ class Circuit:
 
                 self.components[i].fock_shape = [a, b, c, d]
 
-        # TODO: propagate through where A matrix is block-antidiagonal
-        # TODO: do S2gate (easy!)
         return changes
 
     @property
