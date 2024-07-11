@@ -506,7 +506,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         z = z[..., None, :]
 
         A_part = np.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axis=(-1, -2))
-        b_part = np.sum(self.b[..., :dim_alpha] * z[..., None, :], axis=(-1))
+        b_part = np.sum(self.b[..., :dim_alpha] * z[..., None, :], axis=-1)
 
         exp_sum = np.exp(1 / 2 * A_part + b_part)
         if dim_beta == 0:
