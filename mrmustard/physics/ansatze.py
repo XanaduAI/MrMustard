@@ -247,6 +247,11 @@ class PolyExpBase(Ansatz):
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
     def polynomial_dimensions(self):
+        r"""
+        This method finds the dimensionality of the polynomial, i.e. how many wires
+        have polynomials attached to them and what the degree of the polynomial is
+        on each of the wires.
+        """
         if self.batch_size == 1:
             if self.array.shape == (1,):
                 dim_poly = 0
@@ -441,7 +446,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array((1.0,2.0,3.0))
+        >>> c = np.array([1.0,2.0,3.0])
 
         >>> F = DiffOpPolyExpAnsatz(A, b, c)
         >>> z = np.array([1.0, 2.0])
@@ -460,7 +465,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor] = 1.0,
+        c: Batch[Tensor] = np.array([1.0]),
         name: str = "",
     ):
         self.name = name
