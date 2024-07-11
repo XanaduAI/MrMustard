@@ -192,7 +192,6 @@ class PolyExpBase(Ansatz):
         shape_poly = self.array.shape[1:]
         return dim_poly, shape_poly
 
-
     def simplify(self) -> None:
         r"""
         Simplifies the representation by combining together terms that have the same
@@ -258,7 +257,6 @@ class PolyExpBase(Ansatz):
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
-
 
 
 class PolyExpAnsatz(PolyExpBase):
