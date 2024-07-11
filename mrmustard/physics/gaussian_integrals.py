@@ -261,8 +261,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
 
 def contract_two_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
