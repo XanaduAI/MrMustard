@@ -22,11 +22,9 @@ from __future__ import annotations
 from typing import Iterable, Optional, Sequence, Union
 import numbers
 
-import os
 import numpy as np
 import ipywidgets as widgets
-from IPython.display import display, HTML
-from mako.template import Template
+from IPython.display import display
 
 from mrmustard import math, settings, widgets as mmwidgets
 from mrmustard.utils.typing import Scalar, ComplexTensor
