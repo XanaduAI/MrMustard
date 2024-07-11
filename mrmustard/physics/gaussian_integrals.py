@@ -304,7 +304,7 @@ def complex_gaussian_integral_2(
     Here, ``z`` is an ``n``-dim complex vector, ``A`` is an ``n x n`` complex matrix,
     ``b`` is an ``n``-dim complex vector, ``c`` is a complex scalar, and :math:`d\mu(z)`
     is a non-holomorphic complex measure over a subset of m pairs of z,z* variables. These
-    are specified by the indices ``idx_z`` and ``idx_zconj``. The ``measure`` parameter is
+    are specified by the indices ``idx1`` and ``idx2``. The ``measure`` parameter is
     the exponent of the measure:
 
     :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
