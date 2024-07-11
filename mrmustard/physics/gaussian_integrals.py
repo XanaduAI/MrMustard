@@ -19,7 +19,7 @@ This module contains gaussian integral functions and related helper functions.
 from typing import Sequence, Tuple
 import numpy as np
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 
 
 def real_gaussian_integral(
@@ -150,8 +150,8 @@ def complex_gaussian_integral(
 
 
 def join_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -165,15 +165,17 @@ def join_Abc(
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b12 = math.concat([b1, b2], axis=-1)
-    c12 = math.outer(c1, c2)
+    c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
     return A12, b12, c12
 
 
 def join_Abc_real(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -190,7 +192,8 @@ def join_Abc_real(
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
     if len(idx1) != len(idx2):
         raise ValueError(
             f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}"
@@ -220,11 +223,9 @@ def join_Abc_real(
     if math.asnumpy(not_idx1).shape == (0,):
         A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
         b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
     elif math.asnumpy(not_idx2).shape == (0,):
         A12 = math.block([[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]])
         b12 = math.concat([b2 + b1_idx, b1_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
     else:
         O_n = math.zeros((len(not_idx1), len(not_idx2)), math.complex128)
         A12 = math.block(
@@ -235,7 +236,7 @@ def join_Abc_real(
             ]
         )
         b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
-        c12 = math.outer(c1, c2)
+    c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
     return A12, b12, c12
 
 
@@ -288,9 +289,8 @@ def contract_two_Abc(
     )
 
 
-
 def complex_gaussian_integral_2(
-    Abc1: tuple, Abc2: tuple,  idx1: tuple[int, ...], idx2: tuple[int, ...], measure: float = -1
+    Abc1: tuple, Abc2: tuple, idx1: tuple[int, ...], idx2: tuple[int, ...], measure: float = -1
 ):
     r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
     The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
@@ -309,25 +309,28 @@ def complex_gaussian_integral_2(
 
     :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
-    Note that the indices must be a complex variable pairs with each other (idx_z, idx_zconj) to make this contraction meaningful.
+    Note that the indices must be a complex variable pairs with each other (idx1, idx2) to make this contraction meaningful.
     Please make sure the corresponding complex variable with respect to your Abc triples.
     For examples, if the indices of Abc denotes the variables ``(\alpha, \beta, \alpha^*, \beta^*, \gamma, \eta)``, the contraction only works
     with the indices between ``(\alpha, \alpha^*)`` pairs and ``(\beta, \beta^*)`` pairs.
 
     Arguments:
-        A,b,c: the ``(A,b,c)`` triple
-        idx_z: the tuple of indices of the z variables
-        idx_zconj: the tuple of indices of the z* variables
+        A1,b1,c1: the first ``(A,b,c)`` triple
+        A2,b2,c2: the second ``(A,b,c)`` triple
+        idx1: the tuple of indices of the z variables of the first abc
+        idx2: the tuple of indices of the z* variables of the second abc
         measure: the exponent of the measure (default is -1: Bargmann measure)
 
     Returns:
         The ``(A,b,c)`` triple of the result of the integral.
 
     Raises:
-        ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
+        ValueError: If ``idx1`` and ``idx2`` have different lengths.
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
     if len(idx1) != len(idx2):
         raise ValueError(
             f"idx1 and idx2 must have the same length, got {len(idx1)} and {len(idx2)}"
@@ -336,10 +339,10 @@ def complex_gaussian_integral_2(
     idx = tuple(idx1) + tuple(idx2)
     if not idx:
         raise NotImplementedError
-    
+
     A = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
     b = math.concat([b1, b2], axis=-1)
-    c = math.outer(c1,c2)
+    c = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
 
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 

@@ -139,9 +139,9 @@ class PolyExpBase(Ansatz):
     """
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
-        self.mat = math.atleast_3d(math.astensor(mat))
-        self.vec = math.atleast_2d(math.astensor(vec))
-        self.array = math.atleast_1d(math.astensor(array))
+        self.mat = math.atleast_3d(mat)
+        self.vec = math.atleast_2d(vec)
+        self.array = math.atleast_1d(array)
         self.batch_size = self.mat.shape[0]
         self.num_vars = self.mat.shape[-1]
         self._simplified = False
