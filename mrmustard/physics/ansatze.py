@@ -657,17 +657,16 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     for A1, A2 in itertools.product(self.A, other.A)
                 ]
                 new_b = [divb(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-                new_c = [divc(c1, 1/c2) for c1, c2 in itertools.product(self.c, other.c)]
+                new_c = [divc(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
 
                 return self.__class__(A=new_a, b=new_b, c=new_c)
             else:
-                raise NotImplementedError('Only implemented if both c are scalars')
+                raise NotImplementedError("Only implemented if both c are scalars")
         else:
             try:
                 return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-            
 
     def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
