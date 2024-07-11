@@ -1,3 +1,5 @@
+"""This file contains some large CSS strings for styling widgets."""
+
 FOCK_CSS = """
 <style>
 .table-fock {

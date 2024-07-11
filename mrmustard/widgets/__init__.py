@@ -1,3 +1,19 @@
+# Copyright 2024 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""IPython widgets for various objects in MrMustard."""
+
 import ipywidgets as widgets
 import plotly.graph_objs as go
 
@@ -18,7 +34,7 @@ def fock(rep):
         yaxis = "axis 0"
         array = rep.array[0]
     else:  # TODO: add multi-dimensional visualization
-        return
+        return None
 
     text = [
         [f"{yaxis}: {y}<br />{xaxis}: {x}<br />val: {val}<br />" for x, val in enumerate(row)]
@@ -73,7 +89,7 @@ def fock(rep):
 def bargmann(rep):
     """Create a widget to display a Bargmann representation."""
     if rep.A.shape[0] != 1:
-        return
+        return None
 
     A = rep.A[0]
     b = rep.b
@@ -160,6 +176,7 @@ def bargmann(rep):
 
 
 def wires(obj):
+    """Create a widget to display a Wires objects."""
     height_line_ob = "4px" if obj.output.bra else "2px"
     height_line_ib = "4px" if obj.input.bra else "2px"
     height_line_ok = "4px" if obj.output.ket else "2px"
@@ -184,7 +201,7 @@ def wires(obj):
     modes_ok += "" if not modes_ok else dots
     modes_ik += "" if not modes_ik else dots
 
-    n_grid_items = sum([1 if m else 0 for m in [modes_ob, modes_ib, modes_ok, modes_ik]])
+    n_grid_items = sum(1 if m else 0 for m in [modes_ob, modes_ib, modes_ok, modes_ik])
     n_grid_rows = 1 if n_grid_items < 3 else 2
     n_grid_cols = 1 if n_grid_items == 1 else 2
 
@@ -273,6 +290,7 @@ def wires(obj):
 
 
 def state(obj, is_ket=False, is_fock=False):
+    """Create a widget to display a state."""
     fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
     table_widget = widgets.HTML(
         f"""

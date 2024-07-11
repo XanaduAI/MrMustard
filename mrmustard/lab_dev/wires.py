@@ -17,7 +17,6 @@
 from __future__ import annotations
 from functools import cached_property
 from typing import Optional
-import os
 import numpy as np
 
 from IPython.display import display
