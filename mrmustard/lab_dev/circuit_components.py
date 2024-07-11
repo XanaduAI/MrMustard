@@ -24,10 +24,11 @@ import numbers
 
 import os
 import numpy as np
+import ipywidgets as widgets
 from IPython.display import display, HTML
 from mako.template import Template
 
-from mrmustard import math, settings
+from mrmustard import math, settings, widgets as mmwidgets
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.converters import to_fock
 from mrmustard.physics.representations import Representation, Bargmann, Fock
@@ -560,26 +561,16 @@ class CircuitComponent:
         return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
 
     def _repr_html_(self):  # pragma: no cover
-        temp = Template(
-            filename=os.path.dirname(__file__) + "/assets/circuit_components.txt"
-        )  # nosec
-
-        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
-        wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
-        wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+        # both reps might return None
+        rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
+        rep_widget = rep_fn(self.representation) or widgets.HTML(f"<h1>{self}</h1>")
+        wires_widget = mmwidgets.wires(self.wires)
+        display(
+            widgets.Box(
+                [wires_widget, rep_widget],
+                layout=widgets.Layout(position="relative", width="85%", height="100%"),
+            )
         )
-
-        rep_temp = (
-            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")  # nosec
-            if isinstance(self.representation, Fock)
-            else Template(
-                filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt"
-            )  # nosec
-        )
-        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        rep_temp_uni = rep_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
-        display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
 
 
 class CCView(CircuitComponent):
