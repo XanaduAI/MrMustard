@@ -41,6 +41,7 @@ ipython = ">=8.18.1"
 mako = "^1.3.0"
 plotly = "^5.20.0"
 nbformat = "^5.10"
+ipywidgets = "^8.1.3"
 
 ######################  The Tensorflow Section ###################### 
 # Dedicated for making sure that poetry can install tensorflow on all platforms.

@@ -20,8 +20,9 @@ from typing import Optional
 import os
 import numpy as np
 
-from IPython.display import display, HTML
-from mako.template import Template
+from IPython.display import display
+
+from mrmustard import widgets
 
 __all__ = ["Wires"]
 
@@ -412,5 +413,4 @@ class Wires:
         return f"Wires{self.args}"
 
     def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
-        display(HTML(template.render(wires=self)))
+        display(widgets.wires(self))
