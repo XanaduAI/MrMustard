@@ -47,10 +47,15 @@ from mrmustard.lab_dev.wires import Wires
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
-class TestKet:
+class TestKet:  # pylint: disable=too-many-public-methods
     r"""
     Tests for the ``Ket`` class.
     """
+
+    modes = [[[0]], [[0]]]
+    x = [[1.0], [1.0, -1.0]]
+    y = [[1.0], [1.0, -1.0]]
+    coeff = [0.5, 0.3]
 
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -86,6 +91,20 @@ class TestKet:
     def test_bargmann_triple_error(self):
         with pytest.raises(AttributeError):
             Number([0], n=10).bargmann
+
+    @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
+    def test_normalize(self, modes, x, y, coeff):
+        state = Coherent(modes[0], x[0], y[0])
+        for i in range(1, len(modes)):
+            state += Coherent(modes[i], x[i], y[i])
+        state = coeff * state
+        # Bargmann
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+        # Fock
+        state = state.to_fock(5)  # truncated
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):
@@ -345,6 +364,11 @@ class TestDM:
     Tests for the ``DM`` class.
     """
 
+    modes = [[[0]], [[0]]]
+    x = [[1], [1, -1]]
+    y = [[1], [1, -1]]
+    coeff = [0.5, 0.3]
+
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
@@ -381,6 +405,20 @@ class TestDM:
         fock = Number([0], n=10).dm()
         with pytest.raises(AttributeError):
             fock.bargmann
+
+    @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
+    def test_normalize(self, modes, x, y, coeff):
+        state = Coherent(modes[0], x[0], y[0]).dm()
+        for i in range(1, len(modes)):
+            state += Coherent(modes[i], x[i], y[i]).dm()
+        state *= coeff
+        # Bargmann
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+        # Fock
+        state = state.to_fock(5)  # truncated
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_fock(self, modes):

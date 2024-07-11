@@ -61,6 +61,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     complex128 = tf.complex128
 
     def __init__(self):
+        tf.experimental.numpy.experimental_enable_numpy_behavior()
         super().__init__(name="tensorflow")
 
     def __repr__(self) -> str:
@@ -294,7 +295,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.math.pow(x, y)
 
     def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
-        tf.experimental.numpy.experimental_enable_numpy_behavior()
         return tf.experimental.numpy.kron(tensor1, tensor2)
 
     def prod(self, x: tf.Tensor, axis: Union[None, int]):
