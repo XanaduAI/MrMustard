@@ -1,7 +1,5 @@
 """This file contains some large CSS strings for styling widgets."""
 
-# pragma: no cover
-
 FOCK_CSS = """
 <style>
 .table-fock {

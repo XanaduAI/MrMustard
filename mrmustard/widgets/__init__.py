@@ -14,8 +14,6 @@
 
 """IPython widgets for various objects in MrMustard."""
 
-# pragma: no cover
-
 import ipywidgets as widgets
 import plotly.graph_objs as go
 
