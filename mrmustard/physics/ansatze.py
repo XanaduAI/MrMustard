@@ -499,7 +499,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
         dim_beta, shape_beta = self.polynomial_dimensions
         dim_alpha = self.A.shape[-1] - dim_beta
-
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]
         z = z[..., None, :]
 
@@ -596,13 +595,79 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:
+                return self.__class__(self.A, self.b, self.c / other)
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+
+    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+        r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
+
+        Args:
+            other: A scalar or another ansatz.
+
+        Raises:
+            TypeError: If other is neither a scalar nor an ansatz.
+
+        Returns:
+            PolyExpAnsatz: The product of this ansatz and other.
+        """
+
+        def divA(A1, A2, dim_alpha, dim_beta1, dim_beta2):
+            A3 = np.block(
+                [
+                    [
+                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
+                        A1[:dim_alpha, dim_alpha:],
+                        A2[:dim_alpha, dim_alpha:],
+                    ],
+                    [
+                        A1[dim_alpha:, :dim_alpha],
+                        A1[dim_alpha:, dim_alpha:],
+                        np.zeros((dim_beta1, dim_beta2)),
+                    ],
+                    [
+                        A2[dim_alpha:, :dim_alpha],
+                        np.zeros((dim_beta2, dim_beta1)),
+                        A2[dim_alpha:, dim_alpha:],
+                    ],
+                ]
+            )
+            return A3
+
+        def divb(b1, b2, dim_alpha):
+            b3 = np.concatenate((b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]))
+            return b3
+
+        def divc(c1, c2):
+            c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
+            return c3
+
+        if isinstance(other, DiffOpPolyExpAnsatz):
+
+            dim_beta1, _ = self.polynomial_dimensions
+            dim_beta2, _ = other.polynomial_dimensions
+            if dim_beta1 == 0 and dim_beta2 == 0:
+                dim_alpha1 = self.A.shape[-1] - dim_beta1
+                dim_alpha2 = other.A.shape[-1] - dim_beta2
+                assert dim_alpha1 == dim_alpha2
+                dim_alpha = dim_alpha1
+
+                new_a = [
+                    divA(A1, -A2, dim_alpha, dim_beta1, dim_beta2)
+                    for A1, A2 in itertools.product(self.A, other.A)
+                ]
+                new_b = [divb(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+                new_c = [divc(c1, 1/c2) for c1, c2 in itertools.product(self.c, other.c)]
+
+                return self.__class__(A=new_a, b=new_b, c=new_c)
+            else:
+                raise NotImplementedError('Only implemented if both c are scalars')
+        else:
+            try:
                 return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-
-    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
-        r"""Divides this ansatz by a scalar or another ansatz or a plain scalar."""
-        raise NotImplementedError("Not implemented.")
+            
 
     def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
