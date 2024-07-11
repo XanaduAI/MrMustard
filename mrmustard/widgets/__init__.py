@@ -270,3 +270,52 @@ def wires(obj):
     tables_html = "\n".join(wire_tables)
     tables_widget = widgets.HTML(f'<div class="grid-container">{tables_html}</div>')
     return widgets.VBox([style_widget, image_widget, tables_widget])
+
+
+def state(obj, is_ket=False, is_fock=False):
+    fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
+    table_widget = widgets.HTML(
+        f"""
+        <h1>{obj.name or obj.__class__.__name__}</h1>
+        <table style="border-collapse: collapse; text-align: center">
+            <tr>
+                <th>Purity</th>
+                <th>Probability</th>
+                <th>Number of modes</th>
+                <th>Class</th>
+                <th>Bargmann</th>
+                <th>Fock</th>
+            </tr>
+
+            <tr>
+                <td>{f"{obj.purity}" if obj.purity == 1 else f"{obj.purity :.2e}"}</td>
+                <td>{f"{100*obj.probability:.3e} %" if obj.probability < 0.001 else f"{obj.probability:.2%}"}</td></td>
+                <td>{obj.n_modes}</td></td>
+                <td>{"Ket" if is_ket else "DM"}</td></td>
+                <td>{bargmann_yn}</td></td>
+                <td>{fock_yn}</td>
+            </tr>
+        </table>
+        """
+    )
+
+    if obj.n_modes != 1:
+        return table_widget
+
+    style_widget = widgets.HTML(
+        """
+        <style>
+        tr { display: block; float: left; }
+        th, td { display: block; }
+        table { margin: auto; }
+        </style>
+        """
+    )
+    left_widget = widgets.VBox(
+        [table_widget, go.FigureWidget(obj.visualize_dm(40))],
+        layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
+    )
+    return widgets.HBox(
+        [style_widget, left_widget, go.FigureWidget(obj.visualize_2d(resolution=100))],
+        layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),
+    )
