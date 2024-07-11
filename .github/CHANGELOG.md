@@ -17,7 +17,8 @@
   [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
   [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
 
-* Replace IPython `_repr_html_` implementations with `ipywidgets` and improve the aesthetics.
+* Replace IPython `_repr_html_` `mako`-based implementations
+  with `ipywidgets` and improve the aesthetics.
   [(#425)]https://github.com/XanaduAI/MrMustard/pull/425
 
 ### Bug fixes
@@ -29,7 +30,7 @@
 * Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
   [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
 
-* Fix object visualizations in VS Code Notebooks by replacing `mako` with `ipywidgets`.
+* Fix object visualizations in VS Code Notebooks by using the built-in display tools.
   [(#425)]https://github.com/XanaduAI/MrMustard/pull/425
 
 ### Documentation
