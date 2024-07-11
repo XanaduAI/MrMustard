@@ -180,6 +180,19 @@ class PolyExpBase(Ansatz):
             return 0
         return self.array.shape[-1] - 1
 
+    @property
+    def polynomial_dimensions(self):
+        r"""
+        This method finds the dimensionality of the polynomial, i.e. how many wires
+        have polynomials attached to them and what the degree of the polynomial is
+        on each of the wires.
+        """
+
+        dim_poly = len(self.array.shape) - 1
+        shape_poly = self.array.shape[1:]
+        return dim_poly, shape_poly
+
+
     def simplify(self) -> None:
         r"""
         Simplifies the representation by combining together terms that have the same
@@ -246,19 +259,6 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
-    def polynomial_dimensions(self):
-        r"""
-        This method finds the dimensionality of the polynomial, i.e. how many wires
-        have polynomials attached to them and what the degree of the polynomial is
-        on each of the wires.
-        """
-        if self.array.shape[1:] == (1,):
-            dim_poly = 0
-            shape_poly = (1,)
-        else:
-            dim_poly = len(self.array.shape) - 1
-            shape_poly = self.array.shape[1:]
-        return dim_poly, shape_poly
 
 
 class PolyExpAnsatz(PolyExpBase):
@@ -499,8 +499,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         Returns:
             The value of the function.
         """
-        dim_beta, shape_beta = self.polynomial_dimensions()
-        dim_alpha = z.shape[-1]
+        dim_beta, shape_beta = self.polynomial_dimensions
+        dim_alpha = self.A.shape[-1] - dim_beta
 
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]
         z = z[..., None, :]
@@ -580,8 +580,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         if isinstance(other, DiffOpPolyExpAnsatz):
 
-            dim_beta1, _ = self.polynomial_dimensions()
-            dim_beta2, _ = other.polynomial_dimensions()
+            dim_beta1, _ = self.polynomial_dimensions
+            dim_beta2, _ = other.polynomial_dimensions
 
             dim_alpha1 = self.A.shape[-1] - dim_beta1
             dim_alpha2 = other.A.shape[-1] - dim_beta2
@@ -664,8 +664,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
             return c3
 
-        dim_beta1, _ = self.polynomial_dimensions()
-        dim_beta2, _ = other.polynomial_dimensions()
+        dim_beta1, _ = self.polynomial_dimensions
+        dim_beta2, _ = other.polynomial_dimensions
 
         dim_alpha1 = self.A.shape[-1] - dim_beta1
         dim_alpha2 = other.A.shape[-1] - dim_beta2
