@@ -42,6 +42,7 @@ __all__ = [
     "ArrayAnsatz",
     "PolyExpBase",
     "PolyExpAnsatz",
+    "DiffOpPolyExpAnsatz",
 ]
 
 
