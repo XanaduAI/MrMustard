@@ -128,7 +128,7 @@ def Au2Symplectic(A):
 
     Transformation = (
         1
-        / math.sqrt(2)
+        / np.sqrt(2)
         * math.block(
             [
                 [math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")],
@@ -152,7 +152,7 @@ def Symplectic2Au(S):
     # the annihilation one
     Transformation = (
         1
-        / math.sqrt(2)
+        / np.sqrt(2)
         * math.block(
             [
                 [math.eye(m, dtype="complex128"), math.eye(m, dtype="complex128")],

@@ -68,8 +68,8 @@ def test_Au2Symplectic():
         / np.sqrt(2)
         * np.block(
             [
-                [np.eye(2, dtype="complex64"), np.eye(2, dtype="complex64")],
-                [-1j * np.eye(2, dtype="complex64"), 1j * np.eye(2, dtype="complex64")],
+                [np.eye(2), np.eye(2)],
+                [-1j * np.eye(2), 1j * np.eye(2)],
             ]
         )
     )
@@ -111,10 +111,9 @@ def test_Symplectic2Au():
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     Transformation = (
-        1 / np.sqrt(2) * np.block([[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]])
+        np.block([[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]) / np.sqrt(2)
     )
     S = Transformation @ S @ np.conjugate(np.transpose(Transformation))
-
     A = Symplectic2Au(S)
 
     W = S_bs[:2, :2]
