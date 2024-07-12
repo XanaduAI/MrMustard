@@ -129,7 +129,12 @@ def Au2Symplectic(A):
     Transformation = (
         1
         / math.sqrt(2)
-        * math.block([[math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")], [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")]])
+        * math.block(
+            [
+                [math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")],
+                [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")],
+            ]
+        )
     )
 
     return math.real(Transformation @ S @ math.conj(math.transpose(Transformation)))
@@ -148,7 +153,12 @@ def Symplectic2Au(S):
     Transformation = (
         1
         / math.sqrt(2)
-        * math.block([[math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")], [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")]])
+        * math.block(
+            [
+                [math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")],
+                [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")],
+            ]
+        )
     )
     S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
     # identifying blocks of S
