@@ -413,7 +413,6 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz2.vec[0], b)
         assert np.allclose(ansatz2.array[0], d * c)
 
-
     def test_truediv(self):
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
