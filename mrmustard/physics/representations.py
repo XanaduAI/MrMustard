@@ -778,10 +778,9 @@ class Fock(Representation):
         return Fock(array=ret, batched=True)
 
     def _repr_html_(self):  # pragma: no cover
-        w = widgets.fock(self)
-        if w is None:
+        if self.array.shape[0] != 1 or self.array.ndim > 3:
             return
-        display(w)
+        display(widgets.fock(self))
 
     def sum_batch(self) -> Fock:
         r"""

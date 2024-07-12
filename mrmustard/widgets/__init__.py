@@ -25,16 +25,17 @@ NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
 
 def fock(rep):
     """Create a widget to display a Fock representation."""
-    if len(rep.array.shape) == 2:
+    shape = rep.array.shape
+    if len(shape) == 2:
         xaxis = "n"
         yaxis = "batch"
         array = rep.array
-    elif len(rep.array.shape) == 3 and rep.array.shape[0] == 1:
+    elif len(shape) == 3 and shape[0] == 1:
         xaxis = "axis 1"
         yaxis = "axis 0"
         array = rep.array[0]
     else:  # TODO: add multi-dimensional visualization
-        return None
+        raise ValueError(f"unexpected Fock representation with shape {shape}")
 
     text = [
         [f"{yaxis}: {y}<br />{xaxis}: {x}<br />val: {val}<br />" for x, val in enumerate(row)]
@@ -73,7 +74,7 @@ def fock(rep):
     table_widget = widgets.HTML(
         "<table class=table-fock>"
         f"<tr><th>Ansatz</th><td>{rep.ansatz.__class__.__qualname__}</td></tr>"
-        f"<tr><th>Shape</th><td>{rep.array.shape}</td></tr>"
+        f"<tr><th>Shape</th><td>{shape}</td></tr>"
         "</table>"
     )
     return widgets.HBox(
@@ -86,93 +87,54 @@ def fock(rep):
     )
 
 
-def bargmann(rep):
+def bargmann(rep, batch_idx=None):
     """Create a widget to display a Bargmann representation."""
-    if rep.A.shape[0] != 1:
-        return None
+    if batch_idx is None:
+        batch_size = rep.A.shape[0]
+        if batch_size == 1:  # no batching, omit the slider
+            return bargmann(rep, batch_idx=0)
+        batch_idx = 0
+        slider = widgets.IntSlider(0, min=0, max=batch_size - 1, description="Batch index:")
+        stack = widgets.Stack(
+            [bargmann(rep, batch_idx=i) for i in range(batch_size)], selected_index=0
+        )
+        widgets.jslink((slider, "value"), (stack, "selected_index"))
+        return widgets.VBox([slider, stack])
 
-    A = rep.A[0]
-    b = rep.b
-    c = rep.c
+    A = rep.A[batch_idx]
+    b = rep.b[batch_idx]
+    c = rep.c[batch_idx]
 
-    layout_A = {
-        # "height": 200,
-        # "width": 200,
-        "margin": NO_MARGIN,
-        "showlegend": False,
-        "xaxis": {
-            "showgrid": True,
-            "showline": True,
-        },
-        "yaxis": {
-            "autorange": "reversed",
-            "showgrid": True,
-        },
-    }
+    rows = ["".join([f"<td>{ele}</td>" for ele in row]) for row in A]
+    matrix_A = f"<table><tr>{'</tr><tr>'.join(rows)}</tr></table>"
 
-    layout_b = {
-        # "height": 80,
-        # "width": 200,
-        "margin": NO_MARGIN,
-        "showlegend": False,
-        "xaxis": {
-            "showgrid": True,
-            "showline": True,
-        },
-        "yaxis": {
-            "autorange": "reversed",
-            "showticklabels": False,
-        },
-    }
+    b_str = [f"<tr><td>{x}</td></tr>" for x in b]
+    vector_b = f"<table>{''.join(b_str)}</table>"
 
-    fig_A = go.FigureWidget(
-        data=go.Heatmap(
-            z=abs(A),
-            colorscale="viridis",
-            showscale=False,
-        ),
-        layout=layout_A,
+    scalar_c = f"<div>{c}</div>"
+
+    header_w = widgets.HTML(
+        "<h1>Bargmann Representation</h1>" f"<h3>Ansatz: {rep.ansatz.__class__.__qualname__}</h3>"
     )
-
-    fig_b = go.FigureWidget(
-        data=go.Heatmap(
-            z=abs(b),
-            colorscale="viridis",
-            showscale=False,
-            xgap=1,
-        ),
-        layout=layout_b,
-    )
-
-    fig_c = widgets.HTML(f"<h2>c: {c}</h2>")
-    header_w = widgets.HTML("<h1>Bargmann Representation</h1>")
-    table_w = widgets.HTML(
+    triple_w = widgets.HTML(
         f"""
-        <table class="table-bargmann">
+        <style>.triple th {{ text-align: center; background-color: #FBAB7E; }}</style>
+        <table class="triple">
             <tr>
-                <th class="th-bargmann">Ansatz</th>
-                <th class="th-bargmann">Shape A</th>
-                <th class="th-bargmann">Shape b</th>
-                <th class="th-bargmann">Shape c</th>
+                <th>A</th>
+                <th>b</th>
+                <th>c</th>
             </tr>
-
             <tr>
-                <td class="td-bargmann">{rep.ansatz.__class__.__qualname__}</td>
-                <td class="td-bargmann">{rep.A.shape}</td>
-                <td class="td-bargmann">{rep.b.shape}</td>
-                <td class="td-bargmann">{rep.c.shape}</td>
+                <td>{matrix_A}</td>
+                <td>{vector_b}</td>
+                <td>{scalar_c}</td>
             </tr>
         </table>
         """
     )
 
-    return widgets.VBox(
-        [
-            widgets.HBox([header_w, table_w]),
-            widgets.HBox([go.FigureWidget(fig_A), go.FigureWidget(fig_b)]),
-            fig_c,
-        ]
-    )
+    return widgets.VBox([header_w, triple_w])
 
 
 def wires(obj):
