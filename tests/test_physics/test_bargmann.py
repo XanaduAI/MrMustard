@@ -60,13 +60,13 @@ def test_Au2Symplectic():
     # Beam splitter example
     V = 1 / np.sqrt(2) * np.array([[1, 1], [-1, 1]])
 
-    Au = np.block([[np.zeros_like(V), V], [V.T, np.zeros_like(V)]])
+    Au = np.block([[np.zeros_like(V), V], [np.transpose(V), np.zeros_like(V)]])
     S = Au2Symplectic(Au)
     S_by_hand = np.block([[V, np.zeros_like(V)], [np.zeros_like(V), np.conjugate(V)]])
     Transformation = (
         1 / np.sqrt(2) * np.block([[np.eye(2), np.eye(2)], [-1j * np.eye(2), 1j * np.eye(2)]])
     )
-    S_by_hand = Transformation @ S_by_hand @ np.conjugate(Transformation.T)
+    S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
     assert np.allclose(S, S_by_hand)
 
     # squeezing example
@@ -75,7 +75,7 @@ def test_Au2Symplectic():
     S = Au2Symplectic(Au)
     S_by_hand = np.array([[np.cosh(r), -np.sinh(r)], [-np.sinh(r), np.cosh(r)]])
     Transformation = 1 / np.sqrt(2) * np.array([[1, 1], [-1j, 1j]])
-    S_by_hand = Transformation @ S_by_hand @ np.conjugate(Transformation.T)
+    S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
     assert np.allclose(S, S_by_hand)
 
 
@@ -106,7 +106,7 @@ def test_Symplectic2Au():
     Transformation = (
         1 / np.sqrt(2) * np.block([[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]])
     )
-    S = Transformation @ S @ np.conjugate(Transformation.T)
+    S = Transformation @ S @ np.conjugate(np.transpose(Transformation))
 
     A = Symplectic2Au(S)
 
@@ -114,6 +114,8 @@ def test_Symplectic2Au():
     T = np.diag([np.tanh(r), -np.tanh(r)])
     C = np.diag([np.cosh(r), np.cosh(r)])
     Sec = np.linalg.pinv(C)
-    A_by_hand = np.block([[-W @ T @ W.T, W @ Sec], [Sec @ W.T, np.conjugate(T)]])
+    A_by_hand = np.block(
+        [[-W @ T @ np.transpose(W), W @ Sec], [Sec @ np.transpose(W), np.conjugate(T)]]
+    )
 
     assert np.allclose(A, A_by_hand)
