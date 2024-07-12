@@ -68,8 +68,8 @@ def test_Au2Symplectic():
         / np.sqrt(2)
         * np.block(
             [
-                [np.eye(2, dtype="complex"), np.eye(2, dtype="complex")],
-                [-1j * np.eye(2, dtype="complex"), 1j * np.eye(2, dtype="complex")],
+                [np.eye(2, dtype="complex64"), np.eye(2, dtype="complex64")],
+                [-1j * np.eye(2, dtype="complex64"), 1j * np.eye(2, dtype="complex64")],
             ]
         )
     )
