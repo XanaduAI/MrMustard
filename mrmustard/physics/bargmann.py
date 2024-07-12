@@ -119,7 +119,7 @@ def Au2Symplectic(A):
     u_3 = A[..., m:, m:]
 
     # The formula to apply comes here
-    S_1 = math.conj(math.inv(u_2.T))
+    S_1 = math.conj(math.inv(math.transpose(u_2)))
     S_2 = -S_1 @ math.conj(u_3)
     S_3 = math.conj(S_2)
     S_4 = math.conj(S_1)
@@ -132,7 +132,7 @@ def Au2Symplectic(A):
         * math.block([[math.eye(m), math.eye(m)], [-1j * math.eye(m), 1j * math.eye(m)]])
     )
 
-    return math.real(Transformation @ S @ math.conj(Transformation.T))
+    return math.real(Transformation @ S @ math.conj(math.transpose(Transformation)))
 
 
 def Symplectic2Au(S):
@@ -150,7 +150,7 @@ def Symplectic2Au(S):
         / math.sqrt(2)
         * math.block([[math.eye(m), math.eye(m)], [-1j * math.eye(m), 1j * math.eye(m)]])
     )
-    S = np.conjugate(Transformation.T) @ S @ Transformation
+    S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
     # identifying blocks of S
     S_1 = S[:m, :m]
     S_2 = S[:m, m:]
@@ -159,8 +159,8 @@ def Symplectic2Au(S):
 
     # the formula to apply comes here
     A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-    A_2 = math.conj(math.inv(S_1.T))
-    A_3 = A_2.T
+    A_2 = math.conj(math.inv(math.transpose(S_1)))
+    A_3 = math.transpose(A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
     # -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
 
