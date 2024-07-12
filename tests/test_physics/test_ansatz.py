@@ -488,3 +488,25 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz.A[1], np.array([[0]]))
         assert np.allclose(ansatz.b[1], np.array([1]))
         assert ansatz.c[1] == 1
+
+    def test_polynomial_dimensions(self):
+        A, b, _ = Abc_triple(4)
+        c = np.array([[1,2,3]])
+        ansatz = DiffOpPolyExpAnsatz(A,b,c)
+        poly_dim, poly_shape = ansatz.polynomial_dimensions
+        assert np.allclose(poly_dim, 1)
+        assert np.allclose(poly_shape, (3,))
+
+        A1, b1, _ = Abc_triple(4)
+        c1 = np.array([[1,2,3]])
+        ansatz1 = DiffOpPolyExpAnsatz(A1,b1,c1)
+
+        A2, b2, _ = Abc_triple(4)
+        c2 = np.array([[1,2,3]])
+        ansatz2 = DiffOpPolyExpAnsatz(A2,b2,c2)
+
+        ansatz3 = ansatz1*ansatz2
+
+        poly_dim, poly_shape = ansatz3.polynomial_dimensions
+        assert np.allclose(poly_dim, 2)
+        assert np.allclose(poly_shape, (3,3))
