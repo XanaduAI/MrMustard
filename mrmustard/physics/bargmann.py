@@ -158,10 +158,11 @@ def Symplectic2Au(S):
     # TODO: broadcasting/batch stuff consider a batch dimension
 
     # the formula to apply comes here
-    A_1 = S_2 @ np.conjugate(np.linalg.pinv(S_1))  # use solve for inverse
-    A_2 = np.conjugate(np.linalg.pinv(S_1.T))
+    A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+    A_2 = math.conj(math.inv(S_1.T))
     A_3 = A_2.T
-    A_4 = -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
+    A_4 = -math.conj(math.solve(S_1,S_2))
+    #-np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
 
     A = math.block([[A_1, A_2], [A_3, A_4]])
 
