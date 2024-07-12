@@ -110,9 +110,9 @@ def test_Symplectic2Au():
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
-    Transformation = (
-        np.block([[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]) / np.sqrt(2)
-    )
+    Transformation = np.block(
+        [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]
+    ) / np.sqrt(2)
     S = Transformation @ S @ np.conjugate(np.transpose(Transformation))
     A = Symplectic2Au(S)
 
