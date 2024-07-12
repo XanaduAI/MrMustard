@@ -182,7 +182,7 @@ class PolyExpBase(Ansatz):
         return self.array.shape[-1] - 1
 
     @property
-    def polynomial_dimensions(self):
+    def polynomial_dimensions(self) -> tuple[int, tuple]:
         r"""
         This method finds the dimensionality of the polynomial, i.e. how many wires
         have polynomials attached to them and what the degree of the polynomial is
@@ -258,6 +258,40 @@ class PolyExpBase(Ansatz):
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
+
+
+    def decompose_ansatz(self) -> DiffOpPolyExpAnsatz:
+        r"""
+        This method decomposes a DiffOpPolyExpAnsatz. Given an ansatz of dimensions:
+        A=(batch,m+n,m+n), b=(batch,m+n), c = (batch,k_1,k_2,...,k_n), 
+        it can be rewritten as an ansatz of dimensions
+        A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
+        This decomposition is typically favourable if n>m, and will only run if that is the case.
+        """
+        dim_beta, shape_beta = self.polynomial_dimensions
+        dim_alpha = self.mat.shape[-1]-dim_beta
+        batch_size = self.batch_size
+        if dim_beta > dim_alpha:
+            A_bar = np.array([np.block([
+                [np.zeros((dim_alpha,dim_alpha)), self.mat[i,dim_alpha:,:dim_alpha].T],
+                [self.mat[i,dim_alpha:,:dim_alpha], self.mat[i,dim_alpha:,dim_alpha:]],
+                ]) for i in range(batch_size)])
+
+            b_bar = np.array([np.concatenate((np.zeros(dim_alpha),self.vec[i,dim_alpha:])) for i in range(batch_size)])
+
+            poly_bar = math.hermite_renormalized_batch(np.moveaxis(A_bar,0,-1),np.moveaxis(b_bar,0,-1),1,(np.sum(shape_beta),)*dim_alpha+shape_beta+(batch_size,))
+            poly_bar = np.moveaxis(poly_bar,-1,dim_alpha)
+            c_decomp = np.sum(poly_bar*self.array,axis=tuple(np.arange(len(poly_bar.shape)-dim_beta,len(poly_bar.shape))))
+            c_decomp = np.moveaxis(c_decomp,-1,0)
+            A_decomp = np.array([np.block([
+                [self.mat[i,:dim_alpha,:dim_alpha], np.eye(dim_alpha)],
+                [np.eye(dim_alpha), np.zeros((dim_alpha,dim_alpha))]
+                ]) for i in range(batch_size)])
+            b_decomp = np.array([np.concatenate((self.vec[i,:dim_alpha],np.zeros(dim_alpha))) for i in range(batch_size)])
+            return DiffOpPolyExpAnsatz(A_decomp,b_decomp,c_decomp)
+        else:
+            return DiffOpPolyExpAnsatz(self.mat,self.vec,self.array)
+
 
 
 class PolyExpAnsatz(PolyExpBase):

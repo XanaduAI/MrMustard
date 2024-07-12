@@ -413,6 +413,7 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz2.vec[0], b)
         assert np.allclose(ansatz2.array[0], d * c)
 
+
     def test_truediv(self):
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
@@ -533,3 +534,29 @@ class TestDiffOpPolyExpAnsatz:
         poly_dim, poly_shape = ansatz3.polynomial_dimensions
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
+
+    def test_decompose_ansatz(self):
+        A, b, _ = Abc_triple(4)
+        c = np.array([[[[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]]]])
+        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        decomp_ansatz = ansatz.decompose_ansatz()
+        z = np.random.uniform(-10,10,size=(1,1))
+        assert np.allclose(ansatz(z),decomp_ansatz(z))
+        assert np.allclose(decomp_ansatz.A.shape, (1,2,2))
+
+    def test_decompose_ansatz_batch(self):
+        A1, b1, _ = Abc_triple(4)
+        c1 = np.array([[[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]]])
+        A2, b2, _ = Abc_triple(4)
+        c2 = np.array([[[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]],
+                       [[1, 2, 3],[1, 2, 3],[1, 2, 3]]])/0.1
+        ansatz = DiffOpPolyExpAnsatz([A1,A2], [b1,b2], [c1,c2])
+        decomp_ansatz = ansatz.decompose_ansatz()
+        z = np.random.uniform(-10,10,size=(1,1))
+        assert np.allclose(ansatz(z),decomp_ansatz(z))
+        assert np.allclose(decomp_ansatz.A.shape, (2,2,2))
