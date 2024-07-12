@@ -155,8 +155,8 @@ def Symplectic2Au(S):
         / math.sqrt(2)
         * math.block(
             [
-                [math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")],
-                [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")],
+                [math.eye(m, dtype="complex128"), math.eye(m, dtype="complex128")],
+                [-1j * math.eye(m, dtype="complex128"), 1j * math.eye(m, dtype="complex128")],
             ]
         )
     )
