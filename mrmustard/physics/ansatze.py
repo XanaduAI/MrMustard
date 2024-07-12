@@ -42,7 +42,6 @@ __all__ = [
     "ArrayAnsatz",
     "PolyExpBase",
     "PolyExpAnsatz",
-    "DiffOpPolyExpAnsatz",
 ]
 
 
@@ -438,7 +437,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([1.0,2.0,3.0])
 
-        >>> F = DiffOpPolyExpAnsatz(A, b, c)
+        >>> F = PolyExpAnsatz(A, b, c)
         >>> z = np.array([1.0, 2.0])
 
         >>> # calculate the value of the function at ``z``
