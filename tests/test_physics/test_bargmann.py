@@ -64,7 +64,14 @@ def test_Au2Symplectic():
     S = Au2Symplectic(Au)
     S_by_hand = np.block([[V, np.zeros_like(V)], [np.zeros_like(V), np.conjugate(V)]])
     Transformation = (
-        1 / np.sqrt(2) * np.block([[np.eye(2), np.eye(2)], [-1j * np.eye(2), 1j * np.eye(2)]])
+        1
+        / np.sqrt(2)
+        * np.block(
+            [
+                [np.eye(2, dtype="complex"), np.eye(2, dtype="complex")],
+                [-1j * np.eye(2, dtype="complex"), 1j * np.eye(2, dtype="complex")],
+            ]
+        )
     )
     S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
     assert np.allclose(S, S_by_hand)
