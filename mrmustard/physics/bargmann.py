@@ -106,12 +106,15 @@ def wigner_to_bargmann_U(X, d):
 
 
 def Au2Symplectic(A):
+    r"""
+    helper for finding the Au of a unitary from its symplectic rep.
+    Au : in bra-ket order
+    """
     # A represents the A matrix corresponding to unitary U
     m = A.shape[-1]
     m = m // 2
 
     # identifying blocks of A_u
-    u_1 = A[..., :m, :m]
     u_2 = A[..., :m, m:]
     u_3 = A[..., m:, m:]
 
@@ -133,6 +136,11 @@ def Au2Symplectic(A):
 
 
 def Symplectic2Au(S):
+    r"""
+    The inverse of Au2Symplectic i.e., returns symplectic, given Au
+
+    S: symplectic in XXPP order
+    """
     m = S.shape[-1]
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to

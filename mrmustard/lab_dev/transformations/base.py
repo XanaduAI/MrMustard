@@ -205,6 +205,9 @@ class Unitary(Operation):
 
     @property
     def symplectic(self):
+        r"""
+        Returns the symplectic representation
+        """
         batch = self.representation.A.shape[0]
         m = self.representation.A.shape[-1]
         S = math.zeros([batch, m, m])
@@ -214,14 +217,18 @@ class Unitary(Operation):
 
     @classmethod
     def from_symplectic_directly(cls, modes, S) -> Unitary:
+        r"""
+        A simple method for initializing using symplectic representation
+        modes: the modes that we want the unitary to act on
+        S: the symplectic representation (in XXPP order)
+        """
         m = len(S)
-        num_modes = m // 2
         A = Symplectic2Au(S)
         b = [0] * m
         c = 1  # change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
-        a_prime, b_prime, c_prime = v.bargmann
+        _, _, c_prime = v.bargmann
         c = 1 / math.sqrt(c_prime[0])
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
