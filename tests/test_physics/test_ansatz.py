@@ -550,6 +550,6 @@ class TestDiffOpPolyExpAnsatz:
         c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
         ansatz = DiffOpPolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(1, 1))
+        z = np.random.uniform(-10, 10, size=(3, 1))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
