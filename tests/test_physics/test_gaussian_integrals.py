@@ -220,7 +220,7 @@ def test_reorder_abc():
 
 
 def test_complex_gaussian_integral_2():
-    """Tests the ``complex_gaussian_integral`` method."""
+    """Tests the ``complex_gaussian_integral_2`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
