@@ -288,7 +288,7 @@ def apply_BS_schwinger(theta, phi, i, j, array):
     shape_rest, shape = array.shape[:-2], array.shape[-2:]
     array = array.reshape(shape_rest + (-1,))  # flatten the last two dimensions
     # step 2: apply each unitary to the corresponding indices
-    for N in range(sum(shape) - 1):  # is this right?
+    for N in range(sum(shape) - 1):
         flat_idx = sector_idx(N, shape)
         u = sector_u(N, theta, phi)
         subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
