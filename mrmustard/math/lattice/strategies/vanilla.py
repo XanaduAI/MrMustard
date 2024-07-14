@@ -144,9 +144,7 @@ def vanilla_jacobian(
 
 
 @njit
-def vanilla_vjp(
-    G, c, dLdG
-) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -188,9 +186,7 @@ def vanilla_vjp(
         for i, _ in enumerate(db):
             _, n = next(ns)
             db[i] = np.sqrt(index_u[i]) * G_lin[n]
-            dA[i, i] = (
-                0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
-            )
+            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
             for j in range(i + 1, len(db)):
                 dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n - strides[j]]
 
@@ -290,15 +286,9 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
         idx_n = np.delete(np.arange(M), m)
         A_mm = np.array(A[idx_m, :][:, idx_m]).transpose((2, 0, 3, 1)).reshape((2, 2))
         A_nn = (
-            np.array(A[idx_n, :][:, idx_n])
-            .transpose((2, 0, 3, 1))
-            .reshape((2 * M - 2, 2 * M - 2))
+            np.array(A[idx_n, :][:, idx_n]).transpose((2, 0, 3, 1)).reshape((2 * M - 2, 2 * M - 2))
         )
-        A_mn = (
-            np.array(A[idx_m, :][:, idx_n])
-            .transpose((2, 0, 3, 1))
-            .reshape((2, 2 * M - 2))
-        )
+        A_mn = np.array(A[idx_m, :][:, idx_n]).transpose((2, 0, 3, 1)).reshape((2, 2 * M - 2))
         A_nm = np.transpose(A_mn)
         b_m = b[idx_m].transpose().reshape((2,))
         b_n = b[idx_n].transpose().reshape((2 * M - 2,))
@@ -317,9 +307,7 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
         norm = np.abs(c_)
         k = 0
         while norm < max_prob and k < max_shape:
-            buf2[(k + 1) % 2] = (
-                b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]
-            ) / SQRT[k + 1]
+            buf2[(k + 1) % 2] = (b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]) / SQRT[k + 1]
             buf3[(k + 1) % 2, 0] = (
                 b_[0] * buf2[(k + 1) % 2, 0]
                 + A_[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
