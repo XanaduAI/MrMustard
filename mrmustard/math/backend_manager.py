@@ -799,7 +799,26 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 b,
             ),
         )
+    
+    def moveaxis(self, a: Tensor, old: Tensor, new: Tensor) -> Tensor:
+        r"""The element-wise minimum of ``a`` and ``b``.
 
+        Args:
+            a: The first array to take the minimum of
+            b: The second array to take the minimum of
+
+        Returns:
+            The element-wise minimum of ``a`` and ``b``
+        """
+        return self._apply(
+            "moveaxis",
+            (
+                a,
+                old,
+                new,
+            ),
+        )
+    
     def new_variable(
         self,
         value: Tensor,

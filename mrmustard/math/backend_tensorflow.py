@@ -244,7 +244,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     @Autocast()
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
-
+    
+    def moveaxis(self, a: tf.Tensor, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]) -> tf.Tensor:
+        return tf.keras.ops.moveaxis(a, old, new)
+    
     def new_variable(
         self,
         value,

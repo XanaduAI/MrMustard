@@ -298,12 +298,12 @@ class PolyExpBase(Ansatz):
                 complex(1),
                 (batch_size,) + (np.sum(shape_beta),) * dim_alpha + shape_beta,
             )
-            poly_bar = np.moveaxis(poly_bar, 0, dim_alpha)
+            poly_bar = math.moveaxis(poly_bar, 0, dim_alpha)
             c_decomp = np.sum(
                 poly_bar * self.array,
                 axis=tuple(np.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape))),
             )
-            c_decomp = np.moveaxis(c_decomp, -1, 0)
+            c_decomp = math.moveaxis(c_decomp, -1, 0)
 
             A_decomp = math.block(
                 [
