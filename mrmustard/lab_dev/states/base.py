@@ -796,7 +796,7 @@ class DM(State):
         return self.__class__._from_attributes(
             representation, wires, self.name
         )  # pylint: disable=protected-access
-    
+
     def random(cls, wires):
         r"""
         Samples a random density matrix. The final state has zero displacement.
@@ -806,9 +806,9 @@ class DM(State):
         m = len(wires)
         max_idx = np.max(wires)
 
-        ancilla = range(max_idx+1,max_idx+2*m+1)
+        ancilla = range(max_idx + 1, max_idx + 2 * m + 1)
         full_wires = wires + ancilla
-        
+
         psi = Ket.random(full_wires)
         dm = psi.dm()
         return dm >> TraceOut(ancilla)
@@ -871,7 +871,8 @@ class Ket(State):
     @property
     def _probabilities(self) -> RealVector:
         r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
-        return self._L2_normsstate (Ket)
+        return self._L2_normsstate(Ket)
+
     @property
     def probability(self) -> float:
         r"""Probability of this Ket (L2 norm squared)."""
@@ -981,7 +982,7 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 result = DM(result.wires.modes, result.representation)
         return result
-    
+
     def random(cls, wires):
         r"""
         generates random states with 0 displacement, using the random_symplectic funcionality
@@ -990,12 +991,12 @@ class Ket(State):
         Output is a Ket
         """
         # generate a random ket repr.
-		# e.g. S = math.random_symplectic(dim) and then apply to vacuum
+        # e.g. S = math.random_symplectic(dim) and then apply to vacuum
         m = len(wires)
         S = math.random_symplectic(m)
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
         A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-        b = [0]*m
-        psi = cls.from_bargmann(wires,[[A],[b],[1]])
+        b = [0] * m
+        psi = cls.from_bargmann(wires, [[A], [b], [1]])
         return psi.normalize
