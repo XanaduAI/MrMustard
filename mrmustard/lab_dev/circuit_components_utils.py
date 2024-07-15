@@ -135,7 +135,6 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float,
     ):
-
         repr = Bargmann.from_generator(
             fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
         )

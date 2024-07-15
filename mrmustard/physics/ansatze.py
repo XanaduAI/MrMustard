@@ -148,12 +148,10 @@ class PolyExpBase(Ansatz):
         self._vec = vec
         self._array = array
 
-        self._backend_mat = None
-        self._backend_vec = None
-        self._backend_array = None
+        # if (mat, vec, array) have been converted to backend
+        self._backends = [False, False, False]
 
         self._simplified = False
-
         self._fn = None
         self._kwargs = None
 
@@ -184,14 +182,15 @@ class PolyExpBase(Ansatz):
         """
         if self._array is None:
             self._compute_abc()
-        if self._backend_array is None:
-            self._backend_array = math.atleast_1d(self._array)
-        return self._backend_array
+        if not self._backends[2]:
+            self._array = math.atleast_1d(self._array)
+            self._backends[2] = True
+        return self._array
 
     @array.setter
     def array(self, array):
         self._array = array
-        self._backend_array = None
+        self._backends[2] = False
 
     @property
     def batch_size(self):
@@ -216,14 +215,15 @@ class PolyExpBase(Ansatz):
         """
         if self._mat is None:
             self._compute_abc()
-        if self._backend_mat is None:
-            self._backend_mat = math.atleast_3d(self._mat)
-        return self._backend_mat
+        if not self._backends[0]:
+            self._mat = math.atleast_3d(self._mat)
+            self._backends[0] = True
+        return self._mat
 
     @mat.setter
     def mat(self, array):
         self._mat = array
-        self._backend_mat = None
+        self._backends[0] = False
 
     @property
     def num_vars(self):
@@ -239,14 +239,15 @@ class PolyExpBase(Ansatz):
         """
         if self._vec is None:
             self._compute_abc()
-        if self._backend_vec is None:
-            self._backend_vec = math.atleast_2d(self._vec)
-        return self._backend_vec
+        if not self._backends[1]:
+            self._vec = math.atleast_2d(self._vec)
+            self._backends[1] = True
+        return self._vec
 
     @vec.setter
     def vec(self, array):
         self._vec = array
-        self._backend_vec = None
+        self._backends[1] = False
 
     def simplify(self) -> None:
         r"""
