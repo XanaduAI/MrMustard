@@ -799,16 +799,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 b,
             ),
         )
-    
+
     def moveaxis(self, a: Tensor, old: Tensor, new: Tensor) -> Tensor:
-        r"""The element-wise minimum of ``a`` and ``b``.
+        r"""Move axes of an array to a new position.
 
         Args:
-            a: The first array to take the minimum of
-            b: The second array to take the minimum of
+            a: The array to move axes off
+            old: The old index position
+            new: The new index position
+
 
         Returns:
-            The element-wise minimum of ``a`` and ``b``
+            The updated array
         """
         return self._apply(
             "moveaxis",
@@ -818,7 +820,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 new,
             ),
         )
-    
+
     def new_variable(
         self,
         value: Tensor,
