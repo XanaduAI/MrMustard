@@ -112,6 +112,7 @@ class Ansatz(ABC):
         return self * other
 
 
+# pylint: disable=too-many-instance-attributes
 class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
