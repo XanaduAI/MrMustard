@@ -272,22 +272,20 @@ class PolyExpBase(Ansatz):
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
             A_bar = math.block(
-                        [
-                            [
-                                math.zeros((batch_size, dim_alpha, dim_alpha), dtype=A.dtype),
-                                self.mat[..., dim_alpha:, :dim_alpha].T,
-                            ],
-                            [
-                                self.mat[..., dim_alpha:, :dim_alpha],
-                                self.mat[..., dim_alpha:, dim_alpha:],
-                            ],
-                        ]
-                    )
+                [
+                    [
+                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=A.dtype),
+                        self.mat[..., dim_alpha:, :dim_alpha].T,
+                    ],
+                    [
+                        self.mat[..., dim_alpha:, :dim_alpha],
+                        self.mat[..., dim_alpha:, dim_alpha:],
+                    ],
+                ]
+            )
 
             b_bar = math.block(
-                [
-                    math.zeros((dim_alpha, dim_beta), dtype=b.dtype), self.vec[..., dim_alpha:]
-                ]
+                [math.zeros((dim_alpha, dim_beta), dtype=b.dtype), self.vec[..., dim_alpha:]]
             )
             poly_bar = math.hermite_renormalized_batch(
                 np.moveaxis(A_bar, 0, -1),
