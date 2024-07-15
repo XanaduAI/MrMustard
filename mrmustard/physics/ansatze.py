@@ -289,13 +289,11 @@ class PolyExpBase(Ansatz):
                 ]
             )
 
-            b_bar = np.array(
+            b_bar = math.block(
                 [
-                    np.concatenate((np.zeros(dim_alpha), self.vec[i, dim_alpha:]))
-                    for i in range(batch_size)
+                    math.zeros((dim_alpha, dim_beta), dtype=b.dtype), self.vec[..., dim_alpha:]
                 ]
             )
-
             poly_bar = math.hermite_renormalized_batch(
                 np.moveaxis(A_bar, 0, -1),
                 np.moveaxis(b_bar, 0, -1),
