@@ -106,14 +106,7 @@ class BSgate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(
-            A=None,
-            b=None,
-            c=None,
-            fn=triples.beamsplitter_gate_Abc,
-            theta=self.theta.value,
-            phi=self.phi.value,
-        )
+        return Bargmann.from_generator(fn=triples.beamsplitter_gate_Abc, theta=self.theta.value, phi=self.phi.value)
 
 
 class Dgate(Unitary):
@@ -183,7 +176,7 @@ class Dgate(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
-        return Bargmann(A=None, b=None, c=None, fn=triples.displacement_gate_Abc, x=xs, y=ys)
+        return Bargmann.from_generator(fn=triples.displacement_gate_Abc, x=xs, y=ys)
 
 
 class Rgate(Unitary):
@@ -224,7 +217,7 @@ class Rgate(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         phis = list(reshape_params(n_modes, phi=self.phi.value))[0]
-        return Bargmann(A=None, b=None, c=None, fn=triples.rotation_gate_Abc, theta=phis)
+        return Bargmann.from_generator(fn=triples.rotation_gate_Abc, theta=phis)
 
 
 class Sgate(Unitary):
@@ -297,7 +290,7 @@ class Sgate(Unitary):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
-        return Bargmann(A=None, b=None, c=None, fn=triples.squeezing_gate_Abc, r=rs, delta=phis)
+        return Bargmann.from_generator(fn=triples.squeezing_gate_Abc, r=rs, delta=phis)
 
 
 class Identity(Unitary):
@@ -329,7 +322,7 @@ class Identity(Unitary):
     @property
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
-        return Bargmann(A=None, b=None, c=None, fn=triples.identity_Abc, n_modes=n_modes)
+        return Bargmann.from_generator(fn=triples.identity_Abc, n_modes=n_modes)
 
 
 class S2gate(Unitary):
@@ -393,14 +386,7 @@ class S2gate(Unitary):
 
     @property
     def representation(self) -> Bargmann:
-        return Bargmann(
-            A=None,
-            b=None,
-            c=None,
-            fn=triples.twomode_squeezing_gate_Abc,
-            r=self.r.value,
-            phi=self.phi.value,
-        )
+        return Bargmann.from_generator(fn=triples.twomode_squeezing_gate_Abc, r=self.r.value, phi=self.phi.value)
 
 
 class Amplifier(Channel):
@@ -471,7 +457,7 @@ class Amplifier(Channel):
     @property
     def representation(self) -> Bargmann:
         g = list(reshape_params(len(self.modes), g=self.gain.value))[0]
-        return Bargmann(A=None, b=None, c=None, fn=triples.amplifier_Abc, g=g)
+        return Bargmann.from_generator(fn=triples.amplifier_Abc, g=g)
 
 
 class Attenuator(Channel):
@@ -544,4 +530,4 @@ class Attenuator(Channel):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
-        return Bargmann(A=None, b=None, c=None, fn=triples.attenuator_Abc, eta=eta)
+        return Bargmann.from_generator(fn=triples.attenuator_Abc, eta=eta)

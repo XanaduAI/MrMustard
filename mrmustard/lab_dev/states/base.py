@@ -674,7 +674,7 @@ class DM(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM(
             modes,
-            Bargmann(A=None, b=None, c=None, fn=wigner_to_bargmann_rho, cov=cov, means=means),
+            Bargmann.from_generator(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
 
@@ -850,8 +850,7 @@ class Ket(State):
                 raise ValueError(msg)
         return Ket(
             modes,
-            coeff
-            * Bargmann(A=None, b=None, c=None, fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            coeff * Bargmann.from_generator(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
 

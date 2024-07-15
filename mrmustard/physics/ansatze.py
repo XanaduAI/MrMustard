@@ -136,8 +136,6 @@ class PolyExpBase(Ansatz):
         mat: the matrix-like data
         vec: the vector-like data
         array: the array-like data
-        fn: an optional function to generate ``mat``, ``vec`` and ``array``.
-        **kwargs: arguments for ``fn``.
     """
 
     def __init__(
@@ -145,8 +143,6 @@ class PolyExpBase(Ansatz):
         mat: Batch[Matrix],
         vec: Batch[Vector],
         array: Batch[Tensor],
-        fn: Optional[Callable] = None,
-        **kwargs: Any,
     ):
         self._mat = mat
         self._vec = vec
@@ -158,8 +154,8 @@ class PolyExpBase(Ansatz):
 
         self._simplified = False
 
-        self._fn = fn
-        self._kwargs = kwargs
+        self._fn = None
+        self._kwargs = None
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -362,8 +358,6 @@ class PolyExpAnsatz(PolyExpBase):
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
         c: The array of coefficients for the polynomial terms in the ansatz.
-        fn: an optional function to generate ``(A, b, c)``.
-        **kwargs: arguments for ``fn``.
     """
 
     def __init__(
@@ -372,14 +366,12 @@ class PolyExpAnsatz(PolyExpBase):
         b: Optional[Batch[Vector]] = None,
         c: Batch[Tensor | Scalar] = 1.0,
         name: str = "",
-        fn: Optional[Callable] = None,
-        **kwargs: Any,
     ):
         self.name = name
 
-        if A is None and b is None and fn is None:
-            raise ValueError("Please provide either A or b or a function to generate (A, b, c).")
-        super().__init__(mat=A, vec=b, array=c, fn=fn, **kwargs)
+        if A is None and b is None and c is not None:
+            raise ValueError("Please provide either A or b.")
+        super().__init__(mat=A, vec=b, array=c)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -401,6 +393,16 @@ class PolyExpAnsatz(PolyExpBase):
         The array of coefficients for the polynomial terms in the ansatz.
         """
         return self.array
+    
+    @classmethod
+    def from_generator(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
+        r"""
+        Returns a PolyExpAnsatz object from a generator function.
+        """
+        ret = cls(None, None, None)
+        ret._fn = fn
+        ret._kwargs = kwargs
+        return ret
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""

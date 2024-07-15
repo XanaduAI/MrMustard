@@ -20,7 +20,7 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Union
+from typing import Any, Callable, Iterable, Union
 import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -249,11 +249,9 @@ class Bargmann(Representation):
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
-        fn=None,
-        **kwargs,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self._ansatz = PolyExpAnsatz(A=A, b=b, c=c, fn=fn, **kwargs)
+        self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
 
     @property
     def ansatz(self) -> PolyExpAnsatz:
@@ -314,6 +312,16 @@ class Bargmann(Representation):
         The scalar part of the representation.
         """
         return self.c
+    
+    @classmethod
+    def from_generator(cls, fn: Callable, **kwargs: Any) -> Bargmann:
+        r"""
+        Returns a Bargmann object from a generator function.
+        """
+        ret = cls(None, None, None)
+        ansatz = PolyExpAnsatz.from_generator(fn, **kwargs)
+        ret._ansatz = ansatz
+        return ret
 
     def conj(self):
         r"""
