@@ -271,23 +271,18 @@ class PolyExpBase(Ansatz):
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
-            A_bar = np.array(
-                [
-                    np.block(
+            A_bar = math.block(
                         [
                             [
-                                np.zeros((dim_alpha, dim_alpha)),
-                                self.mat[i, dim_alpha:, :dim_alpha].T,
+                                math.zeros((batch_size, dim_alpha, dim_alpha), dtype=A.dtype),
+                                self.mat[..., dim_alpha:, :dim_alpha].T,
                             ],
                             [
-                                self.mat[i, dim_alpha:, :dim_alpha],
-                                self.mat[i, dim_alpha:, dim_alpha:],
+                                self.mat[..., dim_alpha:, :dim_alpha],
+                                self.mat[..., dim_alpha:, dim_alpha:],
                             ],
                         ]
                     )
-                    for i in range(batch_size)
-                ]
-            )
 
             b_bar = math.block(
                 [
