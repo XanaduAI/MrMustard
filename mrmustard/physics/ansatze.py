@@ -322,10 +322,12 @@ class PolyExpBase(Ansatz):
                 ]
             )
             b_decomp = math.block(
-                [[
-                    self.vec[..., :dim_alpha],
-                    math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
-                ]]
+                [
+                    [
+                        self.vec[..., :dim_alpha],
+                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
+                    ]
+                ]
             )
             return DiffOpPolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
