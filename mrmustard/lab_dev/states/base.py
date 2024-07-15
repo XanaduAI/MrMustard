@@ -678,6 +678,12 @@ class DM(State):
             name,
         )
 
+    def normalize(self) -> DM:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        return self / self.probability
+
     @property
     def _probabilities(self) -> RealVector:
         r"""Element-wise probabilities along the batch dimension of this DM.
@@ -848,6 +854,12 @@ class Ket(State):
             * Bargmann(A=None, b=None, c=None, fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
+
+    def normalize(self) -> Ket:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1
+        """
+        return self / math.sqrt(self.probability)
 
     @property
     def _probabilities(self) -> RealVector:
