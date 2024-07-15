@@ -181,8 +181,7 @@ class PolyExpBase(Ansatz):
         r"""
         The array of this ansatz.
         """
-        if self._array is None:
-            self._compute_abc()
+        self._generate_tensors()
         if not self._backends[2]:
             self._array = math.atleast_1d(self._array)
             self._backends[2] = True
@@ -214,8 +213,7 @@ class PolyExpBase(Ansatz):
         r"""
         The matrix of this ansatz.
         """
-        if self._mat is None:
-            self._compute_abc()
+        self._generate_tensors()
         if not self._backends[0]:
             self._mat = math.atleast_3d(self._mat)
             self._backends[0] = True
@@ -238,8 +236,7 @@ class PolyExpBase(Ansatz):
         r"""
         The vector of this ansatz.
         """
-        if self._vec is None:
-            self._compute_abc()
+        self._generate_tensors()
         if not self._backends[1]:
             self._vec = math.atleast_2d(self._vec)
             self._backends[1] = True
@@ -296,15 +293,16 @@ class PolyExpBase(Ansatz):
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
-    def _compute_abc(self):
+    def _generate_tensors(self):
         r"""
         This method computes and sets the matrix, vector and array given a function
         and some kwargs.
         """
-        A, b, c = self._fn(**self._kwargs)
-        self._mat = A
-        self._vec = b
-        self._array = c
+        if self._array is None:
+            mat, vec, array = self._fn(**self._kwargs)
+            self._mat = mat
+            self._vec = vec
+            self._array = array
 
     def _order_batch(self):
         r"""
