@@ -842,7 +842,7 @@ class Ket(State):
 
     def auto_shape(self, max_prob=0.999, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
         r"""
-        A pretty enough estimate of the Fock shape of this Ket, define)d as the shape of the Fock
+        A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
