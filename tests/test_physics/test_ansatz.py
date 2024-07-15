@@ -540,8 +540,11 @@ class TestDiffOpPolyExpAnsatz:
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
+        print(ansatz(z))
+        print(decomp_ansatz(z))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
+
 
     def test_decompose_ansatz_batch(self):
         A1, b1, _ = Abc_triple(4)
@@ -553,3 +556,17 @@ class TestDiffOpPolyExpAnsatz:
         z = np.random.uniform(-10, 10, size=(3, 1))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
+        assert np.allclose(decomp_ansatz.b.shape, (2, 2))
+        assert np.allclose(decomp_ansatz.c.shape, (2, 9))
+
+        A1, b1, _ = Abc_triple(5)
+        c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        A2, b2, _ = Abc_triple(5)
+        c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        ansatz = DiffOpPolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
+        decomp_ansatz = ansatz.decompose_ansatz()
+        z = np.random.uniform(-10, 10, size=(3, 2))
+        assert np.allclose(ansatz(z), decomp_ansatz(z))
+        assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
+        assert np.allclose(decomp_ansatz.b.shape, (2, 4))
+        assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
