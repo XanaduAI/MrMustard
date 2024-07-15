@@ -112,7 +112,9 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann.from_generator(fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)),
+            representation=Bargmann.from_generator(
+                fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
+            ),
             name="BtoPS",
         )
         self.s = s
@@ -133,8 +135,10 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float,
     ):
-        
-        repr = Bargmann.from_generator(fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi)
+
+        repr = Bargmann.from_generator(
+            fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
+        )
         super().__init__(
             modes_out=modes,
             modes_in=modes,

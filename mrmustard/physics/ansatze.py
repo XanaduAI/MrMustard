@@ -393,7 +393,7 @@ class PolyExpAnsatz(PolyExpBase):
         The array of coefficients for the polynomial terms in the ansatz.
         """
         return self.array
-    
+
     @classmethod
     def from_generator(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""

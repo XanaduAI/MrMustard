@@ -163,7 +163,9 @@ class DisplacedSqueezed(Ket):
             n_modes, x=self.x.value, y=self.y.value, r=self.r.value, phi=self.phi.value
         )
         xs, ys, rs, phis = list(params)
-        return Bargmann.from_generator(fn=triples.displaced_squeezed_vacuum_state_Abc, x=xs, y=ys, r=rs, phi=phis)
+        return Bargmann.from_generator(
+            fn=triples.displaced_squeezed_vacuum_state_Abc, x=xs, y=ys, r=rs, phi=phis
+        )
 
 
 class Number(Ket):
@@ -327,7 +329,9 @@ class TwoModeSqueezedVacuum(Ket):
     def representation(self) -> Bargmann:
         n_modes = len(self.modes)
         rs, phis = list(reshape_params(int(n_modes / 2), r=self.r.value, phi=self.phi.value))
-        return Bargmann.from_generator(fn=triples.two_mode_squeezed_vacuum_state_Abc, r=rs, phi=phis)
+        return Bargmann.from_generator(
+            fn=triples.two_mode_squeezed_vacuum_state_Abc, r=rs, phi=phis
+        )
 
 
 class Vacuum(Ket):
@@ -414,4 +418,3 @@ class Thermal(DM):
         n_modes = len(self.modes)
         nbars = list(reshape_params(n_modes, nbar=self.nbar.value))[0]
         return Bargmann.from_generator(fn=triples.thermal_state_Abc, nbar=nbars)
-    

@@ -312,7 +312,7 @@ class Bargmann(Representation):
         The scalar part of the representation.
         """
         return self.c
-    
+
     @classmethod
     def from_generator(cls, fn: Callable, **kwargs: Any) -> Bargmann:
         r"""
