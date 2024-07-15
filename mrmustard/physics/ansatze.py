@@ -274,8 +274,8 @@ class PolyExpBase(Ansatz):
             A_bar = math.block(
                 [
                     [
-                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=A.dtype),
-                        self.mat[..., dim_alpha:, :dim_alpha].T,
+                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
+                        self.mat[..., :dim_alpha, dim_alpha:],
                     ],
                     [
                         self.mat[..., dim_alpha:, :dim_alpha],
@@ -285,7 +285,12 @@ class PolyExpBase(Ansatz):
             )
 
             b_bar = math.block(
-                [math.zeros((dim_alpha, dim_beta), dtype=b.dtype), self.vec[..., dim_alpha:]]
+                [
+                    [
+                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
+                        self.vec[..., dim_alpha:],
+                    ]
+                ]
             )
             poly_bar = math.hermite_renormalized_batch(
                 np.moveaxis(A_bar, 0, -1),
@@ -299,22 +304,28 @@ class PolyExpBase(Ansatz):
                 axis=tuple(np.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape))),
             )
             c_decomp = np.moveaxis(c_decomp, -1, 0)
-            A_decomp = np.array(
+
+            A_decomp = math.block(
                 [
-                    np.block(
-                        [
-                            [self.mat[i, :dim_alpha, :dim_alpha], np.eye(dim_alpha)],
-                            [np.eye(dim_alpha), np.zeros((dim_alpha, dim_alpha))],
-                        ]
-                    )
-                    for i in range(batch_size)
+                    [
+                        self.mat[..., :dim_alpha, :dim_alpha],
+                        np.repeat(
+                            [math.eye((dim_alpha), dtype=self.mat.dtype)], batch_size, axis=0
+                        ),
+                    ],
+                    [
+                        np.repeat(
+                            [math.eye((dim_alpha), dtype=self.mat.dtype)], batch_size, axis=0
+                        ),
+                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
+                    ],
                 ]
             )
-            b_decomp = np.array(
-                [
-                    np.concatenate((self.vec[i, :dim_alpha], np.zeros(dim_alpha)))
-                    for i in range(batch_size)
-                ]
+            b_decomp = math.block(
+                [[
+                    self.vec[..., :dim_alpha],
+                    math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
+                ]]
             )
             return DiffOpPolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
