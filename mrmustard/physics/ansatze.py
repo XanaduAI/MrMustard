@@ -795,10 +795,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return b3
 
         def andc(c1, c2):
-            if c1.shape == (1,) and c2.shape == (1,):
-                c3 = c1 * c2
-            else:
-                c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
+            c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
             return c3
 
         dim_beta1, _ = self.polynomial_degrees
