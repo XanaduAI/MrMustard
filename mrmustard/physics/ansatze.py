@@ -296,23 +296,27 @@ class PolyExpBase(Ansatz):
                 A_bar,
                 b_bar,
                 complex(1),
-                (batch_size,) + (np.sum(shape_beta),) * dim_alpha + shape_beta
+                (batch_size,) + (np.sum(shape_beta),) * dim_alpha + shape_beta,
             )
-            poly_bar = np.moveaxis(poly_bar,0,dim_alpha)
+            poly_bar = np.moveaxis(poly_bar, 0, dim_alpha)
             c_decomp = np.sum(
                 poly_bar * self.array,
                 axis=tuple(np.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape))),
             )
-            c_decomp = np.moveaxis(c_decomp,-1,0)
+            c_decomp = np.moveaxis(c_decomp, -1, 0)
 
             A_decomp = math.block(
                 [
                     [
                         self.mat[..., :dim_alpha, :dim_alpha],
-                        math.outer(math.ones(batch_size),math.eye((dim_alpha), dtype=self.mat.dtype)),
+                        math.outer(
+                            math.ones(batch_size), math.eye((dim_alpha), dtype=self.mat.dtype)
+                        ),
                     ],
                     [
-                        math.outer(math.ones(batch_size),math.eye((dim_alpha), dtype=self.mat.dtype)),
+                        math.outer(
+                            math.ones(batch_size), math.eye((dim_alpha), dtype=self.mat.dtype)
+                        ),
                         math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
                     ],
                 ]
@@ -584,24 +588,29 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             val = np.sum(exp_sum * self.c, axis=-1)
         else:
             b_poly = math.astensor(
-                    [
-                        np.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axis=-1)
-                        + self.b[..., dim_alpha:]
-                        for i in range(batch_size_arg)
-                    ]
-                )
-            b_poly = math.transpose(b_poly,perm=(1,0,2))
+                [
+                    np.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axis=-1)
+                    + self.b[..., dim_alpha:]
+                    for i in range(batch_size_arg)
+                ]
+            )
+            b_poly = math.transpose(b_poly, perm=(1, 0, 2))
             A_poly = self.A[..., dim_alpha:, dim_alpha:]
             poly = math.astensor(
-                            [
-                                math.hermite_renormalized_batch(
-                                    A_poly[i], b_poly[i], complex(1), (batch_size_arg,) + shape_beta
-                                )
-                                for i in range(batch_size)
-                            ]
-                        )
-            poly = math.transpose(poly,perm=math.concat((math.astensor([1,0]),math.arange(2,2 +dim_beta)),axis=0))
-            val = np.sum(exp_sum * np.sum(poly * self.c, axis=tuple(np.arange(2, 2 + dim_beta))), axis=-1)
+                [
+                    math.hermite_renormalized_batch(
+                        A_poly[i], b_poly[i], complex(1), (batch_size_arg,) + shape_beta
+                    )
+                    for i in range(batch_size)
+                ]
+            )
+            poly = math.transpose(
+                poly,
+                perm=math.concat((math.astensor([1, 0]), math.arange(2, 2 + dim_beta)), axis=0),
+            )
+            val = np.sum(
+                exp_sum * np.sum(poly * self.c, axis=tuple(np.arange(2, 2 + dim_beta))), axis=-1
+            )
         return val
 
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:

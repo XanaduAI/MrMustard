@@ -545,7 +545,6 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
-
     def test_decompose_ansatz_batch(self):
         A1, b1, _ = Abc_triple(4)
         c1 = np.random.uniform(-10, 10, size=(3, 3, 3))

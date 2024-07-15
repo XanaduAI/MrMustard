@@ -85,7 +85,7 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
     G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
 
     for nb in range(batch_size):
-        assert np.allclose(G_ref, G_batched[nb,:, :, :, :])
+        assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
 
 
 @pytest.mark.parametrize("batch_size", [1, 3])
