@@ -750,9 +750,9 @@ class TestQuadratureEigenstate:
     x = [[1], 1, [2]]
     phi = [3, [4], 1]
 
-    @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
-    def test_init(self, modes, x, phi):
-        state = QuadratureEigenstate(modes, x, phi)
+    @pytest.mark.parametrize("modes", modes)
+    def test_init(self, modes):
+        state = QuadratureEigenstate(modes)
 
         assert state.name == "QuadratureEigenstate"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
