@@ -171,14 +171,15 @@ class Dgate(Unitary):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
         super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        n_modes = len(self.modes)
+        xs, ys = list(reshape_params(n_modes, x=x, y=y))
+        self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
-        return Bargmann.from_generator(fn=triples.displacement_gate_Abc, x=xs, y=ys)
+
+        return Bargmann.from_generator(fn=triples.displacement_gate_Abc, x=self.x.value, y=self.y.value)
 
 
 class Rgate(Unitary):
@@ -213,13 +214,13 @@ class Rgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        n_modes = len(self.modes)
+        phis, = list(reshape_params(n_modes, phi=phi))
+        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        phis = list(reshape_params(n_modes, phi=self.phi.value))[0]
-        return Bargmann.from_generator(fn=triples.rotation_gate_Abc, theta=phis)
+        return Bargmann.from_generator(fn=triples.rotation_gate_Abc, theta=self.phi.value)
 
 
 class Sgate(Unitary):
@@ -285,14 +286,14 @@ class Sgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Sgate")
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        n_modes = len(self.modes)
+        rs, phis = list(reshape_params(n_modes, r=r, phi=phi))
+        self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
-        return Bargmann.from_generator(fn=triples.squeezing_gate_Abc, r=rs, delta=phis)
+        return Bargmann.from_generator(fn=triples.squeezing_gate_Abc, r=self.r.value, delta=self.phi.value)
 
 
 class Identity(Unitary):
@@ -319,12 +320,9 @@ class Identity(Unitary):
         self,
         modes: Sequence[int],
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="Identity")
-
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        return Bargmann.from_generator(fn=triples.identity_Abc, n_modes=n_modes)
+        n_modes = len(modes)
+        rep = Bargmann.from_generator(fn=triples.identity_Abc, n_modes=n_modes)
+        super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")
 
 
 class S2gate(Unitary):
@@ -448,10 +446,11 @@ class Amplifier(Channel):
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Amp")
+        gs, = list(reshape_params(len(self.modes), gain=gain))
         self._add_parameter(
             make_parameter(
                 gain_trainable,
-                gain,
+                gs,
                 "gain",
                 gain_bounds,
                 None,
@@ -460,8 +459,7 @@ class Amplifier(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        g = list(reshape_params(len(self.modes), g=self.gain.value))[0]
-        return Bargmann.from_generator(fn=triples.amplifier_Abc, g=g)
+        return Bargmann.from_generator(fn=triples.amplifier_Abc, g=self.gain.value)
 
 
 class Attenuator(Channel):
@@ -520,10 +518,12 @@ class Attenuator(Channel):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Att")
+        n_modes = len(self.modes)
+        etas, = list(reshape_params(n_modes, transmissivity=transmissivity))
         self._add_parameter(
             make_parameter(
                 transmissivity_trainable,
-                transmissivity,
+                etas,
                 "transmissivity",
                 transmissivity_bounds,
                 None,
@@ -532,6 +532,4 @@ class Attenuator(Channel):
 
     @property
     def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
-        return Bargmann.from_generator(fn=triples.attenuator_Abc, eta=eta)
+        return Bargmann.from_generator(fn=triples.attenuator_Abc, eta=self.transmissivity.value)

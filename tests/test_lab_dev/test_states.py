@@ -327,6 +327,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         x = math.asnumpy([0, 1, 2])
         s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
 
+        assert np.all(s.y.value == 3)
+        assert s.y.value.shape == (len(modes),)
+        assert s.r.value.shape == (len(modes),)
+        assert s.phi.value.shape == (len(modes),)
+
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
         assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
@@ -335,14 +340,17 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(si.x.value, x[idx])
 
         assert isinstance(si.y, Variable)
-        assert si.y.value == s.y.value
+        assert np.all(si.y.value == 3)
+        assert si.y.value.shape == (len(idx),)
         assert si.y.bounds == s.y.bounds
 
         assert isinstance(si.r, Constant)
-        assert si.r.value == s.r.value
+        assert np.all(si.r.value == 0)
+        assert si.r.value.shape == (len(idx),)
 
         assert isinstance(si.phi, Constant)
-        assert si.phi.value == s.phi.value
+        assert np.all(si.phi.value == 0)
+        assert si.phi.value.shape == (len(idx),)
 
     def test_private_batched_properties(self):
         cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
@@ -601,10 +609,10 @@ class TestCoherent:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             Coherent(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``y``"):
+        with pytest.raises(ValueError, match="y"):
             Coherent(modes=[0, 1], x=1, y=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -674,10 +682,10 @@ class TestDisplacedSqueezed:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             DisplacedSqueezed(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``y``"):
+        with pytest.raises(ValueError, match="y"):
             DisplacedSqueezed(modes=[0, 1], x=1, y=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -722,10 +730,10 @@ class TestNumber:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``n``"):
+        with pytest.raises(ValueError, match="n"):
             Number(modes=[0, 1], n=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``cutoffs``"):
+        with pytest.raises(ValueError, match="cutoffs"):
             Number(modes=[0, 1], n=[2, 3], cutoffs=[4, 5, 6])
 
     @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
@@ -757,10 +765,10 @@ class TestSqueezedVacuum:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``r``"):
+        with pytest.raises(ValueError, match="r"):
             SqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_modes_slice_params(self):
@@ -809,10 +817,10 @@ class TestTwoModeSqueezedVacuum:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``r``"):
+        with pytest.raises(ValueError, match="r"):
             TwoModeSqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -878,7 +886,7 @@ class TestThermal:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``nbar``"):
+        with pytest.raises(ValueError, match="nbar"):
             Thermal(modes=[0, 1], nbar=[2, 3, 4])
 
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])

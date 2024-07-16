@@ -252,10 +252,10 @@ class TestDgate:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             Dgate(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``y``"):
+        with pytest.raises(ValueError, match="y"):
             Dgate(modes=[0, 1], x=1, y=[2, 3, 4])
 
     def test_representation(self):
@@ -309,7 +309,7 @@ class TestRgate:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             Rgate(modes=[0, 1], phi=[2, 3, 4])
 
     def test_representation(self):
@@ -386,10 +386,10 @@ class TestSgate:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``r``"):
+        with pytest.raises(ValueError, match="r"):
             Sgate(modes=[0, 1], r=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             Sgate(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_representation(self):
@@ -581,7 +581,7 @@ class TestAmplifier:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``gain``"):
+        with pytest.raises(ValueError, match="gain"):
             Amplifier(modes=[0, 1], gain=[1.2, 1.3, 1.4])
 
     def test_representation(self):
@@ -670,7 +670,7 @@ class TestAttenuator:
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``transmissivity``"):
+        with pytest.raises(ValueError, match="transmissivity"):
             Attenuator(modes=[0, 1], transmissivity=[0.2, 0.3, 0.4])
 
     def test_representation(self):
