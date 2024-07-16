@@ -741,6 +741,56 @@ class TestNumber:
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
 
+class TestQuadratureEigenstate:
+    r"""
+    Tests for the ``TwoModeSqueezedVacuum`` class.
+    """
+
+    modes = [[0, 1], [1, 2], [1, 5]]
+    r = [[1], 1, [2]]
+    phi = [3, [4], 1]
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_init(self, modes, r, phi):
+        state = TwoModeSqueezedVacuum(modes, r, phi)
+
+        assert state.name == "TwoModeSqueezedVacuum"
+        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+
+    def test_init_error(self):
+        with pytest.raises(ValueError, match="Length of ``r``"):
+            TwoModeSqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
+
+        with pytest.raises(ValueError, match="Length of ``phi``"):
+            SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+
+    def test_trainable_parameters(self):
+        state1 = TwoModeSqueezedVacuum([0, 1], 1, 1)
+        state2 = TwoModeSqueezedVacuum([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
+        state3 = TwoModeSqueezedVacuum([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+
+        with pytest.raises(AttributeError):
+            state1.r.value = 3
+
+        state2.r.value = 2
+        assert state2.r.value == 2
+
+        state3.phi.value = 2
+        assert state3.phi.value == 2
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    def test_representation(self, modes, r, phi):
+        rep = TwoModeSqueezedVacuum(modes, r, phi).representation
+        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).representation
+        assert rep == exp
+
+    def test_representation_error(self):
+        with pytest.raises(ValueError):
+            TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+
+    
+
+
 class TestSqueezedVacuum:
     r"""
     Tests for the ``SqueezedVacuum`` class.
@@ -962,39 +1012,3 @@ class TestVisualization:
     def test_visualize_dm_error(self):
         with pytest.raises(ValueError):
             Coherent([0, 1]).visualize_dm(20)
-
-
-class TestQuadratureEigenstate:
-    r"""
-    Tests for the ``QuadratureEigenstate`` class.
-    """
-
-    modes = [[0, 1], [1, 2], [5, 1]]
-
-    @pytest.mark.parametrize("modes", modes)
-    def test_init(self, modes):
-        state = QuadratureEigenstate(modes)
-        modes = [modes] if not isinstance(modes, list) else sorted(modes)
-        assert state.name == "QuadratureEigenstate"
-        assert state.modes == modes
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
-            QuadratureEigenstate(modes=[0, 1], x=[2, 3, 4])
-
-        with pytest.raises(ValueError, match="Length of ``phi``"):
-            QuadratureEigenstate(modes=[0, 1], x=1, phi=[2, 3, 4])
-
-    def test_trainable_parameters(self):
-        state1 = QuadratureEigenstate([0, 1], 1, 1)
-        state2 = QuadratureEigenstate([0, 1], 1, 1, x_trainable=True, x_bounds=(0, 2))
-        state3 = QuadratureEigenstate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            state1.x.value = 3
-
-        state2.x.value = 2
-        assert state2.x.value == 2
-
-        state3.phi.value = 2
-        assert state3.phi.value == 2
