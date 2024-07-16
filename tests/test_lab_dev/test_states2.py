@@ -16,33 +16,17 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-import json
-import os
+
 import numpy as np
 import pytest
 
-from mrmustard import math, settings
-from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics.representations import Bargmann
-from mrmustard.physics.fock import fock_state
-from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
-from mrmustard.physics.triples import coherent_state_Abc, thermal_state_Abc
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard import settings
+
 from mrmustard.lab_dev.states import (
     Coherent,
-    DisplacedSqueezed,
-    DM,
-    Ket,
-    Number,
     QuadratureEigenstate,
-    SqueezedVacuum,
-    TwoModeSqueezedVacuum,
-    Thermal,
-    Vacuum,
 )
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate, S2gate
-from mrmustard.lab_dev.wires import Wires
+
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
