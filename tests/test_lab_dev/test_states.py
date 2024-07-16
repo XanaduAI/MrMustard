@@ -47,6 +47,7 @@ from mrmustard.lab_dev.wires import Wires
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
+
 class TestKet:  # pylint: disable=too-many-public-methods
     r"""
     Tests for the ``Ket`` class.
@@ -997,4 +998,3 @@ class TestVisualization:
     def test_visualize_dm_error(self):
         with pytest.raises(ValueError):
             Coherent([0, 1]).visualize_dm(20)
-            
