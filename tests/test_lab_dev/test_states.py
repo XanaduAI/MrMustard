@@ -35,7 +35,6 @@ from mrmustard.lab_dev.states import (
     DM,
     Ket,
     Number,
-    QuadratureEigenstate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
     Thermal,
