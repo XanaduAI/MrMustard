@@ -385,18 +385,14 @@ class QuadratureEigenstate(Ket):
 
     Args:
         modes: A list of modes.
+        x: the displacement of the state
+        phi: the angle of the state with `0` being a position eigenstate and `\pi/2` being the momentum eigenstate.
 
     .. details::
-        TO BE DONE...
-        The :math:`N`-mode quadrature eigenstate state is defined by
-
-        .. math::
-            V = \frac{\hbar}{2}I_N \text{and } r = \bar{0}_N.
-
         Its ``(A,b,c)`` triple is given by
 
         .. math::
-            A = O_{N\text{x}N}\text{, }b = O_N\text{, and }c = 1.
+            A = -I_{N}\exp(i2\phi)\text{, }b = I_Nx\exp(i\phi)\sqrt{2/\hbar}\text{, and }c = 1/(\pi\hbar)^{-1/4}\exp(-\abs{x}^2/(2\hbar)).
     """
 
     def __init__(
