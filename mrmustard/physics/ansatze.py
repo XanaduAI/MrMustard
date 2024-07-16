@@ -299,7 +299,17 @@ class PolyExpBase(Ansatz):
         and some kwargs.
         """
         if self._array is None:
-            mat, vec, array = self._fn(**self._kwargs)
+            names = list(self._kwargs.keys())
+            vars = list(self._kwargs.values())
+
+            params = {}
+            for name, param in zip(names, vars):
+                try:
+                    params[name] = param.value
+                except AttributeError:
+                    params[name] = param
+
+            mat, vec, array = self._fn(**params)
             self._mat = mat
             self._vec = vec
             self._array = array
@@ -395,7 +405,7 @@ class PolyExpAnsatz(PolyExpBase):
         return self.array
 
     @classmethod
-    def from_generator(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""
         Returns a PolyExpAnsatz object from a generator function.
         """

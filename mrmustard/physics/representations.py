@@ -314,12 +314,12 @@ class Bargmann(Representation):
         return self.c
 
     @classmethod
-    def from_generator(cls, fn: Callable, **kwargs: Any) -> Bargmann:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
         r"""
         Returns a Bargmann object from a generator function.
         """
         ret = cls(None, None, None)
-        ansatz = PolyExpAnsatz.from_generator(fn, **kwargs)
+        ansatz = PolyExpAnsatz.from_function(fn, **kwargs)
         ret._ansatz = ansatz
         return ret
 

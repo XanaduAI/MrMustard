@@ -67,7 +67,7 @@ class TraceOut(CircuitComponent):
         super().__init__(
             modes_in_ket=modes,
             modes_in_bra=modes,
-            representation=Bargmann.from_generator(fn=triples.identity_Abc, n_modes=len(modes)),
+            representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )
 
@@ -112,7 +112,7 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann.from_generator(
+            representation=Bargmann.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
             name="BtoPS",
@@ -135,7 +135,7 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float,
     ):
-        repr = Bargmann.from_generator(
+        repr = Bargmann.from_function(
             fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
         )
         super().__init__(
