@@ -244,6 +244,7 @@ def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Sc
 
     return A, b, c
 
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
