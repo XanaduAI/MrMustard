@@ -22,7 +22,7 @@ import pytest
 
 from mrmustard import settings
 
-from mrmustard.lab_dev.states import Coherent,QuadratureEigenstate
+from mrmustard.lab_dev.states import Coherent, QuadratureEigenstate
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
