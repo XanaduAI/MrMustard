@@ -301,7 +301,10 @@ class PolyExpBase(Ansatz):
             poly_bar = math.moveaxis(poly_bar, 0, dim_alpha)
             c_decomp = math.sum(
                 poly_bar * self.array,
-                axes=math.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape),dtype=math.int32).tolist())
+                axes=math.arange(
+                    len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
+                ).tolist(),
+            )
             c_decomp = math.moveaxis(c_decomp, -1, 0)
 
             A_decomp = math.block(
@@ -309,12 +312,14 @@ class PolyExpBase(Ansatz):
                     [
                         self.mat[..., :dim_alpha, :dim_alpha],
                         math.outer(
-                            math.ones(batch_size,dtype=self.mat.dtype), math.eye(dim_alpha, dtype=self.mat.dtype)
+                            math.ones(batch_size, dtype=self.mat.dtype),
+                            math.eye(dim_alpha, dtype=self.mat.dtype),
                         ),
                     ],
                     [
                         math.outer(
-                            math.ones(batch_size,dtype=self.mat.dtype), math.eye((dim_alpha), dtype=self.mat.dtype)
+                            math.ones(batch_size, dtype=self.mat.dtype),
+                            math.eye((dim_alpha), dtype=self.mat.dtype),
                         ),
                         math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
                     ],
@@ -605,10 +610,24 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
             poly = math.transpose(
                 poly,
-                perm=math.reshape(math.block([[math.astensor((1,0),dtype=math.int32), math.arange(2, 2 + dim_beta,dtype=math.int32)]]),-1),
+                perm=math.reshape(
+                    math.block(
+                        [
+                            [
+                                math.astensor((1, 0), dtype=math.int32),
+                                math.arange(2, 2 + dim_beta, dtype=math.int32),
+                            ]
+                        ]
+                    ),
+                    -1,
+                ),
             )
             val = math.sum(
-                exp_sum * math.sum(poly * self.c, axes=math.arange(2, 2 + dim_beta,dtype=math.int32).tolist()), axes=[-1]
+                exp_sum
+                * math.sum(
+                    poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
+                ),
+                axes=[-1],
             )
         return val
 
