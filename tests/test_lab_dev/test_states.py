@@ -751,7 +751,7 @@ class TestQuadratureEigenstate:
     phi = [3, [4], 1]
 
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
-    def test_init(self, modes, x, phi):
+    def test_init1(self, modes, x, phi):
         state = QuadratureEigenstate(modes, x, phi)
 
         assert state.name == "QuadratureEigenstate"
