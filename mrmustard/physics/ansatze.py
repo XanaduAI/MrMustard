@@ -25,6 +25,7 @@ from typing import Any, Callable, Union, Optional
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Variable
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -154,7 +155,7 @@ class PolyExpBase(Ansatz):
 
         self._simplified = False
         self._fn = None
-        self._kwargs = None
+        self._kwargs = {}
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -298,17 +299,19 @@ class PolyExpBase(Ansatz):
         This method computes and sets the matrix, vector and array given a function
         and some kwargs.
         """
-        if self._array is None:
-            names = list(self._kwargs.keys())
-            vars = list(self._kwargs.values())
+        names = list(self._kwargs.keys())
+        vars = list(self._kwargs.values())
 
-            params = {}
-            for name, param in zip(names, vars):
-                try:
-                    params[name] = param.value
-                except AttributeError:
-                    params[name] = param
+        params = {}
+        param_types = []
+        for name, param in zip(names, vars):
+            try:
+                params[name] = param.value
+                param_types.append(type(param))
+            except AttributeError:
+                params[name] = param
 
+        if self._array is None or Variable in param_types:
             mat, vec, array = self._fn(**params)
             self._mat = mat
             self._vec = vec
