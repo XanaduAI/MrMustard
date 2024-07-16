@@ -423,6 +423,7 @@ class State(CircuitComponent):
             z=math.transpose(z),
             colorscale=colorscale,
             name="Wigner function",
+            autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
         fig.update_traces(row=2, col=1, showscale=False)
@@ -631,7 +632,7 @@ class DM(State):
 
     def __init__(
         self,
-        modes: Sequence[int, ...] = (),
+        modes: Sequence[int] = (),
         representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
@@ -672,6 +673,12 @@ class DM(State):
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM(modes, Bargmann(*wigner_to_bargmann_rho(cov, means)), name)
+
+    def normalize(self) -> DM:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        return self / self.probability
 
     @property
     def _probabilities(self) -> RealVector:
@@ -838,6 +845,12 @@ class Ket(State):
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
         return Ket(modes, coeff * Bargmann(*wigner_to_bargmann_psi(cov, means)), name)
+
+    def normalize(self) -> Ket:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1
+        """
+        return self / math.sqrt(self.probability)
 
     @property
     def _probabilities(self) -> RealVector:

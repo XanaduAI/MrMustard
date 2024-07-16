@@ -107,7 +107,10 @@ class TestUnitary:
 
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
-        should_be_identity = gate >> gate.inverse()
+        gate_inv = gate.inverse()
+        gate_inv_inv = gate_inv.inverse()
+        assert gate_inv_inv == gate
+        should_be_identity = gate >> gate_inv
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
 

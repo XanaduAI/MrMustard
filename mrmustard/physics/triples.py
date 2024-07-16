@@ -491,8 +491,8 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    eta1 = math.diag(math.sqrt(eta)).reshape((n_modes, n_modes))
-    eta2 = math.eye(n_modes) - math.diag(eta).reshape((n_modes, n_modes))
+    eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
+    eta2 = math.eye(n_modes, math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
 
     A = math.block(
         [
@@ -533,9 +533,8 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
             raise ValueError(msg)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    g1 = math.diag(math.astensor([1 / math.sqrt(g)])).reshape((n_modes, n_modes))
-    g2 = math.diag(math.astensor([1 - 1 / g])).reshape((n_modes, n_modes))
-
+    g1 = math.reshape(math.diag(1 / math.sqrt(g)), (n_modes, n_modes))
+    g2 = math.reshape(math.diag(1 - 1 / g), (n_modes, n_modes))
     A = math.block(
         [
             [O_n, g1, g2, O_n],
@@ -584,7 +583,7 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
     """
     hbar = settings.HBAR
     Id = np.eye(n_modes, dtype=np.complex128)
-    e = np.exp(1j * phi / 2)
+    e = np.exp(-1j * phi + 1j * np.pi / 2)
     A = np.kron(
         [
             [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
