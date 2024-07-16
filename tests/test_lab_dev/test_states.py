@@ -746,14 +746,14 @@ class TestQuadratureEigenstate:
     Tests for the ``QuadratureEigenstate`` class.
     """
 
-    modes = [[0, 1], [1, 2], [1, 5]]
+    modes = [[0, 1], [1, 2], [5, 1]]
 
     @pytest.mark.parametrize("modes", modes)
     def test_init(self, modes):
         state = QuadratureEigenstate(modes)
-
+        modes = [modes] if not isinstance(modes, list) else sorted(modes)
         assert state.name == "QuadratureEigenstate"
-        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert state.modes == modes
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="Length of ``x``"):
