@@ -296,13 +296,12 @@ class PolyExpBase(Ansatz):
                 A_bar,
                 b_bar,
                 complex(1),
-                (batch_size,) + (np.sum(shape_beta),) * dim_alpha + shape_beta,
+                (batch_size,) + (math.sum(shape_beta),) * dim_alpha + shape_beta,
             )
             poly_bar = math.moveaxis(poly_bar, 0, dim_alpha)
-            c_decomp = np.sum(
+            c_decomp = math.sum(
                 poly_bar * self.array,
-                axis=tuple(np.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape))),
-            )
+                axes=math.arange(len(poly_bar.shape) - dim_beta, len(poly_bar.shape),dtype=math.int32).tolist())
             c_decomp = math.moveaxis(c_decomp, -1, 0)
 
             A_decomp = math.block(
@@ -310,12 +309,12 @@ class PolyExpBase(Ansatz):
                     [
                         self.mat[..., :dim_alpha, :dim_alpha],
                         math.outer(
-                            math.ones(batch_size), math.eye((dim_alpha), dtype=self.mat.dtype)
+                            math.ones(batch_size,dtype=self.mat.dtype), math.eye(dim_alpha, dtype=self.mat.dtype)
                         ),
                     ],
                     [
                         math.outer(
-                            math.ones(batch_size), math.eye((dim_alpha), dtype=self.mat.dtype)
+                            math.ones(batch_size,dtype=self.mat.dtype), math.eye((dim_alpha), dtype=self.mat.dtype)
                         ),
                         math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
                     ],
@@ -577,19 +576,19 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         batch_size = self.batch_size
         batch_size_arg = z.shape[0]
 
-        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]
+        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
         # z = z[..., None, :]
 
-        A_part = np.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axis=(-1, -2))
-        b_part = np.sum(self.b[..., :dim_alpha] * z[..., None, :], axis=-1)
+        A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
+        b_part = math.sum(self.b[..., :dim_alpha] * z[..., None, :], axes=[-1])
 
-        exp_sum = np.exp(1 / 2 * A_part + b_part)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)
         if dim_beta == 0:
-            val = np.sum(exp_sum * self.c, axis=-1)
+            val = math.sum(exp_sum * self.c, axes=[-1])
         else:
             b_poly = math.astensor(
                 [
-                    np.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axis=-1)
+                    math.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axes=[-1])
                     + self.b[..., dim_alpha:]
                     for i in range(batch_size_arg)
                 ]
@@ -606,10 +605,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
             poly = math.transpose(
                 poly,
-                perm=math.concat((math.astensor([1, 0]), math.arange(2, 2 + dim_beta)), axis=0),
+                perm=math.reshape(math.block([[math.astensor((1,0),dtype=math.int32), math.arange(2, 2 + dim_beta,dtype=math.int32)]]),-1),
             )
-            val = np.sum(
-                exp_sum * np.sum(poly * self.c, axis=tuple(np.arange(2, 2 + dim_beta))), axis=-1
+            val = math.sum(
+                exp_sum * math.sum(poly * self.c, axes=math.arange(2, 2 + dim_beta,dtype=math.int32).tolist()), axes=[-1]
             )
         return val
 
