@@ -740,6 +740,7 @@ class TestNumber:
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
 
+
 class TestQuadratureEigenstate:
     r"""
     Tests for the ``QuadratureEigenstate`` class.
@@ -750,7 +751,7 @@ class TestQuadratureEigenstate:
     phi = [3, [4], 1]
 
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
-    def test_init(self, modes, r, phi):
+    def test_init(self, modes, x, phi):
         state = QuadratureEigenstate(modes, x, phi)
 
         assert state.name == "QuadratureEigenstate"
@@ -786,6 +787,7 @@ class TestQuadratureEigenstate:
     # def test_representation_error(self):
     #     with pytest.raises(ValueError):
     #         TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+
 
 class TestSqueezedVacuum:
     r"""
