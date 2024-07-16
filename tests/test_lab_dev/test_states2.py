@@ -47,6 +47,7 @@ from mrmustard.lab_dev.wires import Wires
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
+
 class TestQuadratureEigenstate:
     r"""
     Tests for the ``QuadratureEigenstate`` class.
@@ -89,10 +90,10 @@ class TestQuadratureEigenstate:
             QuadratureEigenstate(modes=[0], x=[0.1, 0.2]).representation
 
     def test_with_coherent(self):
-        val0 = Coherent([0],0,0) >> QuadratureEigenstate([0],0,0).dual
-        val1 = Coherent([0],1,0) >> QuadratureEigenstate([0],2,0).dual
-        assert np.allclose(val0,val1)
+        val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
+        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
+        assert np.allclose(val0, val1)
 
-        val0 = Coherent([0],1,0) >> QuadratureEigenstate([0],0,0).dual
-        val1 = Coherent([0],1,0) >> QuadratureEigenstate([0],2,0).dual
-        assert val1>val0
+        val0 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 0, 0).dual
+        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
+        assert val1 > val0
