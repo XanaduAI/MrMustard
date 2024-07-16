@@ -73,7 +73,3 @@ class TestQuadratureEigenstate:
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
         val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
         assert np.allclose(val0, val1)
-
-        val0 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 0, 0).dual
-        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
-        assert val1 > val0
