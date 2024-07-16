@@ -997,3 +997,4 @@ class TestVisualization:
     def test_visualize_dm_error(self):
         with pytest.raises(ValueError):
             Coherent([0, 1]).visualize_dm(20)
+            
