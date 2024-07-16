@@ -746,7 +746,7 @@ class TestQuadratureEigenstate:
     Tests for the ``QuadratureEigenstate`` class.
     """
 
-    modes = [[0, 1], [1, 2], [1, 5]]
+    modes = [[1], [0, 1], [1, 5]]
     x = [[1], 1, [2]]
     phi = [3, [4], 1]
 
