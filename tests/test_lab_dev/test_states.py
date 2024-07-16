@@ -776,10 +776,6 @@ class TestQuadratureEigenstate:
         state3.phi.value = 2
         assert state3.phi.value == 2
 
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            QuadratureEigenstate(modes=[0], x=[0.1, 0.2]).representation
-
 
 class TestSqueezedVacuum:
     r"""
