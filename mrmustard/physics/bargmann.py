@@ -111,7 +111,7 @@ def Au2Symplectic(A):
     Au : in bra-ket order
     """
     # A represents the A matrix corresponding to unitary U
-    A = A *(1.0+0*1j)
+    A = A * (1.0 + 0 * 1j)
     m = A.shape[-1]
     m = m // 2
 
