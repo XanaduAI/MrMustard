@@ -645,7 +645,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
 
         def mulA(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = np.block(
+            A3 = math.block(
                 [
                     [
                         A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
@@ -655,11 +655,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     [
                         A1[dim_alpha:, :dim_alpha],
                         A1[dim_alpha:, dim_alpha:],
-                        np.zeros((dim_beta1, dim_beta2)),
+                        math.zeros((dim_beta1, dim_beta2),dtype=math.complex128),
                     ],
                     [
                         A2[dim_alpha:, :dim_alpha],
-                        np.zeros((dim_beta2, dim_beta1)),
+                        math.zeros((dim_beta2, dim_beta1),dtype=math.complex128),
                         A2[dim_alpha:, dim_alpha:],
                     ],
                 ]
@@ -667,11 +667,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def mulb(b1, b2, dim_alpha):
-            b3 = np.concatenate((b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]))
+            b3 = math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]])
             return b3
 
         def mulc(c1, c2):
-            c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
+            c3 = math.reshape(math.outer(c1, c2),(c1.shape + c2.shape))
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
@@ -685,7 +685,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             dim_alpha = dim_alpha1
 
             new_a = [
-                mulA(A1, A2, dim_alpha, dim_beta1, dim_beta2)
+                mulA(math.cast(A1,"complex128"), math.cast(A2, "complex128"), dim_alpha, dim_beta1, dim_beta2)
                 for A1, A2 in itertools.product(self.A, other.A)
             ]
             new_b = [mulb(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
@@ -712,7 +712,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
 
         def divA(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = np.block(
+            A3 = math.block(
                 [
                     [
                         A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
@@ -722,11 +722,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     [
                         A1[dim_alpha:, :dim_alpha],
                         A1[dim_alpha:, dim_alpha:],
-                        np.zeros((dim_beta1, dim_beta2)),
+                        math.zeros((dim_beta1, dim_beta2),dtype=math.complex128),
                     ],
                     [
                         A2[dim_alpha:, :dim_alpha],
-                        np.zeros((dim_beta2, dim_beta1)),
+                        math.zeros((dim_beta2, dim_beta1),dtype=math.complex128),
                         A2[dim_alpha:, dim_alpha:],
                     ],
                 ]
@@ -734,11 +734,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def divb(b1, b2, dim_alpha):
-            b3 = np.concatenate((b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]))
+            b3 = math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]])
             return b3
 
         def divc(c1, c2):
-            c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
+            c3 = math.reshape(math.outer(c1, c2),(c1.shape + c2.shape))
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
@@ -752,7 +752,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 dim_alpha = dim_alpha1
 
                 new_a = [
-                    divA(A1, -A2, dim_alpha, dim_beta1, dim_beta2)
+                    divA(math.cast(A1, "complex128"), -math.cast(A2, "complex128"), dim_alpha, dim_beta1, dim_beta2)
                     for A1, A2 in itertools.product(self.A, other.A)
                 ]
                 new_b = [divb(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
@@ -782,30 +782,30 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
 
         def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
-            A3 = np.block(
+            A3 = math.block(
                 [
                     [
                         A1[:dim_alpha1, :dim_alpha1],
-                        np.zeros((dim_alpha1, dim_alpha2)),
+                        math.zeros((dim_alpha1, dim_alpha2),dtype=math.complex128),
                         A1[:dim_alpha1, dim_alpha1:],
-                        np.zeros((dim_alpha1, dim_beta2)),
+                        math.zeros((dim_alpha1, dim_beta2),dtype=math.complex128),
                     ],
                     [
-                        np.zeros((dim_alpha2, dim_alpha1)),
+                        math.zeros((dim_alpha2, dim_alpha1),dtype=math.complex128),
                         A2[:dim_alpha2:, :dim_alpha2],
-                        np.zeros((dim_alpha2, dim_beta1)),
+                        math.zeros((dim_alpha2, dim_beta1),dtype=math.complex128),
                         A2[:dim_alpha2, dim_alpha2:],
                     ],
                     [
                         A1[dim_alpha1:, :dim_alpha1],
-                        np.zeros((dim_beta1, dim_alpha2)),
+                        math.zeros((dim_beta1, dim_alpha2),dtype=math.complex128),
                         A1[dim_alpha1:, dim_alpha1:],
-                        np.zeros((dim_beta1, dim_beta2)),
+                        math.zeros((dim_beta1, dim_beta2),dtype=math.complex128),
                     ],
                     [
-                        np.zeros((dim_beta2, dim_alpha1)),
+                        math.zeros((dim_beta2, dim_alpha1),dtype=math.complex128),
                         A2[dim_alpha2:, :dim_alpha2],
-                        np.zeros((dim_beta2, dim_beta1)),
+                        math.zeros((dim_beta2, dim_beta1),dtype=math.complex128),
                         A2[dim_alpha2:, dim_alpha2:],
                     ],
                 ]
@@ -813,13 +813,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def andb(b1, b2, dim_alpha1, dim_alpha2):
-            b3 = np.concatenate(
-                (b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:])
-            )
+            b3 = math.block([[b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:]]])
             return b3
 
         def andc(c1, c2):
-            c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
+            c3 = math.reshape(math.outer(c1, c2),(c1.shape + c2.shape))
             return c3
 
         dim_beta1, _ = self.polynomial_degrees
@@ -829,7 +827,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         dim_alpha2 = other.A.shape[-1] - dim_beta2
 
         As = [
-            andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2)
+            andA(math.cast(A1, "complex128"), math.cast(A2, "complex128"), dim_alpha1, dim_alpha2, dim_beta1, dim_beta2)
             for A1, A2 in itertools.product(self.A, other.A)
         ]
         bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
