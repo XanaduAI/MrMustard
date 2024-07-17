@@ -80,7 +80,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
             [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)],
         ]
     )
-    I = math.eye(N, dtype="complex128")
+    I = math.eye(N, dtype=math.complex128)
     o = math.zeros_like(I)
     R = math.block(
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
@@ -93,7 +93,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     )
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
-    return A, B, math.cast(C, "complex128")
+    return A, B, math.cast(C, math.complex128)
 
 
 def wigner_to_bargmann_U(X, d):
@@ -111,7 +111,7 @@ def Au2Symplectic(A):
     Au : in bra-ket order
     """
     # A represents the A matrix corresponding to unitary U
-    A = A * (1.0 + 0 * 1j)
+    A = A * (1.0 + 0.0 * 1j)
     m = A.shape[-1]
     m = m // 2
 
@@ -132,8 +132,8 @@ def Au2Symplectic(A):
         / np.sqrt(2)
         * math.block(
             [
-                [math.eye(m, dtype="complex64"), math.eye(m, dtype="complex64")],
-                [-1j * math.eye(m, dtype="complex64"), 1j * math.eye(m, dtype="complex64")],
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
             ]
         )
     )
@@ -156,8 +156,8 @@ def Symplectic2Au(S):
         / np.sqrt(2)
         * math.block(
             [
-                [math.eye(m, dtype="complex128"), math.eye(m, dtype="complex128")],
-                [-1j * math.eye(m, dtype="complex128"), 1j * math.eye(m, dtype="complex128")],
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
             ]
         )
     )

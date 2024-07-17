@@ -209,10 +209,10 @@ class Unitary(Operation):
         Returns the symplectic representation
         """
         batch = self.representation.A.shape[0]
-        m = self.representation.A.shape[-1]
-        S = math.zeros([batch, m, m])
+        S = []
         for bat in range(batch):
-            S[bat, :, :] = Au2Symplectic(self.representation.A[bat, :, :])
+            temp = Au2Symplectic(self.representation.A[bat, :, :])
+            S.append(temp)
         return S
 
     @classmethod
