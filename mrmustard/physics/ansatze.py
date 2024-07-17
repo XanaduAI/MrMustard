@@ -667,7 +667,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def mulb(b1, b2, dim_alpha):
-            b3 = math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]])
+            b3 = math.reshape(math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),-1)
             return b3
 
         def mulc(c1, c2):
@@ -740,7 +740,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def divb(b1, b2, dim_alpha):
-            b3 = math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]])
+            b3 = math.reshape(math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),-1)
             return b3
 
         def divc(c1, c2):
@@ -825,7 +825,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return A3
 
         def andb(b1, b2, dim_alpha1, dim_alpha2):
-            b3 = math.block([[b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:]]])
+            b3 = math.reshape(math.block([[b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:]]]),-1)
             return b3
 
         def andc(c1, c2):
