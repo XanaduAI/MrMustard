@@ -219,13 +219,13 @@ class Unitary(Operation):
     def from_symplectic_directly(cls, modes, S) -> Unitary:
         r"""
         A simple method for initializing using symplectic representation
-        modes: the modes that we want the unitary to act on
+        modes: the modes that we want the unitary to act on (should be a list of int)
         S: the symplectic representation (in XXPP order)
         """
         m = len(S)
         A = Symplectic2Au(S)
-        b = [0] * m
-        c = 1  # change after poly*exp ansatz
+        b = math.zeros(m, dtype="complex128")
+        c = complex(1)  # change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
         _, _, c_prime = v.bargmann
@@ -287,3 +287,18 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
+
+    # def random(cls, wires, max_r=1.0):
+    #     r"""
+    #     A random channel without displacement
+    #     """
+    #     m = len(wires)
+    #     S = math.random_symplectic(m, max_r)
+    #     modes = wires # replace everywhere
+    #     U = Unitary.random(modes = range(3*m))
+    #     vacuum_ancilla = Vacuum(range(2*m))
+    #     u_psi= vacuum_ancilla >> U
+    #     A = u_psi.representation # change name
+    #     B = u_psi.adjoint.representation
+    #     C = B[range(2*m)]@A[range(2*m)] # voila
+    #     return Channel.from_arguments(C, Wires(modes,modes,modes,modes))
