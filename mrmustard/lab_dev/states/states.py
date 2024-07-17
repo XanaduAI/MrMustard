@@ -97,7 +97,9 @@ class Coherent(Ket):
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-        self._representation = Bargmann.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y)
+        self._representation = Bargmann.from_function(
+            fn=triples.coherent_state_Abc, x=self.x, y=self.y
+        )
 
 
 class DisplacedSqueezed(Ket):
@@ -148,16 +150,20 @@ class DisplacedSqueezed(Ket):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         super().__init__(modes=modes, name="DisplacedSqueezed")
-        params = reshape_params(
-            len(modes), x=x, y=y, r=r, phi=phi
-        )
+        params = reshape_params(len(modes), x=x, y=y, r=r, phi=phi)
         xs, ys, rs, phis = list(params)
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Bargmann.from_function(fn=triples.displaced_squeezed_vacuum_state_Abc, x=self.x, y=self.y, r=self.r, phi=self.phi)
+        self._representation = Bargmann.from_function(
+            fn=triples.displaced_squeezed_vacuum_state_Abc,
+            x=self.x,
+            y=self.y,
+            r=self.r,
+            phi=self.phi,
+        )
 
 
 class Number(Ket):
@@ -274,7 +280,9 @@ class SqueezedVacuum(Ket):
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Bargmann.from_function(fn=triples.squeezed_vacuum_state_Abc, r=self.r, phi=self.phi)
+        self._representation = Bargmann.from_function(
+            fn=triples.squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
+        )
 
 
 class TwoModeSqueezedVacuum(Ket):
@@ -315,7 +323,9 @@ class TwoModeSqueezedVacuum(Ket):
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Bargmann.from_function(fn=triples.two_mode_squeezed_vacuum_state_Abc, r=self.r, phi=self.phi)
+        self._representation = Bargmann.from_function(
+            fn=triples.two_mode_squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
+        )
 
 
 class Vacuum(Ket):
@@ -391,7 +401,7 @@ class Thermal(DM):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ) -> None:
         super().__init__(modes=modes, name="Thermal")
-        nbars, = list(reshape_params(len(modes), nbar=nbar))
+        (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
 
         self._representation = Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar)

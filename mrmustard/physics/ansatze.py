@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import Any, Callable, Union, Optional
 
 import numpy as np
@@ -313,9 +314,9 @@ class PolyExpBase(Ansatz):
 
         if self._array is None or Variable in param_types:
             mat, vec, array = self._fn(**params)
-            self._mat = mat
-            self._vec = vec
-            self._array = array
+            self.mat = mat
+            self.vec = vec
+            self.array = array
 
     def _order_batch(self):
         r"""

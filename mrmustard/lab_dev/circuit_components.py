@@ -151,7 +151,7 @@ class CircuitComponent:
         """
         if parameter.value.shape != ():
             length = sum(parameter.value.shape)
-            if length!= 1 and length != len(self.modes):
+            if length != 1 and length != len(self.modes):
                 msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
                 raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)
