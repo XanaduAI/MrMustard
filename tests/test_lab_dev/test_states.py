@@ -16,8 +16,6 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-import json
-import os
 import numpy as np
 import pytest
 
