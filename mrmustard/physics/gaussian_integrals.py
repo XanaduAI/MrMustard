@@ -252,7 +252,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
         The reordered ``(A,b,c)`` triple
     """
     A, b, c = Abc
-    
+
     if order:
         A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
         b = math.gather(b, order, axis=-1)
