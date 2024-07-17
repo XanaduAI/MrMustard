@@ -18,7 +18,7 @@ This module contains the classes for the available representations.
 """
 
 from __future__ import annotations
-
+from warnings import warn
 from abc import ABC, abstractmethod
 from typing import Iterable, Union
 import os
@@ -70,6 +70,7 @@ class Representation(ABC):
         Reorders the representation indices.
         """
 
+    @classmethod
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
@@ -338,7 +339,9 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(
+                Abci, idx_z, idx_zconj, measure=-1.0
+            )
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -415,7 +418,9 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+        ax.imshow(
+            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
+        )
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -490,7 +495,9 @@ class Bargmann(Representation):
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                    Abc.append(
+                        contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
+                    )
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -580,7 +587,7 @@ class Fock(Representation):
         return self.array
 
     @property
-    def bargmann(self) -> tuple:
+    def triple(self) -> tuple:
         r"""
         The data of the original Bargmann representation if it exists
         """
@@ -672,7 +679,9 @@ class Fock(Representation):
         batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+                batched_array.append(
+                    math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
+                )
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
@@ -690,7 +699,11 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [
+                i + 1
+                for i in range(len(self.array.shape) - 1)
+                if i not in idxs1 + idxs2
+            ]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -743,9 +756,19 @@ class Fock(Representation):
         length = len(self.array.shape) - 1
         shape = (shape,) * length if isinstance(shape, int) else shape
         if len(shape) != length:
-            msg = f"Expected ``shape`` of length {length}, "
-            msg += f"found shape of length {len(shape)}."
+            msg = f"Expected shape of length {length}, "
+            msg += f"given shape has length {len(shape)}."
             raise ValueError(msg)
+
+        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+            warn(
+                "Warning: the fock array is being padded with zeros. This is a sign that some other array is too large."
+            )
+            padded = math.pad(
+                self.array,
+                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+            )
+            return self.from_ansatz(ArrayAnsatz(padded))
 
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
@@ -761,4 +784,6 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
+        return self.from_ansatz(
+            ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0))
+        )

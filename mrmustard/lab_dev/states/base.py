@@ -414,13 +414,17 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(
+            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
+        )
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(
+            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
+        )
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -515,10 +519,14 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y=dict(
+                show=True, usecolormap=True, highlightcolor="red", project_y=False
+            )
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x=dict(
+                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
+            )
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -560,7 +568,9 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(
+                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
+            )
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -631,7 +641,9 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=0.999, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(
+        self, max_prob=0.999, max_shape=50, respect_fock_shape=True
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -803,12 +815,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [
+            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
+        ]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            representation, wires, self.name
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(representation, wires, self.name)  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -840,7 +852,9 @@ class Ket(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=0.999, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(
+        self, max_prob=0.999, max_shape=50, respect_fock_shape=True
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -857,8 +871,6 @@ class Ket(State):
         try:  # fock
             shape = self._representation.array.shape[1:]
         except AttributeError:  # bargmann
-            if None not in self.fock_shape:  # try the fock_shape if ready
-                return tuple(self.fock_shape)
             repr = self.representation.conj() & self.representation
             shape = autoshape_numba(
                 math.asnumpy(repr.A[0]),
@@ -987,7 +999,9 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
+    def __rshift__(
+        self, other: CircuitComponent | Scalar
+    ) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which

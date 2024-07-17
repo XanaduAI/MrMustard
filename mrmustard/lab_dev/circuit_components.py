@@ -82,7 +82,12 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
+        if (
+            ob != modes_out_bra
+            or ib != modes_in_bra
+            or ok != modes_out_ket
+            or ik != modes_in_ket
+        ):
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -181,7 +186,9 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -235,7 +242,9 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -276,7 +285,7 @@ class CircuitComponent:
         return sorted(self.wires.modes)
 
     @property
-    def n_modes(self) -> list[int]:
+    def n_modes(self) -> int:
         r"""
         The number of modes spanned by this component across all wires.
         """
@@ -385,7 +394,9 @@ class CircuitComponent:
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
-                raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
+                raise ValueError(
+                    f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``."
+                )
         ret = self._light_copy()
         ret._wires = Wires(
             modes_out_bra=set(modes) if ob else set(),
@@ -410,14 +421,19 @@ class CircuitComponent:
         """
         if isinstance(shape, int):
             shape = (shape,) * self.representation.ansatz.num_vars
-        shape = shape or self.auto_shape()
-        if len(shape) != len(self.fock_shape):
+        auto_shape = self.auto_shape()
+        shape = shape or auto_shape
+
+        if len(shape) != len(auto_shape):
             raise ValueError(
-                f"Expected Fock shape of length {len(self.fock_shape)}, got length {len(shape)}"
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
             )
+
         try:
             As, bs, cs = self.bargmann
-            array = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+            array = [
+                math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)
+            ]
         except AttributeError:
             array = self.representation.reduce(shape).array
         return array
@@ -455,9 +471,7 @@ class CircuitComponent:
         If the component is not a State then the shape is a tuple of ``AUTOSHAPE_MAX``.
         """
         MAX = settings.AUTOSHAPE_MAX
-        new_fock_shape = [s if s else MAX for s in self.fock_shape]
-        self.fock_shape = new_fock_shape
-        return tuple(new_fock_shape)
+        return tuple(s if s else MAX for s in self.fock_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -507,7 +521,9 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -524,10 +540,22 @@ class CircuitComponent:
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
-        It allows for a more custom way of contracting components.
+        It allows for contracting components exactly as specified.
+
+        For example, a coherent state can be input to an attenuator, but
+        the attenuator has two inputs: on the ket and the bra side.
+        The ``>>`` operator would automatically add the adjoint of the coherent
+        state on the bra side of the input of the attenuator, but the ``@`` operator
+        instead does not:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Attenuator
+            >>> coh = Coherent([0], 1.0)
+            >>> att = Attenuator([0], 0.5)
+            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
         try:
-            return other._rrshift_(self)
+            return other._rmatmul_(self)
         except AttributeError:
             pass
         if isinstance(other, (numbers.Number, np.ndarray)):
@@ -536,7 +564,9 @@ class CircuitComponent:
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
-        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+        if isinstance(self.representation, Bargmann) and isinstance(
+            other.representation, Bargmann
+        ):
             rep = self.representation[idx_z] @ other.representation[idx_zconj]
             rep = rep.reorder(perm) if perm else rep
             return CircuitComponent._from_attributes(rep, wires_result, None)
@@ -566,7 +596,9 @@ class CircuitComponent:
         """
         return self * other
 
-    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
+    def __rshift__(
+        self, other: CircuitComponent | numbers.Number
+    ) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
         It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
@@ -592,13 +624,13 @@ class CircuitComponent:
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add missing components. Use ``@`` and specify all the components."
-        )
+        msg += "whether or where to add missing components. Use ``@`` and specify all the components."
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        both_sides = (
+            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        )
         if only_ket or only_bra or both_sides:
             return self._rshift_return(self @ other)
 
@@ -613,9 +645,7 @@ class CircuitComponent:
             return self._rshift_return((self @ other) @ other.adjoint)
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
+        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
         raise ValueError(msg)
 
     def _rshift_return(
@@ -634,8 +664,8 @@ class CircuitComponent:
         no wires and the component is returned as a scalar. Note that there is an edge case if the
         object on the left happens to have the ``__rshift__`` method, but it's not the one we want
         (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with
-        types ``np.ndarray >> CircuitComponent`` the method ``__rrshift__`` will not be called, and
-        something else will be returned.
+        types ``np.ndarray >> CircuitComponent`` the method ``CircuitComponent.__rrshift__`` will
+        not be called, and something else will be returned.
         """
         ret = self * other
         try:
@@ -663,7 +693,9 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "")
+            .replace("</body>", "")
+            .replace("h1", "h3")
         )
 
         rep_temp = (
