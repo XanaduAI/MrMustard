@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import Any, Callable, Union, Optional
 
 import numpy as np
