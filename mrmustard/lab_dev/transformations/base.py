@@ -208,12 +208,8 @@ class Unitary(Operation):
         r"""
         Returns the symplectic representation
         """
-        batch = self.representation.A.shape[0]
-        S = []
-        for bat in range(batch):
-            temp = Au2Symplectic(self.representation.A[bat, :, :])
-            S.append(temp)
-        return S
+        batch_size = self.representation.ansatz.batch_size
+        return [Au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
 
     @classmethod
     def from_symplectic_directly(cls, modes, S) -> Unitary:
