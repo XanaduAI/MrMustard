@@ -15,6 +15,7 @@
 """IPython widgets for various objects in MrMustard."""
 
 import ipywidgets as widgets
+import numpy as np
 import plotly.graph_objs as go
 
 from .css import FOCK_CSS, WIRES_CSS
@@ -114,7 +115,13 @@ def bargmann(rep, batch_idx=None):
     scalar_c = f"<div>{c}</div>"
 
     header_w = widgets.HTML(
-        "<h1>Bargmann Representation</h1>" f"<h3>Ansatz: {rep.ansatz.__class__.__qualname__}</h3>"
+        f"""
+        <h1>Bargmann Representation</h1>
+        <div style="font-weight: bold;">
+            Ansatz: {rep.ansatz.__class__.__qualname__}</br>
+            Eigvals of A: {np.linalg.eigvals(A)}
+        </div>
+        """
     )
     triple_w = widgets.HTML(
         f"""
@@ -134,121 +141,69 @@ def bargmann(rep, batch_idx=None):
         """
     )
 
-    return widgets.VBox([header_w, triple_w])
+    return widgets.VBox([header_w, triple_w], layout={"max_width": "50%"})
 
 
 def wires(obj):
     """Create a widget to display a Wires objects."""
-    height_line_ob = "4px" if obj.output.bra else "2px"
-    height_line_ib = "4px" if obj.input.bra else "2px"
-    height_line_ok = "4px" if obj.output.ket else "2px"
-    height_line_ik = "4px" if obj.input.ket else "2px"
+    modes = [obj.output.bra, obj.input.bra, obj.output.ket, obj.input.ket]
+    labels = ["out bra", "in bra", "out ket", "in ket"]
+    colors = ["black" if m else "gainsboro" for m in modes]
 
-    color_ob = "black" if obj.output.bra else "gainsboro"
-    color_ib = "black" if obj.input.bra else "gainsboro"
-    color_ok = "black" if obj.output.ket else "gainsboro"
-    color_ik = "black" if obj.input.ket else "gainsboro"
+    ##### The wires graphic #####
 
-    max_n_modes = 5
-    n_modes = len(obj.modes) if len(obj.modes) < max_n_modes else max_n_modes
-    dots = "" if n_modes < max_n_modes else ", ..."
+    def mode_to_str(m):
+        max_modes = 3
+        result = ", ".join(list(map(str, m.modes))[:max_modes])
+        return (result + ", ...") if len(m) > max_modes else result
 
-    modes_ob = ", ".join(str(s) for s in list(obj.output.bra.modes)[:n_modes])
-    modes_ib = ", ".join(str(s) for s in list(obj.input.bra.modes)[:n_modes])
-    modes_ok = ", ".join(str(s) for s in list(obj.output.ket.modes)[:n_modes])
-    modes_ik = ", ".join(str(s) for s in list(obj.input.ket.modes)[:n_modes])
+    mode_div = """
+    <div class="braket">
+        <div style="color: {color}; font-size: 13px; padding-left: 5px">{label}: {mode}</div>
+        <div class="line" style="background-color: {color}; border-top-color: {color}; height: 1px"></div>
+    </div>
+    """
 
-    modes_ob += "" if not modes_ob else dots
-    modes_ib += "" if not modes_ib else dots
-    modes_ok += "" if not modes_ok else dots
-    modes_ik += "" if not modes_ik else dots
+    wire_labels = [
+        mode_div.format(color=c, label=l, mode=mode_to_str(m))
+        for m, l, c in zip(modes, labels, colors)
+    ]
 
-    n_grid_items = sum(1 if m else 0 for m in [modes_ob, modes_ib, modes_ok, modes_ik])
-    n_grid_rows = 1 if n_grid_items < 3 else 2
-    n_grid_cols = 1 if n_grid_items == 1 else 2
-
-    style_widget = widgets.HTML(WIRES_CSS.format(n_grid_cols, n_grid_rows))
-    image_widget = widgets.HTML(
-        f"""
-        <h1>Wires</h1>
-            <div class="container-wires">
-            <div class="in">
-                <div class="bra">
-                <div class="line" style="background-color: {color_ib}; height: {height_line_ib}"></div>
-                <p class="text-wires type" style="color: {color_ib}">in bra</p>
-                <p class="text-wires modes">{modes_ib}</p>
-                </div>
-                <div class="ket">
-                <div class="line" style="background-color: {color_ik}; height: {height_line_ik}"></div>
-                <p class="text-wires type" style="color: {color_ik}">in ket</p>
-                <p class="text-wires modes">{modes_ik}</p>
-                </div>
-            </div>
-
-            <div class="square"></div>
-
-            <div class="out">
-                <div class="bra">
-                <div class="line" style="background-color: {color_ob}; height: {height_line_ob}"></div>
-                <p class="text-wires type" style="color: {color_ob}">out bra</p>
-                <p class="text-wires modes">{modes_ob}</p>
-                </div>
-                <div class="ket">
-                <div class="line" style="background-color: {color_ok}; height: {height_line_ok}"></div>
-                <p class="text-wires type" style="color: {color_ok}">out ket</p>
-                <p class="text-wires modes">{modes_ok}</p>
-                </div>
-            </div>
-        </div>
-        """
-    )
+    ##### The index table #####
 
     wire_tables = []
-    for (
-        mode,
-        in_out,
-        bra_ket,
-    ) in [
-        (modes_ob, "output", "bra"),
-        (modes_ib, "input", "bra"),
-        (modes_ok, "output", "ket"),
-        (modes_ik, "input", "ket"),
-    ]:
+    for mode, label in zip(modes, labels):
         if not mode:
             continue
 
-        bra_ket_obj = getattr(getattr(obj, in_out), bra_ket)
-        table_data = "\n".join(
-            [
-                "<tr>"
-                f'<td class="td-wires">{m}</td>'
-                f'<td class="td-wires">{bra_ket_obj[m].indices[0]}</td>'
-                "</tr>"
-                for m in bra_ket_obj.modes
-            ]
-        )
-        wire_tables.append(
-            f"""
-            <div class="grid-item-wires">
-                <div class="grid-item-type">{in_out[:-3]} {bra_ket}</div>
-                <div class="table-container-wires">
-                    <table class="table-wires">
-                        <thead>
-                            <tr>
-                            <th class="th-wires">mode</th>
-                            <th class="th-wires">index</th>
-                            </tr>
-                        </thead>
-                        <tr>{table_data}</tr>
-                    </table>
-                </div>
-            </div>
-            """
-        )
+        title_row = f'<td rowspan="{len(mode)}">{label}</td>'
+        table_data = [f"<td>{m}</td><td>{mode[m].indices[0]}</td>" for m in mode.modes]
+        wire_tables.append(title_row + "</tr><tr>".join(table_data))
 
-    tables_html = "\n".join(wire_tables)
-    tables_widget = widgets.HTML(f'<div class="grid-container">{tables_html}</div>')
-    return widgets.VBox([style_widget, image_widget, tables_widget])
+    index_table = f"""
+    <table>
+        <tr>
+            <th>Set</th>
+            <th>Mode</th>
+            <th>Index</th>
+        </tr>
+        <tr>
+            {"</tr><tr>".join(wire_tables)}
+        </tr>
+    </table>
+    """
+
+    ##### The final widget #####
+
+    return widgets.HTML(
+        f"""
+        {WIRES_CSS}
+        <div class="modes-grid">
+            <div class="square">Wires</div>
+            {"".join(wire_labels)}
+        </div></br>{index_table}
+        """
+    )
 
 
 def state(obj, is_ket=False, is_fock=False):
