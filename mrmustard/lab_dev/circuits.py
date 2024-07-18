@@ -39,9 +39,6 @@ class Circuit:
     can vary significantly. The ``path`` attribute is used to specify the order in which the
     components are contracted.
 
-    We supply an automatic path generator that uses a graph representation of the circuit
-    and a branch-and-bound algorithm to find the optimal path. The path can also be set manually.
-
     .. code-block::
 
         >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit

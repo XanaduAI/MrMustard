@@ -461,6 +461,7 @@ class Bargmann(Representation):
         ..code-block::
 
         >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
         >>> rep1 = Bargmann(*vacuum_state_Abc(1))
         >>> rep2 = Bargmann(*displacement_gate_Abc(1))
         >>> rep3 = rep1[0] @ rep2[1]
