@@ -406,7 +406,7 @@ class CircuitComponent:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
             batched: Whether the returned representation is batched or not. If ``False`` (default)
-            it will squeeze the batch dimension if it is 1.
+                it will squeeze the batch dimension if it is 1.
         Returns:
             array: The Fock representation of this component.
         """
