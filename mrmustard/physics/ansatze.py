@@ -633,7 +633,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
         return val
 
-
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
