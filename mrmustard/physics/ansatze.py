@@ -686,9 +686,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         batch_abc = self.batch_size
         batch_arg = z.shape[0]
         Abc = []
-        if batch_abc == 1 and batch_arg == 1:
-            Abc.append(call_none_single(self.A[0], self.b[0], self.c[0], z[0]))
-        elif batch_abc == 1 and batch_arg > 1:
+        if batch_abc == 1 and batch_arg > 1:
             for i in range(batch_arg):
                 Abc.append(call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
         elif batch_arg == 1 and batch_abc > 1:
@@ -699,7 +697,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
         elif self.batch_size != z.shape[0]:
             raise ValueError(
-                f"Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
+                "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
             )
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
