@@ -644,7 +644,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             A new ansatz, which is a "slice" of the old one.
         """
 
-        def call_none_single(self,Ai, bi, ci, zi):
+        def call_none_single(self, Ai, bi, ci, zi):
             r"""
             Helper function for the call_none method. Returns the new triple.
             """
@@ -654,25 +654,28 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             gammagamma = np.einsum("...a,...b->...ab", gamma, gamma)
             remove_index_new = np.concatenate((zi != None, np.array([False] * dim_beta)), axis=-1)
             new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
-            remove_index_alpha_row = np.concatenate((zi != None, np.array([True] * dim_beta)))
-            remove_index_alpha_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
+
             b_alpha = np.sum(
                 np.delete(
-                    np.delete(Ai, remove_index_alpha_row, axis=0),
-                    remove_index_alpha_col,
+                    np.delete(
+                        Ai, np.concatenate((zi != None, np.array([True] * dim_beta))), axis=0
+                    ),
+                    np.concatenate((zi == None, np.array([True] * dim_beta))),
                     axis=1,
                 )
                 * gamma,
                 axis=-1,
             )
 
-            remove_index_beta_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
-            remove_index_beta_row = np.concatenate(
-                (np.array([True] * dim_zi), np.array([False] * dim_beta))
-            )
             b_beta = np.sum(
                 np.delete(
-                    np.delete(Ai, remove_index_beta_row, axis=0), remove_index_beta_col, axis=1
+                    np.delete(
+                        Ai,
+                        np.concatenate((np.array([True] * dim_zi), np.array([False] * dim_beta))),
+                        axis=0,
+                    ),
+                    np.concatenate((zi == None, np.array([True] * dim_beta))),
+                    axis=1,
                 )
                 * gamma,
                 axis=-1,
