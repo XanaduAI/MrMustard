@@ -644,7 +644,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             A new ansatz, which is a "slice" of the old one.
         """
 
-        def call_none_single(Ai, bi, ci, zi):
+        def call_none_single(self,Ai, bi, ci, zi):
+            r"""
+            Helper function for the call_none method. Returns the new triple.
+            """
             dim_zi = len(zi)
             dim_beta, _ = self.polynomial_degrees
             gamma = np.array(zi[zi != None], dtype=math.complex128)
@@ -653,32 +656,35 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
             remove_index_alpha_row = np.concatenate((zi != None, np.array([True] * dim_beta)))
             remove_index_alpha_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
-            b_alpha = np.delete(
-                np.delete(Ai, remove_index_alpha_row, axis=0),
-                remove_index_alpha_col,
-                axis=1,
+            b_alpha = np.sum(
+                np.delete(
+                    np.delete(Ai, remove_index_alpha_row, axis=0),
+                    remove_index_alpha_col,
+                    axis=1,
+                )
+                * gamma,
+                axis=-1,
             )
-            b_alpha = np.sum(b_alpha * gamma, axis=-1)
 
             remove_index_beta_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
             remove_index_beta_row = np.concatenate(
                 (np.array([True] * dim_zi), np.array([False] * dim_beta))
             )
-
-            b_beta = np.delete(
-                np.delete(Ai, remove_index_beta_row, axis=0), remove_index_beta_col, axis=1
+            b_beta = np.sum(
+                np.delete(
+                    np.delete(Ai, remove_index_beta_row, axis=0), remove_index_beta_col, axis=1
+                )
+                * gamma,
+                axis=-1,
             )
-            b_beta = np.sum(b_beta * gamma, axis=-1)
             new_b = np.delete(bi, remove_index_new, axis=0) + np.concatenate((b_alpha, b_beta))
             remove_index_gamma = np.concatenate((zi == None, np.array([True] * dim_beta)))
 
-            A_gamma = np.delete(
-                np.delete(Ai, remove_index_gamma, axis=0), remove_index_gamma, axis=1
+            A_part = np.sum(
+                np.delete(np.delete(Ai, remove_index_gamma, axis=0), remove_index_gamma, axis=1)
+                * gammagamma
             )
-            b_gamma = np.delete(bi, remove_index_gamma, axis=0)
-
-            A_part = np.sum(A_gamma * gammagamma)
-            b_part = np.sum(b_gamma * gamma)
+            b_part = np.sum(np.delete(bi, remove_index_gamma, axis=0) * gamma)
             exp_sum = np.exp(1 / 2 * A_part + b_part)
             new_c = ci * exp_sum
             return new_a, new_b, new_c
@@ -695,7 +701,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         elif batch_abc == batch_arg:
             for i in range(batch_abc):
                 Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
-        elif self.batch_size != z.shape[0]:
+        else:
             raise ValueError(
                 "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
             )
