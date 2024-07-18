@@ -47,7 +47,12 @@ from mrmustard.utils.typing import (
     RealVector,
     Scalar,
 )
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
+from mrmustard.physics.bargmann import (
+    wigner_to_bargmann_psi,
+    wigner_to_bargmann_rho,
+    norm_ket,
+    trace_dm,
+)
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
@@ -414,17 +419,13 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(
-            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
-        )
+        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(
-            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
-        )
+        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -519,14 +520,10 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(
-                show=True, usecolormap=True, highlightcolor="red", project_y=False
-            )
+            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
         )
         fig.update_traces(
-            contours_x=dict(
-                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
-            )
+            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -568,9 +565,7 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(
-                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
-            )
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -641,13 +636,11 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(
-        self, max_prob=0.999, max_shape=50, respect_fock_shape=True
-    ) -> tuple[int, ...]:
+    def auto_shape(self, max_prob=0.999, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
         If the ``respect_fock_shape`` flag is set to ``True``, auto_shape will respect the
         non-None values in ``fock_shape``.
@@ -661,16 +654,18 @@ class DM(State):
             shape = self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             repr = self.representation
+            A, b, c = repr.A[0], repr.b[0], repr.c[0]
+            repr = repr / trace_dm(A, b, c)
             shape = autoshape_numba(
-                math.asnumpy(repr.A[0]),
-                math.asnumpy(repr.b[0]),
-                math.asnumpy(repr.c[0]),
-                max_prob,
+                math.asnumpy(A),
+                math.asnumpy(b),
+                math.asnumpy(c),
+                max_prob or settings.AUTOSHAPE_PROBABILITY,
                 max_shape,
             )
             shape = tuple(shape) + tuple(shape)
         if respect_fock_shape:
-            return tuple(min(c or s, s) for c, s in zip(self.fock_shape, shape))
+            return tuple(c or s for c, s in zip(self.fock_shape, shape))
         return tuple(shape)
 
     @classmethod
@@ -815,12 +810,12 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [
-            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
-        ]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         representation = self.representation.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(representation, wires, self.name)  # pylint: disable=protected-access
+        return self.__class__._from_attributes(
+            representation, wires, self.name
+        )  # pylint: disable=protected-access
 
 
 class Ket(State):
@@ -852,13 +847,11 @@ class Ket(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(
-        self, max_prob=0.999, max_shape=50, respect_fock_shape=True
-    ) -> tuple[int, ...]:
+    def auto_shape(self, max_prob=None, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOCUTOFF_PROBABILITY`` of the probability mass of each
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
         If the ``respect_fock_shape`` flag is set to ``True``, auto_shape will respect the
         non-None values in ``fock_shape``.
@@ -872,15 +865,16 @@ class Ket(State):
             shape = self._representation.array.shape[1:]
         except AttributeError:  # bargmann
             repr = self.representation.conj() & self.representation
+            repr = repr / norm_ket(repr.A[0], repr.b[0], repr.c[0])
             shape = autoshape_numba(
                 math.asnumpy(repr.A[0]),
                 math.asnumpy(repr.b[0]),
                 math.asnumpy(repr.c[0]),
-                max_prob,
+                max_prob or settings.AUTOSHAPE_PROBABILITY,
                 max_shape,
             )
         if respect_fock_shape:
-            return tuple(min(c or s, s) for c, s in zip(self.fock_shape, shape))
+            return tuple(c or s for c, s in zip(self.fock_shape, shape))
         return tuple(shape)
 
     @classmethod
@@ -999,9 +993,7 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(
-        self, other: CircuitComponent | Scalar
-    ) -> CircuitComponent | Batch[Scalar]:
+    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which

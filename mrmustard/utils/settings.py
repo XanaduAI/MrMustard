@@ -67,7 +67,7 @@ class Settings:
         self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
-        self.AUTOCUTOFF_PROBABILITY = 0.999
+        self.AUTOSHAPE_PROBABILITY = 0.999
         "The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is 0.999."
 
         self.AUTOCUTOFF_MAX_CUTOFF = 100  # TODO: remove in MM 1.0

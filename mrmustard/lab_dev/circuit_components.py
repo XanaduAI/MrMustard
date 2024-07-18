@@ -82,12 +82,7 @@ class CircuitComponent:
         ib = tuple(sorted(modes_in_bra))
         ok = tuple(sorted(modes_out_ket))
         ik = tuple(sorted(modes_in_ket))
-        if (
-            ob != modes_out_bra
-            or ib != modes_in_bra
-            or ok != modes_out_ket
-            or ik != modes_in_ket
-        ):
+        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
             offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
             perm = (
                 tuple(np.argsort(modes_out_bra))
@@ -186,9 +181,7 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
+        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
     @property
@@ -242,9 +235,7 @@ class CircuitComponent:
         """
         from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-        wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
+        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -394,9 +385,7 @@ class CircuitComponent:
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
-                raise ValueError(
-                    f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``."
-                )
+                raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
         ret._wires = Wires(
             modes_out_bra=set(modes) if ob else set(),
@@ -407,7 +396,7 @@ class CircuitComponent:
 
         return ret
 
-    def fock(self, shape: Optional[int | Sequence[int]] = None) -> CircuitComponent:
+    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -416,6 +405,8 @@ class CircuitComponent:
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
+            batched: Whether the returned representation is batched or not. If ``False`` (default)
+            it will squeeze the batch dimension if it is 1.
         Returns:
             array: The Fock representation of this component.
         """
@@ -423,7 +414,6 @@ class CircuitComponent:
             shape = (shape,) * self.representation.ansatz.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
-
         if len(shape) != len(auto_shape):
             raise ValueError(
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
@@ -431,12 +421,12 @@ class CircuitComponent:
 
         try:
             As, bs, cs = self.bargmann
-            array = [
-                math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)
-            ]
+            arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
         except AttributeError:
-            array = self.representation.reduce(shape).array
-        return array
+            arrays = self.representation.reduce(shape).array
+        if not batched and len(arrays) == 1:
+            arrays = arrays[0]
+        return arrays
 
     def to_fock(self, shape=None):
         r"""
@@ -459,19 +449,19 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = Fock(math.astensor(self.fock(shape)), batched=True)
+        fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
         fock._original_bargmann_data = self.representation.data
         return self._from_attributes(fock, self.wires, self.name)
 
-    def auto_shape(self) -> tuple[int, ...]:
+    def auto_shape(self, **kwargs) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
         representation the shape is calculated using autoshape using the single-mode marginals.
-        If the component is not a State then the shape is a tuple of ``AUTOSHAPE_MAX``.
+        If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
+        except where the ``fock_shape`` attribute has been set..
         """
-        MAX = settings.AUTOSHAPE_MAX
-        return tuple(s if s else MAX for s in self.fock_shape)
+        return tuple(s or settings.AUTOSHAPE_MAX for s in self.fock_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -521,9 +511,7 @@ class CircuitComponent:
         """
         return self.representation == other.representation and self.wires == other.wires
 
-    def _matmul_indices(
-        self, other: CircuitComponent
-    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -554,19 +542,13 @@ class CircuitComponent:
             >>> att = Attenuator([0], 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
-        try:
-            return other._rmatmul_(self)
-        except AttributeError:
-            pass
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
-        if isinstance(self.representation, Bargmann) and isinstance(
-            other.representation, Bargmann
-        ):
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
             rep = self.representation[idx_z] @ other.representation[idx_zconj]
             rep = rep.reorder(perm) if perm else rep
             return CircuitComponent._from_attributes(rep, wires_result, None)
@@ -596,9 +578,7 @@ class CircuitComponent:
         """
         return self * other
 
-    def __rshift__(
-        self, other: CircuitComponent | numbers.Number
-    ) -> CircuitComponent | np.ndarray:
+    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
         It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
@@ -624,13 +604,13 @@ class CircuitComponent:
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += "whether or where to add missing components. Use ``@`` and specify all the components."
+        msg += (
+            "whether or where to add missing components. Use ``@`` and specify all the components."
+        )
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = (
-            self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
-        )
+        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
         if only_ket or only_bra or both_sides:
             return self._rshift_return(self @ other)
 
@@ -645,7 +625,9 @@ class CircuitComponent:
             return self._rshift_return((self @ other) @ other.adjoint)
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        msg += (
+            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        )
         raise ValueError(msg)
 
     def _rshift_return(
@@ -693,9 +675,7 @@ class CircuitComponent:
         wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
         wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
         wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "")
-            .replace("</body>", "")
-            .replace("h1", "h3")
+            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
         )
 
         rep_temp = (

@@ -338,10 +338,8 @@ class Bargmann(Representation):
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
         A, b, c = [], [], []
-        for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(
-                Abci, idx_z, idx_zconj, measure=-1.0
-            )
+        for Abc in zip(self.A, self.b, self.c):
+            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -418,9 +416,7 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(
-            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
-        )
+        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -458,18 +454,25 @@ class Bargmann(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
+    def __matmul__(self, other: Bargmann) -> Bargmann:
         r"""
-        The inner product of ansatze across the marked indices.
+        Implements the inner product in Bargmann representation.
 
-        If ``other`` is ``Fock``, then ``self`` is converted to ``Fock`` before the contraction.
+        ..code-block::
 
-        Args:
-            other: Another representation.
+        >>> from mrmustard.physics.representations import Bargmann
+        >>> rep1 = Bargmann(*vacuum_state_Abc(1))
+        >>> rep2 = Bargmann(*displacement_gate_Abc(1))
+        >>> rep3 = rep1[0] @ rep2[1]
+        >>> assert np.allclose(rep3.A, [[0,],])
+        >>> assert np.allclose(rep3.b, [1,])
 
-        Returns:
-            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
-            if ``other`` is ``Fock``.
+         Args:
+             other: Another Bargmann representation.
+
+         Returns:
+            Bargmann: the resulting Bargmann representation.
+
         """
         if isinstance(other, Fock):
             raise NotImplementedError("Only matmul Bargmann with Bargmann")
@@ -495,9 +498,7 @@ class Bargmann(Representation):
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(
-                        contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
-                    )
+                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
@@ -628,7 +629,7 @@ class Fock(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
+    def __matmul__(self, other: Fock) -> Fock:
         r"""
         Implements the inner product of fock arrays over the marked indices.
 
@@ -642,9 +643,6 @@ class Fock(Representation):
             >>> g = Fock(np.random.random((2, 5, 8)), batched=True)
             >>> h = f[0,1] @ g[0,1]
             >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
-
-        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
-        using auto_shape where possible, or settings.AUTOSHAPE_MAX where not.
 
         Args:
             other: Another representation.
@@ -679,9 +677,7 @@ class Fock(Representation):
         batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                batched_array.append(
-                    math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
-                )
+                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
@@ -699,11 +695,7 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [
-                i + 1
-                for i in range(len(self.array.shape) - 1)
-                if i not in idxs1 + idxs2
-            ]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -762,7 +754,7 @@ class Fock(Representation):
 
         if any(s > t for s, t in zip(shape, self.array.shape[1:])):
             warn(
-                "Warning: the fock array is being padded with zeros. This is a sign that some other array is too large."
+                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
             )
             padded = math.pad(
                 self.array,
@@ -784,6 +776,4 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(
-            ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0))
-        )
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))

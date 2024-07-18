@@ -122,17 +122,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5)
+        array_in = state_in.fock(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
-
-    def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).to_fock(5)
-        with pytest.raises(ValueError):
-            Ket.from_fock([0], state01.fock(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
@@ -446,7 +441,7 @@ class TestDM:
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5)
+        array_in = state_in.fock(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 

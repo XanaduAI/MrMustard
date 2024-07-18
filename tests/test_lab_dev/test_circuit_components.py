@@ -402,8 +402,8 @@ class TestCircuitComponent:
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
-        coh = Coherent([0], x=1.0).to_fock(20)
-        CC = CircuitComponent._from_attributes(coh.representation, coh.wires, "CC")
+        coh = Coherent([0], x=1.0)
+        CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
             CC.bargmann  # pylint: disable=pointless-statement
 
