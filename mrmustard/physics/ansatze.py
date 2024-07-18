@@ -633,18 +633,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
         return val
 
-    def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
-        r"""
-        Updates the ansatz from calling the ansatz on some wires, while leaving the rest as None.
-        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
-        Args:
-            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
-
-        Returns:
-            A new ansatz, which is a "slice" of the old one.
-        """
-
-        def call_none_single(self, Ai, bi, ci, zi):
+    def call_none_single(self, Ai, bi, ci, zi):
             r"""
             Helper function for the call_none method. Returns the new triple.
             """
@@ -691,6 +680,18 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             exp_sum = np.exp(1 / 2 * A_part + b_part)
             new_c = ci * exp_sum
             return new_a, new_b, new_c
+
+    def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
+        r"""
+        Updates the ansatz from calling the ansatz on some wires, while leaving the rest as None.
+        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+        Args:
+            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
+
+        Returns:
+            A new ansatz, which is a "slice" of the old one.
+        """
+
 
         batch_abc = self.batch_size
         batch_arg = z.shape[0]
