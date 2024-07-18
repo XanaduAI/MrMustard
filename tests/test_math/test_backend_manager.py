@@ -486,13 +486,13 @@ class TestBackendManager:
         r"""
         Tests the ``moveaxis`` method.
         """
-        arr1 = np.random.random(size=(1,2,3))
-        arr2 = np.random.random(size=(2,1,3))
-        arr2_moved = math.moveaxis(arr2,0,1)
+        arr1 = np.random.random(size=(1, 2, 3))
+        arr2 = np.random.random(size=(2, 1, 3))
+        arr2_moved = math.moveaxis(arr2, 0, 1)
         assert np.allclose(arr1.shape, arr2_moved.shape)
 
-        arr1_moved1 = math.moveaxis(arr1,0,1)
-        arr1_moved2 = math.moveaxis(arr1_moved1,1,0)
+        arr1_moved1 = math.moveaxis(arr1, 0, 1)
+        arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
         assert np.allclose(arr1, arr1_moved2)
 
     @pytest.mark.parametrize("t", types)
