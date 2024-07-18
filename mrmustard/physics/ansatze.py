@@ -544,6 +544,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         b = math.astensor(b)
         c = math.astensor(c)
         super().__init__(mat=A, vec=b, array=c)
+        if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
+            raise ValueError("Batch size of A,b,c must be the same.")
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -630,6 +632,77 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 axes=[-1],
             )
         return val
+
+    def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
+        r"""
+        Updates the ansatz from calling the ansatz on some wires, while leaving the rest as None.
+        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+        Args:
+            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
+
+        Returns:
+            A new ansatz, which is a "slice" of the old one.
+        """
+
+        def call_none_single(Ai, bi, ci, zi):
+            dim_zi = len(zi)
+            dim_beta, _ = self.polynomial_degrees
+            gamma = np.array(zi[zi != None], dtype=math.complex128)
+            gammagamma = np.einsum("...a,...b->...ab", gamma, gamma)
+            remove_index_new = np.concatenate((zi != None, np.array([False] * dim_beta)), axis=-1)
+            new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
+            remove_index_alpha_row = np.concatenate((zi != None, np.array([True] * dim_beta)))
+            remove_index_alpha_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
+            b_alpha = np.delete(
+                np.delete(Ai, remove_index_alpha_row, axis=0),
+                remove_index_alpha_col,
+                axis=1,
+            )
+            b_alpha = np.sum(b_alpha * gamma, axis=-1)
+
+            remove_index_beta_col = np.concatenate((zi == None, np.array([True] * dim_beta)))
+            remove_index_beta_row = np.concatenate(
+                (np.array([True] * dim_zi), np.array([False] * dim_beta))
+            )
+
+            b_beta = np.delete(
+                np.delete(Ai, remove_index_beta_row, axis=0), remove_index_beta_col, axis=1
+            )
+            b_beta = np.sum(b_beta * gamma, axis=-1)
+            new_b = np.delete(bi, remove_index_new, axis=0) + np.concatenate((b_alpha, b_beta))
+            remove_index_gamma = np.concatenate((zi == None, np.array([True] * dim_beta)))
+
+            A_gamma = np.delete(
+                np.delete(Ai, remove_index_gamma, axis=0), remove_index_gamma, axis=1
+            )
+            b_gamma = np.delete(bi, remove_index_gamma, axis=0)
+
+            A_part = np.sum(A_gamma * gammagamma)
+            b_part = np.sum(b_gamma * gamma)
+            exp_sum = np.exp(1 / 2 * A_part + b_part)
+            new_c = ci * exp_sum
+            return new_a, new_b, new_c
+
+        batch_abc = self.batch_size
+        batch_arg = z.shape[0]
+        Abc = []
+        if batch_abc == 1 and batch_arg == 1:
+            Abc.append(call_none_single(self.A[0], self.b[0], self.c[0], z[0]))
+        elif batch_abc == 1 and batch_arg > 1:
+            for i in range(batch_arg):
+                Abc.append(call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
+        elif batch_arg == 1 and batch_abc > 1:
+            for i in range(batch_abc):
+                Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
+        elif batch_abc == batch_arg:
+            for i in range(batch_abc):
+                Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+        elif self.batch_size != z.shape[0]:
+            raise ValueError(
+                f"Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
+            )
+        A, b, c = zip(*Abc)
+        return self.__class__(A=A, b=b, c=c)
 
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
