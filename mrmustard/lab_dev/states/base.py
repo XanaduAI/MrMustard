@@ -797,6 +797,22 @@ class DM(State):
             representation, wires, self.name
         )  # pylint: disable=protected-access
 
+    @classmethod
+    def random(cls, modes, max_r = 1.0):
+        r"""
+        Samples a random density matrix. The final state has zero displacement.
+
+        modes: the modes where the state is defined over
+        """
+        m = len(modes)
+        max_idx = max(modes)
+
+        ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        full_wires = modes + ancilla
+
+        psi = Ket.random(full_wires, max_r)
+        return psi[modes]
+
 
 class Ket(State):
     r"""
@@ -966,3 +982,36 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 result = DM(result.wires.modes, result.representation)
         return result
+
+    @classmethod
+    def random(cls, modes, max_r = 1.0):
+        r"""
+        generates random states with 0 displacement, using the random_symplectic funcionality
+
+        Args: "modes" are the modes where the state is defined on
+        Output is a Ket
+        """
+        # TODO: use __class_getitem_ and sample from broader probabilities
+        # TODO: random any gate
+
+        # generate a random ket repr.
+        # e.g. S = math.random_symplectic(dim) and then apply to vacuum
+        m = len(modes)
+        S = math.random_symplectic(m, max_r) # change to a,a^dagger
+        Transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+            )
+        )
+        S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
+        S_1 = S[:m, :m]
+        S_2 = S[:m, m:]
+        A = S_2 @ math.conj(math.inv(S_1)) # use solve for inverse
+        b = [0] * m
+        psi = cls.from_bargmann(modes, [[A], [b], [1]])
+        return psi.normalize()
