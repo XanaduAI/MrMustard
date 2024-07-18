@@ -415,10 +415,6 @@ class QuadratureEigenstate(Ket):
         xs, phis = list(reshape_params(n_modes, x=self.x.value, phi=self.phi.value))
         return Bargmann(*triples.quadrature_eigenstates_Abc(xs, phis))
 
-    @property
-    def probability(self) -> float:
-        return math.inf
-
 
 #  ~~~~~~~~~~~~
 #  Mixed States
