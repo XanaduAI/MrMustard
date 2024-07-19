@@ -539,7 +539,9 @@ class TestDiffOpPolyExpAnsatz:
         c = np.random.random(size=(1, 3, 3, 3))
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
-        with pytest.raises(ValueError, match="The sum of the dimension of the argument and polynomial"):
+        with pytest.raises(
+            ValueError, match="The sum of the dimension of the argument and polynomial"
+        ):
             ansatz(z)
 
     def test_decompose_ansatz(self):
