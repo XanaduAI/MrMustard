@@ -338,8 +338,6 @@ class PolyExpBase(Ansatz):
             return DiffOpPolyExpAnsatz(self.mat, self.vec, self.array)
 
 
-
-
 class PolyExpAnsatz(PolyExpBase):
     r"""
     The ansatz of the Fock-Bargmann representation.
@@ -639,6 +637,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         Returns:
             A new ansatz, which is a "slice" of the old one.
         """
+
         def call_none_single(Ai, bi, ci, zi):
             r"""
             Helper function for the call_none method. Returns the new triple.
@@ -652,7 +651,9 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
             b_alpha = np.sum(
                 np.delete(
-                    np.delete(Ai, np.concatenate((zi != None, np.array([True] * dim_beta))), axis=0),
+                    np.delete(
+                        Ai, np.concatenate((zi != None, np.array([True] * dim_beta))), axis=0
+                    ),
                     np.concatenate((zi == None, np.array([True] * dim_beta))),
                     axis=1,
                 )
@@ -703,7 +704,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
-    
+
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
