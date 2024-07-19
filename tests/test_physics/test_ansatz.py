@@ -442,6 +442,15 @@ class TestDiffOpPolyExpAnsatz:
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
+        A, b, _ = Abc_triple(4)
+        c = np.random.random(size=(1, 3, 3, 3))
+        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        z = np.random.uniform(-10, 10, size=(7, 2))
+        with pytest.raises(
+            ValueError, match="The sum of the dimension of the argument and polynomial"
+        ):
+            ansatz(z)
+
     def test_and(self):
         A1, b1, c1 = Abc_triple(6)
         A2, b2, c2 = Abc_triple(6)
@@ -533,16 +542,6 @@ class TestDiffOpPolyExpAnsatz:
         poly_dim, poly_shape = ansatz3.polynomial_shape
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
-
-    def test_call(self):
-        A, b, _ = Abc_triple(4)
-        c = np.random.random(size=(1, 3, 3, 3))
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
-        z = np.random.uniform(-10, 10, size=(7, 2))
-        with pytest.raises(
-            ValueError, match="The sum of the dimension of the argument and polynomial"
-        ):
-            ansatz(z)
 
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
