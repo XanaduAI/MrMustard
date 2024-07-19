@@ -665,7 +665,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
         return c3
 
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -675,10 +675,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
+            DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
-        if isinstance(other, PolyExpAnsatz):
+        if isinstance(other, DiffOpPolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
             dim_beta2, _ = other.polynomial_degrees
@@ -710,7 +710,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
-    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -720,10 +720,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
+            DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
-        if isinstance(other, PolyExpAnsatz):
+        if isinstance(other, DiffOpPolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
             dim_beta2, _ = other.polynomial_degrees
@@ -802,7 +802,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
         return c3
 
-    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+    def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,
