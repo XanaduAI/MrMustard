@@ -33,6 +33,7 @@ from mrmustard import physics
 from mrmustard.physics.bargmann import Au2Symplectic, Symplectic2Au
 from ..circuit_components import CircuitComponent
 
+
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
 
@@ -228,6 +229,17 @@ class Unitary(Operation):
         c = 1 / math.sqrt(c_prime[0])
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
+    @classmethod
+    def random(cls, modes, max_r=1):
+        r"""
+        Returns a random unitary.
+        modes: the modes the unitary acts on non-trivially
+        max_r: maximum squeezing parameter as defined in math.random_symplecic
+        """
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        return Unitary.from_symplectic_directly(modes, S)
+
 
 class Map(Transformation):
     r"""
@@ -284,17 +296,17 @@ class Channel(Map):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-    # def random(cls, wires, max_r=1.0):
-    #     r"""
-    #     A random channel without displacement
-    #     """
-    #     m = len(wires)
-    #     S = math.random_symplectic(m, max_r)
-    #     modes = wires # replace everywhere
-    #     U = Unitary.random(modes = range(3*m))
-    #     vacuum_ancilla = Vacuum(range(2*m))
-    #     u_psi= vacuum_ancilla >> U
-    #     A = u_psi.representation # change name
-    #     B = u_psi.adjoint.representation
-    #     C = B[range(2*m)]@A[range(2*m)] # voila
-    #     return Channel.from_arguments(C, Wires(modes,modes,modes,modes))
+    @classmethod
+    def random(cls, modes, max_r=1.0):
+        r"""
+        A random channel without displacement
+        """
+        from mrmustard.lab_dev.states import Vacuum
+
+        m = len(modes)
+        U = Unitary.random(range(3 * m), max_r)
+        u_psi = Vacuum(range(2 * m)) >> U
+        A = u_psi.representation
+        # A_dagger = u_psi.adjoint.representation
+        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        return Channel.from_bargmann(modes, modes, kraus.triple)  # no bracket

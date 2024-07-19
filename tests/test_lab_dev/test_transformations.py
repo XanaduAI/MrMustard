@@ -138,6 +138,10 @@ class TestUnitary:
         S_by_hand = np.array([[[1, 0], [0, 1]], [[1, 0], [0, 1]]])
         assert np.allclose(S, S_by_hand)
 
+    def test_random(self):
+        U = Unitary.random([1, 2, 3])
+        assert U >> U.dual == Identity([1, 2, 3])
+
 
 class TestChannel:
     r"""
@@ -195,6 +199,10 @@ class TestChannel:
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.representation == Attenuator([0], 1.0).representation
+
+    @pytest.mark.parametrize("modes", [[0], [2, 3], [1, 2, 3]])
+    def test_random(self, modes):
+        assert np.isclose(((Vacuum(modes)) >> Channel.random(modes)).probability, 1)
 
 
 class TestBSgate:

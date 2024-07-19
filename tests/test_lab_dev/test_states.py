@@ -597,9 +597,21 @@ class TestDM:
         dm = DM.random(modes)
         A = dm.representation.A[0]
         Gamma = A[:m, m:]
+        Lambda = A[m:, m:]
+        Temp = (
+            np.eye(m)
+            - Gamma
+            - np.conjugate(Lambda.T) @ np.linalg.pinv(np.eye(m) - Gamma.T) @ Lambda
+        )
+
+        # we check the `physicality conditions' here:
+
         assert np.all(
             np.linalg.eigvals(Gamma) >= 0
         )  # checks if the off-diagonal block of dm is PSD
+        assert np.all(np.linalg.eigvals(Gamma) < 1)
+        assert np.all(np.linalg.eigvals(Temp) <= 1)
+        assert np.all(np.linalg.eigvals(Temp) > 0)
 
 
 class TestCoherent:
