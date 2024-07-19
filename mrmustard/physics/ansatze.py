@@ -507,6 +507,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
+    The dimension of z and y must be equal to the dimension of A and b.
 
         .. code-block::
 
@@ -586,7 +587,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         z = math.atleast_2d(z)
         batch_size_arg = z.shape[0]
-
+        if z.shape[-1] != dim_alpha:
+            raise ValueError(
+                "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
+            )
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
 
         A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
