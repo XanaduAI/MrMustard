@@ -594,8 +594,7 @@ class TestDM:
     def test_random(self, modes):
 
         m = len(modes)
-        dm = DM.random(modes)
-        A = dm.representation.A[0]
+        A = DM.random(modes).representation.A[0]
         Gamma = A[:m, m:]
         Lambda = A[m:, m:]
         Temp = (
