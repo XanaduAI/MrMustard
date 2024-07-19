@@ -525,8 +525,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
-        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz. 
-        An explicit batch dimension that matched A and b has to be given for c. 
+        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz.
+        An explicit batch dimension that matched A and b has to be given for c.
 
     """
 
