@@ -507,17 +507,17 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
-
+    An explicit batch dimension for c has to given and it must match the batch dimension of A and b.
     .. code-block::
 
         >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([1.0,2.0,3.0])
+        >>> c = np.array([[1.0,2.0,3.0]])
 
-        >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
+        >>> F = DiffOpPolyExpAnsatz(A, b, c)
+        >>> z = np.array([[1.0]])
 
         >>> # calculate the value of the function at ``z``
         >>> val = F(z)
@@ -525,7 +525,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
-        c: The array of coefficients for the polynomial terms in the ansatz.
+        c: The list of arrays of coefficients for the polynomial terms in the ansatz.
 
     """
 
