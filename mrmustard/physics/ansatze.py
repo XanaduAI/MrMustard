@@ -581,10 +581,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         dim_beta, shape_beta = self.polynomial_degrees
         dim_alpha = self.A.shape[-1] - dim_beta
         batch_size = self.batch_size
+
+        z = math.atleast_2d(z)
         batch_size_arg = z.shape[0]
 
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
-        # z = z[..., None, :]
 
         A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
         b_part = math.sum(self.b[..., :dim_alpha] * z[..., None, :], axes=[-1])
