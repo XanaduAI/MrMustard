@@ -506,9 +506,9 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         :math:`F(z) = \sum_i [\sum_k c^(i)_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
-    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
-    An explicit batch dimension for c has to given and it must match the batch dimension of A and b.
-    .. code-block::
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
+
+        .. code-block::
 
         >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
 
@@ -521,11 +521,12 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         >>> # calculate the value of the function at ``z``
         >>> val = F(z)
-
+    A and b can be batched or not, but c needs to include an explicit batch dimension that match A and b.
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
-        c: The list of arrays of coefficients for the polynomial terms in the ansatz.
+        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz. 
+        An explicit batch dimension that matched A and b has to be given for c. 
 
     """
 
