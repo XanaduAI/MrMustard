@@ -176,8 +176,9 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_call(self, triple):
         bargmann = Bargmann(*triple)
-
-        assert bargmann(0.1 + 0.2j) == bargmann.ansatz(0.1 + 0.2j)
+        z = 0.1 + 0.2j
+        dim = triple[0].shape[0]
+        assert bargmann(z*np.ones(dim)) == bargmann.ansatz(z*np.ones(dim))
 
     def test_matmul_barg_barg(self):
         triple1 = Abc_triple(3)
