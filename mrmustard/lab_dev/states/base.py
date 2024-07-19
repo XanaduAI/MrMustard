@@ -808,6 +808,7 @@ class DM(State):
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        modes = list(modes)
         full_wires = modes + ancilla
 
         psi = Ket.random(full_wires, max_r)
@@ -1015,6 +1016,6 @@ class Ket(State):
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
         A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-        b = [0] * m
-        psi = cls.from_bargmann(modes, [[A], [b], [1]])
+        b = [complex(0)] * m
+        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
