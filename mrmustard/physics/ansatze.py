@@ -503,7 +503,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     Represents the ansatz function:
 
-        :math:`F(z) = \sum_i [\sum_k c^(i)_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
+        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
