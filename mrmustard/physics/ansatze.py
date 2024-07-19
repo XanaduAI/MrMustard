@@ -182,7 +182,7 @@ class PolyExpBase(Ansatz):
         return self.array.shape[-1] - 1
 
     @property
-    def polynomial_degrees(self) -> tuple[int, tuple]:
+    def polynomial_shape(self) -> tuple[int, tuple]:
         r"""
         This method finds the dimensionality of the polynomial, i.e. how many wires
         have polynomials attached to them and what the degree of the polynomial is
@@ -267,7 +267,7 @@ class PolyExpBase(Ansatz):
         A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
         This decomposition is typically favourable if n>m, and will only run if that is the case.
         """
-        dim_beta, shape_beta = self.polynomial_degrees
+        dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
@@ -505,29 +505,32 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     Represents the ansatz function:
 
-        :math:`F(z) = \sum_i [\sum_k c^(i)_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
+        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
-    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
+    The dimension of z and y must be equal to the dimension of A and b.
 
-    .. code-block::
+        .. code-block::
 
         >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([1.0,2.0,3.0])
+        >>> c = np.array([[1.0,2.0,3.0]])
 
-        >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
+        >>> F = DiffOpPolyExpAnsatz(A, b, c)
+        >>> z = np.array([[1.0]])
 
         >>> # calculate the value of the function at ``z``
         >>> val = F(z)
 
+    A and b can be batched or not, but c needs to include an explicit batch dimension that match A and b.
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
-        c: The array of coefficients for the polynomial terms in the ansatz.
+        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz.
+        An explicit batch dimension that matched A and b has to be given for c.
 
     """
 
@@ -535,7 +538,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor] = np.array([1.0]),
+        c: Batch[Tensor] = np.array([[1.0]]),
         name: str = "",
     ):
         self.name = name
@@ -580,11 +583,16 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         Returns:
             The value of the function.
         """
-        dim_beta, shape_beta = self.polynomial_degrees
+        dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.A.shape[-1] - dim_beta
         batch_size = self.batch_size
-        batch_size_arg = z.shape[0]
 
+        z = math.atleast_2d(z)
+        batch_size_arg = z.shape[0]
+        if z.shape[-1] != dim_alpha:
+            raise ValueError(
+                "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
+            )
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
 
         A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
@@ -601,7 +609,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     for i in range(batch_size_arg)
                 ]
             )
-            b_poly = math.transpose(b_poly, perm=(1, 0, 2))
+            b_poly = math.moveaxis(b_poly, 0, 1)
             A_poly = self.A[..., dim_alpha:, dim_alpha:]
             poly = math.astensor(
                 [
@@ -611,20 +619,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     for i in range(batch_size)
                 ]
             )
-            poly = math.transpose(
-                poly,
-                perm=math.reshape(
-                    math.block(
-                        [
-                            [
-                                math.astensor((1, 0), dtype=math.int32),
-                                math.arange(2, 2 + dim_beta, dtype=math.int32),
-                            ]
-                        ]
-                    ),
-                    -1,
-                ),
-            )
+            poly = math.moveaxis(poly, 0, 1)
             val = math.sum(
                 exp_sum
                 * math.sum(
@@ -719,10 +714,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
+            DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
-        def mulA(A1, A2, dim_alpha, dim_beta1, dim_beta2):
+        def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
                     [
@@ -744,20 +739,20 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
             return A3
 
-        def mulb(b1, b2, dim_alpha):
+        def mul_b(b1, b2, dim_alpha):
             b3 = math.reshape(
                 math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
             )
             return b3
 
-        def mulc(c1, c2):
+        def mul_c(c1, c2):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
 
-            dim_beta1, _ = self.polynomial_degrees
-            dim_beta2, _ = other.polynomial_degrees
+            dim_beta1, _ = self.polynomial_shape
+            dim_beta2, _ = other.polynomial_shape
 
             dim_alpha1 = self.A.shape[-1] - dim_beta1
             dim_alpha2 = other.A.shape[-1] - dim_beta2
@@ -765,7 +760,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             dim_alpha = dim_alpha1
 
             new_a = [
-                mulA(
+                mul_A(
                     math.cast(A1, "complex128"),
                     math.cast(A2, "complex128"),
                     dim_alpha,
@@ -774,8 +769,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 )
                 for A1, A2 in itertools.product(self.A, other.A)
             ]
-            new_b = [mulb(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-            new_c = [mulc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
+            new_b = [mul_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [mul_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
 
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
@@ -794,10 +789,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
+            DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
-        def divA(A1, A2, dim_alpha, dim_beta1, dim_beta2):
+        def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
                     [
@@ -819,20 +814,20 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
             return A3
 
-        def divb(b1, b2, dim_alpha):
+        def div_b(b1, b2, dim_alpha):
             b3 = math.reshape(
                 math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
             )
             return b3
 
-        def divc(c1, c2):
+        def div_c(c1, c2):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
 
-            dim_beta1, _ = self.polynomial_degrees
-            dim_beta2, _ = other.polynomial_degrees
+            dim_beta1, _ = self.polynomial_shape
+            dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
                 dim_alpha1 = self.A.shape[-1] - dim_beta1
                 dim_alpha2 = other.A.shape[-1] - dim_beta2
@@ -840,7 +835,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 dim_alpha = dim_alpha1
 
                 new_a = [
-                    divA(
+                    div_A(
                         math.cast(A1, "complex128"),
                         -math.cast(A2, "complex128"),
                         dim_alpha,
@@ -849,8 +844,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     )
                     for A1, A2 in itertools.product(self.A, other.A)
                 ]
-                new_b = [divb(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-                new_c = [divc(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
+                new_b = [div_b(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+                new_c = [div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
 
                 return self.__class__(A=new_a, b=new_b, c=new_c)
             else:
@@ -917,8 +912,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        dim_beta1, _ = self.polynomial_degrees
-        dim_beta2, _ = other.polynomial_degrees
+        dim_beta1, _ = self.polynomial_shape
+        dim_beta2, _ = other.polynomial_shape
 
         dim_alpha1 = self.A.shape[-1] - dim_beta1
         dim_alpha2 = other.A.shape[-1] - dim_beta2

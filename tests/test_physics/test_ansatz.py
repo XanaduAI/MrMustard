@@ -442,6 +442,15 @@ class TestDiffOpPolyExpAnsatz:
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
+        A, b, _ = Abc_triple(4)
+        c = np.random.random(size=(1, 3, 3, 3))
+        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        z = np.random.uniform(-10, 10, size=(7, 2))
+        with pytest.raises(
+            ValueError, match="The sum of the dimension of the argument and polynomial"
+        ):
+            ansatz(z)
+
     def test_and(self):
         A1, b1, c1 = Abc_triple(6)
         A2, b2, c2 = Abc_triple(6)
@@ -512,11 +521,11 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz.b[1], np.array([1]))
         assert ansatz.c[1] == 1
 
-    def test_polynomial_degrees(self):
+    def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
-        poly_dim, poly_shape = ansatz.polynomial_degrees
+        poly_dim, poly_shape = ansatz.polynomial_shape
         assert np.allclose(poly_dim, 1)
         assert np.allclose(poly_shape, (3,))
 
@@ -530,7 +539,7 @@ class TestDiffOpPolyExpAnsatz:
 
         ansatz3 = ansatz1 * ansatz2
 
-        poly_dim, poly_shape = ansatz3.polynomial_degrees
+        poly_dim, poly_shape = ansatz3.polynomial_shape
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
 
@@ -540,8 +549,6 @@ class TestDiffOpPolyExpAnsatz:
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
-        print(ansatz(z))
-        print(decomp_ansatz(z))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
@@ -569,37 +576,3 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
-
-    def test_call_none(self):
-        A1, b1, _ = Abc_triple(7)
-        A2, b2, _ = Abc_triple(7)
-        A3, b3, _ = Abc_triple(7)
-
-        batch = 3
-        c = np.random.random(size=(batch, 5, 5, 5)) / 1000
-
-        obj = DiffOpPolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
-        z0 = np.array([[None, 2, None, 5]])
-        z1 = np.array([[1, 2, 4, 5]])
-        z2 = np.array([[1, 4]])
-        obj_none = obj.call_none(z0)
-        val1 = obj(z1)
-        val2 = obj_none(z2)
-        assert np.allclose(val1, val2)
-
-        obj1 = DiffOpPolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
-        z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
-        z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
-        z2 = np.array([[1, 4], [2, 4]])
-        obj1_none = obj1.call_none(z0)
-        obj1_none0 = DiffOpPolyExpAnsatz(
-            obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
-        )
-        obj1_none1 = DiffOpPolyExpAnsatz(
-            obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5)
-        )
-        val1 = obj1(z1)
-        val2 = np.array(
-            (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
-        ).reshape(-1)
-        assert np.allclose(val1, val2)
