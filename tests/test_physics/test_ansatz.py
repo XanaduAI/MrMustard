@@ -442,6 +442,15 @@ class TestPolyExpAnsatz:
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
+        A, b, _ = Abc_triple(4)
+        c = np.random.random(size=(1, 3, 3, 3))
+        ansatz = PolyExpAnsatz(A, b, c)
+        z = np.random.uniform(-10, 10, size=(7, 2))
+        with pytest.raises(
+            ValueError, match="The sum of the dimension of the argument and polynomial"
+        ):
+            ansatz(z)
+
     def test_and(self):
         A1, b1, c1 = Abc_triple(6)
         A2, b2, c2 = Abc_triple(6)
@@ -512,11 +521,11 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz.b[1], np.array([1]))
         assert ansatz.c[1] == 1
 
-    def test_polynomial_degrees(self):
+    def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
         ansatz = PolyExpAnsatz(A, b, c)
-        poly_dim, poly_shape = ansatz.polynomial_degrees
+        poly_dim, poly_shape = ansatz.polynomial_shape
         assert np.allclose(poly_dim, 1)
         assert np.allclose(poly_shape, (3,))
 
@@ -530,7 +539,7 @@ class TestPolyExpAnsatz:
 
         ansatz3 = ansatz1 * ansatz2
 
-        poly_dim, poly_shape = ansatz3.polynomial_degrees
+        poly_dim, poly_shape = ansatz3.polynomial_shape
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
 
@@ -540,8 +549,6 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(A, b, c)
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
-        print(ansatz(z))
-        print(decomp_ansatz(z))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
