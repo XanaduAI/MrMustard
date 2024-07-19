@@ -41,8 +41,8 @@ __all__ = [
     "Ansatz",
     "ArrayAnsatz",
     "PolyExpBase",
+    "PolyExpAnsatzOld",
     "PolyExpAnsatz",
-    "DiffOpPolyExpAnsatz",
 ]
 
 
@@ -259,9 +259,9 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
-    def decompose_ansatz(self) -> DiffOpPolyExpAnsatz:
+    def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
-        This method decomposes a DiffOpPolyExpAnsatz. Given an ansatz of dimensions:
+        This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
         A=(batch,m+n,m+n), b=(batch,m+n), c = (batch,k_1,k_2,...,k_n),
         it can be rewritten as an ansatz of dimensions
         A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
@@ -333,12 +333,12 @@ class PolyExpBase(Ansatz):
                     ]
                 ]
             )
-            return DiffOpPolyExpAnsatz(A_decomp, b_decomp, c_decomp)
+            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
-            return DiffOpPolyExpAnsatz(self.mat, self.vec, self.array)
+            return PolyExpAnsatz(self.mat, self.vec, self.array)
 
 
-class PolyExpAnsatz(PolyExpBase):
+class PolyExpAnsatzOld(PolyExpBase):
     r"""
     The ansatz of the Fock-Bargmann representation.
 
@@ -355,13 +355,13 @@ class PolyExpAnsatz(PolyExpBase):
 
     .. code-block::
 
-        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatzOld
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array(1.0)
 
-        >>> F = PolyExpAnsatz(A, b, c)
+        >>> F = PolyExpAnsatzOld(A, b, c)
         >>> z = np.array([1.0, 2.0])
 
         >>> # calculate the value of the function at ``z``
@@ -429,7 +429,7 @@ class PolyExpAnsatz(PolyExpBase):
         val = np.sum(result, axis=-1)  # (...)
         return val
 
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __mul__(self, other: Union[Scalar, PolyExpAnsatzOld]) -> PolyExpAnsatzOld:
         r"""
         Multiplies this ansatz by a scalar or another ansatz.
 
@@ -440,9 +440,9 @@ class PolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
+            PolyExpAnsatzOld: The product of this ansatz and other.
         """
-        if isinstance(other, PolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatzOld):
             new_a = [A1 + A2 for A1, A2 in itertools.product(self.A, other.A)]
             new_b = [b1 + b2 for b1, b2 in itertools.product(self.b, other.b)]
             new_c = [c1 * c2 for c1, c2 in itertools.product(self.c, other.c)]
@@ -453,7 +453,7 @@ class PolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __truediv__(self, other: Union[Scalar, PolyExpAnsatzOld]) -> PolyExpAnsatzOld:
         r"""
         Divides this ansatz by a scalar or another ansatz.
 
@@ -464,9 +464,9 @@ class PolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            PolyExpAnsatz: The division of this ansatz by other.
+            PolyExpAnsatzOld: The division of this ansatz by other.
         """
-        if isinstance(other, PolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatzOld):
             new_a = [A1 - A2 for A1, A2 in itertools.product(self.A, other.A)]
             new_b = [b1 - b2 for b1, b2 in itertools.product(self.b, other.b)]
             new_c = [c1 / c2 for c1, c2 in itertools.product(self.c, other.c)]
@@ -477,7 +477,7 @@ class PolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+    def __and__(self, other: PolyExpAnsatzOld) -> PolyExpAnsatzOld:
         r"""
         Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
@@ -497,7 +497,7 @@ class PolyExpAnsatz(PolyExpBase):
         return self.__class__(As, bs, cs)
 
 
-class DiffOpPolyExpAnsatz(PolyExpBase):
+class PolyExpAnsatz(PolyExpBase):
     r"""
     The ansatz of the Fock-Bargmann representation.
 
@@ -510,7 +510,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     .. code-block::
 
-        >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
@@ -631,7 +631,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
         return val
 
-    def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -674,7 +674,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
             return c3
 
-        if isinstance(other, DiffOpPolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
             dim_beta2, _ = other.polynomial_degrees
@@ -698,7 +698,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
-    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -741,7 +741,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = np.outer(c1, c2).reshape(c1.shape + c2.shape)
             return c3
 
-        if isinstance(other, DiffOpPolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
             dim_beta2, _ = other.polynomial_degrees
@@ -767,7 +767,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
+    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,

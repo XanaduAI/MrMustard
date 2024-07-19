@@ -21,8 +21,8 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics.ansatze import (
+    PolyExpAnsatzOld,
     PolyExpAnsatz,
-    DiffOpPolyExpAnsatz,
     ArrayAnsatz,
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -32,7 +32,7 @@ from mrmustard.lab_dev.circuit_components_utils import BtoPS
 from ..random import Abc_triple
 
 
-class TestPolyExpAnsatz:
+class TestPolyExpAnsatzOld:
     r"""
     Tests the ``PolyExpAnsatz`` class.
     """
@@ -44,7 +44,7 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init(self, triple):
         A, b, c = triple
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
         assert np.allclose(ansatz.mat[0], A)
         assert np.allclose(ansatz.vec[0], b)
         assert np.allclose(ansatz.array[0], c)
@@ -53,8 +53,8 @@ class TestPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
 
-        ansatz = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatzOld(A1, b1, c1)
+        ansatz2 = PolyExpAnsatzOld(A2, b2, c2)
         ansatz3 = ansatz + ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1)
@@ -68,8 +68,8 @@ class TestPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
 
-        ansatz = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatzOld(A1, b1, c1)
+        ansatz2 = PolyExpAnsatzOld(A2, b2, c2)
         ansatz3 = ansatz * ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1 + A2)
@@ -80,7 +80,7 @@ class TestPolyExpAnsatz:
         A, b, c = Abc_triple(5)
         d = 0.1
 
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
         ansatz2 = ansatz * d
 
         assert np.allclose(ansatz2.mat[0], A)
@@ -89,7 +89,7 @@ class TestPolyExpAnsatz:
 
     def test_call(self):
         A, b, c = Abc_triple(5)
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
@@ -97,8 +97,8 @@ class TestPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(6)
         A2, b2, c2 = Abc_triple(6)
 
-        ansatz = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatzOld(A1, b1, c1)
+        ansatz2 = PolyExpAnsatzOld(A2, b2, c2)
         ansatz3 = ansatz & ansatz2
 
         assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
@@ -108,8 +108,8 @@ class TestPolyExpAnsatz:
     def test_eq(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = PolyExpAnsatz(A, b, c)
-        ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
+        ansatz2 = PolyExpAnsatzOld(2 * A, 2 * b, 2 * c)
 
         assert ansatz == ansatz
         assert ansatz2 == ansatz2
@@ -119,7 +119,7 @@ class TestPolyExpAnsatz:
     def test_simplify(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
         ansatz = ansatz + ansatz
 
         assert np.allclose(ansatz.A[0], ansatz.A[1])
@@ -135,7 +135,7 @@ class TestPolyExpAnsatz:
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatzOld(A, b, c)
         ansatz = ansatz + ansatz
 
         assert np.allclose(ansatz.A[0], ansatz.A[1])
@@ -149,7 +149,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz.c, 2 * c)
 
     def test_order_batch(self):
-        ansatz = PolyExpAnsatz(
+        ansatz = PolyExpAnsatzOld(
             A=[np.array([[0]]), np.array([[1]])],
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
@@ -358,9 +358,9 @@ class TestArrayAnsatz:
         assert math.allclose(new_state_coeff22[0], 1.0)
 
 
-class TestDiffOpPolyExpAnsatz:
+class TestPolyExpAnsatz:
     r"""
-    Tests the ``DiffOpPolyExpAnsatz`` class.
+    Tests the ``PolyExpAnsatz`` class.
     """
 
     Abc_n1 = Abc_triple(1)
@@ -370,7 +370,7 @@ class TestDiffOpPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init(self, triple):
         A, b, c = triple
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         assert np.allclose(ansatz.mat[0], A)
         assert np.allclose(ansatz.vec[0], b)
         assert np.allclose(ansatz.array[0], c)
@@ -379,8 +379,8 @@ class TestDiffOpPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
-        ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz + ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1)
@@ -394,8 +394,8 @@ class TestDiffOpPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
-        ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz * ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1 + A2)
@@ -406,7 +406,7 @@ class TestDiffOpPolyExpAnsatz:
         A, b, c = Abc_triple(5)
         d = 0.1
 
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         ansatz2 = ansatz * d
 
         assert np.allclose(ansatz2.mat[0], A)
@@ -417,8 +417,8 @@ class TestDiffOpPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(5)
         A2, b2, c2 = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
-        ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz / ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1 - A2)
@@ -429,7 +429,7 @@ class TestDiffOpPolyExpAnsatz:
         A, b, c = Abc_triple(5)
         d = 0.1
 
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         ansatz2 = ansatz / d
 
         assert np.allclose(ansatz2.mat[0], A)
@@ -438,7 +438,7 @@ class TestDiffOpPolyExpAnsatz:
 
     def test_call(self):
         A, b, c = Abc_triple(5)
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
@@ -446,8 +446,8 @@ class TestDiffOpPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(6)
         A2, b2, c2 = Abc_triple(6)
 
-        ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
-        ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
+        ansatz = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz & ansatz2
 
         assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
@@ -457,8 +457,8 @@ class TestDiffOpPolyExpAnsatz:
     def test_eq(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
-        ansatz2 = DiffOpPolyExpAnsatz(2 * A, 2 * b, 2 * c)
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
 
         assert ansatz == ansatz
         assert ansatz2 == ansatz2
@@ -468,7 +468,7 @@ class TestDiffOpPolyExpAnsatz:
     def test_simplify(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         ansatz = ansatz + ansatz
 
         assert np.allclose(ansatz.A[0], ansatz.A[1])
@@ -484,7 +484,7 @@ class TestDiffOpPolyExpAnsatz:
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         ansatz = ansatz + ansatz
 
         assert np.allclose(ansatz.A[0], ansatz.A[1])
@@ -498,7 +498,7 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz.c, 2 * c)
 
     def test_order_batch(self):
-        ansatz = DiffOpPolyExpAnsatz(
+        ansatz = PolyExpAnsatz(
             A=[np.array([[0]]), np.array([[1]])],
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
@@ -515,18 +515,18 @@ class TestDiffOpPolyExpAnsatz:
     def test_polynomial_degrees(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         poly_dim, poly_shape = ansatz.polynomial_degrees
         assert np.allclose(poly_dim, 1)
         assert np.allclose(poly_shape, (3,))
 
         A1, b1, _ = Abc_triple(4)
         c1 = np.array([[1, 2, 3]])
-        ansatz1 = DiffOpPolyExpAnsatz(A1, b1, c1)
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
 
         A2, b2, _ = Abc_triple(4)
         c2 = np.array([[1, 2, 3]])
-        ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
 
         ansatz3 = ansatz1 * ansatz2
 
@@ -537,7 +537,7 @@ class TestDiffOpPolyExpAnsatz:
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
         c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
-        ansatz = DiffOpPolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
         print(ansatz(z))
@@ -550,7 +550,7 @@ class TestDiffOpPolyExpAnsatz:
         c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
         A2, b2, _ = Abc_triple(4)
         c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = DiffOpPolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
+        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(3, 1))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
@@ -562,7 +562,7 @@ class TestDiffOpPolyExpAnsatz:
         c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
         A2, b2, _ = Abc_triple(5)
         c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = DiffOpPolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
+        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(3, 2))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
