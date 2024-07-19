@@ -633,38 +633,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )
         return val
 
-    def mul_div_A(self, A1, A2, dim_alpha, dim_beta1, dim_beta2):
-        A3 = math.block(
-            [
-                [
-                    A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
-                    A1[:dim_alpha, dim_alpha:],
-                    A2[:dim_alpha, dim_alpha:],
-                ],
-                [
-                    A1[dim_alpha:, :dim_alpha],
-                    A1[dim_alpha:, dim_alpha:],
-                    math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                ],
-                [
-                    A2[dim_alpha:, :dim_alpha],
-                    math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                    A2[dim_alpha:, dim_alpha:],
-                ],
-            ]
-        )
-        return A3
-
-    def mul_div_b(self, b1, b2, dim_alpha):
-        b3 = math.reshape(
-            math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
-        )
-        return b3
-
-    def mul_div_c(self, c1, c2):
-        c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-        return c3
-
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
@@ -678,6 +646,38 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
+        def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
+            A3 = math.block(
+                [
+                    [
+                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
+                        A1[:dim_alpha, dim_alpha:],
+                        A2[:dim_alpha, dim_alpha:],
+                    ],
+                    [
+                        A1[dim_alpha:, :dim_alpha],
+                        A1[dim_alpha:, dim_alpha:],
+                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        A2[dim_alpha:, :dim_alpha],
+                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
+                        A2[dim_alpha:, dim_alpha:],
+                    ],
+                ]
+            )
+            return A3
+
+        def mul_b(b1, b2, dim_alpha):
+            b3 = math.reshape(
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+            )
+            return b3
+
+        def mul_c(c1, c2):
+            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+            return c3
+
         if isinstance(other, DiffOpPolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
@@ -689,7 +689,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             dim_alpha = dim_alpha1
 
             new_a = [
-                self.mul_div_A(
+                mul_A(
                     math.cast(A1, "complex128"),
                     math.cast(A2, "complex128"),
                     dim_alpha,
@@ -698,10 +698,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 )
                 for A1, A2 in itertools.product(self.A, other.A)
             ]
-            new_b = [
-                self.mul_div_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)
-            ]
-            new_c = [self.mul_div_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
+            new_b = [mul_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [mul_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
 
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
@@ -723,6 +721,38 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             DiffOpPolyExpAnsatz: The product of this ansatz and other.
         """
 
+        def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
+            A3 = math.block(
+                [
+                    [
+                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
+                        A1[:dim_alpha, dim_alpha:],
+                        A2[:dim_alpha, dim_alpha:],
+                    ],
+                    [
+                        A1[dim_alpha:, :dim_alpha],
+                        A1[dim_alpha:, dim_alpha:],
+                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        A2[dim_alpha:, :dim_alpha],
+                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
+                        A2[dim_alpha:, dim_alpha:],
+                    ],
+                ]
+            )
+            return A3
+
+        def div_b(b1, b2, dim_alpha):
+            b3 = math.reshape(
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+            )
+            return b3
+
+        def div_c(c1, c2):
+            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+            return c3
+
         if isinstance(other, DiffOpPolyExpAnsatz):
 
             dim_beta1, _ = self.polynomial_degrees
@@ -734,7 +764,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 dim_alpha = dim_alpha1
 
                 new_a = [
-                    self.mul_div_A(
+                    div_A(
                         math.cast(A1, "complex128"),
                         -math.cast(A2, "complex128"),
                         dim_alpha,
@@ -743,13 +773,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     )
                     for A1, A2 in itertools.product(self.A, other.A)
                 ]
-                new_b = [
-                    self.mul_div_b(b1, -b2, dim_alpha)
-                    for b1, b2 in itertools.product(self.b, other.b)
-                ]
-                new_c = [
-                    self.mul_div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)
-                ]
+                new_b = [div_b(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
+                new_c = [div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
 
                 return self.__class__(A=new_a, b=new_b, c=new_c)
             else:
