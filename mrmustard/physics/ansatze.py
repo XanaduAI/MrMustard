@@ -521,6 +521,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         >>> # calculate the value of the function at ``z``
         >>> val = F(z)
+
     A and b can be batched or not, but c needs to include an explicit batch dimension that match A and b.
     Args:
         A: The list of square matrices :math:`A_i`
