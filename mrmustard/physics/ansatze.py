@@ -601,7 +601,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     for i in range(batch_size_arg)
                 ]
             )
-            b_poly = math.transpose(b_poly, perm=(1, 0, 2))
+            b_poly = math.moveaxis(b_poly, 0, 1)
             A_poly = self.A[..., dim_alpha:, dim_alpha:]
             poly = math.astensor(
                 [
@@ -611,20 +611,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     for i in range(batch_size)
                 ]
             )
-            poly = math.transpose(
-                poly,
-                perm=math.reshape(
-                    math.block(
-                        [
-                            [
-                                math.astensor((1, 0), dtype=math.int32),
-                                math.arange(2, 2 + dim_beta, dtype=math.int32),
-                            ]
-                        ]
-                    ),
-                    -1,
-                ),
-            )
+            poly = math.moveaxis(poly, 0, 1)
             val = math.sum(
                 exp_sum
                 * math.sum(
