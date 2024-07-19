@@ -590,11 +590,10 @@ class TestDM:
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
 
-    @pytest.mark.parametrize("modes", [[5], [1, 2]])
-    def test_random(self, modes):
+    @pytest.mark.parametrize("m", [1, 2])
+    def test_random(self, m):
 
-        m = len(modes)
-        A = DM.random(modes).representation.A[0]
+        A = DM.random(range(m)).representation.A[0]
         Gamma = A[:m, m:]
         Lambda = A[m:, m:]
         Temp = (
