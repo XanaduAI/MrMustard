@@ -182,7 +182,7 @@ class PolyExpBase(Ansatz):
         return self.array.shape[-1] - 1
 
     @property
-    def polynomial_degrees(self) -> tuple[int, tuple]:
+    def polynomial_shape(self) -> tuple[int, tuple]:
         r"""
         This method finds the dimensionality of the polynomial, i.e. how many wires
         have polynomials attached to them and what the degree of the polynomial is
@@ -267,7 +267,7 @@ class PolyExpBase(Ansatz):
         A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
         This decomposition is typically favourable if n>m, and will only run if that is the case.
         """
-        dim_beta, shape_beta = self.polynomial_degrees
+        dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
@@ -535,7 +535,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor] = np.array([1.0]),
+        c: Batch[Tensor] = np.array([[1.0]]),
         name: str = "",
     ):
         self.name = name
@@ -580,7 +580,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         Returns:
             The value of the function.
         """
-        dim_beta, shape_beta = self.polynomial_degrees
+        dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.A.shape[-1] - dim_beta
         batch_size = self.batch_size
 
@@ -670,8 +670,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         if isinstance(other, DiffOpPolyExpAnsatz):
 
-            dim_beta1, _ = self.polynomial_degrees
-            dim_beta2, _ = other.polynomial_degrees
+            dim_beta1, _ = self.polynomial_shape
+            dim_beta2, _ = other.polynomial_shape
 
             dim_alpha1 = self.A.shape[-1] - dim_beta1
             dim_alpha2 = other.A.shape[-1] - dim_beta2
@@ -745,8 +745,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         if isinstance(other, DiffOpPolyExpAnsatz):
 
-            dim_beta1, _ = self.polynomial_degrees
-            dim_beta2, _ = other.polynomial_degrees
+            dim_beta1, _ = self.polynomial_shape
+            dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
                 dim_alpha1 = self.A.shape[-1] - dim_beta1
                 dim_alpha2 = other.A.shape[-1] - dim_beta2
@@ -831,8 +831,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        dim_beta1, _ = self.polynomial_degrees
-        dim_beta2, _ = other.polynomial_degrees
+        dim_beta1, _ = self.polynomial_shape
+        dim_beta2, _ = other.polynomial_shape
 
         dim_alpha1 = self.A.shape[-1] - dim_beta1
         dim_alpha2 = other.A.shape[-1] - dim_beta2

@@ -512,11 +512,11 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz.b[1], np.array([1]))
         assert ansatz.c[1] == 1
 
-    def test_polynomial_degrees(self):
+    def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
         ansatz = DiffOpPolyExpAnsatz(A, b, c)
-        poly_dim, poly_shape = ansatz.polynomial_degrees
+        poly_dim, poly_shape = ansatz.polynomial_shape
         assert np.allclose(poly_dim, 1)
         assert np.allclose(poly_shape, (3,))
 
@@ -530,7 +530,7 @@ class TestDiffOpPolyExpAnsatz:
 
         ansatz3 = ansatz1 * ansatz2
 
-        poly_dim, poly_shape = ansatz3.polynomial_degrees
+        poly_dim, poly_shape = ansatz3.polynomial_shape
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
 
