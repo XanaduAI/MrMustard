@@ -596,7 +596,7 @@ class TestDM:
         A = DM.random(range(m)).representation.A[0]
         Gamma = A[:m, m:]
         Lambda = A[m:, m:]
-        Temp = (
+        Temp =  (
             np.eye(m)
             - Gamma
             - np.conjugate(Lambda.T) @ np.linalg.pinv(np.eye(m) - Gamma.T) @ Lambda
