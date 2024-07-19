@@ -507,7 +507,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
     parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
-    The dimension of z and y must be equal to the dimension of A and b.
+    The dimension of ``z + y`` must be equal to the dimension of ``A`` and ``b``.
 
         .. code-block::
 
