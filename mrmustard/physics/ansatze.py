@@ -644,7 +644,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             """
             dim_zi = len(zi)
             dim_beta, _ = self.polynomial_shape
-            gamma = np.array(zi[zi != None], dtype=math.complex128)
+            gamma = np.array(zi[zi != None], dtype=complex)
             gammagamma = np.einsum("...a,...b->...ab", gamma, gamma)
             remove_index_new = np.concatenate((zi != None, np.array([False] * dim_beta)), axis=-1)
             new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
