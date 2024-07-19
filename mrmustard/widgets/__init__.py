@@ -106,42 +106,87 @@ def bargmann(rep, batch_idx=None):
     b = rep.b[batch_idx]
     c = rep.c[batch_idx]
 
-    rows = ["".join([f"<td>{ele}</td>" for ele in row]) for row in A]
-    matrix_A = f"<table><tr>{'</tr><tr>'.join(rows)}</tr></table>"
+    def get_abc_str(A, b, c, round_val):
+        if round_val >= 0:
+            A = np.round(A, round_val)
+            b = np.round(b, round_val)
+            c = np.round(c, round_val)
 
-    b_str = [f"<tr><td>{x}</td></tr>" for x in b]
-    vector_b = f"<table>{''.join(b_str)}</table>"
+        rows = ["".join([f"<td>{ele}</td>" for ele in row]) for row in A]
+        A_str = f"<table><tr>{'</tr><tr>'.join(rows)}</tr></table>"
 
-    scalar_c = f"<div>{c}</div>"
+        b_str = [f"<tr><td>{x}</td></tr>" for x in b]
+        b_str = f"<table>{''.join(b_str)}</table>"
 
-    header_w = widgets.HTML(
-        f"""
-        <h1>Bargmann Representation</h1>
-        <div style="font-weight: bold;">
-            Ansatz: {rep.ansatz.__class__.__qualname__}</br>
-            Eigvals of A: {np.linalg.eigvals(A)}
-        </div>
-        """
+        c_str = f"<div>{c}</div>"
+        return A_str, b_str, c_str
+
+    triple_fstr = """
+    <style>.triple th {{ text-align: center; background-color: #FBAB7E; }}</style>
+    <table class="triple">
+        <tr><th>A</th> <th>b</th> <th>c</th> </tr>
+        <tr><td>{}</td><td>{}</td><td>{}</td></tr>
+    </table>
+    """
+
+    round_default = 4
+    round_w = widgets.IntText(value=round_default, description="Rounding (negative -> none):")
+    round_w.style.description_width = "230px"
+    header_w = widgets.HTML("<h1>Bargmann Representation</h1>")
+    sub_w = widgets.HBox(
+        [
+            widgets.HTML(
+                '<div style="font-weight: bold; font-size: 18px">Ansatz:</div>'
+                f"{rep.ansatz.__class__.__qualname__}</br>"
+            ),
+            round_w,
+        ]
     )
-    triple_w = widgets.HTML(
-        f"""
-        <style>.triple th {{ text-align: center; background-color: #FBAB7E; }}</style>
-        <table class="triple">
-            <tr>
-                <th>A</th>
-                <th>b</th>
-                <th>c</th>
-            </tr>
-            <tr>
-                <td>{matrix_A}</td>
-                <td>{vector_b}</td>
-                <td>{scalar_c}</td>
-            </tr>
-        </table>
-        """
+    triple_w = widgets.HTML(triple_fstr.format(*get_abc_str(A, b, c, round_default)))
+    eigs_header_w = widgets.HTML("<h2>Eigenvalues of A</h2>")
+    eigvals_w = go.FigureWidget(
+        layout=go.Layout(
+            xaxis={"range": [-1.1, 1.1], "minallowed": -1.1, "maxallowed": 1.1},
+            yaxis={"range": [-1.1, 1.1], "scaleanchor": "x", "scaleratio": 1},
+            width=300,
+            height=300,
+            margin={"l": 0, "b": 0, "t": 0, "r": 0},
+        ),
+    )
+    eigvals_w.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=-1,
+        y0=-1,
+        x1=1,
+        y1=1,
+        line_color="LightSeaGreen",
     )
 
-    return widgets.VBox([header_w, triple_w], layout={"max_width": "50%"})
+    eigvals = np.linalg.eigvals(A)
+    text = [f"re: {np.real(e)}<br />im: {np.imag(e)}" for e in eigvals]
+    eigvals_w.add_trace(
+        go.Scatter(
+            x=np.real(eigvals),
+            y=np.imag(eigvals),
+            hoverinfo="text",
+            text=text,
+            mode="markers",
+        )
+    )
+
+    def on_value_change(change):
+        round_val = change.new
+        triple_w.value = triple_fstr.format(*get_abc_str(A, b, c, round_val))
+
+    round_w.observe(on_value_change, names="value")
+
+    eigs_vbox = widgets.VBox([eigs_header_w, eigvals_w])
+    return widgets.Box(
+        [widgets.VBox([header_w, sub_w, triple_w]), eigs_vbox],
+        layout=widgets.Layout(max_width="50%", flex_flow="row wrap"),
+    )
 
 
 def wires(obj):
