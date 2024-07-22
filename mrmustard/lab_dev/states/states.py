@@ -220,10 +220,8 @@ class Number(Ket):
         if len(self._cutoffs) != len(modes):
             msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
             raise ValueError(msg)
-
-    @property
-    def representation(self) -> Fock:
-        return Fock(fock_state(self.n, self.cutoffs))
+        
+        self._representation = Fock.from_function(fock_state, n=self.n, cutoffs=self.cutoffs)
 
     @property
     def cutoffs(self):

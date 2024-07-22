@@ -55,6 +55,16 @@ class Ansatz(ABC):
     ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__``, and ``__eq__`` methods.
     """
 
+    def __init__(self) -> None:
+        self._fn = None
+        self._kwargs = {}
+
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
+        r"""
+        Returns an ansatz from a function and kwargs.
+        """
+    
     @abstractmethod
     def __neg__(self) -> Ansatz:
         r"""
@@ -113,7 +123,6 @@ class Ansatz(ABC):
         return self * other
 
 
-# pylint: disable=too-many-instance-attributes
 class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
@@ -146,6 +155,7 @@ class PolyExpBase(Ansatz):
         vec: Batch[Vector],
         array: Batch[Tensor],
     ):
+        super().__init__()
         self._mat = mat
         self._vec = vec
         self._array = array
@@ -154,8 +164,6 @@ class PolyExpBase(Ansatz):
         self._backends = [False, False, False]
 
         self._simplified = False
-        self._fn = None
-        self._kwargs = {}
 
     def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
@@ -182,7 +190,7 @@ class PolyExpBase(Ansatz):
         r"""
         The array of this ansatz.
         """
-        self._generate_tensors()
+        self._generate_ansatz()
         if not self._backends[2]:
             self._array = math.atleast_1d(self._array)
             self._backends[2] = True
@@ -214,7 +222,7 @@ class PolyExpBase(Ansatz):
         r"""
         The matrix of this ansatz.
         """
-        self._generate_tensors()
+        self._generate_ansatz()
         if not self._backends[0]:
             self._mat = math.atleast_3d(self._mat)
             self._backends[0] = True
@@ -237,7 +245,7 @@ class PolyExpBase(Ansatz):
         r"""
         The vector of this ansatz.
         """
-        self._generate_tensors()
+        self._generate_ansatz()
         if not self._backends[1]:
             self._vec = math.atleast_2d(self._vec)
             self._backends[1] = True
@@ -294,7 +302,7 @@ class PolyExpBase(Ansatz):
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
-    def _generate_tensors(self):
+    def _generate_ansatz(self):
         r"""
         This method computes and sets the matrix, vector and array given a function
         and some kwargs.
@@ -528,17 +536,26 @@ class ArrayAnsatz(Ansatz):
     """
 
     def __init__(self, array: Batch[Tensor], batched: bool = True):
+        super().__init__()
+
         self._array = array if batched else [array]
-        self._backend_array = None
+        self._backend_array = False
 
     @property
     def array(self) -> Batch[Tensor]:
         r"""
         The array of this ansatz.
         """
-        if self._backend_array is None:
-            self._backend_array = math.astensor(self._array)
-        return self._backend_array
+        self._generate_ansatz()
+        if not self._backend_array:
+            self._array = math.astensor(self._array)
+            self._backend_array = True
+        return self._array
+    
+    @array.setter
+    def array(self, value):
+        self._array = value
+        self._backend_array = False
 
     @property
     def num_vars(self) -> int:
@@ -546,6 +563,24 @@ class ArrayAnsatz(Ansatz):
         The number of variables in this ansatz.
         """
         return len(self.array.shape) - 1
+    
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
+        r"""
+        Returns an ArrayAnsatz object from a generator function.
+        """
+        ret = cls(None, True)
+        ret._fn = fn
+        ret._kwargs = kwargs
+        return ret
+
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the array given a function
+        and some kwargs.
+        """
+        if self._array is None:
+            self.array = [self._fn(**self._kwargs)]
 
     def __neg__(self) -> ArrayAnsatz:
         r"""

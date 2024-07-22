@@ -76,6 +76,12 @@ class Representation(ABC):
         Returns a representation from an ansatz.
         """
 
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+        r"""
+        Returns a representation from a function and kwargs.
+        """
+
     @property
     @abstractmethod
     def data(self) -> tuple | Tensor:
@@ -318,10 +324,7 @@ class Bargmann(Representation):
         r"""
         Returns a Bargmann object from a generator function.
         """
-        ret = cls(None, None, None)
-        ansatz = PolyExpAnsatz.from_function(fn, **kwargs)
-        ret._ansatz = ansatz
-        return ret
+        return cls.from_ansatz(PolyExpAnsatz.from_function(fn, **kwargs))
 
     def conj(self):
         r"""
@@ -617,6 +620,13 @@ class Fock(Representation):
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
         return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
+        r"""
+        Returns a Fock object from a generator function.
+        """
+        return cls.from_ansatz(ArrayAnsatz.from_function(fn, **kwargs))
 
     def conj(self):
         r"""
