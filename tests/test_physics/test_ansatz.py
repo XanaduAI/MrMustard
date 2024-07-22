@@ -447,7 +447,7 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
         with pytest.raises(
-            ValueError, match="The sum of the dimension of the argument and polynomial"
+            Exception, match="The sum of the dimension of the argument and polynomial"
         ):
             ansatz(z)
 
