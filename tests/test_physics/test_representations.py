@@ -178,7 +178,7 @@ class TestBargmannRepresentation:
         bargmann = Bargmann(*triple)
         z = 0.1 + 0.2j
         dim = triple[0].shape[0]
-        assert bargmann(z*np.ones(dim)) == bargmann.ansatz(z*np.ones(dim))
+        assert bargmann(z * np.ones(dim)) == bargmann.ansatz(z * np.ones(dim))
 
     def test_matmul_barg_barg(self):
         triple1 = Abc_triple(3)
