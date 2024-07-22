@@ -564,7 +564,8 @@ class CircuitComponent:
         rep_widget = rep_fn(self.representation)
         wires_widget = mmwidgets.wires(self.wires)
         if not rep_widget:
-            display(widgets.VBox([widgets.HTML(f"<h1>{self}</h1>"), wires_widget]))
+            title_widget = widgets.HTML(f"<h1>{self.name or type(self).__name__}</h1>")
+            display(widgets.VBox([title_widget, wires_widget]))
             return
         rep_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"

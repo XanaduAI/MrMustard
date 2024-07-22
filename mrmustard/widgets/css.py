@@ -1,6 +1,6 @@
 """This file contains some large CSS strings for styling widgets."""
 
-FOCK_CSS = """
+FOCK = """
 <style>
 .table-fock {
   border-collapse: collapse;
@@ -12,7 +12,7 @@ FOCK_CSS = """
 </style>
 """
 
-WIRES_CSS = """
+WIRES = """
 <style>
 .line {
   width: 100%;
@@ -41,7 +41,7 @@ WIRES_CSS = """
 </style>
 """
 
-TABLE_CSS = """
+TABLE = """
 <style>
 td {
   border: 1px solid;
@@ -52,5 +52,17 @@ th {
   font-size: 14px;
   text-align: center;
 }
+</style>
+"""
+
+STATE = """
+<style>
+  .state-table tr { display: block; float: left; }
+  .state-table th { display: block; }
+  .state-table td { display: block; }
+  .state-table {
+    margin: auto;
+    border-collapse: collapse;
+  }
 </style>
 """

@@ -18,10 +18,22 @@ import ipywidgets as widgets
 import numpy as np
 import plotly.graph_objs as go
 
-from .css import FOCK_CSS, WIRES_CSS, TABLE_CSS
+from .css import FOCK, WIRES, TABLE, STATE
 
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
+
+
+def _batch_widget(obj, batch_size, widget_fn, *widget_args):
+    """Return a batch of widgets with a slider."""
+    if batch_size == 1:
+        return widget_fn(obj, *widget_args, batch_idx=0)
+    slider = widgets.IntSlider(0, min=0, max=batch_size - 1, description="Batch index:")
+    stack = widgets.Stack(
+        [widget_fn(obj, *widget_args, batch_idx=i) for i in range(batch_size)], selected_index=0
+    )
+    widgets.jslink((slider, "value"), (stack, "selected_index"))
+    return widgets.VBox([slider, stack])
 
 
 def fock(rep):
@@ -73,14 +85,14 @@ def fock(rep):
 
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
-        TABLE_CSS + "<table class=table-fock>"
+        TABLE + "<table class=table-fock>"
         f"<tr><th>Ansatz</th><td>{rep.ansatz.__class__.__qualname__}</td></tr>"
         f"<tr><th>Shape</th><td>{shape}</td></tr>"
         "</table>"
     )
     return widgets.HBox(
         children=[
-            widgets.HTML(FOCK_CSS),
+            widgets.HTML(FOCK),
             widgets.VBox(children=[header_widget, table_widget]),
             plot_widget,
         ],
@@ -91,16 +103,7 @@ def fock(rep):
 def bargmann(rep, batch_idx=None):
     """Create a widget to display a Bargmann representation."""
     if batch_idx is None:
-        batch_size = rep.A.shape[0]
-        if batch_size == 1:  # no batching, omit the slider
-            return bargmann(rep, batch_idx=0)
-        batch_idx = 0
-        slider = widgets.IntSlider(0, min=0, max=batch_size - 1, description="Batch index:")
-        stack = widgets.Stack(
-            [bargmann(rep, batch_idx=i) for i in range(batch_size)], selected_index=0
-        )
-        widgets.jslink((slider, "value"), (stack, "selected_index"))
-        return widgets.VBox([slider, stack])
+        return _batch_widget(rep, rep.A.shape[0], bargmann)
 
     A = rep.A[batch_idx]
     b = rep.b[batch_idx]
@@ -141,7 +144,7 @@ def bargmann(rep, batch_idx=None):
             round_w,
         ]
     )
-    triple_w = widgets.HTML(TABLE_CSS + triple_fstr.format(*get_abc_str(A, b, c, round_default)))
+    triple_w = widgets.HTML(TABLE + triple_fstr.format(*get_abc_str(A, b, c, round_default)))
     eigs_header_w = widgets.HTML("<h2>Eigenvalues of A</h2>")
     eigvals_w = go.FigureWidget(
         layout=go.Layout(
@@ -149,7 +152,7 @@ def bargmann(rep, batch_idx=None):
             yaxis={"range": [-1.1, 1.1], "scaleanchor": "x", "scaleratio": 1},
             width=180,
             height=180,
-            margin={"l": 0, "b": 0, "t": 0, "r": 0},
+            margin=NO_MARGIN,
         ),
     )
     # Replace config to hide the Plotly mode bar
@@ -244,7 +247,7 @@ def wires(obj):
 
     return widgets.HTML(
         f"""
-        {WIRES_CSS}{TABLE_CSS}
+        {WIRES}{TABLE}
         <div class="modes-grid">
             <div class="square">Wires</div>
             {"".join(wire_labels)}
@@ -253,53 +256,52 @@ def wires(obj):
     )
 
 
-def state(obj, is_ket, is_fock):
+def state(obj, is_ket, is_fock, batch_idx=None):
     """Create a widget to display a state."""
-    fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
-    table_widget = widgets.HTML(
-        f"""
-        {TABLE_CSS}
-        <h1>{obj.name or obj.__class__.__name__}</h1>
-        <table class="state-table" style="border-collapse: collapse; text-align: center">
-            <tr>
-                <th>Purity</th>
-                <th>Probability</th>
-                <th>Number of modes</th>
-                <th>Class</th>
-                <th>Bargmann</th>
-                <th>Fock</th>
-            </tr>
+    if batch_idx is None:
+        a = obj.representation.array if is_fock else obj.representation.A
+        return _batch_widget(obj, a.shape[0], state, is_ket, is_fock)
 
-            <tr>
-                <td>{f"{obj.purity}" if obj.purity == 1 else f"{obj.purity :.2e}"}</td>
-                <td>{f"{100*obj.probability:.3e} %" if obj.probability < 0.001 else f"{obj.probability:.2%}"}</td></td>
-                <td>{obj.n_modes}</td></td>
-                <td>{"Ket" if is_ket else "DM"}</td></td>
-                <td>{bargmann_yn}</td></td>
-                <td>{fock_yn}</td>
-            </tr>
-        </table>
-        """
-    )
+    fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
+    table_html = f"""
+    {TABLE}
+    {STATE}
+    <h1>{obj.name or type(obj).__name__}</h1>
+    <table class="state-table">
+        <tr>
+            <th>Purity</th>
+            <th>Probability</th>
+            <th>Number of modes</th>
+            <th>Class</th>
+            <th>Bargmann</th>
+            <th>Fock</th>
+        </tr>
+
+        <tr>
+            <td>{f"{obj.purity}" if obj.purity == 1 else f"{obj.purity :.2e}"}</td>
+            <td>{f"{100*obj.probability:.3e} %" if obj.probability < 0.001 else f"{obj.probability:.2%}"}</td></td>
+            <td>{obj.n_modes}</td></td>
+            <td>{"Ket" if is_ket else "DM"}</td></td>
+            <td>{bargmann_yn}</td></td>
+            <td>{fock_yn}</td>
+        </tr>
+    </table>
+    """
 
     if obj.n_modes != 1:
-        return table_widget
+        table_widget = widgets.HTML(table_html.replace(' class="state-table"', ""))
+        wires_widget = wires(obj.wires)
+        table_widget.layout.padding = "10px"
+        wires_widget.layout.padding = "10px"
+        return widgets.VBox([table_widget, wires_widget])
 
-    style_widget = widgets.HTML(
-        """
-        <style>
-        .state-table tr { display: block; float: left; }
-        .state-table th { display: block; }
-        .state-table td { display: block; }
-        .state-table { margin: auto; }
-        </style>
-        """
-    )
+    table_widget = widgets.HTML(table_html)
     left_widget = widgets.VBox(
-        [table_widget, go.FigureWidget(obj.visualize_dm())],
+        [table_widget, go.FigureWidget(obj.visualize_dm(batch_idx=batch_idx))],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
     )
+    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100, batch_idx=batch_idx))
     return widgets.HBox(
-        [style_widget, left_widget, go.FigureWidget(obj.visualize_2d(resolution=100))],
+        [left_widget, right_widget],
         layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),
     )
