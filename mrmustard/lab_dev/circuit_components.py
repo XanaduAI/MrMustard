@@ -150,7 +150,8 @@ class CircuitComponent:
                 of modes (e.g. for parallel gates).
         """
         if parameter.value.shape != ():
-            if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
+            length = sum(parameter.value.shape)
+            if length != 1 and length != len(self.modes):
                 msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
                 raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)

@@ -672,7 +672,11 @@ class DM(State):
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM(modes, Bargmann(*wigner_to_bargmann_rho(cov, means)), name)
+        return coeff * DM(
+            modes,
+            Bargmann.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
+            name,
+        )
 
     def normalize(self) -> DM:
         r"""
@@ -844,7 +848,11 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-        return Ket(modes, coeff * Bargmann(*wigner_to_bargmann_psi(cov, means)), name)
+        return Ket(
+            modes,
+            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            name,
+        )
 
     def normalize(self) -> Ket:
         r"""
