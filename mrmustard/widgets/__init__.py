@@ -18,7 +18,7 @@ import ipywidgets as widgets
 import numpy as np
 import plotly.graph_objs as go
 
-from .css import FOCK_CSS, WIRES_CSS
+from .css import FOCK_CSS, WIRES_CSS, TABLE_CSS
 
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
@@ -36,7 +36,7 @@ def fock(rep):
         yaxis = "axis 0"
         array = rep.array[0]
     else:  # TODO: add multi-dimensional visualization
-        raise ValueError(f"unexpected Fock representation with shape {shape}")
+        return None
 
     text = [
         [f"{yaxis}: {y}<br />{xaxis}: {x}<br />val: {val}<br />" for x, val in enumerate(row)]
@@ -73,7 +73,7 @@ def fock(rep):
 
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
-        "<table class=table-fock>"
+        TABLE_CSS + "<table class=table-fock>"
         f"<tr><th>Ansatz</th><td>{rep.ansatz.__class__.__qualname__}</td></tr>"
         f"<tr><th>Shape</th><td>{shape}</td></tr>"
         "</table>"
@@ -122,8 +122,7 @@ def bargmann(rep, batch_idx=None):
         return A_str, b_str, c_str
 
     triple_fstr = """
-    <style>.triple th {{ text-align: center; background-color: #FBAB7E; }}</style>
-    <table class="triple">
+    <table>
         <tr><th>A</th> <th>b</th> <th>c</th> </tr>
         <tr><td>{}</td><td>{}</td><td>{}</td></tr>
     </table>
@@ -142,17 +141,20 @@ def bargmann(rep, batch_idx=None):
             round_w,
         ]
     )
-    triple_w = widgets.HTML(triple_fstr.format(*get_abc_str(A, b, c, round_default)))
+    triple_w = widgets.HTML(TABLE_CSS + triple_fstr.format(*get_abc_str(A, b, c, round_default)))
     eigs_header_w = widgets.HTML("<h2>Eigenvalues of A</h2>")
     eigvals_w = go.FigureWidget(
         layout=go.Layout(
             xaxis={"range": [-1.1, 1.1], "minallowed": -1.1, "maxallowed": 1.1},
             yaxis={"range": [-1.1, 1.1], "scaleanchor": "x", "scaleratio": 1},
-            width=300,
-            height=300,
+            width=180,
+            height=180,
             margin={"l": 0, "b": 0, "t": 0, "r": 0},
         ),
     )
+    # Replace config to hide the Plotly mode bar
+    # See: https://github.com/plotly/plotly.py/issues/1074#issuecomment-1471486307
+    eigvals_w._config = eigvals_w._config | {"displayModeBar": False}
     eigvals_w.add_shape(
         type="circle",
         xref="x",
@@ -242,7 +244,7 @@ def wires(obj):
 
     return widgets.HTML(
         f"""
-        {WIRES_CSS}
+        {WIRES_CSS}{TABLE_CSS}
         <div class="modes-grid">
             <div class="square">Wires</div>
             {"".join(wire_labels)}
@@ -251,13 +253,14 @@ def wires(obj):
     )
 
 
-def state(obj, is_ket=False, is_fock=False):
+def state(obj, is_ket, is_fock):
     """Create a widget to display a state."""
     fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
     table_widget = widgets.HTML(
         f"""
+        {TABLE_CSS}
         <h1>{obj.name or obj.__class__.__name__}</h1>
-        <table style="border-collapse: collapse; text-align: center">
+        <table class="state-table" style="border-collapse: collapse; text-align: center">
             <tr>
                 <th>Purity</th>
                 <th>Probability</th>
@@ -285,14 +288,15 @@ def state(obj, is_ket=False, is_fock=False):
     style_widget = widgets.HTML(
         """
         <style>
-        tr { display: block; float: left; }
-        th, td { display: block; }
-        table { margin: auto; }
+        .state-table tr { display: block; float: left; }
+        .state-table th { display: block; }
+        .state-table td { display: block; }
+        .state-table { margin: auto; }
         </style>
         """
     )
     left_widget = widgets.VBox(
-        [table_widget, go.FigureWidget(obj.visualize_dm(40))],
+        [table_widget, go.FigureWidget(obj.visualize_dm())],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
     )
     return widgets.HBox(

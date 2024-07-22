@@ -561,8 +561,13 @@ class CircuitComponent:
     def _repr_html_(self):  # pragma: no cover
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
-        rep_widget = rep_fn(self.representation) or widgets.HTML(f"<h1>{self}</h1>")
+        rep_widget = rep_fn(self.representation)
         wires_widget = mmwidgets.wires(self.wires)
+        if not rep_widget:
+            display(widgets.VBox([widgets.HTML(f"<h1>{self}</h1>"), wires_widget]))
+            return
+        rep_widget.layout.padding = "10px"
+        wires_widget.layout.padding = "10px"
         display(
             widgets.Box(
                 [wires_widget, rep_widget],

@@ -3,11 +3,11 @@
 FOCK_CSS = """
 <style>
 .table-fock {
-    border-collapse: collapse;
-    text-align: left;
+  border-collapse: collapse;
+  text-align: left;
 }
 .table-fock th {
-    text-align: left;
+  text-align: left;
 }
 </style>
 """
@@ -38,6 +38,11 @@ WIRES_CSS = """
   grid-template-columns: 108px 108px 108px;
   grid-template-rows: 50px 50px;
 }
+</style>
+"""
+
+TABLE_CSS = """
+<style>
 td {
   border: 1px solid;
 }
