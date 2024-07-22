@@ -149,7 +149,8 @@ class PolyExpBase(Ansatz):
         self.vec = math.atleast_2d(vec)
         self.array = math.atleast_1d(array)
         self.batch_size = self.mat.shape[0]
-        self.num_vars = self.mat.shape[-1]
+        dim_poly, _ = self.polynomial_shape
+        self.num_vars = self.mat.shape[-1] - dim_poly
         self._simplified = False
 
     def __neg__(self) -> PolyExpBase:
