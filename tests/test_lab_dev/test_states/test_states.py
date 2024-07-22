@@ -17,10 +17,10 @@
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import json
+from pathlib import Path
 import numpy as np
 import pytest
 
-from pathlib import Path
 
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann
