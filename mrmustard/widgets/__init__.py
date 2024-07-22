@@ -36,45 +36,26 @@ def _batch_widget(obj, batch_size, widget_fn, *widget_args):
     return widgets.VBox([slider, stack])
 
 
-def fock(rep):
-    """Create a widget to display a Fock representation."""
-    shape = rep.array.shape
-    if len(shape) == 2:
-        xaxis = "n"
-        yaxis = "batch"
-        array = rep.array
-    elif len(shape) == 3 and shape[0] == 1:
-        xaxis = "axis 1"
-        yaxis = "axis 0"
-        array = rep.array[0]
-    else:  # TODO: add multi-dimensional visualization
-        return None
-
+def fock_1d(array):
+    """Return a plot widget for a 2D Fock representation."""
+    y = abs(array)
+    z = np.angle(array)
     text = [
-        [f"{yaxis}: {y}<br />{xaxis}: {x}<br />val: {val}<br />" for x, val in enumerate(row)]
-        for y, row in enumerate(array)
+        f"x: {x}<br />abs(arr[x]): {y_}<br />phase(arr[x]): {z_}<br />"
+        for x, (y_, z_) in enumerate(zip(y, z))
     ]
-
     layout = {
         "height": 200,
         "width": 430,
         "margin": NO_MARGIN,
-        "showlegend": False,
-        "xaxis": {
-            "title": xaxis,
-            "showgrid": True,
-            "showline": True,
-        },
-        "yaxis": {
-            "title": yaxis,
-            "autorange": "reversed",
-            "showgrid": True,
-            "showticklabels": False,
-        },
+        "xaxis": {"title": "x"},
+        "yaxis": {"title": "abs(arr[x])"},
     }
-    plot_widget = go.FigureWidget(
+    return go.FigureWidget(
         data=go.Heatmap(
-            z=abs(array),
+            x=list(range(len(array))),
+            y=y,
+            z=z,
             colorscale="viridis",
             showscale=False,
             hoverinfo="text",
@@ -83,6 +64,45 @@ def fock(rep):
         layout=layout,
     )
 
+
+def fock_2d(array):
+    """Return a plot widget for a 1D Fock representation."""
+    z = abs(array)
+    text = [
+        [f"x: {x}<br />y: {y}<br />abs(arr[x, y]): {z_}" for x, z_ in enumerate(row)]
+        for y, row in enumerate(z)
+    ]
+    layout = {
+        "height": 200,
+        "width": 430,
+        "margin": NO_MARGIN,
+        "yaxis": {"autorange": "reversed"},
+    }
+    return go.FigureWidget(
+        data=go.Heatmap(
+            z=z,
+            colorscale="viridis",
+            showscale=False,
+            hoverinfo="text",
+            text=text,
+        ),
+        layout=layout,
+    )
+
+
+def fock(rep):
+    """Create a widget to display a Fock representation."""
+    shape = rep.array.shape
+    if shape[0] != 1:  # the batch dimension should be trivial for Fock representations
+        return
+
+    if len(shape) == 2:
+        plot_widget = fock_1d(rep.array[0])
+    elif len(shape) == 3:
+        plot_widget = fock_2d(rep.array[0])
+    else:  # TODO: add multi-dimensional visualization
+        return None
+
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
         TABLE + "<table class=table-fock>"
@@ -90,12 +110,12 @@ def fock(rep):
         f"<tr><th>Shape</th><td>{shape}</td></tr>"
         "</table>"
     )
+    left_widget = widgets.VBox(children=[header_widget, table_widget])
+    table_widget.layout.padding = "10px"
+    left_widget.layout.padding = "10px"
+
     return widgets.HBox(
-        children=[
-            widgets.HTML(FOCK),
-            widgets.VBox(children=[header_widget, table_widget]),
-            plot_widget,
-        ],
+        children=[widgets.HTML(FOCK), left_widget, plot_widget],
         layout=widgets.Layout(flex_flow="row wrap"),
     )
 
