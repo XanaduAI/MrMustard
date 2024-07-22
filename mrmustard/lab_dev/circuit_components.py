@@ -91,12 +91,6 @@ class CircuitComponent:
                 + tuple(np.argsort(modes_in_ket) + offsets[2])
             )
             if self._representation:
-                try:
-                    dim_poly,_ = self._representation._ansatz.polynomial_shape
-                except:
-                    dim_poly = 0
-                if dim_poly>0:
-                    perm = perm + tuple(np.arange(dim_poly) + offsets[2]+len(ik))
                 self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
