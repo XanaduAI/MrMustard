@@ -64,7 +64,7 @@ class Ansatz(ABC):
         r"""
         Returns an ansatz from a function and kwargs.
         """
-    
+
     @abstractmethod
     def __neg__(self) -> Ansatz:
         r"""
@@ -123,6 +123,7 @@ class Ansatz(ABC):
         return self * other
 
 
+# pylint: disable=too-many-instance-attributes
 class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
@@ -551,7 +552,7 @@ class ArrayAnsatz(Ansatz):
             self._array = math.astensor(self._array)
             self._backend_array = True
         return self._array
-    
+
     @array.setter
     def array(self, value):
         self._array = value
@@ -563,7 +564,7 @@ class ArrayAnsatz(Ansatz):
         The number of variables in this ansatz.
         """
         return len(self.array.shape) - 1
-    
+
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
         r"""
