@@ -261,8 +261,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
                 order = order + tuple(np.arange(len(order), len(order) + dim_poly))
         A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
         b = math.gather(b, order, axis=-1)
-        if len(c.shape) == len(order):
-            c = math.transpose(c, order)
+        # if len(c.shape) == len(order):
+        #     c = math.transpose(c, order)
     return A, b, c
 
 
