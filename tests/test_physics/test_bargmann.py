@@ -68,9 +68,7 @@ def test_norm_ket():
 
 def test_trace_dm():
     """Test that the trace of a density matrix is calculated correctly"""
-    ket = Vacuum([0, 1, 2, 3]) >> Unitary.from_symplectic(
-        [0, 1, 2, 3], math.random_symplectic(4)
-    )
+    ket = Vacuum([0, 1, 2, 3]) >> Unitary.from_symplectic([0, 1, 2, 3], math.random_symplectic(4))
     dm = ket[0, 1]
     A, b, c = [x[0] for x in dm.bargmann]
     assert np.allclose(trace_dm(A, b, c), dm.probability)
