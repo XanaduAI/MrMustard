@@ -439,7 +439,7 @@ class TestCircuitComponent:
         adj = AdjointView(Dgate([1], x=0.1, y=0.1))
         if is_fock:
             adj = adj.to_fock()
-        adj._ipython_display_()
+        adj._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
         [wires_widget, rep_widget] = box.children
@@ -450,7 +450,7 @@ class TestCircuitComponent:
     def test_ipython_repr_invalid_obj(self, mock_display):
         """Test the IPython repr function."""
         adj = AdjointView(Dgate([1, 2], x=0.1, y=0.1)).to_fock()
-        adj._ipython_display_()
+        adj._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, VBox)
         [title_widget, wires_widget] = box.children

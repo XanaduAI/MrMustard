@@ -195,7 +195,7 @@ class TestBargmannRepresentation:
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
         rep = Bargmann(*Abc_triple(2))
-        rep._ipython_display_()
+        rep._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
         assert box.layout.max_width == "50%"
@@ -227,7 +227,7 @@ class TestBargmannRepresentation:
         A1, b1, c1 = Abc_triple(2)
         A2, b2, c2 = Abc_triple(2)
         rep = Bargmann(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
-        rep._ipython_display_()
+        rep._ipython_display_()  # pylint:disable=protected-access
         [vbox] = mock_display.call_args.args
         assert isinstance(vbox, VBox)
 
@@ -241,7 +241,7 @@ class TestBargmannRepresentation:
         assert all(box.layout.max_width == "50%" for box in stack.children)
 
 
-class TestFockRepresentation:
+class TestFockRepresentation:  # pylint:disable=too-many-public-methods
     r"""Tests the Fock Representation."""
 
     array578 = np.random.random((5, 7, 8))
@@ -397,7 +397,7 @@ class TestFockRepresentation:
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
         rep = Fock(np.random.random(shape), batched=True)
-        rep._ipython_display_()
+        rep._ipython_display_()  # pylint:disable=protected-access
         [hbox] = mock_display.call_args.args
         assert isinstance(hbox, HBox)
 
@@ -420,12 +420,12 @@ class TestFockRepresentation:
     def test_ipython_repr_expects_batch_1(self, mock_display):
         """Test the IPython repr function does nothing with real batch."""
         rep = Fock(np.random.random((2, 8)), batched=True)
-        rep._ipython_display_()
+        rep._ipython_display_()  # pylint:disable=protected-access
         mock_display.assert_not_called()
 
     @patch("mrmustard.physics.representations.display")
     def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
         """Test the IPython repr function does nothing with 4+ dims."""
         rep = Fock(np.random.random((1, 4, 4, 4)), batched=True)
-        rep._ipython_display_()
+        rep._ipython_display_()  # pylint:disable=protected-access
         mock_display.assert_not_called()

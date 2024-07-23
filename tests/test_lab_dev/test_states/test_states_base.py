@@ -16,9 +16,7 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-from unittest.mock import patch
-
-from ipywidgets import Box, HBox, VBox, HTML
+from ipywidgets import HBox, VBox, HTML
 import numpy as np
 from plotly.graph_objs import FigureWidget
 import pytest
@@ -396,7 +394,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(wires, HTML)
 
 
-class TestDM:
+class TestDM:  # pylint:disable=too-many-public-methods
     r"""
     Tests for the ``DM`` class.
     """

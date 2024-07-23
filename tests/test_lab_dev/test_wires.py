@@ -187,6 +187,6 @@ class TestWires:
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
         wires = Wires({0}, {}, {3}, {3, 4})
-        wires._ipython_display_()
+        wires._ipython_display_()  # pylint:disable=protected-access
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
