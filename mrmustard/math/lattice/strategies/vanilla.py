@@ -198,7 +198,7 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     return dLdA, dLdb, dLdc
 
 
-# @njit
+@njit
 def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
@@ -284,14 +284,16 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
     for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
-        A_mm = np.array(A[idx_m, :][:, idx_m]).transpose((2, 0, 3, 1)).reshape((2, 2))
-        A_nn = (
-            np.array(A[idx_n, :][:, idx_n]).transpose((2, 0, 3, 1)).reshape((2 * M - 2, 2 * M - 2))
+        A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
+        A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2 * M - 2, 2 * M - 2)
         )
-        A_mn = np.array(A[idx_m, :][:, idx_n]).transpose((2, 0, 3, 1)).reshape((2, 2 * M - 2))
+        A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2, 2 * M - 2)
+        )
         A_nm = np.transpose(A_mn)
-        b_m = b[idx_m].transpose().reshape((2,))
-        b_n = b[idx_n].transpose().reshape((2 * M - 2,))
+        b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))
+        b_n = np.ascontiguousarray(b[idx_n].transpose()).reshape((2 * M - 2,))
         # single-mode A,b,c
         A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
         b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n

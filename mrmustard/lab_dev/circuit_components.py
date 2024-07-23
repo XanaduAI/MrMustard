@@ -397,8 +397,8 @@ class CircuitComponent:
 
         return ret
 
-    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
-        r"""
+    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
+        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
