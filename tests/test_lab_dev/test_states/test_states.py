@@ -241,24 +241,25 @@ class TestQuadratureEigenstate:
         val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
         assert np.allclose(val0, val1)
 
+    hbar = [3.0, 4.0]
 
-    hbar = [3.0,4.0]
     @pytest.mark.parametrize("hbar", hbar)
-    def test_probability_hbar(self,hbar):
+    def test_probability_hbar(self, hbar):
 
         settings._hbar_locked = False
         settings.HBAR = 2.0
-        
+
         q0 = QuadratureEigenstate([0], x=0, phi=0)
 
         settings.HBAR = hbar
         q1 = QuadratureEigenstate([0], x=0, phi=0)
-        assert np.allclose(q0.bargmann[0],q1.bargmann[0])
-        assert np.allclose(q0.bargmann[1],q1.bargmann[1])
-        assert np.allclose(q0.bargmann[2],q1.bargmann[2])
-        
+        assert np.allclose(q0.bargmann[0], q1.bargmann[0])
+        assert np.allclose(q0.bargmann[1], q1.bargmann[1])
+        assert np.allclose(q0.bargmann[2], q1.bargmann[2])
+
         settings._hbar_locked = False
         settings.HBAR = 2.0
+
 
 class TestSqueezedVacuum:
     r"""

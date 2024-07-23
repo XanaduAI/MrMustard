@@ -405,6 +405,8 @@ class QuadratureEigenstate(Ket):
     @property
     def probability(self) -> float:
         return math.inf
+
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
