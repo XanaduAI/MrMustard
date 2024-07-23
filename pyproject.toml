@@ -42,7 +42,7 @@ plotly = "^5.20.0"
 nbformat = "^5.10"
 ipywidgets = "^8.1.3"
 
-######################  The Tensorflow Section ###################### 
+######################  The Tensorflow Section ######################
 # Dedicated for making sure that poetry can install tensorflow on all platforms.
 # This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
 
@@ -65,6 +65,11 @@ tensorflow-io-gcs-filesystem = [
 ]
 tensorflow-probability = { version = ">=0.22.0,<1.0", extras = ["tf"] }
 semantic-version = "^2.10.0"
+setuptools = "70.0.0"
+zipp = "3.19.1"
+urllib3 = "2.2.2"
+scikit-learn = "1.5.0"
+certifi = "2024.07.04"
 
 [tool.poetry.extras]
 ray = ["ray", "scikit-optimize"]
@@ -73,6 +78,7 @@ ray = ["ray", "scikit-optimize"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
+pre-commit = "3.7.1"
 pytest = "8.0"
 pytest-cov ="3.0.0"
 hypothesis = "6.31.6"
@@ -92,6 +98,9 @@ sphinx-automodapi = "^0.15.0"
 sphinxcontrib-bibtex = "^2.5.0"
 mistune = "0.8.4"
 xanadu-sphinx-theme = "0.1.0"
+
+[tool.black]
+line-length = 100
 
 [build-system]
 requires = ["poetry-core"]

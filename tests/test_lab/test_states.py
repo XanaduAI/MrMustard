@@ -305,7 +305,10 @@ def test_padding_dm():
     "Test that padding a density matrix works correctly."
     state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
-    assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
+    assert tuple(int(c) for c in state._dm.shape) == (
+        20,
+        20,
+    )  # pylint: disable=protected-access
 
 
 def test_state_repr_small_prob():
