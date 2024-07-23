@@ -248,18 +248,18 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 1
-                mode 0:   ──Sgate(0.1,0.0)
-                mode 1:   ──Sgate(0.2,0.0)
+                mode 0:   ──S(0.1,0.0)
+                mode 1:   ──S(0.2,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•──────────────
-                mode 1:   ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•──────────
+                mode 1:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 3
-                mode 1:   ──╭•──────────────
-                mode 2:   ──╰BSgate(0.0,0.0)
+                mode 1:   ──╭•──────────
+                mode 2:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -269,19 +269,19 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
-                mode 2:     ◖Vac◗────────────────
+                mode 0:     ◖Vac◗──S(0.1,0.0)
+                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•──────────────
-                mode 1:   ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•──────────
+                mode 1:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 3
-                mode 1:   ──╭•──────────────
-                mode 2:   ──╰BSgate(0.0,0.0)
+                mode 1:   ──╭•──────────
+                mode 2:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -290,15 +290,15 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
-                mode 2:     ◖Vac◗────────────────
+                mode 0:     ◖Vac◗──S(0.1,0.0)
+                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•────────────────────────────────
-                mode 1:   ──╰BSgate(0.0,0.0)──╭•──────────────
-                mode 2:                     ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•────────────────────────
+                mode 1:   ──╰BS(0.0,0.0)──╭•──────────
+                mode 2:                 ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -307,9 +307,9 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)──╭•────────────────────────────────
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)──╰BSgate(0.0,0.0)──╭•──────────────
-                mode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)
+                mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
+                mode 1:     ◖Vac◗──S(0.2,0.0)──╰BS(0.0,0.0)──╭•──────────
+                mode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
