@@ -18,10 +18,16 @@ import importlib
 import pytest
 import numpy as np
 
-from mrmustard.lab import Gaussian, Dgate
+from mrmustard.lab import Gaussian, Dgate, Ggate
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
+from mrmustard.math.lattice.strategies.beamsplitter import (
+    apply_BS_schwinger,
+    beamsplitter,
+    sector_idx,
+    sector_u,
+)
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
@@ -108,3 +114,34 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])
+
+
+def test_bs_schwinger():
+    "test that the schwinger method to apply a BS works correctly"
+    G = np.array(Gaussian(2).ket(cutoffs=[20, 20]))
+    BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
+    manual = np.einsum("ab, cdab", G, BS)
+    apply_BS_schwinger(1.0, 1.0, 0, 1, G)
+    assert np.allclose(manual, G)
+
+    Gg = np.array(Ggate(2).U([20, 20]))
+    BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
+    manual = np.einsum("cdab, abef", BS, Gg)
+    apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
+    assert np.allclose(manual, Gg)
+
+
+def test_sector_idx():
+    "tests that the indices of a sector are calculated correctly"
+    assert sector_idx(1, shape=(4, 4)) == [1, 4]
+    assert sector_idx(2, shape=(4, 4)) == [2, 5, 8]
+    assert sector_idx(1, shape=(3, 4)) == [1, 4]
+    assert sector_idx(1, shape=(4, 3)) == [1, 3]
+    assert sector_idx(5, shape=(4, 4)) == [11, 14]
+
+
+def test_sector_u():
+    "tests that the unitary of a few sectors is indeed unitary"
+    for i in range(1, 10):
+        u = sector_u(i, theta=1.129, phi=0.318)
+        assert u @ u.conj().T == pytest.approx(np.eye(i + 1))

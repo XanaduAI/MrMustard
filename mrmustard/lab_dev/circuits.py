@@ -22,18 +22,22 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import Optional, Sequence, Union
-
 from mrmustard import math, settings
-from .circuit_components import CircuitComponent
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.transformations import BSgate
 
 __all__ = ["Circuit"]
 
 
 class Circuit:
     r"""
-    A quantum circuit.
+    A quantum circuit. It is a sequence of uncontracted components, which leaves the
+    possibility of contracting them in different orders. The order in which the components
+    are contracted is specified by the ``path`` attribute.
 
-    Quantum circuits store a list of ``CircuitComponent``s.
+    Different orders of contraction lead to the same result, but the cost of the contraction
+    can vary significantly. The ``path`` attribute is used to specify the order in which the
+    components are contracted.
 
     .. code-block::
 
@@ -75,6 +79,119 @@ class Circuit:
         # to the ``ids`` of the input wires that they are being contracted with. It is initialized
         # automatically (once and for all) when a path is validated for the first time.
         self._graph: dict[int, int] = {}
+
+    @property
+    def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
+        r"""
+        A dictionary that maps the index of each component to all the components it is connected to.
+        For each connected component, the value is a dictionary with a key-value pair for each component
+        connected to the first one, where the key is the index of this component and the value is
+        a dictionary with all the wire index pairs that are being contracted between the two components.
+
+        For example, if components[i] is connected to components[j] and they are contracting two wires
+        at index pairs (a, b) and (c, d), then indices_dict[i][j] = {a: b, c:d}.
+
+        This dictionary is used to propagate the shapes of the components in the circuit.
+        """
+        if not hasattr(self, "_idxdict"):
+            self._idxdict = self._indices_dict()
+        return self._idxdict
+
+    def _indices_dict(self):
+        ret = dict()
+        for i, opA in enumerate(self.components):
+            out_idx = set(opA.wires.output.indices)
+            indices: dict[int, dict[int, int]] = dict()
+            for j, opB in enumerate(self.components[i + 1 :]):
+                ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
+                ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
+                if not (ovlp_bra or ovlp_ket):
+                    continue
+                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
+                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
+                if not out_idx.intersection(iA):
+                    continue
+                indices[i + j + 1] = dict(zip(iA, iB))
+                out_idx -= set(iA)
+                if not out_idx:
+                    break
+            ret[i] = indices
+        return ret
+
+    def propagate_shapes(self):
+        r"""Propagates the shape information so that the shapes of the components are better
+        than those provided by the auto_shape attribute.
+
+        .. code-block::
+
+        >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
+
+        >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (50,50)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape() for op in circ] == [(5,), (50, 5)]
+
+        >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (50, 50, 50, 50)]
+        >>> circ.propagate_shapes()
+        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
+        """
+
+        for component in self:
+            component.manual_shape = list(component.auto_shape())
+
+        # update the manual_shapes until convergence
+        changes = self._update_shapes()
+        while changes:
+            changes = self._update_shapes()
+
+    def _update_shapes(self) -> bool:
+        r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
+        If two wires are connected and one of them has shape n and the other None, the shape of the
+        wire with None is updated to n. If both wires have a shape, the minimum is taken.
+
+        For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
+        the shapes of the outputs.
+
+        It returns True if any shape was updated, False otherwise.
+        """
+        changes = False
+        # get shapes from neighbors if needed
+        for i, component in enumerate(self.components):
+            for j, indices in self.indices_dict[i].items():
+                for a, b in indices.items():
+                    s_ia = self.components[i].manual_shape[a]
+                    s_jb = self.components[j].manual_shape[b]
+                    s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
+                    if self.components[j].manual_shape[b] != s:
+                        self.components[j].manual_shape[b] = s
+                        changes = True
+                    if self.components[i].manual_shape[a] != s:
+                        self.components[i].manual_shape[a] = s
+                        changes = True
+
+        # propagate through BSgates
+        for i, component in enumerate(self.components):
+            if isinstance(component, BSgate):
+                a, b, c, d = component.manual_shape
+                if c and d:
+                    if not a or a > c + d:
+                        a = c + d
+                        changes = True
+                    if not b or b > c + d:
+                        b = c + d
+                        changes = True
+                if a and b:
+                    if not c or c > a + b:
+                        c = a + b
+                        changes = True
+                    if not d or d > a + b:
+                        d = a + b
+                        changes = True
+
+                self.components[i].manual_shape = [a, b, c, d]
+
+        return changes
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -131,18 +248,18 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 1
-                mode 0:   ──Sgate(0.1,0.0)
-                mode 1:   ──Sgate(0.2,0.0)
+                mode 0:   ──S(0.1,0.0)
+                mode 1:   ──S(0.2,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•──────────────
-                mode 1:   ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•──────────
+                mode 1:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 3
-                mode 1:   ──╭•──────────────
-                mode 2:   ──╰BSgate(0.0,0.0)
+                mode 1:   ──╭•──────────
+                mode 2:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -152,19 +269,19 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
-                mode 2:     ◖Vac◗────────────────
+                mode 0:     ◖Vac◗──S(0.1,0.0)
+                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•──────────────
-                mode 1:   ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•──────────
+                mode 1:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 3
-                mode 1:   ──╭•──────────────
-                mode 2:   ──╰BSgate(0.0,0.0)
+                mode 1:   ──╭•──────────
+                mode 2:   ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -173,15 +290,15 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)
-                mode 2:     ◖Vac◗────────────────
+                mode 0:     ◖Vac◗──S(0.1,0.0)
+                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
-                mode 0:   ──╭•────────────────────────────────
-                mode 1:   ──╰BSgate(0.0,0.0)──╭•──────────────
-                mode 2:                     ──╰BSgate(0.0,0.0)
+                mode 0:   ──╭•────────────────────────
+                mode 1:   ──╰BS(0.0,0.0)──╭•──────────
+                mode 2:                 ──╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -190,9 +307,9 @@ class Circuit:
                 >>> circ.lookup_path()
                 <BLANKLINE>
                 → index: 0
-                mode 0:     ◖Vac◗──Sgate(0.1,0.0)──╭•────────────────────────────────
-                mode 1:     ◖Vac◗──Sgate(0.2,0.0)──╰BSgate(0.0,0.0)──╭•──────────────
-                mode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)
+                mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
+                mode 1:     ◖Vac◗──S(0.2,0.0)──╰BS(0.0,0.0)──╭•──────────
+                mode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 <BLANKLINE>
@@ -325,6 +442,12 @@ class Circuit:
         """
         return len(self.components)
 
+    def __iter__(self):
+        r"""
+        An iterator over the components in this circuit.
+        """
+        return iter(self.components)
+
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
@@ -341,7 +464,7 @@ class Circuit:
         A string-based representation of this component.
         """
 
-        def component_to_str(comp: CircuitComponent) -> str:
+        def component_to_str(comp: CircuitComponent) -> list[str]:
             r"""
             Generates a list string-based representation for the given component.
 
@@ -356,13 +479,24 @@ class Circuit:
             Args:
                 comp: A circuit component.
             """
-            cc_name = comp.name or "CC"
+            cc_name = comp.short_name
+            parallel = isinstance(cc_name, list)
             if not comp.wires.input:
-                cc_name = f"◖{cc_name}◗"
-            if not comp.wires.output:
-                cc_name = f"|{cc_name})="
+                cc_names = [
+                    f"◖{cc_name[i] if parallel else cc_name}◗" for i in range(len(comp.modes))
+                ]
+            elif not comp.wires.output:
+                cc_names = [
+                    f"|{cc_name[i] if parallel else cc_name})=" for i in range(len(comp.modes))
+                ]
+            elif cc_name not in control_gates:
+                cc_names = [
+                    f"{cc_name[i] if parallel else cc_name}" for i in range(len(comp.modes))
+                ]
+            else:
+                cc_names = [f"{cc_name}"]
 
-            if comp.parameter_set.names and settings.CIRCUIT_DRAW_PARAMS:
+            if comp.parameter_set.names and settings.DRAW_CIRCUIT_PARAMS:
                 values = []
                 for name in comp.parameter_set.names:
                     param = comp.parameter_set.constants.get(
@@ -371,18 +505,16 @@ class Circuit:
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
-                    values.append(
-                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
-                    )
-                return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
-            # some components have an empty parameter set
-            return [cc_name for _ in range(len(comp.modes))]
+                    values.append(math.asnumpy(new_values))
+                return [
+                    cc_names[i] + str(val).replace(" ", "") for i, val in enumerate(zip(*values))
+                ]
+            return cc_names
 
         if len(self) == 0:
             return ""
 
-        components = self.components
-        modes = set(sorted([m for c in components for m in c.modes]))
+        modes = set(sorted([m for c in self.components for m in c.modes]))
         n_modes = len(modes)
 
         # update this when new controlled gates are added
@@ -403,7 +535,7 @@ class Circuit:
         # those coordinates
         layers = defaultdict(list)
         x = 0
-        for c1 in components:
+        for c1 in self.components:
             # if a component would overlap, increase the x-axis coordinate
             span_c1 = set(range(min(c1.modes), max(c1.modes) + 1))
             for c2 in layers[x]:
