@@ -169,7 +169,22 @@ class PolyExpBase(Ansatz):
     def __add__(self, other: PolyExpBase) -> PolyExpBase:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
-        combined_arrays = math.concat([self.array, other.array], axis=0)
+
+        a0s = self.array.shape[1:]
+        a1s = other.array.shape[1:]
+        if a0s==a1s:
+            combined_arrays = math.concat([self.array, other.array], axis=0)
+        else:
+            s_max = np.maximum(np.array(a0s),np.array(a1s))
+
+            padding_array0 = np.array((np.zeros(len(s_max)+1),np.concatenate((np.array([0]),np.array((s_max-a0s))))),dtype=int).T
+            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max)+1))
+
+            padding_array1 = np.array((np.zeros(len(s_max)+1),np.concatenate((np.array([0]),np.array((s_max-a1s))))),dtype=int).T
+            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max)+1))
+            a0_new = np.pad(self.array,padding_tuple0,'constant')
+            a1_new = np.pad(other.array,padding_tuple1,'constant')
+            combined_arrays = math.concat([a0_new, a1_new], axis=0)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
