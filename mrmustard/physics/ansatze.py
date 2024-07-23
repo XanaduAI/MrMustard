@@ -156,7 +156,6 @@ class PolyExpBase(Ansatz):
         array: the array-like data
     """
 
-
     def __init__(
         self,
         mat: Batch[Matrix],
@@ -263,7 +262,7 @@ class PolyExpBase(Ansatz):
         dim_poly = len(self.array.shape) - 1
         shape_poly = self.array.shape[1:]
         return dim_poly, shape_poly
-   
+
     @property
     def mat(self) -> Batch[ComplexMatrix]:
         r"""
@@ -285,7 +284,7 @@ class PolyExpBase(Ansatz):
         r"""
         The number of variables in this ansatz.
         """
-        return self.mat.shape[-1]-self.polynomial_shape[0]
+        return self.mat.shape[-1] - self.polynomial_shape[0]
 
     @property
     def vec(self) -> Batch[ComplexMatrix]:
@@ -687,10 +686,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         if A is None and b is None and c is not None:
             raise ValueError("Please provide either A or b.")
         super().__init__(mat=A, vec=b, array=c)
-        
+
         if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
             raise ValueError("Batch size of A,b,c must be the same.")
-            
+
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""
@@ -721,7 +720,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
-
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
