@@ -266,7 +266,7 @@ def cost_fn_sympl():
     state_out = Vacuum(1) >> G >> D >> L
     return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
 
-# For illustration, here the Euclidean optimization doesn't include squeezing 
+# For illustration, here the Euclidean optimization doesn't include squeezing
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D
 
