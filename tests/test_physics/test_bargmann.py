@@ -1,13 +1,17 @@
 import numpy as np
 
+from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
+from mrmustard.lab_dev import Unitary, Vacuum
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
-    Au2Symplectic,
-    Symplectic2Au,
+    norm_ket,
+    trace_dm,
+    au2Symplectic,
+    symplectic2Au,
 )
 
 
@@ -55,13 +59,28 @@ def test_bargmann_numpy_transformation():
     assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
 
 
-def test_Au2Symplectic():
+def test_norm_ket():
+    """Test that the norm of a ket is calculated correctly"""
+    ket = Vacuum([0, 1]) >> Unitary.from_symplectic([0, 1], math.random_symplectic(2))
+    A, b, c = [x[0] for x in ket.bargmann]
+    assert np.isclose(norm_ket(A, b, c), ket.probability)
+
+
+def test_trace_dm():
+    """Test that the trace of a density matrix is calculated correctly"""
+    ket = Vacuum([0, 1, 2, 3]) >> Unitary.from_symplectic([0, 1, 2, 3], math.random_symplectic(4))
+    dm = ket[0, 1]
+    A, b, c = [x[0] for x in dm.bargmann]
+    assert np.allclose(trace_dm(A, b, c), dm.probability)
+
+
+def test_au2Symplectic():
     """Tests the Au -> symplectic code; we check two simple examples"""
     # Beam splitter example
     V = 1 / np.sqrt(2) * np.array([[1, 1], [-1, 1]])
 
     Au = np.block([[np.zeros_like(V), V], [np.transpose(V), np.zeros_like(V)]])
-    S = Au2Symplectic(Au)
+    S = au2Symplectic(Au)
     S_by_hand = np.block([[V, np.zeros_like(V)], [np.zeros_like(V), np.conjugate(V)]])
     Transformation = (
         1
@@ -79,14 +98,14 @@ def test_Au2Symplectic():
     # squeezing example
     r = 2
     Au = np.array([[-np.tanh(r), 1 / np.cosh(r)], [1 / np.cosh(r), np.tanh(r)]])
-    S = Au2Symplectic(Au)
+    S = au2Symplectic(Au)
     S_by_hand = np.array([[np.cosh(r), -np.sinh(r)], [-np.sinh(r), np.cosh(r)]])
     Transformation = 1 / np.sqrt(2) * np.array([[1, 1], [-1j, 1j]])
     S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
     assert np.allclose(S, S_by_hand)
 
 
-def test_Symplectic2Au():
+def test_symplectic2Au():
     """Tests the Symplectic -> Au code"""
 
     # here we consider the circuit of two-mode squeezing
@@ -114,7 +133,7 @@ def test_Symplectic2Au():
         [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]
     ) / np.sqrt(2)
     S = Transformation @ S @ np.conjugate(np.transpose(Transformation))
-    A = Symplectic2Au(S)
+    A = symplectic2Au(S)
 
     W = S_bs[:2, :2]
     T = np.diag([np.tanh(r), -np.tanh(r)])

@@ -201,7 +201,7 @@ class State:  # pylint: disable=too-many-public-methods
         if self._cutoffs is None:
             if self._ket is None and self._dm is None:
                 self._cutoffs = fock.autocutoffs(
-                    self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
+                    self.cov, self.means, settings.AUTOSHAPE_PROBABILITY
                 )
             else:
                 self._cutoffs = [

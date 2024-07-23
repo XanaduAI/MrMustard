@@ -192,7 +192,7 @@ class ParameterSet:
         for name, var in self._variables.items():
             if var.value.shape != ():
                 val = math.gather(var.value, items)
-                ret.add_parameter(Variable(val, name))
+                ret.add_parameter(Variable(val, name, var.bounds, var.update_fn))
             else:
                 ret.add_parameter(var)
 

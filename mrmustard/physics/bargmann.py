@@ -15,6 +15,7 @@
 """
 This module contains functions for performing calculations on objects in the Bargmann representations.
 """
+
 import numpy as np
 
 from mrmustard import math, settings
@@ -105,7 +106,30 @@ def wigner_to_bargmann_U(X, d):
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
 
 
-def Au2Symplectic(A):
+def norm_ket(A, b, c):
+    r"""Calculates the l2 norm of a Ket with a representation given by the Bargmann triple A,b,c."""
+    M = math.block([[math.conj(A), -math.eye_like(A)], [-math.eye_like(A), A]])
+    B = math.concat([math.conj(b), b], 0)
+    norm_squared = (
+        math.abs(c) ** 2
+        * math.exp(-0.5 * math.sum(B * math.matvec(math.inv(M), B)))
+        / math.sqrt((-1) ** A.shape[-1] * math.det(M))
+    )
+    return math.real(math.sqrt(norm_squared))
+
+
+def trace_dm(A, b, c):
+    r"""Calculates the total trace of the density matrix with representation given by the Bargmann triple A,b,c."""
+    M = A - math.Xmat(A.shape[-1] // 2)
+    trace = (
+        c
+        * math.exp(-0.5 * math.sum(b * math.matvec(math.inv(M), b)))
+        / math.sqrt((-1) ** (A.shape[-1] // 2) * math.det(M))
+    )
+    return math.real(trace)
+
+
+def au2Symplectic(A):
     r"""
     helper for finding the Au of a unitary from its symplectic rep.
     Au : in bra-ket order
@@ -141,9 +165,9 @@ def Au2Symplectic(A):
     return math.real(Transformation @ S @ math.conj(math.transpose(Transformation)))
 
 
-def Symplectic2Au(S):
+def symplectic2Au(S):
     r"""
-    The inverse of Au2Symplectic i.e., returns symplectic, given Au
+    The inverse of au2Symplectic i.e., returns symplectic, given Au
 
     S: symplectic in XXPP order
     """
