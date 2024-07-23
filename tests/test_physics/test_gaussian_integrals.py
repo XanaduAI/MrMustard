@@ -21,6 +21,7 @@ from mrmustard.physics import triples
 from mrmustard.physics.gaussian_integrals import (
     real_gaussian_integral,
     complex_gaussian_integral,
+    complex_gaussian_integral_2,
     join_Abc,
     join_Abc_real,
     contract_two_Abc,
@@ -216,3 +217,15 @@ def test_reorder_abc():
     assert all(
         np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
     )
+
+
+def test_complex_gaussian_integral_2():
+    """Tests the ``complex_gaussian_integral_2`` method."""
+    A1, b1, c1 = triples.vacuum_state_Abc(2)
+    A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
+
+    res1 = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [4, 5])
+    assert np.allclose(res1[0], A3)
+    assert np.allclose(res1[1], b3)
+    assert np.allclose(res1[2], c3)

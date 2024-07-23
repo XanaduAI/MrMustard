@@ -413,7 +413,11 @@ class Gaussian(State):
         self._add_parameter(make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb))
         self._add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+                symplectic_trainable,
+                symplectic,
+                "symplectic",
+                (None, None),
+                update_symplectic,
             )
         )
 

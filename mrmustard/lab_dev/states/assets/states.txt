@@ -1,4 +1,4 @@
-<%! 
+<%!
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.states import Ket, DM
 %>
@@ -15,14 +15,14 @@ from mrmustard.lab_dev.states import Ket, DM
     margin: auto;
   }
   .container-state-onemode {
-    display: flex; 
-    flex: 0 0 auto; 
-    flex-wrap: wrap; 
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
     column-gap: 10px;
   }
   .state-left-col {
-    display: flex; 
-    flex-direction: column; 
+    display: flex;
+    flex-direction: column;
     max-width=800px;
   }
   .state-right-col {

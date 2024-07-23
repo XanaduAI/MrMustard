@@ -409,9 +409,12 @@ class AdjointView(Tensor):
             ComplexTensor: the unitary matrix in Fock representation
         """
         # converting the given shape into a shape for the original tensor
-        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self._original.unpack_shape(
-            shape
-        )
+        (
+            shape_in_ket,
+            shape_out_ket,
+            shape_in_bra,
+            shape_out_bra,
+        ) = self._original.unpack_shape(shape)
         shape_ret = shape_in_bra + shape_out_bra + shape_in_ket + shape_out_ket
 
         ret = math.conj(math.astensor(self._original.value(shape_ret)))
