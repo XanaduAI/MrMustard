@@ -403,6 +403,10 @@ class QuadratureEigenstate(Ket):
         return Bargmann(*triples.quadrature_eigenstates_Abc(xs, phis))
 
 
+    @property
+    def L2_norm(self) -> float:
+        return math.inf
+
 #  ~~~~~~~~~~~~
 #  Mixed States
 #  ~~~~~~~~~~~~
