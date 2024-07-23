@@ -198,8 +198,8 @@ def bargmann(rep, batch_idx=None):
 
 def wires(obj):
     """Create a widget to display a Wires objects."""
-    modes = [obj.output.bra, obj.input.bra, obj.output.ket, obj.input.ket]
-    labels = ["out bra", "in bra", "out ket", "in ket"]
+    modes = [obj.input.bra, obj.output.bra, obj.input.ket, obj.output.ket]
+    labels = ["in bra", "out bra", "in ket", "out ket"]
     colors = ["black" if m else "gainsboro" for m in modes]
 
     ##### The wires graphic #####
