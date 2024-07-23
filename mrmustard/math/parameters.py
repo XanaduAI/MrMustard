@@ -175,7 +175,7 @@ class Variable:
     @property
     def name(self) -> str:
         r"""
-        The name of this constant.
+        The name of this variable.
         """
         return self._name
 

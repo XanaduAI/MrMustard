@@ -32,7 +32,7 @@ class TestSettings:
 
         assert settings.HBAR == 2.0
         assert settings.DEBUG is False
-        assert settings.AUTOCUTOFF_PROBABILITY == 0.999  # capture at least 99.9% of the probability
+        assert settings.AUTOSHAPE_PROBABILITY == 0.999  # capture at least 99.9% of the probability
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3
@@ -49,10 +49,10 @@ class TestSettings:
     def test_setters(self):
         settings = Settings()
 
-        ap0 = settings.AUTOCUTOFF_PROBABILITY
-        settings.AUTOCUTOFF_PROBABILITY = 0.1
-        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
-        settings.AUTOCUTOFF_PROBABILITY = ap0
+        ap0 = settings.AUTOSHAPE_PROBABILITY
+        settings.AUTOSHAPE_PROBABILITY = 0.1
+        assert settings.AUTOSHAPE_PROBABILITY == 0.1
+        settings.AUTOSHAPE_PROBABILITY = ap0
 
         db0 = settings.DEBUG
         settings.DEBUG = True
