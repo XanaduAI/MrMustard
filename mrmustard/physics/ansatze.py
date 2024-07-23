@@ -20,11 +20,12 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Union, Optional
+from typing import Any, Callable, Union, Optional
 
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Variable
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -59,6 +60,16 @@ class Ansatz(ABC):
     This class is abstract. Concrete ``Ansatz`` classes have to implement the
     ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__``, and ``__eq__`` methods.
     """
+
+    def __init__(self) -> None:
+        self._fn = None
+        self._kwargs = {}
+
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
+        r"""
+        Returns an ansatz from a function and kwargs.
+        """
 
     @abstractmethod
     def __neg__(self) -> Ansatz:
@@ -118,6 +129,7 @@ class Ansatz(ABC):
         return self * other
 
 
+# pylint: disable=too-many-instance-attributes
 class PolyExpBase(Ansatz):
     r"""
     A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
@@ -144,12 +156,20 @@ class PolyExpBase(Ansatz):
         array: the array-like data
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
-        self.mat = math.atleast_3d(mat)
-        self.vec = math.atleast_2d(vec)
-        self.array = math.atleast_1d(array)
-        self.batch_size = self.mat.shape[0]
-        self.num_vars = self.mat.shape[-1]
+    def __init__(
+        self,
+        mat: Batch[Matrix],
+        vec: Batch[Vector],
+        array: Batch[Tensor],
+    ):
+        super().__init__()
+        self._mat = mat
+        self._vec = vec
+        self._array = array
+
+        # if (mat, vec, array) have been converted to backend
+        self._backends = [False, False, False]
+
         self._simplified = False
 
     def __neg__(self) -> PolyExpBase:
@@ -168,14 +188,64 @@ class PolyExpBase(Ansatz):
     def __add__(self, other: PolyExpBase) -> PolyExpBase:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
-        combined_arrays = math.concat([self.array, other.array], axis=0)
+
+        a0s = self.array.shape[1:]
+        a1s = other.array.shape[1:]
+        if a0s == a1s:
+            combined_arrays = math.concat([self.array, other.array], axis=0)
+        else:
+            s_max = np.maximum(np.array(a0s), np.array(a1s))
+
+            padding_array0 = np.array(
+                (
+                    np.zeros(len(s_max) + 1),
+                    np.concatenate((np.array([0]), np.array((s_max - a0s)))),
+                ),
+                dtype=int,
+            ).T
+            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
+
+            padding_array1 = np.array(
+                (
+                    np.zeros(len(s_max) + 1),
+                    np.concatenate((np.array([0]), np.array((s_max - a1s)))),
+                ),
+                dtype=int,
+            ).T
+            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
+            a0_new = np.pad(self.array, padding_tuple0, "constant")
+            a1_new = np.pad(other.array, padding_tuple1, "constant")
+            combined_arrays = math.concat([a0_new, a1_new], axis=0)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
     @property
+    def array(self) -> Batch[ComplexMatrix]:
+        r"""
+        The array of this ansatz.
+        """
+        self._generate_ansatz()
+        if not self._backends[2]:
+            self._array = math.atleast_1d(self._array)
+            self._backends[2] = True
+        return self._array
+
+    @array.setter
+    def array(self, array):
+        self._array = array
+        self._backends[2] = False
+
+    @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.mat.shape[0]
+
+    @property
     def degree(self) -> int:
         r"""
-        The degree of this ansatz.
+        The polynomial degree of this ansatz.
         """
         if self.array.ndim == 1:
             return 0
@@ -192,6 +262,45 @@ class PolyExpBase(Ansatz):
         dim_poly = len(self.array.shape) - 1
         shape_poly = self.array.shape[1:]
         return dim_poly, shape_poly
+
+    @property
+    def mat(self) -> Batch[ComplexMatrix]:
+        r"""
+        The matrix of this ansatz.
+        """
+        self._generate_ansatz()
+        if not self._backends[0]:
+            self._mat = math.atleast_3d(self._mat)
+            self._backends[0] = True
+        return self._mat
+
+    @mat.setter
+    def mat(self, array):
+        self._mat = array
+        self._backends[0] = False
+
+    @property
+    def num_vars(self):
+        r"""
+        The number of variables in this ansatz.
+        """
+        return self.mat.shape[-1] - self.polynomial_shape[0]
+
+    @property
+    def vec(self) -> Batch[ComplexMatrix]:
+        r"""
+        The vector of this ansatz.
+        """
+        self._generate_ansatz()
+        if not self._backends[1]:
+            self._vec = math.atleast_2d(self._vec)
+            self._backends[1] = True
+        return self._vec
+
+    @vec.setter
+    def vec(self, array):
+        self._vec = array
+        self._backends[1] = False
 
     def simplify(self) -> None:
         r"""
@@ -239,6 +348,29 @@ class PolyExpBase(Ansatz):
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the matrix, vector and array given a function
+        and some kwargs.
+        """
+        names = list(self._kwargs.keys())
+        vars = list(self._kwargs.values())
+
+        params = {}
+        param_types = []
+        for name, param in zip(names, vars):
+            try:
+                params[name] = param.value
+                param_types.append(type(param))
+            except AttributeError:
+                params[name] = param
+
+        if self._array is None or Variable in param_types:
+            mat, vec, array = self._fn(**params)
+            self.mat = mat
+            self.vec = vec
+            self.array = array
+
     def _order_batch(self):
         r"""
         This method orders the batch dimension by the lexicographical order of the
@@ -262,10 +394,11 @@ class PolyExpBase(Ansatz):
     def decompose_ansatz(self) -> DiffOpPolyExpAnsatz:
         r"""
         This method decomposes a DiffOpPolyExpAnsatz. Given an ansatz of dimensions:
-        A=(batch,m+n,m+n), b=(batch,m+n), c = (batch,k_1,k_2,...,k_n),
+        A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
         it can be rewritten as an ansatz of dimensions
-        A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
-        This decomposition is typically favourable if n>m, and will only run if that is the case.
+        A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
+        This decomposition is typically favourable if m>n, and will only run if that is the case.
+        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
         """
         dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
@@ -371,7 +504,6 @@ class PolyExpAnsatz(PolyExpBase):
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
         c: The array of coefficients for the polynomial terms in the ansatz.
-
     """
 
     def __init__(
@@ -383,7 +515,7 @@ class PolyExpAnsatz(PolyExpBase):
     ):
         self.name = name
 
-        if A is None and b is None:
+        if A is None and b is None and c is not None:
             raise ValueError("Please provide either A or b.")
         super().__init__(mat=A, vec=b, array=c)
 
@@ -407,6 +539,16 @@ class PolyExpAnsatz(PolyExpBase):
         The array of coefficients for the polynomial terms in the ansatz.
         """
         return self.array
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
+        r"""
+        Returns a PolyExpAnsatz object from a generator function.
+        """
+        ret = cls(None, None, None)
+        ret._fn = fn
+        ret._kwargs = kwargs
+        return ret
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
@@ -518,12 +660,12 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         >>> c = np.array([[1.0,2.0,3.0]])
 
         >>> F = DiffOpPolyExpAnsatz(A, b, c)
-        >>> z = np.array([[1.0]])
+        >>> z = np.array([[1.0],[2.0],[3.0]])
 
-        >>> # calculate the value of the function at ``z``
+        >>> # calculate the value of the function at the three different ``z``, since z is batched.
         >>> val = F(z)
 
-    A and b can be batched or not, but c needs to include an explicit batch dimension that match A and b.
+    A and b can be batched or not, but c needs to include an explicit batch dimension that matches A and b.
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
@@ -536,17 +678,15 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor] = np.array([[1.0]]),
+        c: Batch[Tensor | Scalar] = np.array([[1.0]]),
         name: str = "",
     ):
         self.name = name
 
-        if A is None and b is None:
+        if A is None and b is None and c is not None:
             raise ValueError("Please provide either A or b.")
-        A = math.astensor(A)
-        b = math.astensor(b)
-        c = math.astensor(c)
         super().__init__(mat=A, vec=b, array=c)
+
         if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
             raise ValueError("Batch size of A,b,c must be the same.")
 
@@ -571,9 +711,25 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
         return self.array
 
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> DiffOpPolyExpAnsatz:
+        r"""
+        Returns a DiffOpPolyExpAnsatz object from a generator function.
+        """
+        ret = cls(None, None, None)
+        ret._fn = fn
+        ret._kwargs = kwargs
+        return ret
+
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
-        Value of this ansatz at ``z``.
+        Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
+        If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
+        Note that the batch dimension of ``z`` and ``Abc`` can be different.
+
+        Conventions in code comments:
+            n: is the same as dim_alpha
+            m: is the same as dim_beta
 
         Args:
             z: point in C^n where the function is evaluated
@@ -585,30 +741,31 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         dim_alpha = self.A.shape[-1] - dim_beta
         batch_size = self.batch_size
 
-        z = math.atleast_2d(z)
+        z = math.atleast_2d(z)  # shape (b_arg, n)
         batch_size_arg = z.shape[0]
-        if z.shape[-1] != dim_alpha:
+        if z.shape[-1] != dim_alpha or z.shape[-1] != self.num_vars:
             raise ValueError(
                 "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
             )
-        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
+        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
-        A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
-        b_part = math.sum(self.b[..., :dim_alpha] * z[..., None, :], axes=[-1])
+        A_part = math.sum(
+            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
+        )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
+        b_part = math.sum(
+            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
+        )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
-        exp_sum = math.exp(1 / 2 * A_part + b_part)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])
+            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
-                [
-                    math.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axes=[-1])
-                    + self.b[..., dim_alpha:]
-                    for i in range(batch_size_arg)
-                ]
-            )
-            b_poly = math.moveaxis(b_poly, 0, 1)
-            A_poly = self.A[..., dim_alpha:, dim_alpha:]
+                math.einsum("ijk,hk", self.A[..., dim_alpha:, :dim_alpha], z)
+                + self.b[..., dim_alpha:]
+            )  # (b_arg, b_abc, m)
+            b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
+            A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
             poly = math.astensor(
                 [
                     math.hermite_renormalized_batch(
@@ -616,15 +773,15 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     )
                     for i in range(batch_size)
                 ]
-            )
-            poly = math.moveaxis(poly, 0, 1)
+            )  # (b_abc,b_arg,poly)
+            poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
             val = math.sum(
                 exp_sum
                 * math.sum(
                     poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
                 ),
                 axes=[-1],
-            )
+            )  # (b_arg)
         return val
 
     def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
@@ -757,7 +914,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
             dim_alpha1 = self.A.shape[-1] - dim_beta1
             dim_alpha2 = other.A.shape[-1] - dim_beta2
-            assert dim_alpha1 == dim_alpha2
+            if dim_alpha1 != dim_alpha2:
+                raise TypeError("The dimensionality of the two ansatze must be the same.")
             dim_alpha = dim_alpha1
 
             new_a = [
@@ -778,7 +936,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
@@ -832,7 +990,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             if dim_beta1 == 0 and dim_beta2 == 0:
                 dim_alpha1 = self.A.shape[-1] - dim_beta1
                 dim_alpha2 = other.A.shape[-1] - dim_beta2
-                assert dim_alpha1 == dim_alpha2
+                if dim_alpha1 != dim_alpha2:
+                    raise TypeError("The dimensionality of the two ansatze must be the same.")
                 dim_alpha = dim_alpha1
 
                 new_a = [
@@ -855,7 +1014,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c / other)
             except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
@@ -957,11 +1116,58 @@ class ArrayAnsatz(Ansatz):
     """
 
     def __init__(self, array: Batch[Tensor], batched: bool = True):
-        array = math.astensor(array)
-        if not batched:
-            array = array[None, ...]
-        self.array = array
-        self.num_vars = len(self.array.shape) - 1
+        super().__init__()
+
+        self._array = array if batched else [array]
+        self._backend_array = False
+
+    @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.array.shape[0]
+
+    @property
+    def array(self) -> Batch[Tensor]:
+        r"""
+        The array of this ansatz.
+        """
+        self._generate_ansatz()
+        if not self._backend_array:
+            self._array = math.astensor(self._array)
+            self._backend_array = True
+        return self._array
+
+    @array.setter
+    def array(self, value):
+        self._array = value
+        self._backend_array = False
+
+    @property
+    def num_vars(self) -> int:
+        r"""
+        The number of variables in this ansatz.
+        """
+        return len(self.array.shape) - 1
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
+        r"""
+        Returns an ArrayAnsatz object from a generator function.
+        """
+        ret = cls(None, True)
+        ret._fn = fn
+        ret._kwargs = kwargs
+        return ret
+
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the array given a function
+        and some kwargs.
+        """
+        if self._array is None:
+            self.array = [self._fn(**self._kwargs)]
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -975,13 +1181,11 @@ class ArrayAnsatz(Ansatz):
 
         Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
 
-        Raises:
-            ValueError: If the arrays don't have the same shape.
         """
-        try:
-            return np.allclose(self.array, other.array)
-        except Exception as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+        slices = (slice(0, None),) + tuple(
+            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+        )
+        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""
@@ -998,7 +1202,7 @@ class ArrayAnsatz(Ansatz):
         """
         try:
             new_array = [a + b for a in self.array for b in other.array]
-            return self.__class__(array=math.astensor(new_array))
+            return self.__class__(array=new_array)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
@@ -1024,7 +1228,7 @@ class ArrayAnsatz(Ansatz):
         if isinstance(other, ArrayAnsatz):
             try:
                 new_array = [a / b for a in self.array for b in other.array]
-                return self.__class__(array=math.astensor(new_array))
+                return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
@@ -1046,7 +1250,7 @@ class ArrayAnsatz(Ansatz):
         if isinstance(other, ArrayAnsatz):
             try:
                 new_array = [a * b for a in self.array for b in other.array]
-                return self.__class__(array=math.astensor(new_array))
+                return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
@@ -1064,7 +1268,7 @@ class ArrayAnsatz(Ansatz):
             Batch size is the product of two batches.
         """
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return self.__class__(array=math.astensor(new_array))
+        return self.__class__(array=new_array)
 
     @property
     def conj(self):

@@ -204,7 +204,10 @@ def vanilla_step_dict(
 
 @njit
 def binomial_step(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[ComplexTensor, float]:
     r"""Computes a whole subspace of the ``G`` tensor at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
@@ -232,7 +235,10 @@ def binomial_step(
 
 @njit
 def binomial_step_dict(
-    G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[types.DictType, float]:
     r"""Computes a whole subspace of the ``G`` dict at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).

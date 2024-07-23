@@ -67,16 +67,19 @@ class Settings:
         self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
-        self.AUTOCUTOFF_PROBABILITY = 0.999
+        self.AUTOSHAPE_PROBABILITY = 0.999
         "The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is 0.999."
 
-        self.AUTOCUTOFF_MAX_CUTOFF = 100
+        self.AUTOCUTOFF_MAX_CUTOFF = 100  # TODO: remove in MM 1.0
         r"""The maximum value for autocutoff. Default is ``100``."""
 
-        self.AUTOCUTOFF_MIN_CUTOFF = 1
+        self.AUTOCUTOFF_MIN_CUTOFF = 1  # TODO: remove in MM 1.0
         r"""The minimum value for autocutoff. Default is ``1``."""
 
-        self.CIRCUIT_DRAW_PARAMS = True
+        self.AUTOSHAPE_MAX = 50
+        r"""The max shape for the autoshape. Default is ``50``."""
+
+        self.DRAW_CIRCUIT_PARAMS = True
         "Whether or not to draw the parameters of a circuit."
 
         self.CIRCUIT_DECIMALS = 3
