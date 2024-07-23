@@ -391,16 +391,39 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz3.array[1], c2)
 
     def test_mul(self):
-        A1, b1, c1 = Abc_triple(5)
-        A2, b2, c2 = Abc_triple(5)
+        A1, b1, _ = Abc_triple(2)
+        c1 = np.random.random(size=(1,4))
+        A2, b2, _ = Abc_triple(2)
+        c2 = np.random.random(size=(1,4))
 
         ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
         ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz * ansatz2
 
-        assert np.allclose(ansatz3.mat[0], A1 + A2)
-        assert np.allclose(ansatz3.vec[0], b1 + b2)
-        assert np.allclose(ansatz3.array[0], c1 * c2)
+        A3 = np.block(
+            [
+                [
+                    A1[:1, :1] + A2[:1, :1],
+                    A1[:1, 1:],
+                    A2[:1, 1:],
+                ],
+                [
+                    A1[1:, :1],
+                    A1[1:, 1:],
+                    math.zeros((1, 1), dtype=np.complex128),
+                ],
+                [
+                    A2[1:, :1],
+                    np.zeros((1, 1), dtype=np.complex128),
+                    A2[1:, 1:],
+                ],
+            ]
+        )        
+        b3 = np.concatenate((b1[:1] + b2[:1], b1[1:], b2[1:]))
+        c3 = np.outer(c1,c2).reshape(4,4)
+        assert np.allclose(ansatz3.mat[0], A3)
+        assert np.allclose(ansatz3.vec[0], b3)
+        assert np.allclose(ansatz3.array[0], c3)
 
     def test_mul_scalar(self):
         A, b, c = Abc_triple(5)
@@ -452,16 +475,48 @@ class TestDiffOpPolyExpAnsatz:
             ansatz(z)
 
     def test_and(self):
-        A1, b1, c1 = Abc_triple(6)
-        A2, b2, c2 = Abc_triple(6)
+        A1, b1, _ = Abc_triple(6)
+        c1 = np.random.random(size=(1,4,4))
+        A2, b2, _ = Abc_triple(6)
+        c2 = np.random.random(size=(1,4,4))
 
         ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
         ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
         ansatz3 = ansatz & ansatz2
 
-        assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
-        assert np.allclose(ansatz3.vec[0], math.concat([b1, b2], -1))
-        assert np.allclose(ansatz3.array[0], c1 * c2)
+        A3 = np.block(
+            [
+                [
+                    A1[:4, :4],
+                    np.zeros((4, 4), dtype=complex),
+                    A1[:4, 4:],
+                    np.zeros((4, 2), dtype=complex),
+                ],
+                [
+                    np.zeros((4, 4), dtype=complex),
+                    A2[:4:, :4],
+                    math.zeros((4, 2), dtype=complex),
+                    A2[:4, 4:],
+                ],
+                [
+                    A1[4:, :4],
+                    np.zeros((2, 4), dtype=complex),
+                    A1[4:, 4:],
+                    np.zeros((2, 2), dtype=complex),
+                ],
+                [
+                    np.zeros((2, 4), dtype=complex),
+                    A2[4:, :4],
+                    np.zeros((2, 2), dtype=complex),
+                    A2[4:, 4:],
+                ],
+            ]
+        )
+        b3 = np.concatenate((b1[:4], b2[:4], b1[4:], b2[4:]))
+        c3 = np.outer(c1,c2).reshape(4,4,4,4)
+        assert np.allclose(ansatz3.mat[0], A3)
+        assert np.allclose(ansatz3.vec[0], b3)
+        assert np.allclose(ansatz3.array[0], c3)
 
     def test_eq(self):
         A, b, c = Abc_triple(5)
