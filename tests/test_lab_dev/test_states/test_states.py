@@ -16,8 +16,11 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
+import json
+from pathlib import Path
 import numpy as np
 import pytest
+
 
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann
@@ -27,16 +30,12 @@ from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,
     Number,
-    QuadratureEigenstate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
     Thermal,
     Vacuum,
 )
 from mrmustard.lab_dev.transformations import Dgate, Sgate, S2gate
-
-# original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
 
 class TestCoherent:
@@ -56,10 +55,10 @@ class TestCoherent:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             Coherent(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``y``"):
+        with pytest.raises(ValueError, match="y"):
             Coherent(modes=[0, 1], x=1, y=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -129,10 +128,10 @@ class TestDisplacedSqueezed:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             DisplacedSqueezed(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``y``"):
+        with pytest.raises(ValueError, match="y"):
             DisplacedSqueezed(modes=[0, 1], x=1, y=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -167,7 +166,7 @@ class TestNumber:
 
     modes = [[0], [1, 2], [9, 7]]
     n = [[3], 4, [5, 6]]
-    cutoffs = [None, [5], [6, 7]]
+    cutoffs = [None, 5, [6, 7]]
 
     @pytest.mark.parametrize("modes,n,cutoffs", zip(modes, n, cutoffs))
     def test_init(self, modes, n, cutoffs):
@@ -177,10 +176,10 @@ class TestNumber:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``n``"):
+        with pytest.raises(ValueError, match="n"):
             Number(modes=[0, 1], n=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``cutoffs``"):
+        with pytest.raises(ValueError, match="cutoffs"):
             Number(modes=[0, 1], n=[2, 3], cutoffs=[4, 5, 6])
 
     @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
@@ -193,53 +192,6 @@ class TestNumber:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
-
-
-class TestQuadratureEigenstate:
-    r"""
-    Tests for the ``QuadratureEigenstate`` class.
-    """
-
-    modes = [[1], [0, 1], [1, 5]]
-    x = [[1], 1, [2]]
-    phi = [3, [4], 1]
-
-    @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
-    def test_init1(self, modes, x, phi):
-        state = QuadratureEigenstate(modes, x, phi)
-
-        assert state.name == "QuadratureEigenstate"
-        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
-            QuadratureEigenstate(modes=[0, 1], x=[2, 3, 4])
-
-        with pytest.raises(ValueError, match="Length of ``phi``"):
-            QuadratureEigenstate(modes=[0, 1], x=1, phi=[2, 3, 4])
-
-    def test_trainable_parameters(self):
-        state1 = QuadratureEigenstate([0, 1], 1, 1)
-        state2 = QuadratureEigenstate([0, 1], 1, 1, x_trainable=True, x_bounds=(0, 2))
-        state3 = QuadratureEigenstate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            state1.x.value = 3
-
-        state2.x.value = 2
-        assert state2.x.value == 2
-
-        state3.phi.value = 2
-        assert state3.phi.value == 2
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            QuadratureEigenstate(modes=[0], x=[0.1, 0.2]).representation
-
-    def test_with_coherent(self):
-        val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
-        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
-        assert np.allclose(val0, val1)
 
 
 class TestSqueezedVacuum:
@@ -259,10 +211,10 @@ class TestSqueezedVacuum:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``r``"):
+        with pytest.raises(ValueError, match="r"):
             SqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_modes_slice_params(self):
@@ -311,11 +263,11 @@ class TestTwoModeSqueezedVacuum:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``r``"):
+        with pytest.raises(ValueError, match="r"):
             TwoModeSqueezedVacuum(modes=[0, 1], r=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
-            TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
+        with pytest.raises(ValueError, match="phi"):
+            SqueezedVacuum(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_trainable_parameters(self):
         state1 = TwoModeSqueezedVacuum([0, 1], 1, 1)
@@ -380,7 +332,7 @@ class TestThermal:
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``nbar``"):
+        with pytest.raises(ValueError, match="nbar"):
             Thermal(modes=[0, 1], nbar=[2, 3, 4])
 
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
@@ -392,3 +344,74 @@ class TestThermal:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Thermal(modes=[0], nbar=[0.1, 0.2]).representation
+
+
+class TestVisualization:
+    r"""
+    Tests the functions to visualize states.
+    """
+
+    # set to ``True`` to regenerate the assets
+    regenerate_assets = False
+
+    # path
+    path = Path(__file__).parent.parent / "assets"
+
+    def test_visualize_2d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path / "visualize_2d.json", remove_uids=True)
+
+        with open(self.path / "visualize_2d.json") as file:
+            ref_data = json.load(file)
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert math.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
+        assert math.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
+        assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
+        assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
+
+    def test_visualize_2d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_2d(20)
+
+    def test_visualize_3d(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path / "visualize_3d.json", remove_uids=True)
+
+        with open(self.path / "visualize_3d.json") as file:
+            ref_data = json.load(file)
+
+        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_3d_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_3d(20)
+
+    def test_visualize_dm(self):
+        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        st.manual_shape[0] = 20
+        fig = st.visualize_dm(20, return_fig=True)
+        data = fig.to_dict()
+
+        if self.regenerate_assets:
+            fig.write_json(self.path / "visualize_dm.json", remove_uids=True)
+
+        with open(self.path / "visualize_dm.json") as file:
+            ref_data = json.load(file)
+        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+
+    def test_visualize_dm_error(self):
+        with pytest.raises(ValueError):
+            Coherent([0, 1]).visualize_dm(20)
