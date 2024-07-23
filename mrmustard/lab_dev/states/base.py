@@ -339,7 +339,6 @@ class State(CircuitComponent):
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
-        batch_idx: int | None = None,
     ) -> Union[go.Figure, None]:
         r"""
         2D visualization of the Wigner function of this state.
@@ -360,8 +359,6 @@ class State(CircuitComponent):
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
-            batch_idx: The batch index of the DM to plot. If None provided, the DM will be
-                summed over the batch axis instead.
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -374,11 +371,7 @@ class State(CircuitComponent):
 
         state = self.to_fock()
         state = state if isinstance(state, DM) else state.dm()
-        dm = (
-            math.sum(state.representation.array, axes=[0])
-            if batch_idx is None
-            else state.representation.array[batch_idx]
-        )
+        dm = math.sum(state.representation.array, axes=[0])
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -538,7 +531,6 @@ class State(CircuitComponent):
     def visualize_dm(
         self,
         cutoff: Optional[int] = None,
-        batch_idx: int | None = None,
     ) -> Union[go.Figure, None]:
         r"""
         Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
@@ -546,8 +538,6 @@ class State(CircuitComponent):
 
         Args:
             cutoff: The desired cutoff. Defaults to the value of auto_shape.
-            batch_idx: The batch index of the DM to plot. If None provided, the DM will be
-                summed over the batch axis instead.
 
         Returns:
             A ``Plotly`` figure representing absolute value of the density matrix of this state.
@@ -559,11 +549,7 @@ class State(CircuitComponent):
             raise ValueError("DM visualization not available for multi-mode states.")
         state = self.to_fock(cutoff)
         state = state if isinstance(state, DM) else state.dm()
-        dm = (
-            math.sum(state.representation.array, axes=[0])
-            if batch_idx is None
-            else state.representation.array[batch_idx]
-        )
+        dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)

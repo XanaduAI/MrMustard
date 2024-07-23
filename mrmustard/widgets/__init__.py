@@ -241,12 +241,8 @@ def wires(obj):
     )
 
 
-def state(obj, is_ket, is_fock, batch_idx=None):
+def state(obj, is_ket, is_fock):
     """Create a widget to display a state."""
-    if batch_idx is None:
-        a = obj.representation.array if is_fock else obj.representation.A
-        return _batch_widget(obj, a.shape[0], state, is_ket, is_fock)
-
     fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
     table_html = f"""
     {TABLE}
@@ -282,10 +278,10 @@ def state(obj, is_ket, is_fock, batch_idx=None):
 
     table_widget = widgets.HTML(table_html)
     left_widget = widgets.VBox(
-        [table_widget, go.FigureWidget(obj.visualize_dm(batch_idx=batch_idx))],
+        [table_widget, go.FigureWidget(obj.visualize_dm())],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
     )
-    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100, batch_idx=batch_idx))
+    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100))
     return widgets.HBox(
         [left_widget, right_widget],
         layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),
