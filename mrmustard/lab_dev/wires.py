@@ -337,7 +337,7 @@ class Wires:
         return any(self.args)
 
     def __len__(self) -> int:
-        r"The number of wires."
+        r"""The number of wires."""
         try:
             return self._len
         except AttributeError:
