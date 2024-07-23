@@ -23,7 +23,16 @@ class Autocast:
 
     def __init__(self):
         self.dtype_order = ("float16", "float32", "float64", "complex64", "complex128")
-        self.no_cast = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
+        self.no_cast = (
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+        )
 
     def can_cast(self, arg):
         r"""Returns `True` if the argument can be casted."""

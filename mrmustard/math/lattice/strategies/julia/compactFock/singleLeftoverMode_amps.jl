@@ -56,7 +56,7 @@ function use_offDiag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, 
 
     # Array0
     G_in[:, :, 2 * d - 1] .= arr0[:, :, params...]
-    
+
 
     # read from Array2
     if params[d] > 1
@@ -170,9 +170,9 @@ function fill_firstMode_PNRzero!(arr0,A,B,M,cutoff_leftoverMode,SQRT)
 end
 
 function fock_1leftoverMode_amps(
-    A::AbstractMatrix{Complex{Float64}}, 
-    B::AbstractVector{Complex{Float64}}, 
-    G0::Complex{Float64}, 
+    A::AbstractMatrix{Complex{Float64}},
+    B::AbstractVector{Complex{Float64}},
+    G0::Complex{Float64},
     cutoffs::Tuple,
     precision_bits::Int64
     )
@@ -190,7 +190,7 @@ function fock_1leftoverMode_amps(
         arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
         arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
     """
-    
+
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]
 

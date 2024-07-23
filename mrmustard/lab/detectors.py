@@ -124,7 +124,8 @@ class PNRDetector(FockMeasurement):
                 )
                 self._internal_stochastic_channel.append(
                     math.convolve_probs_1d(
-                        condprob, [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]]
+                        condprob,
+                        [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]],
                     )
                 )
 
@@ -363,7 +364,10 @@ class Homodyne(Generaldyne):
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
         state = DisplacedSqueezed(
-            r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+            r=self.r,
+            phi=2 * self.quadrature_angle,
+            x=x / units_factor,
+            y=y / units_factor,
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
@@ -422,7 +426,7 @@ class Homodyne(Generaldyne):
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
         out_fock = fock.contract_states(
-            stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+            stateA=(other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)),
             stateB=self.state.ket(self_cutoffs),
             a_is_dm=other.is_mixed,
             b_is_dm=False,
