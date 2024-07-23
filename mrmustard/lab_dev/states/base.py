@@ -647,8 +647,8 @@ class DM(State):
         non-None values in ``manual_shape``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default 0.999).
-            max_shape: The maximum shape to compute (default 50).
+            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
