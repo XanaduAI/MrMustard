@@ -34,7 +34,7 @@ from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-
+import warnings
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
@@ -371,7 +371,7 @@ class State(CircuitComponent):
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock(settings.AUTOSHAPE_MAX)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -485,7 +485,7 @@ class State(CircuitComponent):
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock(settings.AUTOSHAPE_MAX)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -548,7 +548,7 @@ class State(CircuitComponent):
         on a heatmap.
 
         Args:
-            cutoff: The desired cutoff. Defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the
+            cutoff: The desired cutoff. Defaults to the value of ``AUTOSHAPE_MAX`` in the
                 settings.
             return_fig: Whether to return the ``Plotly`` figure.
 
@@ -560,7 +560,7 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-        state = self.to_fock(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock(cutoff)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -636,7 +636,7 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=0.999, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(self, max_prob=None, max_shape=None, respect_fock_shape=True) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -650,20 +650,25 @@ class DM(State):
             max_shape: The maximum shape to compute (default 50).
             respect_fock_shape: Whether to respect the non-None values in ``fock_shape``.
         """
-        try:  # fock
-            shape = self._representation.array.shape[1:]
-        except AttributeError:  # bargmann
-            repr = self.representation
-            A, b, c = repr.A[0], repr.b[0], repr.c[0]
-            repr = repr / trace_dm(A, b, c)
-            shape = autoshape_numba(
-                math.asnumpy(A),
-                math.asnumpy(b),
-                math.asnumpy(c),
-                max_prob or settings.AUTOSHAPE_PROBABILITY,
-                max_shape,
-            )
-            shape = tuple(shape) + tuple(shape)
+        # experimental:
+        if self.representation.ansatz.batch_size == 1:
+            try:  # fock
+                shape = self._representation.array.shape[1:]
+            except AttributeError:  # bargmann
+                repr = self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / trace_dm(A, b, c)
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+                shape = tuple(shape) + tuple(shape)
+        else:
+            warnings.warn("auto_shape not yet implemented for batched states.")
+            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_fock_shape:
             return tuple(c or s for c, s in zip(self.fock_shape, shape))
         return tuple(shape)
@@ -851,7 +856,7 @@ class Ket(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=None, max_shape=50, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(self, max_prob=None, max_shape=None, respect_fock_shape=True) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -865,18 +870,24 @@ class Ket(State):
             max_shape: The maximum shape to compute (default 50).
             respect_fock_shape: Whether to respect the non-None values in ``fock_shape``.
         """
-        try:  # fock
-            shape = self._representation.array.shape[1:]
-        except AttributeError:  # bargmann
-            repr = self.representation.conj() & self.representation
-            repr = repr / norm_ket(repr.A[0], repr.b[0], repr.c[0])
-            shape = autoshape_numba(
-                math.asnumpy(repr.A[0]),
-                math.asnumpy(repr.b[0]),
-                math.asnumpy(repr.c[0]),
-                max_prob or settings.AUTOSHAPE_PROBABILITY,
-                max_shape,
-            )
+        # experimental:
+        if self.representation.ansatz.batch_size == 1:
+            try:  # fock
+                shape = self._representation.array.shape[1:]
+            except AttributeError:  # bargmann
+                repr = self.representation.conj() & self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / norm_ket(A, b, c)
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+        else:
+            warnings.warn("auto_shape not yet implemented for batched states.")
+            shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_fock_shape:
             return tuple(c or s for c, s in zip(self.fock_shape, shape))
         return tuple(shape)
@@ -934,7 +945,9 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        return DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret = DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret.fock_shape = self.fock_shape + self.fock_shape
+        return ret
 
     def expectation(self, operator: CircuitComponent):
         r"""

@@ -401,7 +401,7 @@ class CircuitComponent:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
@@ -425,8 +425,8 @@ class CircuitComponent:
             arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
         except AttributeError:
             arrays = self.representation.reduce(shape).array
-        if not batched and len(arrays) == 1:
-            arrays = arrays[0]
+        array = math.sum(arrays, axes=[0])
+        arrays = math.expand_dims(array, 0) if batched else array
         return arrays
 
     def to_fock(self, shape=None):

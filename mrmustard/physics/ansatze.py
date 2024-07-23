@@ -543,6 +543,13 @@ class ArrayAnsatz(Ansatz):
         self._backend_array = False
 
     @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.array.shape[0]
+
+    @property
     def array(self) -> Batch[Tensor]:
         r"""
         The array of this ansatz.

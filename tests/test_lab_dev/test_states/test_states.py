@@ -401,6 +401,7 @@ class TestVisualization:
 
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
+        st.fock_shape[0] = 20
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
 
@@ -409,7 +410,6 @@ class TestVisualization:
 
         with open(self.path / "visualize_dm.json") as file:
             ref_data = json.load(file)
-
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_dm_error(self):
