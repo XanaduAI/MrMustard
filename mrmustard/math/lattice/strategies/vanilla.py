@@ -327,5 +327,5 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-        shape[m] = k + 1
+        shape[m] = k or 1
     return shape
