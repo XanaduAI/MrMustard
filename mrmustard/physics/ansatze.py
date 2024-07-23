@@ -212,7 +212,7 @@ class PolyExpBase(Ansatz):
     @property
     def degree(self) -> int:
         r"""
-        The degree of this ansatz.
+        The polynomial degree of this ansatz.
         """
         if self.array.ndim == 1:
             return 0
@@ -543,6 +543,13 @@ class ArrayAnsatz(Ansatz):
         self._backend_array = False
 
     @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.array.shape[0]
+
+    @property
     def array(self) -> Batch[Tensor]:
         r"""
         The array of this ansatz.
@@ -595,13 +602,11 @@ class ArrayAnsatz(Ansatz):
 
         Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
 
-        Raises:
-            ValueError: If the arrays don't have the same shape.
         """
-        try:
-            return np.allclose(self.array, other.array)
-        except Exception as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+        slices = (slice(0, None),) + tuple(
+            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+        )
+        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""

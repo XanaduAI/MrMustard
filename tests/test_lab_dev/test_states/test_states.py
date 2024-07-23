@@ -166,7 +166,7 @@ class TestNumber:
 
     modes = [[0], [1, 2], [9, 7]]
     n = [[3], 4, [5, 6]]
-    cutoffs = [None, [5], [6, 7]]
+    cutoffs = [None, 5, [6, 7]]
 
     @pytest.mark.parametrize("modes,n,cutoffs", zip(modes, n, cutoffs))
     def test_init(self, modes, n, cutoffs):
@@ -401,6 +401,7 @@ class TestVisualization:
 
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
+        st.manual_shape[0] = 20
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
 
@@ -409,7 +410,6 @@ class TestVisualization:
 
         with open(self.path / "visualize_dm.json") as file:
             ref_data = json.load(file)
-
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_dm_error(self):

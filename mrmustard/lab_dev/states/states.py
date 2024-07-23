@@ -174,7 +174,7 @@ class Number(Ket):
         >>> from mrmustard.lab_dev import Number
 
         >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert state.modes == [0, 1]
+        >>> assert state.representation.__class__.__name__ == "Fock"
 
     Args:
         modes: The modes of the number state.
@@ -197,45 +197,37 @@ class Number(Ket):
 
     """
 
-    short_name = "N"
-
     def __init__(
         self,
         modes: Sequence[int],
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__(modes=modes, name="N")
+        if isinstance(n, int):
+            n = (n,) * len(modes)
+        elif len(n) != len(modes):
+            raise ValueError(f"The number of modes is {len(modes)}, but {n} has length {len(n)}.")
+        if isinstance(cutoffs, int):
+            cutoffs = (cutoffs,) * len(modes)
+        if cutoffs is not None and len(cutoffs) != len(modes):
+            raise ValueError(
+                f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
+            )
+        self.n = n
+        super().__init__(modes=modes, name=f"N")
+        self.short_name = [str(n) for n in self.n]
 
-        self._n = math.atleast_1d(n)
-        if len(self._n) == 1:
-            self._n = math.tile(self._n, [len(modes)])
-        if len(self._n) != len(modes):
-            msg = f"Length of ``n`` must be 1 or {len(modes)}, found {len(self._n)}."
-            raise ValueError(msg)
+        for i, num in enumerate(n):
+            self.manual_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
 
-        self._cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
-        if len(self._cutoffs) == 1:
-            self._cutoffs = math.tile(self._cutoffs, [len(modes)])
-        if len(self._cutoffs) != len(modes):
-            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self._cutoffs)}."
+        self.cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
+        if len(self.cutoffs) == 1:
+            self.cutoffs = math.tile(self.cutoffs, [len(modes)])
+        if len(self.cutoffs) != len(modes):
+            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self.cutoffs)}."
             raise ValueError(msg)
 
         self._representation = Fock.from_function(fock_state, n=self.n, cutoffs=self.cutoffs)
-
-    @property
-    def cutoffs(self):
-        r"""
-        The cutoffs.
-        """
-        return self._cutoffs
-
-    @property
-    def n(self):
-        r"""
-        The number of photons in each mode.
-        """
-        return self._n
 
 
 class SqueezedVacuum(Ket):
@@ -328,7 +320,7 @@ class TwoModeSqueezedVacuum(Ket):
 
 class Vacuum(Ket):
     r"""
-    The `N`-mode vacuum state.
+    The `N`-mode vacuum state in Bargmann representation.
 
     .. code-block ::
 
@@ -361,6 +353,9 @@ class Vacuum(Ket):
     ) -> None:
         rep = Bargmann.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
         super().__init__(modes=modes, representation=rep, name="Vac")
+
+        for i in range(len(modes)):
+            self.manual_shape[i] = 1
 
 
 #  ~~~~~~~~~~~~

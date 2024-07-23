@@ -34,7 +34,7 @@ from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-
+import warnings
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
@@ -47,8 +47,13 @@ from mrmustard.utils.typing import (
     RealVector,
     Scalar,
 )
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi, wigner_to_bargmann_rho
-from mrmustard.physics.converters import to_fock
+from mrmustard.physics.bargmann import (
+    wigner_to_bargmann_psi,
+    wigner_to_bargmann_rho,
+    norm_ket,
+    trace_dm,
+)
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
@@ -186,7 +191,7 @@ class State(CircuitComponent):
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array)
+            >>> assert coh.representation == Fock(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -310,23 +315,6 @@ class State(CircuitComponent):
         """
         return math.allclose(self.purity, 1.0)
 
-    def fock(self, shape: Optional[Union[int, Sequence[int]]] = None) -> ComplexTensor:
-        r"""
-        The array that describes this state in the Fock representation.
-
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation into a ``Fock`` object.
-
-        Args:
-            shape: The shape of the returned array. If ``shape``is given as an ``int``, it is
-            broadcasted to all the dimensions. If ``None``, it defaults to the value of
-            ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
-
-        Returns:
-            The array that describes this state in the Fock representation.
-        """
-        return to_fock(self.representation, shape).array
-
     def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.
@@ -343,7 +331,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.representation.triple)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
 
     def visualize_2d(
         self,
@@ -383,7 +371,7 @@ class State(CircuitComponent):
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock()
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -497,7 +485,7 @@ class State(CircuitComponent):
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock()
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -560,8 +548,7 @@ class State(CircuitComponent):
         on a heatmap.
 
         Args:
-            cutoff: The desired cutoff. Defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the
-                settings.
+            cutoff: The desired cutoff. Defaults to the value of auto_shape.
             return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
@@ -572,7 +559,7 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-        state = self.to_fock(cutoff or settings.AUTOCUTOFF_MAX_CUTOFF)
+        state = self.to_fock(cutoff)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -583,7 +570,7 @@ class State(CircuitComponent):
         fig.update_layout(
             height=257,
             width=257,
-            margin=dict(l=20, r=20, t=30, b=20),
+            margin=dict(l=30, r=30, t=30, b=20),
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 
@@ -647,6 +634,45 @@ class DM(State):
         )
         if representation is not None:
             self._representation = representation
+
+    def auto_shape(
+        self, max_prob=None, max_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
+        r"""
+        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+        non-None values in ``manual_shape``.
+
+        Args:
+            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+        """
+        # experimental:
+        if self.representation.ansatz.batch_size == 1:
+            try:  # fock
+                shape = self._representation.array.shape[1:]
+            except AttributeError:  # bargmann
+                repr = self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / trace_dm(A, b, c)
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+                shape = tuple(shape) + tuple(shape)
+        else:
+            warnings.warn("auto_shape not yet implemented for batched states.")
+            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
+        return tuple(shape)
 
     @classmethod
     def from_phase_space(
@@ -816,7 +842,7 @@ class Ket(State):
 
     def __init__(
         self,
-        modes: tuple[int, ...] = (),
+        modes: Sequence[int] = (),
         representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
@@ -830,6 +856,44 @@ class Ket(State):
         )
         if representation is not None:
             self._representation = representation
+
+    def auto_shape(
+        self, max_prob=None, max_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
+        r"""
+        A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+        non-None values in ``manual_shape``.
+
+        Args:
+            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+        """
+        # experimental:
+        if self.representation.ansatz.batch_size == 1:
+            try:  # fock
+                shape = self._representation.array.shape[1:]
+            except AttributeError:  # bargmann
+                repr = self.representation.conj() & self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / norm_ket(A, b, c)
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+        else:
+            warnings.warn("auto_shape not yet implemented for batched states.")
+            shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
+        return tuple(shape)
 
     @classmethod
     def from_phase_space(
@@ -884,7 +948,9 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        return DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret = DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret.manual_shape = self.manual_shape + self.manual_shape
+        return ret
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -917,8 +983,9 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = (self @ operator.dual) >> TraceOut(leftover_modes)
-            result = math.abs(result) ** 2 if not leftover_modes else result
+            result = self @ operator.dual
+            result @= result.adjoint
+            result >>= TraceOut(leftover_modes)
 
         elif op_type is OperatorType.DM_LIKE:
             result = (self.adjoint @ (self @ operator.dual)) >> TraceOut(leftover_modes)

@@ -26,7 +26,7 @@ from mrmustard.lab_dev.states import Vacuum, Number
 from mrmustard.lab_dev.transformations import Dgate, Attenuator
 
 # original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+autocutoff_max0 = settings.AUTOSHAPE_MAX
 
 
 class TestSimulator:
@@ -43,7 +43,7 @@ class TestSimulator:
         ],
     )
     def test_run(self, path):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
+        settings.AUTOSHAPE_MAX = 10
 
         vac12 = Vacuum([1, 2])
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -60,4 +60,4 @@ class TestSimulator:
 
         assert np.isclose(res, exp)
 
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
+        settings.AUTOSHAPE_MAX = autocutoff_max0

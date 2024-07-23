@@ -25,7 +25,16 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Amplifier", "Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "S2gate", "Identity"]
+__all__ = [
+    "Amplifier",
+    "Attenuator",
+    "BSgate",
+    "Dgate",
+    "Rgate",
+    "Sgate",
+    "S2gate",
+    "Identity",
+]
 
 
 class BSgate(Unitary):
