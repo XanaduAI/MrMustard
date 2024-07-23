@@ -282,9 +282,9 @@ class Transformation(Tensor):
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from mrmustard.lab.circuit import (
+        from mrmustard.lab.circuit import (  # pylint: disable=import-outside-toplevel
             Circuit,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
