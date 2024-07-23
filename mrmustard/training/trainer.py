@@ -162,9 +162,7 @@ def train_device(
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
     device, kwargs = (
-        curry_pop(device_factory, **kwargs)
-        if callable(device_factory)
-        else ([], kwargs)
+        curry_pop(device_factory, **kwargs) if callable(device_factory) else ([], kwargs)
     )
     device = [device] if not isinstance(device, (Sequence, Mapping)) else device
 
@@ -191,9 +189,7 @@ def train_device(
     if callable(metric_fns):
         results["metrics"] = metric_fns(*device)  # pragma: no cover
     elif isinstance(metric_fns, Sequence):
-        results["metrics"] = [
-            f(*device) for f in metric_fns if callable(f)
-        ]  # pragma: no cover
+        results["metrics"] = [f(*device) for f in metric_fns if callable(f)]  # pragma: no cover
     elif isinstance(metric_fns, Mapping):  # pragma: no cover
         results = {
             **results,
@@ -219,9 +215,7 @@ def _iter_futures(futures):
         yield ray.get(done[0])
 
 
-def map_trainer(
-    trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpus=None, **kwargs
-):
+def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpus=None, **kwargs):
     """Maps multiple training tasks across multiple workers using `ray`.
 
     In practice, the most common use case is to ignore the keywords `trainer` (as it defaults to
@@ -426,9 +420,7 @@ def partial_pop(fn, *args, **kwargs):
     """Partially applies known kwargs to fn and returns the rest."""
     keywords, has_var_keyword = kwargs_of(fn)
     known_kwargs = {k: kwargs.pop(k) for k in set(kwargs).intersection(keywords)}
-    partial_fn = partial(
-        fn, *args, **known_kwargs, **(kwargs if has_var_keyword else {})
-    )
+    partial_fn = partial(fn, *args, **known_kwargs, **(kwargs if has_var_keyword else {}))
     return partial_fn, kwargs
 
 

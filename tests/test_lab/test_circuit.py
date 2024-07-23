@@ -48,9 +48,7 @@ def test_circuit_placement_BS():
 
 def test_circuit_placement_BSBS():
     "tests that BSgates can be placed in any order"
-    assert (
-        BSgate(1.0)[1, 2] >> BSgate(1.0)[0, 3] == BSgate(1.0)[0, 3] >> BSgate(1.0)[1, 2]
-    )
+    assert BSgate(1.0)[1, 2] >> BSgate(1.0)[0, 3] == BSgate(1.0)[0, 3] >> BSgate(1.0)[1, 2]
 
 
 def test_is_unitary():

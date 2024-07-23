@@ -110,9 +110,7 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
-        self._add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds)
-        )
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         self._representation = Bargmann.from_function(
@@ -224,9 +222,7 @@ class Rgate(Unitary):
         (phis,) = list(reshape_params(len(modes), phi=phi))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.rotation_gate_Abc, theta=self.phi
-        )
+        self._representation = Bargmann.from_function(fn=triples.rotation_gate_Abc, theta=self.phi)
 
 
 class Sgate(Unitary):
@@ -326,9 +322,7 @@ class Identity(Unitary):
         modes: Sequence[int],
     ):
         rep = Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes))
-        super().__init__(
-            modes_out=modes, modes_in=modes, representation=rep, name="Identity"
-        )
+        super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")
 
 
 class S2gate(Unitary):
@@ -460,9 +454,7 @@ class Amplifier(Channel):
                 None,
             )
         )
-        self._representation = Bargmann.from_function(
-            fn=triples.amplifier_Abc, g=self.gain
-        )
+        self._representation = Bargmann.from_function(fn=triples.amplifier_Abc, g=self.gain)
 
 
 class Attenuator(Channel):

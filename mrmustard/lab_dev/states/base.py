@@ -419,17 +419,13 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(
-            x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)"
-        )
+        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(
-            x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)"
-        )
+        fig_22 = go.Scatter(x=prob_p, y=-p, line=dict(color="steelblue", width=2), name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -524,14 +520,10 @@ class State(CircuitComponent):
             )
         )
         fig.update_traces(
-            contours_y=dict(
-                show=True, usecolormap=True, highlightcolor="red", project_y=False
-            )
+            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
         )
         fig.update_traces(
-            contours_x=dict(
-                show=True, usecolormap=True, highlightcolor="yellow", project_x=False
-            )
+            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -572,9 +564,7 @@ class State(CircuitComponent):
         dm = math.sum(state.representation.array, axes=[0])
 
         fig = go.Figure(
-            data=go.Heatmap(
-                z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False
-            )
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -832,9 +822,7 @@ class DM(State):
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [
-            i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes
-        ]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         representation = self.representation.trace(idxz, idxz_conj)
 
         return self.__class__._from_attributes(
@@ -928,8 +916,7 @@ class Ket(State):
                 raise ValueError(msg)
         return Ket(
             modes,
-            coeff
-            * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
 
@@ -1032,9 +1019,7 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(
-        self, other: CircuitComponent | Scalar
-    ) -> CircuitComponent | Batch[Scalar]:
+    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which

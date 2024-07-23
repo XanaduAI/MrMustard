@@ -42,9 +42,7 @@ class Autocast:
         r"""Returns `True` if the `arg` can (and should) be casted to `proposed_dtype`."""
         if not self.can_cast(arg):
             return False
-        return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(
-            arg.dtype.name
-        )
+        return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(arg.dtype.name)
 
     def get_dtypes(self, *args, **kwargs) -> List:
         r"""Returns the dtypes of the arguments."""

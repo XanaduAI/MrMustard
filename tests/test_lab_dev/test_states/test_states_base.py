@@ -131,9 +131,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(
-            modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0)
-        )
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
@@ -334,9 +332,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(
-            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
-        )
+        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])

@@ -86,9 +86,7 @@ def test_additive_noise_equal_to_circuit():
     amp = 1.0 + np.random.uniform()
     c1 = Attenuator(1 / amp, nb) >> Amplifier(amp, na)
     c2 = AdditiveNoise(2 * (amp - 1) * (1 + na + nb))
-    assert all(
-        np.allclose(ele1, ele2) for ele1, ele2 in zip(c1.bargmann(), c2.bargmann())
-    )
+    assert all(np.allclose(ele1, ele2) for ele1, ele2 in zip(c1.bargmann(), c2.bargmann()))
 
 
 @given(gate=single_mode_cv_channel())
@@ -187,12 +185,8 @@ def test_squeezer_grad_against_finite_differences():
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
     delta = 1e-6
-    dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (
-        2 * delta
-    )
-    dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (
-        2 * delta
-    )
+    dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
+    dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
     _, (gradr, gradphi) = math.value_and_gradients(
         lambda: fock.squeezer(r, phi, shape=cutoffs), [r, phi]
     )
@@ -207,14 +201,12 @@ def test_displacement_grad():
     y = math.new_variable(0.1, None, "y")
     alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
-    dUdx = (
-        fock.displacement(x + delta, y, cutoffs)
-        - fock.displacement(x - delta, y, cutoffs)
-    ) / (2 * delta)
-    dUdy = (
-        fock.displacement(x, y + delta, cutoffs)
-        - fock.displacement(x, y - delta, cutoffs)
-    ) / (2 * delta)
+    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
+        2 * delta
+    )
+    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (
+        2 * delta
+    )
 
     D = fock.displacement(x, y, shape=cutoffs)
     dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
@@ -347,9 +339,7 @@ def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     N = gate.num_modes
     cutoffs = [cutoff] * N
 
-    choi = math.asnumpy(gate.choi(cutoffs=cutoffs)).reshape(
-        cutoff ** (2 * N), cutoff ** (2 * N)
-    )
+    choi = math.asnumpy(gate.choi(cutoffs=cutoffs)).reshape(cutoff ** (2 * N), cutoff ** (2 * N))
 
     t = math.asnumpy(gate.U(cutoffs=cutoffs))
     row = t.flatten().reshape(1, cutoff ** (2 * N))

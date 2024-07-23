@@ -373,10 +373,7 @@ class TestBackendManager:
         arr[2, 2] = 3
         res = math.asnumpy(math.exp(arr))
         exp = np.array(
-            [
-                [np.exp(0) if i != j else np.exp(i + 1) for i in range(3)]
-                for j in range(3)
-            ]
+            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
         )
         assert np.allclose(res, exp)
 
@@ -662,9 +659,7 @@ class TestBackendManager:
 
         math._euclidean_opt = None  # just in case another test set it
         try:
-            with pytest.warns(
-                UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"
-            ):
+            with pytest.warns(UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"):
                 opt = math.euclidean_opt
             assert isinstance(opt, tf.keras.optimizers.Adam)
         finally:

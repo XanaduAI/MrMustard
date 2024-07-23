@@ -107,14 +107,8 @@ class Circuit:
                 ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
                 if not (ovlp_bra or ovlp_ket):
                     continue
-                iA = (
-                    opA.wires.output.bra[ovlp_bra].indices
-                    + opA.wires.output.ket[ovlp_ket].indices
-                )
-                iB = (
-                    opB.wires.input.bra[ovlp_bra].indices
-                    + opB.wires.input.ket[ovlp_ket].indices
-                )
+                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
+                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
                 if not out_idx.intersection(iA):
                     continue
                 indices[i + j + 1] = dict(zip(iA, iB))
@@ -388,24 +382,18 @@ class Circuit:
         # if the circuit has no graph, compute it
         if not self._graph:
             # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {
-                m: {"ket": None, "bra": None} for w in wires for m in w.modes
-            }
+            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
 
             # populate the graph
             for w in wires:
                 # if there is a dangling wire, add a contraction
                 for m in w.input.ket.modes:  # ket side
                     if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
                         ids_dangling_wires[m]["ket"] = None
                 for m in w.input.bra.modes:  # bra side
                     if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[
-                            0
-                        ]
+                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
                         ids_dangling_wires[m]["bra"] = None
 
                 # update the dangling wires
@@ -495,18 +483,15 @@ class Circuit:
             parallel = isinstance(cc_name, list)
             if not comp.wires.input:
                 cc_names = [
-                    f"◖{cc_name[i] if parallel else cc_name}◗"
-                    for i in range(len(comp.modes))
+                    f"◖{cc_name[i] if parallel else cc_name}◗" for i in range(len(comp.modes))
                 ]
             elif not comp.wires.output:
                 cc_names = [
-                    f"|{cc_name[i] if parallel else cc_name})="
-                    for i in range(len(comp.modes))
+                    f"|{cc_name[i] if parallel else cc_name})=" for i in range(len(comp.modes))
                 ]
             elif cc_name not in control_gates:
                 cc_names = [
-                    f"{cc_name[i] if parallel else cc_name}"
-                    for i in range(len(comp.modes))
+                    f"{cc_name[i] if parallel else cc_name}" for i in range(len(comp.modes))
                 ]
             else:
                 cc_names = [f"{cc_name}"]
@@ -522,8 +507,7 @@ class Circuit:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(math.asnumpy(new_values))
                 return [
-                    cc_names[i] + str(val).replace(" ", "")
-                    for i, val in enumerate(zip(*values))
+                    cc_names[i] + str(val).replace(" ", "") for i, val in enumerate(zip(*values))
                 ]
             return cc_names
 
@@ -625,9 +609,7 @@ class Circuit:
 
         # every chunk starts with a recap of the modes
         chunk_start = [f"mode {mode}:   " for mode in modes]
-        chunk_start = [
-            s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start
-        ]
+        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
 
         # generate the drawing
         ret = ""

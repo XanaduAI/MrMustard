@@ -80,9 +80,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
-    def arange(
-        self, start: int, limit: int = None, delta: int = 1, dtype=None
-    ) -> tf.Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
         dtype = dtype or self.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
@@ -166,9 +164,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         data_format="NWC",
     ) -> tf.Tensor:
         padding = padding or "VALID"
-        return tf.nn.convolution(
-            array, filters=filters, padding=padding, data_format=data_format
-        )
+        return tf.nn.convolution(array, filters=filters, padding=padding, data_format=data_format)
 
     def cos(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cos(array)
@@ -188,9 +184,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if isinstance(string, str):
             return tf.einsum(string, *tensors)
-        return (
-            None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
-        )
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
@@ -261,9 +255,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         bounds = bounds or (None, None)
         dtype = dtype or self.float64
         value = self.astensor(value, dtype)
-        return tf.Variable(
-            value, name=name, dtype=dtype, constraint=self.constraint_func(bounds)
-        )
+        return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=None):
         dtype = dtype or self.float64
@@ -357,9 +349,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.transpose(a, perm)
 
     @Autocast()
-    def update_tensor(
-        self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
-    ) -> tf.Tensor:
+    def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
     @Autocast()
@@ -418,17 +408,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        use_legacy = Version(metadata.distribution("tensorflow").version) < Version(
-            "2.16.0"
-        )
-        AdamOpt = (
-            tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
-        )
-        if (
-            not use_legacy
-            and platform.system() == "Darwin"
-            and platform.processor() == "arm"
-        ):
+        use_legacy = Version(metadata.distribution("tensorflow").version) < Version("2.16.0")
+        AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
+        if not use_legacy and platform.system() == "Darwin" and platform.processor() == "arm":
             warn(
                 "Mac ARM processor detected - MrMustard always trains using the latest Keras Adam "
                 "optimizer with TensorFlow 2.16+, but it is known to be slow on Mac+ARM. To use "
@@ -489,9 +471,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             )
 
             G = self.astensor(
-                jl.Vanilla.vanilla(
-                    A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
-                )
+                jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
             )
 
         def grad(dLdGconj):
@@ -551,9 +531,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         return G, grad
 
-    def reorder_AB_bargmann(
-        self, A: tf.Tensor, B: tf.Tensor
-    ) -> Tuple[tf.Tensor, tf.Tensor]:
+    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""In mrmustard.math.compactFock.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -635,9 +613,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(
-            A, B, C, cutoffs=cutoffs
-        )
+        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
@@ -668,9 +644,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(
-            A, B, C, cutoffs=cutoffs
-        )
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
@@ -765,9 +739,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # unbroadcasting the gradient
             implicit_broadcast = list(range(_tensor.ndim - value.ndim))
             explicit_broadcast = [
-                _tensor.ndim - value.ndim + j
-                for j in range(value.ndim)
-                if value.shape[j] == 1
+                _tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
             ]
             dL_dvalue = np.sum(
                 np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)

@@ -206,9 +206,7 @@ class Number(Ket):
         if isinstance(n, int):
             n = (n,) * len(modes)
         elif len(n) != len(modes):
-            raise ValueError(
-                f"The number of modes is {len(modes)}, but {n} has length {len(n)}."
-            )
+            raise ValueError(f"The number of modes is {len(modes)}, but {n} has length {len(n)}.")
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
         if cutoffs is not None and len(cutoffs) != len(modes):
@@ -229,9 +227,7 @@ class Number(Ket):
             msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self.cutoffs)}."
             raise ValueError(msg)
 
-        self._representation = Fock.from_function(
-            fock_state, n=self.n, cutoffs=self.cutoffs
-        )
+        self._representation = Fock.from_function(fock_state, n=self.n, cutoffs=self.cutoffs)
 
 
 class SqueezedVacuum(Ket):
@@ -401,6 +397,4 @@ class Thermal(DM):
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.thermal_state_Abc, nbar=self.nbar
-        )
+        self._representation = Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar)

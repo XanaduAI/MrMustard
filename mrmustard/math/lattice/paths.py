@@ -49,9 +49,7 @@ def _binomial_subspace_basis(
     for photons in range(cutoffs[mode]):  # could be prange?
         if weight - photons >= 0:
             basis_element = tuple_setitem(basis_element, mode, photons)
-            _binomial_subspace_basis(
-                cutoffs, weight - photons, mode + 1, basis_element, basis
-            )
+            _binomial_subspace_basis(cutoffs, weight - photons, mode + 1, basis_element, basis)
 
 
 @njit

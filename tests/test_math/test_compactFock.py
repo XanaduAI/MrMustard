@@ -59,9 +59,7 @@ def test_compactFock_diagonal(precision, A_B_G0):
         ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
     # New MM
-    G_diag = math.hermite_renormalized_diagonal(
-        math.conj(-A), math.conj(B), math.conj(G0), cutoffs
-    )
+    G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
     assert np.allclose(ref_diag, G_diag)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
@@ -95,13 +93,9 @@ def test_compactFock_1leftover(precision, A_B_G0):
     # Extract amplitudes of leftover mode from vanilla MM
     ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
     for inds in np.ndindex(*cutoffs[1:]):
-        ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = (
-            G_ref[
-                tuple(
-                    [slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds)
-                )
-            ]
-        )
+        ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
+            tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
+        ]
     assert np.allclose(ref_leftover, G_leftover)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision

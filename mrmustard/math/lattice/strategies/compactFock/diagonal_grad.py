@@ -15,9 +15,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 
 
 @njit
-def calc_dA_dB(
-    i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB
-):
+def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB):
     """
     Calculate the derivatives of one Fock amplitude w.r.t A and B.
     Args:
@@ -199,9 +197,7 @@ def use_offDiag_pivot_grad(
 
 
 @njit
-def use_diag_pivot_grad(
-    A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB
-):
+def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB):
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
@@ -229,9 +225,7 @@ def use_diag_pivot_grad(
     # Array1
     for i in range(2 * M):
         if params[i // 2] > 0:
-            i_staggered = (
-                i + 1 - 2 * (i % 2)
-            )  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
+            i_staggered = i + 1 - 2 * (i % 2)  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
             G_in[i] = arr1[i_staggered][params_adapted]
             G_in_dA[i] = arr1_dA[i_staggered][params_adapted]

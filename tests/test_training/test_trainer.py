@@ -52,9 +52,7 @@ def wrappers():
             x=x, x_trainable=True, y_trainable=True
         )
         return (
-            [circ]
-            if return_type == "list"
-            else {"circ": circ} if return_type == "dict" else circ
+            [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
         )
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
@@ -112,9 +110,7 @@ class TestTrainer:
         "return_type",
         [None, "dict"],
     )
-    def test_circ_optimize(
-        self, tasks, return_type
-    ):  # pylint: disable=redefined-outer-name
+    def test_circ_optimize(self, tasks, return_type):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
         skip_np()
 
@@ -157,9 +153,7 @@ class TestTrainer:
             lambda c: (Vacuum(1) >> c >> c >> c).fock_probabilities([5]),
         ],
     )
-    def test_circ_optimize_metrics(
-        self, metric_fns
-    ):  # pylint: disable=redefined-outer-name
+    def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
         skip_np()
 
@@ -184,8 +178,7 @@ class TestTrainer:
         assert set(results.keys()) == set(tasks.keys())
         results = list(results.values())
         assert all(
-            ("metrics" in r or set(metric_fns.keys()).issubset(set(r.keys())))
-            for r in results
+            ("metrics" in r or set(metric_fns.keys()).issubset(set(r.keys()))) for r in results
         )
         assert (
             len(set(r["cost"] for r in results))

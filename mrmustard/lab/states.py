@@ -409,14 +409,8 @@ class Gaussian(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        eb = (
-            (settings.HBAR / 2, None)
-            if eigenvalues_bounds == (None, None)
-            else eigenvalues_bounds
-        )
-        self._add_parameter(
-            make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb)
-        )
+        eb = (settings.HBAR / 2, None) if eigenvalues_bounds == (None, None) else eigenvalues_bounds
+        self._add_parameter(make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb))
         self._add_parameter(
             make_parameter(
                 symplectic_trainable,

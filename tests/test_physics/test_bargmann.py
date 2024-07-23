@@ -54,16 +54,12 @@ def test_bargmann_numpy_state():
 def test_bargmann_numpy_transformation():
     """Tests that the numpy option of the bargmann method of State works correctly"""
     transformation = Ggate(1)
-    assert all(
-        isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True)
-    )
+    assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
 
 
 def test_norm_ket():
     """Test that the norm of a ket is calculated correctly"""
-    ket = Vacuum([0, 1]) >> Unitary.from_symplectic(
-        [0, 1], [0, 1], math.random_symplectic(2)
-    )
+    ket = Vacuum([0, 1]) >> Unitary.from_symplectic([0, 1], [0, 1], math.random_symplectic(2))
     A, b, c = [x[0] for x in ket.bargmann]
     assert np.isclose(norm_ket(A, b, c), ket.probability)
 

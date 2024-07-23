@@ -268,9 +268,7 @@ class Bargmann(Representation):
         return self._ansatz
 
     @classmethod
-    def from_ansatz(
-        cls, ansatz: PolyExpAnsatz
-    ) -> Bargmann:  # pylint: disable=arguments-differ
+    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
         r"""
         Returns a Bargmann object from an ansatz object.
         """
@@ -354,9 +352,7 @@ class Bargmann(Representation):
             )
         A, b, c = [], [], []
         for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(
-                Abc, idx_z, idx_zconj, measure=-1.0
-            )
+            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -433,9 +429,7 @@ class Bargmann(Representation):
 
         # Plot the image
         fig, ax = plt.subplots()
-        ax.imshow(
-            rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]]
-        )
+        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
 
@@ -518,17 +512,13 @@ class Bargmann(Representation):
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(
-                        contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
-                    )
+                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
     def _repr_html_(self):  # pragma: no cover
-        template = Template(
-            filename=os.path.dirname(__file__) + "/assets/bargmann.txt"
-        )  # nosec
+        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")  # nosec
         display(HTML(template.render(rep=self)))
 
 
@@ -591,9 +581,7 @@ class Fock(Representation):
         return self._ansatz
 
     @classmethod
-    def from_ansatz(
-        cls, ansatz: ArrayAnsatz
-    ) -> Fock:  # pylint: disable=arguments-differ
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
         r"""
         Returns a Fock object from an ansatz object.
         """
@@ -710,9 +698,7 @@ class Fock(Representation):
         batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                batched_array.append(
-                    math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
-                )
+                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
@@ -730,11 +716,7 @@ class Fock(Representation):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
             [0]
-            + [
-                i + 1
-                for i in range(len(self.array.shape) - 1)
-                if i not in idxs1 + idxs2
-            ]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
             + [i + 1 for i in idxs1]
             + [i + 1 for i in idxs2]
         )
@@ -805,9 +787,7 @@ class Fock(Representation):
         return Fock(array=ret, batched=True)
 
     def _repr_html_(self):  # pragma: no cover
-        template = Template(
-            filename=os.path.dirname(__file__) + "/assets/fock.txt"
-        )  # nosec
+        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")  # nosec
         display(HTML(template.render(rep=self)))
 
     def sum_batch(self) -> Fock:
@@ -817,6 +797,4 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(
-            ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0))
-        )
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))

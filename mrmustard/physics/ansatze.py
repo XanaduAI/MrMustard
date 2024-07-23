@@ -90,9 +90,7 @@ class Ansatz(ABC):
         try:
             return self.__add__(-other)
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot subtract {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
     def __call__(self, point: Any) -> Scalar:
@@ -172,9 +170,7 @@ class PolyExpBase(Ansatz):
         return self.__class__(self.mat, self.vec, -self.array)
 
     def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(other) and np.allclose(
-            self.array, other.array, atol=1e-10
-        )
+        return self._equal_no_array(other) and np.allclose(self.array, other.array, atol=1e-10)
 
     def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
@@ -276,12 +272,8 @@ class PolyExpBase(Ansatz):
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
-                    self.vec[i], self.vec[j]
-                ):
-                    self.array = math.update_add_tensor(
-                        self.array, [[i]], [self.array[j]]
-                    )
+                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
+                    self.array = math.update_add_tensor(self.array, [[i]], [self.array[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
         to_keep = [i for i in range(self.batch_size) if i not in removed]
@@ -445,15 +437,11 @@ class PolyExpAnsatz(PolyExpBase):
             The value of the function.
         """
         z = np.atleast_2d(z)  # shape (..., n)
-        zz = np.einsum("...a,...b->...ab", z, z)[
-            ..., None, :, :
-        ]  # shape (..., 1, n, n))
+        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (..., 1, n, n))
         A_part = 0.5 * math.sum(
             zz * self.A, axes=[-1, -2]
         )  # sum((...,1,n,n) * (b,n,n), [-1,-2]) ~ (...,b)
-        b_part = np.sum(
-            z[..., None, :] * self.b, axis=-1
-        )  # sum((...,1,n) * (b,n), -1) ~ (...,b)
+        b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((...,1,n) * (b,n), -1) ~ (...,b)
         exp_sum = np.exp(A_part + b_part)  # (..., b)
         result = exp_sum * self.c  # (..., b)
         val = np.sum(result, axis=-1)  # (...)
@@ -481,9 +469,7 @@ class PolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
-                raise TypeError(
-                    f"Cannot multiply {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""
@@ -507,9 +493,7 @@ class PolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c / other)
             except Exception as e:
-                raise TypeError(
-                    f"Cannot divide {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
@@ -620,8 +604,7 @@ class ArrayAnsatz(Ansatz):
 
         """
         slices = (slice(0, None),) + tuple(
-            slice(0, min(si, oi))
-            for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
         return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
@@ -642,9 +625,7 @@ class ArrayAnsatz(Ansatz):
             new_array = [a + b for a in self.array for b in other.array]
             return self.__class__(array=new_array)
         except Exception as e:
-            raise TypeError(
-                f"Cannot add {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
     def __call__(self, point: Any) -> Scalar:
         r"""
@@ -670,9 +651,7 @@ class ArrayAnsatz(Ansatz):
                 new_array = [a / b for a in self.array for b in other.array]
                 return self.__class__(array=new_array)
             except Exception as e:
-                raise TypeError(
-                    f"Cannot divide {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
             return self.__class__(array=self.array / other)
 
@@ -694,9 +673,7 @@ class ArrayAnsatz(Ansatz):
                 new_array = [a * b for a in self.array for b in other.array]
                 return self.__class__(array=new_array)
             except Exception as e:
-                raise TypeError(
-                    f"Cannot multiply {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
             return self.__class__(array=self.array * other)
 
@@ -752,13 +729,10 @@ def bargmann_Abc_to_phasespace_cov_means(
     W = math.transpose(math.conj(math.rotmat(num_modes)))
     coeff = c
     cov = [
-        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR
-        for Amat in A
+        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
     ]
     mean = [
-        1j
-        * math.matvec(Omega @ W, bvec)
-        * math.sqrt(settings.HBAR, dtype=math.complex128)
+        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
         for bvec in b
     ]
     return math.astensor(cov), math.astensor(mean), coeff

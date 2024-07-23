@@ -52,9 +52,7 @@ def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
     skip_np()
 
-    S = math.new_variable(
-        random_symplectic(n), name=None, dtype="complex128", bounds=None
-    )
+    S = math.new_variable(random_symplectic(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dS_euclidean = math.new_variable(
             np.random.random((2 * n, 2 * n)) + 1j * np.random.random((2 * n, 2 * n)),
@@ -73,27 +71,19 @@ def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
     skip_np()
 
-    U = math.new_variable(
-        unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None
-    )
+    U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dU_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_unitary([[dU_euclidean, U]], 0.01)
-        assert is_unitary(
-            math.asnumpy(U)
-        ), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(U)), "training step does not result in a unitary matrix"
         sym = np.block(
             [
                 [np.real(math.asnumpy(U)), -np.imag(math.asnumpy(U))],
                 [np.imag(math.asnumpy(U)), np.real(math.asnumpy(U))],
             ]
         )
-        assert is_symplectic(
-            sym
-        ), "training step does not result in a symplectic matrix"
-        assert is_orthogonal(
-            sym
-        ), "training step does not result in an orthogonal matrix"
+        assert is_symplectic(sym), "training step does not result in a symplectic matrix"
+        assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
 
 
 @given(n=st.integers(2, 4))
@@ -101,24 +91,16 @@ def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
     skip_np()
 
-    O = math.new_variable(
-        math.random_orthogonal(n), name=None, dtype="complex128", bounds=None
-    )
+    O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dO_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_orthogonal([[dO_euclidean, O]], 0.01)
-        assert is_unitary(
-            math.asnumpy(O)
-        ), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(O)), "training step does not result in a unitary matrix"
         ortho = np.block(
             [
                 [np.real(math.asnumpy(O)), -math.zeros_like(math.asnumpy(O))],
                 [math.zeros_like(math.asnumpy(O)), np.real(math.asnumpy(O))],
             ]
         )
-        assert is_symplectic(
-            ortho
-        ), "training step does not result in a symplectic matrix"
-        assert is_orthogonal(
-            ortho
-        ), "training step does not result in an orthogonal matrix"
+        assert is_symplectic(ortho), "training step does not result in a symplectic matrix"
+        assert is_orthogonal(ortho), "training step does not result in an orthogonal matrix"
