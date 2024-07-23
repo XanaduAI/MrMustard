@@ -516,11 +516,8 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def _repr_html_(self):  # pragma: no cover
-        w = widgets.bargmann(self)
-        if w is None:
-            return
-        display(w)
+    def _ipython_display_(self):  # pragma: no cover
+        display(widgets.bargmann(self))
 
 
 class Fock(Representation):
@@ -787,10 +784,12 @@ class Fock(Representation):
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
 
-    def _repr_html_(self):  # pragma: no cover
-        if self.array.shape[0] != 1 or self.array.ndim > 3:
+    def _ipython_display_(self):  # pragma: no cover
+        w = widgets.fock(self)
+        if w is None:
+            print(repr(self))
             return
-        display(widgets.fock(self))
+        display(w)
 
     def sum_batch(self) -> Fock:
         r"""

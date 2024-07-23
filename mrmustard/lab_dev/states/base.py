@@ -564,7 +564,7 @@ class State(CircuitComponent):
 
         return fig
 
-    def _repr_html_(self):  # pragma: no cover
+    def _ipython_display_(self):  # pragma: no cover
         is_ket = isinstance(self, Ket)
         is_fock = isinstance(self.representation, Fock)
         display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
