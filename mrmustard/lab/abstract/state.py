@@ -94,7 +94,9 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
+            self.is_hilbert_vector = np.allclose(
+                gaussian.purity(self.cov), 1.0, atol=1e-6
+            )
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -192,7 +194,9 @@ class State:  # pylint: disable=too-many-public-methods
             return math.sqrt(math.diag_part(self.number_cov))
 
         return math.sqrt(
-            fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
+            fock.number_variances(
+                self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2
+            )
         )
 
     @property
@@ -254,7 +258,9 @@ class State:  # pylint: disable=too-many-public-methods
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
         if not self.is_gaussian:
-            raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
+            raise NotImplementedError(
+                "number_cov not yet implemented for non-gaussian states"
+            )
 
         return gaussian.number_cov(self.cov, self.means)
 
@@ -298,7 +304,9 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = [
+                c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)
+            ]
 
         if self.is_gaussian:
             self._ket = fock.wigner_to_fock_state(
@@ -316,7 +324,9 @@ class State:  # pylint: disable=too-many-public-methods
                     self._ket = fock.dm_to_ket(self._dm)
             current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                paddings = [
+                    (0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)
+                ]
                 if any(p != (0, 0) for p in paddings):
                     padded = fock.math.pad(self._ket, paddings, mode="constant")
                 else:
@@ -337,7 +347,9 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = [
+                c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)
+            ]
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
             if ket is not None:
@@ -348,9 +360,13 @@ class State:  # pylint: disable=too-many-public-methods
                     self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                paddings = [
+                    (0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)
+                ]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
+                    padded = fock.math.pad(
+                        self._dm, paddings + paddings, mode="constant"
+                    )
                 else:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
@@ -442,7 +458,8 @@ class State:  # pylint: disable=too-many-public-methods
 
     def _contract_with_other(self, other):
         other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+            None if m not in self.modes else other.cutoffs[other.indices(m)]
+            for m in other.modes
         ]
         if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
@@ -450,8 +467,12 @@ class State:  # pylint: disable=too-many-public-methods
             # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
-                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                stateA=other.ket(other_cutoffs)
+                if other.is_pure
+                else other.dm(other_cutoffs),
+                stateB=self.ket(self_cutoffs)
+                if self.is_pure
+                else self.dm(self_cutoffs),
                 a_is_dm=other.is_mixed,
                 b_is_dm=self.is_mixed,
                 modes=other.indices(self.modes),
@@ -509,7 +530,9 @@ class State:  # pylint: disable=too-many-public-methods
                 # we want self & other to have shape [1,3,2,1,3,2]
                 # before transposing shape is [1,3,1,3]+[2,2]
                 self_idx = list(range(len(self_fock.shape)))
-                other_idx = list(range(len(self_idx), len(self_idx) + len(other_fock.shape)))
+                other_idx = list(
+                    range(len(self_idx), len(self_idx) + len(other_fock.shape))
+                )
                 return State(
                     dm=math.transpose(
                         dm,
@@ -550,7 +573,9 @@ class State:  # pylint: disable=too-many-public-methods
         self._modes = item
         return self
 
-    def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+    def bargmann(
+        self, numpy=False
+    ) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
         r"""Returns the Bargmann representation of the state.
         If numpy=True, returns the numpy arrays instead of the backend arrays.
         """
@@ -634,7 +659,9 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        warnings.warn("mixing states forces conversion to fock representation", UserWarning)
+        warnings.warn(
+            "mixing states forces conversion to fock representation", UserWarning
+        )
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
     def __rmul__(self, other):
@@ -662,7 +689,9 @@ class State:  # pylint: disable=too-many-public-methods
         E.g. ``psi / 0.5``
         """
         if self.is_gaussian:
-            warnings.warn("scalar division forces conversion to fock representation", UserWarning)
+            warnings.warn(
+                "scalar division forces conversion to fock representation", UserWarning
+            )
             if self.is_pure:
                 return State(ket=self.ket() / other)
             return State(dm=self.dm() / other)
@@ -760,13 +789,17 @@ def mikkel_plot(
 
     # Wigner function
 
-    ax[1][0].contourf(X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].contourf(
+        X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max()
+    )
     ax[1][0].set_xlabel("x", fontsize=12)
     ax[1][0].set_ylabel("p", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(plot_args["xticks"])
     ax[1][0].xaxis.set_ticklabels(plot_args["xtick_labels"])
     ax[1][0].get_yaxis().set_ticks(plot_args["yticks"])
-    ax[1][0].yaxis.set_ticklabels(plot_args["ytick_labels"], rotation="vertical", va="center")
+    ax[1][0].yaxis.set_ticklabels(
+        plot_args["ytick_labels"], rotation="vertical", va="center"
+    )
     ax[1][0].tick_params(direction="in")
     ax[1][0].set_xlim(xbounds)
     ax[1][0].set_ylim(ybounds)
@@ -797,7 +830,9 @@ def mikkel_plot(
     ax[1][1].grid(plot_args["grid"])
 
     # Density matrix
-    ax[0][1].matshow(abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max())
+    ax[0][1].matshow(
+        abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max()
+    )
     ax[0][1].set_title("abs(ρ)", fontsize=12)
     ax[0][1].tick_params(direction="in")
     ax[0][1].get_xaxis().set_ticks([])

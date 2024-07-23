@@ -55,7 +55,9 @@ def test_real_gaussian_integral():
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert np.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
-    assert np.allclose(res[1], b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2])))
+    assert np.allclose(
+        res[1], b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2]))
+    )
     assert np.allclose(
         res[2],
         c
@@ -155,7 +157,9 @@ def test_complex_gaussian_integral():
     assert np.allclose(res2[1], b3)
     assert np.allclose(res2[2], c3)
 
-    res3 = complex_gaussian_integral(join_Abc((A1, b1, c1), (A1, b1, c1)), [0, 1], [2, 3])
+    res3 = complex_gaussian_integral(
+        join_Abc((A1, b1, c1), (A1, b1, c1)), [0, 1], [2, 3]
+    )
     assert np.allclose(res3[0], 0)
     assert np.allclose(res3[1], 0)
     assert np.allclose(res3[2], 1)
@@ -183,7 +187,9 @@ def test_contract_two_Abc():
 
     res1 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [], [])
     assert np.allclose(res1[0], math.block_diag(A1, A2))
-    assert np.allclose(res1[1], [0, 0, 0.1 + 0.3j, 0.2 + 0.3j, -0.1 + 0.3j, -0.2 + 0.3j])
+    assert np.allclose(
+        res1[1], [0, 0, 0.1 + 0.3j, 0.2 + 0.3j, -0.1 + 0.3j, -0.2 + 0.3j]
+    )
     assert np.allclose(res1[2], c1 * c2)
 
     res2 = contract_two_Abc((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3])
@@ -210,9 +216,13 @@ def test_reorder_abc():
     same = reorder_abc((A, b, c), (0, 1))
     assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c)))
+    assert all(
+        np.allclose(x, y)
+        for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c))
+    )
     c = np.array([[6, 7], [8, 9]])
     flipped = reorder_abc((A, b, c), (1, 0))  #  test transposition of c
     assert all(
-        np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
+        np.allclose(x, y)
+        for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
     )

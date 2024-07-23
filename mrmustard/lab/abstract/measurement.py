@@ -87,10 +87,12 @@ class Measurement(ABC):
         ...
 
     @abstractmethod
-    def _measure_fock(self, other: State) -> Union[State, float]: ...
+    def _measure_fock(self, other: State) -> Union[State, float]:
+        ...
 
     @abstractmethod
-    def _measure_gaussian(self, other: State) -> Union[State, float]: ...
+    def _measure_gaussian(self, other: State) -> Union[State, float]:
+        ...
 
     def primal(self, other: State) -> Union[State, float]:
         """performs the measurement procedure according to the representation of the incoming state"""
@@ -134,7 +136,9 @@ class FockMeasurement(Measurement):
     in the Fock basis.
     """
 
-    def __init__(self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int]) -> None:
+    def __init__(
+        self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int]
+    ) -> None:
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
@@ -160,7 +164,9 @@ class FockMeasurement(Measurement):
         for mode in other.modes:
             if mode in self._modes:
                 cutoffs.append(
-                    max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
+                    max(
+                        settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)]
+                    )
                 )
             else:
                 cutoffs.append(other.cutoffs[other.indices(mode)])
@@ -169,14 +175,18 @@ class FockMeasurement(Measurement):
         ):
             self.recompute_stochastic_channel(cutoffs)
         dm = other.dm(cutoffs)
-        for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
+        for k, (mode, stoch) in enumerate(
+            zip(self._modes, self._internal_stochastic_channel)
+        ):
             # move the mode indices to the end
             last = [mode - k, mode + other.num_modes - 2 * k]
             perm = [m for m in range(dm.ndim) if m not in last] + last
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
             dm = math.diag_part(dm)
-            dm = math.tensordot(dm, stoch[: self._cutoffs[k], : dm.shape[-1]], [[-1], [1]])
+            dm = math.tensordot(
+                dm, stoch[: self._cutoffs[k], : dm.shape[-1]], [[-1], [1]]
+            )
         # put back the last len(self.modes) modes at the beginning
         output = math.transpose(
             dm,

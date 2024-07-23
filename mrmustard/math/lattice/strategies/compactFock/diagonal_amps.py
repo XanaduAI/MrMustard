@@ -75,10 +75,12 @@ def use_offDiag_pivot(
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
-            arr1010[(d, i - d - 1) + params] = (GB[2 * i] + A[2 * i] @ G_in) / K_i[2 * i]
-            arr1001[(d, i - d - 1) + params] = (GB[2 * i + 1] + A[2 * i + 1] @ G_in) / K_i[
-                2 * i + 1
+            arr1010[(d, i - d - 1) + params] = (GB[2 * i] + A[2 * i] @ G_in) / K_i[
+                2 * i
             ]
+            arr1001[(d, i - d - 1) + params] = (
+                GB[2 * i + 1] + A[2 * i + 1] @ G_in
+            ) / K_i[2 * i + 1]
 
     return arr0, arr2, arr1010, arr1001
 
@@ -199,8 +201,12 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
             arr1010 = np.zeros((1, 1, 1) + (batch_length,), dtype=np.complex128)
             arr1001 = np.zeros((1, 1, 1) + (batch_length,), dtype=np.complex128)
         else:
-            arr1010 = np.zeros((M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128)
-            arr1001 = np.zeros((M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128)
+            arr1010 = np.zeros(
+                (M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128
+            )
+            arr1001 = np.zeros(
+                (M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128
+            )
 
     arr0[(0,) * M] = G0
     return fock_representation_diagonal_amps_NUMBA(

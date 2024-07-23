@@ -162,7 +162,9 @@ class XPTensor(ABC):
     def modes_last(self) -> Optional[Tensor]:
         if self.tensor is None:
             return None
-        return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
+        return math.transpose(
+            self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1)
+        )  # 22NM or 2N
 
     def clone(self, times: int, modes=None) -> XPTensor:
         r"""Create a new XPTensor made by cloning the system a given number of times
@@ -181,7 +183,9 @@ class XPTensor(ABC):
                 tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times)
             )  # shape = [2,2,NT,NT] = [2,2,O,O]
             tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
-            return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
+            return XPMatrix(
+                tensor, self.like_0, self.like_1, ([], []) if modes is None else modes
+            )
 
         tensor = math.tile(
             self.expand_dims(self.modes_last(), axis=2), (1, 1, times)
@@ -216,7 +220,9 @@ class XPTensor(ABC):
         else:
             raise ValueError("Cannot clone a vector into a matrix or viceversa")
         if self.isMatrix:
-            return XPMatrix(tensor, self.like_0, self.like_1, (other.outmodes, other.inmodes))
+            return XPMatrix(
+                tensor, self.like_0, self.like_1, (other.outmodes, other.inmodes)
+            )
         return XPVector(tensor, other.outmodes)
 
     ####################################################################################################################
@@ -227,7 +233,9 @@ class XPTensor(ABC):
         "Implements the operation ``self * other``"
         if self.tensor is None:
             if self.like_1:
-                raise NotImplementedError("Cannot multiply a scalar and a like_1 null tensor yet")
+                raise NotImplementedError(
+                    "Cannot multiply a scalar and a like_1 null tensor yet"
+                )
             return self
         self.tensor = other * self.tensor
         return self
@@ -235,7 +243,9 @@ class XPTensor(ABC):
     def __mul__(self, other: Scalar) -> Optional[XPTensor]:
         return other * self
 
-    def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector, Scalar]:
+    def __matmul__(
+        self, other: Union[XPMatrix, XPVector]
+    ) -> Union[XPMatrix, XPVector, Scalar]:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(
                 f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
@@ -276,9 +286,13 @@ class XPTensor(ABC):
 
         See documentation for a visual explanation with blocks.
         """
-        if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
+        if list(self.inmodes) == list(
+            other.outmodes
+        ):  # NOTE: they match including the ordering
             prod = math.tensordot(
-                self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1))
+                self.tensor,
+                other.tensor,
+                ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)),
             )
             return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (
                 self.outmodes,
@@ -309,7 +323,9 @@ class XPTensor(ABC):
                 bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
         if self.like_1 and len(uncontracted_other) > 0:
             copied_rows = math.gather(
-                other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0
+                other.tensor,
+                [other.outmodes.index(m) for m in uncontracted_other],
+                axis=0,
             )
         if other.like_1 and len(uncontracted_self) > 0:
             copied_cols = math.gather(
@@ -318,10 +334,12 @@ class XPTensor(ABC):
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
                 bulk = math.zeros(
-                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype
+                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2),
+                    dtype=copied_cols.dtype,
                 )
             empty = math.zeros(
-                (copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype
+                (copied_rows.shape[0], copied_cols.shape[1], 2, 2),
+                dtype=copied_cols.dtype,
             )
             final = math.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
         elif copied_cols is None and copied_rows is not None:
@@ -350,9 +368,13 @@ class XPTensor(ABC):
             inmodes = [m for m in inmodes if m in other.inmodes]
 
         if final is not None:
-            final = math.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
+            final = math.gather(
+                final, [outmodes.index(o) for o in sorted(outmodes)], axis=0
+            )
             if other.isMatrix:
-                final = math.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
+                final = math.gather(
+                    final, [inmodes.index(i) for i in sorted(inmodes)], axis=1
+                )
         return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:
@@ -374,7 +396,9 @@ class XPTensor(ABC):
             raise ValueError("Cannot add a coherence block and a diagonal block")
         if self.tensor is None and other.tensor is None:  # both are None
             if self.like_1 and other.like_1:
-                raise ValueError("Cannot add two like_1 null tensors yet")  # because 1+1 = 2
+                raise ValueError(
+                    "Cannot add two like_1 null tensors yet"
+                )  # because 1+1 = 2
             if self.isMatrix and other.isMatrix:
                 return XPMatrix(like_0=self.like_0 and other.like_0)
             return XPVector()
@@ -388,16 +412,17 @@ class XPTensor(ABC):
                     [i, i] for i in range(other.num_modes)
                 ]  # TODO: check if this is always correct
                 updates = math.tile(
-                    math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1)
+                    math.expand_dims(math.eye(2, dtype=other.dtype), 0),
+                    (other.num_modes, 1, 1),
                 )
                 other.tensor = math.update_add_tensor(other.tensor, indices, updates)
                 return other
         if other.tensor is None:  # only other is None
             return other + self
         # now neither is None
-        modes_match = list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(
-            other.inmodes
-        )
+        modes_match = list(self.outmodes) == list(other.outmodes) and list(
+            self.inmodes
+        ) == list(other.inmodes)
         if modes_match:
             self.tensor = self.tensor + other.tensor
             return self
@@ -419,7 +444,9 @@ class XPTensor(ABC):
             to_add = [self]
         else:  # need to add both to a new empty tensor
             to_update = math.zeros(
-                (len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2),
+                (len(outmodes), len(inmodes), 2, 2)
+                if self.isMatrix
+                else (len(outmodes), 2),
                 dtype=self.tensor.dtype,
             )
             to_add = [self, other]
@@ -453,7 +480,9 @@ class XPTensor(ABC):
     def __truediv__(self, other: Scalar) -> Optional[XPTensor]:
         return (1 / other) * self
 
-    def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
+    def __getitem__(
+        self, modes: Union[int, slice, List[int], Tuple]
+    ) -> Union[XPMatrix, XPVector]:
         r"""Returns modes or subsets of modes from the XPTensor or coherences between modes using an
         intuitive notation.
 
@@ -535,9 +564,13 @@ class XPMatrix(XPTensor):
         if like_0 == like_1:
             raise ValueError(f"like_0 and like_1 can't both be {like_0}")
         if not (
-            isinstance(modes, tuple) and len(modes) == 2 and all(isinstance(m, list) for m in modes)
+            isinstance(modes, tuple)
+            and len(modes) == 2
+            and all(isinstance(m, list) for m in modes)
         ):
-            raise ValueError("modes should be a tuple containing two lists (outmodes and inmodes)")
+            raise ValueError(
+                "modes should be a tuple containing two lists (outmodes and inmodes)"
+            )
         if len(modes[0]) == 0 and len(modes[1]) == 0 and tensor is not None:
             if (
                 tensor.shape[0] != tensor.shape[1] and like_0
@@ -558,7 +591,9 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
+            tensor = math.reshape(
+                tensor, [_ for n in tensor.shape for _ in (2, n // 2)]
+            )
             tensor = math.transpose(tensor, (1, 3, 0, 2))
         return XPMatrix(tensor, like_0, like_1, modes)
 
@@ -571,7 +606,9 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
+            tensor = math.reshape(
+                tensor, [_ for n in tensor.shape for _ in (n // 2, 2)]
+            )
             tensor = math.transpose(tensor, (0, 2, 1, 3))
         return XPMatrix(tensor, like_0, like_1, modes)
 

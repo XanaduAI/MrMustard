@@ -23,7 +23,16 @@ class Autocast:
 
     def __init__(self):
         self.dtype_order = ("float16", "float32", "float64", "complex64", "complex128")
-        self.no_cast = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
+        self.no_cast = (
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+        )
 
     def can_cast(self, arg):
         r"""Returns `True` if the argument can be casted."""
@@ -33,7 +42,9 @@ class Autocast:
         r"""Returns `True` if the `arg` can (and should) be casted to `proposed_dtype`."""
         if not self.can_cast(arg):
             return False
-        return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(arg.dtype.name)
+        return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(
+            arg.dtype.name
+        )
 
     def get_dtypes(self, *args, **kwargs) -> List:
         r"""Returns the dtypes of the arguments."""

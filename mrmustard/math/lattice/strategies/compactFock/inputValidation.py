@@ -73,7 +73,9 @@ def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08)
     return fock_representation_diagonal_amps(A, B, G0, M, cutoffs)
 
 
-def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
+def grad_hermite_multidimensional_diagonal(
+    A, B, G0, arr0, arr2, arr1010, arr1001, arr1
+):
     """
     Validation of user input for gradients of mrmustard.math.backend_tensorflow.hermite_renormalized_diagonal
     """
@@ -106,7 +108,9 @@ def hermite_multidimensional_1leftoverMode(A, B, G0, cutoffs, rtol=1e-05, atol=1
     return fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs)
 
 
-def grad_hermite_multidimensional_1leftoverMode(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
+def grad_hermite_multidimensional_1leftoverMode(
+    A, B, G0, arr0, arr2, arr1010, arr1001, arr1
+):
     """
     Validation of user input for gradients of mrmustard.math.backend_tensorflow.hermite_renormalized_1leftoverMode
     """

@@ -23,12 +23,12 @@ function calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, piv
     end
     return dA ./ K_i[i], dB ./ K_i[i]
 end
-                                
+
 function use_offDiag_pivot_grad!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1,
     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB, T, SQRT)
     """Given params=(a,b,c,...), apply the eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
     for the pivots [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...] / ..."""
-    
+
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
@@ -132,12 +132,12 @@ function use_diag_pivot_grad!(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr
     end
 end
 function fock_diagonal_grad(
-    A::AbstractMatrix{Complex{Float64}}, 
+    A::AbstractMatrix{Complex{Float64}},
     B::AbstractVector{Complex{Float64}},
-    arr0::AbstractArray{Complex{Float64}}, 
-    arr2::AbstractArray{Complex{Float64}}, 
-    arr1010::AbstractArray{Complex{Float64}}, 
-    arr1001::AbstractArray{Complex{Float64}}, 
+    arr0::AbstractArray{Complex{Float64}},
+    arr2::AbstractArray{Complex{Float64}},
+    arr1010::AbstractArray{Complex{Float64}},
+    arr1001::AbstractArray{Complex{Float64}},
     arr1::AbstractArray{Complex{Float64}},
     precision_bits::Int64
     )
@@ -155,7 +155,7 @@ function fock_diagonal_grad(
     Returns:
         arr0_dA, arr0_dB: derivatives of arr0 w.r.t A and B
     """
-    
+
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]
 

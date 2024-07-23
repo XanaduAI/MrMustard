@@ -86,6 +86,8 @@ def shape_check(mat, vec, dim: int, name: str):
         name: The name of the representation for error messages
     """
     if mat.shape[-2:] != (dim, dim) or vec.shape[-1:] != (dim,):
-        msg = f"{name} representation is incompatible with the required dimension {dim}: "
+        msg = (
+            f"{name} representation is incompatible with the required dimension {dim}: "
+        )
         msg += f"{mat.shape[-2:]}!=({dim},{dim}) or {vec.shape[-1:]} != ({dim},)."
         raise ValueError(msg)

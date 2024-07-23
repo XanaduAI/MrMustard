@@ -34,7 +34,9 @@ def test_argsort_gen():
 
     # Test with generators yielding the same first value
     gen_list = [iter(range(i, i + 3)) for i in range(5)]
-    gen_list.append(iter(range(0, 3)))  # Add another generator with the same first value
+    gen_list.append(
+        iter(range(0, 3))
+    )  # Add another generator with the same first value
     assert argsort_gen(gen_list) == [0, 5, 1, 2, 3, 4]
 
     # Test with generators yielding the same values

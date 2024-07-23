@@ -110,7 +110,9 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=1)
 
-    G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
+    G_batched = math.hermite_renormalized_diagonal_batch(
+        A, B_batched, C, cutoffs=cutoffs[:-1]
+    )
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])

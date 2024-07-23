@@ -101,7 +101,9 @@ def squeezer_vjp(
                 dA, _ = steps.vanilla_step_grad(G, (m, n), dA, _)
                 dLdA += dA * dLdG[m, n]
 
-    dLdC = np.sum(G * dLdG)  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
+    dLdC = np.sum(
+        G * dLdG
+    )  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
     # chain rule
     d_sech = -np.tanh(r) / np.cosh(r)
     d_tanh = 1.0 / np.cosh(r) ** 2
@@ -115,13 +117,17 @@ def squeezer_vjp(
         + dLdA[1, 1] * exp_conj * d_tanh
         - np.conj(dLdC) * 0.5 * tanh  # / np.sqrt(np.cosh(r))
     )
-    dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh - dLdA[1, 1] * 1j * exp_conj * tanh)
+    dLdphi = 2 * np.real(
+        -dLdA[0, 0] * 1j * exp * tanh - dLdA[1, 1] * 1j * exp_conj * tanh
+    )
 
     return dLdr, dLdphi
 
 
 @njit
-def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragma: no cover
+def squeezed(
+    cutoff: int, r: float, theta: float, dtype=np.complex128
+):  # pragma: no cover
     r"""Calculates the matrix elements of the single-mode squeezed state using recurrence relations.
 
     Args:
@@ -180,7 +186,9 @@ def squeezed_vjp(
     d_tanh = 1.0 / np.cosh(r) ** 2
     exp = np.exp(1j * phi)
 
-    dLdC = np.sum(G * dLdG)  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
+    dLdC = np.sum(
+        G * dLdG
+    )  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
 
     dLdr = 2 * np.real(-dLdA[0, 0] * exp * d_tanh - np.conj(dLdC) * 0.5 * tanh)
     dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh)

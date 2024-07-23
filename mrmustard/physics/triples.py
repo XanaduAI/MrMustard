@@ -33,7 +33,9 @@ def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
     The X matrix for the order of unitaries.
     """
-    return math.cast(math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
+    return math.cast(
+        math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128
+    )
 
 
 def _vacuum_A_matrix(n_modes: int) -> Matrix:
@@ -330,7 +332,9 @@ def squeezing_gate_Abc(
     tanhr = math.diag(math.sinh(r) / math.cosh(r))
     sechr = math.diag(1 / math.cosh(r))
 
-    A = math.block([[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]])
+    A = math.block(
+        [[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]]
+    )
     b = _vacuum_B_vector(n_modes * 2)
     c = math.prod(1 / math.sqrt(math.cosh(r)))
 
@@ -465,7 +469,9 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
-    eta2 = math.eye(n_modes, math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
+    eta2 = math.eye(n_modes, math.complex128) - math.reshape(
+        math.diag(eta), (n_modes, n_modes)
+    )
 
     A = math.block(
         [
@@ -540,7 +546,9 @@ def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
+def bargmann_to_quadrature_Abc(
+    n_modes: int, phi: float
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
@@ -574,7 +582,9 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(
+    s: int, n_modes: int
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
     :math:
@@ -599,7 +609,9 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
         math.cast(
             math.concat(
                 (
-                    math.concat((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
+                    math.concat(
+                        (order_list[:n_modes], order_list[3 * n_modes :]), axis=0
+                    ),
                     order_list[n_modes : 3 * n_modes],
                 ),
                 axis=0,

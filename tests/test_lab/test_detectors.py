@@ -78,7 +78,9 @@ class TestPNRDetector:
         expected_mean = eta * np.sinh(r) ** 2 + dc
         assert np.allclose(mean, expected_mean)
         variance = np.arange(len(ps)) ** 2 @ math.asnumpy(ps) - mean**2
-        expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+        expected_variance = (
+            eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+        )
         assert np.allclose(variance, expected_variance)
 
     @given(
@@ -152,7 +154,9 @@ class TestPNRDetector:
 class TestHomodyneDetector:
     """tests related to homodyne detectors"""
 
-    @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist())
+    @pytest.mark.parametrize(
+        "outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist()
+    )
     def test_homodyne_mode_kwargs(self, outcome):
         """Test that S gates and Homodyne mesurements are applied to the correct modes via the
         `modes` kwarg.
@@ -262,7 +266,8 @@ class TestHomodyneDetector:
                 + (2 * np.sqrt(s * (s + 1)) * (X - xb))
                 / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
                 pa
-                + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+                + (2 * np.sqrt(s * (s + 1)) * pb)
+                / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
 

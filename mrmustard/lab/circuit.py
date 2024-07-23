@@ -131,8 +131,12 @@ class Circuit(Transformation):
             return False
         if not (self.is_gaussian and other.is_gaussian):
             return np.allclose(
-                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                self.choi(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes
+                ),
+                other.choi(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes
+                ),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
 

@@ -194,4 +194,6 @@ def test_mmtensor_matmul_high_rank():
     T1 = MMTensor(array1, axis_labels=["a", "b", "c", "d"])
     T2 = MMTensor(array2, axis_labels=["d", "c", "b", "e"])
     contracted_tensor = T1 @ T2
-    assert np.allclose(contracted_tensor.tensor, np.einsum("abcd,dcbe->ae", array1, array2))
+    assert np.allclose(
+        contracted_tensor.tensor, np.einsum("abcd,dcbe->ae", array1, array2)
+    )

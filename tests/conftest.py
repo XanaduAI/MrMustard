@@ -27,7 +27,9 @@ print("pytest.conf -----------------------")
 
 hyp_settings.register_profile("ci", max_examples=10, deadline=None)
 hyp_settings.register_profile("dev", max_examples=10, deadline=None)
-hyp_settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose, deadline=None)
+hyp_settings.register_profile(
+    "debug", max_examples=10, verbosity=Verbosity.verbose, deadline=None
+)
 
 hyp_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 

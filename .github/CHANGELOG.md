@@ -1,7 +1,7 @@
 # Current develop
 
 ### New features
-* Added a new Abc triple for mapping the quadrature representation into Bargmann representation. 
+* Added a new Abc triple for mapping the quadrature representation into Bargmann representation.
   [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
 
 * Added `sort` function to math backends.
@@ -18,7 +18,7 @@
   [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
 
 ### Bug fixes
-* Fix the bug in the order of indices of the triples for DsMap CircuitComponent. 
+* Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
 * Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
@@ -45,13 +45,13 @@
 # Release 0.7.3 (current release)
 
 ### New features
-* Added a function ``to_fock`` to map different representations into Fock representation. 
+* Added a function ``to_fock`` to map different representations into Fock representation.
   [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
 
-* Added a new Abc triple for s-parametrized displacement gate. 
+* Added a new Abc triple for s-parametrized displacement gate.
   [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
-  
-* Added a function ``real_gaussian_integral`` as helper function to map between different representations. 
+
+* Added a function ``real_gaussian_integral`` as helper function to map between different representations.
   [(#371)](https://github.com/XanaduAI/MrMustard/pull/371)
 
 ### Breaking changes
@@ -149,13 +149,13 @@
 
 ### Improvements
 
-* Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that 
+* Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that
 result from repeatedly applying the recurrence relation are postponed to higher cutoff values).
-This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/MrMustard/pull/274) and for the 
+This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/MrMustard/pull/274) and for the
 "diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
-This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
+This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors).
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
-The precision is controlled by `setting settings.PRECISION_BITS_HERMITE_POLY`. The default value is ``128``, 
+The precision is controlled by `setting settings.PRECISION_BITS_HERMITE_POLY`. The default value is ``128``,
 which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
 * Replaced parameters in `training` with `Constant` and `Variable` classes.
@@ -174,7 +174,7 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#312)](https://github.com/XanaduAI/MrMustard/pull/312)
   [(#318)](https://github.com/XanaduAI/MrMustard/pull/318)
 
-* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating 
+* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating
   Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
@@ -240,7 +240,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Breaking changes
 
-* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
   [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
@@ -249,10 +249,10 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
-* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups
 that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
-This is done by representing Fock amplitudes with a higher precision than complex128 
-(which counters the accumulation of floating-point errors). 
+This is done by representing Fock amplitudes with a higher precision than complex128
+(which counters the accumulation of floating-point errors).
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
 [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
 
@@ -276,7 +276,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), 
+[Filippo Miatto](https://github.com/ziofil),
 [Yuan Yao](https://github.com/sylviemonet),
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin)
@@ -285,7 +285,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 ---
 
-# Release 0.5.0 
+# Release 0.5.0
 
 ### New features
 
@@ -384,13 +384,13 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
-* Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
+* Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
 
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf)
 
@@ -424,7 +424,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 
+# Release 0.4.0
 
 ### New features
 
@@ -938,4 +938,3 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Zhi Han](https://github.com/hanzhihua1),
 [Theodor Isacsson](https://github.com/thisac/), [Josh Izaac](https://github.com/josh146),
 [Filippo Miatto](https://github.com/ziofil), [Nicolas Quesada](https://github.com/nquesada)
-

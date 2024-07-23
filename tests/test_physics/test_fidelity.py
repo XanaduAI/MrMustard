@@ -62,8 +62,12 @@ class TestGaussianStates:
         settings._hbar = hbar
         beta1 = np.random.rand(num_modes) + 1j * np.random.rand(num_modes)
         beta2 = np.random.rand(num_modes) + 1j * np.random.rand(num_modes)
-        means1 = real_to_complex_displacements(np.concatenate([beta1, beta1.conj()]), hbar=hbar)
-        means2 = real_to_complex_displacements(np.concatenate([beta2, beta2.conj()]), hbar=hbar)
+        means1 = real_to_complex_displacements(
+            np.concatenate([beta1, beta1.conj()]), hbar=hbar
+        )
+        means2 = real_to_complex_displacements(
+            np.concatenate([beta2, beta2.conj()]), hbar=hbar
+        )
         cov1 = hbar * np.identity(2 * num_modes) / 2
         cov2 = hbar * np.identity(2 * num_modes) / 2
         fid = gp.fidelity(means1, cov1, means2, cov2)
@@ -87,7 +91,9 @@ class TestGaussianStates:
     def test_fidelity_thermal(self, n1, n2, hbar):
         """Test fidelity between two thermal states"""
         settings._hbar = hbar
-        expected = 1 / (1 + n1 + n2 + 2 * n1 * n2 - 2 * np.sqrt(n1 * n2 * (n1 + 1) * (n2 + 1)))
+        expected = 1 / (
+            1 + n1 + n2 + 2 * n1 * n2 - 2 * np.sqrt(n1 * n2 * (n1 + 1) * (n2 + 1))
+        )
         cov1 = hbar * (n1 + 0.5) * np.identity(2)
         cov2 = hbar * (n2 + 0.5) * np.identity(2)
         mu1 = np.zeros([2])
@@ -101,7 +107,9 @@ class TestGaussianStates:
         """Calculates the fidelity between a coherent squeezed state and vacuum"""
         settings._hbar = hbar
         cov1 = np.diag([np.exp(2 * r), np.exp(-2 * r)]) * hbar / 2
-        means1 = real_to_complex_displacements(np.array([alpha, np.conj(alpha)]), hbar=hbar)
+        means1 = real_to_complex_displacements(
+            np.array([alpha, np.conj(alpha)]), hbar=hbar
+        )
         means2 = np.zeros([2])
         cov2 = np.identity(2) * hbar / 2
         expected = (
@@ -120,7 +128,9 @@ class TestMixedStates:
 
     def test_fidelity_with_self(self):
         """Test that the fidelity of two identical quantum states is 1"""
-        assert np.allclose(fp.fidelity(self.state1, self.state1, False, False), 1, atol=1e-4)
+        assert np.allclose(
+            fp.fidelity(self.state1, self.state1, False, False), 1, atol=1e-4
+        )
 
     def test_fidelity_is_symmetric(self):
         """Test that the fidelity is symmetric and between 0 and 1"""
@@ -136,7 +146,9 @@ class TestMixedStates:
     def test_fidelity_formula(self):
         """Test fidelity of known mixed states."""
         expected = 5 / 6
-        assert np.allclose(expected, fp.fidelity(self.state1, self.state2, False, False))
+        assert np.allclose(
+            expected, fp.fidelity(self.state1, self.state2, False, False)
+        )
 
 
 class TestGaussianFock:
@@ -146,7 +158,9 @@ class TestGaussianFock:
         """Test that the fidelity of these two states is what it should be"""
         state1ket = Coherent(x=1.0)
         state2ket = Fock(n=1)
-        assert np.allclose(physics.fidelity(state1ket, state2ket), 0.36787944, atol=1e-4)
+        assert np.allclose(
+            physics.fidelity(state1ket, state2ket), 0.36787944, atol=1e-4
+        )
 
     def test_fidelity_across_representations_ket_dm(self):
         """Test that the fidelity of these two states is what it should be"""

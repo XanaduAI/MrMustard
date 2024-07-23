@@ -85,7 +85,9 @@ class Wire:
     @dim.setter
     def dim(self, value: int):
         if self._dim:
-            raise ValueError("Cannot change the dimension of wire with specified dimension.")
+            raise ValueError(
+                "Cannot change the dimension of wire with specified dimension."
+            )
         self._dim = value
 
     @property
@@ -176,7 +178,9 @@ class Tensor(ABC):
             ValueError: if `modes_out_ket` and `modes_out_bra` are not equal, and neither
                 of them is `None`.
         """
-        msg = "modes on ket and bra sides must be equal, unless either of them is `None`."
+        msg = (
+            "modes on ket and bra sides must be equal, unless either of them is `None`."
+        )
         if modes_in_ket and modes_in_bra:
             if modes_in_ket != modes_in_bra:
                 msg = f"Input {msg}"
@@ -347,9 +351,7 @@ class Tensor(ABC):
         """
         for wire in self.wires:
             if wire.is_connected:
-                msg = (
-                    "Cannot change nodes in a tensor when some of its wires are already connected."
-                )
+                msg = "Cannot change nodes in a tensor when some of its wires are already connected."
                 raise ValueError(msg)
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
@@ -371,10 +373,18 @@ class Tensor(ABC):
                 if arg:
                     yield arg
 
-        shape_in_ket = [w.dim if w.dim else default_dim for w in self.input.ket.values()]
-        shape_out_ket = [w.dim if w.dim else default_dim for w in self.output.ket.values()]
-        shape_in_bra = [w.dim if w.dim else default_dim for w in self.input.bra.values()]
-        shape_out_bra = [w.dim if w.dim else default_dim for w in self.output.bra.values()]
+        shape_in_ket = [
+            w.dim if w.dim else default_dim for w in self.input.ket.values()
+        ]
+        shape_out_ket = [
+            w.dim if w.dim else default_dim for w in self.output.ket.values()
+        ]
+        shape_in_bra = [
+            w.dim if w.dim else default_dim for w in self.input.bra.values()
+        ]
+        shape_out_bra = [
+            w.dim if w.dim else default_dim for w in self.output.bra.values()
+        ]
 
         if out_in:
             ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
@@ -409,9 +419,12 @@ class AdjointView(Tensor):
             ComplexTensor: the unitary matrix in Fock representation
         """
         # converting the given shape into a shape for the original tensor
-        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self._original.unpack_shape(
-            shape
-        )
+        (
+            shape_in_ket,
+            shape_out_ket,
+            shape_in_bra,
+            shape_out_bra,
+        ) = self._original.unpack_shape(shape)
         shape_ret = shape_in_bra + shape_out_bra + shape_in_ket + shape_out_ket
 
         ret = math.conj(math.astensor(self._original.value(shape_ret)))
@@ -443,7 +456,9 @@ class DualView(Tensor):
             ComplexTensor: the unitary matrix in Fock representation.
         """
         # converting the given shape into a shape for the original tensor
-        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self.unpack_shape(shape)
+        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self.unpack_shape(
+            shape
+        )
         shape_ret = shape_out_ket + shape_in_ket + shape_out_bra, shape_in_bra
 
         return math.conj(self._original.value(shape_ret))

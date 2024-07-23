@@ -112,7 +112,9 @@ class Transformation(Tensor):
         Returns:
             State: the transformed state
         """
-        X, Y, d = self.XYd(allow_none=False) if not dual else self.XYd_dual(allow_none=False)
+        X, Y, d = (
+            self.XYd(allow_none=False) if not dual else self.XYd_dual(allow_none=False)
+        )
         cov, means = gaussian.CPTP(
             math.astensor(state.cov),
             math.astensor(state.means),
@@ -199,7 +201,9 @@ class Transformation(Tensor):
         if cutoffs is None:
             pass
         elif len(cutoffs) != N:
-            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+            raise ValueError(
+                f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})"
+            )
 
         shape = shape or tuple(cutoffs) * 4
 
@@ -219,7 +223,9 @@ class Transformation(Tensor):
             N1 = list(range(n, 2 * n))
             N2 = list(range(2 * n, 3 * n))
             N3 = list(range(3 * n, 4 * n))
-            choi = math.conj(math.transpose(choi, N1 + N0 + N3 + N2))  # if dual we flip out-in
+            choi = math.conj(
+                math.transpose(choi, N1 + N0 + N3 + N2)
+            )  # if dual we flip out-in
         return choi
 
     def XYd(
@@ -245,9 +251,19 @@ class Transformation(Tensor):
         """
         if allow_none:
             return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
-        Xdual = math.eye(2 * self.num_modes) if self.X_matrix_dual is None else self.X_matrix_dual
-        Ydual = math.zeros_like(Xdual) if self.Y_matrix_dual is None else self.Y_matrix_dual
-        ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
+        Xdual = (
+            math.eye(2 * self.num_modes)
+            if self.X_matrix_dual is None
+            else self.X_matrix_dual
+        )
+        Ydual = (
+            math.zeros_like(Xdual) if self.Y_matrix_dual is None else self.Y_matrix_dual
+        )
+        ddual = (
+            math.zeros_like(Xdual[:, 0])
+            if self.d_vector_dual is None
+            else self.d_vector_dual
+        )
         return Xdual, Ydual, ddual
 
     def __getitem__(self, items) -> Callable:
@@ -282,7 +298,9 @@ class Transformation(Tensor):
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from mrmustard.lab.circuit import Circuit  # pylint: disable=import-outside-toplevel
+        from mrmustard.lab.circuit import (
+            Circuit,
+        )  # pylint: disable=import-outside-toplevel
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
@@ -319,9 +337,14 @@ class Transformation(Tensor):
         class_name = self.name
         modes = self.modes
 
-        parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, (Constant, Variable))}
+        parameters = {
+            k: v
+            for k, v in self.__dict__.items()
+            if isinstance(v, (Constant, Variable))
+        }
         param_str_rep = [
-            f"{name}={repr(math.asnumpy(par.value))}" for name, par in parameters.items()
+            f"{name}={repr(math.asnumpy(par.value))}"
+            for name, par in parameters.items()
         ]
 
         params_str = ", ".join(sorted(param_str_rep))
@@ -343,7 +366,9 @@ class Transformation(Tensor):
         body = ""
         with np.printoptions(precision=6, suppress=True):
             parameters = {
-                k: v for k, v in self.__dict__.items() if isinstance(v, (Constant, Variable))
+                k: v
+                for k, v in self.__dict__.items()
+                if isinstance(v, (Constant, Variable))
             }
             for name, par in parameters.items():
                 par_value = repr(math.asnumpy(par.value)).replace("\n", "<br>")
@@ -380,8 +405,12 @@ class Unitary(Transformation):
         op_idx = [state.modes.index(m) for m in self.modes]
         U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
         if state.is_hilbert_vector:
-            return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
-        return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
+            return State(
+                ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes
+            )
+        return State(
+            dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes
+        )
 
     def U(
         self,
@@ -406,7 +435,9 @@ class Unitary(Transformation):
         if cutoffs is None:
             pass
         elif len(cutoffs) != self.num_modes:
-            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+            raise ValueError(
+                f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})"
+            )
         shape = shape or tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
         return fock.wigner_to_fock_U(X, d, shape=shape)
@@ -417,8 +448,12 @@ class Unitary(Transformation):
             return False
         if not (self.is_gaussian and other.is_gaussian):
             return np.allclose(
-                self.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
-                other.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
+                self.U(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes
+                ),
+                other.U(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes
+                ),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
         sX, sY, sd = self.XYd(allow_none=False)
@@ -451,8 +486,12 @@ class Channel(Transformation):
         op_idx = [state.modes.index(m) for m in self.modes]
         choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx], dual=dual)
         if state.is_hilbert_vector:
-            return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
-        return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+            return State(
+                dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
+            )
+        return State(
+            dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes
+        )
 
     def value(self, shape: Tuple[int]):
         return self.choi(shape=shape)
@@ -463,8 +502,12 @@ class Channel(Transformation):
             return False
         if not (self.is_gaussian and other.is_gaussian):
             return np.allclose(
-                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                self.choi(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes
+                ),
+                other.choi(
+                    cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes
+                ),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
         sX, sY, sd = self.XYd(allow_none=False)

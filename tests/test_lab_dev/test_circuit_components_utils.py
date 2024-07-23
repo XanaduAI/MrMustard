@@ -101,13 +101,19 @@ class TestBtoPS:
 
     def test_representation(self):
         rep1 = BtoPS(modes=[0], s=0).representation  # pylint: disable=protected-access
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(
+            s=0, n_modes=1
+        )
         assert math.allclose(rep1.A[0], A_correct)
         assert math.allclose(rep1.b[0], b_correct)
         assert math.allclose(rep1.c[0], c_correct)
 
-        rep2 = BtoPS(modes=[5, 10], s=1).representation  # pylint: disable=protected-access
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
+        rep2 = BtoPS(
+            modes=[5, 10], s=1
+        ).representation  # pylint: disable=protected-access
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(
+            s=1, n_modes=2
+        )
         assert math.allclose(rep2.A[0], A_correct)
         assert math.allclose(rep2.b[0], b_correct)
         assert math.allclose(rep2.c[0], c_correct)
@@ -149,7 +155,9 @@ class TestBtoPS:
         state_bargmann_triple = (A, b, c)
 
         # get new triple by right shift
-        state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(
+            modes=[0, 1], s=0
+        )  # pylint: disable=protected-access
         A1, b1, c1 = state_after.bargmann
 
         # get new triple by contraction

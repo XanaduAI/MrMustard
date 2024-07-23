@@ -133,7 +133,9 @@ def complex_gaussian_integral(
     bM = math.gather(b, idx, axis=-1)
 
     c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        c
+        * math.sqrt((-1) ** n / math.det(M))
+        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
     if math.asnumpy(not_idx).shape != (0,):
@@ -197,7 +199,9 @@ def join_Abc_real(
         )
 
     if (len(idx1) > A1.shape[-1]) or (len(idx2) > A2.shape[-1]):
-        raise ValueError(f"idx1 and idx2 must be valid, got {len(idx1)} and {len(idx2)}")
+        raise ValueError(
+            f"idx1 and idx2 must be valid, got {len(idx1)} and {len(idx2)}"
+        )
 
     not_idx1 = tuple(i for i in range(A1.shape[-1]) if i not in idx1)
     not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
@@ -207,22 +211,30 @@ def join_Abc_real(
     if not_idx1:
         A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
         A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
-        A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
+        A1_notidx_notidx = math.gather(
+            math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2
+        )
         b1_notidx = math.gather(b1, not_idx1, axis=-1)
     A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
     b2_idx = math.gather(b2, idx2, axis=-1)
     if not_idx2:
         A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
         A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
-        A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
+        A2_notidx_notidx = math.gather(
+            math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2
+        )
         b2_notidx = math.gather(b2, not_idx2, axis=-1)
 
     if math.asnumpy(not_idx1).shape == (0,):
-        A12 = math.block([[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]])
+        A12 = math.block(
+            [[A1 + A2_idx_idx, A2_notidx_idx], [A2_idx_notidx, A2_notidx_notidx]]
+        )
         b12 = math.concat([b1 + b2_idx, b2_notidx], axis=-1)
         c12 = math.outer(c1, c2)
     elif math.asnumpy(not_idx2).shape == (0,):
-        A12 = math.block([[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]])
+        A12 = math.block(
+            [[A2 + A1_idx_idx, A1_notidx_idx], [A1_idx_notidx, A1_notidx_notidx]]
+        )
         b12 = math.concat([b2 + b1_idx, b1_notidx], axis=-1)
         c12 = math.outer(c1, c2)
     else:

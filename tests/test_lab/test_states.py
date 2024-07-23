@@ -41,7 +41,9 @@ hbar0 = settings.HBAR
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float64, shape=(2, length), elements=st.floats(-5.0, 5.0)))
+    return draw(
+        arrays(dtype=np.float64, shape=(2, length), elements=st.floats(-5.0, 5.0))
+    )
 
 
 @given(nmodes, st.floats(0.1, 5.0))
@@ -58,7 +60,9 @@ def test_vacuum_state(nmodes, hbar):
 @given(x=medium_float, y=medium_float)
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
-    assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
+    assert np.allclose(
+        state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]])
+    )
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
@@ -89,7 +93,9 @@ def test_coherent_state_multiple(xy):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
     assert len(x) == len(y)
-    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
+    assert np.allclose(
+        state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR)
+    )
 
     # restoring hbar to its original value
     settings._hbar = hbar0
@@ -255,7 +261,9 @@ def test_concat_pure_states(pure):
     psi = state1 & state2
 
     # test concatenated state
-    psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
+    psi_dm = math.transpose(
+        math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3]
+    )
     assert np.allclose(psi.dm(), psi_dm)
 
 
@@ -305,7 +313,10 @@ def test_padding_dm():
     "Test that padding a density matrix works correctly."
     state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
-    assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
+    assert tuple(int(c) for c in state._dm.shape) == (
+        20,
+        20,
+    )  # pylint: disable=protected-access
 
 
 def test_state_repr_small_prob():

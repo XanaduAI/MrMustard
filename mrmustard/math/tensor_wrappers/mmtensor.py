@@ -45,7 +45,9 @@ class MMTensor:
 
         # Validate the number of axis labels
         if len(self.axis_labels) != len(self.tensor.shape):
-            raise ValueError("The number of axis labels must be equal to the number of axes.")
+            raise ValueError(
+                "The number of axis labels must be equal to the number of axes."
+            )
 
     def __array__(self):
         r"""Implement the NumPy array interface."""
@@ -127,12 +129,14 @@ class MMTensor:
         right_indices = [other.axis_labels.index(label) for label in common_labels]
 
         # Create a list of the new axis labels
-        new_axis_labels = [label for label in self.axis_labels if label not in common_labels] + [
-            label for label in other.axis_labels if label not in common_labels
-        ]
+        new_axis_labels = [
+            label for label in self.axis_labels if label not in common_labels
+        ] + [label for label in other.axis_labels if label not in common_labels]
 
         return MMTensor(
-            math.tensordot(self.tensor, other.tensor, axes=(left_indices, right_indices)),
+            math.tensordot(
+                self.tensor, other.tensor, axes=(left_indices, right_indices)
+            ),
             new_axis_labels,
         )
 
@@ -148,7 +152,9 @@ class MMTensor:
         if relabeling is None:
             relabeling = self.axis_labels
         elif len(relabeling) != len(self.axis_labels):
-            raise ValueError("The number of labels must be equal to the number of axes.")
+            raise ValueError(
+                "The number of labels must be equal to the number of axes."
+            )
 
         self.axis_labels = relabeling
 
@@ -157,11 +163,15 @@ class MMTensor:
         for label in relabeling:
             if label not in unique_labels:
                 unique_labels.append(label)
-        repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
+        repeated = [
+            label for label in unique_labels if self.axis_labels.count(label) > 1
+        ]
 
         # Turn labels into consecutive ascii lower-case letters,
         # with same letters corresponding to the same label
-        label_map = {label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)}
+        label_map = {
+            label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)
+        }
         labels = [label_map[label] for label in self.axis_labels]
 
         # create einsum string from labels
@@ -177,11 +187,15 @@ class MMTensor:
         """Transpose the tensor using a list of axis labels or indices."""
         if set(perm) == set(self.axis_labels):
             perm = [self.axis_labels.index(label) for label in perm]
-        return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
+        return MMTensor(
+            math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm]
+        )
 
     def reshape(self, shape, axis_labels=None):
         """Reshape the tensor. Allows to change the axis labels."""
-        return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
+        return MMTensor(
+            math.reshape(self.tensor, shape), axis_labels or self.axis_labels
+        )
 
     def __getitem__(self, indices):
         """Implement indexing into the tensor."""

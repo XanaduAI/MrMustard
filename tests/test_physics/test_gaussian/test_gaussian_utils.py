@@ -19,15 +19,21 @@ from mrmustard.physics import gaussian as gp
 
 
 def test_partition_means():
-    A, B = gp.partition_means(gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0, 2])
+    A, B = gp.partition_means(
+        gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0, 2]
+    )
     assert np.allclose(A, [1, 3, 4, 6])
     assert np.allclose(B, [2, 5])
 
-    A, B = gp.partition_means(gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0])
+    A, B = gp.partition_means(
+        gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0]
+    )
     assert np.allclose(A, [1, 4])
     assert np.allclose(B, [2, 3, 5, 6])
 
-    A, B = gp.partition_means(gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[1])
+    A, B = gp.partition_means(
+        gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[1]
+    )
     assert np.allclose(A, [2, 5])
     assert np.allclose(B, [1, 3, 4, 6])
 

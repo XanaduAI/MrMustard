@@ -62,7 +62,9 @@ def binomial(
         except KeyError:
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        G, subspace_norm = steps.binomial_step(G, A, b, indices)  # numba parallelized function
+        G, subspace_norm = steps.binomial_step(
+            G, A, b, indices
+        )  # numba parallelized function
         norm += subspace_norm
         try:
             if norm > max_l2:
@@ -115,7 +117,9 @@ def binomial_dict(
         except KeyError:
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        G, prob_subspace = steps.binomial_step_dict(G, A, b, indices)  # numba parallelized function
+        G, prob_subspace = steps.binomial_step_dict(
+            G, A, b, indices
+        )  # numba parallelized function
         prob += prob_subspace
         try:
             if prob > max_prob:

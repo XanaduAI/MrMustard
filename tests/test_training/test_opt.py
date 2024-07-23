@@ -106,7 +106,10 @@ def test_hong_ou_mandel_optimizer(i, k):
     cutoff = 1 + i + k
 
     def cost_fn():
-        return math.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k]) ** 2
+        return (
+            math.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k])
+            ** 2
+        )
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(
@@ -314,7 +317,9 @@ def test_learning_four_mode_RealInterferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        RealInterferometer(orthogonal=perturbed_O, num_modes=4, orthogonal_trainable=True),
+        RealInterferometer(
+            orthogonal=perturbed_O, num_modes=4, orthogonal_trainable=True
+        ),
     ]
     circ = Circuit(ops)
 
@@ -339,7 +344,9 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
     S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
-    S_12 = S2gate(r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+    S_12 = S2gate(
+        r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
+    )[1, 2]
 
     circ = Circuit([S_01, S_23, S_12])
 
@@ -485,7 +492,9 @@ def test_bsgate_optimization():
     def cost_fn():
         state_out = G >> bsgate
 
-        return -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+        return (
+            -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+        )
 
     opt = Optimizer()
     opt.minimize(cost_fn, by_optimizing=[bsgate])

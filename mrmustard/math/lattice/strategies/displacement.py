@@ -77,7 +77,9 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     L[0] = 1.0
     if N > 1:
         for m in range(0, N - 1):
-            L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
+            L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (
+                m + 1
+            )
     return L
 
 
@@ -105,7 +107,9 @@ def grad_displacement(T, r, phi):  # pragma: no cover
 
     for m in range(cutoff):
         for n in range(cutoff):
-            grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
+            grad_r[m, n] = (
+                -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
+            )
             grad_phi[m, n] = (
                 sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
             )

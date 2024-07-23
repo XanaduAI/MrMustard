@@ -166,9 +166,16 @@ def vanilla_step_grad(
     for i in range(len(db)):  # pylint: disable=consider-using-enumerate
         pivot_i = tuple_setitem(index, i, index[i] - 1)
         db[i] = SQRT[index[i]] * G[pivot_i]
-        dA[i, i] = 0.5 * SQRT[index[i] * pivot_i[i]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
+        dA[i, i] = (
+            0.5
+            * SQRT[index[i] * pivot_i[i]]
+            * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
+        )
         for j in range(i + 1, len(db)):
-            dA[i, j] = SQRT[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+            dA[i, j] = (
+                SQRT[index[i] * pivot_i[j]]
+                * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+            )
 
     return dA, db
 
@@ -198,14 +205,19 @@ def vanilla_step_dict(
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
+        value_at_index += (
+            A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
+        )
 
     return value_at_index
 
 
 @njit
 def binomial_step(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[ComplexTensor, float]:
     r"""Computes a whole subspace of the ``G`` tensor at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
@@ -233,7 +245,10 @@ def binomial_step(
 
 @njit
 def binomial_step_dict(
-    G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[types.DictType, float]:
     r"""Computes a whole subspace of the ``G`` dict at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).

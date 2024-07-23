@@ -230,7 +230,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("any", (array,))
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
+    def arange(
+        self, start: int, limit: int = None, delta: int = 1, dtype: Any = None
+    ) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -609,7 +611,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
+    def gather(
+        self, array: Tensor, indices: Batch[int], axis: Optional[int] = None
+    ) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -1145,7 +1149,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("update_tensor", (tensor, indices, values))
 
-    def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
+    def update_add_tensor(
+        self, tensor: Tensor, indices: Tensor, values: Tensor
+    ) -> Tensor:
         r"""Updates a tensor in place by adding the given values.
 
         Args:
@@ -1276,7 +1282,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             if self.backend_name == "numpy":
                 return func(*args, **kwargs)
             else:
-                from tensorflow import custom_gradient  # pylint: disable=import-outside-toplevel
+                from tensorflow import (
+                    custom_gradient,
+                )  # pylint: disable=import-outside-toplevel
 
                 return custom_gradient(func)(*args, **kwargs)
 
@@ -1363,7 +1371,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat([self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1)
+        vec = self.concat(
+            [self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1
+        )
         return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
@@ -1373,7 +1383,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         mat = self.diag(
             self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
         )  # shape [2,2,N,N]
-        mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
+        mat = self.reshape(
+            self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes]
+        )
         return mat
 
     @staticmethod
@@ -1478,7 +1490,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The :math:`2N\times 2N` array
         """
         return self.transpose(
-            self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)
+            self.left_matmul_at_modes(
+                self.transpose(b_partial), self.transpose(a_full), modes
+            )
         )
 
     def matvec_at_modes(
@@ -1508,7 +1522,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         rate = self.cast(rate, k.dtype)
         return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
 
-    def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):
+    def binomial_conditional_prob(
+        self, success_prob: Tensor, dim_out: int, dim_in: int
+    ):
         """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`."""
         in_ = self.arange(dim_in)[None, :]
         out_ = self.arange(dim_out)[:, None]
@@ -1526,7 +1542,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if not all((q.ndim == 1 for q in other_probs)):
             raise ValueError("other_probs must contain 1d arrays")
         if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
-            raise ValueError("The length of the 1d prob vectors must match shape of prob")
+            raise ValueError(
+                "The length of the 1d prob vectors must match shape of prob"
+            )
 
         q = other_probs[0]
         for q_ in other_probs[1:]:

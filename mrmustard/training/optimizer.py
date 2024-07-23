@@ -104,9 +104,14 @@ class Optimizer:
         bar = ProgressBar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                cost, grads = self.compute_loss_and_gradients(cost_fn, trainable_params.values())
+                cost, grads = self.compute_loss_and_gradients(
+                    cost_fn, trainable_params.values()
+                )
 
-                trainables = {tag: (x, dx) for (tag, x), dx in zip(trainable_params.items(), grads)}
+                trainables = {
+                    tag: (x, dx)
+                    for (tag, x), dx in zip(trainable_params.items(), grads)
+                }
 
                 if cost_fn_modified:
                     self.callback_history["orig_cost"].append(orig_cost_fn())
@@ -142,7 +147,8 @@ class Optimizer:
         grouped_items = {
             key: list(result)
             for key, result in groupby(
-                grouped_items, key=lambda x: hash(getattr(x[1], "update_fn", update_euclidean))
+                grouped_items,
+                key=lambda x: hash(getattr(x[1], "update_fn", update_euclidean)),
             )
         }
 
@@ -223,7 +229,10 @@ class Optimizer:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
             if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+                sum(
+                    abs(self.opt_history[-i - 1] - self.opt_history[-i])
+                    for i in range(1, 20)
+                )
                 < 1e-6
             ):
                 self.log.info("Loss looks stable, stopping here.")
@@ -237,11 +246,14 @@ class Optimizer:
             callbacks = {}
         elif callable(callbacks):
             callbacks = {
-                callbacks.tag if isinstance(callbacks, Callback) else callbacks.__name__: callbacks
+                callbacks.tag
+                if isinstance(callbacks, Callback)
+                else callbacks.__name__: callbacks
             }
         elif isinstance(callbacks, Sequence):
             callbacks = {
-                cb.tag if isinstance(cb, Callback) else cb.__name__: cb for cb in callbacks
+                cb.tag if isinstance(cb, Callback) else cb.__name__: cb
+                for cb in callbacks
             }
         elif not isinstance(callbacks, Mapping):
             raise TypeError(
@@ -278,7 +290,8 @@ class Optimizer:
             if "grads" in cb_result:
                 new_grads = cb_result["grads"]
                 trainables = {
-                    tag: (x, dx) for (tag, (x, _)), dx in zip(trainables.items(), new_grads)
+                    tag: (x, dx)
+                    for (tag, (x, _)), dx in zip(trainables.items(), new_grads)
                 }
 
             if cb_result is not None and cb_result:

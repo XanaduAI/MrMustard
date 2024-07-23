@@ -32,7 +32,9 @@ class TestSettings:
 
         assert settings.HBAR == 2.0
         assert settings.DEBUG is False
-        assert settings.AUTOSHAPE_PROBABILITY == 0.999  # capture at least 99.9% of the probability
+        assert (
+            settings.AUTOSHAPE_PROBABILITY == 0.999
+        )  # capture at least 99.9% of the probability
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3

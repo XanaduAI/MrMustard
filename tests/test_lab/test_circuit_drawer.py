@@ -45,7 +45,12 @@ def test_drawable_layers_no_overlap():
 
 def test_drawable_layers_mix_overlap():
     r"""Tests that drawable_layers returns the correct layers"""
-    ops = [BSgate(0.5)[3, 11], BSgate(0.5)[3, 11], BSgate(0.5)[12, 13], BSgate(0.5)[14, 15]]
+    ops = [
+        BSgate(0.5)[3, 11],
+        BSgate(0.5)[3, 11],
+        BSgate(0.5)[12, 13],
+        BSgate(0.5)[14, 15],
+    ]
     assert drawable_layers(ops) == {0: [ops[0]], 1: [ops[1], ops[2], ops[3]]}
 
 

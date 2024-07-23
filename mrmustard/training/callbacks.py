@@ -125,7 +125,9 @@ class Callback:
         return self.optimizer_step
 
     def _should_call(self, **kwargs) -> bool:
-        return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(**kwargs)
+        return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(
+            **kwargs
+        )
 
     def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
         """User implemented custom trigger conditions."""
@@ -133,10 +135,14 @@ class Callback:
     def call(self, **kwargs) -> Optional[Mapping]:  # pylint: disable=unused-argument
         """User implemented main callback logic."""
 
-    def update_cost_fn(self, **kwargs) -> Optional[Callable]:  # pylint: disable=unused-argument
+    def update_cost_fn(
+        self, **kwargs
+    ) -> Optional[Callable]:  # pylint: disable=unused-argument
         """User implemented cost_fn modifier."""
 
-    def update_grads(self, **kwargs) -> Optional[Sequence]:  # pylint: disable=unused-argument
+    def update_grads(
+        self, **kwargs
+    ) -> Optional[Sequence]:  # pylint: disable=unused-argument
         """User implemented gradient modifier."""
 
     def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
@@ -222,11 +228,15 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
 
     def init_writer(self, trainables):
         """Initializes tb logdir folders and writer."""
-        if (self.writter_logdir is None) or (self.optimizer_step <= self.steps_per_call):
+        if (self.writter_logdir is None) or (
+            self.optimizer_step <= self.steps_per_call
+        ):
             trainable_key_hash = hashlib.sha256(
                 ",".join(trainables.keys()).encode("utf-8")
             ).hexdigest()
-            self.experiment_tag = self.experiment_tag or f"experiment-{trainable_key_hash[:7]}"
+            self.experiment_tag = (
+                self.experiment_tag or f"experiment-{trainable_key_hash[:7]}"
+            )
             self.logdir = self.root_logdir / self.experiment_tag
             self.prefix = self.prefix or "optim"
             existing_exp = [path for path in self.logdir.glob("*") if path.is_dir()]
@@ -255,17 +265,17 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
             f"{obj_tag}/cost": cost,
         }
         if self.cost_converter is not None:
-            obj_scalars[f"{obj_tag}/{self.cost_converter.__name__}(cost)"] = self.cost_converter(
-                cost
-            )
+            obj_scalars[
+                f"{obj_tag}/{self.cost_converter.__name__}(cost)"
+            ] = self.cost_converter(cost)
 
         if "orig_cost" in optimizer.callback_history:
             orig_cost = np.array(optimizer.callback_history["orig_cost"][-1]).item()
             obj_scalars[f"{obj_tag}/orig_cost"] = orig_cost
             if self.cost_converter is not None:
-                obj_scalars[f"{obj_tag}/{self.cost_converter.__name__}(orig_cost)"] = (
-                    self.cost_converter(orig_cost)
-                )
+                obj_scalars[
+                    f"{obj_tag}/{self.cost_converter.__name__}(orig_cost)"
+                ] = self.cost_converter(orig_cost)
 
         for k, v in obj_scalars.items():
             tf.summary.scalar(k, data=v, step=self.optimizer_step)
@@ -280,7 +290,9 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
                 tag = tag or k + str(list(ind)).replace(" ", "")
                 tf.summary.scalar(tag + ":value", data=val, step=self.optimizer_step)
                 if self.track_grads:
-                    tf.summary.scalar(tag + ":grad", data=dx[ind], step=self.optimizer_step)
+                    tf.summary.scalar(
+                        tag + ":grad", data=dx[ind], step=self.optimizer_step
+                    )
                 tag = None
 
         result = obj_scalars if self.log_objectives else {}

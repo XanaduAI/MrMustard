@@ -43,11 +43,19 @@ from mrmustard.lab import (
 # numbers
 integer32bits = st.integers(min_value=0, max_value=2**31 - 1)
 real = st.floats(allow_infinity=False, allow_nan=False)
-positive = st.floats(min_value=0, exclude_min=True, allow_infinity=False, allow_nan=False)
-negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_nan=False)
+positive = st.floats(
+    min_value=0, exclude_min=True, allow_infinity=False, allow_nan=False
+)
+negative = st.floats(
+    max_value=0, exclude_max=True, allow_infinity=False, allow_nan=False
+)
 real_not_zero = st.one_of(negative, positive)
-small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
-medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
+small_float = st.floats(
+    min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False
+)
+medium_float = st.floats(
+    min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False
+)
 complex_nonzero = st.complex_numbers(
     allow_infinity=False, allow_nan=False, min_magnitude=1e-9, max_magnitude=1e2
 )
@@ -76,20 +84,20 @@ def Abc_triple(n: int):
     max_magnitude = 1
 
     # complex symmetric matrix A
-    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
+    A = np.random.uniform(
         min_magnitude, max_magnitude, (n, n)
-    )
+    ) + 1.0j * np.random.uniform(min_magnitude, max_magnitude, (n, n))
     A = 0.5 * (A + A.T)  # make it symmetric
 
     # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, (n,)) + 1.0j * np.random.uniform(
+    b = np.random.uniform(
         min_magnitude, max_magnitude, (n,)
-    )
+    ) + 1.0j * np.random.uniform(min_magnitude, max_magnitude, (n,))
 
     # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,)) + 1.0j * np.random.uniform(
+    c = np.random.uniform(
         min_magnitude, max_magnitude, (1,)
-    )
+    ) + 1.0j * np.random.uniform(min_magnitude, max_magnitude, (1,))
 
     return A, b, c
 
@@ -97,21 +105,27 @@ def Abc_triple(n: int):
 @st.composite
 def vector(draw, length):
     r"""Return a vector of length `length`."""
-    return draw(arrays(np.float64, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
+    return draw(
+        arrays(np.float64, (length,), elements=st.floats(min_value=-1.0, max_value=1.0))
+    )
 
 
 @st.composite
 def list_of_ints(draw, N):
     r"""Return a list of N unique integers between 0 and N-1."""
     return draw(
-        st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True)
+        st.lists(
+            st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True
+        )
     )
 
 
 @st.composite
 def matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols`."""
-    elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
+    elements = st.floats(
+        allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10
+    )
     return draw(arrays(np.float64, (rows, cols), elements=elements))
 
 
@@ -120,7 +134,10 @@ def complex_matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols` with complex numbers."""
     max_abs_value = 1e10
     elements = st.complex_numbers(
-        min_magnitude=0, max_magnitude=max_abs_value, allow_infinity=False, allow_nan=False
+        min_magnitude=0,
+        max_magnitude=max_abs_value,
+        allow_infinity=False,
+        allow_nan=False,
     )
     return draw(arrays(np.complex, (rows, cols), elements=elements))
 

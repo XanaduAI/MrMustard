@@ -314,13 +314,17 @@ def use_offDiag_pivot_grad(
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)
+    G_in = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128
+    )
     G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
     G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     ########## READ ##########
     read_GB = (2 * d,) + params
-    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128
+    )
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr1[(m, n) + read_GB] * B
@@ -511,13 +515,17 @@ def use_diag_pivot_grad(
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)
+    G_in = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128
+    )
     G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
     G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     ########## READ ##########
     read_GB = params
-    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128
+    )
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr0[(m, n) + read_GB] * B
@@ -630,7 +638,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
             arr0_dB[(m, 0) + zero_tuple] * B[0]
             + np.sqrt(m) * A[0, 0] * arr0_dB[(m - 1, 0) + zero_tuple]
         ) / np.sqrt(m + 1)
-        arr0_dB[(m + 1, 0) + zero_tuple][0] += arr0[(m, 0) + zero_tuple] / np.sqrt(m + 1)
+        arr0_dB[(m + 1, 0) + zero_tuple][0] += arr0[(m, 0) + zero_tuple] / np.sqrt(
+            m + 1
+        )
 
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode - 1):
@@ -650,7 +660,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
                 + np.sqrt(m) * A[1, 0] * arr0_dB[(m - 1, n) + zero_tuple]
                 + np.sqrt(n) * A[1, 1] * arr0_dB[(m, n - 1) + zero_tuple]
             ) / np.sqrt(n + 1)
-            arr0_dB[(m, n + 1) + zero_tuple][1] += arr0[(m, n) + zero_tuple] / np.sqrt(n + 1)
+            arr0_dB[(m, n + 1) + zero_tuple][1] += arr0[(m, n) + zero_tuple] / np.sqrt(
+                n + 1
+            )
 
     dict_params = construct_dict_params(cutoffs_tail, tuple_type, list_type)
     for sum_params in range(sum(cutoffs_tail)):
@@ -673,7 +685,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
                 )
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M - 1):
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
+                if np.all(np.array(params)[:d] == 0) and (
+                    params[d] < cutoffs_tail[d] - 1
+                ):
                     (
                         arr0_dA,
                         arr2_dA,

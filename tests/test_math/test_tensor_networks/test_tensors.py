@@ -96,16 +96,30 @@ class TestTensor:
 
         assert t.name == name
 
-        assert len(t.input.ket.items()) == 0 if modes_in_ket is None else len(modes_in_ket)
-        assert len(t.output.ket.items()) == 0 if modes_out_ket is None else len(modes_out_ket)
-        assert len(t.input.bra.items()) == 0 if modes_in_bra is None else len(modes_in_bra)
-        assert len(t.output.bra.items()) == 0 if modes_out_bra is None else len(modes_out_bra)
+        assert (
+            len(t.input.ket.items()) == 0 if modes_in_ket is None else len(modes_in_ket)
+        )
+        assert (
+            len(t.output.ket.items()) == 0
+            if modes_out_ket is None
+            else len(modes_out_ket)
+        )
+        assert (
+            len(t.input.bra.items()) == 0 if modes_in_bra is None else len(modes_in_bra)
+        )
+        assert (
+            len(t.output.bra.items()) == 0
+            if modes_out_bra is None
+            else len(modes_out_bra)
+        )
 
     @pytest.mark.parametrize("modes_in_ket", [None, [1, 2, 3]])
     @pytest.mark.parametrize("modes_out_ket", [None, [4]])
     @pytest.mark.parametrize("modes_in_bra", [None, [1, 2, 3]])
     @pytest.mark.parametrize("modes_out_bra", [None, [4]])
-    def test_ids_in_same_tensor(self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra):
+    def test_ids_in_same_tensor(
+        self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra
+    ):
         r"""
         Tests that tensors generate wires with different ``id``s.
         """

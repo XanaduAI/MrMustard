@@ -159,13 +159,17 @@ def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):  # pragma: no cover
         W += 2 * np.real(rho[0, n] * Wmat[0, n])
 
     for m in range(1, cutoff):
-        Wmat[1, m] = (2 * np.conj(grid) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]) / np.sqrt(m)
+        Wmat[1, m] = (
+            2 * np.conj(grid) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]
+        ) / np.sqrt(m)
 
         # W = rho(m, m)W(|m><m|)
         W += np.real(rho[m, m] * Wmat[1, m])
 
         for n in range(m + 1, cutoff):
-            Wmat[1, n] = (2 * grid * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]) / np.sqrt(n)
+            Wmat[1, n] = (
+                2 * grid * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]
+            ) / np.sqrt(n)
 
             # W += rho(m,n)W(|m><n|) + rho(n,m)W(|n><m|)
             W += 2 * np.real(rho[m, n] * Wmat[1, n])

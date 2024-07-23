@@ -103,7 +103,9 @@ def test_inttensor():
 
 
 def test_uinttensor():
-    ten: UIntTensor = np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]], dtype=np.uint32)
+    ten: UIntTensor = np.array(
+        [[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]], dtype=np.uint32
+    )
     assert isinstance(ten, get_origin(UIntTensor))
     assert isinstance(ten[0, 0, 0], get_args(UIntTensor)[1].__constraints__)
 
@@ -112,4 +114,6 @@ def test_batch():
     batch: Batch[RealVector] = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
     # remember batch is a protocol, so we can't use isinstance
     assert issubclass(type(batch), Batch)
-    assert isinstance(batch[0][0], get_args(get_args(Batch[RealVector])[0])[1].__constraints__)
+    assert isinstance(
+        batch[0][0], get_args(get_args(Batch[RealVector])[0])[1].__constraints__
+    )

@@ -42,7 +42,7 @@ mako = "^1.3.0"
 plotly = "^5.20.0"
 nbformat = "^5.10"
 
-######################  The Tensorflow Section ###################### 
+######################  The Tensorflow Section ######################
 # Dedicated for making sure that poetry can install tensorflow on all platforms.
 # This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
 
@@ -73,6 +73,7 @@ ray = ["ray", "scikit-optimize"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
+pre-commit = "3.7.1"
 pytest = "8.0"
 pytest-cov ="3.0.0"
 hypothesis = "6.31.6"

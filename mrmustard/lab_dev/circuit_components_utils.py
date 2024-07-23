@@ -67,11 +67,15 @@ class TraceOut(CircuitComponent):
         super().__init__(
             modes_in_ket=modes,
             modes_in_bra=modes,
-            representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            representation=Bargmann.from_function(
+                fn=triples.identity_Abc, n_modes=len(modes)
+            ),
             name="Tr",
         )
 
-    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+    def __custom_rrshift__(
+        self, other: CircuitComponent | complex
+    ) -> CircuitComponent | complex:
         r"""A custom ``>>`` operator for the ``TraceOut`` component.
         It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
         We know that the trace in Bargmann is a Gaussian integral, and in

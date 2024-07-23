@@ -22,7 +22,9 @@ from mrmustard import math
 from .parameter import Trainable
 
 
-def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):
+def update_symplectic(
+    grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float
+):
     r"""Updates the symplectic parameters using the given symplectic gradients.
     Implemented from:
         Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
@@ -38,7 +40,9 @@ def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symple
         math.assign(S, new_value)
 
 
-def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
+def update_orthogonal(
+    grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float
+):
     r"""Updates the orthogonal parameters using the given orthogonal gradients.
     Implemented from:
         Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
@@ -49,7 +53,9 @@ def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthog
         math.assign(O, new_value)
 
 
-def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_lr: float):
+def update_unitary(
+    grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_lr: float
+):
     r"""Updates the unitary parameters using the given unitary gradients.
     Implemented from:
         Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
@@ -60,7 +66,9 @@ def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_l
         math.assign(U, new_value)
 
 
-def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float):
+def update_euclidean(
+    grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float
+):
     """Updates the parameters using the euclidian gradients."""
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(grads_and_vars)

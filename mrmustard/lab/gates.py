@@ -291,7 +291,9 @@ class Rgate(Unitary):
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
         )
-        self._add_parameter(make_parameter(angle_trainable, angle, "angle", angle_bounds))
+        self._add_parameter(
+            make_parameter(angle_trainable, angle, "angle", angle_bounds)
+        )
 
     @property
     def X_matrix(self):
@@ -336,7 +338,9 @@ class Rgate(Unitary):
         if shape is None:
             raise ValueError
 
-        angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
+        angles = self.angle.value * math.ones(
+            self.num_modes, dtype=self.angle.value.dtype
+        )
 
         # calculate rotation unitary for each mode and concatenate with outer product
         Ur = None
@@ -351,7 +355,8 @@ class Rgate(Unitary):
         # return total unitary with indexes reordered according to MM convention
         return math.transpose(
             Ur,
-            list(range(0, 2 * self.num_modes, 2)) + list(range(1, 2 * self.num_modes, 2)),
+            list(range(0, 2 * self.num_modes, 2))
+            + list(range(1, 2 * self.num_modes, 2)),
         )
 
 
@@ -499,7 +504,9 @@ class BSgate(Unitary):
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds)
+        )
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     def U(
@@ -535,7 +542,9 @@ class BSgate(Unitary):
         elif len(cutoffs) == 2:
             shape = tuple(cutoffs) + tuple(cutoffs)
         else:
-            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
+            raise ValueError(
+                f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4)."
+            )
 
         shape = shape or cutoffs
 
@@ -596,13 +605,19 @@ class MZgate(Unitary):
             modes=modes or [0, 1],
             name="MZgate",
         )
-        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
-        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
+        self._add_parameter(
+            make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds)
+        )
+        self._add_parameter(
+            make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds)
+        )
         self._internal = internal
 
     @property
     def X_matrix(self):
-        return gaussian.mz_symplectic(self.phi_a.value, self.phi_b.value, internal=self._internal)
+        return gaussian.mz_symplectic(
+            self.phi_a.value, self.phi_b.value, internal=self._internal
+        )
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
@@ -680,7 +695,9 @@ class Interferometer(Unitary):
         modes: Optional[list[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
-            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+            raise ValueError(
+                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
+            )
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(
@@ -688,7 +705,9 @@ class Interferometer(Unitary):
             name="Interferometer",
         )
         self._add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+            make_parameter(
+                unitary_trainable, unitary, "unitary", (None, None), update_unitary
+            )
         )
 
     @property
@@ -734,7 +753,9 @@ class RealInterferometer(Unitary):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and (num_modes != len(modes)):
-            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+            raise ValueError(
+                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
+            )
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
 
@@ -797,7 +818,9 @@ class Ggate(Unitary):
         modes: Optional[list[int]] = None,
     ):
         if modes is not None and (num_modes != len(modes)):
-            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+            raise ValueError(
+                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
+            )
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes)
 
@@ -1002,7 +1025,9 @@ class AdditiveNoise(Channel):
             modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
         )
-        self._add_parameter(make_parameter(noise_trainable, noise, "noise", noise_bounds))
+        self._add_parameter(
+            make_parameter(noise_trainable, noise, "noise", noise_bounds)
+        )
 
     @property
     def Y_matrix(self):
@@ -1033,7 +1058,9 @@ class PhaseNoise(Channel):
             name="AddNoise",
         )
         self._add_parameter(
-            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
+            make_parameter(
+                phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds
+            )
         )
 
         self._modes = modes or [0]
@@ -1061,7 +1088,9 @@ class PhaseNoise(Channel):
 
         coeff = math.cast(
             math.exp(
-                -0.5 * self.phase_stdev.value**2 * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+                -0.5
+                * self.phase_stdev.value**2
+                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
             ),
             dm.dtype,
         )

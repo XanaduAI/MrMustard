@@ -65,9 +65,14 @@ def test_tensorboard_callback(tmp_path):
     )
 
     opt = Optimizer(euclidean_lr=0.01)
-    opt.minimize(cost_fn, by_optimizing=[circ, free_var], max_steps=300, callbacks={"tb": tbcb})
+    opt.minimize(
+        cost_fn, by_optimizing=[circ, free_var], max_steps=300, callbacks={"tb": tbcb}
+    )
 
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert tbcb.logdir.exists()
     assert len(list(tbcb.writter_logdir.glob("events*"))) > 0
-    assert len(opt.callback_history["tb"]) == (len(opt.opt_history) - 1) // tbcb.steps_per_call
+    assert (
+        len(opt.callback_history["tb"])
+        == (len(opt.opt_history) - 1) // tbcb.steps_per_call
+    )

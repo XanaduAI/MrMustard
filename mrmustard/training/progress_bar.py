@@ -32,7 +32,9 @@ class ProgressBar:
             )
         else:
             self.bar = Progress(
-                TextColumn("Step {task.completed}/{task.total} | {task.fields[speed]:.1f} it/s"),
+                TextColumn(
+                    "Step {task.completed}/{task.total} | {task.fields[speed]:.1f} it/s"
+                ),
                 BarColumn(),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 TextColumn("Cost = {task.fields[loss]:.5f} | ⏳ "),

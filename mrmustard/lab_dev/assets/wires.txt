@@ -17,7 +17,7 @@
     modes_ib = ", ".join(str(s) for s in list(wires.input.bra.modes)[:n_modes])
     modes_ok = ", ".join(str(s) for s in list(wires.output.ket.modes)[:n_modes])
     modes_ik = ", ".join(str(s) for s in list(wires.input.ket.modes)[:n_modes])
-    
+
     modes_ob += "" if not modes_ob else dots
     modes_ib += "" if not modes_ib else dots
     modes_ok += "" if not modes_ok else dots
@@ -29,7 +29,7 @@
 %>
 
 <style>
-  
+
   .container-wires {
     position: relative;
     width: 320px;
@@ -219,7 +219,7 @@
           </div>
       </div>
     % endif
-    
+
     % if modes_ok:
       <div class="grid-item-wires">
           <div class="grid-item-type">out ket</div>
@@ -267,6 +267,6 @@
           </div>
       </div>
     % endif
-    
+
   </div>
 </body>

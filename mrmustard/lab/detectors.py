@@ -71,7 +71,9 @@ class PNRDetector(FockMeasurement):
         cutoffs: Union[int, List[int]] = None,
     ):
         self._stochastic_channel = stochastic_channel
-        self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
+        self._should_recompute_stochastic_channel = (
+            efficiency_trainable or dark_counts_trainable
+        )
 
         eff = math.atleast_1d(efficiency)
         dk = math.atleast_1d(dark_counts)
@@ -124,7 +126,8 @@ class PNRDetector(FockMeasurement):
                 )
                 self._internal_stochastic_channel.append(
                     math.convolve_probs_1d(
-                        condprob, [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]]
+                        condprob,
+                        [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]],
                     )
                 )
 
@@ -167,7 +170,9 @@ class ThresholdDetector(FockMeasurement):
         if modes is not None:
             num_modes = len(modes)
         else:
-            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob)))
+            num_modes = max(
+                len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob))
+            )
 
         if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
             efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
@@ -187,7 +192,9 @@ class ThresholdDetector(FockMeasurement):
         super().__init__(outcome, modes, cutoffs)
 
         self._add_parameter(
-            make_parameter(efficiency_trainable, efficiency, "efficiency", efficiency_bounds)
+            make_parameter(
+                efficiency_trainable, efficiency, "efficiency", efficiency_bounds
+            )
         )
         self._add_parameter(
             make_parameter(
@@ -283,7 +290,9 @@ class Generaldyne(Measurement):
         )
 
     def _measure_fock(self, other) -> Union[State, float]:
-        raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
+        raise NotImplementedError(
+            f"Fock sampling not implemented for {self.__class__.__name__}"
+        )
 
 
 class Heterodyne(Generaldyne):
@@ -305,7 +314,9 @@ class Heterodyne(Generaldyne):
         modes: List[int] = None,
     ):
         if (x is None) ^ (y is None):  # XOR
-            raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
+            raise ValueError(
+                "Both `x` and `y` arguments should be defined or set to `None`."
+            )
 
         # if no x and y provided, sample the outcome
         if x is None and y is None:
@@ -363,7 +374,10 @@ class Homodyne(Generaldyne):
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
         state = DisplacedSqueezed(
-            r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+            r=self.r,
+            phi=2 * self.quadrature_angle,
+            x=x / units_factor,
+            y=y / units_factor,
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
@@ -380,9 +394,9 @@ class Homodyne(Generaldyne):
         self_state_means = math.concat(
             [self.state.means[: self.num_modes], math.zeros((self.num_modes,))], axis=0
         )
-        self.state = State(cov=self.state.cov, means=self_state_means, modes=self.modes) >> Rgate(
-            self.quadrature_angle, modes=self.modes
-        )
+        self.state = State(
+            cov=self.state.cov, means=self_state_means, modes=self.modes
+        ) >> Rgate(self.quadrature_angle, modes=self.modes)
 
         return out
 
@@ -393,7 +407,8 @@ class Homodyne(Generaldyne):
             )
 
         other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+            None if m not in self.modes else other.cutoffs[other.indices(m)]
+            for m in other.modes
         ]
         remaining_modes = list(set(other.modes) - set(self.modes))
 
@@ -419,10 +434,13 @@ class Homodyne(Generaldyne):
 
         self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
         other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+            None if m not in self.modes else other.cutoffs[other.indices(m)]
+            for m in other.modes
         ]
         out_fock = fock.contract_states(
-            stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+            stateA=other.ket(other_cutoffs)
+            if other.is_pure
+            else other.dm(other_cutoffs),
             stateB=self.state.ket(self_cutoffs),
             a_is_dm=other.is_mixed,
             b_is_dm=False,
