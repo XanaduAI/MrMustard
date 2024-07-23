@@ -76,7 +76,7 @@ def fock(rep):
     """Create a widget to display a Fock representation."""
     shape = rep.array.shape
     if shape[0] != 1:  # the batch dimension should be trivial for Fock representations
-        return
+        return None
 
     if len(shape) == 2:
         plot_widget = fock_1d(rep.array[0])
