@@ -359,7 +359,7 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4))
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -382,7 +382,7 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4))
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -402,7 +402,7 @@ class TestVisualization:
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
         st.manual_shape[0] = 20
-        fig = st.visualize_dm(20, return_fig=True)
+        fig = st.visualize_dm(20)
         data = fig.to_dict()
 
         if self.regenerate_assets:
