@@ -19,16 +19,16 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 import numbers
+from functools import cached_property
 
 import numpy as np
 import ipywidgets as widgets
 from IPython.display import display
 
-from mrmustard import math, settings, widgets as mmwidgets
+from mrmustard import settings, math, widgets as mmwidgets
 from mrmustard.utils.typing import Scalar, ComplexTensor
-from mrmustard.physics.converters import to_fock
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
@@ -72,7 +72,7 @@ class CircuitComponent:
         self._wires = Wires(
             set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
         )
-        self._name = name  # or "CC" + "".join(str(m) for m in sorted(self.wires.modes))
+        self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
 
@@ -149,7 +149,8 @@ class CircuitComponent:
                 of modes (e.g. for parallel gates).
         """
         if parameter.value.shape != ():
-            if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
+            length = sum(parameter.value.shape)
+            if length != 1 and length != len(self.modes):
                 msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
                 raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)
@@ -275,7 +276,7 @@ class CircuitComponent:
         return sorted(self.wires.modes)
 
     @property
-    def n_modes(self) -> list[int]:
+    def n_modes(self) -> int:
         r"""
         The number of modes spanned by this component across all wires.
         """
@@ -324,6 +325,25 @@ class CircuitComponent:
         """
         return DualView(self)
 
+    @cached_property
+    def manual_shape(self) -> list[Optional[int]]:
+        r"""
+        The shape of this Component in the Fock representation. If not manually set,
+        it is a list of M ``None``s where M is the number of wires of the component.
+        The manual_shape is a list and therefore it is mutable. In fact, it can evolve
+        over time as we learn more about the component or its neighbours. For
+        each wire, the entry is either an integer or ``None``. If it is an integer, it
+        is the dimension of the corresponding Fock space. If it is ``None``, it means
+        the best shape is not known yet. ``None``s automatically become integers when
+        ``auto_shape`` is called, but the integers already set are not changed.
+        The order of the elements in the shape is intended the same order as the wires
+        in the `.wires` attribute.
+        """
+        try:  # to read it from array ansatz
+            return list(self.representation.array.shape[1:])
+        except AttributeError:  # bargmann
+            return [None] * len(self.wires)
+
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
@@ -367,45 +387,81 @@ class CircuitComponent:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
-        modes = set(modes)
         ret._wires = Wires(
-            modes_out_bra=modes if ob else set(),
-            modes_in_bra=modes if ib else set(),
-            modes_out_ket=modes if ok else set(),
-            modes_in_ket=modes if ik else set(),
+            modes_out_bra=set(modes) if ob else set(),
+            modes_in_bra=set(modes) if ib else set(),
+            modes_out_ket=set(modes) if ok else set(),
+            modes_in_ket=set(modes) if ik else set(),
         )
 
         return ret
 
-    def to_fock(self, shape: Optional[Union[int, Iterable[int]]] = None) -> CircuitComponent:
+    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
+        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+            batched: Whether the returned representation is batched or not. If ``False`` (default)
+                it will squeeze the batch dimension if it is 1.
+        Returns:
+            array: The Fock representation of this component.
+        """
+        if isinstance(shape, int):
+            shape = (shape,) * self.representation.ansatz.num_vars
+        auto_shape = self.auto_shape()
+        shape = shape or auto_shape
+        if len(shape) != len(auto_shape):
+            raise ValueError(
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+            )
+
+        try:
+            As, bs, cs = self.bargmann
+            arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+        except AttributeError:
+            arrays = self.representation.reduce(shape).array
+        array = math.sum(arrays, axes=[0])
+        arrays = math.expand_dims(array, 0) if batched else array
+        return arrays
+
+    def to_fock(self, shape=None):
         r"""
         Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
-        Uses the :meth:`mrmustard.physics.converters.to_fock` method to convert the internal
-        representation.
-
         .. code-block::
 
-            >>> from mrmustard.physics.converters import to_fock
             >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Fock
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert d_fock.representation == to_fock(d.representation, shape=3)
+            >>> assert isinstance(d_fock.representation, Fock)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOCUTOFF_MAX_CUTOFF`` in the settings.
+                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        return self.__class__._from_attributes(
-            to_fock(self.representation, shape=shape),
-            self.wires,
-            self.name,
-        )
+        fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
+        fock._original_bargmann_data = self.representation.data
+        return self._from_attributes(fock, self.wires, self.name)
+
+    def auto_shape(self, **kwargs) -> tuple[int, ...]:
+        r"""
+        The shape of the Fock representation of this component. If the component has a Fock representation
+        then it is just the shape of the array. If the components is a State in Bargmann
+        representation the shape is calculated using autoshape using the single-mode marginals.
+        If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
+        except where the ``manual_shape`` attribute has been set..
+        """
+        return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -472,13 +528,47 @@ class CircuitComponent:
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
-        It allows for a more custom way of contracting components.
+        It allows for contracting components exactly as specified.
+
+        For example, a coherent state can be input to an attenuator, but
+        the attenuator has two inputs: on the ket and the bra side.
+        The ``>>`` operator would automatically add the adjoint of the coherent
+        state on the bra side of the input of the attenuator, but the ``@`` operator
+        instead does not:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Attenuator
+            >>> coh = Coherent([0], 1.0)
+            >>> att = Attenuator([0], 0.5)
+            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
+
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        rep = self.representation[idx_z] @ other.representation[idx_zconj]
+
+        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+            rep = self.representation[idx_z] @ other.representation[idx_zconj]
+            rep = rep.reorder(perm) if perm else rep
+            return CircuitComponent._from_attributes(rep, wires_result, None)
+
+        self_shape = list(self.auto_shape())
+        other_shape = list(other.auto_shape())
+        for z, zc in zip(idx_z, idx_zconj):
+            self_shape[z] = min(self_shape[z], other_shape[zc])
+            other_shape[zc] = self_shape[z]
+
+        if isinstance(self.representation, Fock):
+            self_rep = self.representation.reduce(self_shape)
+        else:
+            self_rep = self.to_fock(self_shape).representation
+        if isinstance(other.representation, Fock):
+            other_rep = other.representation.reduce(other_shape)
+        else:
+            other_rep = other.to_fock(other_shape).representation
+
+        rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 
@@ -514,7 +604,9 @@ class CircuitComponent:
             return self * other
 
         msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += "whether or where to add missing wires. Use ``@`` and specify all the components."
+        msg += (
+            "whether or where to add missing components. Use ``@`` and specify all the components."
+        )
 
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
@@ -532,6 +624,10 @@ class CircuitComponent:
         if other_needs_bra or other_needs_ket:
             return self._rshift_return((self @ other) @ other.adjoint)
 
+        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+        msg += (
+            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+        )
         raise ValueError(msg)
 
     def _rshift_return(
@@ -547,7 +643,11 @@ class CircuitComponent:
         r"""
         Multiplies a scalar with a circuit component when written as ``scalar >> component``.
         This is needed when the "component" on the left is the result of a contraction that leaves
-        no wires and the component is returned as a scalar. Note that there is an edge case if the object on the left happens to have the ``__rshift__`` method, but it's not the one we want (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with types ``np.ndarray >> CircuitComponent`` the method ``__rrshift__`` will not be called, and something else will be returned.
+        no wires and the component is returned as a scalar. Note that there is an edge case if the
+        object on the left happens to have the ``__rshift__`` method, but it's not the one we want
+        (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with
+        types ``np.ndarray >> CircuitComponent`` the method ``CircuitComponent.__rrshift__`` will
+        not be called, and something else will be returned.
         """
         ret = self * other
         try:
@@ -556,7 +656,16 @@ class CircuitComponent:
             return ret
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(modes={self.modes}, name={self.name or None})"
+        repr = self.representation
+        repr_name = repr.__class__.__name__
+        if repr_name == "NoneType":
+            return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
+        else:
+            return (
+                self.__class__.__name__
+                + f"(modes={self.modes}, name={self.name}"
+                + f", repr={repr_name})"
+            )
 
     def _repr_html_(self):  # pragma: no cover
         # both reps might return None
@@ -586,6 +695,10 @@ class CCView(CircuitComponent):
         component: The circuit component to take the view of.
     """
 
+    @property
+    def short_name(self):
+        return self._component.short_name
+
     def __init__(self, component: CircuitComponent) -> None:
         self.__dict__ = component.__dict__.copy()
         self._component = component._light_copy()
@@ -604,13 +717,6 @@ class AdjointView(CCView):
     Args:
         component: The circuit component to take the view of.
     """
-
-    @property
-    def short_name(self) -> str:
-        r"""
-        Returns a short name that appears in the circuit.
-        """
-        return self._component.short_name + "_adj"
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -647,13 +753,6 @@ class DualView(CCView):
     Args:
         component: The circuit component to take the view of.
     """
-
-    @property
-    def short_name(self) -> str:
-        r"""
-        Returns a short name that appears in the circuit.
-        """
-        return self._component.short_name + "_dual"
 
     @property
     def dual(self) -> CircuitComponent:
