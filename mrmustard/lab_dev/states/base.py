@@ -371,7 +371,7 @@ class State(CircuitComponent):
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOSHAPE_MAX)
+        state = self.to_fock()
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -485,7 +485,7 @@ class State(CircuitComponent):
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
 
-        state = self.to_fock(settings.AUTOSHAPE_MAX)
+        state = self.to_fock()
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -548,8 +548,7 @@ class State(CircuitComponent):
         on a heatmap.
 
         Args:
-            cutoff: The desired cutoff. Defaults to the value of ``AUTOSHAPE_MAX`` in the
-                settings.
+            cutoff: The desired cutoff. Defaults to the value of auto_shape.
             return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
@@ -571,7 +570,7 @@ class State(CircuitComponent):
         fig.update_layout(
             height=257,
             width=257,
-            margin=dict(l=20, r=20, t=30, b=20),
+            margin=dict(l=30, r=30, t=30, b=20),
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 
@@ -636,19 +635,21 @@ class DM(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=None, max_shape=None, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(
+        self, max_prob=None, max_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
-        If the ``respect_fock_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``fock_shape``.
+        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+        non-None values in ``manual_shape``.
 
         Args:
             max_prob: The maximum probability mass to capture in the shape (default 0.999).
             max_shape: The maximum shape to compute (default 50).
-            respect_fock_shape: Whether to respect the non-None values in ``fock_shape``.
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
         if self.representation.ansatz.batch_size == 1:
@@ -669,8 +670,8 @@ class DM(State):
         else:
             warnings.warn("auto_shape not yet implemented for batched states.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
-        if respect_fock_shape:
-            return tuple(c or s for c, s in zip(self.fock_shape, shape))
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
 
     @classmethod
@@ -856,19 +857,21 @@ class Ket(State):
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(self, max_prob=None, max_shape=None, respect_fock_shape=True) -> tuple[int, ...]:
+    def auto_shape(
+        self, max_prob=None, max_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
-        If the ``respect_fock_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``fock_shape``.
+        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+        non-None values in ``manual_shape``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default 0.999).
-            max_shape: The maximum shape to compute (default 50).
-            respect_fock_shape: Whether to respect the non-None values in ``fock_shape``.
+            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
         if self.representation.ansatz.batch_size == 1:
@@ -888,8 +891,8 @@ class Ket(State):
         else:
             warnings.warn("auto_shape not yet implemented for batched states.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
-        if respect_fock_shape:
-            return tuple(c or s for c, s in zip(self.fock_shape, shape))
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
 
     @classmethod
@@ -946,7 +949,7 @@ class Ket(State):
         """
         dm = self @ self.adjoint
         ret = DM._from_attributes(dm.representation, dm.wires, self.name)
-        ret.fock_shape = self.fock_shape + self.fock_shape
+        ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
     def expectation(self, operator: CircuitComponent):

@@ -327,11 +327,11 @@ class CircuitComponent:
         return DualView(self)
 
     @cached_property
-    def fock_shape(self) -> list[Optional[int]]:
+    def manual_shape(self) -> list[Optional[int]]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
         it is a list of M ``None``s where M is the number of wires of the component.
-        The fock_shape is a list and therefore it is mutable. In fact, it can evolve
+        The manual_shape is a list and therefore it is mutable. In fact, it can evolve
         over time as we learn more about the component or its neighbours. For
         each wire, the entry is either an integer or ``None``. If it is an integer, it
         is the dimension of the corresponding Fock space. If it is ``None``, it means
@@ -460,9 +460,9 @@ class CircuitComponent:
         then it is just the shape of the array. If the components is a State in Bargmann
         representation the shape is calculated using autoshape using the single-mode marginals.
         If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
-        except where the ``fock_shape`` attribute has been set..
+        except where the ``manual_shape`` attribute has been set..
         """
-        return tuple(s or settings.AUTOSHAPE_MAX for s in self.fock_shape)
+        return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

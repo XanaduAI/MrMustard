@@ -63,7 +63,6 @@ def _add_op(op, layer_str, decimals):
     if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
         control = [op.modes[0]]
     label = op.short_name
-    print(f"short name of {op} is {label}")
     if decimals is not None:
         param_string = op.parameter_set.to_string(decimals)
         if param_string == "":

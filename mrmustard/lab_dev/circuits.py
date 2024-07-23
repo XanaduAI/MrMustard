@@ -138,9 +138,9 @@ class Circuit:
         """
 
         for component in self:
-            component.fock_shape = list(component.auto_shape())
+            component.manual_shape = list(component.auto_shape())
 
-        # update the fock_shapes until convergence
+        # update the manual_shapes until convergence
         changes = self._update_shapes()
         while changes:
             changes = self._update_shapes()
@@ -160,20 +160,20 @@ class Circuit:
         for i, component in enumerate(self.components):
             for j, indices in self.indices_dict[i].items():
                 for a, b in indices.items():
-                    s_ia = self.components[i].fock_shape[a]
-                    s_jb = self.components[j].fock_shape[b]
+                    s_ia = self.components[i].manual_shape[a]
+                    s_jb = self.components[j].manual_shape[b]
                     s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                    if self.components[j].fock_shape[b] != s:
-                        self.components[j].fock_shape[b] = s
+                    if self.components[j].manual_shape[b] != s:
+                        self.components[j].manual_shape[b] = s
                         changes = True
-                    if self.components[i].fock_shape[a] != s:
-                        self.components[i].fock_shape[a] = s
+                    if self.components[i].manual_shape[a] != s:
+                        self.components[i].manual_shape[a] = s
                         changes = True
 
         # propagate through BSgates
         for i, component in enumerate(self.components):
             if isinstance(component, BSgate):
-                a, b, c, d = component.fock_shape
+                a, b, c, d = component.manual_shape
                 if c and d:
                     if not a or a > c + d:
                         a = c + d
@@ -189,7 +189,7 @@ class Circuit:
                         d = a + b
                         changes = True
 
-                self.components[i].fock_shape = [a, b, c, d]
+                self.components[i].manual_shape = [a, b, c, d]
 
         return changes
 

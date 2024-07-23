@@ -218,7 +218,7 @@ class Number(Ket):
         self.short_name = [str(n) for n in self.n]
 
         for i, num in enumerate(n):
-            self.fock_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
+            self.manual_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
 
         self.cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
         if len(self.cutoffs) == 1:
@@ -355,7 +355,7 @@ class Vacuum(Ket):
         super().__init__(modes=modes, representation=rep, name="Vac")
 
         for i in range(len(modes)):
-            self.fock_shape[i] = 1
+            self.manual_shape[i] = 1
 
 
 #  ~~~~~~~~~~~~

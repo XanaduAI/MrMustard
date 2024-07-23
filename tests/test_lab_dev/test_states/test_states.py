@@ -401,7 +401,7 @@ class TestVisualization:
 
     def test_visualize_dm(self):
         st = Coherent([0], y=1) + Coherent([0], y=-1)
-        st.fock_shape[0] = 20
+        st.manual_shape[0] = 20
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
 
