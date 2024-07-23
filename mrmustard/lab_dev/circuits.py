@@ -464,7 +464,7 @@ class Circuit:
         A string-based representation of this component.
         """
 
-        def component_to_str(comp: CircuitComponent) -> str:
+        def component_to_str(comp: CircuitComponent) -> list[str]:
             r"""
             Generates a list string-based representation for the given component.
 
@@ -479,13 +479,24 @@ class Circuit:
             Args:
                 comp: A circuit component.
             """
-            cc_name = comp.name or "CC"
+            cc_name = comp.short_name
+            parallel = isinstance(cc_name, list)
             if not comp.wires.input:
-                cc_name = f"◖{cc_name}◗"
-            if not comp.wires.output:
-                cc_name = f"|{cc_name})="
+                cc_names = [
+                    f"◖{cc_name[i] if parallel else cc_name}◗" for i in range(len(comp.modes))
+                ]
+            elif not comp.wires.output:
+                cc_names = [
+                    f"|{cc_name[i] if parallel else cc_name})=" for i in range(len(comp.modes))
+                ]
+            elif cc_name not in control_gates:
+                cc_names = [
+                    f"{cc_name[i] if parallel else cc_name}" for i in range(len(comp.modes))
+                ]
+            else:
+                cc_names = [f"{cc_name}"]
 
-            if comp.parameter_set.names and settings.CIRCUIT_DRAW_PARAMS:
+            if comp.parameter_set.names and settings.DRAW_CIRCUIT_PARAMS:
                 values = []
                 for name in comp.parameter_set.names:
                     param = comp.parameter_set.constants.get(
@@ -494,18 +505,16 @@ class Circuit:
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
-                    values.append(
-                        new_values.numpy() if math.backend.name == "tensorflow" else new_values
-                    )
-                return [cc_name + str(l).replace(" ", "") for l in list(zip(*values))]
-            # some components have an empty parameter set
-            return [cc_name for _ in range(len(comp.modes))]
+                    values.append(math.asnumpy(new_values))
+                return [
+                    cc_names[i] + str(val).replace(" ", "") for i, val in enumerate(zip(*values))
+                ]
+            return cc_names
 
         if len(self) == 0:
             return ""
 
-        components = self.components
-        modes = set(sorted([m for c in components for m in c.modes]))
+        modes = set(sorted([m for c in self.components for m in c.modes]))
         n_modes = len(modes)
 
         # update this when new controlled gates are added
@@ -526,7 +535,7 @@ class Circuit:
         # those coordinates
         layers = defaultdict(list)
         x = 0
-        for c1 in components:
+        for c1 in self.components:
             # if a component would overlap, increase the x-axis coordinate
             span_c1 = set(range(min(c1.modes), max(c1.modes) + 1))
             for c2 in layers[x]:

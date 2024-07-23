@@ -79,7 +79,7 @@ class Settings:
         self.AUTOSHAPE_MAX = 50
         r"""The max shape for the autoshape. Default is ``50``."""
 
-        self.CIRCUIT_DRAW_PARAMS = True
+        self.DRAW_CIRCUIT_PARAMS = True
         "Whether or not to draw the parameters of a circuit."
 
         self.CIRCUIT_DECIMALS = 3

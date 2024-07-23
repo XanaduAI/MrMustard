@@ -150,7 +150,8 @@ class CircuitComponent:
                 of modes (e.g. for parallel gates).
         """
         if parameter.value.shape != ():
-            if len(parameter.value) != 1 and len(parameter.value) != len(self.modes):
+            length = sum(parameter.value.shape)
+            if length != 1 and length != len(self.modes):
                 msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
                 raise ValueError(msg)
         self.parameter_set.add_parameter(parameter)
@@ -698,6 +699,10 @@ class CCView(CircuitComponent):
         component: The circuit component to take the view of.
     """
 
+    @property
+    def short_name(self):
+        return self._component.short_name
+
     def __init__(self, component: CircuitComponent) -> None:
         self.__dict__ = component.__dict__.copy()
         self._component = component._light_copy()
@@ -716,13 +721,6 @@ class AdjointView(CCView):
     Args:
         component: The circuit component to take the view of.
     """
-
-    @property
-    def short_name(self) -> str:
-        r"""
-        Returns a short name that appears in the circuit.
-        """
-        return self._component.short_name + "_adj"
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -759,13 +757,6 @@ class DualView(CCView):
     Args:
         component: The circuit component to take the view of.
     """
-
-    @property
-    def short_name(self) -> str:
-        r"""
-        Returns a short name that appears in the circuit.
-        """
-        return self._component.short_name + "_dual"
 
     @property
     def dual(self) -> CircuitComponent:
