@@ -299,6 +299,8 @@ class Channel(Map):
     def random(cls, modes, max_r=1.0):
         r"""
         A random channel without displacement
+        modes: the modes on which the channel is defined
+        max_r: maximum squeezing parameter in random selections
         """
         from mrmustard.lab_dev.states import Vacuum
 
@@ -306,6 +308,5 @@ class Channel(Map):
         U = Unitary.random(range(3 * m), max_r)
         u_psi = Vacuum(range(2 * m)) >> U
         A = u_psi.representation
-        # A_dagger = u_psi.adjoint.representation
         kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)  # no bracket
