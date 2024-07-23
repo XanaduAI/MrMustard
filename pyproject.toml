@@ -73,6 +73,7 @@ ray = ["ray", "scikit-optimize"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
+pre-commit = "3.7.1"
 pytest = "8.0"
 pytest-cov ="3.0.0"
 hypothesis = "6.31.6"
