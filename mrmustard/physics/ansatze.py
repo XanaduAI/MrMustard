@@ -263,10 +263,11 @@ class PolyExpBase(Ansatz):
     def decompose_ansatz(self) -> DiffOpPolyExpAnsatz:
         r"""
         This method decomposes a DiffOpPolyExpAnsatz. Given an ansatz of dimensions:
-        A=(batch,m+n,m+n), b=(batch,m+n), c = (batch,k_1,k_2,...,k_n),
+        A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
         it can be rewritten as an ansatz of dimensions
-        A=(batch,2m,2m), b=(batch,2m), c = (batch,l_1,l_2,...,l_m), with l_i = sum_j k_j
-        This decomposition is typically favourable if n>m, and will only run if that is the case.
+        A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
+        This decomposition is typically favourable if m>n, and will only run if that is the case.
+        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
         """
         dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
