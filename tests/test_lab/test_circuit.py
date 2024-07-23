@@ -15,7 +15,14 @@
 
 from hypothesis import given
 
-from mrmustard.lab import *
+from mrmustard.lab import (
+    Attenuator,
+    BSgate,
+    Dgate,
+    Ggate,
+    Rgate,
+    Sgate,
+)
 from tests.random import angle, medium_float, n_mode_pure_state, r
 
 
@@ -58,7 +65,12 @@ def test_len():
 
 
 @given(
-    r=r, phi1=angle, phi2=angle, x=medium_float, y=medium_float, G=n_mode_pure_state(num_modes=1)
+    r=r,
+    phi1=angle,
+    phi2=angle,
+    x=medium_float,
+    y=medium_float,
+    G=n_mode_pure_state(num_modes=1),
 )
 def test_shift(r, phi1, phi2, x, y, G):
     "test that the leftshift/rightshift operator works as expected"

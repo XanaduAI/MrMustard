@@ -502,7 +502,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
         up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOCUTOFF_PROBABILITY setting.
+        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
 
         Args:
             A: The A matrix.
@@ -521,7 +521,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             _A,
             _B,
             _C,
-            max_l2=max_l2 or settings.AUTOCUTOFF_PROBABILITY,
+            max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )
 
