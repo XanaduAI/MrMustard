@@ -27,9 +27,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 from mrmustard import math
-from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard import physics
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
 

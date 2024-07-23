@@ -61,7 +61,7 @@ def test_bargmann_numpy_transformation():
 
 def test_norm_ket():
     """Test that the norm of a ket is calculated correctly"""
-    ket = Vacuum([0, 1]) >> Unitary.from_symplectic([0, 1], [0, 1], math.random_symplectic(2))
+    ket = Vacuum([0, 1]) >> Unitary.from_symplectic([0, 1], math.random_symplectic(2))
     A, b, c = [x[0] for x in ket.bargmann]
     assert np.isclose(norm_ket(A, b, c), ket.probability)
 
@@ -69,7 +69,7 @@ def test_norm_ket():
 def test_trace_dm():
     """Test that the trace of a density matrix is calculated correctly"""
     ket = Vacuum([0, 1, 2, 3]) >> Unitary.from_symplectic(
-        [0, 1, 2, 3], [0, 1, 2, 3], math.random_symplectic(4)
+        [0, 1, 2, 3], math.random_symplectic(4)
     )
     dm = ket[0, 1]
     A, b, c = [x[0] for x in dm.bargmann]

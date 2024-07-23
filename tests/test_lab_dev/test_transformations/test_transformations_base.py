@@ -99,7 +99,7 @@ class TestUnitary:
 
     def test_init_from_symplectic(self):
         S = math.random_symplectic(2)
-        u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
+        u = Unitary.from_symplectic([0, 1], S)
         assert u >> u.dual == Identity([0, 1])
         assert u.dual >> u == Identity([0, 1])
 
