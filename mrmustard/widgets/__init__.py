@@ -38,31 +38,13 @@ def _batch_widget(obj, batch_size, widget_fn, *widget_args):
 
 def fock_1d(array):
     """Return a plot widget for a 2D Fock representation."""
-    y = abs(array)
-    z = np.angle(array)
-    text = [
-        f"x: {x}<br />abs(arr[x]): {y_}<br />phase(arr[x]): {z_}<br />"
-        for x, (y_, z_) in enumerate(zip(y, z))
+    mag_plot = go.Scatter(y=abs(array))
+    phase_plot = go.Scatter(y=np.angle(array))
+    plots = [
+        go.FigureWidget(p, layout={"margin": NO_MARGIN, "height": 200, "width": 430})
+        for p in [mag_plot, phase_plot]
     ]
-    layout = {
-        "height": 200,
-        "width": 430,
-        "margin": NO_MARGIN,
-        "xaxis": {"title": "x"},
-        "yaxis": {"title": "abs(arr[x])"},
-    }
-    return go.FigureWidget(
-        data=go.Heatmap(
-            x=list(range(len(array))),
-            y=y,
-            z=z,
-            colorscale="viridis",
-            showscale=False,
-            hoverinfo="text",
-            text=text,
-        ),
-        layout=layout,
-    )
+    return widgets.Tab(plots, titles=["Magnitude", "Phase"])
 
 
 def fock_2d(array):
