@@ -377,9 +377,9 @@ class TestDiffOpPolyExpAnsatz:
 
     def test_add(self):
         A1, b1, _ = Abc_triple(5)
-        c1 = np.random.random(size=(1,3,3))
+        c1 = np.random.random(size=(1, 3, 3))
         A2, b2, _ = Abc_triple(5)
-        c2 = np.random.random(size=(1,2,2))
+        c2 = np.random.random(size=(1, 2, 2))
 
         ansatz = DiffOpPolyExpAnsatz(A1, b1, c1)
         ansatz2 = DiffOpPolyExpAnsatz(A2, b2, c2)
@@ -390,7 +390,7 @@ class TestDiffOpPolyExpAnsatz:
         assert np.allclose(ansatz3.array[0], c1[0])
         assert np.allclose(ansatz3.mat[1], A2)
         assert np.allclose(ansatz3.vec[1], b2)
-        assert np.allclose(ansatz3.array[1][:2,:2], c2[0])
+        assert np.allclose(ansatz3.array[1][:2, :2], c2[0])
 
     def test_mul(self):
         A1, b1, _ = Abc_triple(2)
