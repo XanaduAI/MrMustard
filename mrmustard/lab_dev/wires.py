@@ -422,5 +422,5 @@ class Wires:
     def __repr__(self) -> str:
         return f"Wires{self.args}"
 
-    def _ipython_display_(self):  # pragma: no cover
+    def _ipython_display_(self):
         display(widgets.wires(self))

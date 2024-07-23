@@ -667,7 +667,7 @@ class CircuitComponent:
                 + f", repr={repr_name})"
             )
 
-    def _ipython_display_(self):  # pragma: no cover
+    def _ipython_display_(self):
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
         rep_widget = rep_fn(self.representation)

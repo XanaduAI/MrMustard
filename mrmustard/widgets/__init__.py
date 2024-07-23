@@ -57,7 +57,8 @@ def fock_2d(array):
 def fock(rep):
     """Create a widget to display a Fock representation."""
     shape = rep.array.shape
-    if shape[0] != 1:  # the batch dimension should be trivial for Fock representations
+    if shape[0] != 1:  # pragma: no cover
+        # the batch dimension should be trivial for Fock representations
         return None
 
     if len(shape) == 2:
@@ -75,7 +76,7 @@ def fock(rep):
         "</table>"
     )
     left_widget = widgets.VBox(children=[header_widget, table_widget])
-    table_widget.layout.padding = "10px"
+    plot_widget.layout.padding = "10px"
     left_widget.layout.padding = "10px"
 
     return widgets.HBox(

@@ -516,7 +516,7 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def _ipython_display_(self):  # pragma: no cover
+    def _ipython_display_(self):
         display(widgets.bargmann(self))
 
 
@@ -784,7 +784,7 @@ class Fock(Representation):
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
 
-    def _ipython_display_(self):  # pragma: no cover
+    def _ipython_display_(self):
         w = widgets.fock(self)
         if w is None:
             print(repr(self))

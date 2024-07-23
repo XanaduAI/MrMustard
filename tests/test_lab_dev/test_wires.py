@@ -16,6 +16,9 @@
 
 # pylint: disable=missing-function-docstring
 
+from unittest.mock import patch
+
+from ipywidgets import HTML
 import pytest
 
 from mrmustard.lab_dev.wires import Wires
@@ -179,3 +182,11 @@ class TestWires:
         v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
+
+    @patch("mrmustard.lab_dev.wires.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        wires = Wires({0}, {}, {3}, {3, 4})
+        wires._ipython_display_()
+        [widget] = mock_display.call_args.args
+        assert isinstance(widget, HTML)
