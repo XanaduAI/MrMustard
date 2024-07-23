@@ -519,9 +519,9 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         >>> c = np.array([[1.0,2.0,3.0]])
 
         >>> F = DiffOpPolyExpAnsatz(A, b, c)
-        >>> z = np.array([[1.0]])
+        >>> z = np.array([[1.0],[2.0],[3.0]])
 
-        >>> # calculate the value of the function at ``z``
+        >>> # calculate the value of the function at the three different ``z``, since z is batched.
         >>> val = F(z)
 
     A and b can be batched or not, but c needs to include an explicit batch dimension that matches A and b.
@@ -574,7 +574,13 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""
-        Value of this ansatz at ``z``.
+        Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
+        If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
+        Note that the batch dimension of ``z`` and ``Abc`` can be different.
+
+        Conventions in code comments:
+            n: is the same as dim_alpha
+            m: is the same as dim_beta
 
         Args:
             z: point in C^n where the function is evaluated
@@ -586,30 +592,31 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         dim_alpha = self.A.shape[-1] - dim_beta
         batch_size = self.batch_size
 
-        z = math.atleast_2d(z)
+        z = math.atleast_2d(z)  # shape (b_arg, n)
         batch_size_arg = z.shape[0]
-        if z.shape[-1] != dim_alpha:
+        if z.shape[-1] != dim_alpha or z.shape[-1] != self.num_vars:
             raise ValueError(
                 "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
             )
-        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
+        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
-        A_part = math.sum(self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2])
-        b_part = math.sum(self.b[..., :dim_alpha] * z[..., None, :], axes=[-1])
+        A_part = math.sum(
+            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
+        )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
+        b_part = math.sum(
+            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
+        )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
-        exp_sum = math.exp(1 / 2 * A_part + b_part)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])
+            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
-                [
-                    math.sum(self.A[..., dim_alpha:, :dim_alpha] * z[i, None, :], axes=[-1])
-                    + self.b[..., dim_alpha:]
-                    for i in range(batch_size_arg)
-                ]
-            )
-            b_poly = math.moveaxis(b_poly, 0, 1)
-            A_poly = self.A[..., dim_alpha:, dim_alpha:]
+                math.einsum("ijk,hk", self.A[..., dim_alpha:, :dim_alpha], z)
+                + self.b[..., dim_alpha:]
+            )  # (b_arg, b_abc, m)
+            b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
+            A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
             poly = math.astensor(
                 [
                     math.hermite_renormalized_batch(
@@ -617,15 +624,15 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                     )
                     for i in range(batch_size)
                 ]
-            )
-            poly = math.moveaxis(poly, 0, 1)
+            )  # (b_abc,b_arg,poly)
+            poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
             val = math.sum(
                 exp_sum
                 * math.sum(
                     poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
                 ),
                 axes=[-1],
-            )
+            )  # (b_arg)
         return val
 
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
@@ -680,7 +687,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
             dim_alpha1 = self.A.shape[-1] - dim_beta1
             dim_alpha2 = other.A.shape[-1] - dim_beta2
-            assert dim_alpha1 == dim_alpha2
+            if dim_alpha1 != dim_alpha2:
+                raise TypeError("The dimensionality of the two ansatze must be the same.")
             dim_alpha = dim_alpha1
 
             new_a = [
@@ -701,7 +709,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c * other)
             except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
@@ -755,7 +763,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             if dim_beta1 == 0 and dim_beta2 == 0:
                 dim_alpha1 = self.A.shape[-1] - dim_beta1
                 dim_alpha2 = other.A.shape[-1] - dim_beta2
-                assert dim_alpha1 == dim_alpha2
+                if dim_alpha1 != dim_alpha2:
+                    raise TypeError("The dimensionality of the two ansatze must be the same.")
                 dim_alpha = dim_alpha1
 
                 new_a = [
@@ -778,7 +787,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, self.c / other)
             except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
