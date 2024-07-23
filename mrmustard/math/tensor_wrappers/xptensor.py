@@ -444,9 +444,11 @@ class XPTensor(ABC):
             to_add = [self]
         else:  # need to add both to a new empty tensor
             to_update = math.zeros(
-                (len(outmodes), len(inmodes), 2, 2)
-                if self.isMatrix
-                else (len(outmodes), 2),
+                (
+                    (len(outmodes), len(inmodes), 2, 2)
+                    if self.isMatrix
+                    else (len(outmodes), 2)
+                ),
                 dtype=self.tensor.dtype,
             )
             to_add = [self, other]

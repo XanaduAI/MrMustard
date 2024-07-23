@@ -706,7 +706,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            (poly0, poly2, poly1010, poly1001, poly1,) = (
+            (
+                poly0,
+                poly2,
+                poly1010,
+                poly1001,
+                poly1,
+            ) = (
                 self.asnumpy(val)
                 for val in jl.LeftoverModeAmps.fock_1leftoverMode_amps(
                     A, B, C.item(), tuple(cutoffs), precision_bits

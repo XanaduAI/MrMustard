@@ -54,9 +54,7 @@ def wrappers():
         return (
             [circ]
             if return_type == "list"
-            else {"circ": circ}
-            if return_type == "dict"
-            else circ
+            else {"circ": circ} if return_type == "dict" else circ
         )
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):

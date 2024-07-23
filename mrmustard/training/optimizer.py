@@ -188,7 +188,8 @@ class Optimizer:
     @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
         """Groups `trainable_params` and `grads` by type into a dict of the form
-        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}, "unitary": [...]`."""
+        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}, "unitary": [...]`.
+        """
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )
@@ -246,9 +247,11 @@ class Optimizer:
             callbacks = {}
         elif callable(callbacks):
             callbacks = {
-                callbacks.tag
-                if isinstance(callbacks, Callback)
-                else callbacks.__name__: callbacks
+                (
+                    callbacks.tag
+                    if isinstance(callbacks, Callback)
+                    else callbacks.__name__
+                ): callbacks
             }
         elif isinstance(callbacks, Sequence):
             callbacks = {

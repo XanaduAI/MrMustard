@@ -438,9 +438,9 @@ class Homodyne(Generaldyne):
             for m in other.modes
         ]
         out_fock = fock.contract_states(
-            stateA=other.ket(other_cutoffs)
-            if other.is_pure
-            else other.dm(other_cutoffs),
+            stateA=(
+                other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)
+            ),
             stateB=self.state.ket(self_cutoffs),
             a_is_dm=other.is_mixed,
             b_is_dm=False,

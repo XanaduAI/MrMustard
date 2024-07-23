@@ -467,12 +467,14 @@ class State:  # pylint: disable=too-many-public-methods
             # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
-                stateA=other.ket(other_cutoffs)
-                if other.is_pure
-                else other.dm(other_cutoffs),
-                stateB=self.ket(self_cutoffs)
-                if self.is_pure
-                else self.dm(self_cutoffs),
+                stateA=(
+                    other.ket(other_cutoffs)
+                    if other.is_pure
+                    else other.dm(other_cutoffs)
+                ),
+                stateB=(
+                    self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs)
+                ),
                 a_is_dm=other.is_mixed,
                 b_is_dm=self.is_mixed,
                 modes=other.indices(self.modes),

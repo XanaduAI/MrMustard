@@ -95,11 +95,13 @@ def test_compactFock_1leftover(precision, A_B_G0):
     # Extract amplitudes of leftover mode from vanilla MM
     ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
     for inds in np.ndindex(*cutoffs[1:]):
-        ref_leftover[
-            tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))
-        ] = G_ref[
-            tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
-        ]
+        ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = (
+            G_ref[
+                tuple(
+                    [slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds)
+                )
+            ]
+        )
     assert np.allclose(ref_leftover, G_leftover)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
