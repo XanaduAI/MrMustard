@@ -20,7 +20,7 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Union
+from typing import Any, Callable, Iterable, Union
 import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -74,6 +74,12 @@ class Representation(ABC):
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
+        """
+
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+        r"""
+        Returns a representation from a function and kwargs.
         """
 
     @property
@@ -251,7 +257,7 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self._ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
 
     @property
     def ansatz(self) -> PolyExpAnsatz:
@@ -312,6 +318,13 @@ class Bargmann(Representation):
         The scalar part of the representation.
         """
         return self.c
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
+        r"""
+        Returns a Bargmann object from a generator function.
+        """
+        return cls.from_ansatz(PolyExpAnsatz.from_function(fn, **kwargs))
 
     def conj(self):
         r"""
@@ -549,11 +562,7 @@ class Fock(Representation):
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
         self._original_bargmann_data = None
-
-        array = math.astensor(array)
-        if not batched:
-            array = array[None, ...]
-        self._ansatz = ArrayAnsatz(array=array)
+        self._ansatz = ArrayAnsatz(array=array, batched=batched)
 
     @property
     def ansatz(self) -> ArrayAnsatz:
@@ -602,6 +611,13 @@ class Fock(Representation):
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
         return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
+        r"""
+        Returns a Fock object from a generator function.
+        """
+        return cls.from_ansatz(ArrayAnsatz.from_function(fn, **kwargs))
 
     def conj(self):
         r"""
@@ -679,7 +695,8 @@ class Fock(Representation):
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
-        r"""Implements the partial trace over the given index pairs.
+        r"""
+        Implements the partial trace over the given index pairs.
 
         Args:
             idxs1: The first part of the pairs of indices to trace over.

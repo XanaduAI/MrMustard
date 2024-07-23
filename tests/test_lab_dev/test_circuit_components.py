@@ -169,7 +169,7 @@ class TestCircuitComponent:
         assert isinstance(d67.r, Variable)
         assert math.allclose(d89.r.value, d67.r.value)
         assert bool(d67.parameter_set) is True
-        assert d67._representation is None
+        assert d67._representation is d89._representation
 
     def test_on_error(self):
         with pytest.raises(ValueError):
@@ -440,6 +440,7 @@ class TestAdjointView:
         d1_adj = AdjointView(d1)
 
         assert d1_adj.name == d1.name
+        assert d1_adj.short_name == d1.short_name + "_adj"
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.representation == d1.representation.conj()
 
