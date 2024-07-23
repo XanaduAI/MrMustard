@@ -20,8 +20,14 @@ import pytest
 
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number
-from mrmustard.lab_dev.transformations import BSgate, Sgate, Dgate, Attenuator
+from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
+from mrmustard.lab_dev.transformations import (
+    BSgate,
+    Sgate,
+    Dgate,
+    Attenuator,
+)
+from mrmustard import settings
 
 
 class TestCircuit:
@@ -42,6 +48,18 @@ class TestCircuit:
         circ2 = Circuit() >> vac >> s01 >> bs01 >> bs12
         assert circ2.components == [vac, s01, bs01, bs12]
         assert circ2.path == []
+
+    def test_propagate_shapes(self):
+        MAX = settings.AUTOSHAPE_MAX
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
+        circ.propagate_shapes()
+        assert [op.auto_shape() for op in circ] == [(5,), (MAX, 5)]
+
+        circ = Circuit([SqueezedVacuum([0, 1], r=[0.5, -0.5]), BSgate([0, 1], 0.9)])
+        assert [op.auto_shape() for op in circ] == [(6, 6), (MAX, MAX, MAX, MAX)]
+        circ.propagate_shapes()
+        assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
 
     def test_make_path(self):
         vac = Vacuum([0, 1, 2])
@@ -75,14 +93,14 @@ class TestCircuit:
         exp1 += "mode 1:     ◖Vac◗\n"
         exp1 += "mode 2:     ◖Vac◗\n\n\n"
         exp1 += "→ index: 1\n"
-        exp1 += "mode 0:   ──Sgate(0.0,0.0)\n"
-        exp1 += "mode 1:   ──Sgate(0.0,0.0)\n\n\n"
+        exp1 += "mode 0:   ──S(0.0,0.0)\n"
+        exp1 += "mode 1:   ──S(0.0,0.0)\n\n\n"
         exp1 += "→ index: 2\n"
-        exp1 += "mode 0:   ──╭•──────────────\n"
-        exp1 += "mode 1:   ──╰BSgate(0.0,0.0)\n\n\n"
+        exp1 += "mode 0:   ──╭•──────────\n"
+        exp1 += "mode 1:   ──╰BS(0.0,0.0)\n\n\n"
         exp1 += "→ index: 3\n"
-        exp1 += "mode 1:   ──╭•──────────────\n"
-        exp1 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
+        exp1 += "mode 1:   ──╭•──────────\n"
+        exp1 += "mode 2:   ──╰BS(0.0,0.0)\n\n\n\n"
         assert out1 == exp1
 
         circ.path += [(0, 1)]
@@ -90,15 +108,15 @@ class TestCircuit:
         out2, _ = capfd.readouterr()
         exp2 = "\n"
         exp2 += "→ index: 0\n"
-        exp2 += "mode 0:     ◖Vac◗──Sgate(0.0,0.0)\n"
-        exp2 += "mode 1:     ◖Vac◗──Sgate(0.0,0.0)\n"
-        exp2 += "mode 2:     ◖Vac◗────────────────\n\n\n"
+        exp2 += "mode 0:     ◖Vac◗──S(0.0,0.0)\n"
+        exp2 += "mode 1:     ◖Vac◗──S(0.0,0.0)\n"
+        exp2 += "mode 2:     ◖Vac◗────────────\n\n\n"
         exp2 += "→ index: 2\n"
-        exp2 += "mode 0:   ──╭•──────────────\n"
-        exp2 += "mode 1:   ──╰BSgate(0.0,0.0)\n\n\n"
+        exp2 += "mode 0:   ──╭•──────────\n"
+        exp2 += "mode 1:   ──╰BS(0.0,0.0)\n\n\n"
         exp2 += "→ index: 3\n"
-        exp2 += "mode 1:   ──╭•──────────────\n"
-        exp2 += "mode 2:   ──╰BSgate(0.0,0.0)\n\n\n\n"
+        exp2 += "mode 1:   ──╭•──────────\n"
+        exp2 += "mode 2:   ──╰BS(0.0,0.0)\n\n\n\n"
         assert out2 == exp2
 
     @pytest.mark.parametrize("path", [[(0, 1), (2, 3)], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
@@ -226,34 +244,35 @@ class TestCircuit:
 
         circ2 = Circuit([vac012, s01, bs01, bs12, cc, n12.dual])
         r2 = ""
-        r2 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
-        r2 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
-        r2 += "\nmode 2:     ◖Vac◗────────────────────────────────────╰BSgate(0.0,0.0)─────────────"
+        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)="
+        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)="
+        r2 += "\nmode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)──────────"
         assert repr(circ2) == r2 + "\n\n"
 
         circ3 = Circuit([bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01])
         r3 = ""
-        r3 += "\nmode 0:   ──╭•────────────────╭•────────────────╭•────────────────╭•────────────── ---"
-        r3 += "\nmode 1:   ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0) ---"
+        r3 += "\nmode 0:   ──╭•────────────╭•────────────╭•────────────╭•────────────╭•────────────╭•────────── ---"
+        r3 += "\nmode 1:   ──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0) ---"
         r3 += "\n\n"
-        r3 += "\nmode 0:   --- ──╭•────────────────╭•────────────────╭•────────────────╭•────────────── ---"
-        r3 += "\nmode 1:   --- ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0) ---"
-        r3 += "\n\n"
-        r3 += "\nmode 0:   --- ──╭•────────────────╭•────────────────╭•──────────────"
-        r3 += "\nmode 1:   --- ──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)──╰BSgate(0.0,0.0)"
+        r3 += (
+            "\nmode 0:   --- ──╭•────────────╭•────────────╭•────────────╭•────────────╭•──────────"
+        )
+        r3 += (
+            "\nmode 1:   --- ──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)"
+        )
         assert repr(circ3) == r3 + "\n\n"
 
         circ4 = Circuit([vac01, s01, vac2, bs01, bs12, n2.dual, cc, n12.dual])
         r4 = ""
-        r4 += "\nmode 0:     ◖Vac◗──Sgate(0.0,2.0)──╭•──────────────────────────────────my_cc──|N)="
-        r4 += "\nmode 1:     ◖Vac◗──Sgate(1.0,3.0)──╰BSgate(0.0,0.0)──╭•────────────────my_cc──|N)="
-        r4 += "\nmode 2:            ◖Vac◗─────────────────────────────╰BSgate(0.0,0.0)──|N)=       "
+        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC────|3)="
+        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC────|3)="
+        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=      "
         assert repr(circ4) == r4 + "\n\n"
 
         circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual
         r5 = ""
-        r5 += "\nmode 0:          ──╭•───────────────────────────────╭•──────────────────────"
-        r5 += "\nmode 1:     ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)=  ◖Vac◗──╰BSgate(0.0,0.0)──|Vac)="
+        r5 += "\nmode 0:          ──╭•───────────────────────────╭•──────────────────"
+        r5 += "\nmode 1:     ◖Vac◗──╰BS(0.0,0.0)──|Vac)=  ◖Vac◗──╰BS(0.0,0.0)──|Vac)="
         assert repr(circ5) == r5 + "\n\n"
 
     def test_repr_issue_334(self):
@@ -262,7 +281,7 @@ class TestCircuit:
         """
         circ1 = Circuit([Sgate([0, 1], [1.0, -1.0], [2.0, -2.0])])
         r1 = ""
-        r1 += "\nmode 0:   ──Sgate(1.0,2.0)──"
-        r1 += "\nmode 1:   ──Sgate(-1.0,-2.0)"
+        r1 += "\nmode 0:   ──S(1.0,2.0)──"
+        r1 += "\nmode 1:   ──S(-1.0,-2.0)"
         r1 += "\n\n"
         assert repr(circ1) == r1

@@ -1297,7 +1297,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             if self.backend_name == "numpy":
                 return func(*args, **kwargs)
             else:
-                from tensorflow import custom_gradient  # pylint: disable=import-outside-toplevel
+                from tensorflow import (  # pylint: disable=import-outside-toplevel
+                    custom_gradient,
+                )
 
                 return custom_gradient(func)(*args, **kwargs)
 

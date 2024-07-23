@@ -76,16 +76,12 @@ class TestTraceOut:
         assert (cc >> TraceOut([0])).dtype == math.complex128
 
     def test_trace_out_fock_states(self):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 10
-
-        state = Coherent([0, 1, 2], x=1).to_fock()
-        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock().dm()
-        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock().dm()
+        state = Coherent([0, 1, 2], x=1).to_fock(10)
+        assert state >> TraceOut([0]) == Coherent([1, 2], x=1).to_fock(7).dm()
+        assert state >> TraceOut([1, 2]) == Coherent([0], x=1).to_fock(7).dm()
 
         no_state = state >> TraceOut([0, 1, 2])
         assert np.isclose(no_state, 1.0)
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
 
 class TestBtoPS:
