@@ -99,11 +99,11 @@ class TestUnitary:
         assert np.allclose(gate.representation.A[None, ...], A)
         assert np.allclose(gate.representation.b[None, ...], b)
 
-    def test_init_from_symplectic(self):
-        S = math.random_symplectic(2)
-        u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
-        assert u >> u.dual == Identity([0, 1])
-        assert u.dual >> u == Identity([0, 1])
+    # def test_init_from_symplectic(self):
+    #     S = math.random_symplectic(2)
+    #     u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
+    #     assert u >> u.dual == Identity([0, 1])
+    #     assert u.dual >> u == Identity([0, 1])
 
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
@@ -114,12 +114,12 @@ class TestUnitary:
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
     @pytest.mark.parametrize("n", [1, 2, 3])
-    def test_from_symplectic_directly(self, n):
+    def test_from_symplectic(self, n):
         S = math.random_symplectic(n)
-        u = Unitary.from_symplectic_directly(range(n), S)
+        u = Unitary.from_symplectic(range(n), S)
         assert u >> u.dual == Identity(range(n))
 
-    def test_Au2Symplectic(self):
+    def test_au2Symplectic(self):
         A = np.array([[[0, 1], [1, 0]]])
         b = np.array([[0, 0]])
         c = np.array([1])

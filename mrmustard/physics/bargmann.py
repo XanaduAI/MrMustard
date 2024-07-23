@@ -105,7 +105,7 @@ def wigner_to_bargmann_U(X, d):
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
 
 
-def Au2Symplectic(A):
+def au2Symplectic(A):
     r"""
     helper for finding the Au of a unitary from its symplectic rep.
     Au : in bra-ket order
@@ -141,9 +141,9 @@ def Au2Symplectic(A):
     return math.real(Transformation @ S @ math.conj(math.transpose(Transformation)))
 
 
-def Symplectic2Au(S):
+def symplectic2Au(S):
     r"""
-    The inverse of Au2Symplectic i.e., returns symplectic, given Au
+    The inverse of au2Symplectic i.e., returns symplectic, given Au
 
     S: symplectic in XXPP order
     """

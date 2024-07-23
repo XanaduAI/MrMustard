@@ -797,22 +797,6 @@ class DM(State):
             representation, wires, self.name
         )  # pylint: disable=protected-access
 
-    # @classmethod
-    # def random(cls, modes, max_r=1.0):
-    #     r"""
-    #     Samples a random density matrix. The final state has zero displacement.
-
-    #     modes: the modes where the state is defined over
-    #     """
-    #     m = len(modes)
-    #     max_idx = max(modes)
-
-    #     ancilla = list(range(max_idx + 1, max_idx + m + 1))
-    #     full_wires = modes + ancilla
-
-    #     psi = Ket.random(full_wires, max_r)
-    #     return psi[modes]
-
 
 class Ket(State):
     r"""
