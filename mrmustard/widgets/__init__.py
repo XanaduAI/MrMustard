@@ -38,38 +38,20 @@ def _batch_widget(obj, batch_size, widget_fn, *widget_args):
 
 def fock_1d(array):
     """Return a plot widget for a 2D Fock representation."""
+    layout = {"margin": NO_MARGIN, "height": 200, "width": 430}
     mag_plot = go.Scatter(y=abs(array))
     phase_plot = go.Scatter(y=np.angle(array))
-    plots = [
-        go.FigureWidget(p, layout={"margin": NO_MARGIN, "height": 200, "width": 430})
-        for p in [mag_plot, phase_plot]
-    ]
+    plots = [go.FigureWidget(p, layout=layout) for p in [mag_plot, phase_plot]]
     return widgets.Tab(plots, titles=["Magnitude", "Phase"])
 
 
 def fock_2d(array):
     """Return a plot widget for a 1D Fock representation."""
-    z = abs(array)
-    text = [
-        [f"x: {x}<br />y: {y}<br />abs(arr[x, y]): {z_}" for x, z_ in enumerate(row)]
-        for y, row in enumerate(z)
-    ]
-    layout = {
-        "height": 200,
-        "width": 430,
-        "margin": NO_MARGIN,
-        "yaxis": {"autorange": "reversed"},
-    }
-    return go.FigureWidget(
-        data=go.Heatmap(
-            z=z,
-            colorscale="viridis",
-            showscale=False,
-            hoverinfo="text",
-            text=text,
-        ),
-        layout=layout,
-    )
+    layout = {"height": 200, "width": 430, "margin": NO_MARGIN, "yaxis": {"autorange": "reversed"}}
+    mag_plot = go.Heatmap(z=abs(array), colorscale="viridis", showscale=False)
+    phase_plot = go.Heatmap(z=np.angle(array), colorscale="agsunset", showscale=False)
+    plots = [go.FigureWidget(data=p, layout=layout) for p in [mag_plot, phase_plot]]
+    return widgets.Tab(plots, titles=["Magnitude", "Phase"])
 
 
 def fock(rep):
