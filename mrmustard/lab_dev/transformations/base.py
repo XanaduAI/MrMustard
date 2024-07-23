@@ -283,18 +283,3 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
-
-    # def random(cls, wires, max_r=1.0):
-    #     r"""
-    #     A random channel without displacement
-    #     """
-    #     m = len(wires)
-    #     S = math.random_symplectic(m, max_r)
-    #     modes = wires # replace everywhere
-    #     U = Unitary.random(modes = range(3*m))
-    #     vacuum_ancilla = Vacuum(range(2*m))
-    #     u_psi= vacuum_ancilla >> U
-    #     A = u_psi.representation # change name
-    #     B = u_psi.adjoint.representation
-    #     C = B[range(2*m)]@A[range(2*m)] # voila
-    #     return Channel.from_arguments(C, Wires(modes,modes,modes,modes))
