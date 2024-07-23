@@ -167,6 +167,7 @@ class Wires:
             modes_out_ket or set(),
             modes_in_ket or set(),
         )
+        self._len = None
 
         # The "parent" wires object, if any. This is ``None`` for freshly initialized
         # wires objects, and ``not None`` for subsets.
@@ -174,10 +175,6 @@ class Wires:
 
         # Adds elements to the cache when calling ``__getitem__``
         self._mode_cache = {}
-
-    def __len__(self) -> int:
-        r"The number of wires."
-        return sum(len(s) for s in self.args)
 
     @cached_property
     def id(self) -> int:
@@ -338,11 +335,9 @@ class Wires:
 
     def __len__(self) -> int:
         r"""The number of wires."""
-        try:
-            return self._len
-        except AttributeError:
+        if self._len is None:
             self._len = sum(map(len, self.args))
-            return self._len
+        return self._len
 
     def __eq__(self, other) -> bool:
         return self.args == other.args

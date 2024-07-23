@@ -453,7 +453,7 @@ class CircuitComponent:
         fock._original_bargmann_data = self.representation.data
         return self._from_attributes(fock, self.wires, self.name)
 
-    def auto_shape(self, **kwargs) -> tuple[int, ...]:
+    def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
@@ -697,6 +697,7 @@ class CCView(CircuitComponent):
 
     @property
     def short_name(self):
+        """A shortened version of the component name."""
         return self._component.short_name
 
     def __init__(self, component: CircuitComponent) -> None:
