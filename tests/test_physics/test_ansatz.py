@@ -476,6 +476,14 @@ class TestDiffOpPolyExpAnsatz:
         ):
             ansatz(z)
 
+        A = np.array([[0, 1], [1, 0]])
+        b = np.zeros(2)
+        c = c = np.zeros(10, dtype=complex).reshape(1, -1)
+        c[0, -1] = 1
+        obj1 = DiffOpPolyExpAnsatz(A, b, c)
+        nine_factorial = np.prod(np.arange(1, 9))
+        assert np.allclose(obj1(np.array([[0.1]])), 0.1**9 / np.sqrt(nine_factorial))
+
     def test_and(self):
         A1, b1, _ = Abc_triple(6)
         c1 = np.random.random(size=(1, 4, 4))
