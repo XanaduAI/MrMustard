@@ -29,8 +29,9 @@ from IPython.display import display, HTML
 from mako.template import Template
 
 from mrmustard import settings, math
-from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.utils.typing import Scalar, ComplexTensor, Batch, Vector
 from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.physics.fock import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
@@ -246,9 +247,9 @@ class CircuitComponent:
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(BBBB.representation, wires, name)
 
-    def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
+    def quadrature_triple(self, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
-        The quadrature representation data of this circuit component.
+        The quadrature representation triple of this circuit component.
         """
         if isinstance(self.representation, Fock):
             raise NotImplementedError("Not implemented with Fock representation.")
@@ -261,6 +262,30 @@ class CircuitComponent:
         BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
         QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
         return QQQQ.representation.data
+
+    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature basis representation of the circuit component.
+        """
+        if len(self.wires) > 2:
+            raise NotImplementedError("Not implemented for objects with more than 2 wires.")
+
+        if isinstance(self.representation, Fock):
+            fock_arrays = self.representation.array
+            quad_basis = math.sum(
+                [quadrature_basis(array, quad, phi) for array in fock_arrays], axes=[0]
+            )
+            return quad_basis
+
+        elif isinstance(self.representation, Bargmann):
+            from mrmustard.lab_dev.circuit_components_utils import BtoQ
+
+            BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+            BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+            BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+            BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+            QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+            return QQQQ.representation.ansatz(quad)
 
     @property
     def representation(self) -> Representation | None:
