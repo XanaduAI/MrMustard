@@ -33,7 +33,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector, Batch
 
 SQRT = np.sqrt(np.arange(1e6))
 
@@ -816,6 +816,63 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
+def quadrature_basis(
+    fock_array: Tensor,
+    quad: Batch[Vector],
+    quadrature_angle: float = 0.0,
+):
+    r"""Given the Fock basis representation of a 1D or 2D fock basis array, it generates the
+    quadrature basis representation.
+
+    Args:
+        fock_array (Tensor): 1D or 2D fock_array
+        quad (Batch[Vector]): points at which the quadrature basis is evaluated
+        quadrature_angle (float): angle of the quadrature basis vector
+
+    Returns:
+        tuple(Tensor): quadrature basis representation at the points in quad
+    """
+    dims = len(fock_array.shape)
+    if dims > 2:
+        raise ValueError(
+            "Input fock array has dimension {fock_array.shape}. Make sure is either a 1D or 2D object."
+        )
+
+    if quad.shape[-1] != dims:
+        raise ValueError(
+            "Input fock array has dimension {fock_array.shape}. Make sure quad has the same dimension."
+        )
+
+    is_2d = dims == 2
+    cutoff = fock_array.shape[0]
+
+    if not np.isclose(quadrature_angle, 0.0):
+        # rotate mode to the homodyne basis
+        theta = -math.arange(cutoff) * quadrature_angle
+        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+        fock_array = (
+            math.einsum("ij,jk,kl->il", Ur, fock_array, math.dagger(Ur))
+            if is_2d
+            else math.matvec(Ur, fock_array)
+        )
+
+    fock_quad_reps = (
+        math.conj(math.cast(oscillator_eigenstate(quad[..., 0], cutoff), "complex128"))
+        if not is_2d
+        else [
+            math.conj(math.cast(oscillator_eigenstate(quad[..., 0], cutoff), "complex128")),
+            math.cast(oscillator_eigenstate(quad[..., 1], cutoff), "complex128"),
+        ]
+    )
+    quad_basis = (
+        math.einsum("nm,nj,mj->j", fock_array, fock_quad_reps[0], fock_quad_reps[1])
+        if is_2d
+        else math.einsum("n,nj->j", fock_array, fock_quad_reps)
+    )
+
+    return quad_basis
+
+
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
@@ -834,34 +891,16 @@ def quadrature_distribution(
     Returns:
         tuple(Vector, Vector): coordinates at which the pdf is evaluated and the probability distribution
     """
-    dims = len(state.shape)
-    if dims > 2:
-        raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
-        )
-
-    is_dm = dims == 2
     cutoff = state.shape[0]
-
-    if not np.isclose(quadrature_angle, 0.0):
-        # rotate mode to the homodyne basis
-        theta = -math.arange(cutoff) * quadrature_angle
-        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
-        state = (
-            math.einsum("ij,jk,kl->il", Ur, state, math.dagger(Ur))
-            if is_dm
-            else math.matvec(Ur, state)
-        )
-
     if x is None:
         x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
-    psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
-    pdf = (
-        math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
-        if is_dm
-        else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
-    )
+    dims = len(state.shape)
+    is_dm = dims == 2
+
+    quad = math.transpose(math.astensor([x] * dims))
+    quad_basis = quadrature_basis(state, quad, quadrature_angle)
+    pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
     return x, math.real(pdf)
 
