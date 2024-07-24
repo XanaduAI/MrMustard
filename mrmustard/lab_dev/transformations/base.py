@@ -226,7 +226,6 @@ class Unitary(Operation):
         _, _, c_prime = v.bargmann
         c = 1 / math.sqrt(c_prime[0])
         return Unitary.from_bargmann(modes, modes, [A, b, c])
-    
 
     @classmethod
     def random(cls, modes, max_r=1):
@@ -294,7 +293,6 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
-
 
     @classmethod
     def random(cls, modes, max_r=1.0):

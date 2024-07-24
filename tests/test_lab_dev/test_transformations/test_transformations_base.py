@@ -112,9 +112,9 @@ class TestUnitary:
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
     def test_random(self):
-        modes = [3,1,20]
+        modes = [3, 1, 20]
         u = Unitary.random(modes)
-        assert (u>>u.dual) == Identity(modes)
+        assert (u >> u.dual) == Identity(modes)
 
 
 class TestChannel:
@@ -176,5 +176,6 @@ class TestChannel:
 
     def test_random(self):
         from mrmustard.lab_dev.states import Vacuum
-        modes = [2,6,1]
-        assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability ,1)
+
+        modes = [2, 6, 1]
+        assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)

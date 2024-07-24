@@ -826,9 +826,9 @@ class DM(State):
         return self.__class__._from_attributes(
             representation, wires, self.name
         )  # pylint: disable=protected-access
-    
+
     @classmethod
-    def random(cls, modes, max_r = 1.0):
+    def random(cls, modes, max_r=1.0):
         r"""
         Samples a random density matrix. The final state has zero displacement.
         modes: the modes where the state is defined over
@@ -1056,10 +1056,9 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 result = DM(result.wires.modes, result.representation)
         return result
-    
 
     @classmethod
-    def random(cls, modes, max_r = 1.0):
+    def random(cls, modes, max_r=1.0):
         r"""
         generates random states with 0 displacement, using the random_symplectic funcionality
         Args: "modes" are the modes where the state is defined on
@@ -1071,21 +1070,24 @@ class Ket(State):
         # generate a random ket repr.
         # e.g. S = math.random_symplectic(dim) and then apply to vacuum
         m = len(modes)
-        S = math.random_symplectic(m, max_r) # change to a,a^dagger
+        S = math.random_symplectic(m, max_r)  # change to a,a^dagger
         Transformation = (
-        1
-        / np.sqrt(2)
-        * math.block(
-            [
-                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
-                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
-            ]
+            1
+            / np.sqrt(2)
+            * math.block(
+                [
+                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        -1j * math.eye(m, dtype=math.complex128),
+                        1j * math.eye(m, dtype=math.complex128),
+                    ],
+                ]
             )
         )
         S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
-        A = S_2 @ math.conj(math.inv(S_1)) # use solve for inverse
+        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
         b = [complex(0)] * m
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
