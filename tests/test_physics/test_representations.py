@@ -327,8 +327,14 @@ class TestFockRepresentation:
         array1 = math.astensor(np.arange(27).reshape((3, 3, 3)))
         fock1 = Fock(array1)
 
-        with pytest.raises(ValueError, match="Expected ``shape``"):
+        with pytest.raises(ValueError, match="Expected shape"):
             fock1.reduce((1, 2))
 
-        with pytest.raises(ValueError, match="Expected ``shape``"):
+        with pytest.raises(ValueError, match="Expected shape"):
             fock1.reduce((1, 2, 3, 4, 5))
+
+    def test_reduce_padded(self):
+        fock = Fock(self.array578)
+        with pytest.warns(UserWarning):
+            fock1 = fock.reduce((8, 8, 8))
+        assert fock1.array.shape == (1, 8, 8, 8)

@@ -19,7 +19,15 @@ from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
 
-__all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
+__all__ = [
+    "vanilla",
+    "vanilla_batch",
+    "vanilla_jacobian",
+    "vanilla_vjp",
+    "autoshape_numba",
+]
+
+SQRT = np.sqrt(np.arange(1000))
 
 SQRT = np.sqrt(np.arange(1000))
 
@@ -193,9 +201,7 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
 
 
 @njit
-def autoshape_numba(
-    A, b, c, max_prob=0.999, max_shape=100
-) -> int:  # pragma: no covera(A, b, c, max_prob=0.999, max_shape=100) -> int:
+def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
     This is an adaptation of Robbe's diagonal strategy, with early stopping.
@@ -208,11 +214,13 @@ def autoshape_numba(
         max_prob (float): the probability value to stop at (default 0.999)
         max_shape (int): max value before stopping (default 100)
 
-    Details:
+    **Details:**
 
     Here's how it works. First we get the reduced density matrix at the given mode. Then we
     maintain two buffers that contain values around the diagonal: buf3 and buf2, of size 2x3
     and 2x2 respectively. The buffers contain the following elements of the density matrix:
+
+    .. code-block::
 
                      ┌────┐                           ┌────┐
                      │buf3│                           │buf2│
@@ -234,6 +242,8 @@ def autoshape_numba(
     By using indices mod 2, the data needed at each iteration is in the columns not being updated.
 
     The updates roughly look like this:
+
+    .. code-block::
 
                     ┌───────┐                     ┌───────┐
                     │k even │                     │ k odd │
@@ -273,15 +283,19 @@ def autoshape_numba(
     zero = np.zeros((M - 1, M - 1), dtype=np.complex128)
     id = np.eye(M - 1, dtype=np.complex128)
     X = np.vstack((np.hstack((zero, id)), np.hstack((id, zero))))
-    for t, m in enumerate(range(M)):
+    for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
-        A_mm = A[idx_m, :][:, idx_m].reshape((2, 2))
-        A_nn = A[idx_n, :][:, idx_n].reshape((2 * M - 2, 2 * M - 2))
-        A_mn = A[idx_m, :][:, idx_n].reshape((2, 2 * M - 2))
+        A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
+        A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2 * M - 2, 2 * M - 2)
+        )
+        A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2, 2 * M - 2)
+        )
         A_nm = np.transpose(A_mn)
-        b_m = b[idx_m].reshape((2,))
-        b_n = b[idx_n].reshape((2 * M - 2,))
+        b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))
+        b_n = np.ascontiguousarray(b[idx_n].transpose()).reshape((2 * M - 2,))
         # single-mode A,b,c
         A_ = A_mm - A_mn @ np.linalg.inv(A_nn - X) @ A_nm
         b_ = b_m - A_mn @ np.linalg.inv(A_nn - X) @ b_n
@@ -315,5 +329,5 @@ def autoshape_numba(
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-        shape[t] = k
+        shape[m] = k
     return shape

@@ -58,7 +58,7 @@ class TestCircuitComponent:
         assert list(cc.modes) == [1, 8]
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.representation == representation
-        assert cc._fock_shape == [None] * 4
+        assert cc.manual_shape == [None] * 4
 
     def test_missing_name(self):
         cc = CircuitComponent(
@@ -358,10 +358,10 @@ class TestCircuitComponent:
         # bargmann >> fock >> bargmann
         r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n12
 
-        assert math.allclose(r1, r2)
-        assert math.allclose(r1, r3)
+        assert np.allclose(r1, r2)
+        assert np.allclose(r1, r3)
 
-        settings.AUTOSHAPE_MAX = autocutoff_max0
+        settings.AUTOSHAPE_MAX = 50
 
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
@@ -391,8 +391,8 @@ class TestCircuitComponent:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
-        assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012, repr=NoneType)"
-        assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component, repr=NoneType)"
+        assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
+        assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
@@ -402,8 +402,8 @@ class TestCircuitComponent:
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
-        coh = Coherent([0], x=1.0).to_fock(20)
-        CC = CircuitComponent._from_attributes(coh.representation, coh.wires, "CC")
+        coh = Coherent([0], x=1.0)
+        CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
             CC.bargmann  # pylint: disable=pointless-statement
 
@@ -440,7 +440,6 @@ class TestAdjointView:
         d1_adj = AdjointView(d1)
 
         assert d1_adj.name == d1.name
-        assert d1_adj.short_name == d1.short_name + "_adj"
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.representation == d1.representation.conj()
 
@@ -452,11 +451,8 @@ class TestAdjointView:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
 
-        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012, repr=NoneType)"
-        assert (
-            repr(c2.adjoint)
-            == "CircuitComponent(modes=[0, 1, 2], name=my_component, repr=NoneType)"
-        )
+        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
+        assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
 
     def test_parameters_point_to_original_parameters(self):
         r"""
@@ -496,10 +492,8 @@ class TestDualView:
         c1 = CircuitComponent(modes_out_ket=(0, 1, 3))
         c2 = CircuitComponent(modes_out_ket=(0, 1, 3), name="my_component")
 
-        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013, repr=NoneType)"
-        assert (
-            repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component, repr=NoneType)"
-        )
+        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013)"
+        assert repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component)"
 
     def test_parameters_point_to_original_parameters(self):
         r"""

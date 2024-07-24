@@ -59,16 +59,16 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_ket=set(modes))
 
-    def test_fock_shape(self):
+    def test_manual_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.fock_shape == [None, None]
-        ket.fock_shape[0] = 19
-        assert ket.fock_shape == [19, None]
+        assert ket.manual_shape == [None, None]
+        ket.manual_shape[0] = 19
+        assert ket.manual_shape == [19, None]
 
     def test_auto_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
         assert ket.auto_shape() == (5, 11)
-        ket.fock_shape[0] = 19
+        ket.manual_shape[0] = 19
         assert ket.auto_shape() == (19, 11)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -115,17 +115,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5)
+        array_in = state_in.fock(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
-
-    def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).to_fock(5)
-        with pytest.raises(ValueError):
-            Ket.from_fock([0], state01.fock(5), "my_ket", True)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
@@ -136,9 +131,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(
-            modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0)
-        )
+        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
         assert state1 == Vacuum(modes)
 
         r = [i / 10 for i in range(n_modes)]
@@ -235,6 +228,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_expectation_fock(self):
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+
         assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
 
         k0 = Coherent([0], x=1, y=2).to_fock(10)
@@ -338,9 +332,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(
-            m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6)
-        )
+        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
 
         assert isinstance(si.x, Constant)
         assert math.allclose(si.x.value, x[idx])
@@ -392,16 +384,16 @@ class TestDM:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
-    def test_fock_shape(self):
+    def test_manual_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.fock_shape == [None, None, None, None]
-        dm.fock_shape[0] = 19
-        assert dm.fock_shape == [19, None, None, None]
+        assert dm.manual_shape == [None, None, None, None]
+        dm.manual_shape[0] = 19
+        assert dm.manual_shape == [19, None, None, None]
 
     def test_auto_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
         assert dm.auto_shape() == (5, 11, 5, 11)
-        dm.fock_shape[0] = 1
+        dm.manual_shape[0] = 1
         assert dm.auto_shape() == (1, 11, 5, 11)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -450,7 +442,7 @@ class TestDM:
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5)
+        array_in = state_in.fock(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.representation.array)
 

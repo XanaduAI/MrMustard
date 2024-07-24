@@ -18,7 +18,7 @@ This module contains the classes for the available representations.
 """
 
 from __future__ import annotations
-
+from warnings import warn
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
 import os
@@ -70,6 +70,7 @@ class Representation(ABC):
         Reorders the representation indices.
         """
 
+    @classmethod
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
@@ -350,8 +351,8 @@ class Bargmann(Representation):
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
         A, b, c = [], [], []
-        for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+        for Abc in zip(self.A, self.b, self.c):
+            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -466,18 +467,26 @@ class Bargmann(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
+    def __matmul__(self, other: Bargmann) -> Bargmann:
         r"""
-        The inner product of ansatze across the marked indices.
+        Implements the inner product in Bargmann representation.
 
-        If ``other`` is ``Fock``, then ``self`` is converted to ``Fock`` before the contraction.
+        ..code-block::
 
-        Args:
-            other: Another representation.
+        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+        >>> rep1 = Bargmann(*vacuum_state_Abc(1))
+        >>> rep2 = Bargmann(*displacement_gate_Abc(1))
+        >>> rep3 = rep1[0] @ rep2[1]
+        >>> assert np.allclose(rep3.A, [[0,],])
+        >>> assert np.allclose(rep3.b, [1,])
 
-        Returns:
-            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
-            if ``other`` is ``Fock``.
+         Args:
+             other: Another Bargmann representation.
+
+         Returns:
+            Bargmann: the resulting Bargmann representation.
+
         """
         if isinstance(other, Fock):
             raise NotImplementedError("Only matmul Bargmann with Bargmann")
@@ -593,7 +602,7 @@ class Fock(Representation):
         return self.array
 
     @property
-    def bargmann(self) -> tuple:
+    def triple(self) -> tuple:
         r"""
         The data of the original Bargmann representation if it exists
         """
@@ -641,10 +650,11 @@ class Fock(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
+    def __matmul__(self, other: Fock) -> Fock:
         r"""
         Implements the inner product of fock arrays over the marked indices.
-        ..code-block::
+
+        .. code-block::
             >>> from mrmustard.physics.representations import Fock
             >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
             >>> g = Fock(np.random.random((2, 5, 8)))
@@ -654,9 +664,6 @@ class Fock(Representation):
             >>> g = Fock(np.random.random((2, 5, 8)), batched=True)
             >>> h = f[0,1] @ g[0,1]
             >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
-
-        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction
-        using auto_shape where possible, or settings.AUTOSHAPE_MAX where not.
 
         Args:
             other: Another representation.
@@ -762,9 +769,19 @@ class Fock(Representation):
         length = len(self.array.shape) - 1
         shape = (shape,) * length if isinstance(shape, int) else shape
         if len(shape) != length:
-            msg = f"Expected ``shape`` of length {length}, "
-            msg += f"found shape of length {len(shape)}."
+            msg = f"Expected shape of length {length}, "
+            msg += f"given shape has length {len(shape)}."
             raise ValueError(msg)
+
+        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+            warn(
+                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
+            )
+            padded = math.pad(
+                self.array,
+                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+            )
+            return self.from_ansatz(ArrayAnsatz(padded))
 
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)

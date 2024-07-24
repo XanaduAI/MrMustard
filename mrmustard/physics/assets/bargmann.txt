@@ -112,32 +112,32 @@ import plotly.graph_objects as go
                 showticklabels=False,
             )
         )
-        
+
         fig_A = go.Figure(
             data=go.Heatmap(
-                z=abs(A), 
-                colorscale="viridis", 
+                z=abs(A),
+                colorscale="viridis",
                 showscale=False,
-            ), 
+            ),
             layout=layout_A
         )
-        
+
         fig_b = go.Figure(
             data=go.Heatmap(
-                z=abs(b), 
-                colorscale="viridis", 
+                z=abs(b),
+                colorscale="viridis",
                 showscale=False,
                 xgap=1,
-            ), 
+            ),
             layout=layout_b,
         )
-        
+
         fig_c = go.Figure(
             data=go.Heatmap(
-                z=[abs(c)], 
-                colorscale="viridis", 
+                z=[abs(c)],
+                colorscale="viridis",
                 showscale=False,
-            ), 
+            ),
             layout=layout_c
         )
 %>

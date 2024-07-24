@@ -14,6 +14,7 @@
 """
 This module contains logic for the text-based circuit drawer for MrMustard
 """
+
 from collections import defaultdict
 
 __all__ = [

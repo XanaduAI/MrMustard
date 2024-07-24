@@ -83,7 +83,7 @@ class BSgate(Unitary):
                     e^{i\phi}\text{sin}(\theta) & \text{cos}(\theta)
                 \end{bmatrix} \\
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
@@ -110,9 +110,7 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
-        self._add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds)
-        )
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         self._representation = Bargmann.from_function(
@@ -151,10 +149,10 @@ class Dgate(Unitary):
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
         displacement gate is defined by
 
-        .. math:: 
+        .. math::
             S = I_N \text{ and } r = \sqrt{2\hbar}\big[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})\big].
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -224,9 +222,7 @@ class Rgate(Unitary):
         (phis,) = list(reshape_params(len(modes), phi=phi))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.rotation_gate_Abc, theta=self.phi
-        )
+        self._representation = Bargmann.from_function(fn=triples.rotation_gate_Abc, theta=self.phi)
 
 
 class Sgate(Unitary):
@@ -268,7 +264,7 @@ class Sgate(Unitary):
             d = O_{2N},
 
         where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -326,9 +322,7 @@ class Identity(Unitary):
         modes: Sequence[int],
     ):
         rep = Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes))
-        super().__init__(
-            modes_out=modes, modes_in=modes, representation=rep, name="Identity"
-        )
+        super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")
 
 
 class S2gate(Unitary):
@@ -360,14 +354,14 @@ class S2gate(Unitary):
 
     .. details::
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
                     O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
                     e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
                     \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
-                    O & \sech(r) & e^{i\phi}\tanh(r) & 0     
+                    O & \sech(r) & e^{i\phi}\tanh(r) & 0
                 \end{bmatrix} \text{, }
             b = O_{4} \text{, and }
             c = \sech(r)
@@ -407,7 +401,7 @@ class Amplifier(Channel):
         >>> from mrmustard.lab_dev import Amplifier, Coherent
 
         >>> amp = Amplifier([0], gain=4)
-        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
+        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
         >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
 
@@ -429,7 +423,7 @@ class Amplifier(Channel):
         where :math:`/bar{g}` is the gain and
         :math:`\text{diag}_N(\bar{g})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{g}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -460,9 +454,7 @@ class Amplifier(Channel):
                 None,
             )
         )
-        self._representation = Bargmann.from_function(
-            fn=triples.amplifier_Abc, g=self.gain
-        )
+        self._representation = Bargmann.from_function(fn=triples.amplifier_Abc, g=self.gain)
 
 
 class Attenuator(Channel):
@@ -495,10 +487,10 @@ class Attenuator(Channel):
             Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
             d = O_{4N}\:,
 
-        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
+        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and
         :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}

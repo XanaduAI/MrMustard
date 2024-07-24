@@ -11,7 +11,7 @@ function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, ar
 
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
-    
+
     G_in = zeros(Complex{T}, 2 * M)
 
     ########## READ ##########
@@ -93,9 +93,9 @@ function use_diag_pivot!(A, B, M, cutoffs, params, arr0, arr1, T, SQRT)
 end
 
 function fock_diagonal_amps(
-    A::AbstractMatrix{Complex{Float64}}, 
-    B::AbstractVector{Complex{Float64}}, 
-    G0::Complex{Float64}, 
+    A::AbstractMatrix{Complex{Float64}},
+    B::AbstractVector{Complex{Float64}},
+    G0::Complex{Float64},
     cutoffs::Tuple,
     precision_bits::Int64
     )
@@ -113,7 +113,7 @@ function fock_diagonal_amps(
         arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
         arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
     """
-    
+
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]
 

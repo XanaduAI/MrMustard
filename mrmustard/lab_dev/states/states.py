@@ -174,7 +174,7 @@ class Number(Ket):
         >>> from mrmustard.lab_dev import Number
 
         >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert state.modes == [0, 1]
+        >>> assert state.representation.__class__.__name__ == "Fock"
 
     Args:
         modes: The modes of the number state.
@@ -197,22 +197,16 @@ class Number(Ket):
 
     """
 
-    short_name = "N"
-
     def __init__(
         self,
         modes: Sequence[int],
         n: Union[int, Sequence[int]],
         cutoffs: Optional[Union[int, Sequence[int]]] = None,
     ) -> None:
-        super().__init__(modes=modes, name=f"{n}")
-
         if isinstance(n, int):
             n = (n,) * len(modes)
-        if len(n) != len(modes):
-            raise ValueError(
-                f"The number of modes is {len(modes)}, but{n} has length {len(n)}."
-            )
+        elif len(n) != len(modes):
+            raise ValueError(f"The number of modes is {len(modes)}, but {n} has length {len(n)}.")
         if isinstance(cutoffs, int):
             cutoffs = (cutoffs,) * len(modes)
         if cutoffs is not None and len(cutoffs) != len(modes):
@@ -220,13 +214,20 @@ class Number(Ket):
                 f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
             )
         self.n = n
-        self._manual_shape = (
-            [n + 1 for n in self.n] if cutoffs is None else list(c + 1 for c in cutoffs)
-        )
+        super().__init__(modes=modes, name=f"N")
+        self.short_name = [str(n) for n in self.n]
 
-        self._representation = Fock.from_function(
-            fock_state, n=self.n, cutoffs=self.cutoffs
-        )
+        for i, num in enumerate(n):
+            self.manual_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
+
+        self.cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
+        if len(self.cutoffs) == 1:
+            self.cutoffs = math.tile(self.cutoffs, [len(modes)])
+        if len(self.cutoffs) != len(modes):
+            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self.cutoffs)}."
+            raise ValueError(msg)
+
+        self._representation = Fock.from_function(fock_state, n=self.n, cutoffs=self.cutoffs)
 
 
 class SqueezedVacuum(Ket):
@@ -319,7 +320,7 @@ class TwoModeSqueezedVacuum(Ket):
 
 class Vacuum(Ket):
     r"""
-    The `N`-mode vacuum state.
+    The `N`-mode vacuum state in Bargmann representation.
 
     .. code-block ::
 
@@ -352,6 +353,9 @@ class Vacuum(Ket):
     ) -> None:
         rep = Bargmann.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
         super().__init__(modes=modes, representation=rep, name="Vac")
+
+        for i in range(len(modes)):
+            self.manual_shape[i] = 1
 
 
 #  ~~~~~~~~~~~~
@@ -393,6 +397,4 @@ class Thermal(DM):
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.thermal_state_Abc, nbar=self.nbar
-        )
+        self._representation = Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar)
