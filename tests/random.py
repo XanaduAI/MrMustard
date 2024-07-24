@@ -120,7 +120,10 @@ def complex_matrix(draw, rows, cols):
     """Return a strategy for generating matrices of shape `rows` x `cols` with complex numbers."""
     max_abs_value = 1e10
     elements = st.complex_numbers(
-        min_magnitude=0, max_magnitude=max_abs_value, allow_infinity=False, allow_nan=False
+        min_magnitude=0,
+        max_magnitude=max_abs_value,
+        allow_infinity=False,
+        allow_nan=False,
     )
     return draw(arrays(np.complex, (rows, cols), elements=elements))
 

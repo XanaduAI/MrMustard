@@ -63,7 +63,9 @@ def draw_mpl(timings_dict, ncols, num_commits):
     """
     groups = {
         group_name: list(group)
-        for group_name, group in groupby(sorted(timings_dict), key=lambda x: x.split("/")[1])
+        for group_name, group in groupby(
+            sorted(timings_dict), key=lambda x: x.split("/")[1]
+        )
     }
 
     fig = plt.figure(1)
@@ -97,7 +99,11 @@ def draw_plotly(timings_dict, use_short_name):
     )
     lines = []
     timings_sorted = dict(
-        sorted(timings_dict.items(), key=lambda item: max(val[1] for val in item[1]), reverse=True)
+        sorted(
+            timings_dict.items(),
+            key=lambda item: max(val[1] for val in item[1]),
+            reverse=True,
+        )
     )
     for test_name, data in timings_sorted.items():
         x, y = list(zip(*data))
@@ -115,7 +121,9 @@ def draw_plotly_group(timings_dict, use_short_name, ncols):
 
     groups = {
         group_name: list(group)
-        for group_name, group in groupby(sorted(timings_dict), key=lambda x: x.split("/")[1])
+        for group_name, group in groupby(
+            sorted(timings_dict), key=lambda x: x.split("/")[1]
+        )
     }
     tot = len(groups)
     cols = ncols
@@ -123,7 +131,9 @@ def draw_plotly_group(timings_dict, use_short_name, ncols):
     fig = make_subplots(rows, cols, subplot_titles=list(groups))
     fig.update_layout({"title": "Test durations over history of commits"})
 
-    for (row, col), (group, test_names) in zip(np.ndindex((rows, cols)), groups.items()):
+    for (row, col), (group, test_names) in zip(
+        np.ndindex((rows, cols)), groups.items()
+    ):
         for test_name in test_names:
             x, y = list(zip(*timings_dict[test_name]))
             if use_short_name:
@@ -195,7 +205,9 @@ if __name__ == "__main__":
         ),
         description="Visualize pytest duration data to detect regressions.",
     )
-    parser.add_argument("data_folder", type=str, help="Folder where duration files are synced")
+    parser.add_argument(
+        "data_folder", type=str, help="Folder where duration files are synced"
+    )
     parser.add_argument(
         "-m",
         "--mode",
@@ -212,7 +224,9 @@ if __name__ == "__main__":
         help="Number of modules per row (does nothing in the default 'plotly' mode)",
     )
     parser.add_argument(
-        "--short-name", action="store_true", help="Show only the test name without the file path"
+        "--short-name",
+        action="store_true",
+        help="Show only the test name without the file path",
     )
     args = parser.parse_args()
     folder = Path(args.data_folder)

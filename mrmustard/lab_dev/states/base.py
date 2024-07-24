@@ -668,7 +668,7 @@ class DM(State):
                 )
                 shape = tuple(shape) + tuple(shape)
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -713,7 +713,8 @@ class DM(State):
     @property
     def _probabilities(self) -> RealVector:
         r"""Element-wise probabilities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states."""
+        Useful for cases where the batch dimension does not mean a convex combination of states.
+        """
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
         rep = self.representation.trace(idx_ket, idx_bra)
@@ -728,7 +729,8 @@ class DM(State):
     @property
     def _purities(self) -> RealVector:
         r"""Element-wise purities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states."""
+        Useful for cases where the batch dimension does not mean a convex combination of states.
+        """
         return self._L2_norms / self._probabilities
 
     @property
@@ -889,7 +891,7 @@ class Ket(State):
                     max_shape or settings.AUTOSHAPE_MAX,
                 )
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
