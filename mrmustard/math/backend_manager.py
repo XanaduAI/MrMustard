@@ -804,7 +804,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Move axes of an array to a new position.
 
         Args:
-            a: The array to move axes off
+            a: The array to move the axes of.
             old: The old index position
             new: The new index position
 
