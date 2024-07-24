@@ -697,7 +697,9 @@ class CCView(CircuitComponent):
 
     @property
     def short_name(self):
-        """A shortened version of the component name."""
+        r"""
+        A shortened version of the component name.
+        """
         return self._component.short_name
 
     def __init__(self, component: CircuitComponent) -> None:
