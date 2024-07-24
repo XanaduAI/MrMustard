@@ -185,10 +185,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
 
-    @pytest.mark.parametrize(
-        "state", [Coherent(modes=[0], x=0, y=2), Coherent(modes=[0], x=0, y=2).to_fock(30)]
-    )
-    def test_quadrature(self, state):
+    def test_quadrature(self):
+        state = Coherent(modes=[0], x=0, y=2)
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q]))
         psi_q = (
@@ -198,15 +196,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         )
         assert math.allclose(state.quadrature(quad), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
-    @pytest.mark.parametrize(
-        "state",
-        [
-            Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2),
-            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).to_fock(30),
-        ],
-    )
-    def test_quadrature_batch(self, state):
+    def test_quadrature_batch(self):
+        state = Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q]))
         psi_q = (
@@ -219,6 +213,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         )
         assert math.allclose(state.quadrature(quad), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
@@ -539,11 +535,8 @@ class TestDM:
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
-    @pytest.mark.parametrize(
-        "state",
-        [Coherent(modes=[0], x=0, y=2).dm(), Coherent(modes=[0], x=0, y=2).dm().to_fock(30)],
-    )
-    def test_quadrature(self, state):
+    def test_quadrature(self):
+        state = Coherent(modes=[0], x=0, y=2).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q, q + 1]))
         psi_q_0 = (
@@ -558,15 +551,11 @@ class TestDM:
         )
         assert math.allclose(state.quadrature(quad), psi_q_0 * psi_q_1)
         assert math.allclose(state.quadrature_distribution(q), math.abs(psi_q_0) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), psi_q_0 * psi_q_1)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(psi_q_0) ** 2)
 
-    @pytest.mark.parametrize(
-        "state",
-        [
-            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).dm(),
-            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).dm().to_fock(30),
-        ],
-    )
-    def test_quadrature_batch(self, state):
+    def test_quadrature_batch(self):
+        state = (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q, q + 1]))
         psi_q_0 = (
@@ -587,6 +576,8 @@ class TestDM:
         )
         assert math.allclose(state.quadrature(quad), psi_q_0 * psi_q_1)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q_0) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), psi_q_0 * psi_q_1)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q_0) ** 2)
 
     def test_expectation_bargmann_ket(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
