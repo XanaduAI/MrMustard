@@ -244,9 +244,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.minimum(a, b)
 
     def moveaxis(
-        self, a: np.ndarray, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
+        self, array: np.ndarray, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
     ) -> np.ndarray:
-        return np.moveaxis(a, old, new)
+        return np.moveaxis(array, old, new)
 
     def new_variable(
         self,
