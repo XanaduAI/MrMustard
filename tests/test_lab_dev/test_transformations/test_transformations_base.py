@@ -111,6 +111,11 @@ class TestUnitary:
         should_be_identity = gate >> gate_inv
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
 
+    def test_random(self):
+        modes = [3,1,20]
+        u = Unitary.random(modes)
+        assert (u>>u.dual) == Identity(modes)
+
 
 class TestChannel:
     r"""
@@ -168,3 +173,8 @@ class TestChannel:
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.representation == Attenuator([0], 1.0).representation
+
+    def test_random(self):
+        from mrmustard.lab_dev.states import Vacuum
+        modes = [2,6,1]
+        assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability ,1)

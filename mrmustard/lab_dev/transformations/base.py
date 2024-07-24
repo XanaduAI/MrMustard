@@ -167,7 +167,7 @@ class Unitary(Operation):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-    # here is the older version of the from_symplectif method (preserved for safety)
+    # here is the older version of the from_symplect method (preserved for safety)
     # @classmethod
     # def from_symplectic(
     #     cls,
@@ -226,6 +226,18 @@ class Unitary(Operation):
         _, _, c_prime = v.bargmann
         c = 1 / math.sqrt(c_prime[0])
         return Unitary.from_bargmann(modes, modes, [A, b, c])
+    
+
+    @classmethod
+    def random(cls, modes, max_r=1):
+        r"""
+        Returns a random unitary.
+        modes: the modes the unitary acts on non-trivially
+        max_r: maximum squeezing parameter as defined in math.random_symplecic
+        """
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        return Unitary.from_symplectic(modes, S)
 
 
 class Map(Transformation):
@@ -282,3 +294,20 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
+
+
+    @classmethod
+    def random(cls, modes, max_r=1.0):
+        r"""
+        A random channel without displacement
+        modes: the modes on which the channel is defined
+        max_r: maximum squeezing parameter in random selections
+        """
+        from mrmustard.lab_dev.states import Vacuum
+
+        m = len(modes)
+        U = Unitary.random(range(3 * m), max_r)
+        u_psi = Vacuum(range(2 * m)) >> U
+        A = u_psi.representation
+        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        return Channel.from_bargmann(modes, modes, kraus.triple)
