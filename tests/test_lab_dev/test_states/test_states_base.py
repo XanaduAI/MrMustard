@@ -148,7 +148,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         c0 = np.exp(-0.5 * 0.04)  # z^*
 
         state0 = Ket.from_bargmann(modes, (A0, b0, c0))
-        Atest, btest, ctest = state0.quadrature()
+        Atest, btest, ctest = state0.quadrature_triple()
         state1 = Ket.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
         Atest2, btest2, ctest2 = state1.bargmann
         assert math.allclose(Atest2[0], A0)
@@ -184,6 +184,41 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert dm.name == ket.name
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
+
+    @pytest.mark.parametrize(
+        "state", [Coherent(modes=[0], x=0, y=2), Coherent(modes=[0], x=0, y=2).to_fock(30)]
+    )
+    def test_quadrature(self, state):
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q]))
+        psi_q = (
+            math.exp(1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        assert math.allclose(state.quadrature(quad), psi_q)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+
+    @pytest.mark.parametrize(
+        "state",
+        [
+            Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2),
+            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).to_fock(30),
+        ],
+    )
+    def test_quadrature_batch(self, state):
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q]))
+        psi_q = (
+            math.exp(1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+            + math.exp(-1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        assert math.allclose(state.quadrature(quad), psi_q)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
@@ -472,7 +507,7 @@ class TestDM:
         c0 = 0.951229424500714  # z, z^*
 
         state0 = DM.from_bargmann(modes, (A0, b0, c0))
-        Atest, btest, ctest = state0.quadrature()
+        Atest, btest, ctest = state0.quadrature_triple()
         state1 = DM.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
         Atest2, btest2, ctest2 = state1.bargmann
         assert math.allclose(Atest2[0], A0)
@@ -503,6 +538,55 @@ class TestDM:
         state = Coherent([0], 1, 2).dm()
         assert math.allclose(state.purity, 1)
         assert state.is_pure
+
+    @pytest.mark.parametrize(
+        "state",
+        [Coherent(modes=[0], x=0, y=2).dm(), Coherent(modes=[0], x=0, y=2).dm().to_fock(30)],
+    )
+    def test_quadrature(self, state):
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q, q + 1]))
+        psi_q_0 = (
+            math.exp(-1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        psi_q_1 = (
+            math.exp(1j * (q + 1) * 2)
+            * math.exp(-(((q + 1)) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        assert math.allclose(state.quadrature(quad), psi_q_0 * psi_q_1)
+        assert math.allclose(state.quadrature_distribution(q), math.abs(psi_q_0) ** 2)
+
+    @pytest.mark.parametrize(
+        "state",
+        [
+            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).dm(),
+            (Coherent(modes=[0], x=0, y=2) + Coherent(modes=[0], x=0, y=-2)).dm().to_fock(30),
+        ],
+    )
+    def test_quadrature_batch(self, state):
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q, q + 1]))
+        psi_q_0 = (
+            math.exp(-1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+            + math.exp(1j * q * 2)
+            * math.exp(-((q) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        psi_q_1 = (
+            math.exp(1j * (q + 1) * 2)
+            * math.exp(-(((q + 1)) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+            + math.exp(-1j * (q + 1) * 2)
+            * math.exp(-(((q + 1)) ** 2) / (2 * settings.HBAR))
+            / (np.pi * settings.HBAR) ** 0.25
+        )
+        assert math.allclose(state.quadrature(quad), psi_q_0 * psi_q_1)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q_0) ** 2)
 
     def test_expectation_bargmann_ket(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])

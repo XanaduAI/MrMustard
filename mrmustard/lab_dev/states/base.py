@@ -46,6 +46,7 @@ from mrmustard.utils.typing import (
     ComplexVector,
     RealVector,
     Scalar,
+    Vector,
 )
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
@@ -332,6 +333,12 @@ class State(CircuitComponent):
 
         new_state = self >> BtoPS(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the circuit component.
+        """
+        raise NotImplementedError
 
     def visualize_2d(
         self,
@@ -737,6 +744,13 @@ class DM(State):
     def purity(self) -> float:
         return self.L2_norm
 
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the circuit component.
+        """
+        quad = math.transpose(math.astensor([quad, quad]))
+        return self.quadrature(quad, phi)
+
     def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator with respect to this DM.
@@ -953,6 +967,13 @@ class Ket(State):
         ret = DM._from_attributes(dm.representation, dm.wires, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the circuit component.
+        """
+        quad = math.transpose(math.astensor([quad]))
+        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):
         r"""
