@@ -88,7 +88,7 @@ from mrmustard.lab_dev.states import Ket, DM
                     </table>
                 </div>
                 <div>
-                    ${state.visualize_dm(40, return_fig=True).to_html(full_html=False, include_plotlyjs="cdn")}
+                    ${state.visualize_dm(None, return_fig=True).to_html(full_html=False, include_plotlyjs="cdn")}
                 </div>
             </div>
         </div>
