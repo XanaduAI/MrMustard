@@ -108,6 +108,9 @@ class TestCoherent:
         assert (lc @ lc.dual).representation.ansatz.batch_size == 3  # not 9
         settings.UNSAFE_ZIP_BATCH = False
 
+    def test_vacuum_shape(self):
+        assert Coherent([0], x=0.0, y=0.0).auto_shape() == (1,)
+
 
 class TestDisplacedSqueezed:
     r"""

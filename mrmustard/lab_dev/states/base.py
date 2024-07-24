@@ -668,7 +668,7 @@ class DM(State):
                 )
                 shape = tuple(shape) + tuple(shape)
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -891,7 +891,7 @@ class Ket(State):
                     max_shape or settings.AUTOSHAPE_MAX,
                 )
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
