@@ -115,19 +115,44 @@ def use_offDiag_pivot_grad(
     # Array0
     params_adapted = tuple_setitem(params, d, params[d] + 1)
     arr0_dA[params_adapted], arr0_dB[params_adapted] = calc_dA_dB(
-        2 * d + 1, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB
+        2 * d + 1,
+        G_in_dA,
+        G_in_dB,
+        G_in,
+        A,
+        B,
+        K_l,
+        K_i,
+        M,
+        pivot_val,
+        pivot_val_dA,
+        pivot_val_dB,
     )
 
     # Array2
     if params[d] + 2 < cutoffs[d]:
         arr2_dA[d][params], arr2_dB[d][params] = calc_dA_dB(
-            2 * d, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB
+            2 * d,
+            G_in_dA,
+            G_in_dB,
+            G_in,
+            A,
+            B,
+            K_l,
+            K_i,
+            M,
+            pivot_val,
+            pivot_val_dA,
+            pivot_val_dB,
         )
 
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
-            arr1010_dA[d][i - d - 1][params], arr1010_dB[d][i - d - 1][params] = calc_dA_dB(
+            (
+                arr1010_dA[d][i - d - 1][params],
+                arr1010_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i,
                 G_in_dA,
                 G_in_dB,
@@ -141,7 +166,10 @@ def use_offDiag_pivot_grad(
                 pivot_val_dA,
                 pivot_val_dB,
             )
-            arr1001_dA[d][i - d - 1][params], arr1001_dB[d][i - d - 1][params] = calc_dA_dB(
+            (
+                arr1001_dA[d][i - d - 1][params],
+                arr1001_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i + 1,
                 G_in_dA,
                 G_in_dB,
@@ -156,7 +184,16 @@ def use_offDiag_pivot_grad(
                 pivot_val_dB,
             )
 
-    return arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB
+    return (
+        arr0_dA,
+        arr2_dA,
+        arr1010_dA,
+        arr1001_dA,
+        arr0_dB,
+        arr2_dB,
+        arr1010_dB,
+        arr1001_dB,
+    )
 
 
 @njit
@@ -257,7 +294,17 @@ def fock_representation_diagonal_grad_NUMBA(
             # diagonal pivots: aa,bb,cc,dd,...
             if (cutoffs[0] == 1) or (params[0] < cutoffs[0] - 1):
                 arr1_dA, arr1_dB = use_diag_pivot_grad(
-                    A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB
+                    A,
+                    B,
+                    M,
+                    cutoffs,
+                    params,
+                    arr0,
+                    arr1,
+                    arr0_dA,
+                    arr1_dA,
+                    arr0_dB,
+                    arr1_dB,
                 )
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M):

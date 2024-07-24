@@ -25,7 +25,16 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Amplifier", "Attenuator", "BSgate", "Dgate", "Rgate", "Sgate", "S2gate", "Identity"]
+__all__ = [
+    "Amplifier",
+    "Attenuator",
+    "BSgate",
+    "Dgate",
+    "Rgate",
+    "Sgate",
+    "S2gate",
+    "Identity",
+]
 
 
 class BSgate(Unitary):
@@ -74,7 +83,7 @@ class BSgate(Unitary):
                     e^{i\phi}\text{sin}(\theta) & \text{cos}(\theta)
                 \end{bmatrix} \\
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
@@ -104,9 +113,9 @@ class BSgate(Unitary):
         self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.beamsplitter_gate_Abc(self.theta.value, self.phi.value))
+        self._representation = Bargmann.from_function(
+            fn=triples.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
+        )
 
 
 class Dgate(Unitary):
@@ -140,10 +149,10 @@ class Dgate(Unitary):
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
         displacement gate is defined by
 
-        .. math:: 
+        .. math::
             S = I_N \text{ and } r = \sqrt{2\hbar}\big[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})\big].
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -169,14 +178,13 @@ class Dgate(Unitary):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ) -> None:
         super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        xs, ys = list(reshape_params(len(modes), x=x, y=y))
+        self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        xs, ys = list(reshape_params(n_modes, x=self.x.value, y=self.y.value))
-        return Bargmann(*triples.displacement_gate_Abc(xs, ys))
+        self._representation = Bargmann.from_function(
+            fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+        )
 
 
 class Rgate(Unitary):
@@ -211,13 +219,10 @@ class Rgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        (phis,) = list(reshape_params(len(modes), phi=phi))
+        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        phis = list(reshape_params(n_modes, phi=self.phi.value))[0]
-        return Bargmann(*triples.rotation_gate_Abc(phis))
+        self._representation = Bargmann.from_function(fn=triples.rotation_gate_Abc, theta=self.phi)
 
 
 class Sgate(Unitary):
@@ -259,7 +264,7 @@ class Sgate(Unitary):
             d = O_{2N},
 
         where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -283,14 +288,13 @@ class Sgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Sgate")
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
+        self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        rs, phis = list(reshape_params(n_modes, r=self.r.value, phi=self.phi.value))
-        return Bargmann(*triples.squeezing_gate_Abc(rs, phis))
+        self._representation = Bargmann.from_function(
+            fn=triples.squeezing_gate_Abc, r=self.r, delta=self.phi
+        )
 
 
 class Identity(Unitary):
@@ -317,12 +321,8 @@ class Identity(Unitary):
         self,
         modes: Sequence[int],
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="Identity")
-
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        return Bargmann(*triples.identity_Abc(n_modes))
+        rep = Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes))
+        super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")
 
 
 class S2gate(Unitary):
@@ -354,14 +354,14 @@ class S2gate(Unitary):
 
     .. details::
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
                     O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
                     e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
                     \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
-                    O & \sech(r) & e^{i\phi}\tanh(r) & 0     
+                    O & \sech(r) & e^{i\phi}\tanh(r) & 0
                 \end{bmatrix} \text{, }
             b = O_{4} \text{, and }
             c = \sech(r)
@@ -384,9 +384,9 @@ class S2gate(Unitary):
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
-    @property
-    def representation(self) -> Bargmann:
-        return Bargmann(*triples.twomode_squeezing_gate_Abc(self.r.value, self.phi.value))
+        self._representation = Bargmann.from_function(
+            fn=triples.twomode_squeezing_gate_Abc, r=self.r, phi=self.phi
+        )
 
 
 class Amplifier(Channel):
@@ -401,7 +401,7 @@ class Amplifier(Channel):
         >>> from mrmustard.lab_dev import Amplifier, Coherent
 
         >>> amp = Amplifier([0], gain=4)
-        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
+        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
         >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
 
@@ -423,7 +423,7 @@ class Amplifier(Channel):
         where :math:`/bar{g}` is the gain and
         :math:`\text{diag}_N(\bar{g})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{g}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -444,20 +444,17 @@ class Amplifier(Channel):
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Amp")
+        (gs,) = list(reshape_params(len(modes), gain=gain))
         self._add_parameter(
             make_parameter(
                 gain_trainable,
-                gain,
+                gs,
                 "gain",
                 gain_bounds,
                 None,
             )
         )
-
-    @property
-    def representation(self) -> Bargmann:
-        g = list(reshape_params(len(self.modes), g=self.gain.value))[0]
-        return Bargmann(*triples.amplifier_Abc(g))
+        self._representation = Bargmann.from_function(fn=triples.amplifier_Abc, g=self.gain)
 
 
 class Attenuator(Channel):
@@ -490,10 +487,10 @@ class Attenuator(Channel):
             Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
             d = O_{4N}\:,
 
-        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
+        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and
         :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -516,18 +513,16 @@ class Attenuator(Channel):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Att")
+        (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
         self._add_parameter(
             make_parameter(
                 transmissivity_trainable,
-                transmissivity,
+                etas,
                 "transmissivity",
                 transmissivity_bounds,
                 None,
             )
         )
-
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        eta = list(reshape_params(n_modes, eta=self.transmissivity.value))[0]
-        return Bargmann(*triples.attenuator_Abc(eta))
+        self._representation = Bargmann.from_function(
+            fn=triples.attenuator_Abc, eta=self.transmissivity
+        )

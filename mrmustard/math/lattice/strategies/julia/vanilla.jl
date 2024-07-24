@@ -80,4 +80,3 @@ function get_neighbors(idx::CartesianIndex{N}) where {N}
 end
 
 end # end module
-

@@ -16,7 +16,6 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme
 
-
 from math import lgamma as mlgamma
 from typing import List, Optional, Sequence, Tuple, Union
 
@@ -245,9 +244,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.minimum(a, b)
 
     def moveaxis(
-        self, a: np.ndarray, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
+        self, array: np.ndarray, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
     ) -> np.ndarray:
-        return np.moveaxis(a, old, new)
+        return np.moveaxis(array, old, new)
 
     def new_variable(
         self,
@@ -496,7 +495,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
         up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOCUTOFF_PROBABILITY setting.
+        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
 
         Args:
             A: The A matrix.
@@ -514,7 +513,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             A,
             B,
             C,
-            max_l2=max_l2 or settings.AUTOCUTOFF_PROBABILITY,
+            max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )
 
