@@ -800,11 +800,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def moveaxis(self, a: Tensor, old: Tensor, new: Tensor) -> Tensor:
-        r"""Move axes of an array to a new position.
+    def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
+        r"""
+        Moves the axes of an array to a new position.
 
         Args:
-            a: The array to move axes off
+            a: The array to move the axes of.
             old: The old index position
             new: The new index position
 
@@ -815,7 +816,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply(
             "moveaxis",
             (
-                a,
+                array,
                 old,
                 new,
             ),

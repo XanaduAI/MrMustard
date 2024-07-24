@@ -258,7 +258,6 @@ class PolyExpBase(Ansatz):
         have polynomials attached to them and what the degree of the polynomial is
         on each of the wires.
         """
-
         dim_poly = len(self.array.shape) - 1
         shape_poly = self.array.shape[1:]
         return dim_poly, shape_poly
