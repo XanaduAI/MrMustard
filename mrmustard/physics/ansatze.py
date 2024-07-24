@@ -761,7 +761,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
-                math.einsum("ijk,hk", self.A[..., dim_alpha:, :dim_alpha], z)
+                math.einsum(
+                    "ijk,hk",
+                    math.cast(self.A[..., dim_alpha:, :dim_alpha], "complex128"),
+                    math.cast(z, "complex128"),
+                )
                 + self.b[..., dim_alpha:]
             )  # (b_arg, b_abc, m)
             b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)

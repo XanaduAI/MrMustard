@@ -497,7 +497,7 @@ class TestDiffOpPolyExpAnsatz:
                 [
                     np.zeros((4, 4), dtype=complex),
                     A2[:4:, :4],
-                    math.zeros((4, 2), dtype=complex),
+                    np.zeros((4, 2), dtype=complex),
                     A2[:4, 4:],
                 ],
                 [
