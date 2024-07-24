@@ -277,15 +277,14 @@ class CircuitComponent:
             )
             return quad_basis
 
-        elif isinstance(self.representation, Bargmann):
-            from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from mrmustard.lab_dev.circuit_components_utils import BtoQ
 
-            BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-            BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-            BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-            BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-            QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
-            return QQQQ.representation.ansatz(quad)
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+        return QQQQ.representation.ansatz(quad)
 
     @property
     def representation(self) -> Representation | None:
