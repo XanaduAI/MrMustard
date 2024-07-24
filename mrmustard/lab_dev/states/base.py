@@ -29,12 +29,12 @@ from typing import Optional, Sequence, Union
 import os
 
 from enum import Enum
+import warnings
 from IPython.display import display, HTML
 from mako.template import Template
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-import warnings
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
