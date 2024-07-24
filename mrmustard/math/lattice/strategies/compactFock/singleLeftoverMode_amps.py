@@ -84,7 +84,18 @@ def read_block(
 
 @njit
 def use_offDiag_pivot(
-    A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1
+    A,
+    B,
+    M,
+    cutoff_leftoverMode,
+    cutoffs_tail,
+    params,
+    d,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
 ):
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
@@ -125,10 +136,18 @@ def use_offDiag_pivot(
         if params[i] > 0:
             params_adapted = tuple_setitem(params, i, params[i] - 1)
             G_in = read_block(
-                G_in, 2 * i, arr1001, (d, i - d - 1) + params_adapted, cutoff_leftoverMode
+                G_in,
+                2 * i,
+                arr1001,
+                (d, i - d - 1) + params_adapted,
+                cutoff_leftoverMode,
             )
             G_in = read_block(
-                G_in, 2 * i + 1, arr1010, (d, i - d - 1) + params_adapted, cutoff_leftoverMode
+                G_in,
+                2 * i + 1,
+                arr1010,
+                (d, i - d - 1) + params_adapted,
+                cutoff_leftoverMode,
             )
 
     ########## WRITE ##########
@@ -151,10 +170,28 @@ def use_offDiag_pivot(
         if params[i] + 1 < cutoffs_tail[i]:
             write = (d, i - d - 1) + params
             arr1010 = write_block(
-                2 * i + 2, arr1010, write, arr1, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
+                2 * i + 2,
+                arr1010,
+                write,
+                arr1,
+                read_GB,
+                G_in,
+                GB,
+                A,
+                K_i,
+                cutoff_leftoverMode,
             )
             arr1001 = write_block(
-                2 * i + 3, arr1001, write, arr1, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
+                2 * i + 3,
+                arr1001,
+                write,
+                arr1,
+                read_GB,
+                G_in,
+                GB,
+                A,
+                K_i,
+                cutoff_leftoverMode,
             )
 
     return arr0, arr2, arr1010, arr1001
@@ -190,7 +227,11 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
         if params[i // 2] > 0:
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
             G_in = read_block(
-                G_in, i, arr1, (i + 1 - 2 * (i % 2),) + params_adapted, cutoff_leftoverMode
+                G_in,
+                i,
+                arr1,
+                (i + 1 - 2 * (i % 2),) + params_adapted,
+                cutoff_leftoverMode,
             )  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
 
     ########## WRITE ##########
@@ -205,7 +246,16 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
             if i != 1 or params[0] + 2 < cutoffs_tail[0]:
                 write = (i,) + params
                 arr1 = write_block(
-                    i + 2, arr1, write, arr0, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
+                    i + 2,
+                    arr1,
+                    write,
+                    arr0,
+                    read_GB,
+                    G_in,
+                    GB,
+                    A,
+                    K_i,
+                    cutoff_leftoverMode,
                 )
 
     return arr1
@@ -303,7 +353,8 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     arr0 = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail, dtype=np.complex128)
     arr0[(0,) * (M + 1)] = G0
     arr2 = np.zeros(
-        (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail, dtype=np.complex128
+        (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail,
+        dtype=np.complex128,
     )
     arr1 = np.zeros(
         (cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail,

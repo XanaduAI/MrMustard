@@ -135,7 +135,12 @@ def draw(
 
     fig = plt.figure(figsize=figsize)
     nx.draw_networkx_nodes(
-        graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
+        graph,
+        pos,
+        edgecolors="gray",
+        alpha=0.9,
+        node_size=node_size,
+        node_color=node_color,
     )
     nx.draw_networkx_edges(graph, pos, edge_color="lightgreen", width=4, alpha=0.6)
     nx.draw_networkx_edges(

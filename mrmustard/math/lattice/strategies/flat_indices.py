@@ -17,7 +17,7 @@ Contains the functions to operate with flattened indices.
 
 Given a multi-dimensional ``np.ndarray``, we can index its elements using ``np.ndindex``.
 Alternatevely, we can flatten the multi-dimensional array and index its elements with
-``int``s (hereby referred to as ''flat indices''). 
+``int``s (hereby referred to as ''flat indices'').
 """
 
 from typing import Iterator, Sequence
