@@ -686,8 +686,8 @@ class PolyExpAnsatz(PolyExpBase):
             raise ValueError("Please provide either A or b.")
         super().__init__(mat=A, vec=b, array=c)
 
-        if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
-            raise ValueError("Batch size of A,b,c must be the same.")
+        # if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
+        #     raise ValueError("Batch size of A,b,c must be the same.")
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
