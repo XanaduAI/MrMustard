@@ -367,10 +367,16 @@ class TestKet:  # pylint: disable=too-many-public-methods
         settings.UNSAFE_ZIP_BATCH = False
         assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
 
+    @pytest.mark.parametrize("max_sq", [1, 2, 3])
+    def test_random_states(self, max_sq):
+        psi = Ket.random([1, 22], max_sq)
+        A = psi.representation.A[0]
+        assert np.isclose(psi.probability, 1)  # checks if the state is normalized
+        assert np.allclose(A - np.transpose(A), np.zeros(2))  # checks if the A matrix is symmetric
+
     def test_ipython_repr(self):
         """
         Test the widgets.state function.
-
         Note: could not mock display because of the states.py file name conflict.
         """
         hbox = state_widget(Number([0], n=1), True, True)
@@ -656,3 +662,18 @@ class TestDM:  # pylint:disable=too-many-public-methods
         # measurements
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
+
+    @pytest.mark.parametrize("modes", [[5], [1, 2]])
+    def test_random(self, modes):
+
+        m = len(modes)
+        dm = DM.random(modes)
+        A = dm.representation.A[0]
+        Gamma = A[:m, m:]
+        Lambda = A[m:, m:]
+        Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda
+        assert np.all(
+            np.linalg.eigvals(Gamma) >= 0
+        )  # checks if the off-diagonal block of dm is PSD
+        assert np.all(np.linalg.eigvals(Gamma) < 1)
+        assert np.all(np.linalg.eigvals(Temp) < 1)
