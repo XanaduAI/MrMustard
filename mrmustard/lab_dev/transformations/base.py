@@ -167,7 +167,6 @@ class Unitary(Operation):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(

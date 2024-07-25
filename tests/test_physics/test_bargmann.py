@@ -82,7 +82,7 @@ def test_au2Symplectic():
     Au = np.block([[np.zeros_like(V), V], [np.transpose(V), np.zeros_like(V)]])
     S = au2Symplectic(Au)
     S_by_hand = np.block([[V, np.zeros_like(V)], [np.zeros_like(V), np.conjugate(V)]])
-    Transformation = (
+    transformation = (
         1
         / np.sqrt(2)
         * np.block(
@@ -92,7 +92,7 @@ def test_au2Symplectic():
             ]
         )
     )
-    S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
+    S_by_hand = transformation @ S_by_hand @ np.conjugate(np.transpose(transformation))
     assert np.allclose(S, S_by_hand)
 
     # squeezing example
@@ -100,8 +100,8 @@ def test_au2Symplectic():
     Au = np.array([[-np.tanh(r), 1 / np.cosh(r)], [1 / np.cosh(r), np.tanh(r)]])
     S = au2Symplectic(Au)
     S_by_hand = np.array([[np.cosh(r), -np.sinh(r)], [-np.sinh(r), np.cosh(r)]])
-    Transformation = 1 / np.sqrt(2) * np.array([[1, 1], [-1j, 1j]])
-    S_by_hand = Transformation @ S_by_hand @ np.conjugate(np.transpose(Transformation))
+    transformation = 1 / np.sqrt(2) * np.array([[1, 1], [-1j, 1j]])
+    S_by_hand = transformation @ S_by_hand @ np.conjugate(np.transpose(transformation))
     assert np.allclose(S, S_by_hand)
 
 
@@ -129,10 +129,10 @@ def test_symplectic2Au():
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
-    Transformation = np.block(
+    transformation = np.block(
         [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]
     ) / np.sqrt(2)
-    S = Transformation @ S @ np.conjugate(np.transpose(Transformation))
+    S = transformation @ S @ np.conjugate(np.transpose(transformation))
     A = symplectic2Au(S)
 
     W = S_bs[:2, :2]

@@ -830,10 +830,10 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes, m = None, max_r=1.0):
+    def random(cls, modes, m=None, max_r=1.0):
         r"""
         Samples a random density matrix. The final state has zero displacement.
-        
+
         Args:
         modes: the modes where the state is defined over
         m: is the number modes to be considered for tracing out from a random pure state (Ket)
@@ -841,7 +841,7 @@ class DM(State):
         """
         if m is None:
             m = len(modes)
-        
+
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
