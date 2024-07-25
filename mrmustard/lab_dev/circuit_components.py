@@ -39,6 +39,7 @@ from mrmustard.lab_dev.wires import Wires
 __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 
 
+# pylint: disable=too-complex
 class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
