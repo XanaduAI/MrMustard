@@ -167,32 +167,6 @@ class Unitary(Operation):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-    # here is the older version of the from_symplect method (preserved for safety)
-    # @classmethod
-    # def from_symplectic(
-    #     cls,
-    #     modes_out: Sequence[int],
-    #     modes_in: Sequence[int],
-    #     symplectic: tuple,
-    #     name: Optional[str] = None,
-    # ) -> Unitary:
-    #     r"""
-    #     Initialize a Unitary from the given symplectic matrix in qqpp basis,
-    #     i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
-    #     """
-    #     M = len(modes_in) + len(modes_out)
-    #     if symplectic.shape[-2:] != (M, M):
-    #         raise ValueError(
-    #             "Symplectic matrix and number of modes don't match. "
-    #             + f"Modes imply shape {(M,M)}, "
-    #             + f"but shape is {symplectic.shape[-2:]}."
-    #         )
-    #     A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, math.zeros(M))
-    #     return Unitary._from_attributes(
-    #         representation=Bargmann(A, b, c),
-    #         wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-    #         name=name,
-    #     )
 
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
@@ -220,7 +194,7 @@ class Unitary(Operation):
         m = len(S)
         A = symplectic2Au(S)
         b = math.zeros(m, dtype="complex128")
-        c = complex(1)  # change after poly*exp ansatz
+        c = complex(1)  # TODO: to be change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
         _, _, c_prime = v.bargmann

@@ -151,7 +151,7 @@ def au2Symplectic(A):
 
     S = math.block([[S_1, S_2], [S_3, S_4]])
 
-    Transformation = (
+    transformation = (
         1
         / np.sqrt(2)
         * math.block(
@@ -162,7 +162,7 @@ def au2Symplectic(A):
         )
     )
 
-    return math.real(Transformation @ S @ math.conj(math.transpose(Transformation)))
+    return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
 
 
 def symplectic2Au(S):
@@ -175,7 +175,7 @@ def symplectic2Au(S):
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
-    Transformation = (
+    transformation = (
         1
         / np.sqrt(2)
         * math.block(
@@ -185,7 +185,7 @@ def symplectic2Au(S):
             ]
         )
     )
-    S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
+    S = np.conjugate(math.transpose(transformation)) @ S @ transformation
     # identifying blocks of S
     S_1 = S[:m, :m]
     S_2 = S[:m, m:]

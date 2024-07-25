@@ -830,12 +830,18 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes, m = None, max_r=1.0):
         r"""
         Samples a random density matrix. The final state has zero displacement.
+        
+        Args:
         modes: the modes where the state is defined over
+        m: is the number modes to be considered for tracing out from a random pure state (Ket)
+        if not specified, m is considered to be len(modes)
         """
-        m = len(modes)
+        if m is None:
+            m = len(modes)
+        
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
@@ -1072,8 +1078,8 @@ class Ket(State):
         # generate a random ket repr.
         # e.g. S = math.random_symplectic(dim) and then apply to vacuum
         m = len(modes)
-        S = math.random_symplectic(m, max_r)  # change to a,a^dagger
-        Transformation = (
+        S = math.random_symplectic(m, max_r)
+        transformation = (
             1
             / np.sqrt(2)
             * math.block(
@@ -1086,10 +1092,10 @@ class Ket(State):
                 ]
             )
         )
-        S = np.conjugate(math.transpose(Transformation)) @ S @ Transformation
+        S = math.conj(math.transpose(transformation)) @ S @ transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
         A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-        b = [complex(0)] * m
+        b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
