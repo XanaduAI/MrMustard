@@ -25,7 +25,6 @@ from ..circuit_components import CircuitComponent
 __all__ = ["MeasurementDevice"]
 
 
-
 class MeasurementDevice(CircuitComponent):
     r"""
     Base class for all measurement devices.
@@ -38,7 +37,9 @@ class MeasurementDevice(CircuitComponent):
         sampling_technique: Optional[Any] = None,
     ):
         super().__init__(
-            name = name or "MD" + "".join(str(m) for m in modes), modes_in_bra=modes, modes_in_ket=modes
+            name=name or "MD" + "".join(str(m) for m in modes),
+            modes_in_bra=modes,
+            modes_in_ket=modes,
         )
 
         # thinking this is either Sampler / ProbabilityDistribution / POVMs

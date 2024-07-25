@@ -30,47 +30,64 @@ __all__ = [
     "ConditionalState",
 ]
 
+
 class ConditionalState(State):
     r"""
     A state dependent on the outcomes of a measurement.
 
     Args:
-
+        modes: The modes of the conditional state.
+        meas_outcomes: A list of measurement outcomes.
+        states: The states conditioned on some measured outcome.
+        name: The name of this conditional state.
     """
-    def __init__(self, modes: Sequence[int], meas_outcomes: Sequence[Any], states: Sequence[State], name: str | None = None):
+
+    def __init__(
+        self,
+        modes: Sequence[int],
+        meas_outcomes: Sequence[Any],
+        states: Sequence[State],
+        name: str | None = None,
+    ):
 
         self._state_outcomes = dict(zip(meas_outcomes, states))
-        self._state = None
+        self._meas_outcomes = None
 
         # not sure about modes?
-        super().__init__(modes_in_ket=modes, modes_out_ket=modes, name= name or "ConditionalState")
+        super().__init__(modes_out_ket=modes, name=name or "ConditionalState")
 
     @property
-    def state(self) -> State | None:
-        r"""
-        """
-        return self._state
-    
+    def meas_outcomes(self) -> Any | None:
+        r""" """
+        return self._meas_outcomes
+
+    @meas_outcomes.setter
+    def meas_outcomes(self, value):
+        self._meas_outcomes = value
+
+    @property
+    def state(self):
+        r""" """
+        try:
+            return self.state_outcomes[self.meas_outcomes]
+        except KeyError:
+            return None
+
     @property
     def state_outcomes(self) -> dict[Any:State]:
-        r"""
-        """
+        r""" """
         return self._state_outcomes
-    
+
     @property
     def representation(self):
-        r"""
-        """
+        r""" """
         # once we get the meas outcome batch dim working then it should return a representation
         # with all possible states if no state is set
-        return self._state.representation if self._state else None
-    
-    def get_batched(self):
-        r"""
-        """
-        return math.astensor([state.representation.data for state in self.state_outcomes.values()])
+        try:
+            return self.state.representation
+        except AttributeError:
+            return None
 
-    def set_state(self, meas_outcome):
-        r"""
-        """
-        self._state = self._state_outcomes[meas_outcome]
+    def get_batched(self):
+        r""" """
+        return math.astensor([state.representation.data for state in self.state_outcomes.values()])

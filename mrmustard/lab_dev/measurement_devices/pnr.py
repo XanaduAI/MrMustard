@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains the base classes for the available measurements.
+This module contains the PNR class.
 """
 
 from __future__ import annotations
@@ -23,10 +23,10 @@ import numpy as np
 from numbers import Number
 from typing import Optional, Sequence
 
-from ..states import Number, ConditionalState
+from ..states import Number, ConditionalState, State
 from .base import MeasurementDevice
 from ..circuit_components import CircuitComponent
-from mrmustard import settings
+from mrmustard import settings, math
 
 __all__ = ["PNR"]
 
@@ -57,8 +57,10 @@ class PNR(MeasurementDevice):
         The cutoff of this PNR.
         """
         return self._cutoff
-    
-    def __custom_rrshift__(self, other: CircuitComponent | complex) -> ConditionalState | MeasurementDevice:
+
+    def __custom_rrshift__(
+        self, other: CircuitComponent | complex
+    ) -> ConditionalState | MeasurementDevice:
         r"""A custom ``>>`` operator for the ``PNR`` component.
         It allows ``PNR`` to carry the method that processes ``other >> PNR``.
         """
@@ -78,10 +80,13 @@ class PNR(MeasurementDevice):
 
         # this should be handled by self.sampling_technique.sample
         a = list(range(len(self.sampling_technique)))
-        p = [ret.state_outcomes[i].probability for i in range(len(a))]
+        p = [
+            state.probability if isinstance(state, State) else math.cast(state**2, float)
+            for state in ret.state_outcomes.values()
+        ]
+        p = p / sum(p)
         rng = np.random.default_rng()
         meas_outcome = rng.choice(a=a, p=p)
 
-        ret.set_state(meas_outcome)
-        return ret
-    
+        ret.meas_outcomes = meas_outcome
+        return ret if ret.modes else ret.state
