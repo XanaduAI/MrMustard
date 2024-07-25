@@ -5,16 +5,15 @@ import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 import random
+from math import factorial
 
 Edge = tuple[int, int]
 
 
-class Component:
+class Node:
     r"""A lightweight counterpart of a CircuitComponent without the actual representation.
-    It's used in the computation of the optimal path. Each node in the graph has a Component
-    of the corresponding CircuitComponent. The Component has wires and shape, but no representation.
-
-    TODO: if CircuitComponent could function without a representation we might not need Component.
+    It's used in the computation of the optimal path. Each node in the graph has a Node
+    A Node has a type (Fock or Bargmann), wires, shape, name and id.
     """
 
     def __init__(self, type: str, wires: Wires, shape: list[int], name: str = ""):
@@ -26,34 +25,41 @@ class Component:
         self.name = name
 
     @classmethod
-    def from_component(cls, c):
-        return Component(
+    def from_circuitcomponent(cls, c):
+        return Node(
             str(c.representation.__class__.__name__),
             Wires(*c.wires.args),
             c.manual_shape,
             c.__class__.__name__,
         )
 
-    def contraction_cost(self, other: Component) -> int:
+    def copy(self) -> Node:
+        return Node(self.type, self.wires, self.shape, self.name)
+
+    def contraction_cost(self, other: Node) -> int:
         r"""
-        Returns the computational cost of contracting this component with another one.
-        The cost depends on the representation. If both components are in Fock representation,
-        the cost is the product of the values along both shapes, counting only once the values
-        corresponding to the contracted indices. E.g. consider a tensor with shape (2,3,4) where
-        indices 1,2 are contracted with indices 0,1 of a tensor of shape (3,4,5,6).
-        This contraction has complexity 2 x 3 x 4 x 5 x 6 = 720 (note 3,4 were counted only once).
-        If one of the two is in Bargmann, we add the cost of converting it to Fock.
-        If both are in Bargmann representation, the contraction is much cheaper because it's
-        the cost of a gaussian integral, which scales like the cube of the number of contracted wires.
+        Returns the computational cost in approx FLOPS for contracting this component with another
+        one. Three cases are possible:
+
+        1. If both components are in Fock representation the cost is the product of the values along
+        both shapes, counting only once the shape of the contracted indices. E.g. a tensor with shape
+        (20,30,40) contracts its 1,2 indices with the 0,1 indices of a tensor with shape (30,40,50,60).
+        The cost is 20 x 30 x 40 x 50 x 60 = 72_000_000 (note 30,40 were counted only once).
+
+        2. If the representations are a mix of Bargmann and Fock, we add the cost of converting the
+        Bargmann to Fock, which is the product of the shape of the Bargmann component.
+
+        3. If both are in Bargmann representation, the contraction can be a simple a Gaussian integral
+        which scales like the cube of the number of contracted indices, i.e. ~ just 8 in the example above.
 
         Arguments:
-            other: Component
+            other: Node
 
         Returns:
-            int: contraction cost
+            int: contraction cost in FLOPS
 
         TODO: this will need to be updated once we have the poly x exp ansatz.
-        TODO: be more precise on costs (profile properly)
+        TODO: be more precise on costs (profile properly? use wall time?)
         """
         idxA, idxB = self.wires.contracted_indices(other.wires)
         m = len(idxA)  # same as len(idxB)
@@ -74,29 +80,30 @@ class Component:
                 [min(self.shape[i], other.shape[j]) for i, j in zip(idxA, idxB)]
             )
             cost = (
-                prod_A * prod_B * prod_contracted
+                prod_A * prod_B * prod_contracted  # matmul
                 + np.prod(self.shape) * (self.type == "Bargmann")  # conversion
                 + np.prod(other.shape) * (other.type == "Bargmann")  # conversion
             )
         return int(cost)
 
-    def __matmul__(self, other) -> Component:
-        """computes the contracted Component"""
+    def __matmul__(self, other) -> Node:
+        """Returns the contracted Node."""
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
         shape_A = [n for i, n in enumerate(self.shape) if i not in idxA]
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = Component(
+        new_component = Node(
             "Bargmann" if self.type == other.type == "Bargmann" else "Fock",
             new_wires,
             new_shape,
+            f"({self.name}@{other.name})",
         )
         return new_component
 
     def __repr__(self):
-        return f"Component({self.name}, {self.shape}, {self.wires})"
+        return f"{self.name}({self.shape}, {self.wires})"
 
 
 class Graph(nx.DiGraph):
@@ -107,12 +114,6 @@ class Graph(nx.DiGraph):
         self.solution = solution
         self.costs = costs
 
-    # def custom_copy(self) -> Graph:
-    #     g = Graph(self.solution, self.costs)
-    #     g.add_nodes_from(self.nodes(data=True))
-    #     g.add_edges_from(self.edges(data=True))
-    #     return g
-
     @property
     def cost(self) -> int:
         return sum(self.costs)
@@ -121,51 +122,35 @@ class Graph(nx.DiGraph):
         return self.cost < other.cost
 
     def __hash__(self) -> int:
-        return hash(tuple(self.nodes) + tuple(self.edges) + (self.cost,) + tuple(self.solution))
+        return hash(tuple(self.nodes) + tuple(self.edges) + tuple(self.solution))
 
 
-def parse(components: list[CircuitComponent], debug: int = 0) -> Graph:
-    """Parses a list of CircuitComponents into a graph.
-    Warning: It assumes that there are no missing adjoints and such.
-    This should be ensured before calling this function.
+def parse(components: list[CircuitComponent]) -> Graph:
+    """Parses a list of CircuitComponents into a Graph.
 
-    Each node in the graph corresponds to a CircuitComponent and
-    an edge between two nodes indicates that the two CircuitComponents
-    are directly connected at the circuit level. Whether they are connected by one wire
+    Each node in the graph corresponds to a Node and an edge between two nodes indicates that
+    the Nodes are connected in the circuit level. Whether they are connected by one wire
     or by many, in the graph they will have a single edge between them.
 
-    Each node has a "component" attribute that is a Component.
-    Component is a lightweight version of CircuitComponent that has wires
-    and can simulate the contraction of two components, but without the actual representation.
-
     Args:
-        components (list[CircuitComponent]): A list of CircuitComponents.
+        components: A list of CircuitComponents.
     """
     graph = Graph()
     for i, A in enumerate(components):
-        GC = Component.from_component(A)
-        if debug > 0:
-            print(f"\nAdding node {i}: {GC}")
-        graph.add_node(i, component=Component.from_component(A))
+        comp = Node.from_circuitcomponent(A)
+        graph.add_node(i, component=comp.copy())
         for j, B in enumerate(components[i + 1 :]):
-            overlap_ket = GC.wires.output.ket.modes & B.wires.input.ket.modes
-            overlap_bra = GC.wires.output.bra.modes & B.wires.input.bra.modes
+            overlap_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes
+            overlap_bra = comp.wires.output.bra.modes & B.wires.input.bra.modes
             if overlap_ket or overlap_bra:
-                graph.add_edge(i, i + j + 1)  # edge data goes in here
-                if debug > 0:
-                    print(f"Adding edge {i} -> {i+j+1} between {GC} and {B}")
-                if debug > 1:
-                    print(f"Overlap bra: {overlap_bra}, overlap ket: {overlap_ket}")
-                GC.wires = Wires(
-                    GC.wires.args[0] - overlap_bra,
-                    GC.wires.args[1],  # input bra
-                    GC.wires.args[2] - overlap_ket,
-                    GC.wires.args[3],  # input ket
+                graph.add_edge(i, i + j + 1)
+                comp.wires = Wires(
+                    comp.wires.args[0] - overlap_bra,  # output bra
+                    comp.wires.args[1],
+                    comp.wires.args[2] - overlap_ket,  # output ket
+                    comp.wires.args[3],
                 )
-                if debug > 1:
-                    print(f"New wires: {GC.wires}")
-                    print("GC output: ", GC.wires.output)
-                if not GC.wires.output:
+                if not comp.wires.output:
                     break
     return graph
 
@@ -211,7 +196,7 @@ def children(graph: Graph, cost_bound: int) -> set[Graph]:
     children = set()
     for edge in sorted(graph.out_edges, key=lambda e: graph.out_edges[e]["cost"]):
         if graph.cost + graph.edges[edge]["cost"] < cost_bound:
-            children.add(contract(graph, edge))  # duplicates are automatically removed
+            children.add(contract(graph, edge))
     return children
 
 
@@ -228,7 +213,7 @@ def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
         cost_bound (int): The maximum cost of the grandchildren
 
     Returns:
-        set[Graph]: The set of grandchildren
+        set[Graph]: The set of grandchildren below the cost bound.
     """
     grandchildren = set()
     for child in children(graph, cost_bound):
@@ -274,7 +259,7 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     n, tA, tB = code
     for node in graph.nodes:
         if int(n) == graph.degree(node):
-            for edge in graph.out_edges(node):
+            for edge in list(graph.edges(node)) + list(graph.in_edges(node)):
                 A = graph.nodes[edge[0]]["component"]
                 B = graph.nodes[edge[1]]["component"]
                 if A.type[0] == tA and B.type[0] == tB:
@@ -289,16 +274,14 @@ def heuristic(graph: Graph, code: str, debug: int = 0) -> Graph:
     while edge:
         graph, edge = reduce_first(graph, code)
         if debug > 0 and edge:
-            print(
-                f"{code} edge found: {edge} | tot cost: {graph.cost} | solution: {graph.solution}"
-            )
+            print(f"{code} edge: {edge} | tot cost: {graph.cost} | solution: {graph.solution}")
     return graph
 
 
 def optimal_contraction(
     graph: Graph,
     n_init: int = 1,
-    heuristics: tuple[str, ...] = ("1BB",),
+    heuristics: tuple[str, ...] = ("1BB", "2BB", "1FF", "2FF"),
     debug: int = 0,
 ) -> Graph:
     r"""Finds the optimal path to contract a graph.
@@ -318,32 +301,31 @@ def optimal_contraction(
     for code in heuristics:
         graph = heuristic(graph, code, debug)
 
-    if debug > 0:
-        print(f"\n===== {n_init} Random contractions =====")
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
         best = rand if rand.cost < best.cost else best
     if debug > 0:
+        print(f"\n===== Init from best of {n_init} full random contractions =====")
         print(f"Best cost found: {best.cost}\n")
 
-    print("===== Branch and bound =====")
+    print(f"===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     queue = PriorityQueue()
     queue.put(graph)
     while not queue.empty():
         candidate = queue.get()
-        print(
-            f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
-            end="\x1b\r",
-        )
         if candidate.cost >= best.cost:
-            return best
+            return best  # early stopping because first in queue is worse
         elif candidate.number_of_edges() == 0:  # better solution! 🥳
             best = candidate
-            queue.queue = [g for g in queue.queue if g.cost <= best.cost]
+            queue.queue = [g for g in queue.queue if g.cost < best.cost]  # prune
         else:
-            for g in grandchildren(candidate, best.cost):
-                if g not in queue.queue:
+            for g in grandchildren(candidate, cost_bound=best.cost):
+                if g not in queue.queue:  # superfluous check?
                     queue.put(g)
-    print("\n")
+        print(
+            "\r"
+            + f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
+            end="\x1b[1K",
+        )
     return best
