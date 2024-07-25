@@ -208,9 +208,11 @@ def wires(obj):
     ##### The index table #####
 
     wire_tables = []
-    for mode, label in zip(modes, labels):
+    for i in [1, 0, 3, 2]:  # match index order
+        mode = modes[i]
         if not mode:
             continue
+        label = labels[i]
 
         title_row = f'<td rowspan="{len(mode)}">{label}</td>'
         table_data = [f"<td>{m}</td><td>{mode[m].indices[0]}</td>" for m in mode.modes]
