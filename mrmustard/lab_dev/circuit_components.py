@@ -678,12 +678,7 @@ class CircuitComponent:
             return
         rep_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"
-        display(
-            widgets.Box(
-                [wires_widget, rep_widget],
-                layout=widgets.Layout(position="relative", width="85%", height="100%"),
-            )
-        )
+        display(widgets.Box([wires_widget, rep_widget]))
 
 
 class CCView(CircuitComponent):

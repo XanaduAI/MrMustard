@@ -247,9 +247,8 @@ def wires(obj):
 def state(obj, is_ket, is_fock):
     """Create a widget to display a state."""
     fock_yn, bargmann_yn = ("✅", "❌") if is_fock else ("❌", "✅")
-    table_html = f"""
-    {TABLE}
-    {STATE}
+    table_widget = widgets.HTML(
+        f"""{TABLE}{STATE}
     <h1>{obj.name or type(obj).__name__}</h1>
     <table class="state-table">
         <tr>
@@ -271,15 +270,14 @@ def state(obj, is_ket, is_fock):
         </tr>
     </table>
     """
+    )
 
     if obj.n_modes != 1:
-        table_widget = widgets.HTML(table_html.replace(' class="state-table"', ""))
         wires_widget = wires(obj.wires)
         table_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"
-        return widgets.VBox([table_widget, wires_widget])
+        return widgets.Box([table_widget, wires_widget])
 
-    table_widget = widgets.HTML(table_html)
     left_widget = widgets.VBox(
         [table_widget, go.FigureWidget(obj.visualize_dm())],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
