@@ -1,42 +1,46 @@
 # Copyright 2024 Xanadu Quantum Technologies Inc.
 from __future__ import annotations
-from mrmustard.lab_dev import CircuitComponent, Wires
+from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 import random
 from math import factorial
+from typing import Generator
 
 Edge = tuple[int, int]
 
 
-class Node:
-    r"""A lightweight counterpart of a CircuitComponent without the actual representation.
-    It's used in the computation of the optimal path. Each node in the graph has a Node
-    A Node has a type (Fock or Bargmann), wires, shape, name and id.
+class Component:
+    r"""A lightweight "CircuitComponent" without the actual representation.
+    Basically a wrapper around Wires, so that it can emulate components in
+    a circuit. It exposes the repr, wires, shape, name and order (in the circuit).
+
+    TODO: this could be replaced by a simple CircuitComponent without the representation.
     """
 
-    def __init__(self, type: str, wires: Wires, shape: list[int], name: str = ""):
+    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = ""):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
-        self.type = type
+        self.repr = repr
         self.wires = wires
-        self.shape = shape
+        self.shape = list(shape)
         self.name = name
 
     @classmethod
-    def from_circuitcomponent(cls, c):
-        return Node(
-            str(c.representation.__class__.__name__),
-            Wires(*c.wires.args),
-            c.manual_shape,
-            c.__class__.__name__,
+    def from_circuitcomponent(cls, c: CircuitComponent):
+        return Component(
+            repr=str(c.representation.__class__.__name__),
+            wires=Wires(*c.wires.args),
+            shape=c.auto_shape(),
+            name=c.__class__.__name__,
         )
 
-    def copy(self) -> Node:
-        return Node(self.type, self.wires, self.shape, self.name)
+    def copy(self) -> Component:
+        return Component(self.repr, self.wires, self.shape, self.name)
 
-    def contraction_cost(self, other: Node) -> int:
+    def contraction_cost(self, other: Component) -> int:
         r"""
         Returns the computational cost in approx FLOPS for contracting this component with another
         one. Three cases are possible:
@@ -53,7 +57,7 @@ class Node:
         which scales like the cube of the number of contracted indices, i.e. ~ just 8 in the example above.
 
         Arguments:
-            other: Node
+            other: Component
 
         Returns:
             int: contraction cost in FLOPS
@@ -65,7 +69,7 @@ class Node:
         m = len(idxA)  # same as len(idxB)
         nA, nB = len(self.shape) - m, len(other.shape) - m
 
-        if self.type == "Bargmann" and other.type == "Bargmann":
+        if self.repr == "Bargmann" and other.repr == "Bargmann":
             cost = (  # +1s to include vector part)
                 m * m * m  # M inverse
                 + (m + 1) * m * nA  # left matmul
@@ -81,21 +85,21 @@ class Node:
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
-                + np.prod(self.shape) * (self.type == "Bargmann")  # conversion
-                + np.prod(other.shape) * (other.type == "Bargmann")  # conversion
+                + np.prod(self.shape) * (self.repr == "Bargmann")  # conversion
+                + np.prod(other.shape) * (other.repr == "Bargmann")  # conversion
             )
         return int(cost)
 
-    def __matmul__(self, other) -> Node:
-        """Returns the contracted Node."""
+    def __matmul__(self, other) -> Component:
+        """Returns the contracted Component."""
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
         shape_A = [n for i, n in enumerate(self.shape) if i not in idxA]
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = Node(
-            "Bargmann" if self.type == other.type == "Bargmann" else "Fock",
+        new_component = Component(
+            "Bargmann" if self.repr == other.repr == "Bargmann" else "Fock",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
@@ -107,7 +111,7 @@ class Node:
 
 
 class Graph(nx.DiGraph):
-    """Giving the nx.Graph a cost and a solution attribute and making it sortable."""
+    """Power pack for nx.DiGraph with additional attributes and methods."""
 
     def __init__(self, solution: tuple[Edge, ...] = (), costs: tuple[int, ...] = ()):
         super().__init__()
@@ -122,14 +126,61 @@ class Graph(nx.DiGraph):
         return self.cost < other.cost
 
     def __hash__(self) -> int:
-        return hash(tuple(self.nodes) + tuple(self.edges) + tuple(self.solution))
+        return hash(
+            tuple(self.nodes)
+            + tuple(self.edges)
+            + tuple(self.solution)  # do we want this?
+            + tuple(sum((c.shape for c in self.components()), start=[]))
+        )
+
+    def component(self, n) -> Component:
+        return self.nodes[n]["component"]
+
+    def components(self) -> Generator[Component, None, None]:
+        for n in self.nodes:
+            yield self.component(n)
+
+
+def optimize_fock_shapes(graph: Graph) -> Graph:
+    h = hash(graph)
+    for A, B in graph.edges:
+        wires_A = graph.nodes[A]["component"].wires
+        wires_B = graph.nodes[B]["component"].wires
+        idx_A, idx_B = wires_A.contracted_indices(wires_B)
+        # ensure at idx_i and idx_j the shapes are the minimum
+        for i, j in zip(idx_A, idx_B):
+            value = min(
+                graph.nodes[A]["component"].shape[i],
+                graph.nodes[B]["component"].shape[j],
+            )
+            graph.nodes[A]["component"].shape[i] = value
+            graph.nodes[B]["component"].shape[j] = value
+
+    for component in graph.components():
+        if component.name == "BSgate":
+            a, b, c, d = component.shape
+            if c and d:
+                if not a or a > c + d:
+                    a = c + d
+                if not b or b > c + d:
+                    b = c + d
+            if a and b:
+                if not c or c > a + b:
+                    c = a + b
+                if not d or d > a + b:
+                    d = a + b
+            component.shape = [a, b, c, d]
+
+    if h != hash(graph):
+        graph = optimize_fock_shapes(graph)
+    return graph
 
 
 def parse(components: list[CircuitComponent]) -> Graph:
     """Parses a list of CircuitComponents into a Graph.
 
-    Each node in the graph corresponds to a Node and an edge between two nodes indicates that
-    the Nodes are connected in the circuit level. Whether they are connected by one wire
+    Each node in the graph corresponds to a Component and an edge between two nodes indicates that
+    the Components are connected in the circuit level. Whether they are connected by one wire
     or by many, in the graph they will have a single edge between them.
 
     Args:
@@ -137,7 +188,7 @@ def parse(components: list[CircuitComponent]) -> Graph:
     """
     graph = Graph()
     for i, A in enumerate(components):
-        comp = Node.from_circuitcomponent(A)
+        comp = Component.from_circuitcomponent(A)
         graph.add_node(i, component=comp.copy())
         for j, B in enumerate(components[i + 1 :]):
             overlap_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes
@@ -233,7 +284,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
         graph.edges[edge]["cost"] = A.contraction_cost(B)
         if debug > 0:
             print(
-                f"cost of edge {edge}: {A.type}|{A.shape} x {B.type}|{B.shape} = {graph.edges[edge]['cost']}"
+                f"cost of edge {edge}: {A.repr}|{A.shape} x {B.repr}|{B.shape} = {graph.edges[edge]['cost']}"
             )
 
 
@@ -248,10 +299,10 @@ def random_solution(graph: Graph) -> Graph:
 def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     r"""Reduces the first pair of nodes that match the pattern in the code.
     The first number and letter describe a node with that number of
-    edges and that type (B for Bargmann, F for Fock), and the last letter
-    describes the type of the second node.
+    edges and that repr (B for Bargmann, F for Fock), and the last letter
+    describes the repr of the second node.
     For example 1BB means we will contract the first occurrence of a node
-    that has one edge (a leaf) connected to a node of type B with an arbitrary
+    that has one edge (a leaf) connected to a node of repr B with an arbitrary
     number of edges.
     We typically use codes like 1BB, 2BB, 1FF, 2FF by default because they are
     safe, and codes like 1BF, 1FB optionally as they are not always the best choice.
@@ -262,7 +313,7 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
             for edge in list(graph.edges(node)) + list(graph.in_edges(node)):
                 A = graph.nodes[edge[0]]["component"]
                 B = graph.nodes[edge[1]]["component"]
-                if A.type[0] == tA and B.type[0] == tB:
+                if A.repr[0] == tA and B.repr[0] == tB:
                     graph = contract(graph, edge)
                     return graph, edge
     return graph, False
