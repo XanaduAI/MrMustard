@@ -339,6 +339,7 @@ class State(CircuitComponent):
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
+        return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
         2D visualization of the Wigner function of this state.
@@ -359,6 +360,7 @@ class State(CircuitComponent):
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -450,7 +452,9 @@ class State(CircuitComponent):
             tickfont_family="Arial Black",
         )
 
-        return fig
+        if return_fig:
+            return fig
+        display(fig)
 
     def visualize_3d(
         self,
@@ -458,6 +462,7 @@ class State(CircuitComponent):
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "viridis",
+        return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
         3D visualization of the Wigner function of this state on a surface plot.
@@ -468,6 +473,7 @@ class State(CircuitComponent):
             resolution: The number of bins on each axes.
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing the state in 3D.
@@ -526,11 +532,14 @@ class State(CircuitComponent):
         fig.update_xaxes(title_text="x")
         fig.update_yaxes(title="p")
 
-        return fig
+        if return_fig:
+            return fig
+        display(fig)
 
     def visualize_dm(
         self,
         cutoff: Optional[int] = None,
+        return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
         Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
@@ -538,6 +547,7 @@ class State(CircuitComponent):
 
         Args:
             cutoff: The desired cutoff. Defaults to the value of auto_shape.
+            return_fig: Whether to return the ``Plotly`` figure.
 
         Returns:
             A ``Plotly`` figure representing absolute value of the density matrix of this state.
@@ -562,7 +572,9 @@ class State(CircuitComponent):
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 
-        return fig
+        if return_fig:
+            return fig
+        display(fig)
 
     def _ipython_display_(self):  # pragma: no cover
         is_ket = isinstance(self, Ket)

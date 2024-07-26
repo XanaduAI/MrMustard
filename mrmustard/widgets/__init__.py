@@ -279,10 +279,10 @@ def state(obj, is_ket, is_fock):
         return widgets.Box([table_widget, wires_widget])
 
     left_widget = widgets.VBox(
-        [table_widget, go.FigureWidget(obj.visualize_dm())],
+        [table_widget, go.FigureWidget(obj.visualize_dm(return_fig=True))],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
     )
-    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100))
+    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100, return_fig=True))
     return widgets.HBox(
         [left_widget, right_widget],
         layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),
