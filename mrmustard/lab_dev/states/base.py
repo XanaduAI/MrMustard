@@ -455,7 +455,6 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
-        del fig
 
     def visualize_3d(
         self,
@@ -536,7 +535,6 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
-        del fig
 
     def visualize_dm(
         self,
@@ -577,7 +575,6 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
-        del fig
 
     def _ipython_display_(self):  # pragma: no cover
         is_ket = isinstance(self, Ket)
