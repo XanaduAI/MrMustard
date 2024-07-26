@@ -186,6 +186,12 @@ class PolyExpBase(Ansatz):
         )
 
     def __add__(self, other: PolyExpBase) -> PolyExpBase:
+        r"""
+        Adds two ansatze together. This means concatenating them in the batch dimension.
+        In the case where c is a polynomial of different shapes it will add padding zeros to make
+        the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the 
+        shape of the combined object will be (2,5,4,5).
+        """
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
 
