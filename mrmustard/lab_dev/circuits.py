@@ -82,7 +82,7 @@ class Circuit:
     def optimize_fock_shapes(self) -> None:
         r"""
         Optimizes the Fock shapes of the components in this circuit.
-        It starts by matching the existing connected wires and keep the smaller shape,
+        It starts by matching the existing connected wires and keeps the smaller shape,
         then it enforces the BSgate symmetry (conservation of photon number) to further
         reduce the shapes across the circuit.
         This operation acts in place.
@@ -95,12 +95,16 @@ class Circuit:
         self,
         n_init: int = 100,
         heuristics: tuple[str, ...] = ("1BB", "2BB", "1FF", "2FF"),
-        debug: bool = False,
     ) -> None:
         r"""
         Optimizes the contraction path for this circuit.
+
+        Args:
+            graph: The graph to contract.
+            n_init: The number of random contractions to find an initial cost upper bound.
+            heuristics: A sequence of patterns to reduce in order.
         """
-        self.path = bb.optimal_contraction(self.graph, n_init, heuristics, debug).solution
+        self.path = bb.optimal_contraction(self.graph, n_init, heuristics).solution
 
     def lookup_path(self, n: int) -> None:
         r"""

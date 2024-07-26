@@ -319,12 +319,12 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     return graph, False
 
 
-def heuristic(graph: Graph, code: str, debug: int = 0) -> Graph:
+def heuristic(graph: Graph, code: str) -> Graph:
     r"""Simplifies the graph by contracting all pairs of nodes that match the given pattern."""
     edge = True
     while edge:
         graph, edge = reduce_first(graph, code)
-        if debug > 0 and edge:
+        if edge:
             print(f"{code} edge: {edge} | tot cost: {graph.cost} | solution: {graph.solution}")
     return graph
 
@@ -333,7 +333,6 @@ def optimal_contraction(
     graph: Graph,
     n_init: int = 1,
     heuristics: tuple[str, ...] = ("1BB", "2BB", "1FF", "2FF"),
-    debug: int = 0,
 ) -> Graph:
     r"""Finds the optimal path to contract a graph.
 
@@ -347,18 +346,15 @@ def optimal_contraction(
         The optimally contracted graph with associated cost and solution
     """
     assign_costs(graph)
-    if debug > 0:
-        print("===== Simplify graph via heuristics =====")
+    print("===== Simplify graph via heuristics =====")
     for code in heuristics:
-        graph = heuristic(graph, code, debug)
-
+        graph = heuristic(graph, code)
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
         best = rand if rand.cost < best.cost else best
-    if debug > 0:
-        print(f"\n===== Init from best of {n_init} full random contractions =====")
-        print(f"Best cost found: {best.cost}\n")
+    print(f"\n===== Init from best of {n_init} full random contractions =====")
+    print(f"Best cost found: {best.cost}\n")
 
     print(f"===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     queue = PriorityQueue()
