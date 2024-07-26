@@ -16,7 +16,7 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-from ipywidgets import HBox, VBox, HTML
+from ipywidgets import Box, HBox, VBox, HTML
 import numpy as np
 from plotly.graph_objs import FigureWidget
 import pytest
@@ -393,7 +393,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_ipython_repr_too_many_dims(self):
         """Test the widgets.state function when the Ket has too many dims."""
         vbox = state_widget(Number([0, 1], n=1), True, True)
-        assert isinstance(vbox, VBox)
+        assert isinstance(vbox, Box)
 
         [table, wires] = vbox.children
         assert isinstance(table, HTML)
