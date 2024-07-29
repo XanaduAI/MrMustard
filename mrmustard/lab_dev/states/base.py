@@ -26,16 +26,16 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
-import os
 
 from enum import Enum
-from IPython.display import display, HTML
-from mako.template import Template
+import warnings
+
+from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-import warnings
-from mrmustard import math, settings
+
+from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
@@ -454,8 +454,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_3d(
         self,
@@ -535,8 +534,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_dm(
         self,
@@ -576,12 +574,12 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
-        display(HTML(template.render(state=self)))
+    def _ipython_display_(self):  # pragma: no cover
+        is_ket = isinstance(self, Ket)
+        is_fock = isinstance(self.representation, Fock)
+        display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
     def _getitem_builtin_state(self, modes: set[int]):
         r"""
@@ -668,7 +666,7 @@ class DM(State):
                 )
                 shape = tuple(shape) + tuple(shape)
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -829,6 +827,27 @@ class DM(State):
             representation, wires, self.name
         )  # pylint: disable=protected-access
 
+    @classmethod
+    def random(cls, modes, m=None, max_r=1.0):
+        r"""
+        Samples a random density matrix. The final state has zero displacement.
+
+        Args:
+        modes: the modes where the state is defined over
+        m: is the number modes to be considered for tracing out from a random pure state (Ket)
+        if not specified, m is considered to be len(modes)
+        """
+        if m is None:
+            m = len(modes)
+
+        max_idx = max(modes)
+
+        ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        full_wires = modes + ancilla
+
+        psi = Ket.random(full_wires, max_r)
+        return psi[modes]
+
 
 class Ket(State):
     r"""
@@ -891,7 +910,7 @@ class Ket(State):
                     max_shape or settings.AUTOSHAPE_MAX,
                 )
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -1043,3 +1062,38 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 result = DM(result.wires.modes, result.representation)
         return result
+
+    @classmethod
+    def random(cls, modes, max_r=1.0):
+        r"""
+        generates random states with 0 displacement, using the random_symplectic funcionality
+        Args: "modes" are the modes where the state is defined on
+        Output is a Ket
+        """
+        # TODO: use __class_getitem_ and sample from broader probabilities
+        # TODO: random any gate
+
+        # generate a random ket repr.
+        # e.g. S = math.random_symplectic(dim) and then apply to vacuum
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        transformation = (
+            1
+            / np.sqrt(2)
+            * math.block(
+                [
+                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        -1j * math.eye(m, dtype=math.complex128),
+                        1j * math.eye(m, dtype=math.complex128),
+                    ],
+                ]
+            )
+        )
+        S = math.conj(math.transpose(transformation)) @ S @ transformation
+        S_1 = S[:m, :m]
+        S_2 = S[:m, m:]
+        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+        b = math.zeros(m, dtype=A.dtype)
+        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
+        return psi.normalize()

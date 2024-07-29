@@ -17,11 +17,11 @@
 from __future__ import annotations
 from functools import cached_property
 from typing import Optional, Sequence
-import os
 import numpy as np
 
-from IPython.display import display, HTML
-from mako.template import Template
+from IPython.display import display
+
+from mrmustard import widgets
 
 __all__ = ["Wires"]
 
@@ -167,6 +167,7 @@ class Wires:
             modes_out_ket or set(),
             modes_in_ket or set(),
         )
+        self._len = None
 
         # The "parent" wires object, if any. This is ``None`` for freshly initialized
         # wires objects, and ``not None`` for subsets.
@@ -334,11 +335,9 @@ class Wires:
 
     def __len__(self) -> int:
         r"""The number of wires."""
-        try:
-            return self._len
-        except AttributeError:
+        if self._len is None:
             self._len = sum(map(len, self.args))
-            return self._len
+        return self._len
 
     def __eq__(self, other) -> bool:
         return self.args == other.args
@@ -423,10 +422,6 @@ class Wires:
     def __repr__(self) -> str:
         return f"Wires{self.args}"
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")
-        display(HTML(template.render(wires=self)))
-
     def contracted_indices(self, other: Wires):
         """Returns the indices being contracted on self and other"""
         ovlp_bra = sorted(self.output.bra.modes & other.input.bra.modes)
@@ -434,3 +429,6 @@ class Wires:
         idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
         idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
         return idxA, idxB
+
+    def _ipython_display_(self):
+        display(widgets.wires(self))
