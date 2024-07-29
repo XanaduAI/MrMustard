@@ -16,6 +16,9 @@
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
+from unittest.mock import patch
+
+from ipywidgets import Box, VBox, HBox, HTML
 import numpy as np
 import pytest
 
@@ -428,6 +431,31 @@ class TestCircuitComponent:
         C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
         back = Channel.from_quadrature([0], [0], C.quadrature())
         assert C == back
+
+    @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
+    @patch("mrmustard.lab_dev.circuit_components.display")
+    def test_ipython_repr(self, mock_display, is_fock, widget_cls):
+        """Test the IPython repr function."""
+        adj = AdjointView(Dgate([1], x=0.1, y=0.1))
+        if is_fock:
+            adj = adj.to_fock()
+        adj._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, Box)
+        [wires_widget, rep_widget] = box.children
+        assert isinstance(wires_widget, HTML)
+        assert type(rep_widget) is widget_cls
+
+    @patch("mrmustard.lab_dev.circuit_components.display")
+    def test_ipython_repr_invalid_obj(self, mock_display):
+        """Test the IPython repr function."""
+        adj = AdjointView(Dgate([1, 2], x=0.1, y=0.1)).to_fock()
+        adj._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, VBox)
+        [title_widget, wires_widget] = box.children
+        assert isinstance(title_widget, HTML)
+        assert isinstance(wires_widget, HTML)
 
 
 class TestAdjointView:

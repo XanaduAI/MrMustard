@@ -16,7 +16,9 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
+from ipywidgets import Box, HBox, VBox, HTML
 import numpy as np
+from plotly.graph_objs import FigureWidget
 import pytest
 
 from mrmustard import math, settings
@@ -35,6 +37,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.widgets import state as state_widget
 
 # original settings
 autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)
@@ -371,8 +374,33 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert np.isclose(psi.probability, 1)  # checks if the state is normalized
         assert np.allclose(A - np.transpose(A), np.zeros(2))  # checks if the A matrix is symmetric
 
+    def test_ipython_repr(self):
+        """
+        Test the widgets.state function.
+        Note: could not mock display because of the states.py file name conflict.
+        """
+        hbox = state_widget(Number([0], n=1), True, True)
+        assert isinstance(hbox, HBox)
 
-class TestDM:
+        [left, viz_2d] = hbox.children
+        assert isinstance(left, VBox)
+        assert isinstance(viz_2d, FigureWidget)
+
+        [table, dm] = left.children
+        assert isinstance(table, HTML)
+        assert isinstance(dm, FigureWidget)
+
+    def test_ipython_repr_too_many_dims(self):
+        """Test the widgets.state function when the Ket has too many dims."""
+        vbox = state_widget(Number([0, 1], n=1), True, True)
+        assert isinstance(vbox, Box)
+
+        [table, wires] = vbox.children
+        assert isinstance(table, HTML)
+        assert isinstance(wires, HTML)
+
+
+class TestDM:  # pylint:disable=too-many-public-methods
     r"""
     Tests for the ``DM`` class.
     """
