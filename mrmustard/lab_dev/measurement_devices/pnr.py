@@ -20,12 +20,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from numbers import Number
 from typing import Optional, Sequence
 
 from ..states import Number, ConditionalState, State
 from .base import MeasurementDevice
 from ..circuit_components import CircuitComponent
+from ..sampler import Sampler
 from mrmustard import settings, math
 
 __all__ = ["PNR"]
@@ -48,7 +48,10 @@ class PNR(MeasurementDevice):
         super().__init__(
             modes=set(modes),
             name="PNR",
-            sampling_technique=[Number(modes, n, self.cutoff) for n in range(self.cutoff + 1)],
+            sampler=Sampler(
+                list(range(self.cutoff + 1)),
+                [Number(modes, n, self.cutoff) for n in range(self.cutoff + 1)],
+            ),
         )
 
     @property
@@ -81,7 +84,7 @@ class PNR(MeasurementDevice):
         # this should be handled by self.sampling_technique.sample
         a = list(range(len(self.sampling_technique)))
         p = [
-            state.probability if isinstance(state, State) else math.cast(state**2, float)
+            state.probability if isinstance(state, State) else math.cast(math.pow(state, 2), float)
             for state in ret.state_outcomes.values()
         ]
         p = p / sum(p)

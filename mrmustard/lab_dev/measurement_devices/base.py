@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Optional, Any
 
 from ..circuit_components import CircuitComponent
+from ..sampler import Sampler
 
 __all__ = ["MeasurementDevice"]
 
@@ -34,7 +35,7 @@ class MeasurementDevice(CircuitComponent):
         self,
         name: Optional[str] = None,
         modes: tuple[int, ...] = (),
-        sampling_technique: Optional[Any] = None,
+        sampler: Optional[Sampler] = None,
     ):
         super().__init__(
             name=name or "MD" + "".join(str(m) for m in modes),
@@ -43,11 +44,9 @@ class MeasurementDevice(CircuitComponent):
         )
 
         # thinking this is either Sampler / ProbabilityDistribution / POVMs
-        self._sampling_technique = sampling_technique
+        self._sampler = sampler
 
     @property
-    def sampling_technique(self):
-        r"""
-        The sampling technique that defines this measurement.
-        """
-        return self._sampling_technique
+    def sampler(self):
+        r""" """
+        return self._sampler

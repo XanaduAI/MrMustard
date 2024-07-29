@@ -12,31 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=too-many-branches
+
 """
-This module contains the Homodyne class.
+This module contains the sampler class.
 """
 
 from __future__ import annotations
 
-import numpy as np
 
-from typing import Sequence
-
-from .base import MeasurementDevice
+__all__ = ["Sampler"]
 
 
-__all__ = ["Homodyne"]
-
-
-class Homodyne(MeasurementDevice):
+class Sampler:
     r""" """
 
-    def __init__(
-        self,
-        modes: Sequence[int],
-    ):
-        super().__init__(
-            modes=set(modes),
-            name="Homodyne",
-            sampling_technique=[],
-        )
+    def __init__(self, meas_outcomes, sampling_technique) -> None:
+        self._meas_outcomes = meas_outcomes
+        self._sampling_technique = sampling_technique
+
+    @property
+    def meas_outcomes(self):
+        r""" """
+        return self._meas_outcomes
+
+    @property
+    def sampling_technique(self):
+        r""" """
+        return self._sampling_technique
+
+    def sample(self):
+        r""" """
+        pass
+
+    def prob_dist(self):
+        r""" """
+        pass
+
+    def povms(self):
+        r""" """
+        pass
