@@ -26,16 +26,16 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
-import os
 
 from enum import Enum
 import warnings
-from IPython.display import display, HTML
-from mako.template import Template
+
+from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-from mrmustard import math, settings
+
+from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
@@ -454,8 +454,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_3d(
         self,
@@ -535,8 +534,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_dm(
         self,
@@ -576,12 +574,12 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
-        display(HTML(template.render(state=self)))
+    def _ipython_display_(self):  # pragma: no cover
+        is_ket = isinstance(self, Ket)
+        is_fock = isinstance(self.representation, Fock)
+        display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
     def _getitem_builtin_state(self, modes: set[int]):
         r"""
