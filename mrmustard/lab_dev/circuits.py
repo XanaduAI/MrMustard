@@ -77,9 +77,50 @@ class Circuit:
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
         self.graph = bb.parse(self.components)
-        self.path = []
+        self.optimized_graph = bb.Graph()
 
-    def optimize_fock_shapes(self) -> None:
+    def optimize(self, with_1FB_heuristic: list[str] = True) -> None:
+        r"""
+        Optimizes the Fock shapes and the contraction path of this circuit.
+        It allows one to use the 1FB heuristic as appropriate. This simplifies
+        a 1-wire Fock component with a multimode Bargmann component.
+        Args:
+            with_BF_heuristic: If True (default), the 1FB heuristics are included in the optimization process.
+        """
+        self._optimize_fock_shapes()
+        if with_1FB_heuristic:
+            self._optimize_contraction_path(heuristics=("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"))
+        else:
+            self._optimize_contraction_path(heuristics=("1BB", "2BB", "1FF", "2FF"))
+
+    def run(self, circuit: Circuit) -> CircuitComponent:
+        r"""
+        Runs the simulations of the given circuit.
+
+        Arguments:
+            circuit: The circuit to simulate.
+
+        Returns:
+            A circuit component representing the entire circuit.
+
+        Raises:
+            ValueError: If ``circuit`` has an incomplete path.
+        """
+        if not circuit.path:
+            raise ValueError("The circuit has no path. Run the ``optimize`` method first.")
+
+        if len(circuit.path) != len(circuit) - 1:
+            msg = f"``circuit.path`` needs to specify {len(circuit) - 1} contractions, "
+            msg += f"found {len(circuit.path)}."
+            raise ValueError(msg)
+
+        ret = dict(enumerate(circuit.components))
+        for idx0, idx1 in circuit.path:
+            ret[idx0] = ret[idx0] @ ret.pop(idx1)
+
+        return list(ret.values())[0]
+
+    def _optimize_fock_shapes(self) -> None:
         r"""
         Optimizes the Fock shapes of the components in this circuit.
         It starts by matching the existing connected wires and keeps the smaller shape,
@@ -87,14 +128,22 @@ class Circuit:
         reduce the shapes across the circuit.
         This operation acts in place.
         """
-        self.graph = bb.optimize_fock_shapes(self.graph)
+        print("===== Optimizing Fock shapes =====")
+        self.graph = bb.optimize_fock_shapes(self.graph, 0)
         for i, c in enumerate(self.components):
             c.manual_shape = self.graph.component(i).shape
 
-    def optimize_contraction_path(
+    @property
+    def path(self) -> list[tuple[int, int]]:
+        r"""
+        The optimized contraction path of this circuit. If empty, run the ``optimize`` method.
+        """
+        return self.optimized_graph.solution
+
+    def _optimize_contraction_path(
         self,
         n_init: int = 100,
-        heuristics: tuple[str, ...] = ("1BB", "2BB", "1FF", "2FF"),
+        heuristics: tuple[str, ...] = ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"),
     ) -> None:
         r"""
         Optimizes the contraction path for this circuit.
@@ -104,7 +153,7 @@ class Circuit:
             n_init: The number of random contractions to find an initial cost upper bound.
             heuristics: A sequence of patterns to reduce in order.
         """
-        self.path = bb.optimal_contraction(self.graph, n_init, heuristics).solution
+        self.optimized_graph = bb.optimal_contraction(self.graph, n_init, heuristics)
 
     def lookup_path(self, n: int) -> None:
         r"""

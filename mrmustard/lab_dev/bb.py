@@ -141,7 +141,7 @@ class Graph(nx.DiGraph):
             yield self.component(n)
 
 
-def optimize_fock_shapes(graph: Graph) -> Graph:
+def optimize_fock_shapes(graph: Graph, iter: int) -> Graph:
     h = hash(graph)
     for A, B in graph.edges:
         wires_A = graph.nodes[A]["component"].wires
@@ -172,7 +172,8 @@ def optimize_fock_shapes(graph: Graph) -> Graph:
             component.shape = [a, b, c, d]
 
     if h != hash(graph):
-        graph = optimize_fock_shapes(graph)
+        print(f"Iteration {iter}: graph updated")
+        graph = optimize_fock_shapes(graph, iter + 1)
     return graph
 
 
@@ -325,14 +326,14 @@ def heuristic(graph: Graph, code: str) -> Graph:
     while edge:
         graph, edge = reduce_first(graph, code)
         if edge:
-            print(f"{code} edge: {edge} | tot cost: {graph.cost} | solution: {graph.solution}")
+            print(f"{code} edge: {edge} | tot cost: {graph.cost}")
     return graph
 
 
 def optimal_contraction(
     graph: Graph,
-    n_init: int = 1,
-    heuristics: tuple[str, ...] = ("1BB", "2BB", "1FF", "2FF"),
+    n_init: int,
+    heuristics: tuple[str, ...],
 ) -> Graph:
     r"""Finds the optimal path to contract a graph.
 
@@ -346,33 +347,38 @@ def optimal_contraction(
         The optimally contracted graph with associated cost and solution
     """
     assign_costs(graph)
-    print("===== Simplify graph via heuristics =====")
+    print("\n===== Simplify graph via heuristics =====")
     for code in heuristics:
         graph = heuristic(graph, code)
+    if graph.number_of_edges() == 0:
+        return graph
+
+    print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
         best = rand if rand.cost < best.cost else best
-    print(f"\n===== Init from best of {n_init} full random contractions =====")
-    print(f"Best cost found: {best.cost}\n")
+    print(f"Best cost from {n_init} random contractions: {best.cost}\n")
 
-    print(f"===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     queue = PriorityQueue()
     queue.put(graph)
     while not queue.empty():
         candidate = queue.get()
+        print(
+            f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
+            end="\x1b[1K\r",
+        )
+
         if candidate.cost >= best.cost:
-            return best  # early stopping because first in queue is worse
-        elif candidate.number_of_edges() == 0:  # better solution! 🥳
+            print("warning: early stop")
+            return  # early stopping because first in queue is worse
+        elif (
+            candidate.number_of_edges() == 0
+        ):  # better solution! 🥳r_of_edges() == 0:  # better solution! 🥳
             best = candidate
             queue.queue = [g for g in queue.queue if g.cost < best.cost]  # prune
         else:
             for g in grandchildren(candidate, cost_bound=best.cost):
                 if g not in queue.queue:  # superfluous check?
                     queue.put(g)
-        print(
-            "\r"
-            + f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
-            end="\x1b[1K",
-        )
     return best
