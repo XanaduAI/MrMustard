@@ -90,5 +90,5 @@ class TraceOut(CircuitComponent):
             repr = other.representation.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
-        cpt = other._from_attributes(repr, wires)
+        cpt = other._from_attributes(repr, wires)  # pylint:disable=protected-access
         return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
