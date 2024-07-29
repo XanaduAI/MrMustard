@@ -14,9 +14,10 @@
 
 """This module contains the logic for cachin tensor functions in Mr Mustard."""
 
+import numpy as np
+
 from functools import lru_cache, wraps
 from mrmustard.math.backend_manager import BackendManager
-import numpy as np
 
 math = BackendManager()
 

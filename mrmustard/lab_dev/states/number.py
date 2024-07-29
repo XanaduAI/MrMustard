@@ -77,7 +77,7 @@ class Number(Ket):
                 f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
             )
         self.n = n
-        super().__init__(modes=modes, name=f"N")
+        super().__init__(modes=modes, name="N")
         self.short_name = [str(n) for n in self.n]
 
         for i, num in enumerate(n):

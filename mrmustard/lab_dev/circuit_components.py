@@ -234,7 +234,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
@@ -253,7 +253,7 @@ class CircuitComponent:
         if isinstance(self.representation, Fock):
             raise NotImplementedError("Not implemented with Fock representation.")
 
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
