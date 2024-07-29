@@ -789,7 +789,9 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
     def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
-        Updates the ansatz from calling the ansatz on some wires, while leaving the rest as None.
+        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
+        For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self.call_none([np.array([1.0, None]])``
+        returns ``F(1.0, z2)`` as a new ansatz with a single variable.
         Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
         Args:
             z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
