@@ -21,13 +21,11 @@ from __future__ import annotations
 from warnings import warn
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
-import os
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from IPython.display import display, HTML
-from mako.template import Template
+from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -44,6 +42,7 @@ from mrmustard.utils.typing import (
     Scalar,
     Tensor,
 )
+from mrmustard import widgets
 
 __all__ = ["Representation", "Bargmann", "Fock"]
 
@@ -517,9 +516,8 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")  # nosec
-        display(HTML(template.render(rep=self)))
+    def _ipython_display_(self):
+        display(widgets.bargmann(self))
 
 
 class Fock(Representation):
@@ -786,9 +784,12 @@ class Fock(Representation):
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")  # nosec
-        display(HTML(template.render(rep=self)))
+    def _ipython_display_(self):
+        w = widgets.fock(self)
+        if w is None:
+            print(repr(self))
+            return
+        display(w)
 
     def sum_batch(self) -> Fock:
         r"""
