@@ -1,4 +1,17 @@
 # Copyright 2024 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.lab_dev.circuit_components import CircuitComponent
@@ -60,7 +73,7 @@ class Component:
             other: Component
 
         Returns:
-            int: contraction cost in FLOPS
+            int: contraction cost in approx FLOPS
 
         TODO: this will need to be updated once we have the poly x exp ansatz.
         TODO: be more precise on costs (profile properly? use wall time?)
@@ -311,7 +324,7 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     n, tA, tB = code
     for node in graph.nodes:
         if int(n) == graph.degree(node):
-            for edge in list(graph.edges(node)) + list(graph.in_edges(node)):
+            for edge in list(graph.out_edges(node)) + list(graph.in_edges(node)):
                 A = graph.nodes[edge[0]]["component"]
                 B = graph.nodes[edge[1]]["component"]
                 if A.repr[0] == tA and B.repr[0] == tB:
@@ -371,14 +384,12 @@ def optimal_contraction(
 
         if candidate.cost >= best.cost:
             print("warning: early stop")
-            return  # early stopping because first in queue is worse
-        elif (
-            candidate.number_of_edges() == 0
-        ):  # better solution! 🥳r_of_edges() == 0:  # better solution! 🥳
+            return candidate  # early stopping because first in queue is already worse
+        elif candidate.number_of_edges() == 0:  # better solution! 🥳
             best = candidate
             queue.queue = [g for g in queue.queue if g.cost < best.cost]  # prune
         else:
             for g in grandchildren(candidate, cost_bound=best.cost):
-                if g not in queue.queue:  # superfluous check?
+                if g not in queue.queue:
                     queue.put(g)
     return best

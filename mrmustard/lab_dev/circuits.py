@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=too-many-branches
 
 """
 A class to quantum circuits.
@@ -77,45 +76,46 @@ class Circuit:
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
         self.graph = bb.parse(self.components)
+        self.path: list[tuple[int, int]] = []
         self.optimized_graph = bb.Graph()
 
-    def optimize(self, with_1FB_heuristic: list[str] = True) -> None:
+    def optimize(self, with_BF_heuristic: bool = True) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
-        It allows one to use the 1FB heuristic as appropriate. This simplifies
-        a 1-wire Fock component with a multimode Bargmann component.
+        It allows one to use the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
+        components with multimode Bargmann/Fock components leads to a lower total cost.
+
         Args:
-            with_BF_heuristic: If True (default), the 1FB heuristics are included in the optimization process.
+            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
         """
         self._optimize_fock_shapes()
-        if with_1FB_heuristic:
+        if with_BF_heuristic:
             self._optimize_contraction_path(heuristics=("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"))
         else:
             self._optimize_contraction_path(heuristics=("1BB", "2BB", "1FF", "2FF"))
 
-    def run(self, circuit: Circuit) -> CircuitComponent:
+    def contract(self) -> CircuitComponent:
         r"""
-        Runs the simulations of the given circuit.
-
-        Arguments:
-            circuit: The circuit to simulate.
+        Contracts the components in this circuit in the order specified by the ``path`` attribute.
 
         Returns:
-            A circuit component representing the entire circuit.
+            The result of contracting the circuit.
 
         Raises:
             ValueError: If ``circuit`` has an incomplete path.
         """
-        if not circuit.path:
-            raise ValueError("The circuit has no path. Run the ``optimize`` method first.")
-
-        if len(circuit.path) != len(circuit) - 1:
-            msg = f"``circuit.path`` needs to specify {len(circuit) - 1} contractions, "
-            msg += f"found {len(circuit.path)}."
+        if not self.path:
+            msg = "The circuit has no contraction path. "
+            msg += "Run the ``optimize`` method or set the path attribute manually."
             raise ValueError(msg)
 
-        ret = dict(enumerate(circuit.components))
-        for idx0, idx1 in circuit.path:
+        if len(self.path) != len(self) - 1:
+            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
+            msg += f"found {len(self.path)}."
+            raise ValueError(msg)
+
+        ret = dict(enumerate(self.components))
+        for idx0, idx1 in self.path:
             ret[idx0] = ret[idx0] @ ret.pop(idx1)
 
         return list(ret.values())[0]
@@ -133,13 +133,6 @@ class Circuit:
         for i, c in enumerate(self.components):
             c.manual_shape = self.graph.component(i).shape
 
-    @property
-    def path(self) -> list[tuple[int, int]]:
-        r"""
-        The optimized contraction path of this circuit. If empty, run the ``optimize`` method.
-        """
-        return self.optimized_graph.solution
-
     def _optimize_contraction_path(
         self,
         n_init: int = 100,
@@ -154,8 +147,9 @@ class Circuit:
             heuristics: A sequence of patterns to reduce in order.
         """
         self.optimized_graph = bb.optimal_contraction(self.graph, n_init, heuristics)
+        self.path = list(self.optimized_graph.solution)
 
-    def lookup_path(self, n: int) -> None:
+    def check_contraction(self, n: int) -> None:
         r"""
         An auxiliary function that helps visualize the contraction path of the circuit.
 
@@ -201,7 +195,7 @@ class Circuit:
                 <BLANKLINE>
 
                 >>> # start building the path
-                >>> circ.path = [(0, 1), (2, 3), (0, 2)]
+                >>> circ.path = ((0, 1), (2, 3), (0, 2)]
 
                 >>> circ.lookup_path(1)
                 <BLANKLINE>

@@ -20,6 +20,5 @@ from .circuit_components import *
 from .circuit_components_utils import *
 from .circuits import *
 from .states import *
-from .simulator import *
 from .transformations import *
 from .wires import Wires
