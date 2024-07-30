@@ -626,8 +626,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -872,7 +871,7 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:

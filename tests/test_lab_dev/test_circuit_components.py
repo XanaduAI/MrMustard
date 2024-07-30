@@ -55,7 +55,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
+        cc = CircuitComponent(representation, wires=[(), (), (1, 8), (1, 8)], name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -65,9 +65,7 @@ class TestCircuitComponent:
 
     def test_missing_name(self):
         cc = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
-            modes_out_ket=(1, 8),
-            modes_in_ket=(1, 8),
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)), wires=[(), (), (1, 8), (1, 8)]
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -83,13 +81,13 @@ class TestCircuitComponent:
         r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
         r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
 
-        cc1 = CircuitComponent(r1, modes_out_ket=m1, modes_in_ket=m1)
-        cc2 = CircuitComponent(r2, modes_out_ket=m2, modes_in_ket=m2)
+        cc1 = CircuitComponent(r1, wires=[(), (), m1, m1])
+        cc2 = CircuitComponent(r2, wires=[(), (), m2, m2])
         assert cc1 == cc2
 
         r3 = (cc1.adjoint @ cc1).representation
-        cc3 = CircuitComponent(r3, m2, m2, m2, m1)
-        cc4 = CircuitComponent(r3, m2, m2, m2, m2)
+        cc3 = CircuitComponent(r3, wires=[m2, m2, m2, m1])
+        cc4 = CircuitComponent(r3, wires=[m2, m2, m2, m2])
         assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -112,7 +110,7 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
         cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
-        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature())
         assert cc == ccc
 
     def test_adjoint(self):
@@ -149,9 +147,7 @@ class TestCircuitComponent:
 
     def test_light_copy(self):
         d1 = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-            modes_out_ket=[1],
-            modes_in_ket=[1],
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
         )
         d1_cp = d1._light_copy()
 
@@ -391,8 +387,8 @@ class TestCircuitComponent:
         assert result1 == result4
 
     def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
+        c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
+        c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")
 
         assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
@@ -476,8 +472,8 @@ class TestAdjointView:
         assert d1_adj_adj.representation == d1.representation
 
     def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
+        c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
+        c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")
 
         assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
         assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
@@ -517,8 +513,8 @@ class TestDualView:
         assert d1_dual_dual.representation == d1.representation
 
     def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 3))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 3), name="my_component")
+        c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 3)))
+        c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 3)), name="my_component")
 
         assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013)"
         assert repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component)"
