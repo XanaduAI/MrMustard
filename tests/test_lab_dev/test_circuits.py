@@ -53,39 +53,22 @@ class TestCircuit:
         MAX = settings.AUTOSHAPE_MAX
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
-        circ.propagate_shapes()
+        circ._optimize_fock_shapes()
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, 5)]
 
-        circ = Circuit([SqueezedVacuum([0, 1], r=[0.5, -0.5]), BSgate([0, 1], 0.9)])
+        circ = Circuit([SqueezedVacuum([0, 1], r=[0.5, -0.5]), BSgate((0, 1), 0.9)])
         assert [op.auto_shape() for op in circ] == [(6, 6), (MAX, MAX, MAX, MAX)]
-        circ.propagate_shapes()
+        circ._optimize_fock_shapes()
         assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
-
-    def test_make_path(self):
-        vac = Vacuum([0, 1, 2])
-        s01 = Sgate([0, 1])
-        bs01 = BSgate([0, 1])
-        bs12 = BSgate([1, 2])
-
-        circ = Circuit([vac, s01, bs01, bs12])
-
-        circ.make_path("l2r")
-        assert circ.path == [(0, 1), (0, 2), (0, 3)]
-
-        circ.make_path("r2l")
-        assert circ.path == [(2, 3), (1, 2), (0, 1)]
-
-        with pytest.raises(ValueError):
-            circ.make_path("my_strategy")
 
     def test_lookup_path(self, capfd):
         vac = Vacuum([0, 1, 2])
         s01 = Sgate([0, 1])
-        bs01 = BSgate([0, 1])
-        bs12 = BSgate([1, 2])
+        bs01 = BSgate((0, 1))
+        bs12 = BSgate((1, 2))
 
         circ = Circuit([vac, s01, bs01, bs12])
-        circ.lookup_path()
+        circ.check_contraction(0)
         out1, _ = capfd.readouterr()
         exp1 = "\n"
         exp1 += "→ index: 0\n"
@@ -104,7 +87,7 @@ class TestCircuit:
         assert out1 == exp1
 
         circ.path += [(0, 1)]
-        circ.lookup_path()
+        circ.check_contraction(1)
         out2, _ = capfd.readouterr()
         exp2 = "\n"
         exp2 += "→ index: 0\n"

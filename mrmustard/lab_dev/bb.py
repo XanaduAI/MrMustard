@@ -304,7 +304,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
 
 
 def random_solution(graph: Graph) -> Graph:
-    r"""Returns the cost and solution of a random contraction."""
+    r"""Returns a randomly contracted graph."""
     while graph.number_of_edges() > 0:
         edge = random.choice(list(graph.edges))
         graph = contract(graph, edge)
