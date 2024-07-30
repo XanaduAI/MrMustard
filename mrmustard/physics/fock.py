@@ -58,7 +58,7 @@ def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = 
     """
     n = math.atleast_1d(n)
     if cutoffs is None:
-        cutoffs = [ni for ni in n]
+        cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
 
