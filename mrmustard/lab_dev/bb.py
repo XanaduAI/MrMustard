@@ -154,7 +154,8 @@ class Graph(nx.DiGraph):
             yield self.component(n)
 
 
-def optimize_fock_shapes(graph: Graph, iter: int) -> Graph:
+def optimize_fock_shapes(graph: Graph, iteration: int) -> Graph:
+    """Iteratively optimizes the Fock shapes of the components in the graph."""
     h = hash(graph)
     for A, B in graph.edges:
         wires_A = graph.nodes[A]["component"].wires
@@ -186,7 +187,7 @@ def optimize_fock_shapes(graph: Graph, iter: int) -> Graph:
 
     if h != hash(graph):
         print(f"Iteration {iter}: graph updated")
-        graph = optimize_fock_shapes(graph, iter + 1)
+        graph = optimize_fock_shapes(graph, iteration + 1)
     return graph
 
 

@@ -75,9 +75,9 @@ class Circuit:
         components: Optional[Sequence[CircuitComponent]] = None,
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
-        self.graph = bb.parse(self.components)
+        self._graph = bb.parse(self.components)
         self.path: list[tuple[int, int]] = []
-        self.optimized_graph = bb.Graph()
+        self._optimized_graph = bb.Graph()
 
     def optimize(self, with_BF_heuristic: bool = True) -> None:
         r"""
@@ -104,14 +104,11 @@ class Circuit:
         Raises:
             ValueError: If ``circuit`` has an incomplete path.
         """
-        if not self.path:
-            msg = "The circuit has no contraction path. "
-            msg += "Run the ``optimize`` method or set the path attribute manually."
-            raise ValueError(msg)
-
         if len(self.path) != len(self) - 1:
-            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, "
-            msg += f"found {len(self.path)}."
+            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, found "
+            msg += (
+                f"{len(self.path)}. Please run the ``.optimize()`` method or set the path manually."
+            )
             raise ValueError(msg)
 
         ret = dict(enumerate(self.components))
@@ -129,9 +126,9 @@ class Circuit:
         This operation acts in place.
         """
         print("===== Optimizing Fock shapes =====")
-        self.graph = bb.optimize_fock_shapes(self.graph, 0)
+        self._graph = bb.optimize_fock_shapes(self._graph, 0)
         for i, c in enumerate(self.components):
-            c.manual_shape = self.graph.component(i).shape
+            c.manual_shape = self._graph.component(i).shape
 
     def _optimize_contraction_path(
         self,
@@ -146,8 +143,8 @@ class Circuit:
             n_init: The number of random contractions to find an initial cost upper bound.
             heuristics: A sequence of patterns to reduce in order.
         """
-        self.optimized_graph = bb.optimal_contraction(self.graph, n_init, heuristics)
-        self.path = list(self.optimized_graph.solution)
+        self._optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics)
+        self.path = list(self._optimized_graph.solution)
 
     def check_contraction(self, n: int) -> None:
         r"""
@@ -169,7 +166,7 @@ class Circuit:
 
                 >>> # ``circ`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
-                >>> circ.lookup_path(0)
+                >>> circ.check_contraction(0)  # no contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗
@@ -194,10 +191,10 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> # start building the path
-                >>> circ.path = ((0, 1), (2, 3), (0, 2)]
+                >>> # start building the path manually
+                >>> circ.path = ((0, 1), (2, 3), (0, 2))
 
-                >>> circ.lookup_path(1)
+                >>> circ.check_contraction(1)  # after 1 contraction
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -217,7 +214,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.lookup_path(2)
+                >>> circ.check_contraction(2)  # after 2 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -233,7 +230,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.lookup_path(3)
+                >>> circ.check_contraction(3)  # after 3 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
