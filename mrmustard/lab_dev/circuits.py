@@ -442,6 +442,14 @@ class Circuit:
         chunk_start = [f"mode {mode}:   " for mode in modes]
         chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
 
+        # every chunk starts with a recap of the modes
+        chunk_start = [f"mode {mode}:   " for mode in modes]
+        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
+
+        # every chunk starts with a recap of the modes
+        chunk_start = [f"mode {mode}:   " for mode in modes]
+        chunk_start = [s.rjust(max(len(s) for s in chunk_start), " ") for s in chunk_start]
+
         # generate the drawing
         ret = ""
         for chunk_idx in range(n_chunks):
