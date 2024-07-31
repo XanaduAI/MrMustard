@@ -122,7 +122,7 @@ class TestBtoPS:
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann
+        A1, b1, c1 = state_after.bargmann()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -130,9 +130,9 @@ class TestBtoPS:
             state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1], idx2=[1, 3]
         )
 
-        assert math.allclose(A1[0], A2)
-        assert math.allclose(b1[0], b2)
-        assert math.allclose(c1[0], c2)
+        assert math.allclose(A1, A2)
+        assert math.allclose(b1, b2)
+        assert math.allclose(c1, c2)
 
         # The init state cov and means comes from the random state 'state = Gaussian(2) >> Dgate([0.2], [0.3])'
         state_cov = np.array(
@@ -150,7 +150,7 @@ class TestBtoPS:
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann
+        A1, b1, c1 = state_after.bargmann()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
@@ -161,9 +161,9 @@ class TestBtoPS:
             idx2=[2, 3, 6, 7],
         )
 
-        assert math.allclose(A1[0], A2)
-        assert math.allclose(b1[0], b2)
-        assert math.allclose(c1[0], c2)
+        assert math.allclose(A1, A2)
+        assert math.allclose(b1, b2)
+        assert math.allclose(c1, c2)
 
 
 class TestBtoQ:

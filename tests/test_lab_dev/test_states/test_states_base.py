@@ -82,7 +82,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
-        triple_in = state_in.bargmann
+        triple_in = state_in.bargmann()  # automatically batched
 
         assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
         assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
@@ -94,11 +94,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_from_bargmann_error(self):
         state01 = Coherent([0, 1], 1)
         with pytest.raises(ValueError):
-            Ket.from_bargmann([0], state01.bargmann, "my_ket")
+            Ket.from_bargmann([0], state01.bargmann(), "my_ket")
 
     def test_bargmann_triple_error(self):
         with pytest.raises(AttributeError):
-            Number([0], n=10).bargmann
+            Number([0], n=10).bargmann()
 
     @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
     def test_normalize(self, modes, x, y, coeff):
@@ -153,10 +153,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state0 = Ket.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature()
         state1 = Ket.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
-        Atest2, btest2, ctest2 = state1.bargmann
-        assert math.allclose(Atest2[0], A0)
-        assert math.allclose(btest2[0], b0)
-        assert math.allclose(ctest2[0], c0)
+        Atest2, btest2, ctest2 = state1.bargmann()
+        assert math.allclose(Atest2, A0)
+        assert math.allclose(btest2, b0)
+        assert math.allclose(ctest2, c0)
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
@@ -434,7 +434,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
         state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
-        triple_in = state_in.bargmann
+        triple_in = state_in.bargmann()
 
         state_out = DM.from_bargmann(modes, triple_in, "my_dm")
         assert state_in == state_out
@@ -444,7 +444,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError):
             DM.from_bargmann(
                 [0],
-                state01.bargmann,
+                state01.bargmann(),
                 "my_dm",
             )
 
@@ -457,7 +457,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
         with pytest.raises(AttributeError):
-            fock.bargmann
+            fock.bargmann()
 
     @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
     def test_normalize(self, modes, x, y, coeff):
@@ -509,10 +509,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state0 = DM.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature()
         state1 = DM.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
-        Atest2, btest2, ctest2 = state1.bargmann
-        assert math.allclose(Atest2[0], A0)
-        assert math.allclose(btest2[0], b0)
-        assert math.allclose(ctest2[0], c0)
+        Atest2, btest2, ctest2 = state1.bargmann()
+        assert np.allclose(Atest2, A0)
+        assert np.allclose(btest2, b0)
+        assert np.allclose(ctest2, c0)
 
     def test_L2_norms(self):
         state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
@@ -665,7 +665,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):
-
         m = len(modes)
         dm = DM.random(modes)
         A = dm.representation.A[0]

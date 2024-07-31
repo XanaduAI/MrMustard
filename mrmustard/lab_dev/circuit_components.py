@@ -184,27 +184,30 @@ class CircuitComponent:
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
-    @property
-    def bargmann(self) -> tuple:
+    def bargmann(self, batched=False) -> tuple:
         r"""
         The Bargmann parametrization of this component, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this component is
         :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
 
+        If ``batched`` is ``False`` (default), it removes the batch dimension if it is of size 1.
+
         .. code-block:: pycon
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
             >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann, modes_out_ket=[0])
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann(), modes_out_ket=[0])
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
         try:
-            return self.representation.triple
+            A, b, c = self.representation.triple
+            if not batched and self.representation.ansatz.batch_size == 1:
+                return A[0], b[0], c[0]
+            else:
+                return A, b, c
         except AttributeError as e:
-            raise AttributeError(
-                f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
-            ) from e
+            raise AttributeError("No Bargmann data for this component.") from e
 
     @classmethod
     def from_quadrature(
@@ -420,7 +423,7 @@ class CircuitComponent:
             )
 
         try:
-            As, bs, cs = self.bargmann
+            As, bs, cs = self.bargmann(batched=True)
             arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
         except AttributeError:
             arrays = self.representation.reduce(shape).array

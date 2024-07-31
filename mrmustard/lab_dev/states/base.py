@@ -331,7 +331,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann(batched=True))
 
     def visualize_2d(
         self,
@@ -1082,7 +1082,10 @@ class Ket(State):
             / np.sqrt(2)
             * math.block(
                 [
-                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        math.eye(m, dtype=math.complex128),
+                        math.eye(m, dtype=math.complex128),
+                    ],
                     [
                         -1j * math.eye(m, dtype=math.complex128),
                         1j * math.eye(m, dtype=math.complex128),
