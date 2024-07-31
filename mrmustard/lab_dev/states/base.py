@@ -830,7 +830,7 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes, m=None, max_r=1.0):
+    def random(cls, modes: Sequence[int], m=None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -849,6 +849,30 @@ class DM(State):
 
         psi = Ket.random(full_wires, max_r)
         return psi[modes]
+
+    @property
+    def is_positive(self) -> bool:
+        r"""
+        This method checks if a DM corresponds to a positive operator
+        """
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+        lambda_A = A[m:, m:]
+        temp_A = gamma_A + np.conj(lambda_A.T) @ np.linalg.pinv(np.eye(m) - gamma_A.T) @ lambda_A
+
+        if not np.allclose(gamma_A, math.conj(gamma_A).T):  # checks if gamma_A is Hermitian
+            return False
+        # positivity conditions devided into three checks:
+        check_1 = all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
+        check_2 = all(math.real(mu) < 1 for mu in math.eigvals(gamma_A))
+        check_3 = all(math.real(mu) < 1 for mu in math.eigvals(temp_A))
+
+        return check_1 and check_2 and check_3
+
+    @property
+    def is_physical(self) -> bool:
+        return self.is_positive and np.isclose(self.probability, 1)
 
 
 class Ket(State):
@@ -1066,7 +1090,7 @@ class Ket(State):
         return result
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
         generates random states with 0 displacement, using the random_symplectic funcionality
         Args: "modes" are the modes where the state is defined on

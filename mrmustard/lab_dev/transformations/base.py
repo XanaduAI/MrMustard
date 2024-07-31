@@ -30,6 +30,7 @@ from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
+import numpy as np
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
@@ -268,9 +269,11 @@ class Channel(Map):
         return ret
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
         r"""
         A random channel without displacement
+
+        Args:
         modes: the modes on which the channel is defined
         max_r: maximum squeezing parameter in random selections
         """
@@ -282,3 +285,39 @@ class Channel(Map):
         A = u_psi.representation
         kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)
+
+    @property
+    def is_CP(self) -> bool:
+        r"""
+        This method checks if a Gaussian map is completely positive (CP).
+        """
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+
+        if not np.allclose(gamma_A, math.conj(gamma_A).T):  # checks if gamma_A is Hermitian
+            return False
+        # positivity conditions devided into three checks:
+        check_1 = all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
+        check_2 = all(math.real(mu) <= 1 for mu in math.eigvals(gamma_A))
+
+        return check_1 and check_2
+
+    @property
+    def is_TP(self) -> bool:
+        r"""
+        This method checks if a Gaussian map is trace preserving (TP).
+        """
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+        lambda_A = A[m:, m:]
+        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
+        return np.allclose(temp_A, math.eye(m))
+    
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        This method checks if a Gaussian map is physical (CPTP)
+        """
+        return self.is_CP and self.is_TP

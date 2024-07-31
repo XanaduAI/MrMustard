@@ -179,3 +179,6 @@ class TestChannel:
 
         modes = [2, 6, 1]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
+
+    def test_is_physical(self):
+        assert Channel.random([0,1,2]).is_physical

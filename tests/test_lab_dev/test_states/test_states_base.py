@@ -15,7 +15,6 @@
 """Tests for the base state subpackage."""
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 
@@ -649,3 +648,7 @@ class TestDM:
         )  # checks if the off-diagonal block of dm is PSD
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
+
+    @pytest.mark.parametrize("modes", [[1],[9,2],[0,1,2,3,4]])
+    def test_is_positive(self,modes):
+        assert (Ket.random(modes) >> Attenuator(modes)).is_physical
