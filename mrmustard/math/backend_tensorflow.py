@@ -245,6 +245,11 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
 
+    def moveaxis(
+        self, array: tf.Tensor, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
+    ) -> tf.Tensor:
+        return tf.experimental.numpy.moveaxis(array, old, new)
+
     def new_variable(
         self,
         value,
