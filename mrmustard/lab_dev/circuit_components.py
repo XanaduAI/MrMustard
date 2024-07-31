@@ -23,12 +23,11 @@ from typing import Optional, Sequence, Union
 import numbers
 from functools import cached_property
 
-import os
 import numpy as np
-from IPython.display import display, HTML
-from mako.template import Template
+import ipywidgets as widgets
+from IPython.display import display
 
-from mrmustard import settings, math
+from mrmustard import settings, math, widgets as mmwidgets
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
@@ -234,7 +233,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
@@ -253,7 +252,7 @@ class CircuitComponent:
         if isinstance(self.representation, Fock):
             raise NotImplementedError("Not implemented with Fock representation.")
 
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
@@ -398,7 +397,7 @@ class CircuitComponent:
         return ret
 
     def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
-        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
+        r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
@@ -429,7 +428,7 @@ class CircuitComponent:
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
 
-    def to_fock(self, shape=None):
+    def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
@@ -454,7 +453,7 @@ class CircuitComponent:
         fock._original_bargmann_data = self.representation.data
         return self._from_attributes(fock, self.wires, self.name)
 
-    def auto_shape(self, **kwargs) -> tuple[int, ...]:
+    def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the components is a State in Bargmann
@@ -668,26 +667,18 @@ class CircuitComponent:
                 + f", repr={repr_name})"
             )
 
-    def _repr_html_(self):  # pragma: no cover
-        temp = Template(
-            filename=os.path.dirname(__file__) + "/assets/circuit_components.txt"
-        )  # nosec
-
-        wires_temp = Template(filename=os.path.dirname(__file__) + "/assets/wires.txt")  # nosec
-        wires_temp_uni = wires_temp.render_unicode(wires=self.wires)
-        wires_temp_uni = (
-            wires_temp_uni.replace("<body>", "").replace("</body>", "").replace("h1", "h3")
-        )
-
-        rep_temp = (
-            Template(filename=os.path.dirname(__file__) + "/../physics/assets/fock.txt")  # nosec
-            if isinstance(self.representation, Fock)
-            else Template(
-                filename=os.path.dirname(__file__) + "/../physics/assets/bargmann.txt"
-            )  # nosec
-        )
-        rep_temp_uni = rep_temp.render_unicode(rep=self.representation)
-        display(HTML(temp.render(comp=self, wires=wires_temp_uni, rep=rep_temp_uni)))
+    def _ipython_display_(self):
+        # both reps might return None
+        rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
+        rep_widget = rep_fn(self.representation)
+        wires_widget = mmwidgets.wires(self.wires)
+        if not rep_widget:
+            title_widget = widgets.HTML(f"<h1>{self.name or type(self).__name__}</h1>")
+            display(widgets.VBox([title_widget, wires_widget]))
+            return
+        rep_widget.layout.padding = "10px"
+        wires_widget.layout.padding = "10px"
+        display(widgets.Box([wires_widget, rep_widget]))
 
 
 class CCView(CircuitComponent):
@@ -701,6 +692,9 @@ class CCView(CircuitComponent):
 
     @property
     def short_name(self):
+        r"""
+        A shortened version of the component name.
+        """
         return self._component.short_name
 
     def __init__(self, component: CircuitComponent) -> None:

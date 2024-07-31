@@ -54,7 +54,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
