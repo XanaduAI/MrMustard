@@ -17,4 +17,10 @@ The classes representing states in quantum circuits.
 """
 
 from .base import *
-from .states import *
+from .coherent import *
+from .displaced_squeezed import *
+from .number import *
+from .squeezed_vacuum import *
+from .thermal import *
+from .two_mode_squeezed_vacuum import *
+from .vacuum import *

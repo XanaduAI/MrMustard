@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,10 @@
 # limitations under the License.
 
 """
-The classes representing transformations in quantum circuits.
+A set of components that do not correspond to physical elements of a circuit, but can be used to
+perform useful mathematical calculations.
 """
 
-from .amplifier import *
-from .attenuator import *
-from .base import *
-from .bsgate import *
-from .dgate import *
-from .identity import *
-from .rgate import *
-from .s2gate import *
-from .sgate import *
+from .b_to_ps import *
+from .b_to_q import *
+from .trace_out import *
