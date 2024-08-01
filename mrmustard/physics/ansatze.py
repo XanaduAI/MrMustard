@@ -44,6 +44,7 @@ __all__ = [
     "PolyExpBase",
     "PolyExpAnsatzOld",
     "PolyExpAnsatz",
+]
 
 
 class Ansatz(ABC):
@@ -644,7 +645,6 @@ class PolyExpAnsatzOld(PolyExpBase):
 
 
 class PolyExpAnsatz(PolyExpBase):
-
     r"""
     The ansatz of the Fock-Bargmann representation.
 
@@ -692,7 +692,6 @@ class PolyExpAnsatz(PolyExpBase):
         if A is None and b is None and c is not None:
             raise ValueError("Please provide either A or b.")
         super().__init__(mat=A, vec=b, array=c)
-
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -793,7 +792,6 @@ class PolyExpAnsatz(PolyExpBase):
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -841,7 +839,6 @@ class PolyExpAnsatz(PolyExpBase):
 
         if isinstance(other, PolyExpAnsatz):
 
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
 
@@ -872,7 +869,6 @@ class PolyExpAnsatz(PolyExpBase):
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -920,7 +916,6 @@ class PolyExpAnsatz(PolyExpBase):
 
         if isinstance(other, PolyExpAnsatz):
 
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
@@ -953,7 +948,6 @@ class PolyExpAnsatz(PolyExpBase):
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-
         r"""Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,

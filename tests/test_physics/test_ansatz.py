@@ -386,7 +386,6 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
 
-
         ansatz3 = ansatz + ansatz2
 
         assert np.allclose(ansatz3.mat[0], A1)
@@ -404,7 +403,6 @@ class TestPolyExpAnsatz:
 
         ansatz = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
-
 
         A3 = np.block(
             [
@@ -471,7 +469,6 @@ class TestPolyExpAnsatz:
     def test_call(self):
         A, b, c = Abc_triple(5)
         ansatz = PolyExpAnsatz(A, b, c)
-
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
@@ -544,7 +541,6 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(A, b, c)
         ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
 
-
         assert ansatz == ansatz
         assert ansatz2 == ansatz2
         assert ansatz != ansatz2
@@ -586,7 +582,6 @@ class TestPolyExpAnsatz:
 
     def test_order_batch(self):
         ansatz = PolyExpAnsatz(
-
             A=[np.array([[0]]), np.array([[1]])],
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
@@ -616,7 +611,6 @@ class TestPolyExpAnsatz:
         A2, b2, _ = Abc_triple(4)
         c2 = np.array([[1, 2, 3]])
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
-
 
         ansatz3 = ansatz1 * ansatz2
 
