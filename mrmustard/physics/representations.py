@@ -508,7 +508,6 @@ class Bargmann(Representation):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
                     Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
-
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
