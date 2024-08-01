@@ -421,12 +421,19 @@ class CircuitComponent:
 
         try:
             As, bs, cs = self.bargmann
-            if self.representation.ansatz.degree==0:
+            if self.representation.ansatz.degree == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
-            elif self.representation.ansatz.degree>0:
+            elif self.representation.ansatz.degree > 0:
                 num_vars = self.representation.ansatz.num_vars
-                arrays = [math.sum(math.hermite_renormalized(A, b, 1, shape + c.shape) * c, 
-                                  axes=math.arange(num_vars, num_vars + len(c.shape), dtype=math.int32).tolist()) for A, b, c in zip(As, bs, cs)]
+                arrays = [
+                    math.sum(
+                        math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
+                        axes=math.arange(
+                            num_vars, num_vars + len(c.shape), dtype=math.int32
+                        ).tolist(),
+                    )
+                    for A, b, c in zip(As, bs, cs)
+                ]
         except AttributeError:
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
