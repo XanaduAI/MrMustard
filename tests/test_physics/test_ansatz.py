@@ -23,7 +23,6 @@ from mrmustard import math
 from mrmustard.physics.ansatze import (
     PolyExpAnsatzOld,
     PolyExpAnsatz,
-    DiffOpPolyExpAnsatz,
     ArrayAnsatz,
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -403,6 +402,7 @@ class TestPolyExpAnsatz:
 
         ansatz = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz3 = ansatz * ansatz2
 
         A3 = np.block(
             [
