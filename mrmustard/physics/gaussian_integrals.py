@@ -253,6 +253,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     """
     A, b, c = Abc
     dim_poly = len(c.shape) - 1
+
     if order:
         if dim_poly > 0:
             if type(order) == list:
