@@ -857,7 +857,9 @@ class DM(State):
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
 
-        if math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8:  # checks if gamma_A is Hermitian
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8
+        ):  # checks if gamma_A is Hermitian
             return False
 
         return all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
@@ -867,7 +869,7 @@ class DM(State):
         r"""
         This method checks if a Gaussian operator corresponds to a physical density operator.
         """
-        return self.is_positive and (math.abs(self.probability-1) < 1e-8)
+        return self.is_positive and (math.abs(self.probability - 1) < 1e-8)
 
 
 class Ket(State):
@@ -1093,7 +1095,7 @@ class Ket(State):
         max_r: maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
-        
+
         m = len(modes)
         S = math.random_symplectic(m, max_r)
         transformation = (
