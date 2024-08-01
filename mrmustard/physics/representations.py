@@ -29,7 +29,6 @@ from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
-    contract_two_Abc,
     contract_two_Abc_poly,
     reorder_abc,
     complex_gaussian_integral,
