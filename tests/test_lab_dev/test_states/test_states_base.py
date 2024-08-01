@@ -685,5 +685,5 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_is_physical(self):
         rho = DM.random(range(10))
         assert rho.is_physical
-        rho.representation.c[0] = 2 * rho.representation.c[0]
+        rho = 2 * rho
         assert not rho.is_physical
