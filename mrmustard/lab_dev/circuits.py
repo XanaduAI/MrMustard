@@ -98,10 +98,10 @@ class Circuit:
         return self._idxdict
 
     def _indices_dict(self):
-        ret = dict()
+        ret = {}
         for i, opA in enumerate(self.components):
             out_idx = set(opA.wires.output.indices)
-            indices: dict[int, dict[int, int]] = dict()
+            indices: dict[int, dict[int, int]] = {}
             for j, opB in enumerate(self.components[i + 1 :]):
                 ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
                 ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
