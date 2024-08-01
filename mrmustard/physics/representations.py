@@ -495,34 +495,20 @@ class Bargmann(Representation):
         idx_o = other._contract_idxs
 
         Abc = []
-        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
-            if settings.UNSAFE_ZIP_BATCH:
-                if self.ansatz.batch_size != other.ansatz.batch_size:
-                    raise ValueError(
-                        f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                    )
-                for (A1, b1, c1), (A2, b2, c2) in zip(
-                    zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-                ):
-                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
-            else:
-                for A1, b1, c1 in zip(self.A, self.b, self.c):
-                    for A2, b2, c2 in zip(other.A, other.b, other.c):
-                        Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+        if settings.UNSAFE_ZIP_BATCH:
+            if self.ansatz.batch_size != other.ansatz.batch_size:
+                raise ValueError(
+                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                )
+            for (A1, b1, c1), (A2, b2, c2) in zip(
+                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
+            ):
+                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
         else:
-            if settings.UNSAFE_ZIP_BATCH:
-                if self.ansatz.batch_size != other.ansatz.batch_size:
-                    raise ValueError(
-                        f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                    )
-                for (A1, b1, c1), (A2, b2, c2) in zip(
-                    zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-                ):
-                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
-            else:
-                for A1, b1, c1 in zip(self.A, self.b, self.c):
-                    for A2, b2, c2 in zip(other.A, other.b, other.c):
-                        Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            for A1, b1, c1 in zip(self.A, self.b, self.c):
+                for A2, b2, c2 in zip(other.A, other.b, other.c):
+                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
