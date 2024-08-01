@@ -480,7 +480,7 @@ class TestPolyExpAnsatz:
         b = np.zeros(2)
         c = c = np.zeros(10, dtype=complex).reshape(1, -1)
         c[0, -1] = 1
-        obj1 = DiffOpPolyExpAnsatz(A, b, c)
+        obj1 = PolyExpAnsatz(A, b, c)
         nine_factorial = np.prod(np.arange(1, 9))
         assert np.allclose(obj1(np.array([[0.1]])), 0.1**9 / np.sqrt(nine_factorial))
 
