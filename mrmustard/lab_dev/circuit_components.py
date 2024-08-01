@@ -184,7 +184,7 @@ class CircuitComponent:
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
-    def bargmann(self, batched=False) -> tuple:
+    def bargmann(self, batched: bool=False) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The Bargmann parametrization of this component, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this component is
