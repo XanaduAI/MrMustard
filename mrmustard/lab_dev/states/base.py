@@ -1058,15 +1058,12 @@ class Ket(State):
 
         try:
             result.state_outcomes
-            return result
         except AttributeError:
-            pass
-
-        if not result.wires.input:
-            if not result.wires.bra:
-                return Ket(result.wires.modes, result.representation)
-            elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.representation)
+            if not result.wires.input:
+                if not result.wires.bra:
+                    return Ket(result.wires.modes, result.representation)
+                elif result.wires.bra.modes == result.wires.ket.modes:
+                    result = DM(result.wires.modes, result.representation)
         return result
 
     @classmethod
