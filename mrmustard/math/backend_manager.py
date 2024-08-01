@@ -800,6 +800,28 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
+    def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
+        r"""
+        Moves the axes of an array to a new position.
+
+        Args:
+            array: The array to move the axes of.
+            old: The old index position
+            new: The new index position
+
+
+        Returns:
+            The updated array
+        """
+        return self._apply(
+            "moveaxis",
+            (
+                array,
+                old,
+                new,
+            ),
+        )
+
     def new_variable(
         self,
         value: Tensor,
