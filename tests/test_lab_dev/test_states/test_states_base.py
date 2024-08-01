@@ -678,6 +678,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
-    @pytest.mark.parametrize("modes", [[1],[9,2],[0,1,2,3,4]])
-    def test_is_positive(self,modes):
+    @pytest.mark.parametrize("modes", [[1], [9, 2], [0, 1, 2, 3, 4]])
+    def test_is_positive(self, modes):
         assert (Ket.random(modes) >> Attenuator(modes)).is_physical

@@ -856,21 +856,20 @@ class DM(State):
         A = self.representation.A[0]
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
-        lambda_A = A[m:, m:]
-        temp_A = gamma_A + np.conj(lambda_A.T) @ np.linalg.pinv(np.eye(m) - gamma_A.T) @ lambda_A
 
-        if not np.allclose(gamma_A, math.conj(gamma_A).T):  # checks if gamma_A is Hermitian
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8
+        ):  # checks if gamma_A is Hermitian
             return False
-        # positivity conditions devided into three checks:
-        check_1 = all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
-        check_2 = all(math.real(mu) < 1 for mu in math.eigvals(gamma_A))
-        check_3 = all(math.real(mu) < 1 for mu in math.eigvals(temp_A))
 
-        return check_1 and check_2 and check_3
+        return all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
 
     @property
     def is_physical(self) -> bool:
-        return self.is_positive and np.isclose(self.probability, 1)
+        r"""
+        This method checks if a Gaussian operator corresponds to a physical density operator.
+        """
+        return self.is_positive and (math.abs(self.probability - 1) < 1e-8)
 
 
 class Ket(State):
@@ -1090,8 +1089,10 @@ class Ket(State):
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
-        generates random states with 0 displacement, using the random_symplectic funcionality
-        Args: "modes" are the modes where the state is defined on
+        This method generates random states with 0 displacement, using the random_symplectic funcionality
+
+        Args: "modes" are the modes where the state is defined on.
+        max_r: maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
         # TODO: use __class_getitem_ and sample from broader probabilities

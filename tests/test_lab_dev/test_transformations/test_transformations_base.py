@@ -180,5 +180,11 @@ class TestChannel:
         modes = [2, 6, 1]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
 
+    def test_is_CP(self):
+        assert Attenuator([0, 1], 0.8).is_CP
+
+    def test_is_TP(self):
+        assert Attenuator([0, 1], 0.5).is_CP
+
     def test_is_physical(self):
-        assert Channel.random([0,1,2]).is_physical
+        assert Channel.random(range(5)).is_physical

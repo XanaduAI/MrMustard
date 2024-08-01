@@ -30,7 +30,6 @@ from mrmustard import math
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
-import numpy as np
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
@@ -295,13 +294,12 @@ class Channel(Map):
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
 
-        if not np.allclose(gamma_A, math.conj(gamma_A).T):  # checks if gamma_A is Hermitian
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8
+        ):  # checks if gamma_A is Hermitian
             return False
-        # positivity conditions devided into three checks:
-        check_1 = all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
-        check_2 = all(math.real(mu) <= 1 for mu in math.eigvals(gamma_A))
 
-        return check_1 and check_2
+        return all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
 
     @property
     def is_TP(self) -> bool:
@@ -313,8 +311,8 @@ class Channel(Map):
         gamma_A = A[:m, m:]
         lambda_A = A[m:, m:]
         temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
-        return np.allclose(temp_A, math.eye(m))
-    
+        return math.real(math.norm(temp_A - math.eye(m))) < 1e-8
+
     @property
     def is_physical(self) -> bool:
         r"""
