@@ -737,7 +737,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return self._call_none(z)
         else:
             return self._call_all(z)
-            
 
     def _call_all(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
