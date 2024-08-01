@@ -30,7 +30,7 @@ from mrmustard.lab_dev.transformations import (
     S2gate,
     Identity,
 )
-from mrmustard.lab_dev.states import Coherent, Vacuum, TwoModeSqueezedVacuum
+from mrmustard.lab_dev.states import Coherent, Vacuum, TwoModeSqueezedVacuum, SqueezedVacuum
 
 
 class TestBSgate:
@@ -152,6 +152,13 @@ class TestDgate:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Dgate(modes=[0], x=[0.1, 0.2]).representation
+    
+    def test_to_fock_method(self):
+        #test stable Dgate in fock basis
+        state =  SqueezedVacuum([0],r=1.0)
+        #displacement gate in fock representation for large displacement
+        dgate =  Dgate([0],x=10.0).to_fock(150)
+        assert ((state >> dgate ).probability < 1) and np.all(np.abs(dgate.fock(150) < 1))
 
 
 class TestRgate:

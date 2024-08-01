@@ -20,9 +20,12 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
 
+from mrmustard import math
+from mrmustard.utils.typing import ComplexTensor
 from .base import Unitary, Channel
-from ...physics.representations import Bargmann
-from ...physics import triples
+from ...physics.representations import Bargmann, Representation
+from mrmustard.lab_dev.wires import Wires
+from ...physics import triples, fock
 from ..utils import make_parameter, reshape_params
 
 __all__ = [
@@ -185,6 +188,82 @@ class Dgate(Unitary):
         self._representation = Bargmann.from_function(
             fn=triples.displacement_gate_Abc, x=self.x, y=self.y
         )
+
+    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
+        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
+        Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+            batched: Whether the returned representation is batched or not. If ``False`` (default)
+                it will squeeze the batch dimension if it is 1.
+        Returns:
+            array: The Fock representation of this component.
+        """
+        if isinstance(shape, int):
+            shape = (shape,) * self.representation.ansatz.num_vars
+        auto_shape = self.auto_shape()
+        shape = shape or auto_shape
+        if len(shape) != len(auto_shape):
+            raise ValueError(
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+            )
+        N = self.n_modes
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+
+        if N > 1:
+            # calculate displacement unitary for each mode and concatenate with outer product
+            Ud = None
+            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
+                if Ud is None:
+                    Ud = fock.displacement(x[idx], y[idx], shape=out_in)
+                else:
+                    U_next = fock.displacement(x[idx], y[idx], shape=out_in)
+                    Ud = math.outer(Ud, U_next)
+
+            array = math.transpose(
+                Ud,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
+        else:
+            array = fock.displacement(x[0], y[0], shape=shape)
+        arrays = math.expand_dims(array, 0) if batched else array
+        return arrays
+    
+    def _from_attributes(
+        cls,
+        representation: Representation,
+        wires: Wires,
+        name: Optional[str] = None,
+    ) -> Dgate:
+        r"""
+        Overrides the _from_attributes method of the parent class CircuitComponent.
+
+        The return type is the closest parent among the types ``Ket``, ``DM``, ``Unitary``,
+        ``Operation``, ``Channel``, and ``Map``. This is to ensure the right properties
+        are used when calling methods on the returned object, e.g. when adding two
+        coherent states we don't get a generic ``CircuitComponent`` but a ``Ket``:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Ket
+            >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
+            >>> assert isinstance(cat, Ket)
+
+        Args:
+            representation: A representation for this circuit component.
+            wires: The wires of this component.
+            name: The name for this component (optional).
+
+        Returns:
+            A circuit component with the given attributes.
+        """
+        ret = cls._light_copy(wires=wires)
+        ret._representation = representation
+        return ret
 
 
 class Rgate(Unitary):
