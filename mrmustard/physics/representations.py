@@ -494,18 +494,6 @@ class Bargmann(Representation):
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
-        if isinstance(other, Fock):
-            from .converters import to_fock  # pylint: disable=import-outside-toplevel
-
-            # set same shape along the contracted axes, and default shape along the
-            # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)]
-            for i, j in zip(idx_s, idx_o):
-                shape[i] = other.array.shape[1:][j]
-
-            return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
-
         Abc = []
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             if settings.UNSAFE_ZIP_BATCH:
