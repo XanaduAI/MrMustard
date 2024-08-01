@@ -793,86 +793,84 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )  # (b_arg)
         return val
 
+    def _call_none_single(self, Ai, bi, ci, zi):
+        r"""
+        Helper function for the call_none method. Returns the new triple.
+        """
+        dim_zi = len(zi)
+        dim_beta, _ = self.polynomial_shape
+        gamma = np.array(zi[zi != None], dtype=complex)
+        gammagamma = np.einsum("...a,...b->...ab", gamma, gamma)
+        remove_index_new = np.concatenate((zi != None, np.array([False] * dim_beta)), axis=-1)
+        new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
+
+        b_alpha = np.sum(
+            np.delete(
+                np.delete(Ai, np.concatenate((zi != None, np.array([True] * dim_beta))), axis=0),
+                np.concatenate((zi == None, np.array([True] * dim_beta))),
+                axis=1,
+            )
+            * gamma,
+            axis=-1,
+        )
+
+        b_beta = np.sum(
+            np.delete(
+                np.delete(
+                    Ai,
+                    np.concatenate((np.array([True] * dim_zi), np.array([False] * dim_beta))),
+                    axis=0,
+                ),
+                np.concatenate((zi == None, np.array([True] * dim_beta))),
+                axis=1,
+            )
+            * gamma,
+            axis=-1,
+        )
+        new_b = np.delete(bi, remove_index_new, axis=0) + np.concatenate((b_alpha, b_beta))
+        remove_index_gamma = np.concatenate((zi == None, np.array([True] * dim_beta)))
+
+        A_part = np.sum(
+            np.delete(np.delete(Ai, remove_index_gamma, axis=0), remove_index_gamma, axis=1)
+            * gammagamma
+        )
+        b_part = np.sum(np.delete(bi, remove_index_gamma, axis=0) * gamma)
+        exp_sum = np.exp(1 / 2 * A_part + b_part)
+        new_c = ci * exp_sum
+        return new_a, new_b, new_c
+
     def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self.call_none([np.array([1.0, None]])``
         returns ``F(1.0, z2)`` as a new ansatz with a single variable.
         Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+
         Args:
             z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
 
         Returns:
-            A new ansatz, which is a "slice" of the old one.
+            A new ansatz.
         """
-
-        def call_none_single(Ai, bi, ci, zi):
-            r"""
-            Helper function for the call_none method. Returns the new triple.
-            """
-            dim_zi = len(zi)
-            dim_beta, _ = self.polynomial_shape
-            gamma = np.array(zi[zi != None], dtype=complex)
-            gammagamma = np.einsum("...a,...b->...ab", gamma, gamma)
-            remove_index_new = np.concatenate((zi != None, np.array([False] * dim_beta)), axis=-1)
-            new_a = np.delete(np.delete(Ai, remove_index_new, axis=0), remove_index_new, axis=1)
-
-            b_alpha = np.sum(
-                np.delete(
-                    np.delete(
-                        Ai, np.concatenate((zi != None, np.array([True] * dim_beta))), axis=0
-                    ),
-                    np.concatenate((zi == None, np.array([True] * dim_beta))),
-                    axis=1,
-                )
-                * gamma,
-                axis=-1,
-            )
-
-            b_beta = np.sum(
-                np.delete(
-                    np.delete(
-                        Ai,
-                        np.concatenate((np.array([True] * dim_zi), np.array([False] * dim_beta))),
-                        axis=0,
-                    ),
-                    np.concatenate((zi == None, np.array([True] * dim_beta))),
-                    axis=1,
-                )
-                * gamma,
-                axis=-1,
-            )
-            new_b = np.delete(bi, remove_index_new, axis=0) + np.concatenate((b_alpha, b_beta))
-            remove_index_gamma = np.concatenate((zi == None, np.array([True] * dim_beta)))
-
-            A_part = np.sum(
-                np.delete(np.delete(Ai, remove_index_gamma, axis=0), remove_index_gamma, axis=1)
-                * gammagamma
-            )
-            b_part = np.sum(np.delete(bi, remove_index_gamma, axis=0) * gamma)
-            exp_sum = np.exp(1 / 2 * A_part + b_part)
-            new_c = ci * exp_sum
-            return new_a, new_b, new_c
 
         batch_abc = self.batch_size
         batch_arg = z.shape[0]
         Abc = []
         if batch_abc == 1 and batch_arg > 1:
             for i in range(batch_arg):
-                Abc.append(call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
+                Abc.append(self._call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
         elif batch_arg == 1 and batch_abc > 1:
             for i in range(batch_abc):
-                Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
         elif batch_abc == batch_arg:
             for i in range(batch_abc):
-                Abc.append(call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
         else:
             raise ValueError(
                 "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
             )
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
-
 
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
