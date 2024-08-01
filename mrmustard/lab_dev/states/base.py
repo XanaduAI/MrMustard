@@ -843,7 +843,7 @@ class DM(State):
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
-        full_wires = modes + ancilla
+        full_wires = list(modes) + ancilla
 
         psi = Ket.random(full_wires, max_r)
         return psi[modes]

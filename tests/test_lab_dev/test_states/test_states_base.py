@@ -680,4 +680,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[1], [9, 2], [0, 1, 2, 3, 4]])
     def test_is_positive(self, modes):
-        assert (Ket.random(modes) >> Attenuator(modes)).is_physical
+        assert (Ket.random(modes) >> Attenuator(modes)).is_positive
+
+    def test_is_physical(self):
+        rho = DM.random(range(10))
+        assert rho.is_physical
+        rho.representation.c[0] = 2 * rho.representation.c[0]
+        assert not rho.is_physical
