@@ -657,7 +657,7 @@ class TestDiffOpPolyExpAnsatz:
         z0 = np.array([[None, 2, None, 5]])
         z1 = np.array([[1, 2, 4, 5]])
         z2 = np.array([[1, 4]])
-        obj_none = obj.call_none(z0)
+        obj_none = obj(z0)
         val1 = obj(z1)
         val2 = obj_none(z2)
         assert np.allclose(val1, val2)
@@ -666,7 +666,7 @@ class TestDiffOpPolyExpAnsatz:
         z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
         z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
         z2 = np.array([[1, 4], [2, 4]])
-        obj1_none = obj1.call_none(z0)
+        obj1_none = obj1(z0)
         obj1_none0 = DiffOpPolyExpAnsatz(
             obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
         )

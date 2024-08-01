@@ -726,7 +726,20 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         ret._kwargs = kwargs
         return ret
 
-    def __call__(self, z: Batch[Vector]) -> Scalar:
+    def __call__(self, z: Batch[Vector]) -> Union[Scalar, DiffOpPolyExpAnsatz]:
+        r"""
+        Returns either the value of the ansatz or a new ansatz depending on the argument.
+        If the argument contains None, returns a new ansatz.
+        If the argument only contains numbers, returns the value of the ansatz at that argument.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+        """
+        if (z == None).any():
+            return self._call_none(z)
+        else:
+            return self._call_all(z)
+            
+
+    def _call_all(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
         Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
@@ -839,7 +852,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         new_c = ci * exp_sum
         return new_a, new_b, new_c
 
-    def call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
+    def _call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self.call_none([np.array([1.0, None]])``
