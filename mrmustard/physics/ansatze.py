@@ -747,7 +747,7 @@ class PolyExpAnsatz(PolyExpBase):
         z = math.atleast_2d(z)  # shape (b_arg, n)
         batch_size_arg = z.shape[0]
         if z.shape[-1] != dim_alpha or z.shape[-1] != self.num_vars:
-            raise Exception(
+            raise ValueError(
                 "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
             )
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
