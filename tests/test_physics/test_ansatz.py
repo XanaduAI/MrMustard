@@ -678,3 +678,4 @@ class TestDiffOpPolyExpAnsatz:
             (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
         ).reshape(-1)
         assert np.allclose(val1, val2)
+
