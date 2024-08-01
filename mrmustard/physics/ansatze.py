@@ -440,7 +440,9 @@ class PolyExpBase(Ansatz):
             c_decomp = math.sum(
                 poly_bar * self.array,
                 axes=math.arange(
-                    len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
+                    len(poly_bar.shape) - dim_beta,
+                    len(poly_bar.shape),
+                    dtype=math.int32,
                 ).tolist(),
             )
             c_decomp = math.moveaxis(c_decomp, -1, 0)
@@ -787,7 +789,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             val = math.sum(
                 exp_sum
                 * math.sum(
-                    poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
+                    poly * self.c,
+                    axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
                 axes=[-1],
             )  # (b_arg)
@@ -830,7 +833,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         def mul_b(b1, b2, dim_alpha):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
+                -1,
             )
             return b3
 
@@ -839,7 +843,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
 
@@ -906,7 +909,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         def div_b(b1, b2, dim_alpha):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
+                -1,
             )
             return b3
 
@@ -915,7 +919,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             return c3
 
         if isinstance(other, DiffOpPolyExpAnsatz):
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
@@ -994,7 +997,16 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
 
         def andb(b1, b2, dim_alpha1, dim_alpha2):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:]]]),
+                math.block(
+                    [
+                        [
+                            b1[:dim_alpha1],
+                            b2[:dim_alpha2],
+                            b1[dim_alpha1:],
+                            b2[dim_alpha2:],
+                        ]
+                    ]
+                ),
                 -1,
             )
             return b3
@@ -1141,7 +1153,7 @@ class ArrayAnsatz(Ansatz):
         r"""
         Evaluates this ansatz at a given point in the domain.
         """
-        raise AttributeError("Cannot plot ArrayAnsatz.")
+        raise AttributeError("Cannot call ArrayAnsatz.")
 
     def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
         r"""

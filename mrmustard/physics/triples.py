@@ -16,6 +16,7 @@
 This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
 various states and transformations.
 """
+
 from typing import Generator, Iterable, Union
 
 import numpy as np
@@ -31,7 +32,7 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
-    The X matrix for the order of unitaries.
+    The X matrix for unitaries.
     """
     return math.cast(math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
 
@@ -612,6 +613,33 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return math.astensor(A), b, c
+
+
+def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
+    Given a function :math:`f(z^*, z)`, the complex Fourier transform is defined as
+    :math:
+        \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
+    The indices of this triple correspond to the variables :math:`(y^*, z^*, y, z)`.
+
+    Args:
+        n_modes: the number of modes for this map.
+
+    Returns:
+        The ``(A, b, c)`` triple of the complex fourier transform.
+    """
+    O2n = math.zeros((2 * n_modes, 2 * n_modes))
+    Omega = math.J(n_modes)
+    A = (
+        math.block([[O2n, Omega], [-Omega, O2n]])
+        .reshape((2 * n_modes,) * 4)
+        .transpose([0, 2, 1, 3])  # out,out,in,in -> out,in,out,in (bra first)
+        .reshape((4 * n_modes, 4 * n_modes))
+    )
+    b = _vacuum_B_vector(4 * n_modes)
+    c = 1.0 + 0j
+    return A, b, c
 
 
 # ~~~~~~~~~~~~~~~~

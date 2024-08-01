@@ -227,8 +227,8 @@ class Map(Transformation):
 
     def __init__(
         self,
-        modes_out: tuple[int, ...] = (),
-        modes_in: tuple[int, ...] = (),
+        modes_out: Sequence[int] = (),
+        modes_in: Sequence[int] = (),
         representation: Optional[Bargmann | Fock] = None,
         name: Optional[str] = None,
     ):
