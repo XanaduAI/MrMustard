@@ -34,7 +34,7 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 
-__all__ = ["CircuitComponent", "AdjointView", "DualView"]
+__all__ = ["CircuitComponent"]
 
 
 class CircuitComponent:
@@ -311,22 +311,37 @@ class CircuitComponent:
         return self._wires
 
     @property
-    def adjoint(self) -> AdjointView:
+    def adjoint(self) -> CircuitComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
         the ket and bra wires. The returned object is a view of the original component which
         applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
-        return AdjointView(self)
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        rep = self.representation.reorder(kets + bras).conj() if self.representation else None
+
+        ret = CircuitComponent(rep, self.wires.adjoint, self.name)
+        ret.short_name = self.short_name
+        return ret
 
     @property
-    def dual(self) -> DualView:
+    def dual(self) -> CircuitComponent:
         r"""
         The dual of this component obtained by conjugating the representation and swapping
         the input and output wires. The returned object is a view of the original component which
         applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
-        return DualView(self)
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
+
+        ret = CircuitComponent(rep, self.wires.dual, self.name)
+        ret.short_name = self.short_name
+
+        return ret
 
     @cached_property
     def manual_shape(self) -> list[Optional[int]]:
@@ -682,101 +697,3 @@ class CircuitComponent:
         rep_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"
         display(widgets.Box([wires_widget, rep_widget]))
-
-
-class CCView(CircuitComponent):
-    r"""
-    A base class for views of circuit components. It allows for a more efficient
-    use of components when we need the same component on different wires.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def short_name(self):
-        r"""
-        A shortened version of the component name.
-        """
-        return self._component.short_name
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.__dict__.copy()
-        self._component = component._light_copy()
-
-    def __repr__(self) -> str:
-        return repr(self._component)
-
-
-class AdjointView(CCView):
-    r"""
-    Adjoint view of a circuit component obtained by swapping the ket/bra wires
-    and conjugating the representation. Note the representation is a wrapper
-    property around the original one, so it can work also for classes whose
-    representation attribute is a computed property like the trainable components.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def adjoint(self) -> CircuitComponent:
-        r"""
-        Returns a light-copy of the component that was used to generate the view.
-        """
-        return self._component
-
-    @property
-    def representation(self):
-        r"""
-        Returns a representation of this circuit component. Note that ket and bra
-        indices have been swapped.
-        """
-        bras = self._component.wires.bra.indices
-        kets = self._component.wires.ket.indices
-        return self._component.representation.reorder(kets + bras).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.adjoint
-
-
-class DualView(CCView):
-    r"""
-    Dual view of a circuit component obtained by swapping the input/output wires
-    and conjugating the representation. Note the representation is a wrapper
-    property around the original one, so it can work also for classes whose
-    representation attribute is a computed property like the trainable components.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def dual(self) -> CircuitComponent:
-        r"""
-        Returns a light-copy of the component that was used to generate the view.
-        """
-        return self._component
-
-    @property
-    def representation(self):
-        r"""
-        Returns a representation of this circuit component. Note that input and
-        output indices have been swapped.
-        """
-        ok = self._component.wires.ket.output.indices
-        ik = self._component.wires.ket.input.indices
-        ib = self._component.wires.bra.input.indices
-        ob = self._component.wires.bra.output.indices
-        return self._component.representation.reorder(ib + ob + ik + ok).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.dual
