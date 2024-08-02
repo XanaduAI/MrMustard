@@ -27,6 +27,7 @@ from ..utils import make_parameter, reshape_params
 
 __all__ = ["QuadratureEigenstate"]
 
+
 class QuadratureEigenstate(Ket):
     r"""
     The `N`-mode Quadrature eigenstate .
@@ -69,5 +70,3 @@ class QuadratureEigenstate(Ket):
         n_modes = len(self.modes)
         xs, phis = list(reshape_params(n_modes, x=self.x.value, phi=self.phi.value))
         return Bargmann(*triples.quadrature_eigenstates_Abc(xs, phis))
-
-
