@@ -395,14 +395,8 @@ def join_Abc_poly(
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
 
-    if c1.shape == (1,):
-        dim_n1 = 0
-    else:
-        dim_n1 = len(c1.shape)
-    if c2.shape == (1,):
-        dim_n2 = 0
-    else:
-        dim_n2 = len(c2.shape)
+    dim_n1 = len(c1.shape)
+    dim_n2 = len(c2.shape)
 
     dim_m1 = A1.shape[-1] - dim_n1
     dim_m2 = A2.shape[-1] - dim_n2
@@ -465,10 +459,7 @@ def contract_two_Abc_poly(
     """
     Abc = join_Abc_poly(Abc1, Abc2)
 
-    if Abc1[2].shape == (1,):
-        dim_n1 = 0
-    else:
-        dim_n1 = len(Abc1[2].shape)
+    dim_n1 = len(Abc1[2].shape)
     return complex_gaussian_integral(
         Abc, idx1, tuple(n + Abc1[0].shape[-1] - dim_n1 for n in idx2), measure=-1.0
     )
