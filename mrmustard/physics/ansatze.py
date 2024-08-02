@@ -733,7 +733,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         If the argument only contains numbers, returns the value of the ansatz at that argument.
         Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
         """
-        if (z == None).any():
+        if (np.array(z) == None).any():
             return self._call_none(z)
         else:
             return self._call_all(z)
