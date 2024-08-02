@@ -724,7 +724,7 @@ class AdjointView(CCView):
         r"""
         Returns a light-copy of the component that was used to generate the view.
         """
-        return self._component._light_copy()
+        return self._component
 
     @property
     def representation(self):
@@ -760,7 +760,7 @@ class DualView(CCView):
         r"""
         Returns a light-copy of the component that was used to generate the view.
         """
-        return self._component._light_copy()
+        return self._component
 
     @property
     def representation(self):
