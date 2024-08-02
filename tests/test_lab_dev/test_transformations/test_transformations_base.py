@@ -182,7 +182,9 @@ class TestChannel:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
     def test_is_CP(self, modes):
-        assert Channel.from_bargmann(modes, modes, Unitary.random(modes).triple).is_CP
+        u = Unitary.random(modes).representation
+        kraus = u @ u.conj()
+        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
 
     def test_is_TP(self):
         assert Attenuator([0, 1], 0.5).is_CP
