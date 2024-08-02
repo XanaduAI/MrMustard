@@ -851,8 +851,13 @@ class DM(State):
     @property
     def is_positive(self) -> bool:
         r"""
-        This method checks if a DM corresponds to a positive operator
+        Whether this DM is a positive operator.
         """
+        batch_dim = self.representation.A.shape[0]
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
         A = self.representation.A[0]
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
@@ -867,9 +872,9 @@ class DM(State):
     @property
     def is_physical(self) -> bool:
         r"""
-        This method checks if a Gaussian operator corresponds to a physical density operator.
+        Whether this DM is a physical density operator.
         """
-        return self.is_positive and (math.abs(self.probability - 1) < 1e-8)
+        return self.is_positive and math.allclose(self.probability, 1, 1e-8)
 
 
 class Ket(State):
@@ -1089,10 +1094,11 @@ class Ket(State):
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
-        This method generates random states with 0 displacement, using the random_symplectic funcionality
+        Generates a random zero displacement state.
 
-        Args: "modes" are the modes where the state is defined on.
-        max_r: maximum squeezing parameter over which we make random choices.
+        Args:
+            modes: The modes of the state.
+            max_r: maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
 
@@ -1118,3 +1124,20 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether the ket object is a physical one.
+        """
+        batch_dim = self.representation.A.shape[0]
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+
+        A = self.representation.A[0]
+
+        return all(math.abs(mu) < 1 for mu in math.eigvals(A)) and (
+            math.abs(self.probability - 1) < 1e-8
+        )

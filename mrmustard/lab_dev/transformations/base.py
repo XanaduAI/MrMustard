@@ -274,7 +274,7 @@ class Channel(Map):
 
         Args:
         modes: the modes on which the channel is defined
-        max_r: maximum squeezing parameter in random selections
+        max_r: The maximum squeezing parameter
         """
         from mrmustard.lab_dev.states import Vacuum
 
@@ -288,8 +288,13 @@ class Channel(Map):
     @property
     def is_CP(self) -> bool:
         r"""
-        This method checks if a Gaussian map is completely positive (CP).
+        Whether this channel is completely positive (CP).
         """
+        batch_dim = self.presentation.A.shape[0]
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
         A = self.representation.A[0]
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
@@ -304,7 +309,7 @@ class Channel(Map):
     @property
     def is_TP(self) -> bool:
         r"""
-        This method checks if a Gaussian map is trace preserving (TP).
+        Whether this channel is trace preserving (TP).
         """
         A = self.representation.A[0]
         m = A.shape[-1] // 2
@@ -316,6 +321,6 @@ class Channel(Map):
     @property
     def is_physical(self) -> bool:
         r"""
-        This method checks if a Gaussian map is physical (CPTP)
+        Whether this channel is physical (i.e. CPTP).
         """
         return self.is_CP and self.is_TP

@@ -399,6 +399,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(table, HTML)
         assert isinstance(wires, HTML)
 
+    def test_is_physical(self):
+        assert Ket.random([0, 1]).is_physical
+
 
 class TestDM:  # pylint:disable=too-many-public-methods
     r"""
@@ -682,8 +685,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_is_positive(self, modes):
         assert (Ket.random(modes) >> Attenuator(modes)).is_positive
 
-    def test_is_physical(self):
-        rho = DM.random(range(10))
+    @pytest.mark.parametrize("modes", [range(10), [0, 1]])
+    def test_is_physical(self, modes):
+        rho = DM.random(modes)
         assert rho.is_physical
         rho = 2 * rho
         assert not rho.is_physical
+        assert Ket.random(modes).dm().is_physical
