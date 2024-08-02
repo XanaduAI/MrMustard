@@ -290,7 +290,7 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
         """
-        batch_dim = self.presentation.A.shape[0]
+        batch_dim = self.representation.A.shape[0]
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
