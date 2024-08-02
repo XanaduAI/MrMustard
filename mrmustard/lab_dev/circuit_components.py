@@ -421,9 +421,9 @@ class CircuitComponent:
 
         try:
             As, bs, cs = self.bargmann
-            if self.representation.ansatz.degree == 0:
+            if self.representation.ansatz.polynomial_shape[0] == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
-            elif self.representation.ansatz.degree > 0:
+            elif self.representation.ansatz.polynomial_shape[0] > 0:
                 num_vars = self.representation.ansatz.num_vars
                 arrays = [
                     math.sum(

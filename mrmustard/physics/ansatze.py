@@ -248,19 +248,10 @@ class PolyExpBase(Ansatz):
         return self.mat.shape[0]
 
     @property
-    def degree(self) -> int:
-        r"""
-        The polynomial degree of this ansatz.
-        """
-        if self.array.ndim == 1:
-            return 0
-        return self.array.shape[-1] - 1
-
-    @property
     def polynomial_shape(self) -> tuple[int, tuple]:
         r"""
         This method finds the dimensionality of the polynomial, i.e. how many wires
-        have polynomials attached to them and what the degree of the polynomial is
+        have polynomials attached to them and what the degree(+1) of the polynomial is
         on each of the wires.
         """
         dim_poly = len(self.array.shape) - 1

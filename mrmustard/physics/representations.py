@@ -345,7 +345,7 @@ class Bargmann(Representation):
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
-        if self.ansatz.degree > 0:
+        if self.ansatz.polynomial_shape[0] > 0:
             raise NotImplementedError(
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
