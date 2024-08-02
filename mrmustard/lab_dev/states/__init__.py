@@ -22,5 +22,6 @@ from .displaced_squeezed import *
 from .number import *
 from .squeezed_vacuum import *
 from .thermal import *
+from .quadrature_eigenstate import *
 from .two_mode_squeezed_vacuum import *
 from .vacuum import *
