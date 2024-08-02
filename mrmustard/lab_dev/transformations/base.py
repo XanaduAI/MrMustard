@@ -27,9 +27,8 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 from mrmustard import math
-from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard import physics
+from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
@@ -54,7 +53,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -168,32 +167,6 @@ class Unitary(Operation):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-    @classmethod
-    def from_symplectic(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        symplectic: tuple,
-        name: Optional[str] = None,
-    ) -> Unitary:
-        r"""
-        Initialize a Unitary from the given symplectic matrix in qqpp basis,
-        i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
-        """
-        M = len(modes_in) + len(modes_out)
-        if symplectic.shape[-2:] != (M, M):
-            raise ValueError(
-                "Symplectic matrix and number of modes don't match. "
-                + f"Modes imply shape {(M,M)}, "
-                + f"but shape is {symplectic.shape[-2:]}."
-            )
-        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, math.zeros(M))
-        return Unitary._from_attributes(
-            representation=Bargmann(A, b, c),
-            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            name=name,
-        )
-
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(
@@ -201,6 +174,42 @@ class Unitary(Operation):
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
+
+    @property
+    def symplectic(self):
+        r"""
+        Returns the symplectic matrix that corresponds to this unitary
+        """
+        batch_size = self.representation.ansatz.batch_size
+        return [au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
+
+    @classmethod
+    def from_symplectic(cls, modes, S) -> Unitary:
+        r"""
+        A simple method for initializing using symplectic representation
+        modes: the modes that we want the unitary to act on (should be a list of int)
+        S: the symplectic representation (in XXPP order)
+        """
+        m = len(S)
+        A = symplectic2Au(S)
+        b = math.zeros(m, dtype="complex128")
+        c = complex(1)  # TODO: to be change after poly*exp ansatz
+        u = Unitary.from_bargmann(modes, modes, [A, b, c])
+        v = u >> u.dual
+        _, _, c_prime = v.bargmann
+        c = 1 / math.sqrt(c_prime[0])
+        return Unitary.from_bargmann(modes, modes, [A, b, c])
+
+    @classmethod
+    def random(cls, modes, max_r=1):
+        r"""
+        Returns a random unitary.
+        modes: the modes the unitary acts on non-trivially
+        max_r: maximum squeezing parameter as defined in math.random_symplecic
+        """
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        return Unitary.from_symplectic(modes, S)
 
 
 class Map(Transformation):
@@ -257,3 +266,19 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
+
+    @classmethod
+    def random(cls, modes, max_r=1.0):
+        r"""
+        A random channel without displacement
+        modes: the modes on which the channel is defined
+        max_r: maximum squeezing parameter in random selections
+        """
+        from mrmustard.lab_dev.states import Vacuum
+
+        m = len(modes)
+        U = Unitary.random(range(3 * m), max_r)
+        u_psi = Vacuum(range(2 * m)) >> U
+        A = u_psi.representation
+        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        return Channel.from_bargmann(modes, modes, kraus.triple)

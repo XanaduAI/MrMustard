@@ -202,10 +202,10 @@ function fill_firstMode_PNRzero!(arr0,arr0_dA,arr0_dB,A,B,M,cutoff_leftoverMode,
     for m in 1:cutoff_leftoverMode - 1
         arr0_dA[m + 1, 1, one_tuple..., :, :] = arr0_dA[m, 1, one_tuple..., :, :] .* B[1]
         arr0_dB[m + 1, 1, one_tuple..., :] = arr0_dB[m, 1, one_tuple..., :] .* B[1]
-        arr0_dB[m + 1, 1, one_tuple..., 1] += arr0[m, 1, one_tuple...] 
+        arr0_dB[m + 1, 1, one_tuple..., 1] += arr0[m, 1, one_tuple...]
         if m != 1
             arr0_dA[m + 1, 1, one_tuple..., :, :] += SQRT[m] .* A[1, 1] .* arr0_dA[m - 1, 1, one_tuple..., :, :]
-            arr0_dA[m + 1, 1, one_tuple..., 1, 1] += SQRT[m] .* arr0[m - 1, 1, one_tuple...] 
+            arr0_dA[m + 1, 1, one_tuple..., 1, 1] += SQRT[m] .* arr0[m - 1, 1, one_tuple...]
             arr0_dB[m + 1, 1, one_tuple..., :] += SQRT[m] .* A[1, 1] .* arr0_dB[m - 1, 1, one_tuple..., :]
         end
         arr0_dA[m + 1, 1, one_tuple..., :, :] ./= SQRT[m + 1]
@@ -221,7 +221,7 @@ function fill_firstMode_PNRzero!(arr0,arr0_dA,arr0_dB,A,B,M,cutoff_leftoverMode,
                 arr0_dA[m, n + 1, one_tuple..., :, :] += SQRT[m] .* A[2, 1] .* arr0_dA[m - 1, n, one_tuple..., :, :]
                 arr0_dA[m, n + 1, one_tuple..., 2, 1] += SQRT[m] .* arr0[m - 1, n, one_tuple...]
                 arr0_dB[m, n + 1, one_tuple..., :] += SQRT[m] .* A[2, 1] .* arr0_dB[m - 1, n, one_tuple..., :]
-                
+
             end
             if n != 1
                 arr0_dA[m, n + 1, one_tuple..., :, :] += SQRT[n] .* A[2, 2] .* arr0_dA[m, n - 1, one_tuple..., :, :]
@@ -235,12 +235,12 @@ function fill_firstMode_PNRzero!(arr0,arr0_dA,arr0_dB,A,B,M,cutoff_leftoverMode,
 end
 
 function fock_1leftoverMode_grad(
-    A::AbstractMatrix{Complex{Float64}}, 
+    A::AbstractMatrix{Complex{Float64}},
     B::AbstractVector{Complex{Float64}},
-    arr0::AbstractArray{Complex{Float64}}, 
-    arr2::AbstractArray{Complex{Float64}}, 
-    arr1010::AbstractArray{Complex{Float64}}, 
-    arr1001::AbstractArray{Complex{Float64}}, 
+    arr0::AbstractArray{Complex{Float64}},
+    arr2::AbstractArray{Complex{Float64}},
+    arr1010::AbstractArray{Complex{Float64}},
+    arr1001::AbstractArray{Complex{Float64}},
     arr1::AbstractArray{Complex{Float64}},
     precision_bits::Int64
     )
@@ -258,10 +258,10 @@ function fock_1leftoverMode_grad(
     Returns:
         arr0_dA, arr0_dB: derivatives of arr0 w.r.t A and B
     """
-    
+
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]
-    
+
     cutoffs = size(arr0)[2:end]
     M = length(cutoffs)
     cutoff_leftoverMode = cutoffs[1]

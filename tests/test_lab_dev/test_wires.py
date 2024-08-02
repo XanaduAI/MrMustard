@@ -16,6 +16,9 @@
 
 # pylint: disable=missing-function-docstring
 
+from unittest.mock import patch
+
+from ipywidgets import HTML
 import pytest
 
 from mrmustard.lab_dev.wires import Wires
@@ -136,7 +139,11 @@ class TestWires:
 
         w2 = Wires(set(), {2})
         assert w[2] == w2
-        assert w._mode_cache == {(0,): w0, (1,): w1, (2,): w2}  # pylint: disable=protected-access
+        assert w._mode_cache == {  # pylint: disable=protected-access
+            (0,): w0,
+            (1,): w1,
+            (2,): w2,
+        }
 
         assert w[0].indices == (0, 2)
         assert w[1].indices == (1,)
@@ -175,3 +182,11 @@ class TestWires:
         v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
+
+    @patch("mrmustard.lab_dev.wires.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        wires = Wires({0}, {}, {3}, {3, 4})
+        wires._ipython_display_()  # pylint:disable=protected-access
+        [widget] = mock_display.call_args.args
+        assert isinstance(widget, HTML)
