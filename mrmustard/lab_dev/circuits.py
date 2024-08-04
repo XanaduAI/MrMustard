@@ -14,7 +14,7 @@
 
 
 """
-A class to quantum circuits.
+A class to simulate quantum circuits.
 """
 
 from __future__ import annotations
@@ -35,8 +35,9 @@ class Circuit:
     are contracted is specified by the ``path`` attribute.
 
     Different orders of contraction lead to the same result, but the cost of the contraction
-    can vary significantly. The ``path`` attribute is used to specify the order in which the
-    components are contracted.
+    can vary significantly. The ``optimize`` method optimizes the Fock shapes and the contraction
+    path of the circuit, while the ``contract`` method contracts the components in the order
+    specified by the ``path`` attribute.
 
     .. code-block::
 
@@ -76,14 +77,16 @@ class Circuit:
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
         self._graph = bb.parse(self.components)
-        self.path: list[tuple[int, int]] = []
+        self.path: list[tuple[int, int]] = [
+            (0, i) for i in range(1, len(self.components))
+        ]  # default path (likely not optimal)
         self._optimized_graph = bb.Graph()
 
     def optimize(self, with_BF_heuristic: bool = True) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
-        It allows one to use the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
-        components with multimode Bargmann/Fock components leads to a lower total cost.
+        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
+        components with multimode Bargmann/Fock components leads to a higher total cost.
 
         Args:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
@@ -113,7 +116,7 @@ class Circuit:
 
         ret = dict(enumerate(self.components))
         for idx0, idx1 in self.path:
-            ret[idx0] = ret[idx0] @ ret.pop(idx1)
+            ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
         return list(ret.values())[0]
 

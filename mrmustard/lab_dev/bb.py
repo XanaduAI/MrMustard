@@ -195,30 +195,40 @@ def parse(components: list[CircuitComponent]) -> Graph:
     """Parses a list of CircuitComponents into a Graph.
 
     Each node in the graph corresponds to a Component and an edge between two nodes indicates that
-    the Components are connected in the circuit level. Whether they are connected by one wire
+    the Components are connected in the circuit. Whether they are connected by one wire
     or by many, in the graph they will have a single edge between them.
 
     Args:
         components: A list of CircuitComponents.
     """
+    validate(components)
     graph = Graph()
     for i, A in enumerate(components):
         comp = Component.from_circuitcomponent(A)
         graph.add_node(i, component=comp.copy())
         for j, B in enumerate(components[i + 1 :]):
-            overlap_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes
-            overlap_bra = comp.wires.output.bra.modes & B.wires.input.bra.modes
-            if overlap_ket or overlap_bra:
+            ovlp_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes
+            ovlp_bra = comp.wires.output.bra.modes & B.wires.input.bra.modes
+            if ovlp_ket or ovlp_bra:
                 graph.add_edge(i, i + j + 1)
                 comp.wires = Wires(
-                    comp.wires.args[0] - overlap_bra,  # output bra
+                    comp.wires.args[0] - ovlp_bra,
                     comp.wires.args[1],
-                    comp.wires.args[2] - overlap_ket,  # output ket
+                    comp.wires.args[2] - ovlp_ket,
                     comp.wires.args[3],
                 )
-                if not comp.wires.output:
-                    break
+            if not comp.wires.output:
+                break
     return graph
+
+
+def validate(components: list[CircuitComponent]) -> None:
+    "raises an error if the components are not valid"
+    if len(components) == 0:
+        return
+    w = components[0].wires
+    for comp in components[1:]:
+        w = (w @ comp.wires)[0]
 
 
 def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
