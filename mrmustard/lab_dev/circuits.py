@@ -82,7 +82,7 @@ class Circuit:
         ]  # default path (likely not optimal)
         self._optimized_graph = bb.Graph()
 
-    def optimize(self, with_BF_heuristic: bool = True) -> None:
+    def optimize(self, n_init=100, with_BF_heuristic: bool = True, verbose: bool = True) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
         It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
@@ -90,12 +90,15 @@ class Circuit:
 
         Args:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
+            verbose: If True (default), the progress of the optimization is shown.
         """
         self._optimize_fock_shapes()
         if with_BF_heuristic:
-            self._optimize_contraction_path(heuristics=("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"))
+            self._optimize_contraction_path(
+                n_init, ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"), verbose
+            )
         else:
-            self._optimize_contraction_path(heuristics=("1BB", "2BB", "1FF", "2FF"))
+            self._optimize_contraction_path(n_init, ("1BB", "2BB", "1FF", "2FF"), verbose)
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -135,18 +138,21 @@ class Circuit:
 
     def _optimize_contraction_path(
         self,
-        n_init: int = 100,
-        heuristics: tuple[str, ...] = ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"),
+        n_init: int,
+        heuristics: tuple[str, ...],
+        verbose: bool,
     ) -> None:
         r"""
-        Optimizes the contraction path for this circuit.
+        Optimizes the contraction path for this circuit. Possible heuristics are
+        1BB, 2BB, 1BF, 1FB, 1FF, 2FF. See explanation in the ``optimize`` method.
 
         Args:
             graph: The graph to contract.
             n_init: The number of random contractions to find an initial cost upper bound.
             heuristics: A sequence of patterns to reduce in order.
+            verbose: show the progress of the optimization.
         """
-        self._optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics)
+        self._optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
         self.path = list(self._optimized_graph.solution)
 
     def check_contraction(self, n: int) -> None:

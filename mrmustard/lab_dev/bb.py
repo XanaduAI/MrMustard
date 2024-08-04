@@ -358,6 +358,7 @@ def optimal_contraction(
     graph: Graph,
     n_init: int,
     heuristics: tuple[str, ...],
+    verbose: bool,
 ) -> Graph:
     r"""Finds the optimal path to contract a graph.
 
@@ -365,36 +366,41 @@ def optimal_contraction(
         graph: The graph to contract.
         n_init: The number of random contractions to find an initial cost upper bound.
         heuristics: A sequence of patterns to reduce in order.
-        debug: Whether to print debug information.
+        verbose: Whether to print the progress.
 
     Returns:
         The optimally contracted graph with associated cost and solution
     """
     assign_costs(graph)
-    print("\n===== Simplify graph via heuristics =====")
+    if verbose:
+        print("\n===== Simplify graph via heuristics =====")
     for code in heuristics:
         graph = heuristic(graph, code)
     if graph.number_of_edges() == 0:
         return graph
 
-    print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
+    if verbose:
+        print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
         best = rand if rand.cost < best.cost else best
-    print(f"Best cost from {n_init} random contractions: {best.cost}\n")
+    if verbose:
+        print(f"Best cost from {n_init} random contractions: {best.cost}\n")
 
     queue = PriorityQueue()
     queue.put(graph)
     while not queue.empty():
         candidate = queue.get()
-        print(
-            f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
-            end="\x1b[1K\r",
-        )
+        if verbose:
+            print(
+                f"Queue: {queue.qsize()}/{queue.unfinished_tasks} | cost: {candidate.cost} | solution: {candidate.solution}",
+                end="\x1b[1K\r",
+            )
 
         if candidate.cost >= best.cost:
-            print("warning: early stop")
+            if verbose:
+                print("warning: early stop")
             return candidate  # early stopping because first in queue is already worse
         elif candidate.number_of_edges() == 0:  # better solution! 🥳
             best = candidate

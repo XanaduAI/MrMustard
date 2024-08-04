@@ -230,3 +230,17 @@ class TestCircuit:
         r1 += "\nmode 1:   ──S(-1.0,-2.0)"
         r1 += "\n\n"
         assert repr(circ1) == r1
+
+    def test_optimize_path(self):
+        "tests the optimize method"
+        # contracting the last two first is better
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ.optimize()  # with default heuristics
+        assert circ.path == [(1, 2), (0, 1)]
+
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ._optimize_fock_shapes()
+        circ._optimize_contraction_path(
+            n_init=1, heuristics=(), verbose=False
+        )  # without heuristics
+        assert circ.path == [(1, 2), (0, 1)]
