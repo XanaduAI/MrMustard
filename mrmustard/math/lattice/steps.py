@@ -80,25 +80,24 @@ def vanilla_step_batch(
     The necessary pivot and neighbours must have already been computed,
     as this step will read those values from G.
     Note that this function is different from vanilla_step with b is no longer a vector,
-    it becomes a bathced vector with the batch dimension on the last index.
+    it becomes a bathced vector with the batch dimension on the first index.
 
     Args:
         G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
         A (array): A matrix of the Fock-Bargmann representation
-        b (array): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
+        b (array): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
         index (Sequence): index of the amplitude to calculate
     Returns:
-        array: the value of the amplitude at the given index according to each batch on the last index
+        array: the value of the amplitude at the given index according to each batch on the first index
     """
     # get pivot
     i, pivot = first_available_pivot(index)
 
     # pivot contribution
-    value_at_index = b[i] * G[pivot]
-
+    value_at_index = b[..., i] * G[(slice(None),) + pivot]
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
 
     return value_at_index / SQRT[index[i]]
 
@@ -205,7 +204,10 @@ def vanilla_step_dict(
 
 @njit
 def binomial_step(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[ComplexTensor, float]:
     r"""Computes a whole subspace of the ``G`` tensor at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
@@ -233,7 +235,10 @@ def binomial_step(
 
 @njit
 def binomial_step_dict(
-    G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[types.DictType, float]:
     r"""Computes a whole subspace of the ``G`` dict at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).

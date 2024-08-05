@@ -51,7 +51,11 @@ import sys
 import logging
 import pytest
 from mrmustard.training import optimizer
-from mrmustard.utils.logger import logging_handler_defined, default_handler, create_logger
+from mrmustard.utils.logger import (
+    logging_handler_defined,
+    default_handler,
+    create_logger,
+)
 
 modules_contain_logging = [optimizer]
 

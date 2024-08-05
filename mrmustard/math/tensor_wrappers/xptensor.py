@@ -278,7 +278,9 @@ class XPTensor(ABC):
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = math.tensordot(
-                self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1))
+                self.tensor,
+                other.tensor,
+                ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)),
             )
             return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (
                 self.outmodes,
@@ -309,7 +311,9 @@ class XPTensor(ABC):
                 bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
         if self.like_1 and len(uncontracted_other) > 0:
             copied_rows = math.gather(
-                other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0
+                other.tensor,
+                [other.outmodes.index(m) for m in uncontracted_other],
+                axis=0,
             )
         if other.like_1 and len(uncontracted_self) > 0:
             copied_cols = math.gather(
@@ -318,10 +322,12 @@ class XPTensor(ABC):
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
                 bulk = math.zeros(
-                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype
+                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2),
+                    dtype=copied_cols.dtype,
                 )
             empty = math.zeros(
-                (copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype
+                (copied_rows.shape[0], copied_cols.shape[1], 2, 2),
+                dtype=copied_cols.dtype,
             )
             final = math.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
         elif copied_cols is None and copied_rows is not None:
@@ -388,7 +394,8 @@ class XPTensor(ABC):
                     [i, i] for i in range(other.num_modes)
                 ]  # TODO: check if this is always correct
                 updates = math.tile(
-                    math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1)
+                    math.expand_dims(math.eye(2, dtype=other.dtype), 0),
+                    (other.num_modes, 1, 1),
                 )
                 other.tensor = math.update_add_tensor(other.tensor, indices, updates)
                 return other
@@ -419,7 +426,7 @@ class XPTensor(ABC):
             to_add = [self]
         else:  # need to add both to a new empty tensor
             to_update = math.zeros(
-                (len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2),
+                ((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2)),
                 dtype=self.tensor.dtype,
             )
             to_add = [self, other]

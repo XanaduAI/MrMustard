@@ -15,6 +15,7 @@
 """
 This module contains functions for performing calculations on objects in the Bargmann representations.
 """
+
 import numpy as np
 
 from mrmustard import math, settings
@@ -80,7 +81,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
             [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)],
         ]
     )
-    I = math.eye(N, dtype="complex128")
+    I = math.eye(N, dtype=math.complex128)
     o = math.zeros_like(I)
     R = math.block(
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
@@ -93,7 +94,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     )
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
-    return A, B, math.cast(C, "complex128")
+    return A, B, math.cast(C, math.complex128)
 
 
 def wigner_to_bargmann_U(X, d):
@@ -103,3 +104,101 @@ def wigner_to_bargmann_U(X, d):
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+
+
+def norm_ket(A, b, c):
+    r"""Calculates the l2 norm of a Ket with a representation given by the Bargmann triple A,b,c."""
+    M = math.block([[math.conj(A), -math.eye_like(A)], [-math.eye_like(A), A]])
+    B = math.concat([math.conj(b), b], 0)
+    norm_squared = (
+        math.abs(c) ** 2
+        * math.exp(-0.5 * math.sum(B * math.matvec(math.inv(M), B)))
+        / math.sqrt((-1) ** A.shape[-1] * math.det(M))
+    )
+    return math.real(math.sqrt(norm_squared))
+
+
+def trace_dm(A, b, c):
+    r"""Calculates the total trace of the density matrix with representation given by the Bargmann triple A,b,c."""
+    M = A - math.Xmat(A.shape[-1] // 2)
+    trace = (
+        c
+        * math.exp(-0.5 * math.sum(b * math.matvec(math.inv(M), b)))
+        / math.sqrt((-1) ** (A.shape[-1] // 2) * math.det(M))
+    )
+    return math.real(trace)
+
+
+def au2Symplectic(A):
+    r"""
+    helper for finding the Au of a unitary from its symplectic rep.
+    Au : in bra-ket order
+    """
+    # A represents the A matrix corresponding to unitary U
+    A = A * (1.0 + 0.0 * 1j)
+    m = A.shape[-1]
+    m = m // 2
+
+    # identifying blocks of A_u
+    u_2 = A[..., :m, m:]
+    u_3 = A[..., m:, m:]
+
+    # The formula to apply comes here
+    S_1 = math.conj(math.inv(math.transpose(u_2)))
+    S_2 = -S_1 @ math.conj(u_3)
+    S_3 = math.conj(S_2)
+    S_4 = math.conj(S_1)
+
+    S = math.block([[S_1, S_2], [S_3, S_4]])
+
+    transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+        )
+    )
+
+    return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
+
+
+def symplectic2Au(S):
+    r"""
+    The inverse of au2Symplectic i.e., returns symplectic, given Au
+
+    S: symplectic in XXPP order
+    """
+    m = S.shape[-1]
+    m = m // 2
+    # the following lines of code transform the quadrature symplectic matrix to
+    # the annihilation one
+    transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+        )
+    )
+    S = np.conjugate(math.transpose(transformation)) @ S @ transformation
+    # identifying blocks of S
+    S_1 = S[:m, :m]
+    S_2 = S[:m, m:]
+
+    # TODO: broadcasting/batch stuff consider a batch dimension
+
+    # the formula to apply comes here
+    A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+    A_2 = math.conj(math.inv(math.transpose(S_1)))
+    A_3 = math.transpose(A_2)
+    A_4 = -math.conj(math.solve(S_1, S_2))
+    # -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
+
+    A = math.block([[A_1, A_2], [A_3, A_4]])
+
+    return A

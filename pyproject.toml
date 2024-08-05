@@ -38,11 +38,11 @@ scikit-optimize = { version = "^0.9.0", optional = true }
 networkx = "^3.1"
 juliacall = "^0.9.20"
 ipython = ">=8.18.1"
-mako = "^1.3.0"
 plotly = "^5.20.0"
 nbformat = "^5.10"
+ipywidgets = "^8.1.3"
 
-######################  The Tensorflow Section ###################### 
+######################  The Tensorflow Section ######################
 # Dedicated for making sure that poetry can install tensorflow on all platforms.
 # This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
 
@@ -73,6 +73,7 @@ ray = ["ray", "scikit-optimize"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
+pre-commit = "3.7.1"
 pytest = "8.0"
 pytest-cov ="3.0.0"
 hypothesis = "6.31.6"
@@ -92,6 +93,9 @@ sphinx-automodapi = "^0.15.0"
 sphinxcontrib-bibtex = "^2.5.0"
 mistune = "0.8.4"
 xanadu-sphinx-theme = "0.1.0"
+
+[tool.black]
+line-length = 100
 
 [build-system]
 requires = ["poetry-core"]

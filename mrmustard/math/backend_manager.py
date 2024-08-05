@@ -800,6 +800,28 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
+    def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
+        r"""
+        Moves the axes of an array to a new position.
+
+        Args:
+            array: The array to move the axes of.
+            old: The old index position
+            new: The new index position
+
+
+        Returns:
+            The updated array
+        """
+        return self._apply(
+            "moveaxis",
+            (
+                array,
+                old,
+                new,
+            ),
+        )
+
     def new_variable(
         self,
         value: Tensor,
@@ -1276,7 +1298,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             if self.backend_name == "numpy":
                 return func(*args, **kwargs)
             else:
-                from tensorflow import custom_gradient  # pylint: disable=import-outside-toplevel
+                from tensorflow import (  # pylint: disable=import-outside-toplevel
+                    custom_gradient,
+                )
 
                 return custom_gradient(func)(*args, **kwargs)
 

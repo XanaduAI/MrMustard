@@ -18,16 +18,14 @@ This module contains the classes for the available representations.
 """
 
 from __future__ import annotations
-
+from warnings import warn
 from abc import ABC, abstractmethod
-from typing import Iterable, Union
-import os
+from typing import Any, Callable, Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from IPython.display import display, HTML
-from mako.template import Template
+from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -44,6 +42,7 @@ from mrmustard.utils.typing import (
     Scalar,
     Tensor,
 )
+from mrmustard import widgets
 
 __all__ = ["Representation", "Bargmann", "Fock"]
 
@@ -70,10 +69,17 @@ class Representation(ABC):
         Reorders the representation indices.
         """
 
+    @classmethod
     @abstractmethod
     def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
         r"""
         Returns a representation from an ansatz.
+        """
+
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+        r"""
+        Returns a representation from a function and kwargs.
         """
 
     @property
@@ -251,7 +257,7 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
     ):
         self._contract_idxs: tuple[int, ...] = ()
-        self._ansatz = PolyExpAnsatz(A, b, c)
+        self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
 
     @property
     def ansatz(self) -> PolyExpAnsatz:
@@ -313,6 +319,13 @@ class Bargmann(Representation):
         """
         return self.c
 
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
+        r"""
+        Returns a Bargmann object from a generator function.
+        """
+        return cls.from_ansatz(PolyExpAnsatz.from_function(fn, **kwargs))
+
     def conj(self):
         r"""
         The conjugate of this Bargmann object.
@@ -337,8 +350,8 @@ class Bargmann(Representation):
                 "Partial trace is only supported for ansatze with polynomial of degree ``0``."
             )
         A, b, c = [], [], []
-        for Abci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
+        for Abc in zip(self.A, self.b, self.c):
+            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
@@ -453,33 +466,32 @@ class Bargmann(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Union[Bargmann, Fock]:
+    def __matmul__(self, other: Bargmann) -> Bargmann:
         r"""
-        The inner product of ansatze across the marked indices.
+        Implements the inner product in Bargmann representation.
 
-        If ``other`` is ``Fock``, then ``self`` is converted to ``Fock`` before the contraction.
+        ..code-block::
 
-        Args:
-            other: Another representation.
+        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+        >>> rep1 = Bargmann(*vacuum_state_Abc(1))
+        >>> rep2 = Bargmann(*displacement_gate_Abc(1))
+        >>> rep3 = rep1[0] @ rep2[1]
+        >>> assert np.allclose(rep3.A, [[0,],])
+        >>> assert np.allclose(rep3.b, [1,])
 
-        Returns:
-            A ``Bargmann`` representation if ``other`` is ``Bargmann``, or a ``Fock``representation
-            if ``other`` is ``Fock``.
+         Args:
+             other: Another Bargmann representation.
+
+         Returns:
+            Bargmann: the resulting Bargmann representation.
+
         """
+        if isinstance(other, Fock):
+            raise NotImplementedError("Only matmul Bargmann with Bargmann")
+
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
-
-        # if ``other`` is ``Fock``, convert ``self`` to ``Fock``
-        if isinstance(other, Fock):
-            from .converters import to_fock  # pylint: disable=import-outside-toplevel
-
-            # set same shape along the contracted axes, and default shape along the
-            # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.ansatz.num_vars)]
-            for i, j in zip(idx_s, idx_o):
-                shape[i] = other.array.shape[1:][j]
-
-            return to_fock(self, shape=shape)[idx_s] @ other[idx_o]
 
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
@@ -490,7 +502,7 @@ class Bargmann(Representation):
         if settings.UNSAFE_ZIP_BATCH:
             if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
-                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                    "Batch size of the two ansatze must match since settings.UNSAFE_ZIP_BATCH is True."
                 )
             for (A1, b1, c1), (A2, b2, c2) in zip(
                 zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
@@ -504,9 +516,8 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/bargmann.txt")  # nosec
-        display(HTML(template.render(rep=self)))
+    def _ipython_display_(self):
+        display(widgets.bargmann(self))
 
 
 class Fock(Representation):
@@ -589,7 +600,7 @@ class Fock(Representation):
         return self.array
 
     @property
-    def bargmann(self) -> tuple:
+    def triple(self) -> tuple:
         r"""
         The data of the original Bargmann representation if it exists
         """
@@ -607,6 +618,13 @@ class Fock(Representation):
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
         return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+
+    @classmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
+        r"""
+        Returns a Fock object from a generator function.
+        """
+        return cls.from_ansatz(ArrayAnsatz.from_function(fn, **kwargs))
 
     def conj(self):
         r"""
@@ -630,15 +648,20 @@ class Fock(Representation):
         new._contract_idxs = idx
         return new
 
-    def __matmul__(self, other: Union[Bargmann, Fock]) -> Fock:
+    def __matmul__(self, other: Fock) -> Fock:
         r"""
-        Implements the inner product of ansatze across the marked indices.
+        Implements the inner product of fock arrays over the marked indices.
 
-        If ``other`` is ``Fock``, the two representations are automatically reduced
-        before being contracted. The array of the returned representation has the largest
-        possible dimension along every axis.
-
-        If ``other`` is ``Bargmann``, it is converted to ``Fock`` before the contraction.
+        .. code-block::
+            >>> from mrmustard.physics.representations import Fock
+            >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
+            >>> g = Fock(np.random.random((2, 5, 8)))
+            >>> h = f[1,2] @ g[1,2]
+            >>> assert h.array.shape == (1,3,2)  # batch size is 1
+            >>> f = Fock(np.random.random((3, 5, 10)), batched=True)
+            >>> g = Fock(np.random.random((2, 5, 8)), batched=True)
+            >>> h = f[0,1] @ g[0,1]
+            >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
 
         Args:
             other: Another representation.
@@ -646,20 +669,11 @@ class Fock(Representation):
         Returns:
             A ``Fock``representation.
         """
+        if isinstance(other, Bargmann):
+            raise NotImplementedError("only matmul Fock with Fock")
+
         idx_s = list(self._contract_idxs)
         idx_o = list(other._contract_idxs)
-
-        # if ``other`` is ``Bargmann``, convert it to ``Fock``
-        if isinstance(other, Bargmann):
-            from .converters import to_fock  # pylint: disable=import-outside-toplevel
-
-            # set same shape along the contracted axes, and default shape along the
-            # axes that are not being contracted
-            shape = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(other.ansatz.num_vars)]
-            for i, j in zip(idx_s, idx_o):
-                shape[j] = self.array.shape[1:][i]
-
-            return self[idx_s] @ to_fock(other, shape=shape)[idx_o]
 
         # the number of batches in self and other
         n_batches_s = self.array.shape[0]
@@ -669,34 +683,21 @@ class Fock(Representation):
         shape_s = self.array.shape[1:]
         shape_o = other.array.shape[1:]
 
-        # the shapes of the axes being contracted
-        shape_s_contr = [shape_s[i] for i in idx_s]
-        shape_o_contr = [shape_o[i] for i in idx_o]
+        new_shape_s = list(shape_s)
+        new_shape_o = list(shape_o)
+        for s, o in zip(idx_s, idx_o):
+            new_shape_s[s] = min(shape_s[s], shape_o[o])
+            new_shape_o[o] = min(shape_s[s], shape_o[o])
 
-        # compare the shapes along the axes being contracted
-        if shape_o_contr != shape_s_contr:
-            # calculate new shapes that maintain the largest possible dimension
-            # along each of the contracted axes
-            shape = [min(s, o) for s, o in zip(shape_s_contr, shape_o_contr)]
-
-            new_shape_s = [n_batches_s]
-            new_shape_s += [
-                shape[idx_s.index(i)] if i in idx_s else idx for i, idx in enumerate(shape_s)
-            ]
-
-            new_shape_o = [n_batches_o]
-            new_shape_o += [
-                shape[idx_o.index(i)] if i in idx_o else idx for i, idx in enumerate(shape_o)
-            ]
-
-            return self.reduce(new_shape_s)[idx_s] @ other.reduce(new_shape_o)[idx_o]
+        reduced_s = self.reduce(new_shape_s)[idx_s]
+        reduced_o = other.reduce(new_shape_o)[idx_o]
 
         axes = [list(idx_s), list(idx_o)]
-        new_array = []
+        batched_array = []
         for i in range(n_batches_s):
             for j in range(n_batches_o):
-                new_array.append(math.tensordot(self.array[i], other.array[j], axes))
-        return self.from_ansatz(ArrayAnsatz(new_array))
+                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+        return self.from_ansatz(ArrayAnsatz(batched_array))
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""
@@ -756,29 +757,39 @@ class Fock(Representation):
             >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
             >>> assert fock3 == Fock(array3)
 
-            >>> fock4 = fock1.reduce((2, 1, 3, 1))
+            >>> fock4 = fock1.reduce((1, 3, 1))
             >>> array4 = [[[0], [3], [6]]]
             >>> assert fock4 == Fock(array4)
 
         Args:
             shape: The shape of the array of the returned ``Fock``.
         """
-        length = len(self.array.shape)
+        length = len(self.array.shape) - 1
         shape = (shape,) * length if isinstance(shape, int) else shape
         if len(shape) != length:
-            msg = f"Expected ``shape`` of lenght {length}, "
-            msg += f"found shape of lenght {len(shape)}."
+            msg = f"Expected shape of length {length}, "
+            msg += f"given shape has length {len(shape)}."
             raise ValueError(msg)
 
-        ret = self.array
-        for i, s in enumerate(shape):
-            slc = (slice(None),) * i + (slice(0, s),) + (slice(None),) * (length - i - 1)
-            ret = ret[slc]
+        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+            warn(
+                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
+            )
+            padded = math.pad(
+                self.array,
+                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+            )
+            return self.from_ansatz(ArrayAnsatz(padded))
+
+        ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/fock.txt")  # nosec
-        display(HTML(template.render(rep=self)))
+    def _ipython_display_(self):
+        w = widgets.fock(self)
+        if w is None:
+            print(repr(self))
+            return
+        display(w)
 
     def sum_batch(self) -> Fock:
         r"""

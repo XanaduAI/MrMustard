@@ -36,7 +36,10 @@ class TestBackendManager:
     l2 = [1.0 + 0.0j, -2.0 + 2.0j]
     l3 = [[1.0, 2.0], [-3.0, 4.0]]
     l4 = [l2, l2]
-    l5 = [[[1.0, 2.0, 3.0 + 6], [3.0, 4.0, 5.0 - 10]], [[1.0, 2.0 + 1, 3.0], [3.0, 4.0, 5.0]]]
+    l5 = [
+        [[1.0, 2.0, 3.0 + 6], [3.0, 4.0, 5.0 - 10]],
+        [[1.0, 2.0 + 1, 3.0], [3.0, 4.0, 5.0]],
+    ]
     lists = [l1, l2, l3, l4, l5]
 
     types = ["None", "int32", "float32", "float64", "complex128"]
@@ -220,7 +223,12 @@ class TestBackendManager:
         I = math.ones(shape=(4, 4), dtype=math.complex128)
         O = math.zeros(shape=(4, 4), dtype=math.complex128)
         R = math.block(
-            [[I, 1j * I, O, O], [O, O, I, -1j * I], [I, -1j * I, O, O], [O, O, I, 1j * I]]
+            [
+                [I, 1j * I, O, O],
+                [O, O, I, -1j * I],
+                [I, -1j * I, O, O],
+                [O, O, I, 1j * I],
+            ]
         )
         assert R.shape == (16, 16)
 
@@ -481,6 +489,19 @@ class TestBackendManager:
         arr2 = 2 * np.eye(3)
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert np.allclose(res, arr1)
+
+    def test_moveaxis(self):
+        r"""
+        Tests the ``moveaxis`` method.
+        """
+        arr1 = np.random.random(size=(1, 2, 3))
+        arr2 = np.random.random(size=(2, 1, 3))
+        arr2_moved = math.moveaxis(arr2, 0, 1)
+        assert np.allclose(arr1.shape, arr2_moved.shape)
+
+        arr1_moved1 = math.moveaxis(arr1, 0, 1)
+        arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
+        assert np.allclose(arr1, arr1_moved2)
 
     @pytest.mark.parametrize("t", types)
     def test_new_variable(self, t):

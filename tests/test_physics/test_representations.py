@@ -14,12 +14,14 @@
 
 """This module contains tests for ``Representation`` objects."""
 
+from unittest.mock import patch
+
+from ipywidgets import Box, HBox, VBox, HTML, IntText, Stack, IntSlider, Tab
 import numpy as np
+from plotly.graph_objs import FigureWidget
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.converters import to_fock
-from mrmustard.physics.triples import displacement_gate_Abc, attenuator_Abc
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
@@ -189,26 +191,57 @@ class TestBargmannRepresentation:
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
 
-    @pytest.mark.parametrize("n1", [1, 2])
-    @pytest.mark.parametrize("n2", [1, 2])
-    def test_matmul_barg_fock(self, n1, n2):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 3
+    @patch("mrmustard.physics.representations.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        rep = Bargmann(*Abc_triple(2))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, Box)
+        assert box.layout.max_width == "50%"
 
-        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
-        a0_barg = Bargmann(*attenuator_Abc(0.7))
+        # data on left, eigvals on right
+        [data_vbox, eigs_vbox] = box.children
+        assert isinstance(data_vbox, VBox)
+        assert isinstance(eigs_vbox, VBox)
 
-        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
-        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
+        # data forms a stack: header, ansatz, triple data
+        [header, sub, table] = data_vbox.children
+        assert isinstance(header, HTML)
+        assert isinstance(sub, HBox)
+        assert isinstance(table, HTML)
 
-        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
+        # ansatz goes beside button to modify rounding
+        [ansatz, round_w] = sub.children
+        assert isinstance(ansatz, HTML)
+        assert isinstance(round_w, IntText)
 
-        res = (d01_barg[0] @ a0_fock[0]).array
-        assert res.shape == (n1 * n2, 3, 3, 3, 3, 4, 5)
+        # eigvals have a header and a unit circle plot
+        [eig_header, unit_circle] = eigs_vbox.children
+        assert isinstance(eig_header, HTML)
+        assert isinstance(unit_circle, FigureWidget)
 
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
+    @patch("mrmustard.physics.representations.display")
+    def test_ipython_repr_batched(self, mock_display):
+        """Test the IPython repr function for a batched repr."""
+        A1, b1, c1 = Abc_triple(2)
+        A2, b2, c2 = Abc_triple(2)
+        rep = Bargmann(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [vbox] = mock_display.call_args.args
+        assert isinstance(vbox, VBox)
+
+        [slider, stack] = vbox.children
+        assert isinstance(slider, IntSlider)
+        assert slider.max == 1  # the batch size - 1
+        assert isinstance(stack, Stack)
+
+        # max_width is spot-check that this is bargmann widget
+        assert len(stack.children) == 2
+        assert all(box.layout.max_width == "50%" for box in stack.children)
 
 
-class TestFockRepresentation:
+class TestFockRepresentation:  # pylint:disable=too-many-public-methods
     r"""Tests the Fock Representation."""
 
     array578 = np.random.random((5, 7, 8))
@@ -294,25 +327,6 @@ class TestFockRepresentation:
             math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
         )
 
-    @pytest.mark.parametrize("n1", [1, 2])
-    @pytest.mark.parametrize("n2", [1, 2])
-    def test_matmul_fock_barg(self, n1, n2):
-        settings.AUTOCUTOFF_MAX_CUTOFF = 3
-
-        d01_barg = Bargmann(*displacement_gate_Abc([0.1, 0.2]))
-        a0_barg = Bargmann(*attenuator_Abc(0.7))
-
-        d01_barg = d01_barg if n1 == 1 else d01_barg + d01_barg
-        a0_barg = a0_barg if n2 == 1 else a0_barg + a0_barg
-
-        d01_fock = to_fock(d01_barg, shape=(2, 3, 4, 5))
-        a0_fock = to_fock(a0_barg, shape=(2, 3, 4, 5))
-
-        assert (d01_fock[0] @ a0_barg[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 3, 3)
-        assert (d01_fock[0] @ a0_fock[0]).array.shape == (n1 * n2, 3, 4, 5, 3, 4, 5)
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-
     def test_add(self):
         fock1 = Fock(self.array2578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
@@ -358,7 +372,7 @@ class TestFockRepresentation:
         array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
         assert fock3 == Fock(array3)
 
-        fock4 = fock1.reduce((2, 1, 3, 1))
+        fock4 = fock1.reduce((1, 3, 1))
         array4 = math.astensor([[[0], [3], [6]]])
         assert fock4 == Fock(array4)
 
@@ -366,8 +380,52 @@ class TestFockRepresentation:
         array1 = math.astensor(np.arange(27).reshape((3, 3, 3)))
         fock1 = Fock(array1)
 
-        with pytest.raises(ValueError, match="Expected ``shape``"):
+        with pytest.raises(ValueError, match="Expected shape"):
             fock1.reduce((1, 2))
 
-        with pytest.raises(ValueError, match="Expected ``shape``"):
+        with pytest.raises(ValueError, match="Expected shape"):
             fock1.reduce((1, 2, 3, 4, 5))
+
+    def test_reduce_padded(self):
+        fock = Fock(self.array578)
+        with pytest.warns(UserWarning):
+            fock1 = fock.reduce((8, 8, 8))
+        assert fock1.array.shape == (1, 8, 8, 8)
+
+    @pytest.mark.parametrize("shape", [(1, 8), (1, 8, 8)])
+    @patch("mrmustard.physics.representations.display")
+    def test_ipython_repr(self, mock_display, shape):
+        """Test the IPython repr function."""
+        rep = Fock(np.random.random(shape), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [hbox] = mock_display.call_args.args
+        assert isinstance(hbox, HBox)
+
+        # the CSS, the header+ansatz, and the tabs of plots
+        [css, left, plots] = hbox.children
+        assert isinstance(css, HTML)
+        assert isinstance(left, VBox)
+        assert isinstance(plots, Tab)
+
+        # left contains header and ansatz
+        left = left.children
+        assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
+
+        # one plot for magnitude, another for phase
+        assert plots.titles == ("Magnitude", "Phase")
+        plots = plots.children
+        assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
+
+    @patch("mrmustard.physics.representations.display")
+    def test_ipython_repr_expects_batch_1(self, mock_display):
+        """Test the IPython repr function does nothing with real batch."""
+        rep = Fock(np.random.random((2, 8)), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        mock_display.assert_not_called()
+
+    @patch("mrmustard.physics.representations.display")
+    def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
+        """Test the IPython repr function does nothing with 4+ dims."""
+        rep = Fock(np.random.random((1, 4, 4, 4)), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        mock_display.assert_not_called()
