@@ -154,7 +154,7 @@ class Graph(nx.DiGraph):
             yield self.component(n)
 
 
-def optimize_fock_shapes(graph: Graph, iteration: int) -> Graph:
+def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
     """Iteratively optimizes the Fock shapes of the components in the graph."""
     h = hash(graph)
     for A, B in graph.edges:
@@ -185,8 +185,8 @@ def optimize_fock_shapes(graph: Graph, iteration: int) -> Graph:
                     d = a + b
             component.shape = [a, b, c, d]
 
-    if h != hash(graph):
-        print(f"Iteration {iter}: graph updated")
+    if h != hash(graph) and verbose:
+        print(f"Iteration {iteration}: graph updated")
         graph = optimize_fock_shapes(graph, iteration + 1)
     return graph
 
@@ -344,12 +344,12 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     return graph, False
 
 
-def heuristic(graph: Graph, code: str) -> Graph:
+def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     r"""Simplifies the graph by contracting all pairs of nodes that match the given pattern."""
     edge = True
     while edge:
         graph, edge = reduce_first(graph, code)
-        if edge:
+        if edge and verbose:
             print(f"{code} edge: {edge} | tot cost: {graph.cost}")
     return graph
 
@@ -375,7 +375,7 @@ def optimal_contraction(
     if verbose:
         print("\n===== Simplify graph via heuristics =====")
     for code in heuristics:
-        graph = heuristic(graph, code)
+        graph = heuristic(graph, code, verbose)
     if graph.number_of_edges() == 0:
         return graph
 

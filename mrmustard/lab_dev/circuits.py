@@ -92,7 +92,7 @@ class Circuit:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
             verbose: If True (default), the progress of the optimization is shown.
         """
-        self._optimize_fock_shapes()
+        self._optimize_fock_shapes(verbose)
         if with_BF_heuristic:
             self._optimize_contraction_path(
                 n_init, ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"), verbose
@@ -123,7 +123,7 @@ class Circuit:
 
         return list(ret.values())[0]
 
-    def _optimize_fock_shapes(self) -> None:
+    def _optimize_fock_shapes(self, verbose: bool) -> None:
         r"""
         Optimizes the Fock shapes of the components in this circuit.
         It starts by matching the existing connected wires and keeps the smaller shape,
@@ -131,8 +131,9 @@ class Circuit:
         reduce the shapes across the circuit.
         This operation acts in place.
         """
-        print("===== Optimizing Fock shapes =====")
-        self._graph = bb.optimize_fock_shapes(self._graph, 0)
+        if verbose:
+            print("===== Optimizing Fock shapes =====")
+        self._graph = bb.optimize_fock_shapes(self._graph, 0, verbose)
         for i, c in enumerate(self.components):
             c.manual_shape = self._graph.component(i).shape
 
