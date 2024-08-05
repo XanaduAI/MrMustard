@@ -33,13 +33,14 @@ class Component:
     TODO: this could be replaced by a simple CircuitComponent without the representation.
     """
 
-    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = ""):
+    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
         self.repr = repr
         self.wires = wires
         self.shape = list(shape)
         self.name = name
+        self.cost = cost
 
     @classmethod
     def from_circuitcomponent(cls, c: CircuitComponent):
@@ -116,6 +117,7 @@ class Component:
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
+            self.contraction_cost(other) + self.cost + other.cost,
         )
         return new_component
 
