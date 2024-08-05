@@ -244,3 +244,15 @@ class TestCircuit:
             n_init=1, heuristics=(), verbose=False
         )  # without heuristics
         assert circ.path == [(1, 2), (0, 1)]
+
+    def test_wrong_path(self):
+        "tests an exception is raised if contract is called with a wrond path"
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ.path = [(0, 3)]
+        with pytest.raises(ValueError):
+            circ.contract()
+
+    def test_contract(self):
+        "tests the contract method"
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        assert circ.contract() == Number([0], n=15) >> Sgate([0], r=1.0) >> Dgate([0], x=1.0)
