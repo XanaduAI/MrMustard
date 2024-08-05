@@ -273,8 +273,8 @@ class Channel(Map):
         A random channel without displacement.
 
         Args:
-        modes: The modes of the channel.
-        max_r: The maximum squeezing parameter.
+            modes: The modes of the channel.
+            max_r: The maximum squeezing parameter.
         """
         from mrmustard.lab_dev.states import Vacuum
 

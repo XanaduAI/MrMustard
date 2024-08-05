@@ -119,7 +119,7 @@ class Settings:
         "Whether tensorflow's ComplexWarning should be raised when a complex is cast to a float. Default is False."
 
         self.ATOL = 1e-8
-        "The error tolerance that is used for physicality conditions of .is_CP for Channels and .is_positive for DMs."
+        "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
 
     @property
     def COMPLEX_WARNING(self):
