@@ -290,6 +290,13 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_matmul_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = d0 @ 0.8
+        assert math.allclose(result.representation.A, d0.representation.A)
+        assert math.allclose(result.representation.b, d0.representation.b)
+        assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -385,6 +392,11 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+    def test_rshift_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = 0.8 >> d0
+        assert math.allclose(result, 0.8 * d0.representation.c)
 
     def test_repr(self):
         c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
