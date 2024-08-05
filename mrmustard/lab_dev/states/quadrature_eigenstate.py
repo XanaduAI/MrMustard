@@ -55,7 +55,7 @@ class QuadratureEigenstate(Ket):
         self,
         modes: Sequence[int],
         x: float | Sequence[float] = 0.0,
-        phi: Union[float, Sequence[float]] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         phi_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
