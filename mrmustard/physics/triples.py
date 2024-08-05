@@ -197,7 +197,7 @@ def two_mode_squeezed_vacuum_state_Abc(
 
     If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``r=[1,2,3,4]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1]``.
+    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1,1]``.
 
     Args:
         r: The squeezing magnitudes.
@@ -214,6 +214,33 @@ def two_mode_squeezed_vacuum_state_Abc(
     A = math.block([[O, tanhr], [tanhr, O]])
     b = _vacuum_B_vector(n_modes)
     c = math.prod(1 / math.cosh(r))
+
+    return A, b, c
+
+
+def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of quadrature eigenstates.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``x=[1,2,3]`` and ``phi=1`` is equivalent to
+    passing ``x=[1,2,3]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing angles.
+
+    Returns:
+        The ``(A, b, c)`` triple of the squeezed vacuum states.
+    """
+    hbar = settings.HBAR
+    x, phi = list(_reshape(x=x, phi=phi))
+
+    A = -math.diag(math.exp(1j * 2 * phi))
+    b = x * math.exp(1j * phi) * math.sqrt(2 / hbar)
+    c = math.prod(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)))
 
     return A, b, c
 
@@ -523,18 +550,24 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     return A, b, c
 
 
-def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
     Args:
-        n_modes: The number of modes.
+        beta: The damping parameter.
 
     Returns:
-        The ``(A, b, c)`` triple of the Fock damping channels.
+        The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    A = _X_matrix_for_unitary(n_modes * 2)
-    b = _vacuum_B_vector(n_modes * 4)
+    beta = math.atleast_1d(beta, math.complex128)
+    n_modes = len(beta)
+
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
+
+    A = math.block([[O_n, B_n], [B_n, O_n]])
+    b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
     return A, b, c
