@@ -819,7 +819,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
-    x: Vector = None,
+    x: Optional[Vector] = None,
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -837,7 +837,7 @@ def quadrature_distribution(
     dims = len(state.shape)
     if dims > 2:
         raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
+            f"Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
     is_dm = dims == 2
