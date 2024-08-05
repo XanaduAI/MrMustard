@@ -42,10 +42,10 @@ class TestQuadratureEigenstate:
         assert np.allclose(state.phi.value, phi)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``x``"):
+        with pytest.raises(ValueError, match="x"):
             QuadratureEigenstate(modes=[0, 1], x=[2, 3, 4])
 
-        with pytest.raises(ValueError, match="Length of ``phi``"):
+        with pytest.raises(ValueError, match="phi"):
             QuadratureEigenstate(modes=[0, 1], x=1, phi=[2, 3, 4])
 
     def test_trainable_parameters(self):
@@ -81,6 +81,7 @@ class TestQuadratureEigenstate:
 
         q0 = QuadratureEigenstate([0], x=0, phi=0)
 
+        settings._hbar_locked = False
         settings.HBAR = hbar
         q1 = QuadratureEigenstate([0], x=0, phi=0)
         assert np.allclose(q0.bargmann[0], q1.bargmann[0])

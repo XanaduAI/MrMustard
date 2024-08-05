@@ -62,11 +62,8 @@ class QuadratureEigenstate(Ket):
         phi_bounds: Tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="QuadratureEigenstate")
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        xs, phis = list(reshape_params(n_modes, x=self.x.value, phi=self.phi.value))
-        return Bargmann(*triples.quadrature_eigenstates_Abc(xs, phis))
+        xs, phis = list(reshape_params(len(modes), x=x, phi=phi))
+        self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self._representation = Bargmann.from_function(
+            fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi)
