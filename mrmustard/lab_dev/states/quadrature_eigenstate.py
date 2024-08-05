@@ -36,7 +36,7 @@ class QuadratureEigenstate(Ket):
 
         >>> from mrmustard.lab_dev import QuadratureEigenstate
 
-        >>> state = QuadratureEigenstate([1, 2], x = 1, phi = np.pi/2)
+        >>> state = QuadratureEigenstate([1, 2], x = 1, phi = 0)
         >>> assert state.modes == [1, 2]
 
     Args:
