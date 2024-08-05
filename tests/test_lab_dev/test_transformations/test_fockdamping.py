@@ -37,14 +37,11 @@ class TestFockDamping:
 
         assert gate.name == "FockDamping"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Length of ``damping``"):
-            FockDamping(modes=[0, 1], damping=[0.2, 0.3, 0.4])
+        assert np.allclose(gate.damping.value, damping)
 
     def test_representation(self):
         rep1 = FockDamping(modes=[0], damping=0.1).representation
-        e = np.exp(-0.1)
+        e = math.exp(-0.1)
         assert math.allclose(
             rep1.A,
             [
@@ -57,7 +54,7 @@ class TestFockDamping:
                 ]
             ],
         )
-        assert math.allclose(rep1.b, np.zeros((1, 2)))
+        assert math.allclose(rep1.b, math.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):

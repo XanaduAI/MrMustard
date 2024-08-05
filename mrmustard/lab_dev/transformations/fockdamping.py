@@ -49,7 +49,7 @@ class FockDamping(Operation):
         
     Args:
         modes: The modes this gate is applied to.
-        damping: The damping.
+        damping: The damping parameter.
         damping_trainable: Whether the damping is a trainable variable.
         damping_bounds: The bounds for the damping.
 
@@ -70,23 +70,22 @@ class FockDamping(Operation):
     def __init__(
         self,
         modes: Sequence[int],
-        damping: Union[Optional[float], Optional[list[float]]] = 0.0,
+        damping: float | Sequence[float] | None =  0.0,
         damping_trainable: bool = False,
-        damping_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        damping_bounds: Tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="FockDamping")
+        (betas,) = list(reshape_params(len(modes), damping=damping))
         self._add_parameter(
             make_parameter(
                 damping_trainable,
-                damping,
+                betas,
                 "damping",
                 damping_bounds,
                 None,
             )
         )
+        self._representation = Bargmann.from_function(
+            fn=triples.fock_damping_Abc, beta=self.damping
+        )
 
-    @property
-    def representation(self) -> Bargmann:
-        n_modes = len(self.modes)
-        beta = list(reshape_params(n_modes, beta=self.damping.value))[0]
-        return Bargmann(*triples.fock_damping_Abc(beta))
