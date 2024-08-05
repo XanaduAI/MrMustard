@@ -20,7 +20,6 @@ import pytest
 import numpy as np
 
 from mrmustard.lab_dev.states import QuadratureEigenstate, Coherent
-from mrmustard.lab_dev.transformations import Sgate
 from mrmustard import settings
 
 
@@ -39,6 +38,8 @@ class TestQuadratureEigenstate:
 
         assert state.name == "QuadratureEigenstate"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert np.allclose(state.x.value, x)
+        assert np.allclose(state.phi.value, phi)
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="Length of ``x``"):
@@ -85,6 +86,3 @@ class TestQuadratureEigenstate:
         assert np.allclose(q0.bargmann[0], q1.bargmann[0])
         assert np.allclose(q0.bargmann[1], q1.bargmann[1])
         assert np.allclose(q0.bargmann[2], q1.bargmann[2])
-
-        settings._hbar_locked = False
-        settings.HBAR = 2.0
