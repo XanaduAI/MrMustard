@@ -59,7 +59,7 @@ class QuadratureEigenstate(Ket):
         x_trainable: bool = False,
         phi_trainable: bool = False,
         x_bounds: Tuple[float | None, float | None] = (None, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_bounds: Tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="QuadratureEigenstate")
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
