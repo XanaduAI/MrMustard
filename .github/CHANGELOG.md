@@ -20,7 +20,7 @@
 * Replace IPython `_repr_html_` `mako`-based implementations
   with `ipywidgets` and improve the aesthetics.
   [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
-  [(#4xx)](https://github.com/XanaduAI/MrMustard/pull/4xx)
+  [(#450)](https://github.com/XanaduAI/MrMustard/pull/450)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
