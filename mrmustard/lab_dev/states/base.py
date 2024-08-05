@@ -863,7 +863,7 @@ class DM(State):
         gamma_A = A[:m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
@@ -874,7 +874,7 @@ class DM(State):
         r"""
         Whether this DM is a physical density operator.
         """
-        return self.is_positive and math.allclose(self.probability, 1, 1e-8)
+        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
 
 class Ket(State):
@@ -1138,4 +1138,6 @@ class Ket(State):
 
         A = self.representation.A[0]
 
-        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(self.probability, 1, 1e-8)
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            self.probability, 1, settings.ATOL
+        )

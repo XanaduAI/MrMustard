@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
@@ -295,28 +295,28 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.representation.A[0]
+        A = self.representation.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[0, :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > 1e-8
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
     def is_TP(self) -> bool:
         r"""
         Whether this channel is trace preserving (TP).
         """
-        A = self.representation.A[0]
+        A = self.representation.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
-        lambda_A = A[m:, m:]
+        gamma_A = A[0, :m, m:]
+        lambda_A = A[0, m:, m:]
         temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
-        return math.real(math.norm(temp_A - math.eye(m))) < 1e-8
+        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
 
     @property
     def is_physical(self) -> bool:
