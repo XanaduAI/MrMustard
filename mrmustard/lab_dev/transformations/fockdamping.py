@@ -18,7 +18,7 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
 from .base import Operation
 from ...physics.representations import Bargmann
