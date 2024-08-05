@@ -54,7 +54,7 @@ class QuadratureEigenstate(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        x: Union[float, Sequence[float]] = 0.0,
+        x: float | Sequence[float] = 0.0,
         phi: Union[float, Sequence[float]] = 0.0,
         x_trainable: bool = False,
         phi_trainable: bool = False,
