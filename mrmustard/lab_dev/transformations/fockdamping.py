@@ -70,7 +70,7 @@ class FockDamping(Operation):
     def __init__(
         self,
         modes: Sequence[int],
-        damping: float | Sequence[float] | None =  0.0,
+        damping: float | Sequence[float] | None = 0.0,
         damping_trainable: bool = False,
         damping_bounds: Tuple[float | None, float | None] = (0.0, None),
     ):
@@ -88,4 +88,3 @@ class FockDamping(Operation):
         self._representation = Bargmann.from_function(
             fn=triples.fock_damping_Abc, beta=self.damping
         )
-
