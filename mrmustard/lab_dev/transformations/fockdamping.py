@@ -29,7 +29,8 @@ __all__ = ["FockDamping"]
 
 
 class FockDamping(Operation):
-    r"""The Fock damping operator.
+    r"""
+    The Fock damping operator.
 
     If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
     all the modes share the same damping.
