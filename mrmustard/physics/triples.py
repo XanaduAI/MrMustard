@@ -523,18 +523,24 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     return A, b, c
 
 
-def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
     Args:
-        n_modes: The number of modes.
+        beta: The damping parameter.
 
     Returns:
-        The ``(A, b, c)`` triple of the Fock damping channels.
+        The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    A = _X_matrix_for_unitary(n_modes * 2)
-    b = _vacuum_B_vector(n_modes * 4)
+    beta = math.atleast_1d(beta, math.complex128)
+    n_modes = len(beta)
+
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
+
+    A = math.block([[O_n, B_n], [B_n, O_n]])
+    b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
     return A, b, c
