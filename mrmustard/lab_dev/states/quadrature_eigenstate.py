@@ -66,4 +66,5 @@ class QuadratureEigenstate(Ket):
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
         self._representation = Bargmann.from_function(
-            fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi)
+            fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
+        )
