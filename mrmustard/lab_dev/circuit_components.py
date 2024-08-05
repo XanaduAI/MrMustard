@@ -22,12 +22,14 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 import numbers
 from functools import cached_property
+from pathlib import Path
 
 import numpy as np
 import ipywidgets as widgets
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
+from mrmustard.utils import serialize
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
@@ -91,6 +93,24 @@ class CircuitComponent:
             )
             if self._representation:
                 self._representation = self._representation.reorder(tuple(perm))
+
+    def serialize(self) -> Path:
+        r"""Serialize a CircuitComponent object."""
+        return serialize.save(
+            type(self),
+            name=self.name,
+            representation=str(self.representation.serialize()),
+            wires=self.wires.serialize(),
+        )
+
+    @classmethod
+    def deserialize(cls, data) -> CircuitComponent:
+        r"""Deserialize a CircuitComponent object."""
+        return cls._from_attributes(
+            serialize.load(data["representation"]),
+            Wires.deserialize(data["wires"]),
+            name=data["name"],
+        )
 
     @classmethod
     def _from_attributes(

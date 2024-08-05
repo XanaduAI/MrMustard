@@ -21,6 +21,8 @@ from __future__ import annotations
 from warnings import warn
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
+from pathlib import Path
+
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,6 +36,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral,
 )
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.utils import serialize
 from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
@@ -97,6 +100,15 @@ class Representation(ABC):
         The scalar part of the representation.
         For now it's ``c`` for Bargmann and the array for Fock.
         """
+
+    @abstractmethod
+    def serialize(self) -> Path:
+        r"""Serialize a Representation."""
+
+    @classmethod
+    @abstractmethod
+    def deserialize(cls, data) -> Representation:
+        r"""Deserialize a Representation."""
 
     def __eq__(self, other: Representation) -> bool:
         r"""
@@ -516,6 +528,18 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
+    def serialize(self) -> Path:
+        r"""Serialize a Bargmann instance."""
+        return serialize.save(type(self), A=self.A, b=self.b, c=self.c)
+
+    @classmethod
+    def deserialize(cls, data) -> Bargmann:
+        r"""Deserialize a Bargmann instance."""
+        A = data["A"]
+        b = data["b"]
+        c = data["c"]
+        return cls(A, b, c)
+
     def _ipython_display_(self):
         display(widgets.bargmann(self))
 
@@ -783,6 +807,15 @@ class Fock(Representation):
 
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
         return Fock(array=ret, batched=True)
+
+    def serialize(self) -> Path:
+        r"""Serialize a Fock instance."""
+        return serialize.save(type(self), array=self.array, batched=self.batched)
+
+    @classmethod
+    def deserialize(cls, data) -> Fock:
+        r"""Deserialize a Fock instance."""
+        return cls(data["array"], batched=data["batched"])
 
     def _ipython_display_(self):
         w = widgets.fock(self)

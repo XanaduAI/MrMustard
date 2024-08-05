@@ -15,6 +15,7 @@
 """``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
+import json
 from functools import cached_property
 from typing import Optional
 import numpy as np
@@ -306,6 +307,24 @@ class Wires:
     def dual(self) -> Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
+
+    def serialize(self) -> str:
+        r"""
+        Serialize a Wires object.
+
+        Note that this simply dumps a JSON string, and assumes that surrounding code handles it.
+        """
+        return json.dumps(tuple(tuple(w) for w in self.args))
+
+    @classmethod
+    def deserialize(cls, wires: str) -> Wires:
+        r"""
+        Deserialize a Wires object.
+
+        Note that this simply loads a JSON string, and assumes that surrounding code handles it.
+        """
+        mode_tuples = json.loads(wires)
+        return cls(*(set(m) for m in mode_tuples))
 
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
