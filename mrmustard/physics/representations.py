@@ -810,12 +810,12 @@ class Fock(Representation):
 
     def serialize(self) -> Path:
         r"""Serialize a Fock instance."""
-        return serialize.save(type(self), array=self.array, batched=self.batched)
+        return serialize.save(type(self), array=self.array)
 
     @classmethod
     def deserialize(cls, data) -> Fock:
         r"""Deserialize a Fock instance."""
-        return cls(data["array"], batched=data["batched"])
+        return cls(data["array"], batched=True)
 
     def _ipython_display_(self):
         w = widgets.fock(self)

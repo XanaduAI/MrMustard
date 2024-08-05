@@ -28,7 +28,6 @@ CACHE = Path(__file__).parents[2].absolute() / ".serialize_cache"
 def save(cls, **data) -> Path:
     r"""Save a serialized set of data to file for later deserialization."""
     file = CACHE / f"{cls.__qualname__}_{uuid4()}.json"  # random filename
-    data["file"] = str(file)
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
 
     # use numpy serialization tools, save filename in json

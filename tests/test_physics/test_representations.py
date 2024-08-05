@@ -14,6 +14,7 @@
 
 """This module contains tests for ``Representation`` objects."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 from ipywidgets import Box, HBox, VBox, HTML, IntText, Stack, IntSlider, Tab
@@ -22,6 +23,7 @@ from plotly.graph_objs import FigureWidget
 import pytest
 
 from mrmustard import math, settings
+from mrmustard.utils.serialize import load
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
@@ -240,6 +242,15 @@ class TestBargmannRepresentation:
         assert len(stack.children) == 2
         assert all(box.layout.max_width == "50%" for box in stack.children)
 
+    def test_save_and_load(self):
+        r"""
+        Test that serializing then deserializing a Bargmann instance creates an equivalent one.
+        """
+        barg = Bargmann(*Abc_triple(2))
+        path = barg.serialize()
+        assert isinstance(path, Path)
+        assert load(path) == barg
+
 
 class TestFockRepresentation:  # pylint:disable=too-many-public-methods
     r"""Tests the Fock Representation."""
@@ -429,3 +440,13 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         rep = Fock(np.random.random((1, 4, 4, 4)), batched=True)
         rep._ipython_display_()  # pylint:disable=protected-access
         mock_display.assert_not_called()
+
+    @pytest.mark.parametrize("batched", [False, True])
+    def test_save_and_load(self, batched):
+        r"""
+        Test that serializing then deserializing a Fock instance creates an equivalent one.
+        """
+        fock = Fock(self.array1578 if batched else self.array578, batched=batched)
+        path = fock.serialize()
+        assert isinstance(path, Path)
+        assert load(path) == fock

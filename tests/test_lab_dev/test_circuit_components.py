@@ -16,6 +16,7 @@
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
+from pathlib import Path
 from unittest.mock import patch
 
 from ipywidgets import Box, VBox, HBox, HTML
@@ -38,6 +39,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.utils.serialize import load
 
 
 # original settings
@@ -456,6 +458,15 @@ class TestCircuitComponent:
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
+
+    def test_save_and_load(self):
+        r"""
+        Test that serializing then deserializing a CircuitComponent creates an equivalent instance.
+        """
+        adj = AdjointView(Dgate([1], x=0.1, y=0.1))
+        path = adj.serialize()
+        assert isinstance(path, Path)
+        assert load(path) == adj
 
 
 class TestAdjointView:
