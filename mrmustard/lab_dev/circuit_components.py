@@ -131,14 +131,11 @@ class CircuitComponent:
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
-                break
-        else:
-            ret = CircuitComponent()
-        ret._name = name
-        ret._representation = representation
-        ret._wires = wires
-
-        return ret
+                ret._name = name
+                ret._representation = representation
+                ret._wires = wires
+                return ret
+        return CircuitComponent(representation, wires, name)
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
@@ -154,8 +151,7 @@ class CircuitComponent:
         if parameter.value.shape != ():
             length = sum(parameter.value.shape)
             if length != 1 and length != len(self.modes):
-                msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
-                raise ValueError(msg)
+                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
@@ -486,8 +482,7 @@ class CircuitComponent:
         Implements the addition between circuit components.
         """
         if self.wires != other.wires:
-            msg = "Cannot add components with different wires."
-            raise ValueError(msg)
+            raise ValueError("Cannot add components with different wires.")
         rep = self.representation + other.representation
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
@@ -497,8 +492,7 @@ class CircuitComponent:
         Implements the subtraction between circuit components.
         """
         if self.wires != other.wires:
-            msg = "Cannot subtract components with different wires."
-            raise ValueError(msg)
+            raise ValueError("Cannot subtract components with different wires.")
         rep = self.representation - other.representation
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
