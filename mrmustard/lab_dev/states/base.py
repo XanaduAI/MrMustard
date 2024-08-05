@@ -338,7 +338,7 @@ class State(CircuitComponent):
         xbounds: tuple[int, int] = (-6, 6),
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -409,12 +409,12 @@ class State(CircuitComponent):
             x=xs,
             y=-ps,
             z=math.transpose(z),
-            colorscale=colorscale,
+            coloraxis="coloraxis",
             name="Wigner function",
             autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
-        fig.update_traces(row=2, col=1, showscale=False)
+        fig.update_traces(row=2, col=1)
         fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
@@ -436,6 +436,7 @@ class State(CircuitComponent):
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
+            coloraxis={"colorscale": colorscale, "cmid": 0, "showscale": False},
         )
         fig.update_xaxes(
             showline=True,
@@ -461,7 +462,7 @@ class State(CircuitComponent):
         xbounds: tuple[int] = (-6, 6),
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -499,7 +500,7 @@ class State(CircuitComponent):
                 x=xs,
                 y=ps,
                 z=z,
-                colorscale=colorscale,
+                coloraxis="coloraxis",
                 hovertemplate="x: %{x:.3f}"
                 + "<br>p: %{y:.3f}"
                 + "<br>W(x, p): %{z:.3f}<extra></extra>",
@@ -512,6 +513,7 @@ class State(CircuitComponent):
             height=500,
             margin=dict(l=0, r=0, b=0, t=0),
             scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
             contours_z=dict(
