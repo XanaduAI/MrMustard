@@ -31,6 +31,7 @@ class TestQuadratureEigenstate:
     modes = [[1], [0, 1], [1, 5]]
     x = [[1], 1, [2]]
     phi = [3, [4], 1]
+    hbar = [3.0, 4.0]
 
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
     def test_init1(self, modes, x, phi):
@@ -70,8 +71,6 @@ class TestQuadratureEigenstate:
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
         val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
         assert np.allclose(val0, val1)
-
-    hbar = [3.0, 4.0]
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
