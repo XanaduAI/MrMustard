@@ -187,7 +187,7 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
 
     if h != hash(graph) and verbose:
         print(f"Iteration {iteration}: graph updated")
-        graph = optimize_fock_shapes(graph, iteration + 1)
+        graph = optimize_fock_shapes(graph, iteration + 1, verbose)
     return graph
 
 
