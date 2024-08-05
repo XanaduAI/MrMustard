@@ -270,11 +270,11 @@ class Channel(Map):
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
         r"""
-        A random channel without displacement
+        A random channel without displacement.
 
         Args:
         modes: The modes of the channel.
-        max_r: The maximum squeezing parameter
+        max_r: The maximum squeezing parameter.
         """
         from mrmustard.lab_dev.states import Vacuum
 
@@ -290,7 +290,7 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
         """
-        batch_dim = self.representation.A.shape[0]
+        batch_dim = self.representation.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -304,7 +304,7 @@ class Channel(Map):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
 
     @property
     def is_TP(self) -> bool:

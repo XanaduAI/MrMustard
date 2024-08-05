@@ -828,7 +828,7 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes: Sequence[int], m=None, max_r: float = 1.0) -> DM:
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -853,7 +853,7 @@ class DM(State):
         r"""
         Whether this DM is a positive operator.
         """
-        batch_dim = self.representation.A.shape[0]
+        batch_dim = self.representation.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -867,7 +867,7 @@ class DM(State):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(mu) >= 0 for mu in math.eigvals(gamma_A))
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
 
     @property
     def is_physical(self) -> bool:
@@ -1098,7 +1098,7 @@ class Ket(State):
 
         Args:
             modes: The modes of the state.
-            max_r: maximum squeezing parameter over which we make random choices.
+            max_r: Maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
 
@@ -1130,7 +1130,7 @@ class Ket(State):
         r"""
         Whether the ket object is a physical one.
         """
-        batch_dim = self.representation.A.shape[0]
+        batch_dim = self.representation.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -1138,6 +1138,4 @@ class Ket(State):
 
         A = self.representation.A[0]
 
-        return all(math.abs(mu) < 1 for mu in math.eigvals(A)) and (
-            math.abs(self.probability - 1) < 1e-8
-        )
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(self.probability, 1, 1e-8)
