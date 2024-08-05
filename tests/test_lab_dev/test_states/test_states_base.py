@@ -684,8 +684,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
     @pytest.mark.parametrize("modes", [[9, 2], [0, 1, 2, 3, 4]])
     def test_is_positive(self, modes):
         assert (Ket.random(modes) >> Attenuator(modes)).is_positive
-        A = np.zeros([2*len(modes), 2*len(modes)])
-        A[0,-1] = 1.0
+        A = np.zeros([2 * len(modes), 2 * len(modes)])
+        A[0, -1] = 1.0
         rho = DM.from_bargmann(
             modes, [A, [complex(0)] * 2 * len(modes), [complex(1)]]
         )  # this test fails at the hermitian check
