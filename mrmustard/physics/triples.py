@@ -239,7 +239,7 @@ def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Sc
     x, phi = list(_reshape(x=x, phi=phi))
 
     A = -math.diag(math.exp(1j * 2 * phi))
-    b = x * np.exp(1j * phi) * np.sqrt(2 / hbar)
+    b = x * math.exp(1j * phi) * math.sqrt(2 / hbar)
     c = math.prod(1 / (np.pi) ** (1 / 4) * np.exp(-(x**2) / (2 * hbar)))
 
     return A, b, c
