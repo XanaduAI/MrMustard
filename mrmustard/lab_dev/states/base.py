@@ -436,7 +436,7 @@ class State(CircuitComponent):
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
-            coloraxis={"colorscale": colorscale, "cmid": 0, "showscale": False},
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_xaxes(
             showline=True,
