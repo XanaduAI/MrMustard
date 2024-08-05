@@ -395,7 +395,7 @@ class State(CircuitComponent):
         fig = make_subplots(
             rows=2,
             cols=2,
-            column_widths=[2, 1],
+            column_widths=[5, 3],
             row_heights=[1, 2],
             vertical_spacing=0.05,
             horizontal_spacing=0.05,
@@ -432,7 +432,7 @@ class State(CircuitComponent):
 
         fig.update_layout(
             height=500,
-            width=500,
+            width=580,
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
