@@ -28,7 +28,6 @@ from ..utils import make_parameter, reshape_params
 __all__ = ["FockDamping"]
 
 
-
 class FockDamping(Operation):
     r"""The Fock damping operator.
 
