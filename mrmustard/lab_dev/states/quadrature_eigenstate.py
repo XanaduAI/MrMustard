@@ -18,7 +18,7 @@ The class representing a squeezed vacuum state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
