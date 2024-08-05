@@ -87,3 +87,7 @@ class TestQuadratureEigenstate:
         assert np.allclose(q0.bargmann[0], q1.bargmann[0])
         assert np.allclose(q0.bargmann[1], q1.bargmann[1])
         assert np.allclose(q0.bargmann[2], q1.bargmann[2])
+
+        settings._hbar_locked = False
+        settings.HBAR = 2.0
+        settings._hbar_locked = True
