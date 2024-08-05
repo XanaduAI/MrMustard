@@ -41,7 +41,7 @@ class QuadratureEigenstate(Ket):
 
     Args:
         modes: A list of modes.
-        x: the displacement of the state
+        x: The displacement of the state.
         phi: the angle of the state with `0` being a position eigenstate and `\pi/2` being the momentum eigenstate.
 
     .. details::
