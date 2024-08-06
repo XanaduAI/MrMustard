@@ -69,9 +69,6 @@ class CircuitComponent:
         modes_out_ket = modes_out_ket or ()
         modes_in_ket = modes_in_ket or ()
 
-        self._wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
@@ -96,7 +93,6 @@ class CircuitComponent:
     def _from_attributes(
         cls,
         representation: Representation,
-        wires: Wires,
         name: Optional[str] = None,
     ) -> CircuitComponent:
         r"""
@@ -118,7 +114,6 @@ class CircuitComponent:
 
         Args:
             representation: A representation for this circuit component.
-            wires: The wires of this component.
             name: The name for this component (optional).
 
         Returns:
@@ -133,7 +128,6 @@ class CircuitComponent:
             ret = CircuitComponent()
         ret._name = name
         ret._representation = representation
-        ret._wires = wires
 
         return ret
 
@@ -180,9 +174,9 @@ class CircuitComponent:
         Returns:
             A circuit component with the given Bargmann representation.
         """
-        repr = Bargmann(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
-        return cls._from_attributes(repr, wires, name)
+        repr = Bargmann(*triple, wires)
+        return cls._from_attributes(repr, name)
 
     @property
     def bargmann(self) -> tuple:
@@ -241,9 +235,9 @@ class CircuitComponent:
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent._from_attributes(Bargmann(*triple), wires)
+        QQQQ = CircuitComponent._from_attributes(Bargmann(*triple, wires))
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
-        return cls._from_attributes(BBBB.representation, wires, name)
+        return cls._from_attributes(BBBB.representation, name)
 
     def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
@@ -254,10 +248,10 @@ class CircuitComponent:
 
         from .circuit_components_utils.b_to_q import BtoQ
 
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+        BtoQ_ob = BtoQ(self.representation.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.representation.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.representation.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.representation.wires.input.ket.modes, phi).dual
         QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
         return QQQQ.representation.data
 
@@ -273,7 +267,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return sorted(self.wires.modes)
+        return sorted(self.representation.wires.modes)
 
     @property
     def n_modes(self) -> int:
@@ -289,7 +283,7 @@ class CircuitComponent:
         """
         if self._name is None:
             name = self.short_name
-            modes = "".join(str(m) for m in sorted(self.wires.modes))
+            modes = "".join(str(m) for m in sorted(self.representation.wires.modes))
             self._name = name + modes if len(modes) < 5 else name
         return self._name
 
@@ -299,13 +293,6 @@ class CircuitComponent:
         The set of parameters of this component.
         """
         return self._parameter_set
-
-    @property
-    def wires(self) -> Wires:
-        r"""
-        The wires of this component.
-        """
-        return self._wires
 
     @property
     def adjoint(self) -> AdjointView:
@@ -342,7 +329,7 @@ class CircuitComponent:
         try:  # to read it from array ansatz
             return list(self.representation.array.shape[1:])
         except AttributeError:  # bargmann
-            return [None] * len(self.wires)
+            return [None] * len(self.representation.wires)
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
@@ -352,7 +339,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
+        instance.__dict__["_wires"] = wires or Wires(*self.representation.wires.args)
         return instance
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
@@ -374,10 +361,10 @@ class CircuitComponent:
             ValueError: If the component's wires are not all defined on the same modes or if the
             length of the given modes is different from the length of the original modes.
         """
-        ob = self.wires.output.bra.modes
-        ib = self.wires.input.bra.modes
-        ok = self.wires.output.ket.modes
-        ik = self.wires.input.ket.modes
+        ob = self.representation.wires.output.bra.modes
+        ib = self.representation.wires.input.bra.modes
+        ok = self.representation.wires.output.ket.modes
+        ik = self.representation.wires.input.ket.modes
         subsets = [s for s in (ob, ib, ok, ik) if s]
         if any(s != subsets[0] for s in subsets):
             raise ValueError(
@@ -451,7 +438,7 @@ class CircuitComponent:
         """
         fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
         fock._original_bargmann_data = self.representation.data
-        return self._from_attributes(fock, self.wires, self.name)
+        return self._from_attributes(fock, self.representation.wires, self.name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -467,29 +454,29 @@ class CircuitComponent:
         r"""
         Implements the addition between circuit components.
         """
-        if self.wires != other.wires:
+        if self.representation.wires != other.representation.wires:
             msg = "Cannot add components with different wires."
             raise ValueError(msg)
         rep = self.representation + other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(rep, name)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the subtraction between circuit components.
         """
-        if self.wires != other.wires:
+        if self.representation.wires != other.representation.wires:
             msg = "Cannot subtract components with different wires."
             raise ValueError(msg)
         rep = self.representation - other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(rep, name)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.representation * other, self.wires, self.name)
+        return self._from_attributes(self.representation * other, self.name)
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -501,7 +488,7 @@ class CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(self.representation / other, self.wires, self.name)
+        return self._from_attributes(self.representation / other, self.name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -509,20 +496,27 @@ class CircuitComponent:
 
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
-        return self.representation == other.representation and self.wires == other.wires
+        return (
+            self.representation == other.representation
+            and self.representation.wires == other.representation.wires
+        )
 
     def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
         # find the indices of the wires being contracted on the bra side
-        bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
-        idx_z = self.wires.bra.output[bra_modes].indices
-        idx_zconj = other.wires.bra.input[bra_modes].indices
+        bra_modes = tuple(
+            self.representation.wires.bra.output.modes & other.representation.wires.bra.input.modes
+        )
+        idx_z = self.representation.wires.bra.output[bra_modes].indices
+        idx_zconj = other.representation.wires.bra.input[bra_modes].indices
         # find the indices of the wires being contracted on the ket side
-        ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
-        idx_z += self.wires.ket.output[ket_modes].indices
-        idx_zconj += other.wires.ket.input[ket_modes].indices
+        ket_modes = tuple(
+            self.representation.wires.ket.output.modes & other.representation.wires.ket.input.modes
+        )
+        idx_z += self.representation.wires.ket.output[ket_modes].indices
+        idx_zconj += other.representation.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
@@ -545,7 +539,7 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
-        wires_result, perm = self.wires @ other.wires
+        wires_result, perm = self.representation.wires @ other.representation.wires
         idx_z, idx_zconj = self._matmul_indices(other)
 
         if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
@@ -570,7 +564,7 @@ class CircuitComponent:
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_result, None)
+        return CircuitComponent._from_attributes(rep, None)
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -608,19 +602,36 @@ class CircuitComponent:
             "whether or where to add missing components. Use ``@`` and specify all the components."
         )
 
-        only_ket = not self.wires.bra and not other.wires.bra
-        only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        only_ket = not self.representation.wires.bra and not other.representation.wires.bra
+        only_bra = not self.representation.wires.ket and not other.representation.wires.ket
+        both_sides = (
+            self.representation.wires.bra
+            and self.representation.wires.ket
+            and other.representation.wires.bra
+            and other.representation.wires.ket
+        )
         if only_ket or only_bra or both_sides:
             return self._rshift_return(self @ other)
 
-        self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
-        self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
+        self_needs_bra = (
+            (not self.representation.wires.bra)
+            and other.representation.wires.bra
+            and other.representation.wires.ket
+        )
+        self_needs_ket = (
+            (not self.representation.wires.ket)
+            and other.representation.wires.bra
+            and other.representation.wires.ket
+        )
         if self_needs_bra or self_needs_ket:
             return self._rshift_return(self.adjoint @ (self @ other))
 
-        other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
-        other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
+        other_needs_bra = (
+            self.representation.wires.bra and self.representation.wires.ket
+        ) and not other.representation.wires.bra
+        other_needs_ket = (
+            self.representation.wires.bra and self.representation.wires.ket
+        ) and not other.representation.wires.ket
         if other_needs_bra or other_needs_ket:
             return self._rshift_return((self @ other) @ other.adjoint)
 
@@ -634,7 +645,7 @@ class CircuitComponent:
         self, ret: CircuitComponent | np.ndarray | complex
     ) -> CircuitComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
-        if len(ret.wires) > 0:
+        if len(ret.representation.wires) > 0:
             return ret
         scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
@@ -671,7 +682,7 @@ class CircuitComponent:
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
         rep_widget = rep_fn(self.representation)
-        wires_widget = mmwidgets.wires(self.wires)
+        wires_widget = mmwidgets.wires(self.representation.wires)
         if not rep_widget:
             title_widget = widgets.HTML(f"<h1>{self.name or type(self).__name__}</h1>")
             display(widgets.VBox([title_widget, wires_widget]))
@@ -729,16 +740,9 @@ class AdjointView(CCView):
         Returns a representation of this circuit component. Note that ket and bra
         indices have been swapped.
         """
-        bras = self._component.wires.bra.indices
-        kets = self._component.wires.ket.indices
+        bras = self._component.representation.wires.bra.indices
+        kets = self._component.representation.wires.ket.indices
         return self._component.representation.reorder(kets + bras).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.adjoint
 
 
 class DualView(CCView):
@@ -765,15 +769,8 @@ class DualView(CCView):
         Returns a representation of this circuit component. Note that input and
         output indices have been swapped.
         """
-        ok = self._component.wires.ket.output.indices
-        ik = self._component.wires.ket.input.indices
-        ib = self._component.wires.bra.input.indices
-        ob = self._component.wires.bra.output.indices
+        ok = self._component.representation.wires.ket.output.indices
+        ik = self._component.representation.wires.ket.input.indices
+        ib = self._component.representation.wires.bra.input.indices
+        ob = self._component.representation.wires.bra.output.indices
         return self._component.representation.reorder(ib + ob + ik + ok).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.dual

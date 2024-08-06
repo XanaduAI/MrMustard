@@ -20,13 +20,14 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 from warnings import warn
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Union
+from typing import Any, Callable, Iterable, Union, Optional
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 
 from IPython.display import display
 
+from mrmustard.lab_dev import Wires
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
@@ -255,9 +256,18 @@ class Bargmann(Representation):
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
+        wires: Optional[Wires] = None,
     ):
         self._contract_idxs: tuple[int, ...] = ()
         self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
+        self._wires = wires
+
+    @property
+    def wires(self) -> Wires:
+        r"""
+        The wires of the representation.
+        """
+        return self._wires
 
     @property
     def ansatz(self) -> PolyExpAnsatz:
@@ -267,11 +277,13 @@ class Bargmann(Representation):
         return self._ansatz
 
     @classmethod
-    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
+    def from_ansatz(
+        cls, ansatz: PolyExpAnsatz, wires: Optional[Wires] = None
+    ) -> Bargmann:  # pylint: disable=arguments-differ
         r"""
         Returns a Bargmann object from an ansatz object.
         """
-        return cls(ansatz.A, ansatz.b, ansatz.c)
+        return cls(ansatz.A, ansatz.b, ansatz.c, wires)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -324,13 +336,13 @@ class Bargmann(Representation):
         r"""
         Returns a Bargmann object from a generator function.
         """
-        return cls.from_ansatz(PolyExpAnsatz.from_function(fn, **kwargs))
+        return cls.from_ansatz(PolyExpAnsatz.from_function(fn, **kwargs), kwargs.get("wires"))
 
     def conj(self):
         r"""
         The conjugate of this Bargmann object.
         """
-        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c), self.wires)
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
@@ -355,7 +367,15 @@ class Bargmann(Representation):
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return Bargmann(A, b, c)
+
+        out_bra, in_bra, out_ket, in_ket = self.wires.index_dicts
+        out_bra = {k for k, v in out_bra.items() if v not in idx_z + idx_zconj}
+        in_bra = {k for k, v in in_bra.items() if v not in idx_z + idx_zconj}
+        out_ket = {k for k, v in out_ket.items() if v not in idx_z + idx_zconj}
+        in_ket = {k for k, v in in_ket.items() if v not in idx_z + idx_zconj}
+        new_wires = Wires(out_bra, in_bra, out_ket, in_ket)
+
+        return Bargmann(A, b, c, wires=new_wires)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""
