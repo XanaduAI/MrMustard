@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-The class representing a squeezed vacuum state.
+The class representing a quadrature eigenstate.
 """
 
 from __future__ import annotations
