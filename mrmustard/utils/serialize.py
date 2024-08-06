@@ -56,7 +56,7 @@ def load(file: Path, remove_after=True):
         remove_after (Optional[bool]): Once load is complete, delete the saved file
     """
     file = Path(file)
-    with file.open() as f:
+    with file.open("r") as f:
         data = json.load(f)
 
     if "arrays" in data:
