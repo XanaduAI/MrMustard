@@ -179,3 +179,15 @@ class TestChannel:
 
         modes = [2, 6, 1]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
+    def test_is_CP(self, modes):
+        u = Unitary.random(modes).representation
+        kraus = u @ u.conj()
+        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
+
+    def test_is_TP(self):
+        assert Attenuator([0, 1], 0.5).is_CP
+
+    def test_is_physical(self):
+        assert Channel.random(range(5)).is_physical
