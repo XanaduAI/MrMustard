@@ -37,6 +37,10 @@ class TestQuadratureEigenstate:
         state = QuadratureEigenstate([0], x=1, phi=0)
         assert state.auto_shape() == state.manual_shape
 
+    def test_dual(self):
+        state = QuadratureEigenstate([0], x=0, phi=0)
+        assert state >> state.dual == np.inf
+
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
     def test_init(self, modes, x, phi):
         state = QuadratureEigenstate(modes, x, phi)
