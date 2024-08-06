@@ -31,11 +31,12 @@ from ..conftest import skip_np
 class Dummy:
     """A dummy class for testing."""
 
-    foo: int
-    bar: str
+    val: int
+    word: str
 
     @classmethod
     def deserialize(cls, data):
+        """Basic deserializer method."""
         return cls(**data)
 
 
@@ -48,6 +49,7 @@ class DummyOneNP:
 
     @classmethod
     def deserialize(cls, data):
+        """Basic deserializer method."""
         return cls(**data)
 
 
@@ -61,11 +63,13 @@ class DummyTwoNP:
 
     @classmethod
     def deserialize(cls, data):
+        """Basic deserializer method."""
         return cls(**data)
 
 
-@pytest.fixture()
-def cache_dir(tmpdir, monkeypatch):
+@pytest.fixture(name="cache_dir")
+def fixture_cache_dir(tmpdir, monkeypatch):
+    """Mock the serialization cache using tmpdir, and return the new cache folder."""
     cache = Path(tmpdir)
     monkeypatch.setattr("mrmustard.utils.serialize.CACHE", cache)
     return cache
@@ -76,19 +80,19 @@ class TestSerialize:
 
     def test_basic(self, cache_dir):
         """Test basic save and load functionality."""
-        path = save(Dummy, foo=5, bar="hello")
+        path = save(Dummy, val=5, word="hello")
         assert path.exists() and path.parent == cache_dir
-        assert load(path) == Dummy(foo=5, bar="hello")
+        assert load(path) == Dummy(val=5, word="hello")
         assert not list(cache_dir.glob("*"))  # removed by load
 
     def test_one_numpy_obj(self, cache_dir):
         """Test save and load functionality with numpy data."""
-        path = save(DummyOneNP, name="foobar", arrays={"array": np.array([1.1, 2.2])})
+        path = save(DummyOneNP, name="myname", arrays={"array": np.array([1.1, 2.2])})
         assert path.exists() and path.with_suffix(".npz").exists()
         loaded = load(path)
 
         assert isinstance(loaded, DummyOneNP)
-        assert loaded.name == "foobar"
+        assert loaded.name == "myname"
         assert np.array_equal(loaded.array, np.array([1.1, 2.2]))
         assert not list(cache_dir.glob("*"))
 
@@ -96,12 +100,12 @@ class TestSerialize:
         """Test save and load functionality with more numpy data."""
         a1 = np.array([1.1, 2.2])
         a2 = np.array([3.3 + 4.4j, 5.5 + 6.6j])
-        path = save(DummyTwoNP, name="foobar", arrays={"array1": a1, "array2": a2})
+        path = save(DummyTwoNP, name="myname", arrays={"array1": a1, "array2": a2})
         assert path.exists() and path.with_suffix(".npz").exists()
         loaded = load(path)
 
         assert isinstance(loaded, DummyTwoNP)
-        assert loaded.name == "foobar"
+        assert loaded.name == "myname"
         assert np.array_equal(loaded.array1, a1)
         assert np.array_equal(loaded.array2, a2)
         assert not list(cache_dir.glob("*"))
@@ -109,15 +113,15 @@ class TestSerialize:
     def test_overlap_forbidden(self):
         """Test that array names must be distinct from non-array names."""
         with pytest.raises(
-            ValueError, match=r"Arrays cannot have the same name as generic data: {'foo'}"
+            ValueError, match=r"Arrays cannot have the same name as generic data: {'val'}"
         ):
-            save(Dummy, arrays={"foo": [1]}, foo=2)
+            save(Dummy, arrays={"val": [1]}, val=2)
 
     def test_tensorflow_support(self, cache_dir):
         """Test that TensorFlow data is supported."""
         skip_np()
         x = math.astensor([1.1, 2.2])
-        loaded = load(save(DummyOneNP, name="foobar", arrays={"array": x}))
+        loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert tf.is_tensor(loaded.array)
         assert np.array_equal(loaded.array, x)
         assert not list(cache_dir.glob("*"))
@@ -126,7 +130,7 @@ class TestSerialize:
         """Test that data must be deserialized with the same backend."""
         skip_np()
         x = math.astensor([1.1, 2.2])
-        path = save(DummyOneNP, name="foobar", arrays={"array": x})
+        path = save(DummyOneNP, name="myname", arrays={"array": x})
         # can be thought of as restarting python and not changing to tensorflow
         monkeypatch.setattr("mrmustard.math._backend._name", "numpy")
         with pytest.raises(
@@ -134,4 +138,4 @@ class TestSerialize:
             match="Data serialized with tensorflow backend, cannot deserialize to the currently active numpy backend",
         ):
             load(path)
-        assert path.exists()
+        assert sorted(cache_dir.glob("*")) == [path, path.with_suffix(".npz")]
