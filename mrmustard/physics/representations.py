@@ -36,7 +36,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral,
 )
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
-from mrmustard.utils import serialize
+from mrmustard.utils.serialize import save
 from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
@@ -530,7 +530,7 @@ class Bargmann(Representation):
 
     def serialize(self) -> Path:
         r"""Serialize a Bargmann instance."""
-        return serialize.save(type(self), arrays={"A": self.A, "b": self.b, "c": self.c})
+        return save(type(self), arrays={"A": self.A, "b": self.b, "c": self.c})
 
     @classmethod
     def deserialize(cls, data) -> Bargmann:
@@ -810,7 +810,7 @@ class Fock(Representation):
 
     def serialize(self) -> Path:
         r"""Serialize a Fock instance."""
-        return serialize.save(type(self), arrays={"array": self.array})
+        return save(type(self), arrays={"array": self.array})
 
     @classmethod
     def deserialize(cls, data) -> Fock:

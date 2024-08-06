@@ -191,9 +191,9 @@ class TestWires:
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
 
-    def test_serialize_and_deserialize(self):
+    def test_to_and_from_json(self):
         """Test the serialization methods."""
         wires = Wires({0}, {}, {3}, {3, 4})
-        wires_str = wires.serialize()
+        wires_str = wires.to_json()
         assert wires_str == "[[0], [], [3], [3, 4]]"
-        assert Wires.deserialize(wires.serialize()) == wires
+        assert Wires.from_json(wires.to_json()) == wires

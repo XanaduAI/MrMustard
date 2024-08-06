@@ -308,21 +308,13 @@ class Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
-    def serialize(self) -> str:
-        r"""
-        Serialize a Wires object.
-
-        Note that this simply dumps a JSON string, and assumes that surrounding code handles it.
-        """
+    def to_json(self) -> str:
+        r"""Serialize a Wires object."""
         return json.dumps(tuple(tuple(w) for w in self.args))
 
     @classmethod
-    def deserialize(cls, wires: str) -> Wires:
-        r"""
-        Deserialize a Wires object.
-
-        Note that this simply loads a JSON string, and assumes that surrounding code handles it.
-        """
+    def from_json(cls, wires: str) -> Wires:
+        r"""Deserialize a Wires object."""
         mode_tuples = json.loads(wires)
         return cls(*(set(m) for m in mode_tuples))
 
