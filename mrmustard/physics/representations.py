@@ -530,7 +530,7 @@ class Bargmann(Representation):
 
     def serialize(self) -> Path:
         r"""Serialize a Bargmann instance."""
-        return serialize.save(type(self), A=self.A, b=self.b, c=self.c)
+        return serialize.save(type(self), arrays={"A": self.A, "b": self.b, "c": self.c})
 
     @classmethod
     def deserialize(cls, data) -> Bargmann:
@@ -810,7 +810,7 @@ class Fock(Representation):
 
     def serialize(self) -> Path:
         r"""Serialize a Fock instance."""
-        return serialize.save(type(self), array=self.array)
+        return serialize.save(type(self), arrays={"array": self.array})
 
     @classmethod
     def deserialize(cls, data) -> Fock:

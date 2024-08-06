@@ -21,32 +21,25 @@ from uuid import uuid4
 
 import numpy as np
 
+from mrmustard import math
+
 
 CACHE = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
 
-def save(cls, **data) -> Path:
+def save(cls, arrays=None, **data) -> Path:
     r"""Save a serialized set of data to file for later deserialization."""
     file = CACHE / f"{cls.__qualname__}_{uuid4()}.json"  # random filename
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
 
-    # use numpy serialization tools, save filename in json
-    arrays = {k: v for k, v in data.items() if isinstance(v, np.ndarray)}
-    if len(arrays) > 1:  # many arrays, use zipped serialization
-        # save to file
+    if arrays:
+        if overlap := set(arrays).intersection(set(data)):
+            raise ValueError(f"Arrays cannot have the same name as generic data: {overlap}")
+        backend = math.backend_name
         npz = file.with_suffix(".npz")
-        np.savez(npz, **arrays)
-        # update json
-        _ = list(map(data.pop, arrays))
-        data["npz"] = str(npz)
-    elif len(arrays) == 1:
-        # save to file
-        npy = file.with_suffix(".npy")
-        [(k, arr)] = list(arrays.items())
-        np.save(npy, arr)
-        # update json
-        del data[k]
-        data["npy"] = (k, str(npy))
+        np.savez(npz, **{k: math.asnumpy(v) for k, v in arrays.items()})
+        data["arrays"] = str(npz)
+        data["backend"] = backend
 
     with file.open("w") as f:
         json.dump(data, f)
@@ -65,18 +58,17 @@ def load(file: Path, remove_after=True):
     file = Path(file)
     with file.open() as f:
         data = json.load(f)
-    if remove_after:
-        file.unlink()
 
-    if "npy" in data:
-        (k, npy_file) = data.pop("npy")
-        data[k] = np.load(npy_file)
-        if remove_after:
-            Path(npy_file).unlink()
-    elif "npz" in data:
-        npz_file = data.pop("npz")
-        data.update(**dict(np.load(npz_file)))
+    if "arrays" in data:
+        npz_file = data.pop("arrays")
+        if (backend := data.pop("backend")) != math.backend_name:
+            raise TypeError(
+                f"Data serialized with {backend} backend, cannot deserialize to the currently active {math.backend_name} backend"
+            )
+        data.update(**{k: math.astensor(v) for k, v in np.load(npz_file).items()})
         if remove_after:
             Path(npz_file).unlink()
 
+    if remove_after:
+        file.unlink()
     return locate(data.pop("class")).deserialize(data)
