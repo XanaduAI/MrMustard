@@ -31,6 +31,7 @@ from mrmustard.lab_dev.transformations import (
     Operation,
 )
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.states import Vacuum
 
 
 class TestOperation:
@@ -99,7 +100,7 @@ class TestUnitary:
 
     def test_init_from_symplectic(self):
         S = math.random_symplectic(2)
-        u = Unitary.from_symplectic([0, 1], [0, 1], S, "my_unitary")
+        u = Unitary.from_symplectic([0, 1], S)
         assert u >> u.dual == Identity([0, 1])
         assert u.dual >> u == Identity([0, 1])
 
@@ -110,6 +111,11 @@ class TestUnitary:
         assert gate_inv_inv == gate
         should_be_identity = gate >> gate_inv
         assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
+
+    def test_random(self):
+        modes = [3, 1, 20]
+        u = Unitary.random(modes)
+        assert (u >> u.dual) == Identity(modes)
 
 
 class TestChannel:
@@ -168,3 +174,20 @@ class TestChannel:
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.representation == Attenuator([0], 1.0).representation
+
+    def test_random(self):
+
+        modes = [2, 6, 1]
+        assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
+
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
+    def test_is_CP(self, modes):
+        u = Unitary.random(modes).representation
+        kraus = u @ u.conj()
+        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
+
+    def test_is_TP(self):
+        assert Attenuator([0, 1], 0.5).is_CP
+
+    def test_is_physical(self):
+        assert Channel.random(range(5)).is_physical

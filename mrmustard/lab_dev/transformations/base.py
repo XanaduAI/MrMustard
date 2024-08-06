@@ -26,10 +26,9 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard import math
-from mrmustard.lab_dev.wires import Wires
+from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard import physics
+from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
@@ -54,7 +53,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -128,9 +127,8 @@ class Operation(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_ket=modes_in,
-            modes_in_ket=modes_out,
             representation=representation,
+            wires=[(), (), modes_in, modes_out],
             name=name,
         )
 
@@ -168,32 +166,6 @@ class Unitary(Operation):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
 
-    @classmethod
-    def from_symplectic(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        symplectic: tuple,
-        name: Optional[str] = None,
-    ) -> Unitary:
-        r"""
-        Initialize a Unitary from the given symplectic matrix in qqpp basis,
-        i.e. the axes are ordered as [q0, q1, ..., p0, p1, ...].
-        """
-        M = len(modes_in) + len(modes_out)
-        if symplectic.shape[-2:] != (M, M):
-            raise ValueError(
-                "Symplectic matrix and number of modes don't match. "
-                + f"Modes imply shape {(M,M)}, "
-                + f"but shape is {symplectic.shape[-2:]}."
-            )
-        A, b, c = physics.bargmann.wigner_to_bargmann_U(symplectic, math.zeros(M))
-        return Unitary._from_attributes(
-            representation=Bargmann(A, b, c),
-            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            name=name,
-        )
-
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(
@@ -201,6 +173,42 @@ class Unitary(Operation):
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
+
+    @property
+    def symplectic(self):
+        r"""
+        Returns the symplectic matrix that corresponds to this unitary
+        """
+        batch_size = self.representation.ansatz.batch_size
+        return [au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
+
+    @classmethod
+    def from_symplectic(cls, modes, S) -> Unitary:
+        r"""
+        A simple method for initializing using symplectic representation
+        modes: the modes that we want the unitary to act on (should be a list of int)
+        S: the symplectic representation (in XXPP order)
+        """
+        m = len(S)
+        A = symplectic2Au(S)
+        b = math.zeros(m, dtype="complex128")
+        c = complex(1)  # TODO: to be change after poly*exp ansatz
+        u = Unitary.from_bargmann(modes, modes, [A, b, c])
+        v = u >> u.dual
+        _, _, c_prime = v.bargmann
+        c = 1 / math.sqrt(c_prime[0])
+        return Unitary.from_bargmann(modes, modes, [A, b, c])
+
+    @classmethod
+    def random(cls, modes, max_r=1):
+        r"""
+        Returns a random unitary.
+        modes: the modes the unitary acts on non-trivially
+        max_r: maximum squeezing parameter as defined in math.random_symplecic
+        """
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        return Unitary.from_symplectic(modes, S)
 
 
 class Map(Transformation):
@@ -224,11 +232,8 @@ class Map(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_bra=modes_out,
-            modes_in_bra=modes_in,
-            modes_out_ket=modes_out,
-            modes_in_ket=modes_in,
             representation=representation,
+            wires=[modes_out, modes_in, modes_out, modes_in],
             name=name or self.__class__.__name__,
         )
 
@@ -257,3 +262,61 @@ class Channel(Map):
         if isinstance(other, (Channel, Unitary)):
             return Channel._from_attributes(ret.representation, ret.wires)
         return ret
+
+    @classmethod
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
+        r"""
+        A random channel without displacement.
+
+        Args:
+            modes: The modes of the channel.
+            max_r: The maximum squeezing parameter.
+        """
+        from mrmustard.lab_dev.states import Vacuum
+
+        m = len(modes)
+        U = Unitary.random(range(3 * m), max_r)
+        u_psi = Vacuum(range(2 * m)) >> U
+        A = u_psi.representation
+        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        return Channel.from_bargmann(modes, modes, kraus.triple)
+
+    @property
+    def is_CP(self) -> bool:
+        r"""
+        Whether this channel is completely positive (CP).
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
+
+    @property
+    def is_TP(self) -> bool:
+        r"""
+        Whether this channel is trace preserving (TP).
+        """
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+        lambda_A = A[0, m:, m:]
+        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
+        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this channel is physical (i.e. CPTP).
+        """
+        return self.is_CP and self.is_TP

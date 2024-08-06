@@ -26,16 +26,16 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
-import os
 
 from enum import Enum
-from IPython.display import display, HTML
-from mako.template import Template
+import warnings
+
+from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-import warnings
-from mrmustard import math, settings
+
+from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
@@ -461,8 +461,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_3d(
         self,
@@ -542,8 +541,7 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_dm(
         self,
@@ -583,12 +581,12 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
-        display(HTML(template.render(state=self)))
+    def _ipython_display_(self):  # pragma: no cover
+        is_ket = isinstance(self, Ket)
+        is_fock = isinstance(self.representation, Fock)
+        display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
     def _getitem_builtin_state(self, modes: set[int]):
         r"""
@@ -635,8 +633,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -843,6 +840,55 @@ class DM(State):
             representation, wires, self.name
         )  # pylint: disable=protected-access
 
+    @classmethod
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
+        r"""
+        Samples a random density matrix. The final state has zero displacement.
+
+        Args:
+        modes: the modes where the state is defined over
+        m: is the number modes to be considered for tracing out from a random pure state (Ket)
+        if not specified, m is considered to be len(modes)
+        """
+        if m is None:
+            m = len(modes)
+
+        max_idx = max(modes)
+
+        ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        full_wires = list(modes) + ancilla
+
+        psi = Ket.random(full_wires, max_r)
+        return psi[modes]
+
+    @property
+    def is_positive(self) -> bool:
+        r"""
+        Whether this DM is a positive operator.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this DM is a physical density operator.
+        """
+        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
+
 
 class Ket(State):
     r"""
@@ -867,7 +913,7 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -1064,3 +1110,54 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 result = DM(result.wires.modes, result.representation)
         return result
+
+    @classmethod
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
+        r"""
+        Generates a random zero displacement state.
+
+        Args:
+            modes: The modes of the state.
+            max_r: Maximum squeezing parameter over which we make random choices.
+        Output is a Ket
+        """
+
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        transformation = (
+            1
+            / np.sqrt(2)
+            * math.block(
+                [
+                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        -1j * math.eye(m, dtype=math.complex128),
+                        1j * math.eye(m, dtype=math.complex128),
+                    ],
+                ]
+            )
+        )
+        S = math.conj(math.transpose(transformation)) @ S @ transformation
+        S_1 = S[:m, :m]
+        S_2 = S[:m, m:]
+        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+        b = math.zeros(m, dtype=A.dtype)
+        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
+        return psi.normalize()
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether the ket object is a physical one.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+
+        A = self.representation.A[0]
+
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            self.probability, 1, settings.ATOL
+        )

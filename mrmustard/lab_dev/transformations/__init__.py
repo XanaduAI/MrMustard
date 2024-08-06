@@ -16,5 +16,13 @@
 The classes representing transformations in quantum circuits.
 """
 
+from .amplifier import *
+from .attenuator import *
 from .base import *
-from .transformations import *
+from .bsgate import *
+from .dgate import *
+from .fockdamping import *
+from .identity import *
+from .rgate import *
+from .s2gate import *
+from .sgate import *
