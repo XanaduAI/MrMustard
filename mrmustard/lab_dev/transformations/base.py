@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
@@ -264,11 +264,13 @@ class Channel(Map):
         return ret
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
         r"""
-        A random channel without displacement
-        modes: the modes on which the channel is defined
-        max_r: maximum squeezing parameter in random selections
+        A random channel without displacement.
+
+        Args:
+            modes: The modes of the channel.
+            max_r: The maximum squeezing parameter.
         """
         from mrmustard.lab_dev.states import Vacuum
 
@@ -278,3 +280,43 @@ class Channel(Map):
         A = u_psi.representation
         kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)
+
+    @property
+    def is_CP(self) -> bool:
+        r"""
+        Whether this channel is completely positive (CP).
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
+
+    @property
+    def is_TP(self) -> bool:
+        r"""
+        Whether this channel is trace preserving (TP).
+        """
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+        lambda_A = A[0, m:, m:]
+        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
+        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this channel is physical (i.e. CPTP).
+        """
+        return self.is_CP and self.is_TP
