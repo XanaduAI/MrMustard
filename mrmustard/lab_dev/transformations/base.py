@@ -127,9 +127,8 @@ class Operation(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_ket=modes_in,
-            modes_in_ket=modes_out,
             representation=representation,
+            wires=[(), (), modes_in, modes_out],
             name=name,
         )
 
@@ -233,11 +232,8 @@ class Map(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_bra=modes_out,
-            modes_in_bra=modes_in,
-            modes_out_ket=modes_out,
-            modes_in_ket=modes_in,
             representation=representation,
+            wires=[modes_out, modes_in, modes_out, modes_in],
             name=name or self.__class__.__name__,
         )
 
