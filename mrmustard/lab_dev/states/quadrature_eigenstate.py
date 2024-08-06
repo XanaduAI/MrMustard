@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from typing import Sequence, Tuple
 
+import numpy as np
+
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 from .base import Ket
@@ -68,3 +70,7 @@ class QuadratureEigenstate(Ket):
         self._representation = Bargmann.from_function(
             fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
         )
+
+    @property
+    def L2_norm(self):
+        return np.inf
