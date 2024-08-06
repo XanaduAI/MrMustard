@@ -32,7 +32,7 @@ __all__ = ["QuadratureEigenstate"]
 
 class QuadratureEigenstate(Ket):
     r"""
-    The `N`-mode Quadrature eigenstate .
+    The `N`-mode Quadrature eigenstate.
 
     .. code-block ::
 
@@ -71,6 +71,11 @@ class QuadratureEigenstate(Ket):
             fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
         )
 
+        self.manual_shape = (50,)
+
     @property
     def L2_norm(self):
+        r"""
+        The L2 norm of this quadrature eigenstate.
+        """
         return np.inf
