@@ -41,7 +41,7 @@ def save(cls, arrays=None, **data) -> Path:
         data["arrays"] = str(npz)
         data["backend"] = backend
 
-    with file.open("w") as f:
+    with file.open("w", encoding="utf-8") as f:
         json.dump(data, f)
 
     return file
@@ -56,7 +56,7 @@ def load(file: Path, remove_after=True):
         remove_after (Optional[bool]): Once load is complete, delete the saved file
     """
     file = Path(file)
-    with file.open("r") as f:
+    with file.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
     if "arrays" in data:
