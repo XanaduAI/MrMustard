@@ -140,7 +140,7 @@ def complex_gaussian_integral(
             * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
         )
     else:
-        c_post = c * np.inf
+        c_post = math.real(c) * np.inf
 
     if math.asnumpy(not_idx).shape != (0,):
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
