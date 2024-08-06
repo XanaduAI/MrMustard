@@ -828,7 +828,7 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes, m=None, max_r=1.0):
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -843,10 +843,38 @@ class DM(State):
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
-        full_wires = modes + ancilla
+        full_wires = list(modes) + ancilla
 
         psi = Ket.random(full_wires, max_r)
         return psi[modes]
+
+    @property
+    def is_positive(self) -> bool:
+        r"""
+        Whether this DM is a positive operator.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this DM is a physical density operator.
+        """
+        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
 
 class Ket(State):
@@ -1067,17 +1095,16 @@ class Ket(State):
         return result
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
-        generates random states with 0 displacement, using the random_symplectic funcionality
-        Args: "modes" are the modes where the state is defined on
+        Generates a random zero displacement state.
+
+        Args:
+            modes: The modes of the state.
+            max_r: Maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
-        # TODO: use __class_getitem_ and sample from broader probabilities
-        # TODO: random any gate
 
-        # generate a random ket repr.
-        # e.g. S = math.random_symplectic(dim) and then apply to vacuum
         m = len(modes)
         S = math.random_symplectic(m, max_r)
         transformation = (
@@ -1100,3 +1127,20 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether the ket object is a physical one.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+
+        A = self.representation.A[0]
+
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            self.probability, 1, settings.ATOL
+        )
