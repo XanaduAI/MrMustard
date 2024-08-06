@@ -26,7 +26,7 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import (
     Ket,
     DM,
@@ -56,7 +56,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
+        cc = CircuitComponent(representation, wires=[(), (), (1, 8), (1, 8)], name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -66,9 +66,7 @@ class TestCircuitComponent:
 
     def test_missing_name(self):
         cc = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
-            modes_out_ket=(1, 8),
-            modes_in_ket=(1, 8),
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)), wires=[(), (), (1, 8), (1, 8)]
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -84,13 +82,13 @@ class TestCircuitComponent:
         r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
         r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
 
-        cc1 = CircuitComponent(r1, modes_out_ket=m1, modes_in_ket=m1)
-        cc2 = CircuitComponent(r2, modes_out_ket=m2, modes_in_ket=m2)
+        cc1 = CircuitComponent(r1, wires=[(), (), m1, m1])
+        cc2 = CircuitComponent(r2, wires=[(), (), m2, m2])
         assert cc1 == cc2
 
         r3 = (cc1.adjoint @ cc1).representation
-        cc3 = CircuitComponent(r3, m2, m2, m2, m1)
-        cc4 = CircuitComponent(r3, m2, m2, m2, m2)
+        cc3 = CircuitComponent(r3, wires=[m2, m2, m2, m1])
+        cc4 = CircuitComponent(r3, wires=[m2, m2, m2, m2])
         assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -113,14 +111,14 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
         cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
-        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature())
         assert cc == ccc
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_adj = d1.adjoint
 
-        assert isinstance(d1_adj, AdjointView)
+        assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
         assert (
@@ -137,7 +135,7 @@ class TestCircuitComponent:
         d1_dual = d1.dual
         vac = Vacuum([1, 8])
 
-        assert isinstance(d1_dual, DualView)
+        assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
         assert (vac >> d1 >> d1_dual).representation == vac.representation
@@ -150,9 +148,7 @@ class TestCircuitComponent:
 
     def test_light_copy(self):
         d1 = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-            modes_out_ket=[1],
-            modes_in_ket=[1],
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
         )
         d1_cp = d1._light_copy()
 
@@ -303,6 +299,13 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_matmul_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = d0 @ 0.8
+        assert math.allclose(result.representation.A, d0.representation.A)
+        assert math.allclose(result.representation.b, d0.representation.b)
+        assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -399,9 +402,14 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_rshift_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = 0.8 >> d0
+        assert math.allclose(result, 0.8 * d0.representation.c)
+
     def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
+        c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
+        c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")
 
         assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
@@ -445,10 +453,10 @@ class TestCircuitComponent:
     @patch("mrmustard.lab_dev.circuit_components.display")
     def test_ipython_repr(self, mock_display, is_fock, widget_cls):
         """Test the IPython repr function."""
-        adj = AdjointView(Dgate([1], x=0.1, y=0.1))
+        dgate = Dgate([1], x=0.1, y=0.1)
         if is_fock:
-            adj = adj.to_fock()
-        adj._ipython_display_()  # pylint:disable=protected-access
+            dgate = dgate.to_fock()
+        dgate._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
         [wires_widget, rep_widget] = box.children
@@ -458,88 +466,10 @@ class TestCircuitComponent:
     @patch("mrmustard.lab_dev.circuit_components.display")
     def test_ipython_repr_invalid_obj(self, mock_display):
         """Test the IPython repr function."""
-        adj = AdjointView(Dgate([1, 2], x=0.1, y=0.1)).to_fock()
-        adj._ipython_display_()  # pylint:disable=protected-access
+        dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
+        dgate._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, VBox)
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
-
-
-class TestAdjointView:
-    r"""
-    Tests ``AdjointView`` objects.
-    """
-
-    def test_init(self):
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d1_adj = AdjointView(d1)
-
-        assert d1_adj.name == d1.name
-        assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()
-
-        d1_adj_adj = d1_adj.adjoint
-        assert d1_adj_adj.wires == d1.wires
-        assert d1_adj_adj.representation == d1.representation
-
-    def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
-
-        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
-
-    def test_parameters_point_to_original_parameters(self):
-        r"""
-        Tests that the parameters of an AdjointView object point to those of the original object.
-        """
-        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
-        d1_adj = AdjointView(d1)
-
-        d1.x.value = 0.8
-
-        assert d1_adj.x.value == 0.8
-        assert d1_adj.representation == d1.representation.conj()
-
-
-class TestDualView:
-    r"""
-    Tests ``DualView`` objects.
-    """
-
-    def test_init(self):
-        r"""
-        Tests the ``__init__`` method.
-        """
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d1_dual = DualView(d1)
-        vac = Vacuum([1])
-
-        assert d1_dual.name == d1.name
-        assert d1_dual.wires == d1.wires.dual
-        assert (vac >> d1 >> d1_dual).representation == vac.representation
-
-        d1_dual_dual = DualView(d1_dual)
-        assert d1_dual_dual.wires == d1.wires
-        assert d1_dual_dual.representation == d1.representation
-
-    def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 3))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 3), name="my_component")
-
-        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013)"
-        assert repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component)"
-
-    def test_parameters_point_to_original_parameters(self):
-        r"""
-        Tests that the parameters of a DualView object point to those of the original object.
-        """
-        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
-        d1_dual = DualView(d1)
-        vac = Vacuum([0])
-        d1.x.value = 0.8
-
-        assert d1_dual.x.value == 0.8
-        assert (vac >> d1 >> d1_dual).representation == vac.representation
