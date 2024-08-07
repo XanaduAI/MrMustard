@@ -890,7 +890,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         """
 
         batch_abc = self.batch_size
-        print(batch_abc)
         batch_arg = z.shape[0]
         Abc = []
         if batch_abc == 1 and batch_arg > 1:
