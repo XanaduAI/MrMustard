@@ -86,14 +86,14 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
-    last index.
+    first index.
 
     Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the last term
+        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the first term
         A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
+        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
         c (complex): vacuum amplitude
 
     Returns:
@@ -104,14 +104,14 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     G = np.zeros(shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape[:-1])  # We know the last dimension is the batch one
+    path = np.ndindex(shape[1:])  # We know the first dimension is the batch one
 
     # write vacuum amplitude
-    G[next(path)] = c
+    G[(slice(None),) + next(path)] = c
 
     # iterate over the rest of the indices
     for index in path:
-        G[index] = steps.vanilla_step_batch(G, A, b, index)
+        G[(slice(None),) + index] = steps.vanilla_step_batch(G, A, b, index)
 
     return G
 

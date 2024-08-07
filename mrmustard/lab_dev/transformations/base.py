@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from typing import Optional, Sequence
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
 from ..circuit_components import CircuitComponent
@@ -53,7 +53,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -127,9 +127,8 @@ class Operation(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_ket=modes_in,
-            modes_in_ket=modes_out,
             representation=representation,
+            wires=[(), (), modes_in, modes_out],
             name=name,
         )
 
@@ -233,11 +232,8 @@ class Map(Transformation):
         name: Optional[str] = None,
     ):
         super().__init__(
-            modes_out_bra=modes_out,
-            modes_in_bra=modes_in,
-            modes_out_ket=modes_out,
-            modes_in_ket=modes_in,
             representation=representation,
+            wires=[modes_out, modes_in, modes_out, modes_in],
             name=name or self.__class__.__name__,
         )
 
@@ -268,11 +264,13 @@ class Channel(Map):
         return ret
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
         r"""
-        A random channel without displacement
-        modes: the modes on which the channel is defined
-        max_r: maximum squeezing parameter in random selections
+        A random channel without displacement.
+
+        Args:
+            modes: The modes of the channel.
+            max_r: The maximum squeezing parameter.
         """
         from mrmustard.lab_dev.states import Vacuum
 
@@ -282,3 +280,43 @@ class Channel(Map):
         A = u_psi.representation
         kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)
+
+    @property
+    def is_CP(self) -> bool:
+        r"""
+        Whether this channel is completely positive (CP).
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
+
+    @property
+    def is_TP(self) -> bool:
+        r"""
+        Whether this channel is trace preserving (TP).
+        """
+        A = self.representation.A
+        m = A.shape[-1] // 2
+        gamma_A = A[0, :m, m:]
+        lambda_A = A[0, m:, m:]
+        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
+        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this channel is physical (i.e. CPTP).
+        """
+        return self.is_CP and self.is_TP
