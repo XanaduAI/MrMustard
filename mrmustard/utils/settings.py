@@ -118,6 +118,9 @@ class Settings:
         self.COMPLEX_WARNING = False
         "Whether tensorflow's ComplexWarning should be raised when a complex is cast to a float. Default is False."
 
+        self.ATOL = 1e-8
+        "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
+
     @property
     def COMPLEX_WARNING(self):
         r"""Whether tensorflow's ``ComplexWarning``s should be raised when a complex is cast to a float. Default is ``False``."""
