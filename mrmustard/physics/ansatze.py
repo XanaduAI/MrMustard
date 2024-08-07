@@ -1107,7 +1107,9 @@ class ArrayAnsatz(Ansatz):
         Args:
             shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
-        length = len(self.array.shape) - 1
+        if shape == self.array.shape[1:]:
+            return self
+        length = self.num_vars
         shape = (shape,) * length if isinstance(shape, int) else shape
         if len(shape) != length:
             msg = f"Expected shape of length {length}, "
@@ -1149,7 +1151,15 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The addition of this ansatz and other.
         """
         try:
-            new_array = [a + b for a in self.array for b in other.array]
+            diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+            if diff < 0:
+                new_array = [
+                    a + b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                ]
+            else:
+                new_array = [
+                    a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                ]
             return self.__class__(array=new_array)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
@@ -1201,7 +1211,15 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                new_array = [a * b for a in self.array for b in other.array]
+                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+                if diff < 0:
+                    new_array = [
+                        a * b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                    ]
+                else:
+                    new_array = [
+                        a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                    ]
                 return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
