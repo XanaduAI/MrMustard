@@ -196,7 +196,7 @@ class TestCircuitComponent:
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
         barg = Bargmann(A, b, c)
-        cc = CircuitComponent(barg, [], [], [0, 1], []).to_fock(shape=(10, 10))
+        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
