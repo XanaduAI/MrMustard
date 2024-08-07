@@ -279,7 +279,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -634,7 +634,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 

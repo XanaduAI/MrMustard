@@ -34,7 +34,7 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 
-__all__ = ["CircuitComponent", "AdjointView", "DualView"]
+__all__ = ["CircuitComponent"]
 
 
 class CircuitComponent:
@@ -46,10 +46,10 @@ class CircuitComponent:
 
     Args:
         representation: A representation for this circuit component.
-        modes_out_bra: The output modes on the bra side of this component.
-        modes_in_bra: The input modes on the bra side of this component.
-        modes_out_ket: The output modes on the ket side of this component.
-        modes_in_ket: The input modes on the ket side of this component.
+        wires: The wires of this component. Alternatively, can be
+            a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
+            where if any of the modes are out of order the representation
+            will be reordered.
         name: The name of this component.
     """
 
@@ -58,39 +58,42 @@ class CircuitComponent:
     def __init__(
         self,
         representation: Optional[Bargmann | Fock] = None,
-        modes_out_bra: Optional[Sequence[int]] = None,
-        modes_in_bra: Optional[Sequence[int]] = None,
-        modes_out_ket: Optional[Sequence[int]] = None,
-        modes_in_ket: Optional[Sequence[int]] = None,
+        wires: Wires | Sequence[tuple[int]] | None = None,
         name: Optional[str] = None,
     ) -> None:
-        modes_out_bra = modes_out_bra or ()
-        modes_in_bra = modes_in_bra or ()
-        modes_out_ket = modes_out_ket or ()
-        modes_in_ket = modes_in_ket or ()
-
-        self._wires = Wires(
-            set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
-        )
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
 
-        # handle out-of-order modes
-        ob = tuple(sorted(modes_out_bra))
-        ib = tuple(sorted(modes_in_bra))
-        ok = tuple(sorted(modes_out_ket))
-        ik = tuple(sorted(modes_in_ket))
-        if ob != modes_out_bra or ib != modes_in_bra or ok != modes_out_ket or ik != modes_in_ket:
-            offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
-            perm = (
-                tuple(np.argsort(modes_out_bra))
-                + tuple(np.argsort(modes_in_bra) + offsets[0])
-                + tuple(np.argsort(modes_out_ket) + offsets[1])
-                + tuple(np.argsort(modes_in_ket) + offsets[2])
+        if isinstance(wires, Wires):
+            self._wires = wires
+        else:
+            wires = [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
+            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = wires
+            self._wires = Wires(
+                set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
             )
-            if self._representation:
-                self._representation = self._representation.reorder(tuple(perm))
+
+            # handle out-of-order modes
+            ob = tuple(sorted(modes_out_bra))
+            ib = tuple(sorted(modes_in_bra))
+            ok = tuple(sorted(modes_out_ket))
+            ik = tuple(sorted(modes_in_ket))
+            if (
+                ob != modes_out_bra
+                or ib != modes_in_bra
+                or ok != modes_out_ket
+                or ik != modes_in_ket
+            ):
+                offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
+                perm = (
+                    tuple(np.argsort(modes_out_bra))
+                    + tuple(np.argsort(modes_in_bra) + offsets[0])
+                    + tuple(np.argsort(modes_out_ket) + offsets[1])
+                    + tuple(np.argsort(modes_in_ket) + offsets[2])
+                )
+                if self._representation:
+                    self._representation = self._representation.reorder(tuple(perm))
 
     @classmethod
     def _from_attributes(
@@ -128,14 +131,11 @@ class CircuitComponent:
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
-                break
-        else:
-            ret = CircuitComponent()
-        ret._name = name
-        ret._representation = representation
-        ret._wires = wires
-
-        return ret
+                ret._name = name
+                ret._representation = representation
+                ret._wires = wires
+                return ret
+        return CircuitComponent(representation, wires, name)
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
@@ -151,8 +151,7 @@ class CircuitComponent:
         if parameter.value.shape != ():
             length = sum(parameter.value.shape)
             if length != 1 and length != len(self.modes):
-                msg = f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}."
-                raise ValueError(msg)
+                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
@@ -308,22 +307,37 @@ class CircuitComponent:
         return self._wires
 
     @property
-    def adjoint(self) -> AdjointView:
+    def adjoint(self) -> CircuitComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
         the ket and bra wires. The returned object is a view of the original component which
         applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
-        return AdjointView(self)
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        rep = self.representation.reorder(kets + bras).conj() if self.representation else None
+
+        ret = CircuitComponent(rep, self.wires.adjoint, self.name)
+        ret.short_name = self.short_name
+        return ret
 
     @property
-    def dual(self) -> DualView:
+    def dual(self) -> CircuitComponent:
         r"""
         The dual of this component obtained by conjugating the representation and swapping
         the input and output wires. The returned object is a view of the original component which
         applies a conjugation and a swap of the wires, but does not copy the data in memory.
         """
-        return DualView(self)
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
+
+        ret = CircuitComponent(rep, self.wires.dual, self.name)
+        ret.short_name = self.short_name
+
+        return ret
 
     @cached_property
     def manual_shape(self) -> list[Optional[int]]:
@@ -468,8 +482,7 @@ class CircuitComponent:
         Implements the addition between circuit components.
         """
         if self.wires != other.wires:
-            msg = "Cannot add components with different wires."
-            raise ValueError(msg)
+            raise ValueError("Cannot add components with different wires.")
         rep = self.representation + other.representation
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
@@ -479,8 +492,7 @@ class CircuitComponent:
         Implements the subtraction between circuit components.
         """
         if self.wires != other.wires:
-            msg = "Cannot subtract components with different wires."
-            raise ValueError(msg)
+            raise ValueError("Cannot subtract components with different wires.")
         rep = self.representation - other.representation
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
@@ -683,101 +695,3 @@ class CircuitComponent:
         rep_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"
         display(widgets.Box([wires_widget, rep_widget]))
-
-
-class CCView(CircuitComponent):
-    r"""
-    A base class for views of circuit components. It allows for a more efficient
-    use of components when we need the same component on different wires.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def short_name(self):
-        r"""
-        A shortened version of the component name.
-        """
-        return self._component.short_name
-
-    def __init__(self, component: CircuitComponent) -> None:
-        self.__dict__ = component.__dict__.copy()
-        self._component = component._light_copy()
-
-    def __repr__(self) -> str:
-        return repr(self._component)
-
-
-class AdjointView(CCView):
-    r"""
-    Adjoint view of a circuit component obtained by swapping the ket/bra wires
-    and conjugating the representation. Note the representation is a wrapper
-    property around the original one, so it can work also for classes whose
-    representation attribute is a computed property like the trainable components.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def adjoint(self) -> CircuitComponent:
-        r"""
-        Returns a light-copy of the component that was used to generate the view.
-        """
-        return self._component._light_copy()
-
-    @property
-    def representation(self):
-        r"""
-        Returns a representation of this circuit component. Note that ket and bra
-        indices have been swapped.
-        """
-        bras = self._component.wires.bra.indices
-        kets = self._component.wires.ket.indices
-        return self._component.representation.reorder(kets + bras).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.adjoint
-
-
-class DualView(CCView):
-    r"""
-    Dual view of a circuit component obtained by swapping the input/output wires
-    and conjugating the representation. Note the representation is a wrapper
-    property around the original one, so it can work also for classes whose
-    representation attribute is a computed property like the trainable components.
-
-    Args:
-        component: The circuit component to take the view of.
-    """
-
-    @property
-    def dual(self) -> CircuitComponent:
-        r"""
-        Returns a light-copy of the component that was used to generate the view.
-        """
-        return self._component._light_copy()
-
-    @property
-    def representation(self):
-        r"""
-        Returns a representation of this circuit component. Note that input and
-        output indices have been swapped.
-        """
-        ok = self._component.wires.ket.output.indices
-        ik = self._component.wires.ket.input.indices
-        ib = self._component.wires.bra.input.indices
-        ob = self._component.wires.bra.output.indices
-        return self._component.representation.reorder(ib + ob + ik + ok).conj()
-
-    @property
-    def wires(self):
-        r"""
-        Returns the ``Wires`` in this component.
-        """
-        return self._component.wires.dual
