@@ -217,6 +217,33 @@ def two_mode_squeezed_vacuum_state_Abc(
 
     return A, b, c
 
+def sauron_state_Abc(n: int, epsilon: float):
+    r"""
+    The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
+    ring of coherent states.
+
+    Args:
+        n: number of photons
+        epsilon: size of the ring. The approximation is exact in the limit for epsilon that goes to zero
+
+    Returns:
+        The ``(A, b, c)`` triple of the sauron state.
+    """
+
+    phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
+    cs = np.exp(1j * phases)
+    bs = (epsilon * cs)[..., None]
+    As = np.zeros([n + 1, 1, 1], dtype="complex128")
+
+    # normalization
+    prob = 0
+    for (A1,b1,c1) in zip(As,bs,cs):
+        for (A2,b2,c2) in zip(As,bs,cs):
+            prob += contract_two_Abc((np.conj(A1), np.conj(b1), np.conj(c1)), (A2, b2, c2), [0], [0])[2]
+    cs /= np.sqrt(prob)
+
+    return As, bs, cs
+
 
 #  ~~~~~~~~~~~~
 #  Mixed States

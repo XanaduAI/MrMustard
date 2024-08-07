@@ -242,20 +242,14 @@ class Sauron(Ket):
     .. math::
         |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |r e^{2\pi k/(n+1)}\rangle_c,
     Args:
-        modes (Sequence[int]): The modes of the Sauron state.
-        n (int): The Fock state that is approximated.
-        r (float): The radius of the ring of coherent states, default is 0.1.
+        modes: The modes of the Sauron state.
+        n: The Fock state that is approximated.
+        r: The radius of the ring of coherent states, default is 0.1.
     """
 
-    def __init__(self, modes, n=0, r=0.1):
-        phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
-        cs = np.exp(1j * phases)
-        bs = (r * cs)[..., None]
-        As = np.zeros([n + 1, 1, 1], dtype="complex128")
+    def __init__(self, modes, n, epsilon=0.1):
         super().__init__(name=f"Sauron-{n}", modes=modes)
-        prob = Ket.from_bargmann(modes, (As, bs, cs)).probability
-        self._representation = Bargmann(As, bs, cs / np.sqrt(prob))
-
+        self._representation = Bargmann.from_function(triples.sauron_state_Abc, n=n, epsilon=epsilon)
 
 class SqueezedVacuum(Ket):
     r"""The `N`-mode squeezed vacuum state.
