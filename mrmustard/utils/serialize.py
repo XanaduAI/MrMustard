@@ -99,16 +99,18 @@ def load(file: Path, remove_after=True):
     return locate(data.pop("class")).deserialize(data)
 
 
-def get_zipfile(name=None):
-    if not name:
-        name = f"collection_{uuid4().hex}.zip"
-    return CACHE / name
+def get_zipfile(name: str = None) -> Path:
+    r"""
+    Returns a randomly named zipfile in the cache folder. If a name is
+    provided, returns a Path for that base name in the cache folder.
+    """
+    return CACHE / (name or f"collection_{uuid4().hex}.zip")
 
 
 @contextmanager
 def cache_subdir(name=None):
-    """Context manager to have calls to ``save`` write to a cache subdirectory."""
-    global CACHE
+    r"""Context manager to have calls to ``save`` write to a cache subdirectory."""
+    global CACHE  # pylint:disable=global-statement
     if not name:
         name = f"subcache_{uuid4().hex}"
 

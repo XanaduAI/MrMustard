@@ -23,7 +23,8 @@ import pytest
 import tensorflow as tf
 
 from mrmustard import math
-from mrmustard.lab_dev import Circuit, Coherent, Dgate, AdjointView
+from mrmustard.lab_dev import Circuit, Coherent, Dgate
+from mrmustard.lab_dev.circuit_components import AdjointView
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
 
@@ -153,7 +154,7 @@ class TestHelpers:
         result = get_zipfile()
         assert not result.exists()  # it doesn't make the file
         assert result.parent == cache_dir
-        assert re.match("^collection_[a-f0-9]{32}\.zip$", result.name)
+        assert re.match(r"^collection_[a-f0-9]{32}\.zip$", result.name)
 
         assert get_zipfile("myfile.zip") == cache_dir / "myfile.zip"
 

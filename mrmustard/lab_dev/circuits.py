@@ -432,7 +432,7 @@ class Circuit:
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
     def serialize(self) -> Path:
-        """Serialize a Circuit."""
+        r"""Serialize a Circuit."""
         with cache_subdir() as subdir:
             order = [c.serialize().name for c in self.components]
 
@@ -447,6 +447,7 @@ class Circuit:
 
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
+        r"""Deserialize a Circuit."""
         order = data["order"]
         zipfile = Path(data["zipfile"])
         subdir = Path(data["subdir"])  # extract to same subdir because hidden path tracking
