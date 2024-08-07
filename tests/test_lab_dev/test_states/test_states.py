@@ -34,6 +34,7 @@ from mrmustard.lab_dev.states import (
     TwoModeSqueezedVacuum,
     Thermal,
     Vacuum,
+    Sauron,
 )
 from mrmustard.lab_dev.transformations import Dgate, Sgate, S2gate
 
@@ -418,3 +419,19 @@ class TestVisualization:
     def test_visualize_dm_error(self):
         with pytest.raises(ValueError):
             Coherent([0, 1]).visualize_dm(20)
+
+
+class TestSauron:
+    r"""
+    Tests for the ``Sauron`` state class.
+    """
+
+    def test_init(self):
+        state = Sauron([0], n=1)
+        assert state.name == "Sauron-1"
+        assert np.isclose(state.probability, 1.0)
+
+    def test_equals_number_state(self):
+        assert np.isclose(Sauron([0], n=1, r=0.1) >> Number([0], n=1).dual, 1.0)
+        assert np.isclose(Sauron([0], n=2, r=0.1) >> Number([0], n=2).dual, 1.0)
+        assert np.isclose(Sauron([0], n=3, r=0.1) >> Number([0], n=3).dual, 1.0)

@@ -34,7 +34,6 @@ from mrmustard.lab_dev.states import (
     Ket,
     Number,
     Vacuum,
-    Sauron,
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
@@ -666,7 +665,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):
-
         m = len(modes)
         dm = DM.random(modes)
         A = dm.representation.A[0]
