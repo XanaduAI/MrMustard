@@ -21,8 +21,12 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
 from typing import Optional, Sequence, Union
+from zipfile import ZipFile
+
 from mrmustard import math, settings
+from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import BSgate
 
@@ -426,6 +430,36 @@ class Circuit:
                     raise ValueError(f"The contraction ``{i1, i2}`` is invalid.")
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
+
+    def serialize(self) -> Path:
+        """Serialize a Circuit."""
+        with cache_subdir() as subdir:
+            order = [c.serialize().name for c in self.components]
+
+        with ZipFile(get_zipfile(), "w") as circuit_zip:
+            for p in subdir.glob("*"):
+                circuit_zip.write(p, p.name)
+                p.unlink()
+
+        subdir.rmdir()
+
+        return save(type(self), order=order, zipfile=circuit_zip.filename, subdir=str(subdir))
+
+    @classmethod
+    def deserialize(cls, data: dict) -> Circuit:
+        order = data["order"]
+        zipfile = Path(data["zipfile"])
+        subdir = Path(data["subdir"])  # extract to same subdir because hidden path tracking
+        subdir.mkdir()
+
+        with ZipFile(zipfile) as circuit_zip:
+            circuit_zip.extractall(subdir)
+
+        Path(circuit_zip.filename).unlink()
+
+        circuit = cls([load(subdir / p) for p in order])
+        subdir.rmdir()
+        return circuit
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components

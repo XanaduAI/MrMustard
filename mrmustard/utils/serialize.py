@@ -14,6 +14,7 @@
 
 """A serialization library for MrMustard."""
 
+from contextlib import contextmanager
 import json
 from pathlib import Path
 from pydoc import locate
@@ -27,9 +28,33 @@ from mrmustard import math
 CACHE = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
 
-def save(cls, arrays=None, **data) -> Path:
-    r"""Save a serialized set of data to file for later deserialization."""
-    file = CACHE / f"{cls.__qualname__}_{uuid4()}.json"  # random filename
+def save(cls: type, arrays=None, **data) -> Path:
+    r"""
+    Save a serialized set of data to file for later deserialization.
+
+    This function can serialize any object that implements the MrMustard
+    serialization interface, which is the following:
+
+    .. code-block:: python
+
+        @classmethod
+        def deserialize(cls, data: Dict) -> cls
+
+    Though not required to satisfy the interface, it is conventional for a
+    class to implement an instance method called ``serialize`` that takes no
+    arguments, calls this function with its data, and returns the Path result.
+
+    Args:
+        cls (type): The object type being serialized
+
+    Kwargs:
+        arrays (Dict[str, NDArray]): A dict of array-like objects to be serialized
+        data (Dict[Any, Any]): A JSON-serializable dict of arbitrary data to save
+
+    Returns:
+        Path: the path to the saved object, to be retrieved later with ``load``
+    """
+    file = CACHE / f"{cls.__qualname__}_{uuid4().hex}.json"  # random filename
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
 
     if arrays:
@@ -49,10 +74,10 @@ def save(cls, arrays=None, **data) -> Path:
 
 def load(file: Path, remove_after=True):
     r"""
-    The deserializer entrypoint for MrMustard.
+    The deserializer entrypoint for objects saved with the ``save`` method.
 
     Args:
-        file (Path): The file to load from
+        file (Path): The json file to load from
         remove_after (Optional[bool]): Once load is complete, delete the saved file
     """
     file = Path(file)
@@ -72,3 +97,23 @@ def load(file: Path, remove_after=True):
     if remove_after:
         file.unlink()
     return locate(data.pop("class")).deserialize(data)
+
+
+def get_zipfile(name=None):
+    if not name:
+        name = f"collection_{uuid4().hex}.zip"
+    return CACHE / name
+
+
+@contextmanager
+def cache_subdir(name=None):
+    """Context manager to have calls to ``save`` write to a cache subdirectory."""
+    global CACHE
+    if not name:
+        name = f"subcache_{uuid4().hex}"
+
+    old_cache = CACHE
+    CACHE /= name
+    CACHE.mkdir()
+    yield CACHE
+    CACHE = old_cache

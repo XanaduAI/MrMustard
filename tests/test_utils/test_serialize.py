@@ -16,15 +16,19 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
 from mrmustard import math
-from mrmustard.utils.serialize import save, load
+from mrmustard.lab_dev import Circuit, Coherent, Dgate, AdjointView
+from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
 
 from ..conftest import skip_np
+from ..random import Abc_triple
 
 
 @dataclass
@@ -139,3 +143,45 @@ class TestSerialize:
         ):
             load(path)
         assert sorted(cache_dir.glob("*")) == [path, path.with_suffix(".npz")]
+
+
+class TestHelpers:
+    """Test various helper functions from the serialize module."""
+
+    def test_get_zipfile(self, cache_dir):
+        """Test the get_zipfile helper."""
+        result = get_zipfile()
+        assert not result.exists()  # it doesn't make the file
+        assert result.parent == cache_dir
+        assert re.match("^collection_[a-f0-9]{32}\.zip$", result.name)
+
+        assert get_zipfile("myfile.zip") == cache_dir / "myfile.zip"
+
+    def test_cache_subdir_context(self, cache_dir):
+        """Test the cache_subdir context manager."""
+        with cache_subdir() as subdir:
+            # something that uses CACHE internally
+            assert get_zipfile().parent == subdir
+
+        assert get_zipfile().parent == cache_dir
+        assert subdir.parent == cache_dir
+        assert subdir.exists()
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        lambda: Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)]),
+        lambda: AdjointView(Dgate([1], x=0.1, y=0.1)),
+        lambda: Fock(np.random.random((5, 7, 8)), batched=False),
+        lambda: Fock(np.random.random((1, 5, 7, 8)), batched=True),
+        lambda: Bargmann(*Abc_triple(2)),
+    ],
+)
+def test_actual_objects(obj, cache_dir):
+    r"""
+    Test that serializing then deserializing a MrMustard object creates an equivalent instance.
+    """
+    obj = obj()
+    assert load(obj.serialize()) == obj
+    assert not list(cache_dir.glob("*"))
