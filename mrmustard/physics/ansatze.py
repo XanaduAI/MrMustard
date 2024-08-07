@@ -805,7 +805,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )  # (b_arg)
         return val
 
-
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
         Helper function for the call_none method. Returns the new triple.
@@ -814,18 +813,20 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         dim_beta, _ = self.polynomial_shape
         gamma = math.astensor(zi[zi != None], dtype=math.complex128)
         gammagamma = math.einsum("...a,...b->...ab", gamma, gamma)
-        new_a_logic = math.concat((zi == None, math.astensor([True] * dim_beta, dtype=bool)), axis=-1)
-        new_a_logic = math.arange(len(new_a_logic),dtype=math.int32)[new_a_logic]
+        new_a_logic = math.concat(
+            (zi == None, math.astensor([True] * dim_beta, dtype=bool)), axis=-1
+        )
+        new_a_logic = math.arange(len(new_a_logic), dtype=math.int32)[new_a_logic]
         new_a = math.gather(math.gather(Ai, new_a_logic, axis=0), new_a_logic, axis=1)
 
         b_alpha_logic0 = math.concat(
             (zi == None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1
         )
-        b_alpha_logic0 = math.arange(len(b_alpha_logic0),dtype=math.int32)[b_alpha_logic0]
+        b_alpha_logic0 = math.arange(len(b_alpha_logic0), dtype=math.int32)[b_alpha_logic0]
         b_alpha_logic1 = math.concat(
             (zi != None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1
         )
-        b_alpha_logic1 = math.arange(len(b_alpha_logic1),dtype=math.int32)[b_alpha_logic1]
+        b_alpha_logic1 = math.arange(len(b_alpha_logic1), dtype=math.int32)[b_alpha_logic1]
 
         b_alpha = math.sum(
             math.gather(
@@ -840,9 +841,11 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         b_beta_logic0 = math.concat(
             (math.astensor([False] * dim_zi), math.astensor([True] * dim_beta, dtype=bool)), axis=-1
         )
-        b_beta_logic0 = math.arange(len(b_beta_logic0),dtype=math.int32)[b_beta_logic0]
-        b_beta_logic1 = math.concat((zi != None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1)
-        b_beta_logic1 = math.arange(len(b_beta_logic1),dtype=math.int32)[b_beta_logic1]
+        b_beta_logic0 = math.arange(len(b_beta_logic0), dtype=math.int32)[b_beta_logic0]
+        b_beta_logic1 = math.concat(
+            (zi != None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1
+        )
+        b_beta_logic1 = math.arange(len(b_beta_logic1), dtype=math.int32)[b_beta_logic1]
 
         b_beta = math.sum(
             math.gather(
@@ -859,8 +862,10 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         )
 
         new_b = math.gather(bi, new_a_logic, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
-        A_part_logic = math.concat((zi != None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1)
-        A_part_logic = math.arange(len(A_part_logic),dtype=math.int32)[A_part_logic]
+        A_part_logic = math.concat(
+            (zi != None, math.astensor([False] * dim_beta, dtype=bool)), axis=-1
+        )
+        A_part_logic = math.arange(len(A_part_logic), dtype=math.int32)[A_part_logic]
 
         A_part = math.sum(
             math.gather(math.gather(Ai, A_part_logic, axis=0), A_part_logic, axis=1) * gammagamma
