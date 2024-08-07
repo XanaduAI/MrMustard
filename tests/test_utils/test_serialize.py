@@ -24,7 +24,6 @@ import tensorflow as tf
 
 from mrmustard import math
 from mrmustard.lab_dev import Circuit, Coherent, Dgate
-from mrmustard.lab_dev.circuit_components import AdjointView
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
 
@@ -173,7 +172,7 @@ class TestHelpers:
     "obj",
     [
         lambda: Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)]),
-        lambda: AdjointView(Dgate([1], x=0.1, y=0.1)),
+        lambda: Dgate([1], x=0.1, y=0.1),
         lambda: Fock(np.random.random((5, 7, 8)), batched=False),
         lambda: Fock(np.random.random((1, 5, 7, 8)), batched=True),
         lambda: Bargmann(*Abc_triple(2)),
