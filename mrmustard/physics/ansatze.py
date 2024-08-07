@@ -1247,7 +1247,15 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                new_array = [a / b for a in self.array for b in other.array]
+                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+                if diff < 0:
+                    new_array = [
+                        a / b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                    ]
+                else:
+                    new_array = [
+                        a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                    ]
                 return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
