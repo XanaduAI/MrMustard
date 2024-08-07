@@ -32,7 +32,7 @@ from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 
 __all__ = ["CircuitComponent", "AdjointView", "DualView"]
 

@@ -26,8 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from IPython.display import display
-
-from mrmustard.lab_dev import Wires
+from mrmustard.physics.wires import Wires
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
@@ -260,7 +259,7 @@ class Bargmann(Representation):
     ):
         self._contract_idxs: tuple[int, ...] = ()
         self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
-        self._wires = wires
+        self._wires = wires or Wires([],[],set(range(len(b))),[])
 
     @property
     def wires(self) -> Wires:
@@ -399,7 +398,7 @@ class Bargmann(Representation):
             The reordered Bargmann object.
         """
         A, b, c = reorder_abc((self.A, self.b, self.c), order)
-        return self.__class__(A, b, c)
+        return self.__class__(A, b, c, self.wires)
 
     def plot(
         self,
@@ -482,7 +481,7 @@ class Bargmann(Representation):
                 raise IndexError(
                     f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.num_vars}."
                 )
-        new = self.__class__(self.A, self.b, self.c)
+        new = self.__class__(self.A, self.b, self.c, self.wires)
         new._contract_idxs = idx
         return new
 
@@ -534,7 +533,8 @@ class Bargmann(Representation):
                     Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
-        return Bargmann(A, b, c)
+        new_wires, new_order = self.wires@other.wires
+        return Bargmann(A, b, c, new_wires).reorder(new_order)
 
     def _ipython_display_(self):
         display(widgets.bargmann(self))
@@ -586,24 +586,35 @@ class Fock(Representation):
 
     """
 
-    def __init__(self, array: Batch[Tensor], batched=False):
+    def __init__(self, array: Batch[Tensor], batched=False, wires : Optional[Wires]=None):
         self._contract_idxs: tuple[int, ...] = ()
         self._original_bargmann_data = None
         self._ansatz = ArrayAnsatz(array=array, batched=batched)
-
+        if batched== False:
+            self._wires = wires or Wires([],[],set(range(array.ndim)),[])
+        else:
+            self._wires = wires or Wires([],[],set(range(array.ndim-1)),[])
     @property
     def ansatz(self) -> ArrayAnsatz:
         r"""
         The ansatz of the representation.
         """
         return self._ansatz
+    
+    @property
+    def wires(self) -> Wires:
+        r"""
+        The wires of the representation.
+        """
+        return self._wires
+
 
     @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
+    def from_ansatz(cls, ansatz: ArrayAnsatz, wires:Optional[Wires] = None) -> Fock:  # pylint: disable=arguments-differ
         r"""
         Returns a Fock object from an ansatz object.
         """
-        return cls(ansatz.array, batched=True)
+        return cls(ansatz.array, batched=True, wires = wires)
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -644,13 +655,13 @@ class Fock(Representation):
         r"""
         Returns a Fock object from a generator function.
         """
-        return cls.from_ansatz(ArrayAnsatz.from_function(fn, **kwargs))
+        return cls.from_ansatz(ArrayAnsatz.from_function(fn, **kwargs), kwargs.get("wires"))
 
     def conj(self):
         r"""
         The conjugate of this Fock object.
         """
-        new = self.from_ansatz(self.ansatz.conj)
+        new = self.from_ansatz(self.ansatz.conj, self.wires)
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
 
@@ -717,7 +728,8 @@ class Fock(Representation):
         for i in range(n_batches_s):
             for j in range(n_batches_o):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
-        return self.from_ansatz(ArrayAnsatz(batched_array))
+        new_wires, new_order = self.wires@other.wires
+        return self.from_ansatz(ArrayAnsatz(batched_array), new_wires).reorder(new_order)
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
         r"""
@@ -742,7 +754,15 @@ class Fock(Representation):
         n = np.prod(new_array.shape[-len(idxs2) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
         trace = math.trace(new_array)
-        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
+
+        out_bra, in_bra, out_ket, in_ket = self.wires.index_dicts
+        out_bra = {k for k, v in out_bra.items() if v not in idxs1 + idxs2}
+        in_bra = {k for k, v in in_bra.items() if v not in idxs1 + idxs2}
+        out_ket = {k for k, v in out_ket.items() if v not in idxs1 + idxs2}
+        in_ket = {k for k, v in in_ket.items() if v not in idxs1 + idxs2}
+        new_wires = Wires(out_bra, in_bra, out_ket, in_ket)
+
+        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace), new_wires)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
         r"""
@@ -756,6 +776,7 @@ class Fock(Representation):
         """
         return self.from_ansatz(
             ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
+            , self.wires
         )
 
     def reduce(self, shape: Union[int, Iterable[int]]) -> Fock:
@@ -799,10 +820,10 @@ class Fock(Representation):
                 self.array,
                 [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
             )
-            return self.from_ansatz(ArrayAnsatz(padded))
+            return self.from_ansatz(ArrayAnsatz(padded), self.wires)
 
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
-        return Fock(array=ret, batched=True)
+        return Fock(array=ret, batched=True, wires = self.wires)
 
     def _ipython_display_(self):
         w = widgets.fock(self)
@@ -818,4 +839,4 @@ class Fock(Representation):
         Returns:
             The collapsed Fock object.
         """
-        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)), self.wires)

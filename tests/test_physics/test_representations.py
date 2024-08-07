@@ -28,6 +28,7 @@ from mrmustard.physics.gaussian_integrals import (
 )
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
+from mrmustard.physics.wires import Wires
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -161,7 +162,7 @@ class TestBargmannRepresentation:
 
     def test_trace(self):
         triple = Abc_triple(4)
-        bargmann = Bargmann(*triple).trace([0], [2])
+        bargmann = Bargmann(*triple, Wires([0],[1],[2],[3])).trace([0], [2])
         A, b, c = complex_gaussian_integral(triple, [0], [2])
 
         assert np.allclose(bargmann.A, A)
@@ -185,7 +186,7 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
-        res1 = Bargmann(*triple1) @ Bargmann(*triple2)
+        res1 = Bargmann(*triple1, Wires(set(range(3)), [], [], [])) @ Bargmann(*triple2, Wires([], [], set(range(3)), []))
         exp1 = contract_two_Abc(triple1, triple2, [], [])
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
@@ -318,8 +319,8 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
 
     def test_matmul_fock_fock(self):
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
-        fock1 = Fock(self.array2578, batched=True)
-        fock2 = Fock(array2, batched=True)
+        fock1 = Fock(self.array2578, batched=True, wires=Wires([], set([0,1]), set([2]), []))
+        fock2 = Fock(array2, batched=True, wires=Wires(set([0,1,3]), set([2]), [], []))
         fock_test = fock1[2] @ fock2[2]
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(

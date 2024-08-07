@@ -34,7 +34,7 @@ from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM, Vacuum
 from mrmustard.lab_dev.transformations import Dgate
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 
 
 # original settings
