@@ -29,8 +29,6 @@ __all__ = [
 
 SQRT = np.sqrt(np.arange(1000))
 
-SQRT = np.sqrt(np.arange(1000))
-
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
