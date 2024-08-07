@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""tests for the Sauron state class"""
+
 from mrmustard.lab_dev.states import Sauron, Number
 import numpy as np
 

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+r"""The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states."""
+
 from mrmustard.lab_dev import Ket
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
