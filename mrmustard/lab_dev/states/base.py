@@ -50,8 +50,6 @@ from mrmustard.utils.typing import (
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
-    norm_ket,
-    trace_dm,
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
@@ -626,8 +624,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -656,7 +653,7 @@ class DM(State):
             except AttributeError:  # bargmann
                 repr = self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / trace_dm(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
@@ -900,7 +897,7 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -929,7 +926,7 @@ class Ket(State):
             except AttributeError:  # bargmann
                 repr = self.representation.conj() & self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / norm_ket(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
