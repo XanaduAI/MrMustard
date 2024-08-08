@@ -451,7 +451,6 @@ class Circuit:
         order = data["order"]
         zipfile = Path(data["zipfile"])
         subdir = Path(data["subdir"])  # extract to same subdir because hidden path tracking
-        subdir.mkdir()
 
         with ZipFile(zipfile) as circuit_zip:
             circuit_zip.extractall(subdir)
@@ -459,7 +458,6 @@ class Circuit:
         Path(circuit_zip.filename).unlink()
 
         circuit = cls([load(subdir / p) for p in order])
-        subdir.rmdir()
         return circuit
 
     def __eq__(self, other: Circuit) -> bool:

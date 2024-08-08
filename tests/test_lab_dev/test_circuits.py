@@ -28,6 +28,7 @@ from mrmustard.lab_dev.transformations import (
     Attenuator,
 )
 from mrmustard import settings
+from mrmustard.utils.serialize import load
 
 
 class TestCircuit:
@@ -285,3 +286,11 @@ class TestCircuit:
         r1 += "\nmode 1:   ──S(-1.0,-2.0)"
         r1 += "\n\n"
         assert repr(circ1) == r1
+
+    def test_serialize_makes_two_files(self, tmpdir):
+        """Test that serialize makes a JSON and a zip."""
+        settings.CACHE_DIR = tmpdir
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        path = circ.serialize()
+        assert sorted(p.suffix for p in path.parent.glob("*")) == [".json", ".zip"]
+        assert load(path) == circ

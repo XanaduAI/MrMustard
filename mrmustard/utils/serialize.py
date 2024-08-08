@@ -69,13 +69,14 @@ def save(cls: type, arrays=None, **data) -> Path:
     return file
 
 
-def load(file: Path, remove_after=True):
+def load(file: Path, remove_after=False):
     r"""
     The deserializer entrypoint for objects saved with the ``save`` method.
 
     Args:
         file (Path): The json file to load from
-        remove_after (Optional[bool]): Once load is complete, delete the saved file
+        remove_after (Optional[bool]): Once load is complete, delete the saved
+            file. Default is False
     """
     file = Path(file)
     with file.open("r", encoding="utf-8") as f:

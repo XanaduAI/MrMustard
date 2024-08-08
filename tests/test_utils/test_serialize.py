@@ -80,12 +80,13 @@ def cache_dir(tmpdir):
 class TestSerialize:
     """Test the serialize module."""
 
-    def test_basic(self):
+    @pytest.mark.parametrize("remove_after", [False, True])
+    def test_basic(self, remove_after):
         """Test basic save and load functionality."""
         path = save(Dummy, val=5, word="hello")
         assert path.exists() and path.parent == settings.CACHE_DIR
-        assert load(path) == Dummy(val=5, word="hello")
-        assert not list(settings.CACHE_DIR.glob("*"))  # removed by load
+        assert load(path, remove_after=remove_after) == Dummy(val=5, word="hello")
+        assert list(settings.CACHE_DIR.glob("*")) == [] if remove_after else [path]
 
     def test_one_numpy_obj(self):
         """Test save and load functionality with numpy data."""
@@ -96,7 +97,7 @@ class TestSerialize:
         assert isinstance(loaded, DummyOneNP)
         assert loaded.name == "myname"
         assert np.array_equal(loaded.array, np.array([1.1, 2.2]))
-        assert not list(settings.CACHE_DIR.glob("*"))
+        assert sorted(settings.CACHE_DIR.glob("*")) == [path, path.with_suffix(".npz")]
 
     def test_two_numpy_obj(self):
         """Test save and load functionality with more numpy data."""
@@ -110,7 +111,6 @@ class TestSerialize:
         assert loaded.name == "myname"
         assert np.array_equal(loaded.array1, a1)
         assert np.array_equal(loaded.array2, a2)
-        assert not list(settings.CACHE_DIR.glob("*"))
 
     def test_overlap_forbidden(self):
         """Test that array names must be distinct from non-array names."""
@@ -126,7 +126,6 @@ class TestSerialize:
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert tf.is_tensor(loaded.array)
         assert np.array_equal(loaded.array, x)
-        assert not list(settings.CACHE_DIR.glob("*"))
 
     def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
