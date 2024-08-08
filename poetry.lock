@@ -3771,13 +3771,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "thewalrus"
-version = "0.19.0"
+version = "0.21.0"
 description = "Open source library for hafnian calculation"
 optional = false
 python-versions = "*"
 files = [
-    {file = "thewalrus-0.19.0-py3-none-any.whl", hash = "sha256:07b6e2969bf5405a2df736c442b1500857438bbd2afc2053b8b600b8b0c67f97"},
-    {file = "thewalrus-0.19.0.tar.gz", hash = "sha256:06ff07a14cd8cd4650d9c82b8bb8301ef9a58dcdd4bafb14841768ccf80c98b9"},
+    {file = "thewalrus-0.21.0-py3-none-any.whl", hash = "sha256:5f393d17fc8362e7156337faed769e99f15149040ef298d2a1be27f234aa8cb9"},
+    {file = "thewalrus-0.21.0.tar.gz", hash = "sha256:a8e1d6a7dea1e2c70aeb172f2dba1dfc7fabfa6e000c8ace9c5f81c7df422637"},
 ]
 
 [package.dependencies]
@@ -4078,4 +4078,4 @@ ray = ["ray", "scikit-optimize"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "30bce04d5fbcc64fd6a04429fb95fe317ef88066ed9719ce1fbc727cc5a2495c"
+content-hash = "c364c09c12220da073c88095ff23595b15cfafdab3b7c18e4bd56a172acd293d"
