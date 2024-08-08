@@ -16,12 +16,14 @@
 This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
 various states and transformations.
 """
+
 from typing import Generator, Iterable, Union
 
 import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.physics.gaussian_integrals import contract_two_Abc
 
 
 #  ~~~~~~~~~
@@ -580,7 +582,9 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     return A, b, c
 
 
-def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def fock_damping_Abc(
+    beta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
