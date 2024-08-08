@@ -20,7 +20,6 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
-from pathlib import Path
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -35,7 +34,6 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral,
 )
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
-from mrmustard.utils.serialize import save
 from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
@@ -101,12 +99,12 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def serialize(self) -> Path:
+    def serialize(self) -> list[tuple[str, Any]]:
         r"""Serialize a Representation."""
 
     @classmethod
     @abstractmethod
-    def deserialize(cls, data) -> Representation:
+    def deserialize(cls, data: dict) -> Representation:
         r"""Deserialize a Representation."""
 
     def __eq__(self, other: Representation) -> bool:
@@ -527,17 +525,14 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def serialize(self) -> Path:
-        r"""Serialize a Bargmann instance."""
-        return save(type(self), arrays={"A": self.A, "b": self.b, "c": self.c})
+    def serialize(self) -> list[tuple[str, Any]]:
+        """Serialize a Bargmann instance."""
+        return [("A", self.A), ("b", self.b), ("c", self.c)]
 
     @classmethod
-    def deserialize(cls, data) -> Bargmann:
-        r"""Deserialize a Bargmann instance."""
-        A = data["A"]
-        b = data["b"]
-        c = data["c"]
-        return cls(A, b, c)
+    def deserialize(cls, data: dict) -> Bargmann:
+        """Deserialize a Bargmann instance."""
+        return cls(data["A"], data["b"], data["c"])
 
     def _ipython_display_(self):
         display(widgets.bargmann(self))
@@ -798,13 +793,13 @@ class Fock(Representation):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
-    def serialize(self) -> Path:
-        r"""Serialize a Fock instance."""
-        return save(type(self), arrays={"array": self.array})
+    def serialize(self) -> list[tuple[str, Any]]:
+        """Serialize a Fock instance."""
+        return [("array", self.representation.data)]
 
     @classmethod
-    def deserialize(cls, data) -> Fock:
-        r"""Deserialize a Fock instance."""
+    def deserialize(cls, data: dict) -> Fock:
+        """Deserialize a Fock instance."""
         return cls(data["array"], batched=True)
 
     def _ipython_display_(self):

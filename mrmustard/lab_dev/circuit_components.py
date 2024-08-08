@@ -19,17 +19,16 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
+from pydoc import locate
 from typing import Optional, Sequence, Union
 import numbers
 from functools import cached_property
-from pathlib import Path
 
 import numpy as np
 import ipywidgets as widgets
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.serialize import save, load
 from mrmustard.utils.typing import Scalar, ComplexTensor
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
@@ -37,6 +36,11 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["CircuitComponent"]
+
+
+def modpath(c):
+    t = type(c)
+    return f"{t.__module__}.{t.__qualname__}"
 
 
 class CircuitComponent:
@@ -97,23 +101,20 @@ class CircuitComponent:
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
 
-    def serialize(self) -> Path:
-        r"""Serialize a CircuitComponent object."""
-        return save(
-            type(self),
-            name=self.name,
-            representation=str(self.representation.serialize()),
-            wires=self.wires.to_json(),
-        )
+    def serialize(self):
+        """Inner serialization to be used by Circuit.serialize()."""
+        return (
+            modpath(self),  # mrmustard.lab_dev.submodule.class_name
+            self.name,  # the name
+            self.wires.to_json(),  # wires as a JSON-serializable string
+            modpath(self.representation),  # mrmustard.physics.representations.class_name
+        ), self.representation.serialize()
 
     @classmethod
-    def deserialize(cls, data) -> CircuitComponent:
-        r"""Deserialize a CircuitComponent object."""
-        return cls._from_attributes(
-            load(data["representation"]),
-            Wires.from_json(data["wires"]),
-            name=data["name"],
-        )
+    def deserialize(cls, rep_str, rep_data, wires_str, name) -> CircuitComponent:
+        """Deserialization when within a circuit."""
+        rep = locate(rep_str).deserialize(rep_data)
+        return cls._from_attributes(rep, Wires.from_json(wires_str), name=name)
 
     @classmethod
     def _from_attributes(

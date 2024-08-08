@@ -292,5 +292,5 @@ class TestCircuit:
         settings.CACHE_DIR = tmpdir
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         path = circ.serialize()
-        assert sorted(p.suffix for p in path.parent.glob("*")) == [".json", ".zip"]
+        assert sorted(path.parent.glob("*")) == [path, path.with_suffix(".npz")]
         assert load(path) == circ

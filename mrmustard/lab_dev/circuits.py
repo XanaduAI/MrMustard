@@ -21,12 +21,11 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from pathlib import Path
+from pydoc import locate
 from typing import Optional, Sequence, Union
-from zipfile import ZipFile
 
 from mrmustard import math, settings
-from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
+from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import BSgate
 
@@ -431,34 +430,28 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
-    def serialize(self) -> Path:
+    def serialize(self):
         r"""Serialize a Circuit."""
-        with cache_subdir() as subdir:
-            order = [c.serialize().name for c in self.components]
-
-        with ZipFile(get_zipfile(), "w") as circuit_zip:
-            for p in subdir.glob("*"):
-                circuit_zip.write(p, p.name)
-                p.unlink()
-
-        subdir.rmdir()
-
-        return save(type(self), order=order, zipfile=circuit_zip.filename, subdir=str(subdir))
+        components, data = list(zip(*[c.serialize() for c in self.components]))
+        arrays = {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs}
+        return save(type(self), arrays=arrays, components=components)
 
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
         r"""Deserialize a Circuit."""
-        order = data["order"]
-        zipfile = Path(data["zipfile"])
-        subdir = Path(data["subdir"])  # extract to same subdir because hidden path tracking
+        comps = data.pop("components")
 
-        with ZipFile(zipfile) as circuit_zip:
-            circuit_zip.extractall(subdir)
+        arrays = [{} for _ in comps]
+        for k, v in data.items():
+            kwarg, i = k.split(":")
+            arrays[int(i)][kwarg] = v
 
-        Path(circuit_zip.filename).unlink()
-
-        circuit = cls([load(subdir / p) for p in order])
-        return circuit
+        return cls(
+            [
+                locate(cls_str).deserialize(rep_str, arrs, wires_str, name)
+                for arrs, (cls_str, name, wires_str, rep_str) in zip(arrays, comps)
+            ]
+        )
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components

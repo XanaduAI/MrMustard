@@ -14,7 +14,6 @@
 
 """A serialization library for MrMustard."""
 
-from contextlib import contextmanager
 import json
 from pathlib import Path
 from pydoc import locate
@@ -99,20 +98,3 @@ def load(file: Path, remove_after=False):
     if remove_after:
         file.unlink()
     return cls.deserialize(data)
-
-
-def get_zipfile(name: str = None) -> Path:
-    r"""
-    Returns a randomly named zipfile in the cache folder. If a name is
-    provided, returns a Path for that base name in the cache folder.
-    """
-    return settings.CACHE_DIR / (name or f"collection_{uuid4().hex}.zip")
-
-
-@contextmanager
-def cache_subdir(name=None):
-    r"""Context manager to have calls to ``save`` write to a cache subdirectory."""
-    old_cache = settings.CACHE_DIR
-    settings.CACHE_DIR = old_cache / (name or f"subcache_{uuid4().hex}")
-    yield settings.CACHE_DIR
-    settings.CACHE_DIR = old_cache
