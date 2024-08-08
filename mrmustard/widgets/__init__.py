@@ -40,7 +40,7 @@ def fock_1d(array):
     """Return a plot widget for a 2D Fock representation."""
     layout = {"margin": NO_MARGIN, "height": 200, "width": 250}
     mag_plot = go.Bar(y=abs(array))
-    phase_plot = go.Scatter(y=np.angle(array))
+    phase_plot = go.Bar(y=np.angle(array))
     plots = [go.FigureWidget(p, layout=layout) for p in [mag_plot, phase_plot]]
     return widgets.Tab(plots, titles=["Magnitude", "Phase"])
 
