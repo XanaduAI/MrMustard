@@ -200,6 +200,24 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_add_aa2.array[2], np.array([[4, 6], [8, 10]]))
         assert np.allclose(aa1_add_aa2.array[3], np.array([[8, 10], [12, 14]]))
 
+        array3 = np.arange(2).reshape(2, 1, 1)
+        aa3 = ArrayAnsatz(array=array3)
+        aa2_add_aa3 = aa2 + aa3
+
+        assert isinstance(aa2_add_aa3, ArrayAnsatz)
+        assert np.allclose(aa2_add_aa3.array[0], np.array([[0, 1], [2, 3]]))
+        assert np.allclose(aa2_add_aa3.array[1], np.array([[1, 1], [2, 3]]))
+        assert np.allclose(aa2_add_aa3.array[2], np.array([[4, 5], [6, 7]]))
+        assert np.allclose(aa2_add_aa3.array[3], np.array([[5, 5], [6, 7]]))
+
+        array4 = np.array([1]).reshape(1, 1, 1)
+        aa4 = ArrayAnsatz(array=array4)
+        aa2_add_aa4 = aa2 + aa4
+
+        assert isinstance(aa2_add_aa4, ArrayAnsatz)
+        assert np.allclose(aa2_add_aa4.array[0], np.array([[1, 1], [2, 3]]))
+        assert np.allclose(aa2_add_aa4.array[1], np.array([[5, 5], [6, 7]]))
+
     def test_and(self):
         array = np.arange(8).reshape(2, 2, 2)
         array2 = np.arange(8).reshape(2, 2, 2)
@@ -265,6 +283,24 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_mul_aa2.array[2], np.array([[0, 5], [12, 21]]))
         assert np.allclose(aa1_mul_aa2.array[3], np.array([[16, 25], [36, 49]]))
 
+        array3 = np.arange(2).reshape(2, 1, 1)
+        aa3 = ArrayAnsatz(array=array3)
+        aa2_mul_aa3 = aa2 * aa3
+        assert isinstance(aa2_mul_aa3, ArrayAnsatz)
+        assert aa2_mul_aa3.array.shape == (4, 2, 2)
+        assert np.allclose(aa2_mul_aa3.array[0], np.array([[0, 0], [0, 0]]))
+        assert np.allclose(aa2_mul_aa3.array[1], np.array([[0, 0], [0, 0]]))
+        assert np.allclose(aa2_mul_aa3.array[2], np.array([[0, 0], [0, 0]]))
+        assert np.allclose(aa2_mul_aa3.array[3], np.array([[4, 0], [0, 0]]))
+
+        array4 = np.array([1]).reshape(1, 1, 1)
+        aa4 = ArrayAnsatz(array=array4)
+        aa2_mul_aa4 = aa2 * aa4
+
+        assert isinstance(aa2_mul_aa4, ArrayAnsatz)
+        assert np.allclose(aa2_mul_aa4.array[0], np.array([[0, 0], [0, 0]]))
+        assert np.allclose(aa2_mul_aa4.array[1], np.array([[4, 0], [0, 0]]))
+
     def test_truediv_a_scalar(self):
         array = np.random.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
@@ -284,6 +320,24 @@ class TestArrayAnsatz:
         assert np.allclose(aa1_div_aa2.array[1], np.array([[0.2, 0.33333], [0.42857143, 0.5]]))
         assert np.allclose(aa1_div_aa2.array[2], np.array([[5.0, 3.0], [2.33333333, 2.0]]))
         assert np.allclose(aa1_div_aa2.array[3], np.array([[1.0, 1.0], [1.0, 1.0]]))
+
+        array3 = np.arange(3)[1:].reshape(2, 1, 1)
+        aa3 = ArrayAnsatz(array=array3)
+        aa3_div_aa2 = aa3 / aa2
+        assert isinstance(aa3_div_aa2, ArrayAnsatz)
+        assert aa3_div_aa2.array.shape == (4, 2, 2)
+        assert np.allclose(aa3_div_aa2.array[0], np.array([[1, 0], [0, 0]]))
+        assert np.allclose(aa3_div_aa2.array[1], np.array([[0.2, 0], [0, 0]]))
+        assert np.allclose(aa3_div_aa2.array[2], np.array([[2, 0], [0, 0]]))
+        assert np.allclose(aa3_div_aa2.array[3], np.array([[0.4, 0], [0, 0]]))
+
+        array4 = np.array([2]).reshape(1, 1, 1)
+        aa4 = ArrayAnsatz(array=array4)
+        aa4_div_aa2 = aa4 / aa2
+
+        assert isinstance(aa4_div_aa2, ArrayAnsatz)
+        assert np.allclose(aa4_div_aa2.array[0], np.array([[2, 0], [0, 0]]))
+        assert np.allclose(aa4_div_aa2.array[1], np.array([[0.4, 0], [0, 0]]))
 
     def test_algebra_with_different_shape_of_array_raise_errors(self):
         array = np.random.random((2, 4, 5))

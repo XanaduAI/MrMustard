@@ -279,7 +279,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -398,6 +398,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         [table, wires] = vbox.children
         assert isinstance(table, HTML)
         assert isinstance(wires, HTML)
+
+    def test_is_physical(self):
+        assert Ket.random([0, 1]).is_physical
 
 
 class TestDM:  # pylint:disable=too-many-public-methods
@@ -631,7 +634,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(None, modes_in_ket=[0], modes_out_ket=[1])
+        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -676,3 +679,21 @@ class TestDM:  # pylint:disable=too-many-public-methods
         )  # checks if the off-diagonal block of dm is PSD
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
+
+    @pytest.mark.parametrize("modes", [[9, 2], [0, 1, 2, 3, 4]])
+    def test_is_positive(self, modes):
+        assert (Ket.random(modes) >> Attenuator(modes)).is_positive
+        A = np.zeros([2 * len(modes), 2 * len(modes)])
+        A[0, -1] = 1.0
+        rho = DM.from_bargmann(
+            modes, [A, [complex(0)] * 2 * len(modes), [complex(1)]]
+        )  # this test fails at the hermitian check
+        assert not rho.is_positive
+
+    @pytest.mark.parametrize("modes", [range(10), [0, 1]])
+    def test_is_physical(self, modes):
+        rho = DM.random(modes)
+        assert rho.is_physical
+        rho = 2 * rho
+        assert not rho.is_physical
+        assert Ket.random(modes).dm().is_physical
