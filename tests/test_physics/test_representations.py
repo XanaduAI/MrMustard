@@ -321,7 +321,7 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
         fock1 = Fock(self.array2578, batched=True, wires=Wires([], set([0,1]), set([2]), []))
         fock2 = Fock(array2, batched=True, wires=Wires(set([0,1,3]), set([2]), [], []))
-        fock_test = fock1[2] @ fock2[2]
+        fock_test = fock1 @ fock2
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(
             math.reshape(fock_test.array, -1),
