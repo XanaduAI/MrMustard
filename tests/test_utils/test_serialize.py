@@ -93,7 +93,8 @@ class TestSerialize:
                 "word": "hello",
             }
         assert load(path, remove_after=remove_after) == Dummy(val=5, word="hello")
-        assert list(settings.CACHE_DIR.glob("*")) == [] if remove_after else [path]
+        cached_files = list(settings.CACHE_DIR.glob("*"))
+        assert (not cached_files) if remove_after else (cached_files == [path])
 
     def test_one_numpy_obj(self):
         """Test save and load functionality with numpy data."""
