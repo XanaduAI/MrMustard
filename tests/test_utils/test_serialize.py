@@ -90,20 +90,20 @@ class TestSerialize:
     def test_one_numpy_obj(self):
         """Test save and load functionality with numpy data."""
         path = save(DummyOneNP, name="myname", arrays={"array": np.array([1.1, 2.2])})
-        assert path.exists() and path.with_suffix(".npz").exists()
+        assert path.exists() and path.suffix == ".zip"
         loaded = load(path)
 
         assert isinstance(loaded, DummyOneNP)
         assert loaded.name == "myname"
         assert np.array_equal(loaded.array, np.array([1.1, 2.2]))
-        assert sorted(settings.CACHE_DIR.glob("*")) == [path, path.with_suffix(".npz")]
+        assert list(settings.CACHE_DIR.glob("*")) == [path]
 
     def test_two_numpy_obj(self):
         """Test save and load functionality with more numpy data."""
         a1 = np.array([1.1, 2.2])
         a2 = np.array([3.3 + 4.4j, 5.5 + 6.6j])
         path = save(DummyTwoNP, name="myname", arrays={"array1": a1, "array2": a2})
-        assert path.exists() and path.with_suffix(".npz").exists()
+        assert path.exists() and path.suffix == ".zip"
         loaded = load(path)
 
         assert isinstance(loaded, DummyTwoNP)
@@ -138,4 +138,11 @@ class TestSerialize:
             match="Data serialized with tensorflow backend, cannot deserialize to the currently active numpy backend",
         ):
             load(path)
-        assert sorted(settings.CACHE_DIR.glob("*")) == [path, path.with_suffix(".npz")]
+        assert sorted(settings.CACHE_DIR.glob("*")) == [path]
+
+    def test_zip_remove_after(self):
+        """Test that remove_after works with zip files."""
+        path = save(DummyOneNP, name="myname", arrays={"array": np.array([1.1, 2.2])})
+        assert path.exists() and path.suffix == ".zip"
+        load(path, remove_after=True)
+        assert not list(settings.CACHE_DIR.glob("*"))

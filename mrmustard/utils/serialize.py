@@ -17,14 +17,16 @@
 import json
 from pathlib import Path
 from pydoc import locate
+from time import strftime
 from uuid import uuid4
+from zipfile import ZipFile
 
 import numpy as np
 
 from mrmustard import math, settings, __version__
 
 
-def save(cls: type, arrays=None, **data) -> Path:
+def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
     r"""
     Save a serialized set of data to file for later deserialization.
 
@@ -44,13 +46,20 @@ def save(cls: type, arrays=None, **data) -> Path:
         cls (type): The object type being serialized
 
     Kwargs:
+        filename (str): A custom filename to save the data to
+        do_zip (bool): If arrays are provided, zip results
         arrays (Dict[str, NDArray]): A dict of array-like objects to be serialized
         data (Dict[Any, Any]): A JSON-serializable dict of arbitrary data to save
 
     Returns:
         Path: the path to the saved object, to be retrieved later with ``load``
     """
-    file = settings.CACHE_DIR / f"{cls.__qualname__}_{uuid4().hex}.json"  # random filename
+    if not filename:
+        filename = f"{cls.__qualname__}_{strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:8]}.json"
+    elif filename[-5:] != ".json":
+        filename = f"{filename}.json"
+
+    file = settings.CACHE_DIR / filename
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
     data["version"] = __version__
 
@@ -66,6 +75,16 @@ def save(cls: type, arrays=None, **data) -> Path:
     with file.open("w", encoding="utf-8") as f:
         json.dump(data, f)
 
+    if arrays and do_zip:
+        npz = file.with_suffix(".npz")
+        with ZipFile(file.with_suffix(".zip"), "w") as zipf:
+            zipf.write(file, file.name)
+            zipf.write(npz, npz.name)
+
+        file.unlink()
+        npz.unlink()
+        return Path(zipf.filename)
+
     return file
 
 
@@ -78,7 +97,14 @@ def load(file: Path, remove_after=False):
         remove_after (Optional[bool]): Once load is complete, delete the saved
             file. Default is False
     """
+    was_zipped = False
     file = Path(file)
+    if file.suffix == ".zip":
+        was_zipped = True
+        with ZipFile(file) as zipf:
+            zipf.extractall(file.parent)
+        file = file.with_suffix(".json")
+
     with file.open("r", encoding="utf-8") as f:
         data: dict = json.load(f)
 
@@ -88,14 +114,19 @@ def load(file: Path, remove_after=False):
     if data.pop("arrays"):
         npz_file = file.with_suffix(".npz")
         if (backend := data.pop("backend")) != math.backend_name:
+            if was_zipped:
+                npz_file.unlink()
+                file.unlink()
             raise TypeError(
                 f"Data serialized with {backend} backend, cannot deserialize to the currently active {math.backend_name} backend"
             )
         data.update(**{k: math.astensor(v) for k, v in np.load(npz_file).items()})
-        if remove_after:
+        if remove_after or was_zipped:
             npz_file.unlink()
 
-    if remove_after:
+    if remove_after or was_zipped:
         file.unlink()
+        if remove_after and was_zipped:
+            file.with_suffix(".zip").unlink()
 
     return cls.deserialize(data)

@@ -287,10 +287,20 @@ class TestCircuit:
         r1 += "\n\n"
         assert repr(circ1) == r1
 
-    def test_serialize_makes_two_files(self, tmpdir):
+    def test_serialize_makes_zip(self, tmpdir):
         """Test that serialize makes a JSON and a zip."""
         settings.CACHE_DIR = tmpdir
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         path = circ.serialize()
-        assert sorted(path.parent.glob("*")) == [path, path.with_suffix(".npz")]
+        assert list(path.parent.glob("*")) == [path]
+        assert path.suffix == ".zip"
+
         assert load(path) == circ
+        assert list(path.parent.glob("*")) == [path]
+
+    def test_serialize_custom_name(self, tmpdir):
+        """Test that circuits can be serialized with custom names."""
+        settings.CACHE_DIR = tmpdir
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        path = circ.serialize(filename="custom_name")
+        assert path.name == "custom_name.zip"

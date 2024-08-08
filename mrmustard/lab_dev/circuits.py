@@ -430,11 +430,11 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
-    def serialize(self):
+    def serialize(self, filename=None):
         r"""Serialize a Circuit."""
         components, data = list(zip(*[c.serialize() for c in self.components]))
         arrays = {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs}
-        return save(type(self), arrays=arrays, components=components)
+        return save(type(self), filename=filename, arrays=arrays, components=components)
 
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
