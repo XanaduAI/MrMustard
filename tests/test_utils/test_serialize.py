@@ -75,7 +75,7 @@ class TestSerialize:
         """Test basic save and load functionality."""
         path = save(Dummy, val=5, word="hello")
         assert path.exists() and path.parent == settings.CACHE_DIR
-        with path.open() as f:
+        with path.open("r", encoding="utf-8") as f:
             assert json.load(f) == {
                 "class": f"{Dummy.__module__}.{Dummy.__qualname__}",
                 "version": __version__,
