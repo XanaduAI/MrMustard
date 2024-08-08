@@ -57,11 +57,11 @@ def save(cls: type, arrays=None, **data) -> Path:
     if arrays:
         if overlap := set(arrays).intersection(set(data)):
             raise ValueError(f"Arrays cannot have the same name as generic data: {overlap}")
-        backend = math.backend_name
-        npz = file.with_suffix(".npz")
-        np.savez(npz, **{k: math.asnumpy(v) for k, v in arrays.items()})
-        data["arrays"] = str(npz)
-        data["backend"] = backend
+        np.savez(file.with_suffix(".npz"), **{k: math.asnumpy(v) for k, v in arrays.items()})
+        data["arrays"] = True
+        data["backend"] = math.backend_name
+    else:
+        data["arrays"] = False
 
     with file.open("w", encoding="utf-8") as f:
         json.dump(data, f)
@@ -80,21 +80,22 @@ def load(file: Path, remove_after=False):
     """
     file = Path(file)
     with file.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+        data: dict = json.load(f)
 
     cls = locate(data.pop("class"))
     _ = data.pop("version")
 
-    if "arrays" in data:
-        npz_file = data.pop("arrays")
+    if data.pop("arrays"):
+        npz_file = file.with_suffix(".npz")
         if (backend := data.pop("backend")) != math.backend_name:
             raise TypeError(
                 f"Data serialized with {backend} backend, cannot deserialize to the currently active {math.backend_name} backend"
             )
         data.update(**{k: math.astensor(v) for k, v in np.load(npz_file).items()})
         if remove_after:
-            Path(npz_file).unlink()
+            npz_file.unlink()
 
     if remove_after:
         file.unlink()
+
     return cls.deserialize(data)

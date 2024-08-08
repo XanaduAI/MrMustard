@@ -79,6 +79,7 @@ class TestSerialize:
             assert json.load(f) == {
                 "class": f"{Dummy.__module__}.{Dummy.__qualname__}",
                 "version": __version__,
+                "arrays": False,
                 "val": 5,
                 "word": "hello",
             }
