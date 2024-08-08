@@ -22,10 +22,7 @@ from uuid import uuid4
 
 import numpy as np
 
-from mrmustard import math
-
-
-CACHE = Path(__file__).parents[2].absolute() / ".serialize_cache"
+from mrmustard import math, settings
 
 
 def save(cls: type, arrays=None, **data) -> Path:
@@ -54,7 +51,7 @@ def save(cls: type, arrays=None, **data) -> Path:
     Returns:
         Path: the path to the saved object, to be retrieved later with ``load``
     """
-    file = CACHE / f"{cls.__qualname__}_{uuid4().hex}.json"  # random filename
+    file = settings.CACHE_DIR / f"{cls.__qualname__}_{uuid4().hex}.json"  # random filename
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
 
     if arrays:
@@ -104,18 +101,13 @@ def get_zipfile(name: str = None) -> Path:
     Returns a randomly named zipfile in the cache folder. If a name is
     provided, returns a Path for that base name in the cache folder.
     """
-    return CACHE / (name or f"collection_{uuid4().hex}.zip")
+    return settings.CACHE_DIR / (name or f"collection_{uuid4().hex}.zip")
 
 
 @contextmanager
 def cache_subdir(name=None):
     r"""Context manager to have calls to ``save`` write to a cache subdirectory."""
-    global CACHE  # pylint:disable=global-statement
-    if not name:
-        name = f"subcache_{uuid4().hex}"
-
-    old_cache = CACHE
-    CACHE /= name
-    CACHE.mkdir()
-    yield CACHE
-    CACHE = old_cache
+    old_cache = settings.CACHE_DIR
+    settings.CACHE_DIR = old_cache / (name or f"subcache_{uuid4().hex}")
+    yield settings.CACHE_DIR
+    settings.CACHE_DIR = old_cache

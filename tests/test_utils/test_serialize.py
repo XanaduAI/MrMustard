@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev import Circuit, Coherent, Dgate
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
@@ -71,25 +71,23 @@ class DummyTwoNP:
         return cls(**data)
 
 
-@pytest.fixture(name="cache_dir")
-def fixture_cache_dir(tmpdir, monkeypatch):
-    """Mock the serialization cache using tmpdir, and return the new cache folder."""
-    cache = Path(tmpdir)
-    monkeypatch.setattr("mrmustard.utils.serialize.CACHE", cache)
-    return cache
+@pytest.fixture(autouse=True)
+def cache_dir(tmpdir):
+    """Set the serialization cache using tmpdir."""
+    settings.CACHE_DIR = tmpdir
 
 
 class TestSerialize:
     """Test the serialize module."""
 
-    def test_basic(self, cache_dir):
+    def test_basic(self):
         """Test basic save and load functionality."""
         path = save(Dummy, val=5, word="hello")
-        assert path.exists() and path.parent == cache_dir
+        assert path.exists() and path.parent == settings.CACHE_DIR
         assert load(path) == Dummy(val=5, word="hello")
-        assert not list(cache_dir.glob("*"))  # removed by load
+        assert not list(settings.CACHE_DIR.glob("*"))  # removed by load
 
-    def test_one_numpy_obj(self, cache_dir):
+    def test_one_numpy_obj(self):
         """Test save and load functionality with numpy data."""
         path = save(DummyOneNP, name="myname", arrays={"array": np.array([1.1, 2.2])})
         assert path.exists() and path.with_suffix(".npz").exists()
@@ -98,9 +96,9 @@ class TestSerialize:
         assert isinstance(loaded, DummyOneNP)
         assert loaded.name == "myname"
         assert np.array_equal(loaded.array, np.array([1.1, 2.2]))
-        assert not list(cache_dir.glob("*"))
+        assert not list(settings.CACHE_DIR.glob("*"))
 
-    def test_two_numpy_obj(self, cache_dir):
+    def test_two_numpy_obj(self):
         """Test save and load functionality with more numpy data."""
         a1 = np.array([1.1, 2.2])
         a2 = np.array([3.3 + 4.4j, 5.5 + 6.6j])
@@ -112,7 +110,7 @@ class TestSerialize:
         assert loaded.name == "myname"
         assert np.array_equal(loaded.array1, a1)
         assert np.array_equal(loaded.array2, a2)
-        assert not list(cache_dir.glob("*"))
+        assert not list(settings.CACHE_DIR.glob("*"))
 
     def test_overlap_forbidden(self):
         """Test that array names must be distinct from non-array names."""
@@ -121,16 +119,16 @@ class TestSerialize:
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
 
-    def test_tensorflow_support(self, cache_dir):
+    def test_tensorflow_support(self):
         """Test that TensorFlow data is supported."""
         skip_np()
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert tf.is_tensor(loaded.array)
         assert np.array_equal(loaded.array, x)
-        assert not list(cache_dir.glob("*"))
+        assert not list(settings.CACHE_DIR.glob("*"))
 
-    def test_backend_change_error(self, cache_dir, monkeypatch):
+    def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
         skip_np()
         x = math.astensor([1.1, 2.2])
@@ -142,29 +140,29 @@ class TestSerialize:
             match="Data serialized with tensorflow backend, cannot deserialize to the currently active numpy backend",
         ):
             load(path)
-        assert sorted(cache_dir.glob("*")) == [path, path.with_suffix(".npz")]
+        assert sorted(settings.CACHE_DIR.glob("*")) == [path, path.with_suffix(".npz")]
 
 
 class TestHelpers:
     """Test various helper functions from the serialize module."""
 
-    def test_get_zipfile(self, cache_dir):
+    def test_get_zipfile(self):
         """Test the get_zipfile helper."""
         result = get_zipfile()
         assert not result.exists()  # it doesn't make the file
-        assert result.parent == cache_dir
+        assert result.parent == settings.CACHE_DIR
         assert re.match(r"^collection_[a-f0-9]{32}\.zip$", result.name)
 
-        assert get_zipfile("myfile.zip") == cache_dir / "myfile.zip"
+        assert get_zipfile("myfile.zip") == settings.CACHE_DIR / "myfile.zip"
 
-    def test_cache_subdir_context(self, cache_dir):
+    def test_cache_subdir_context(self):
         """Test the cache_subdir context manager."""
         with cache_subdir() as subdir:
             # something that uses CACHE internally
             assert get_zipfile().parent == subdir
 
-        assert get_zipfile().parent == cache_dir
-        assert subdir.parent == cache_dir
+        assert get_zipfile().parent == settings.CACHE_DIR
+        assert subdir.parent == settings.CACHE_DIR
         assert subdir.exists()
 
 
@@ -178,10 +176,9 @@ class TestHelpers:
         lambda: Bargmann(*Abc_triple(2)),
     ],
 )
-def test_actual_objects(obj, cache_dir):
+def test_actual_objects(obj):
     r"""
     Test that serializing then deserializing a MrMustard object creates an equivalent instance.
     """
     obj = obj()
     assert load(obj.serialize()) == obj
-    assert not list(cache_dir.glob("*"))
