@@ -132,9 +132,15 @@ def complex_gaussian_integral(
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
 
-    c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
+    determinant = math.det(M)
+    if determinant != 0:
+        c_post = (
+            c
+            * math.sqrt((-1) ** n / determinant)
+            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        )
+    else:
+        c_post = math.real(c) * np.inf
 
     if math.asnumpy(not_idx).shape != (0,):
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
