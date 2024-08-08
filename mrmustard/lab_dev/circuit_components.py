@@ -39,6 +39,7 @@ __all__ = ["CircuitComponent"]
 
 
 def modpath(c):
+    """Given an instance of something, return the module string needed by pydoc.locate"""
     t = type(c)
     return f"{t.__module__}.{t.__qualname__}"
 

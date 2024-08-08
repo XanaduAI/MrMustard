@@ -795,7 +795,7 @@ class Fock(Representation):
 
     def serialize(self) -> list[tuple[str, Any]]:
         """Serialize a Fock instance."""
-        return [("array", self.representation.data)]
+        return [("array", self.data)]
 
     @classmethod
     def deserialize(cls, data: dict) -> Fock:
