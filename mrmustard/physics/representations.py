@@ -332,7 +332,7 @@ class Bargmann(Representation):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
-      
+
     def plot(
         self,
         just_phase: bool = False,
