@@ -22,7 +22,7 @@ from uuid import uuid4
 
 import numpy as np
 
-from mrmustard import math, settings
+from mrmustard import math, settings, __version__
 
 
 def save(cls: type, arrays=None, **data) -> Path:
@@ -53,6 +53,7 @@ def save(cls: type, arrays=None, **data) -> Path:
     """
     file = settings.CACHE_DIR / f"{cls.__qualname__}_{uuid4().hex}.json"  # random filename
     data["class"] = f"{cls.__module__}.{cls.__qualname__}"
+    data["version"] = __version__
 
     if arrays:
         if overlap := set(arrays).intersection(set(data)):
@@ -82,6 +83,9 @@ def load(file: Path, remove_after=False):
     with file.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
+    cls = locate(data.pop("class"))
+    _ = data.pop("version")
+
     if "arrays" in data:
         npz_file = data.pop("arrays")
         if (backend := data.pop("backend")) != math.backend_name:
@@ -94,7 +98,7 @@ def load(file: Path, remove_after=False):
 
     if remove_after:
         file.unlink()
-    return locate(data.pop("class")).deserialize(data)
+    return cls.deserialize(data)
 
 
 def get_zipfile(name: str = None) -> Path:

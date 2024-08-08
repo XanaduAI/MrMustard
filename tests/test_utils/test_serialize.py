@@ -15,14 +15,14 @@
 """Test the MrMustard serialization library."""
 
 from dataclasses import dataclass
-from pathlib import Path
+import json
 import re
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
-from mrmustard import math, settings
+from mrmustard import math, settings, __version__
 from mrmustard.lab_dev import Circuit, Coherent, Dgate
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.utils.serialize import save, load, get_zipfile, cache_subdir
@@ -85,6 +85,13 @@ class TestSerialize:
         """Test basic save and load functionality."""
         path = save(Dummy, val=5, word="hello")
         assert path.exists() and path.parent == settings.CACHE_DIR
+        with path.open() as f:
+            assert json.load(f) == {
+                "class": f"{Dummy.__module__}.{Dummy.__qualname__}",
+                "version": __version__,
+                "val": 5,
+                "word": "hello",
+            }
         assert load(path, remove_after=remove_after) == Dummy(val=5, word="hello")
         assert list(settings.CACHE_DIR.glob("*")) == [] if remove_after else [path]
 
