@@ -19,6 +19,7 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
+from inspect import signature
 from pydoc import locate
 from typing import Optional, Sequence, Union, List, Dict, Tuple, Any
 import numbers
@@ -37,12 +38,6 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 
 __all__ = ["CircuitComponent"]
-
-
-def modpath(c):
-    """Given an instance of something, return the module string needed by pydoc.locate"""
-    t = type(c)
-    return f"{t.__module__}.{t.__qualname__}"
 
 
 class CircuitComponent:
@@ -105,18 +100,43 @@ class CircuitComponent:
 
     def serialize(self) -> Tuple[Dict[str, Any], List[Tuple[str, ArrayLike]]]:
         """Inner serialization to be used by Circuit.serialize()."""
-        return {
-            "class": modpath(self),  # mrmustard.lab_dev.submodule.class_name
-            "name": self.name,  # the name
-            "wires": self.wires.to_json(),  # wires as a JSON-serializable string
-            "rep_cls": modpath(self.representation),  # mrmustard.physics.representations.class_name
-        }, self.representation.serialize()
+        cls = type(self)
+        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
+        params = signature(cls).parameters
+        if "name" in params:  # assume abstract type, serialize the representation
+            rep_cls = type(self.representation)
+            serializable["name"] = self.name
+            serializable["wires"] = self.wires.sorted_args
+            serializable["rep_class"] = f"{rep_cls.__module__}.{rep_cls.__qualname__}"
+            return serializable, self.representation.serialize()
+
+        # handle modes parameter
+        if "modes" in params:
+            serializable["modes"] = tuple(self.wires.modes)
+        elif "modes_out" in params and "modes_in" in params:
+            serializable["modes_out"] = tuple(self.wires.args[0] or self.wires.args[2])
+            serializable["modes_in"] = tuple(self.wires.args[1] or self.wires.args[3])
+        else:
+            raise ValueError(f"{cls.__name__} does not seem to have any wires construction method")
+
+        if self.parameter_set:
+            for k, v in self.parameter_set.variables.items():
+                serializable[f"{k}_bounds"] = v.bounds
+                serializable[f"{k}_trainable"] = True
+            return serializable, [
+                (k, v.value) for k, v in self.parameter_set.all_parameters.items()
+            ]
+
+        return serializable, []
 
     @classmethod
     def deserialize(cls, arrays=None, **data) -> CircuitComponent:
         """Deserialization when within a circuit."""
-        rep = locate(data["rep_cls"]).deserialize(arrays)
-        return cls._from_attributes(rep, Wires.from_json(data["wires"]), name=data["name"])
+        if "rep_class" in data:
+            rep = locate(data["rep_class"]).deserialize(arrays)
+            return cls._from_attributes(rep, Wires(*map(set, data["wires"])), name=data["name"])
+
+        return cls(**data, **arrays)
 
     @classmethod
     def _from_attributes(

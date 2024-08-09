@@ -24,6 +24,30 @@ import tensorflow as tf
 from mrmustard import math, settings, __version__
 from mrmustard.utils.serialize import save, load
 
+from mrmustard.lab_dev.circuits import Circuit
+from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS, TraceOut
+from mrmustard.lab_dev.states import (
+    Thermal,
+    Coherent,
+    DisplacedSqueezed,
+    Number,
+    QuadratureEigenstate,
+    SqueezedVacuum,
+    TwoModeSqueezedVacuum,
+    Vacuum,
+)
+from mrmustard.lab_dev.transformations import (
+    BSgate,
+    Dgate,
+    Identity,
+    Rgate,
+    S2gate,
+    Sgate,
+    FockDamping,
+    Amplifier,
+    Attenuator,
+)
+
 from ..conftest import skip_np
 
 
@@ -146,3 +170,40 @@ class TestSerialize:
         assert path.exists() and path.suffix == ".zip"
         load(path, remove_after=True)
         assert not list(settings.CACHE_DIR.glob("*"))
+
+    def test_all_components_serializable(self):
+        """Test that all circuit components are serializable."""
+        circ = Circuit(
+            [
+                Coherent([0], x=1.0),
+                Dgate([0], 0.1),
+                BSgate([1, 2], theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
+                Dgate([0], x=1.1, y=2.2),
+                Identity([1, 2]),
+                Rgate([1, 2], phi=0.1),
+                S2gate([0, 1], 1, 1),
+                Sgate([0], 0.1, 0.2, r_trainable=True),
+                FockDamping([0], damping=0.1),
+                BtoQ([0], np.pi / 2),
+                Amplifier([0], gain=4),
+                Attenuator([1, 2], transmissivity=0.1),
+                BtoPS([0], s=1),
+                TraceOut([0, 1]),
+                Thermal([1, 2], nbar=3),
+                Coherent([0, 1], x=[0.3, 0.4], y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)),
+                DisplacedSqueezed([0], 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
+                Number([0, 1], n=[10, 20]),
+                QuadratureEigenstate([1, 2], x=1, phi=0, phi_trainable=True, phi_bounds=[-1, 1]),
+                SqueezedVacuum([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2),
+                TwoModeSqueezedVacuum([0, 1], r=0.3, phi=0.2),
+                Vacuum([1, 2]),
+            ],
+        )
+        path = circ.serialize()
+        assert list(path.parent.glob("*")) == [path]
+        assert path.suffix == ".zip"
+
+        loaded = load(path)
+        assert loaded == circ
+        assert all(type(a) == type(b) for a, b in zip(circ.components, loaded.components))
+        assert list(path.parent.glob("*")) == [path]

@@ -308,16 +308,6 @@ class Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
         return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
-    def to_json(self) -> str:
-        r"""Serialize a Wires object."""
-        return json.dumps(tuple(tuple(w) for w in self.args))
-
-    @classmethod
-    def from_json(cls, wires: str) -> Wires:
-        r"""Deserialize a Wires object."""
-        mode_tuples = json.loads(wires)
-        return cls(*(set(m) for m in mode_tuples))
-
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
         modes = {modes} if isinstance(modes, int) else set(modes)

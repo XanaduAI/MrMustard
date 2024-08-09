@@ -190,10 +190,3 @@ class TestWires:
         wires._ipython_display_()  # pylint:disable=protected-access
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
-
-    def test_to_and_from_json(self):
-        """Test the serialization methods."""
-        wires = Wires({0}, {}, {3}, {3, 4})
-        wires_str = wires.to_json()
-        assert wires_str == "[[0], [], [3], [3, 4]]"
-        assert Wires.from_json(wires.to_json()) == wires
