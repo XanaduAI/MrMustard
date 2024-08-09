@@ -483,6 +483,8 @@ class TestCircuitComponent:
         """Test that the serializer fails if no modes or name+wires are present."""
 
         class MyComponent(CircuitComponent):
+            """A dummy class without a valid modes kwarg."""
+
             def __init__(self, rep, custom_modes):
                 super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
 
