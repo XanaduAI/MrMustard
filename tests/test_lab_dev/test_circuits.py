@@ -19,7 +19,7 @@
 import pytest
 
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuits import Circuit
+from mrmustard.lab_dev.circuits import Circuit, lookup_path
 from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
 from mrmustard.lab_dev.transformations import (
     BSgate,
@@ -85,7 +85,7 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
 
         circ = Circuit([vac, s01, bs01, bs12])
-        circ.lookup_path()
+        lookup_path(circ)
         out1, _ = capfd.readouterr()
         exp1 = "\n"
         exp1 += "→ index: 0\n"
@@ -104,7 +104,7 @@ class TestCircuit:
         assert out1 == exp1
 
         circ.path += [(0, 1)]
-        circ.lookup_path()
+        lookup_path(circ)
         out2, _ = capfd.readouterr()
         exp2 = "\n"
         exp2 += "→ index: 0\n"

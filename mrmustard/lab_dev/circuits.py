@@ -94,29 +94,31 @@ class Circuit:
         This dictionary is used to propagate the shapes of the components in the circuit.
         """
         if not hasattr(self, "_idxdict"):
-            self._idxdict = self._indices_dict()
+            self._idxdict = {}
+            for i, opA in enumerate(self.components):
+                out_idx = set(opA.wires.output.indices)
+                indices: dict[int, dict[int, int]] = {}
+                for j, opB in enumerate(self.components[i + 1 :]):
+                    ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
+                    ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
+                    if not (ovlp_bra or ovlp_ket):
+                        continue
+                    iA = (
+                        opA.wires.output.bra[ovlp_bra].indices
+                        + opA.wires.output.ket[ovlp_ket].indices
+                    )
+                    iB = (
+                        opB.wires.input.bra[ovlp_bra].indices
+                        + opB.wires.input.ket[ovlp_ket].indices
+                    )
+                    if not out_idx.intersection(iA):
+                        continue
+                    indices[i + j + 1] = dict(zip(iA, iB))
+                    out_idx -= set(iA)
+                    if not out_idx:
+                        break
+                self._idxdict[i] = indices
         return self._idxdict
-
-    def _indices_dict(self):
-        ret = {}
-        for i, opA in enumerate(self.components):
-            out_idx = set(opA.wires.output.indices)
-            indices: dict[int, dict[int, int]] = {}
-            for j, opB in enumerate(self.components[i + 1 :]):
-                ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
-                ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
-                if not (ovlp_bra or ovlp_ket):
-                    continue
-                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
-                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
-                if not out_idx.intersection(iA):
-                    continue
-                indices[i + j + 1] = dict(zip(iA, iB))
-                out_idx -= set(iA)
-                if not out_idx:
-                    break
-            ret[i] = indices
-        return ret
 
     def propagate_shapes(self):
         r"""Propagates the shape information so that the shapes of the components are better
@@ -141,57 +143,43 @@ class Circuit:
             component.manual_shape = list(component.auto_shape())
 
         # update the manual_shapes until convergence
-        changes = self._update_shapes()
+        changes = True
         while changes:
-            changes = self._update_shapes()
+            changes = False
+            # get shapes from neighbors if needed
+            for i, component in enumerate(self.components):
+                for j, indices in self.indices_dict[i].items():
+                    for a, b in indices.items():
+                        s_ia = self.components[i].manual_shape[a]
+                        s_jb = self.components[j].manual_shape[b]
+                        s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
+                        if self.components[j].manual_shape[b] != s:
+                            self.components[j].manual_shape[b] = s
+                            changes = True
+                        if self.components[i].manual_shape[a] != s:
+                            self.components[i].manual_shape[a] = s
+                            changes = True
 
-    def _update_shapes(self) -> bool:
-        r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
-        If two wires are connected and one of them has shape n and the other None, the shape of the
-        wire with None is updated to n. If both wires have a shape, the minimum is taken.
+            # propagate through BSgates
+            for i, component in enumerate(self.components):
+                if isinstance(component, BSgate):
+                    a, b, c, d = component.manual_shape
+                    if c and d:
+                        if not a or a > c + d:
+                            a = c + d
+                            changes = True
+                        if not b or b > c + d:
+                            b = c + d
+                            changes = True
+                    if a and b:
+                        if not c or c > a + b:
+                            c = a + b
+                            changes = True
+                        if not d or d > a + b:
+                            d = a + b
+                            changes = True
 
-        For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
-        the shapes of the outputs.
-
-        It returns True if any shape was updated, False otherwise.
-        """
-        changes = False
-        # get shapes from neighbors if needed
-        for i, component in enumerate(self.components):
-            for j, indices in self.indices_dict[i].items():
-                for a, b in indices.items():
-                    s_ia = self.components[i].manual_shape[a]
-                    s_jb = self.components[j].manual_shape[b]
-                    s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                    if self.components[j].manual_shape[b] != s:
-                        self.components[j].manual_shape[b] = s
-                        changes = True
-                    if self.components[i].manual_shape[a] != s:
-                        self.components[i].manual_shape[a] = s
-                        changes = True
-
-        # propagate through BSgates
-        for i, component in enumerate(self.components):
-            if isinstance(component, BSgate):
-                a, b, c, d = component.manual_shape
-                if c and d:
-                    if not a or a > c + d:
-                        a = c + d
-                        changes = True
-                    if not b or b > c + d:
-                        b = c + d
-                        changes = True
-                if a and b:
-                    if not c or c > a + b:
-                        c = a + b
-                        changes = True
-                    if not d or d > a + b:
-                        d = a + b
-                        changes = True
-
-                self.components[i].manual_shape = [a, b, c, d]
-
-        return changes
+                    self.components[i].manual_shape = [a, b, c, d]
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -219,122 +207,6 @@ class Circuit:
         """
         self.validate_path(value)
         self._path = value
-
-    def lookup_path(self) -> None:
-        r"""
-        An auxiliary function that helps building the contraction path for this circuit.
-
-        Shows the remaining components and the corresponding contraction indices.
-
-        .. code-block::
-
-                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
-
-                >>> vac = Vacuum([0, 1, 2])
-                >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-                >>> bs01 = BSgate([0, 1])
-                >>> bs12 = BSgate([1, 2])
-
-                >>> circ = Circuit([vac, s01, bs01, bs12])
-
-                >>> # ``circ`` has no path: all the components are available, and indexed
-                >>> # as they appear in the list of components
-                >>> circ.lookup_path()
-                <BLANKLINE>
-                → index: 0
-                mode 0:     ◖Vac◗
-                mode 1:     ◖Vac◗
-                mode 2:     ◖Vac◗
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 1
-                mode 0:   ──S(0.1,0.0)
-                mode 1:   ──S(0.2,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 2
-                mode 0:   ──╭•──────────
-                mode 1:   ──╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 3
-                mode 1:   ──╭•──────────
-                mode 2:   ──╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                <BLANKLINE>
-
-                >>> # start building the path
-                >>> circ.path = [(0, 1)]
-                >>> circ.lookup_path()
-                <BLANKLINE>
-                → index: 0
-                mode 0:     ◖Vac◗──S(0.1,0.0)
-                mode 1:     ◖Vac◗──S(0.2,0.0)
-                mode 2:     ◖Vac◗────────────
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 2
-                mode 0:   ──╭•──────────
-                mode 1:   ──╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 3
-                mode 1:   ──╭•──────────
-                mode 2:   ──╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                <BLANKLINE>
-
-                >>> circ.path = [(0, 1), (2, 3)]
-                >>> circ.lookup_path()
-                <BLANKLINE>
-                → index: 0
-                mode 0:     ◖Vac◗──S(0.1,0.0)
-                mode 1:     ◖Vac◗──S(0.2,0.0)
-                mode 2:     ◖Vac◗────────────
-                <BLANKLINE>
-                <BLANKLINE>
-                → index: 2
-                mode 0:   ──╭•────────────────────────
-                mode 1:   ──╰BS(0.0,0.0)──╭•──────────
-                mode 2:                 ──╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                <BLANKLINE>
-
-                >>> circ.path = [(0, 1), (2, 3), (0, 2)]
-                >>> circ.lookup_path()
-                <BLANKLINE>
-                → index: 0
-                mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
-                mode 1:     ◖Vac◗──S(0.2,0.0)──╰BS(0.0,0.0)──╭•──────────
-                mode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)
-                <BLANKLINE>
-                <BLANKLINE>
-                <BLANKLINE>
-
-
-        Raises:
-            ValueError: If ``circuit.path`` contains invalid contractions.
-        """
-        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
-        for idx0, idx1 in self.path:
-            try:
-                left = remaining[idx0].components
-                right = remaining.pop(idx1).components
-                remaining[idx0] = Circuit(left + right)
-            except KeyError as e:
-                wrong_key = idx0 if idx0 not in remaining else idx1
-                msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
-                raise ValueError(msg) from e
-
-        msg = "\n"
-        for idx, circ in remaining.items():
-            msg += f"→ index: {idx}"
-            msg += f"{circ}\n"
-
-        print(msg)
 
     def make_path(self, strategy: str = "l2r") -> None:
         r"""
@@ -624,3 +496,120 @@ class Circuit:
             ret += "\n\n"
 
         return ret
+
+
+def lookup_path(circuit: Circuit) -> None:
+    r"""
+    An auxiliary function that helps building the contraction path for this circuit.
+
+    Shows the remaining components and the corresponding contraction indices.
+
+    .. code-block:: pycon
+
+        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+
+        >>> vac = Vacuum([0, 1, 2])
+        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
+        >>> bs01 = BSgate([0, 1])
+        >>> bs12 = BSgate([1, 2])
+
+        >>> circ = Circuit([vac, s01, bs01, bs12])
+
+        >>> # ``circ`` has no path: all the components are available, and indexed
+        >>> # as they appear in the list of components
+        >>> lookup_path(circ)
+        <BLANKLINE>
+        → index: 0
+        mode 0:     ◖Vac◗
+        mode 1:     ◖Vac◗
+        mode 2:     ◖Vac◗
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 1
+        mode 0:   ──S(0.1,0.0)
+        mode 1:   ──S(0.2,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 2
+        mode 0:   ──╭•──────────
+        mode 1:   ──╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 3
+        mode 1:   ──╭•──────────
+        mode 2:   ──╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        <BLANKLINE>
+
+        >>> # start building the path
+        >>> circ.path = [(0, 1)]
+        >>> lookup_path(circ)
+        <BLANKLINE>
+        → index: 0
+        mode 0:     ◖Vac◗──S(0.1,0.0)
+        mode 1:     ◖Vac◗──S(0.2,0.0)
+        mode 2:     ◖Vac◗────────────
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 2
+        mode 0:   ──╭•──────────
+        mode 1:   ──╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 3
+        mode 1:   ──╭•──────────
+        mode 2:   ──╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        <BLANKLINE>
+
+        >>> circ.path = [(0, 1), (2, 3)]
+        >>> lookup_path(circ)
+        <BLANKLINE>
+        → index: 0
+        mode 0:     ◖Vac◗──S(0.1,0.0)
+        mode 1:     ◖Vac◗──S(0.2,0.0)
+        mode 2:     ◖Vac◗────────────
+        <BLANKLINE>
+        <BLANKLINE>
+        → index: 2
+        mode 0:   ──╭•────────────────────────
+        mode 1:   ──╰BS(0.0,0.0)──╭•──────────
+        mode 2:                 ──╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        <BLANKLINE>
+
+        >>> circ.path = [(0, 1), (2, 3), (0, 2)]
+        >>> lookup_path(circ)
+        <BLANKLINE>
+        → index: 0
+        mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
+        mode 1:     ◖Vac◗──S(0.2,0.0)──╰BS(0.0,0.0)──╭•──────────
+        mode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)
+        <BLANKLINE>
+        <BLANKLINE>
+        <BLANKLINE>
+
+
+    Raises:
+        ValueError: If ``circuit.path`` contains invalid contractions.
+    """
+    remaining = {i: Circuit([c]) for i, c in enumerate(circuit.components)}
+    for idx0, idx1 in circuit.path:
+        try:
+            left = remaining[idx0].components
+            right = remaining.pop(idx1).components
+            remaining[idx0] = Circuit(left + right)
+        except KeyError as e:
+            wrong_key = idx0 if idx0 not in remaining else idx1
+            msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
+            raise ValueError(msg) from e
+
+    msg = "\n"
+    for idx, circ in remaining.items():
+        msg += f"→ index: {idx}"
+        msg += f"{circ}\n"
+
+    print(msg)
