@@ -226,7 +226,7 @@ def sauron_state_Abc(n: int, epsilon: float):
     ring of coherent states.
 
     Args:
-        n: number of photons
+        n: The number of photons.
         epsilon: size of the ring. The approximation is exact in the limit for epsilon that goes to zero
 
     Returns:
