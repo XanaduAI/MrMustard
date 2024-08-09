@@ -34,7 +34,7 @@ class Sauron(Ket):
         epsilon: The radius of the ring of coherent states, default is 0.1.
     """
 
-    def __init__(self, modes, n, epsilon=0.1):
+    def __init__(self, modes: Sequence[int], n: int, epsilon=0.1):
         super().__init__(name=f"Sauron-{n}", modes=modes)
         self._representation = Bargmann.from_function(
             triples.sauron_state_Abc, n=n, epsilon=epsilon
