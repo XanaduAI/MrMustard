@@ -430,11 +430,25 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
-    def serialize(self, filename=None):
-        r"""Serialize a Circuit."""
+    def serialize(self, filestem=None):
+        r"""
+        Serialize a Circuit.
+
+        Keyword Args:
+            filestem (str): An optional name to give the resulting file saved to disk.
+
+        All components must implement the following in order to serialize correctly:
+
+        .. code-block:: python
+
+            def serialize(self) -> Tuple[Dict[str, Any], List[Tuple[str, arraylike]]]
+
+        The first part should be a JSON-serializable dict, and the second part should
+        contain the (non-JSON-serializable) array-like data to be collected separately.
+        """
         components, data = list(zip(*[c.serialize() for c in self.components]))
         arrays = {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs}
-        return save(type(self), filename=filename, arrays=arrays, components=components)
+        return save(type(self), filename=filestem, arrays=arrays, components=components)
 
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
@@ -448,8 +462,8 @@ class Circuit:
 
         return cls(
             [
-                locate(cls_str).deserialize(rep_str, arrs, wires_str, name)
-                for arrs, (cls_str, name, wires_str, rep_str) in zip(arrays, comps)
+                locate(comp_data.pop("class")).deserialize(arrays=arrs, **comp_data)
+                for arrs, comp_data in zip(arrays, comps)
             ]
         )
 

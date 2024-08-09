@@ -45,7 +45,7 @@ def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
     Args:
         cls (type): The object type being serialized
 
-    Kwargs:
+    Keyword Args:
         filename (str): A custom filename to save the data to
         do_zip (bool): If arrays are provided, zip results
         arrays (Dict[str, NDArray]): A dict of array-like objects to be serialized

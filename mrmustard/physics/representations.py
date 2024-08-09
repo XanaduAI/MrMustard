@@ -24,6 +24,7 @@ from typing import Any, Callable, Iterable, Union
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import ArrayLike
 
 from IPython.display import display
 
@@ -99,7 +100,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def serialize(self) -> list[tuple[str, Any]]:
+    def serialize(self) -> list[tuple[str, ArrayLike]]:
         r"""Serialize a Representation."""
 
     @classmethod
@@ -525,7 +526,7 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def serialize(self) -> list[tuple[str, Any]]:
+    def serialize(self) -> list[tuple[str, ArrayLike]]:
         """Serialize a Bargmann instance."""
         return [("A", self.A), ("b", self.b), ("c", self.c)]
 
@@ -793,7 +794,7 @@ class Fock(Representation):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
-    def serialize(self) -> list[tuple[str, Any]]:
+    def serialize(self) -> list[tuple[str, ArrayLike]]:
         """Serialize a Fock instance."""
         return [("array", self.data)]
 

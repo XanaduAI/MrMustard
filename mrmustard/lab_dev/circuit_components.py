@@ -20,11 +20,12 @@ A base class for the components of quantum circuits.
 from __future__ import annotations
 
 from pydoc import locate
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, List, Dict, Tuple, Any
 import numbers
 from functools import cached_property
 
 import numpy as np
+from numpy.typing import ArrayLike
 import ipywidgets as widgets
 from IPython.display import display
 
@@ -102,20 +103,20 @@ class CircuitComponent:
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
 
-    def serialize(self):
+    def serialize(self) -> Tuple[Dict[str, Any], List[Tuple[str, ArrayLike]]]:
         """Inner serialization to be used by Circuit.serialize()."""
-        return (
-            modpath(self),  # mrmustard.lab_dev.submodule.class_name
-            self.name,  # the name
-            self.wires.to_json(),  # wires as a JSON-serializable string
-            modpath(self.representation),  # mrmustard.physics.representations.class_name
-        ), self.representation.serialize()
+        return {
+            "class": modpath(self),  # mrmustard.lab_dev.submodule.class_name
+            "name": self.name,  # the name
+            "wires": self.wires.to_json(),  # wires as a JSON-serializable string
+            "rep_cls": modpath(self.representation),  # mrmustard.physics.representations.class_name
+        }, self.representation.serialize()
 
     @classmethod
-    def deserialize(cls, rep_str, rep_data, wires_str, name) -> CircuitComponent:
+    def deserialize(cls, arrays=None, **data) -> CircuitComponent:
         """Deserialization when within a circuit."""
-        rep = locate(rep_str).deserialize(rep_data)
-        return cls._from_attributes(rep, Wires.from_json(wires_str), name=name)
+        rep = locate(data["rep_cls"]).deserialize(arrays)
+        return cls._from_attributes(rep, Wires.from_json(data["wires"]), name=data["name"])
 
     @classmethod
     def _from_attributes(

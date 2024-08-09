@@ -302,5 +302,5 @@ class TestCircuit:
         """Test that circuits can be serialized with custom names."""
         settings.CACHE_DIR = tmpdir
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
-        path = circ.serialize(filename="custom_name")
+        path = circ.serialize(filestem="custom_name")
         assert path.name == "custom_name.zip"
