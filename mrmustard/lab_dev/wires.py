@@ -15,7 +15,6 @@
 """``Wires`` class for supporting tensor network functionalities."""
 
 from __future__ import annotations
-import json
 from functools import cached_property
 from typing import Optional
 import numpy as np
