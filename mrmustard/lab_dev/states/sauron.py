@@ -31,7 +31,7 @@ class Sauron(Ket):
     Args:
         modes: The modes of the Sauron state.
         n: The Fock state that is approximated.
-        r: The radius of the ring of coherent states, default is 0.1.
+        epsilon: The radius of the ring of coherent states, default is 0.1.
     """
 
     def __init__(self, modes, n, epsilon=0.1):
