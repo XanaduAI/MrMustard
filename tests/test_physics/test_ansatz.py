@@ -366,7 +366,7 @@ class TestArrayAnsatz:
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann(batched=True)
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
         (
             new_state_cov,
             new_state_means,
@@ -389,14 +389,14 @@ class TestArrayAnsatz:
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann(batched=True)
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
         (
             new_state_cov1,
             new_state_means1,
             new_state_coeff1,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
-        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann(
+        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann_triple(
             batched=True
         )  # pylint: disable=protected-access
         (

@@ -71,7 +71,10 @@ class CircuitComponent:
             wires = [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
             modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = wires
             self._wires = Wires(
-                set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+                set(modes_out_bra),
+                set(modes_in_bra),
+                set(modes_out_ket),
+                set(modes_in_ket),
             )
 
             # handle out-of-order modes
@@ -183,7 +186,7 @@ class CircuitComponent:
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
-    def bargmann(
+    def bargmann_triple(
         self, batched: bool = False
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
@@ -197,7 +200,7 @@ class CircuitComponent:
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
             >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann(), modes_out_ket=[0])
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
@@ -439,7 +442,7 @@ class CircuitComponent:
             )
 
         try:
-            As, bs, cs = self.bargmann(batched=True)
+            As, bs, cs = self.bargmann_triple(batched=True)
             arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
         except AttributeError:
             arrays = self.representation.reduce(shape).array

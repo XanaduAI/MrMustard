@@ -122,7 +122,7 @@ class TestBtoPS:
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann()
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -150,7 +150,7 @@ class TestBtoPS:
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann()
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)

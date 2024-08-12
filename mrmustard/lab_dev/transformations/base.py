@@ -195,7 +195,7 @@ class Unitary(Operation):
         c = complex(1)  # TODO: to be change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
-        _, _, c_prime = v.bargmann()
+        _, _, c_prime = v.bargmann_triple()
         c = 1 / math.sqrt(c_prime)
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
