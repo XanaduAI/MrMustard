@@ -604,19 +604,14 @@ class CircuitComponent:
             rep = rep.reorder(perm) if perm else rep
             return CircuitComponent._from_attributes(rep, wires_result, None)
 
-        self_shape = list(self.auto_shape())
-        other_shape = list(other.auto_shape())
-        for z, zc in zip(idx_z, idx_zconj):
-            self_shape[z] = min(self_shape[z], other_shape[zc])
-            other_shape[zc] = self_shape[z]
 
         if isinstance(self.representation, Fock):
-            self_rep = self.to_bargmann()
+            self_rep = self.to_bargmann().representation
         else:
             self_rep = self.representation
 
         if isinstance(other.representation, Fock):
-            other_rep = other.to_bargmann()
+            other_rep = other.to_bargmann().representation
         else: 
             other_rep = other.representation
 
