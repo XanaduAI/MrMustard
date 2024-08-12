@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Union, Optional
+from typing import Any, Callable, Union, Optional, Sequence
+from warnings import warn
 
 import numpy as np
 
@@ -1169,13 +1170,6 @@ class ArrayAnsatz(Ansatz):
         self._backend_array = False
 
     @property
-    def batch_size(self):
-        r"""
-        The batch size of this ansatz.
-        """
-        return self.array.shape[0]
-
-    @property
     def array(self) -> Batch[Tensor]:
         r"""
         The array of this ansatz.
@@ -1190,6 +1184,20 @@ class ArrayAnsatz(Ansatz):
     def array(self, value):
         self._array = value
         self._backend_array = False
+
+    @property
+    def batch_size(self):
+        r"""
+        The batch size of this ansatz.
+        """
+        return self.array.shape[0]
+
+    @property
+    def conj(self):
+        r"""
+        The conjugate of this ansatz.
+        """
+        return self.__class__(math.conj(self.array))
 
     @property
     def num_vars(self) -> int:
@@ -1208,6 +1216,35 @@ class ArrayAnsatz(Ansatz):
         ret._kwargs = kwargs
         return ret
 
+    def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
+        r"""
+        Returns a new ``ArrayAnsatz`` with a sliced array.
+
+        Args:
+            shape: The shape of the array of the returned ``ArrayAnsatz``.
+        """
+        if shape == self.array.shape[1:]:
+            return self
+        length = self.num_vars
+        shape = (shape,) * length if isinstance(shape, int) else shape
+        if len(shape) != length:
+            msg = f"Expected shape of length {length}, "
+            msg += f"given shape has length {len(shape)}."
+            raise ValueError(msg)
+
+        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+            warn(
+                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
+            )
+            padded = math.pad(
+                self.array,
+                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+            )
+            return ArrayAnsatz(padded)
+
+        ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
+        return ArrayAnsatz(array=ret, batched=True)
+
     def _generate_ansatz(self):
         r"""
         This method computes and sets the array given a function
@@ -1215,24 +1252,6 @@ class ArrayAnsatz(Ansatz):
         """
         if self._array is None:
             self.array = [self._fn(**self._kwargs)]
-
-    def __neg__(self) -> ArrayAnsatz:
-        r"""
-        Negates the values in the array.
-        """
-        return self.__class__(array=-self.array)
-
-    def __eq__(self, other: Ansatz) -> bool:
-        r"""
-        Whether this ansatz's array is equal to another ansatz's array.
-
-        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
-
-        """
-        slices = (slice(0, None),) + tuple(
-            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
-        )
-        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""
@@ -1248,10 +1267,32 @@ class ArrayAnsatz(Ansatz):
             ArrayAnsatz: The addition of this ansatz and other.
         """
         try:
-            new_array = [a + b for a in self.array for b in other.array]
+            diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+            if diff < 0:
+                new_array = [
+                    a + b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                ]
+            else:
+                new_array = [
+                    a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                ]
             return self.__class__(array=new_array)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+
+    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+        r"""
+        Tensor product of this ansatz with another ansatz.
+
+        Args:
+            other: Another ansatz.
+
+        Returns:
+            The tensor product of this ansatz and other.
+            Batch size is the product of two batches.
+        """
+        new_array = [math.outer(a, b) for a in self.array for b in other.array]
+        return self.__class__(array=new_array)
 
     def __call__(self, point: Any) -> Scalar:
         r"""
@@ -1259,27 +1300,17 @@ class ArrayAnsatz(Ansatz):
         """
         raise AttributeError("Cannot plot ArrayAnsatz.")
 
-    def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+    def __eq__(self, other: Ansatz) -> bool:
         r"""
-        Divides this ansatz by another ansatz.
+        Whether this ansatz's array is equal to another ansatz's array.
 
-        Args:
-            other: A scalar or another ansatz.
+        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
 
-        Raises:
-            ValueError: If the arrays don't have the same shape.
-
-        Returns:
-            ArrayAnsatz: The division of this ansatz and other.
         """
-        if isinstance(other, ArrayAnsatz):
-            try:
-                new_array = [a / b for a in self.array for b in other.array]
-                return self.__class__(array=new_array)
-            except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
-        else:
-            return self.__class__(array=self.array / other)
+        slices = (slice(0, None),) + tuple(
+            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+        )
+        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
         r"""
@@ -1296,33 +1327,56 @@ class ArrayAnsatz(Ansatz):
         """
         if isinstance(other, ArrayAnsatz):
             try:
-                new_array = [a * b for a in self.array for b in other.array]
+                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+                if diff < 0:
+                    new_array = [
+                        a * b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                    ]
+                else:
+                    new_array = [
+                        a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                    ]
                 return self.__class__(array=new_array)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
             return self.__class__(array=self.array * other)
 
-    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+    def __neg__(self) -> ArrayAnsatz:
         r"""
-        Tensor product of this ansatz with another ansatz.
+        Negates the values in the array.
+        """
+        return self.__class__(array=-self.array)
+
+    def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+        r"""
+        Divides this ansatz by another ansatz.
 
         Args:
-            other: Another ansatz.
+            other: A scalar or another ansatz.
+
+        Raises:
+            ValueError: If the arrays don't have the same shape.
 
         Returns:
-            The tensor product of this ansatz and other.
-            Batch size is the product of two batches.
+            ArrayAnsatz: The division of this ansatz and other.
         """
-        new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return self.__class__(array=new_array)
-
-    @property
-    def conj(self):
-        r"""
-        The conjugate of this ansatz.
-        """
-        return self.__class__(math.conj(self.array))
+        if isinstance(other, ArrayAnsatz):
+            try:
+                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+                if diff < 0:
+                    new_array = [
+                        a / b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                    ]
+                else:
+                    new_array = [
+                        a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                    ]
+                return self.__class__(array=new_array)
+            except Exception as e:
+                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+        else:
+            return self.__class__(array=self.array / other)
 
 
 def bargmann_Abc_to_phasespace_cov_means(
