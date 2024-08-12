@@ -13,11 +13,9 @@
 # limitations under the License.
 
 """
-A set of components that do not correspond to physical elements of a circuit, but can be used to
-perform useful mathematical calculations.
+Convenience and helper functions for working with circuits.
 """
 
-from .b_to_ps import *
-from .b_to_q import *
-from .trace_out import *
-from .circuit_drawing import *
+from .indices_dict import indices_dict
+from .graph import build_graph
+from .shapes import propagate_component_shapes

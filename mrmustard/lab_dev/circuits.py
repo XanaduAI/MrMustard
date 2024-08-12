@@ -22,9 +22,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import Optional, Sequence, Union
-from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.transformations import BSgate
+from mrmustard.lab_dev.circuit_components_utils import component_to_str, control_gates
+from mrmustard.lab_dev.circuits_utils import indices_dict, build_graph, propagate_component_shapes
 
 __all__ = ["Circuit"]
 
@@ -94,30 +94,7 @@ class Circuit:
         This dictionary is used to propagate the shapes of the components in the circuit.
         """
         if not hasattr(self, "_idxdict"):
-            self._idxdict = {}
-            for i, opA in enumerate(self.components):
-                out_idx = set(opA.wires.output.indices)
-                indices: dict[int, dict[int, int]] = {}
-                for j, opB in enumerate(self.components[i + 1 :]):
-                    ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
-                    ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
-                    if not (ovlp_bra or ovlp_ket):
-                        continue
-                    iA = (
-                        opA.wires.output.bra[ovlp_bra].indices
-                        + opA.wires.output.ket[ovlp_ket].indices
-                    )
-                    iB = (
-                        opB.wires.input.bra[ovlp_bra].indices
-                        + opB.wires.input.ket[ovlp_ket].indices
-                    )
-                    if not out_idx.intersection(iA):
-                        continue
-                    indices[i + j + 1] = dict(zip(iA, iB))
-                    out_idx -= set(iA)
-                    if not out_idx:
-                        break
-                self._idxdict[i] = indices
+            self._idxdict = indices_dict(self.components)
         return self._idxdict
 
     def propagate_shapes(self):
@@ -138,48 +115,7 @@ class Circuit:
         >>> circ.propagate_shapes()
         >>> assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
         """
-
-        for component in self:
-            component.manual_shape = list(component.auto_shape())
-
-        # update the manual_shapes until convergence
-        changes = True
-        while changes:
-            changes = False
-            # get shapes from neighbors if needed
-            for i, component in enumerate(self.components):
-                for j, indices in self.indices_dict[i].items():
-                    for a, b in indices.items():
-                        s_ia = self.components[i].manual_shape[a]
-                        s_jb = self.components[j].manual_shape[b]
-                        s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                        if self.components[j].manual_shape[b] != s:
-                            self.components[j].manual_shape[b] = s
-                            changes = True
-                        if self.components[i].manual_shape[a] != s:
-                            self.components[i].manual_shape[a] = s
-                            changes = True
-
-            # propagate through BSgates
-            for i, component in enumerate(self.components):
-                if isinstance(component, BSgate):
-                    a, b, c, d = component.manual_shape
-                    if c and d:
-                        if not a or a > c + d:
-                            a = c + d
-                            changes = True
-                        if not b or b > c + d:
-                            b = c + d
-                            changes = True
-                    if a and b:
-                        if not c or c > a + b:
-                            c = a + b
-                            changes = True
-                        if not d or d > a + b:
-                            d = a + b
-                            changes = True
-
-                    self.components[i].manual_shape = [a, b, c, d]
+        propagate_component_shapes(self.components, self.indices_dict)
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
@@ -252,33 +188,7 @@ class Circuit:
             wires = [(w @ w.adjoint)[0] if bool(w.bra) is False else w for w in wires]
 
         # if the circuit has no graph, compute it
-        if not self._graph:
-            # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
-
-            # populate the graph
-            for w in wires:
-                # if there is a dangling wire, add a contraction
-                for m in w.input.ket.modes:  # ket side
-                    if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
-                        ids_dangling_wires[m]["ket"] = None
-                for m in w.input.bra.modes:  # bra side
-                    if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
-                        ids_dangling_wires[m]["bra"] = None
-
-                # update the dangling wires
-                for m in w.output.ket.modes:  # ket side
-                    if w.output.ket[m].ids:
-                        if ids_dangling_wires[m]["ket"]:
-                            raise ValueError("Dangling wires cannot be overwritten.")
-                        ids_dangling_wires[m]["ket"] = w.output.ket[m].ids[0]
-                for m in w.output.bra.modes:  # bra side
-                    if w.output.bra[m].ids:
-                        if ids_dangling_wires[m]["bra"]:
-                            raise ValueError("Dangling wires cannot be overwritten.")
-                        ids_dangling_wires[m]["bra"] = w.output.bra[m].ids[0]
+        self._graph |= build_graph(wires)
 
         # use ``self._graph`` to validate the path
         remaining = dict(enumerate(wires))
@@ -335,62 +245,11 @@ class Circuit:
         r"""
         A string-based representation of this component.
         """
-
-        def component_to_str(comp: CircuitComponent) -> list[str]:
-            r"""
-            Generates a list string-based representation for the given component.
-
-            If ``comp`` is not a controlled gate, the list contains as many elements modes as in
-            ``comp.modes``. For example, if ``comp=Sgate([0, 1, 5], r=[0.1, 0.2, 0.5])``, it returns
-            ``['Sgate(0.1,0.0)', 'Sgate(0.2,0.0)', 'Sgate(0.5,0.0)']``.
-
-            If ``comp`` is a controlled gate, the list contains the string that needs to be added to
-            the target mode. For example, if``comp=BSgate([0, 1], 1, 2)``, it returns
-            ``['BSgate(0.0,0.0)']``.
-
-            Args:
-                comp: A circuit component.
-            """
-            cc_name = comp.short_name
-            parallel = isinstance(cc_name, list)
-            if not comp.wires.input:
-                cc_names = [
-                    f"◖{cc_name[i] if parallel else cc_name}◗" for i in range(len(comp.modes))
-                ]
-            elif not comp.wires.output:
-                cc_names = [
-                    f"|{cc_name[i] if parallel else cc_name})=" for i in range(len(comp.modes))
-                ]
-            elif cc_name not in control_gates:
-                cc_names = [
-                    f"{cc_name[i] if parallel else cc_name}" for i in range(len(comp.modes))
-                ]
-            else:
-                cc_names = [f"{cc_name}"]
-
-            if comp.parameter_set.names and settings.DRAW_CIRCUIT_PARAMS:
-                values = []
-                for name in comp.parameter_set.names:
-                    param = comp.parameter_set.constants.get(
-                        name
-                    ) or comp.parameter_set.variables.get(name)
-                    new_values = math.atleast_1d(param.value)
-                    if len(new_values) == 1 and cc_name not in control_gates:
-                        new_values = math.tile(new_values, (len(comp.modes),))
-                    values.append(math.asnumpy(new_values))
-                return [
-                    cc_names[i] + str(val).replace(" ", "") for i, val in enumerate(zip(*values))
-                ]
-            return cc_names
-
         if len(self) == 0:
             return ""
 
         modes = set(sorted([m for c in self.components for m in c.modes]))
         n_modes = len(modes)
-
-        # update this when new controlled gates are added
-        control_gates = ["BSgate", "MZgate", "CZgate", "CXgate"]
 
         # create a dictionary ``lines`` mapping modes to the heigth of the corresponding line
         #  in the drawing, where:
