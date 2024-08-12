@@ -223,12 +223,6 @@ def test_reorder_abc():
         np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0, 2], :][:, [1, 0, 2]], b[[1, 0, 2]], c))
     )
 
-    # c = np.array([[6, 7], [8, 9]])
-    # flipped = reorder_abc((A, b, c), (1, 0))  #  test transposition of c
-    # assert all(
-    #     np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
-    # )
-
 
 def test_complex_gaussian_integral_2():
     """Tests the ``complex_gaussian_integral_2`` method."""
