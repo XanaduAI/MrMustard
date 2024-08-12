@@ -33,6 +33,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.triples import identity_Abc
 
 __all__ = ["CircuitComponent"]
 
@@ -478,6 +479,32 @@ class CircuitComponent:
         fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
         fock._original_bargmann_data = self.representation.data
         return self._from_attributes(fock, self.wires, self.name)
+
+    def to_bargmann(self) -> CircuitComponent:
+        r"""
+        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        UPDATE THINGS BELOW
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Fock
+
+            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d_fock = d.to_fock(shape=3)
+
+            >>> assert d_fock.name == d.name
+            >>> assert d_fock.wires == d.wires
+            >>> assert isinstance(d_fock.representation, Fock)
+
+        Args:
+            shape: The shape of the returned representation. If ``shape``is given as
+                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
+                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        """
+        A, b , _ = identity_Abc(self.n_modes)
+        bargmann = Bargmann(A,b,self.representation.data)
+        bargmann._original_fock_data = self.representation.data
+        return self._from_attributes(bargmann, self.wires, self.name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
