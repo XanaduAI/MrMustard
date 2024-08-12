@@ -19,7 +19,8 @@
 
 * Replace IPython `_repr_html_` `mako`-based implementations
   with `ipywidgets` and improve the aesthetics.
-  [(#425)]https://github.com/XanaduAI/MrMustard/pull/425
+  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
+  [(#450)](https://github.com/XanaduAI/MrMustard/pull/450)
 
 * Loosen the upper-bound on `thewalrus` and upgrade it.
   [(#454)](https://github.com/XanaduAI/MrMustard/pull/454)
@@ -34,7 +35,7 @@
   [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
 
 * Fix object visualizations in VS Code Notebooks by using the built-in display tools.
-  [(#425)]https://github.com/XanaduAI/MrMustard/pull/425
+  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
 
 ### Documentation
 
