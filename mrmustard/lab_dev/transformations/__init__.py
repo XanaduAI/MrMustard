@@ -21,6 +21,7 @@ from .attenuator import *
 from .base import *
 from .bsgate import *
 from .dgate import *
+from .fockdamping import *
 from .identity import *
 from .rgate import *
 from .s2gate import *

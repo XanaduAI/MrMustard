@@ -50,8 +50,6 @@ from mrmustard.utils.typing import (
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
-    norm_ket,
-    trace_dm,
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
@@ -338,7 +336,7 @@ class State(CircuitComponent):
         xbounds: tuple[int, int] = (-6, 6),
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -395,7 +393,7 @@ class State(CircuitComponent):
         fig = make_subplots(
             rows=2,
             cols=2,
-            column_widths=[2, 1],
+            column_widths=[5, 3],
             row_heights=[1, 2],
             vertical_spacing=0.05,
             horizontal_spacing=0.05,
@@ -409,12 +407,12 @@ class State(CircuitComponent):
             x=xs,
             y=-ps,
             z=math.transpose(z),
-            colorscale=colorscale,
+            coloraxis="coloraxis",
             name="Wigner function",
             autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
-        fig.update_traces(row=2, col=1, showscale=False)
+        fig.update_traces(row=2, col=1)
         fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
@@ -432,10 +430,11 @@ class State(CircuitComponent):
 
         fig.update_layout(
             height=500,
-            width=500,
+            width=580,
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_xaxes(
             showline=True,
@@ -461,7 +460,7 @@ class State(CircuitComponent):
         xbounds: tuple[int] = (-6, 6),
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -499,7 +498,7 @@ class State(CircuitComponent):
                 x=xs,
                 y=ps,
                 z=z,
-                colorscale=colorscale,
+                coloraxis="coloraxis",
                 hovertemplate="x: %{x:.3f}"
                 + "<br>p: %{y:.3f}"
                 + "<br>W(x, p): %{z:.3f}<extra></extra>",
@@ -512,6 +511,7 @@ class State(CircuitComponent):
             height=500,
             margin=dict(l=0, r=0, b=0, t=0),
             scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
             contours_z=dict(
@@ -626,8 +626,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -656,7 +655,7 @@ class DM(State):
             except AttributeError:  # bargmann
                 repr = self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / trace_dm(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
@@ -828,7 +827,7 @@ class DM(State):
         )  # pylint: disable=protected-access
 
     @classmethod
-    def random(cls, modes, m=None, max_r=1.0):
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -843,10 +842,38 @@ class DM(State):
         max_idx = max(modes)
 
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
-        full_wires = modes + ancilla
+        full_wires = list(modes) + ancilla
 
         psi = Ket.random(full_wires, max_r)
         return psi[modes]
+
+    @property
+    def is_positive(self) -> bool:
+        r"""
+        Whether this DM is a positive operator.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this DM is a physical density operator.
+        """
+        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
 
 class Ket(State):
@@ -872,7 +899,7 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -901,7 +928,7 @@ class Ket(State):
             except AttributeError:  # bargmann
                 repr = self.representation.conj() & self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / norm_ket(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
@@ -1064,17 +1091,16 @@ class Ket(State):
         return result
 
     @classmethod
-    def random(cls, modes, max_r=1.0):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
-        generates random states with 0 displacement, using the random_symplectic funcionality
-        Args: "modes" are the modes where the state is defined on
+        Generates a random zero displacement state.
+
+        Args:
+            modes: The modes of the state.
+            max_r: Maximum squeezing parameter over which we make random choices.
         Output is a Ket
         """
-        # TODO: use __class_getitem_ and sample from broader probabilities
-        # TODO: random any gate
 
-        # generate a random ket repr.
-        # e.g. S = math.random_symplectic(dim) and then apply to vacuum
         m = len(modes)
         S = math.random_symplectic(m, max_r)
         transformation = (
@@ -1097,3 +1123,20 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether the ket object is a physical one.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+
+        A = self.representation.A[0]
+
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            self.probability, 1, settings.ATOL
+        )
