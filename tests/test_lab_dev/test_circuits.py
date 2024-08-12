@@ -304,3 +304,19 @@ class TestCircuit:
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         path = circ.serialize(filestem="custom_name")
         assert path.name == "custom_name.zip"
+
+    def test_path_is_loaded(self, tmpdir):
+        """Test that circuit paths are saved if already evaluated."""
+        settings.CACHE_DIR = tmpdir
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+
+        circ = Circuit([vac, s01, bs01, bs12])
+        assert not load(circ.serialize())._path
+
+        circ.make_path()
+        assert circ._path
+
+        assert load(circ.serialize())._path == circ.path

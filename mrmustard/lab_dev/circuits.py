@@ -447,25 +447,31 @@ class Circuit:
         contain the (non-JSON-serializable) array-like data to be collected separately.
         """
         components, data = list(zip(*[c.serialize() for c in self.components]))
-        arrays = {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs}
-        return save(type(self), filename=filestem, arrays=arrays, components=components)
+        kwargs = {
+            "arrays": {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs},
+            "path": self.path,
+            "components": components,
+        }
+        return save(type(self), filename=filestem, **kwargs)
 
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
         r"""Deserialize a Circuit."""
-        comps = data.pop("components")
+        comps, path = map(data.pop, ("components", "path"))
 
         arrays = [{} for _ in comps]
         for k, v in data.items():
             kwarg, i = k.split(":")
             arrays[int(i)][kwarg] = v
 
-        return cls(
-            [
-                locate(comp_data.pop("class")).deserialize(arrays=arrs, **comp_data)
-                for arrs, comp_data in zip(arrays, comps)
-            ]
-        )
+        components = [
+            locate(comp_data.pop("class")).deserialize(arrays=arrs, **comp_data)
+            for arrs, comp_data in zip(arrays, comps)
+        ]
+        circ = cls(components)
+        if path:  # re-evaluates the hidden `_graph` property
+            circ.path = [tuple(p) for p in path]
+        return circ
 
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
