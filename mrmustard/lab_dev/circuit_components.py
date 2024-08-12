@@ -611,13 +611,14 @@ class CircuitComponent:
             other_shape[zc] = self_shape[z]
 
         if isinstance(self.representation, Fock):
-            self_rep = self.representation.reduce(self_shape)
+            self_rep = self.to_bargmann()
         else:
-            self_rep = self.to_fock(self_shape).representation
+            self_rep = self.representation
+
         if isinstance(other.representation, Fock):
-            other_rep = other.representation.reduce(other_shape)
-        else:
-            other_rep = other.to_fock(other_shape).representation
+            other_rep = other.to_bargmann()
+        else: 
+            other_rep = other.representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
