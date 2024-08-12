@@ -733,6 +733,12 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         If the argument contains None, returns a new ansatz.
         If the argument only contains numbers, returns the value of the ansatz at that argument.
         Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+
+        Args:
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
         """
         if (np.array(z) == None).any():
             return self._call_none(z)
@@ -809,6 +815,15 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
         Helper function for the call_none method. Returns the new triple.
+
+        Args:
+            Ai: The matrix of the Bargmann function
+            bi: The vector of the Bargmann function
+            ci: The polynomial coefficients (or scalar)
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The new Abc triple.
         """
         dim_zi = len(zi)
         dim_beta, _ = self.polynomial_shape
@@ -901,7 +916,6 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
         elif batch_abc == batch_arg:
             for i in range(batch_abc):
-                print(i)
                 Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
         else:
             raise ValueError(
