@@ -425,21 +425,22 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
+        num_vars = self.representation.ansatz.num_vars
         if isinstance(shape, int):
-            shape = (shape,) * self.representation.ansatz.num_vars
-        auto_shape = self.auto_shape()
-        shape = shape or auto_shape
-        if len(shape) != len(auto_shape):
-            raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
-            )
-
+            shape = (shape,) * num_vars
         try:
             As, bs, cs = self.bargmann
             if self.representation.ansatz.polynomial_shape[0] == 0:
+                auto_shape = self.auto_shape()
+                shape = shape or auto_shape
+                if len(shape) != len(auto_shape):
+                    raise ValueError(
+                        f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                    )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
-                num_vars = self.representation.ansatz.num_vars
+                if not shape:
+                    shape = (settings.AUTOCUTOFF_MAX_CUTOFF,) * num_vars
                 arrays = [
                     math.sum(
                         math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
