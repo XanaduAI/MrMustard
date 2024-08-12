@@ -152,6 +152,8 @@ class Wires:
         modes_in_bra: The input modes on the bra side.
         modes_out_ket: The output modes on the ket side.
         modes_in_ket: The input modes on the ket side.
+        classical_out: The output modes for classical information.
+        classical_in: The input modes for classical information.
     """
 
     def __init__(
@@ -160,12 +162,16 @@ class Wires:
         modes_in_bra: Optional[set[int]] = None,
         modes_out_ket: Optional[set[int]] = None,
         modes_in_ket: Optional[set[int]] = None,
+        classical_out: Optional[set[int]] = None,
+        classical_in: Optional[set[int]] = None,
     ) -> None:
         self.args: tuple[set, ...] = (
             modes_out_bra or set(),
             modes_in_bra or set(),
             modes_out_ket or set(),
             modes_in_ket or set(),
+            classical_out or set(),
+            classical_in or set(),
         )
         self._len = None
 
@@ -389,8 +395,8 @@ class Wires:
         """
         if self.original or other.original:
             raise ValueError("cannot contract a subset of wires")
-        A, B, a, b = self.args
-        C, D, c, d = other.args
+        A, B, a, b, e, f = self.args
+        C, D, c, d, g, h = other.args
         sets = (A - D, B, a - d, b, C, D - A, c, d - a)
         if m := sets[0] & sets[4]:
             raise ValueError(f"output bra modes {m} overlap")

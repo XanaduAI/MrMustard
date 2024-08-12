@@ -30,8 +30,8 @@ class TestWires:
     """
 
     def test_init(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
-        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
+        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
 
     def test_ids(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
@@ -73,20 +73,22 @@ class TestWires:
         assert w.input.ket.modes == {3}
 
     def test_index_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4})
-        d = [{0: 0, 1: 1, 2: 2}, {6: 3, 7: 4, 8: 5}, {3: 6, 4: 7}, {4: 8}]
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
+        d = [{0: 0, 1: 1, 2: 2}, {6: 3, 7: 4, 8: 5}, {3: 6, 4: 7}, {4: 8}, {5: 9}, {9: 10}]
 
         assert w.index_dicts == d
         assert w.input.index_dicts == d
         assert w.input.bra.index_dicts == d
 
     def test_ids_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4})
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
         d = [
             {0: w.id, 1: w.id + 1, 2: w.id + 2},
             {6: w.id + 3, 7: w.id + 4, 8: w.id + 5},
             {3: w.id + 6, 4: w.id + 7},
             {4: w.id + 8},
+            {5: w.id + 9},
+            {9: w.id + 10},
         ]
 
         assert w.ids_dicts == d
@@ -169,7 +171,14 @@ class TestWires:
         u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8})
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12})
         new_wires, perm = u @ v
-        assert new_wires.args == ({0, 5, 9, 14}, {2, 6, 10, 15}, {2, 7, 11}, {4, 8, 12})
+        assert new_wires.args == (
+            {0, 5, 9, 14},
+            {2, 6, 10, 15},
+            {2, 7, 11},
+            {4, 8, 12},
+            set(),
+            set(),
+        )
         assert perm == [7, 0, 8, 9, 1, 2, 10, 3, 11, 4, 12, 5, 6, 13]
 
     def test_matmul_keeps_ids(self):
