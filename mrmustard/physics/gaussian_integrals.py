@@ -407,7 +407,7 @@ def join_Abc_poly(
     dim_m1 = A1.shape[-1] - dim_n1
     dim_m2 = A2.shape[-1] - dim_n2
 
-    A12 = np.block(
+    A12 = math.block(
         [
             [
                 math.cast(A1, "complex128")[:dim_m1, :dim_m1],
