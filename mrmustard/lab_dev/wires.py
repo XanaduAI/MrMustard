@@ -278,14 +278,14 @@ class Wires:
     @cached_property
     def input(self) -> Wires:
         r"New ``Wires`` object without output wires."
-        ret = Wires(set(), self.args[1], set(), self.args[3])
+        ret = Wires(set(), self.args[1], set(), self.args[3], set(), self.args[5])
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
     def output(self) -> Wires:
         r"New ``Wires`` object without input wires."
-        ret = Wires(self.args[0], set(), self.args[2], set())
+        ret = Wires(self.args[0], set(), self.args[2], set(), self.args[4], set())
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
@@ -304,20 +304,31 @@ class Wires:
         return ret
 
     @cached_property
+    def classical(self) -> Wires:
+        r"New ``Wires`` object without quantum wires."
+        ret = Wires(set(), set(), set(), set(), self.args[4], self.args[5])
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
     def adjoint(self) -> Wires:
         r"New ``Wires`` object obtained by swapping ket and bra wires."
-        return Wires(self.args[2], self.args[3], self.args[0], self.args[1])
+        return Wires(
+            self.args[2], self.args[3], self.args[0], self.args[1], self.args[4], self.args[5]
+        )
 
     @cached_property
     def dual(self) -> Wires:
         r"New ``Wires`` object obtained by swapping input and output wires."
-        return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
+        return Wires(
+            self.args[1], self.args[0], self.args[3], self.args[2], self.args[5], self.args[4]
+        )
 
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"New ``Wires`` object with wires only on the given modes."
         modes = {modes} if isinstance(modes, int) else set(modes)
         if tuple(modes) not in self._mode_cache:
-            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3)))
+            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3, 4, 5)))
             w._original = self.original or self
             self._mode_cache[tuple(modes)] = w
         return self._mode_cache[tuple(modes)]
@@ -395,33 +406,43 @@ class Wires:
         """
         if self.original or other.original:
             raise ValueError("cannot contract a subset of wires")
-        A, B, a, b, e, f = self.args
-        C, D, c, d, g, h = other.args
-        sets = (A - D, B, a - d, b, C, D - A, c, d - a)
-        if m := sets[0] & sets[4]:
+        A, B, a, b, E, F = self.args
+        C, D, c, d, G, H = other.args
+        sets = (A - D, B, a - d, b, E - H, F, C, D - A, c, d - a, G, H - E)
+        if m := sets[0] & sets[6]:
             raise ValueError(f"output bra modes {m} overlap")
-        if m := sets[1] & sets[5]:
+        if m := sets[1] & sets[7]:
             raise ValueError(f"input bra modes {m} overlap")
-        if m := sets[2] & sets[6]:
+        if m := sets[2] & sets[8]:
             raise ValueError(f"output ket modes {m} overlap")
-        if m := sets[3] & sets[7]:
+        if m := sets[3] & sets[9]:
             raise ValueError(f"input ket modes {m} overlap")
-        bra_out = sets[0] | sets[4]  # (self.output.bra - other.input.bra) | other.output.bra
-        bra_in = sets[1] | sets[5]  # self.input.bra | (other.input.bra - self.output.bra)
-        ket_out = sets[2] | sets[6]  # (self.output.ket - other.input.ket) | other.output.ket
-        ket_in = sets[3] | sets[7]  # self.input.ket | (other.input.ket - self.output.ket)
-        w = Wires(bra_out, bra_in, ket_out, ket_in)
+        if m := sets[4] & sets[10]:
+            raise ValueError(f"output classical modes {m} overlap")
+        if m := sets[5] & sets[11]:
+            raise ValueError(f"input classical modes {m} overlap")
+        bra_out = sets[0] | sets[6]  # (self.output.bra - other.input.bra) | other.output.bra
+        bra_in = sets[1] | sets[7]  # self.input.bra | (other.input.bra - self.output.bra)
+        ket_out = sets[2] | sets[8]  # (self.output.ket - other.input.ket) | other.output.ket
+        ket_in = sets[3] | sets[9]  # self.input.ket | (other.input.ket - self.output.ket)
+        classical_out = (
+            sets[4] | sets[10]
+        )  # (self.output.classical - other.input.classical) | other.output.classical
+        classical_in = (
+            sets[5] | sets[11]
+        )  # self.input.classical | (other.input.classical - self.output.classical)
+        w = Wires(bra_out, bra_in, ket_out, ket_in, classical_out, classical_in)
 
         # preserve ids
-        for t in (0, 1, 2, 3):
+        for t in (0, 1, 2, 3, 4, 5):
             for m in w.args[t]:
                 w.ids_dicts[t][m] = self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
 
         # calculate permutation
         result_ids = [id for d in w.ids_dicts for id in d.values()]
-        self_other_ids = [self.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t])] + [
-            other.ids_dicts[t][m] for t in (0, 1, 2, 3) for m in sorted(sets[t + 4])
-        ]
+        self_other_ids = [
+            self.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t])
+        ] + [other.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t + 6])]
         perm = [self_other_ids.index(id) for id in result_ids]
         return w, perm
 

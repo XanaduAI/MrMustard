@@ -168,18 +168,19 @@ class TestWires:
     def test_matmul(self):
         # contracts 1,1 on bra side
         # contracts 3,3 and 13,13 on ket side
-        u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8})
-        v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12})
+        # contracts 17,17 on classical
+        u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8}, {16, 17}, {18})
+        v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12}, {19}, {17})
         new_wires, perm = u @ v
         assert new_wires.args == (
             {0, 5, 9, 14},
             {2, 6, 10, 15},
             {2, 7, 11},
             {4, 8, 12},
-            set(),
-            set(),
+            {16, 19},
+            {18},
         )
-        assert perm == [7, 0, 8, 9, 1, 2, 10, 3, 11, 4, 12, 5, 6, 13]
+        assert perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
 
     def test_matmul_keeps_ids(self):
         U = Wires(set(), set(), {0}, {0})
