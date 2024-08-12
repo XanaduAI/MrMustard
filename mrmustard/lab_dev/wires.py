@@ -33,8 +33,8 @@ class Wires:
     In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a tensor network picture,
     where states flow from left to right. ``CircuitComponent``\s can have wires on the
-    bra and/or on the ket side. Here are some examples for the types of components available on
-    ``mrmustard.lab_dev``:
+    bra and/or on the ket side. Additionally, they may have classical wires. Here are some examples
+    for the types of components available on ``mrmustard.lab_dev``:
 
     .. code-block::
 
@@ -65,11 +65,17 @@ class Wires:
                         ╚═════════╝      └───────┘
 
 
-        Also a ket representing the state of mode ``1`` has only output wires:
+        A ket representing the state of mode ``1`` has only output wires:
 
                         ╔═════════╗   1  ┌───────┐
                         ║   Ket   ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
+
+        A measurement acting on mode ``0`` has input wires on the ket side and classical output wires:
+
+        ┌──────┐   0  ╔═════════════╗   0  ┌─────────────┐
+        │Ket in│─────▶║ Measurement ║─────▶│Classical out│
+        └──────┘      ╚═════════════╝      └─────────────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
 
@@ -105,15 +111,15 @@ class Wires:
 
     .. code-block::
 
-                     ╔═════════╗
-        1 (2) ─────▶ ║         ║─────▶ 0 (0)
-        2 (3) ─────▶ ║         ║─────▶ 1 (1)
-                     ║         ║
+                     ╔═════════════╗
+        1 (2) ─────▶ ║             ║─────▶ 0 (0)
+        2 (3) ─────▶ ║             ║─────▶ 1 (1)
+                     ║             ║
                      ║  ``Wires``  ║
-        1 (6) ─────▶ ║         ║
-        2 (7) ─────▶ ║         ║─────▶ 0 (4)
-       13 (8) ─────▶ ║         ║─────▶ 13 (5)
-                     ╚═════════╝
+        1 (6) ─────▶ ║             ║
+        2 (7) ─────▶ ║             ║─────▶ 0 (4)
+       13 (8) ─────▶ ║             ║─────▶ 13 (5)
+                     ╚═════════════╝
 
     To access the index of a subset of wires in standard order we can use the ``indices``
     property:
@@ -342,7 +348,7 @@ class Wires:
         new_args = []
         for t, (m1, m2) in enumerate(zip(self.args, other.args)):
             if m := m1 & m2:
-                raise ValueError(f"{t}-type wires overlap at mode {m}")
+                raise ValueError(f"{t}-type wires overlap at mode {m}.")
             new_args.append(m1 | m2)
         return Wires(*new_args)
 
@@ -405,22 +411,22 @@ class Wires:
             ValueError: If any leftover wires would overlap.
         """
         if self.original or other.original:
-            raise ValueError("cannot contract a subset of wires")
+            raise ValueError("Cannot contract a subset of wires.")
         A, B, a, b, E, F = self.args
         C, D, c, d, G, H = other.args
         sets = (A - D, B, a - d, b, E - H, F, C, D - A, c, d - a, G, H - E)
         if m := sets[0] & sets[6]:
-            raise ValueError(f"output bra modes {m} overlap")
+            raise ValueError(f"Output bra modes {m} overlap.")
         if m := sets[1] & sets[7]:
-            raise ValueError(f"input bra modes {m} overlap")
+            raise ValueError(f"Input bra modes {m} overlap.")
         if m := sets[2] & sets[8]:
-            raise ValueError(f"output ket modes {m} overlap")
+            raise ValueError(f"Output ket modes {m} overlap.")
         if m := sets[3] & sets[9]:
-            raise ValueError(f"input ket modes {m} overlap")
+            raise ValueError(f"Input ket modes {m} overlap.")
         if m := sets[4] & sets[10]:
-            raise ValueError(f"output classical modes {m} overlap")
+            raise ValueError(f"Output classical modes {m} overlap.")
         if m := sets[5] & sets[11]:
-            raise ValueError(f"input classical modes {m} overlap")
+            raise ValueError(f"Input classical modes {m} overlap.")
         bra_out = sets[0] | sets[6]  # (self.output.bra - other.input.bra) | other.output.bra
         bra_in = sets[1] | sets[7]  # self.input.bra | (other.input.bra - self.output.bra)
         ket_out = sets[2] | sets[8]  # (self.output.ket - other.input.ket) | other.output.ket
