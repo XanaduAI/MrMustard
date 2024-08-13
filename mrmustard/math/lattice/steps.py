@@ -36,7 +36,7 @@ SQRT = np.sqrt(np.arange(100000))
 @njit
 def vanilla_average_step(
     G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
-) -> complex:
+) -> complex:  # pragma: no cover
     r"""Recurrence relation step where we average over all possible pivots.
 
     Args:
