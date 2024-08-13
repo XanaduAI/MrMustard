@@ -68,7 +68,7 @@ class Number(Ket):
     ) -> None:
         super().__init__(modes=modes, name="N")
         ns, cs = list(reshape_params(len(modes), n=n, cutoffs=cutoffs if cutoffs else n))
-        self._add_parameter(make_parameter(False, ns, "n", (None, None)))
+        self._add_parameter(make_parameter(False, ns, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
         self.short_name = [str(int(n)) for n in self.n.value]
         for i, cutoff in enumerate(self.cutoffs.value):
