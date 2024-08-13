@@ -98,7 +98,9 @@ class Constant:
     def __init__(self, value: any, name: str):
         if math.from_backend(value) and not math.is_trainable(value):
             self._value = value
-        elif type(value) in [list, int, float]:
+        elif type(value) is int:
+            self._value = math.new_constant(value, name, "int64")
+        elif type(value) in [list, float]:
             self._value = math.new_constant(value, name)
         else:
             self._value = math.new_constant(value, name, value.dtype)
