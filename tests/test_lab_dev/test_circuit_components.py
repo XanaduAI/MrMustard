@@ -18,8 +18,8 @@
 
 from unittest.mock import patch
 
-from ipywidgets import Box, VBox, HBox, HTML
 import numpy as np
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings

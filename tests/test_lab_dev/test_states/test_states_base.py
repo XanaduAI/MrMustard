@@ -16,8 +16,8 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-from ipywidgets import Box, HBox, VBox, HTML
 import numpy as np
+from ipywidgets import Box, HBox, VBox, HTML
 from plotly.graph_objs import FigureWidget
 import pytest
 

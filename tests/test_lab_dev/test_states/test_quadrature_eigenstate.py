@@ -16,8 +16,8 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.lab_dev.states import QuadratureEigenstate, Coherent
 from mrmustard import settings

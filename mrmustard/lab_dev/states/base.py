@@ -30,10 +30,10 @@ from typing import Optional, Sequence, Union
 from enum import Enum
 import warnings
 
+import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import numpy as np
 
 from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
