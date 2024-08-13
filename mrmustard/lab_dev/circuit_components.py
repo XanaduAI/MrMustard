@@ -137,24 +137,6 @@ class CircuitComponent:
                 return ret
         return CircuitComponent(representation, wires, name)
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
-        r"""
-        Adds a parameter to this circuit component and makes it accessible as an attribute.
-
-        Args:
-            parameter: The parameter to add.
-
-        Raises:
-            ValueError: If the the given parameter is incompatible with the number
-                of modes (e.g. for parallel gates).
-        """
-        if parameter.value.shape != ():
-            length = sum(parameter.value.shape)
-            if length != 1 and length != len(self.modes):
-                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
-        self.parameter_set.add_parameter(parameter)
-        self.__dict__[parameter.name] = parameter
-
     @classmethod
     def from_bargmann(
         cls,
@@ -358,16 +340,15 @@ class CircuitComponent:
         except AttributeError:  # bargmann
             return [None] * len(self.wires)
 
-    def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
+    def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
-        Creates a "light" copy of this component by referencing its __dict__, except for the wires,
-        which are a new object or the given one.
-        This is useful when one needs the same component acting on different modes, for example.
+        The shape of the Fock representation of this component. If the component has a Fock representation
+        then it is just the shape of the array. If the components is a State in Bargmann
+        representation the shape is calculated using autoshape using the single-mode marginals.
+        If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
+        except where the ``manual_shape`` attribute has been set..
         """
-        instance = super().__new__(self.__class__)
-        instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
-        return instance
+        return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
         r"""
@@ -465,31 +446,68 @@ class CircuitComponent:
         """
         fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
         fock._original_bargmann_data = self.representation.data
-
         try:
-            kwargs = {}
-            for name, param in self._parameter_set.all_parameters.items():
-                kwargs[name] = param.value
-                if isinstance(param, Variable):
-                    kwargs[name + "_trainable"] = True
-                    kwargs[name + "_bounds"] = param.bounds
-
-            ret = self.__class__(modes=self.modes, **kwargs)
-            ret._representation = fock
-            ret._name = self.name
+            ret = self._from_param_set(fock, self.wires, self.name)
         except TypeError:
             ret = self._from_attributes(fock, self.wires, self.name)
         return ret
 
-    def auto_shape(self, **_) -> tuple[int, ...]:
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
-        The shape of the Fock representation of this component. If the component has a Fock representation
-        then it is just the shape of the array. If the components is a State in Bargmann
-        representation the shape is calculated using autoshape using the single-mode marginals.
-        If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
-        except where the ``manual_shape`` attribute has been set..
+        Adds a parameter to this circuit component and makes it accessible as an attribute.
+
+        Args:
+            parameter: The parameter to add.
+
+        Raises:
+            ValueError: If the the given parameter is incompatible with the number
+                of modes (e.g. for parallel gates).
         """
-        return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
+        if parameter.value.shape != ():
+            length = sum(parameter.value.shape)
+            if length != 1 and length != len(self.modes):
+                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    def _from_param_set(
+        self, representation: Representation, wires: Wires, name: str | None = None
+    ) -> CircuitComponent:
+        r"""
+        Initializes a circuit component from it's ``ParameterSet``. This method differs from
+        ``_from_attributes`` in that it will return the same class instance rather than it's
+        nearest parent.
+
+        Args:
+            representation: A representation for this circuit component.
+            wires: The wires of this component.
+            name: The name for this component (optional).
+
+        Returns:
+            A circuit component with the given attributes.
+        """
+        kwargs = {}
+        for param_name, param in self._parameter_set.all_parameters.items():
+            kwargs[param_name] = param.value
+            if isinstance(param, Variable):
+                kwargs[param_name + "_trainable"] = True
+                kwargs[param_name + "_bounds"] = param.bounds
+        ret = self.__class__(modes=self.modes, **kwargs)
+        ret._representation = representation
+        ret._wires = wires
+        ret._name = name
+        return ret
+
+    def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
+        r"""
+        Creates a "light" copy of this component by referencing its __dict__, except for the wires,
+        which are a new object or the given one.
+        This is useful when one needs the same component acting on different modes, for example.
+        """
+        instance = super().__new__(self.__class__)
+        instance.__dict__ = self.__dict__.copy()
+        instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
+        return instance
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
