@@ -84,68 +84,55 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     return ret.reshape(shape)
 
 
+# NOTE: numba cannot compile a single function with two possible output shapes
+# so we wrap the numba function call in a python function
 def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all pivots.
+    r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
+    stable implementation because the errors are averaged out (or so we think).
+
+    Supports ``b`` as a batched tensor, with the batch dimension on the first index,
+    in which case the output tensor will have the same batch dimension.
 
     Args:
-        shape: shape of the output tensor
+        shape: shape of the output tensor excluding the batch dimension
         A: A matrix of the Fock-Bargmann representation
         b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
         c: vacuum amplitude
 
     Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
     """
     if b.ndim == 1:
-        return vanilla_average_nonbatch(shape, A, b, c)
+        b = np.atleast_2d(b)
+        return _vanilla_average_batch(shape, A, b, c)[..., 0]
+    elif b.ndim == 2:
+        return np.moveaxis(_vanilla_average_batch(shape, A, b, c), -1, 0)
     else:
-        b = np.transpose(b)
-        return np.moveaxis(vanilla_average_batch(shape, A, b, c), -1, 0)
+        raise ValueError(f"Invalid shape for b: {b.shape}. It should be 1D or 2D.")
 
 
 @njit
-def vanilla_average_nonbatch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
+    ``b`` is assumed to be batched, with batch in the first dimension.
+    The output has a corresponding batch dimension of the same size, but on the last dimension.
 
     Args:
-        shape: shape of the output tensor
+        shape: shape of the output tensor excluding the batch dimension, which is inferred from the shape of ``b``
         A: A matrix of the Fock-Bargmann representation
-        b: B vector of the Fock-Bargmann representation
-        c: vacuum amplitude
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
-    """
-    path = np.ndindex(shape)
-
-    G = np.zeros(shape, dtype=np.complex128)
-    G[next(path)] = c
-    for index in path:
-        G[index] = steps.vanilla_average_step(G, A, b, index)[0]
-
-    return G
-
-
-@njit
-def vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
-    ``b`` is assumed to be batched, with batch in the last dimension, so G have a corresponding batch dimension of the same size.
-
-    Args:
-        shape: shape of the output tensor with the batch dimension on the first term
-        A: A matrix of the Fock-Bargmann representation
-        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
+        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
         c: vacuum amplitudes
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape + (batch,)``
     """
     path = np.ndindex(shape)
+    b = np.transpose(b)  # put the batch dimension last (makes the code simpler)
 
     G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
-    G[next(path) + (slice(None),)] = c
+    G[next(path)] = c * np.ones(b.shape[-1], dtype=np.complex128)
     for index in path:
-        G[index + (slice(None),)] = steps.vanilla_average_step(G, A, b, index)
+        G[index] = steps.vanilla_average_step_batch(G, A, b, index)
     return G
 
 

@@ -30,6 +30,7 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
     sector_u,
 )
 from mrmustard.math.lattice.strategies.displacement import displacement
+from mrmustard.math.lattice.strategies.vanilla import vanilla_average
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
@@ -159,4 +160,16 @@ def test_vanilla_average():
     sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
     assert np.max(np.abs(sgate)) < 1
 
-    settings.USING_VANILLA_AVERAGE = False
+    settings.USE_VANILLA_AVERAGE = False
+
+
+def test_vanilla_average_batched():
+    "tests the vanilla average against other known stable methods. batched version."
+    settings.USE_VANILLA_AVERAGE = True
+    A, b, c = mmld.Ket.random([0, 1]).bargmann
+    batched = vanilla_average((4, 4), A[0], b, c[0])
+    non_batched = vanilla_average((4, 4), A[0], b[0], c[0])
+
+    assert np.allclose(batched[0], non_batched)
+
+    settings.USE_VANILLA_AVERAGE = False
