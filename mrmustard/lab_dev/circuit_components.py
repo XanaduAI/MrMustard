@@ -483,6 +483,8 @@ class CircuitComponent:
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
+        USE STORED BARGMANNN DATA!!!
+
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
         UPDATE THINGS BELOW
         .. code-block::
@@ -502,10 +504,14 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        A, b , _ = identity_Abc(self.wires.__len__())
-        bargmann = Bargmann(A,b,self.representation.data)
-        bargmann._original_fock_data = self.representation.data
-        return self._from_attributes(bargmann, self.wires, self.name)
+        try:
+            bargmann = Bargmann(*self.bargmann)
+            return self._from_attributes(bargmann, self.wires, self.name)
+        except AttributeError:
+            A, b, _ = identity_Abc(self.wires.__len__())
+            bargmann = Bargmann(A, b, self.representation.data)
+            bargmann._original_fock_data = self.representation.data
+            return self._from_attributes(bargmann, self.wires, self.name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -599,7 +605,6 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-
         if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
             self_rep = self.representation
             other_rep = other.representation

@@ -427,10 +427,10 @@ class Bargmann(Representation):
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
-        if self.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Partial trace is only supported for ansatze with polynomial of degree ``0``."
-            )
+        # if self.ansatz.degree > 0:
+        #     raise NotImplementedError(
+        #         "Partial trace is only supported for ansatze with polynomial of degree ``0``."
+        #     )
         A, b, c = [], [], []
         for Abc in zip(self.A, self.b, self.c):
             Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
