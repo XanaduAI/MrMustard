@@ -53,7 +53,7 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._hbar = 2.0
+        self._hbar = 1.0
         self._hbar_locked = False
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
@@ -67,7 +67,7 @@ class Settings:
         self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
-        self.AUTOSHAPE_PROBABILITY = 0.999
+        self.AUTOSHAPE_PROBABILITY = 0.99999
         "The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is 0.999."
 
         self.AUTOCUTOFF_MAX_CUTOFF = 100  # TODO: remove in MM 1.0
