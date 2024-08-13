@@ -668,7 +668,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):
-
         m = len(modes)
         dm = DM.random(modes)
         A = dm.representation.A[0]
