@@ -18,7 +18,7 @@ The class representing a number state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Sequence
 
 from mrmustard import math
 from mrmustard.physics.representations import Fock
@@ -63,8 +63,8 @@ class Number(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        n: Union[int, Sequence[int]],
-        cutoffs: Optional[Union[int, Sequence[int]]] = None,
+        n: int | Sequence[int],
+        cutoffs: int | Sequence[int] | None = None,
     ) -> None:
         if isinstance(n, int):
             n = (n,) * len(modes)
