@@ -408,28 +408,28 @@ def join_Abc_poly(
     A12 = math.block(
         [
             [
-                math.cast(A1, "complex128")[:dim_m1, :dim_m1],
-                np.zeros((dim_m1, dim_m2)),
-                math.cast(A1, "complex128")[:dim_m1, dim_m1:],
-                np.zeros((dim_m1, dim_n2)),
+                A1[:dim_m1, :dim_m1],
+                np.zeros((dim_m1, dim_m2),dtype=A1.dtype),
+                A1[:dim_m1, dim_m1:],
+                np.zeros((dim_m1, dim_n2),dtype=A1.dtype),
             ],
             [
-                np.zeros((dim_m2, dim_m1)),
-                math.cast(A2, "complex128")[:dim_m2:, :dim_m2],
-                np.zeros((dim_m2, dim_n1)),
-                math.cast(A2, "complex128")[:dim_m2, dim_m2:],
+                np.zeros((dim_m2, dim_m1),dtype=A1.dtype),
+                A2[:dim_m2:, :dim_m2],
+                np.zeros((dim_m2, dim_n1),dtype=A1.dtype),
+                A2[:dim_m2, dim_m2:],
             ],
             [
-                math.cast(A1, "complex128")[dim_m1:, :dim_m1],
-                np.zeros((dim_n1, dim_m2)),
-                math.cast(A1, "complex128")[dim_m1:, dim_m1:],
-                np.zeros((dim_n1, dim_n2)),
+                A1[dim_m1:, :dim_m1],
+                np.zeros((dim_n1, dim_m2),dtype=A1.dtype),
+                A1[dim_m1:, dim_m1:],
+                np.zeros((dim_n1, dim_n2),dtype=A1.dtype),
             ],
             [
-                np.zeros((dim_n2, dim_m1)),
-                math.cast(A2, "complex128")[dim_m2:, :dim_m2],
-                np.zeros((dim_n2, dim_n1)),
-                math.cast(A2, "complex128")[dim_m2:, dim_m2:],
+                np.zeros((dim_n2, dim_m1),dtype=A1.dtype),
+                A2[dim_m2:, :dim_m2],
+                np.zeros((dim_n2, dim_n1),dtype=A1.dtype),
+                A2[dim_m2:, dim_m2:],
             ],
         ]
     )
