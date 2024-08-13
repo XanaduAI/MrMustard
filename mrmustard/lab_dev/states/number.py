@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard import math
 from mrmustard.physics.representations import Fock
 from mrmustard.physics.fock import fock_state
 from .base import Ket
