@@ -28,7 +28,13 @@ import ipywidgets as widgets
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.utils.typing import (
+    Scalar,
+    ComplexTensor,
+    ComplexMatrix,
+    ComplexVector,
+    Batch,
+)
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
