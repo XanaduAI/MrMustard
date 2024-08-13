@@ -19,9 +19,12 @@ from mrmustard.lab_dev.states.base import Ket
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 
+from ..utils import make_parameter, reshape_params
+
 
 class Sauron(Ket):
-    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using
+    r"""
+    The `n`-th Sauron state is an approximation of the `n`-th Fock states using
     a ring of `n+1` coherent states. The reference to the Lord of the Rings comes from
     the approximation becoming perfect in the limit for the radius of the ring going
     to zero where vacuum (= darkness) is.
@@ -35,8 +38,10 @@ class Sauron(Ket):
         epsilon: The radius of the ring of coherent states, default is 0.1.
     """
 
-    def __init__(self, modes: Sequence[int], n: int, epsilon=0.1):
+    def __init__(self, modes: Sequence[int], n: int, epsilon: float = 0.1):
         super().__init__(name=f"Sauron-{n}", modes=modes)
+        self._add_parameter(make_parameter(False, n, "n", (None, None)))
+        self._add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
         self._representation = Bargmann.from_function(
-            triples.sauron_state_Abc, n=n, epsilon=epsilon
+            triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
         )
