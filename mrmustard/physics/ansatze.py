@@ -717,9 +717,8 @@ class PolyExpAnsatz(PolyExpBase):
             )
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
-    
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
 
+    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:

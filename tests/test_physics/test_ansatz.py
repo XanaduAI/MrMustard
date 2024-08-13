@@ -587,7 +587,7 @@ class TestPolyExpAnsatz:
         batch = 3
         c = np.random.random(size=(batch, 5, 5, 5)) / 1000
 
-        obj = DiffOpPolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
+        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
         z0 = np.array([[None, 2, None, 5]])
         z1 = np.array([[1, 2, 4, 5]])
         z2 = np.array([[1, 4]])
@@ -596,15 +596,15 @@ class TestPolyExpAnsatz:
         val2 = obj_none(z2)
         assert np.allclose(val1, val2)
 
-        obj1 = DiffOpPolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
+        obj1 = PolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
         z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
         z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
         z2 = np.array([[1, 4], [2, 4]])
         obj1_none = obj1(z0)
-        obj1_none0 = DiffOpPolyExpAnsatz(
+        obj1_none0 = PolyExpAnsatz(
             obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
         )
-        obj1_none1 = DiffOpPolyExpAnsatz(
+        obj1_none1 = PolyExpAnsatz(
             obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5)
         )
         val1 = obj1(z1)
