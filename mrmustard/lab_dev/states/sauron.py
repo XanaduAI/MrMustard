@@ -19,7 +19,7 @@ from mrmustard.lab_dev.states.base import Ket
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 
 class Sauron(Ket):
