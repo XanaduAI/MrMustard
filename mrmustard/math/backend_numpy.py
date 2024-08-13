@@ -29,7 +29,7 @@ from scipy.stats import multivariate_normal
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from .lattice.strategies import binomial, vanilla, vanilla_batch
+from .lattice.strategies import binomial, vanilla, vanilla_average, vanilla_batch
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -244,7 +244,10 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.minimum(a, b)
 
     def moveaxis(
-        self, array: np.ndarray, old: Union[int, Sequence[int]], new: Union[int, Sequence[int]]
+        self,
+        array: np.ndarray,
+        old: Union[int, Sequence[int]],
+        new: Union[int, Sequence[int]],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
@@ -462,7 +465,10 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
         if precision_bits == 128:  # numba
-            G = vanilla(tuple(shape), A, B, C)
+            if settings.USE_VANILLA_AVERAGE:
+                G = vanilla_average(tuple(shape), A, B, C)
+            else:
+                G = vanilla(tuple(shape), A, B, C)
         else:  # julia (with precision_bits = 512)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel

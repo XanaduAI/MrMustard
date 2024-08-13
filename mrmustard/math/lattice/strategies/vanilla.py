@@ -21,6 +21,7 @@ from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strid
 
 __all__ = [
     "vanilla",
+    "vanilla_average",
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
@@ -81,6 +82,30 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         ret[index] = value_at_index / np.sqrt(index_u[i])
 
     return ret.reshape(shape)
+
+
+@njit
+def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    r"""Like vanilla, but contributions are averaged over all pivots.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+
+    G = np.zeros(shape, dtype=np.complex128)
+    path = np.ndindex(shape)
+    G[next(path)] = c
+
+    for index in path:
+        G[index] = steps.vanilla_average_step(G, A, b, index)
+
+    return G
 
 
 @njit

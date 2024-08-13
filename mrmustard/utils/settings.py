@@ -64,6 +64,9 @@ class Settings:
         self.UNSAFE_ZIP_BATCH = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
 
+        self.USE_VANILLA_AVERAGE = False
+        "Whether to use the vanilla_average function when computing Fock amplitudes (more stable, but slower). Default is False."
+
         self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 

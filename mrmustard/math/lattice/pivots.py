@@ -53,3 +53,19 @@ def smallest_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     if min_ == 2**64 - 1:
         raise ValueError("Index is zero")
     return min_i, tuple_setitem(index, min_i, min_ - 1)
+
+
+@njit
+def all_pivots(
+    index: tuple[int, ...],
+) -> list[tuple[int, tuple[int, ...]]]:
+    r"""returns all the pivots for the given index. A pivot is a nearest neighbor
+    of the index one index lowered.
+
+    Arguments:
+        index: the index to get the pivots of.
+
+    Returns:
+        a generator of the index that was decremented and the pivot
+    """
+    return [(i, tuple_setitem(index, i, v - 1)) for i, v in enumerate(index) if v > 0]

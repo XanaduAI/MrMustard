@@ -27,10 +27,34 @@ from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbors import lower_neighbors
-from mrmustard.math.lattice.pivots import first_available_pivot
+from mrmustard.math.lattice.pivots import first_available_pivot, all_pivots
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
+
+
+@njit
+def vanilla_average_step(
+    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+) -> complex:
+    r"""Recurrence relation step where we average over all possible pivots.
+
+    Args:
+        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): B vector of the Fock-Bargmann representation
+        index (Sequence): index of the amplitude to calculate
+
+    Returns:
+        complex: the value of the amplitude at the given index
+    """
+    all_contributions = 0
+    for N, (i, pivot) in enumerate(all_pivots(index)):  # we add all the contributions
+        pivot_contribution = b[i] * G[pivot]
+        for j, neighbor in lower_neighbors(pivot):
+            pivot_contribution += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+        all_contributions += pivot_contribution / SQRT[index[i]]
+    return all_contributions / (N + 1)  # ... and average
 
 
 @njit
