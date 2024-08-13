@@ -502,7 +502,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        A, b , _ = identity_Abc(self.n_modes)
+        A, b , _ = identity_Abc(self.wires.__len__())
         bargmann = Bargmann(A,b,self.representation.data)
         bargmann._original_fock_data = self.representation.data
         return self._from_attributes(bargmann, self.wires, self.name)
@@ -601,19 +601,16 @@ class CircuitComponent:
         idx_z, idx_zconj = self._matmul_indices(other)
 
         if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
-            rep = self.representation[idx_z] @ other.representation[idx_zconj]
-            rep = rep.reorder(perm) if perm else rep
-            return CircuitComponent._from_attributes(rep, wires_result, None)
-
-
-        if isinstance(self.representation, Fock):
-            self_rep = self.to_bargmann().representation
-        else:
             self_rep = self.representation
-
-        if isinstance(other.representation, Fock):
+            other_rep = other.representation
+        elif isinstance(self.representation, Fock) and isinstance(other.representation, Fock):
+            self_rep = self.representation
+            other_rep = other.representation
+        elif isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
+            self_rep = self.representation
             other_rep = other.to_bargmann().representation
-        else: 
+        elif isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+            self_rep = self.to_bargmann().representation
             other_rep = other.representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
