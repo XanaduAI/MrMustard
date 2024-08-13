@@ -15,10 +15,11 @@
 """Tests for the lattice module"""
 
 import importlib
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.lab import Gaussian, Dgate, Ggate
+from mrmustard.lab_dev import Sgate
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict

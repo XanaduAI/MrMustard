@@ -54,7 +54,7 @@ def vanilla_average_step(
         for j, neighbor in lower_neighbors(pivot):
             pivot_contribution += A[i, j] * SQRT[pivot[j]] * G[neighbor]
         all_contributions += pivot_contribution / SQRT[index[i]]
-    return all_contributions / (N + 1)  # ... and average
+    return all_contributions / (N + 1)  # pylint: disable=undefined-loop-variable
 
 
 @njit
