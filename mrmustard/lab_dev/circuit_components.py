@@ -465,7 +465,21 @@ class CircuitComponent:
         """
         fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
         fock._original_bargmann_data = self.representation.data
-        return self._from_attributes(fock, self.wires, self.name)
+
+        try:
+            kwargs = {}
+            for name, param in self._parameter_set.all_parameters.items():
+                kwargs[name] = param.value
+                if isinstance(param, Variable):
+                    kwargs[name + "_trainable"] = True
+                    kwargs[name + "_bounds"] = param.bounds
+
+            ret = self.__class__(modes=self.modes, **kwargs)
+            ret._representation = fock
+            ret._name = self.name
+        except TypeError:
+            ret = self._from_attributes(fock, self.wires, self.name)
+        return ret
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
