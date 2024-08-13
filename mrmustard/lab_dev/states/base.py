@@ -142,7 +142,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.physics.representations import Bargmann
             >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.lab_dev.states.base import Ket
 
             >>> modes = [0, 1]
             >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
