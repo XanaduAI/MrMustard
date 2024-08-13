@@ -30,6 +30,7 @@ def make_parameter(
     name: str,
     bounds: Tuple[Optional[float], Optional[float]],
     update_fn: Callable = update_euclidean,
+    dtype: any = None,
 ):
     r"""
     Returns a constant or variable parameter with given name, value, bounds, and update function.
@@ -40,12 +41,13 @@ def make_parameter(
         name: The name of the returned parameter.
         bounds: The bounds of the returned parameter (ignored if ``is_trainable`` is ``False``).
         update_fn: The update_fn of the returned parameter (ignored if ``is_trainable`` is ``False``).
+        dtype: The dtype of the returned parameter.
     """
     if isinstance(value, (Constant, Variable)):
         return value
     if not is_trainable:
-        return Constant(value=value, name=name)
-    return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
+        return Constant(value=value, name=name, dtype=dtype)
+    return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn, dtype=dtype)
 
 
 def reshape_params(n_modes: str, **kwargs) -> Generator:

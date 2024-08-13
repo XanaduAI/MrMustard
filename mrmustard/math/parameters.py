@@ -93,14 +93,15 @@ class Constant:
     Args:
         value: The value of this constant.
         name: The name of this constant.
+        dtype: The dtype of this constant.
     """
 
-    def __init__(self, value: any, name: str):
+    def __init__(self, value: any, name: str, dtype: any = None):
         if math.from_backend(value) and not math.is_trainable(value):
             self._value = value
-        elif type(value) is int:
-            self._value = math.new_constant(value, name, "int64")
-        elif type(value) in [list, float]:
+        elif dtype is not None:
+            self._value = math.new_constant(value, name, dtype)
+        elif type(value) in [list, int, float]:
             self._value = math.new_constant(value, name)
         else:
             self._value = math.new_constant(value, name, value.dtype)
@@ -142,6 +143,7 @@ class Variable:
         name: The name of this variable.
         bounds: The numerical bounds of this variable.
         update_fn: The function used to update this variable during training.
+        dtype: The dtype of this variable.
     """
 
     def __init__(
@@ -150,18 +152,21 @@ class Variable:
         name: str,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         update_fn: Callable = update_euclidean,
+        dtype: any = None,
     ):
-        self._value = self._get_value(value, bounds, name)
+        self._value = self._get_value(value, bounds, name, dtype)
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
 
-    def _get_value(self, value, bounds, name):
+    def _get_value(self, value, bounds, name, dtype=None):
         r"""
         Returns a variable from given ``value``, ``bounds``, and ``name``.
         """
         if math.from_backend(value) and math.is_trainable(value):
             return value
+        elif dtype:
+            return math.new_variable(value, bounds, name, dtype)
         elif type(value) in [list, int, float]:
             return math.new_variable(value, bounds, name)
         else:

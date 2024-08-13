@@ -40,7 +40,7 @@ class Sauron(Ket):
 
     def __init__(self, modes: Sequence[int], n: int, epsilon: float = 0.1):
         super().__init__(name=f"Sauron-{n}", modes=modes)
-        self._add_parameter(make_parameter(False, n, "n", (None, None)))
+        self._add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
         self._representation = Bargmann.from_function(
             triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
