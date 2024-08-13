@@ -35,20 +35,21 @@ SQRT = np.sqrt(np.arange(100000))
 
 @njit
 def vanilla_average_step(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+    G: ComplexTensor, A: ComplexMatrix, b: ComplexMatrix, index: tuple[int, ...]
 ) -> complex:  # pragma: no cover
-    r"""Recurrence relation step where we average over all possible pivots.
+    r"""Recurrence relation step where we average over all possible pivots. Assumes b
+    is batched, with batch dimension on the last index.
 
     Args:
-        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
-        A (array): A matrix of the Fock-Bargmann representation
-        b (array): B vector of the Fock-Bargmann representation
-        index (Sequence): index of the amplitude to calculate
+        G: fock amplitudes array, possibly with a batch dimension (last)
+        A: A matrix of the Fock-Bargmann representation
+        b: b vector of the Fock-Bargmann representation with a batch dimension on the last index
+        index (Sequence): index of the amplitude to calculate (excluding the batch dimension)
 
     Returns:
-        complex: the value of the amplitude at the given index
+        complex: vector of the amplitudes at the given index. The length of the vector is the same as the batch dimension.
     """
-    all_contributions = 0
+    all_contributions = np.zeros(b.shape[-1], dtype=np.complex128)
     for N, (i, pivot) in enumerate(all_pivots(index)):  # we add all the contributions
         pivot_contribution = b[i] * G[pivot]
         for j, neighbor in lower_neighbors(pivot):

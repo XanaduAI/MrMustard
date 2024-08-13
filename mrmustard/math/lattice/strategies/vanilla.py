@@ -28,7 +28,7 @@ __all__ = [
     "autoshape_numba",
 ]
 
-SQRT = np.sqrt(np.arange(1000))
+SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
@@ -84,27 +84,68 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     return ret.reshape(shape)
 
 
-@njit
-def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     r"""Like vanilla, but contributions are averaged over all pivots.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): B vector of the Fock-Bargmann representation
-        c (complex): vacuum amplitude
+        shape: shape of the output tensor
+        A: A matrix of the Fock-Bargmann representation
+        b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
+        c: vacuum amplitude
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
+    if b.ndim == 1:
+        return vanilla_average_nonbatch(shape, A, b, c)
+    else:
+        b = np.transpose(b)
+        return np.moveaxis(vanilla_average_batch(shape, A, b, c), -1, 0)
+
+
+@njit
+def vanilla_average_nonbatch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
+
+    Args:
+        shape: shape of the output tensor
+        A: A matrix of the Fock-Bargmann representation
+        b: B vector of the Fock-Bargmann representation
+        c: vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+    path = np.ndindex(shape)
 
     G = np.zeros(shape, dtype=np.complex128)
-    path = np.ndindex(shape)
     G[next(path)] = c
-
     for index in path:
-        G[index] = steps.vanilla_average_step(G, A, b, index)
+        G[index] = steps.vanilla_average_step(G, A, b, index)[0]
 
+    return G
+
+
+@njit
+def vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
+    ``b`` is assumed to be batched, with batch in the last dimension, so G have a corresponding batch dimension of the same size.
+
+    Args:
+        shape: shape of the output tensor with the batch dimension on the first term
+        A: A matrix of the Fock-Bargmann representation
+        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
+        c: vacuum amplitudes
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape + (batch,)``
+    """
+    path = np.ndindex(shape)
+
+    G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
+    G[next(path) + (slice(None),)] = c
+    for index in path:
+        G[index + (slice(None),)] = steps.vanilla_average_step(G, A, b, index)
     return G
 
 
