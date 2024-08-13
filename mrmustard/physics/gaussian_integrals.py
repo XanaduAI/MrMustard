@@ -396,8 +396,8 @@ def join_Abc_poly(
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    A1 = math.cast(A1,"complex128")
-    A2 = math.cast(A2,"complex128")
+    A1 = math.cast(A1, "complex128")
+    A2 = math.cast(A2, "complex128")
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
 
