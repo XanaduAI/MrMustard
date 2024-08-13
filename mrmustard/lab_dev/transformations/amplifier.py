@@ -41,7 +41,7 @@ class Amplifier(Channel):
         >>> from mrmustard.lab_dev import Amplifier, Coherent
 
         >>> amp = Amplifier([0], gain=4)
-        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default)
+        >>> coh = Coherent([0], x=1.0 * np.sqrt(2), y=2.0 * np.sqrt(2))  # units of hbar=1 (default)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
         >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
 
