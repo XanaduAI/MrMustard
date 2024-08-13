@@ -727,7 +727,25 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
         ret._kwargs = kwargs
         return ret
 
-    def __call__(self, z: Batch[Vector]) -> Scalar:
+    def __call__(self, z: Batch[Vector]) -> Union[Scalar, DiffOpPolyExpAnsatz]:
+        r"""
+        Returns either the value of the ansatz or a new ansatz depending on the argument.
+        If the argument contains None, returns a new ansatz.
+        If the argument only contains numbers, returns the value of the ansatz at that argument.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+
+        Args:
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
+        """
+        if (np.array(z) == None).any():
+            return self._call_none(z)
+        else:
+            return self._call_all(z)
+
+    def _call_all(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
         r"""
         Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
@@ -793,6 +811,83 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
                 axes=[-1],
             )  # (b_arg)
         return val
+
+    def _call_none_single(self, Ai, bi, ci, zi):
+        r"""
+        Helper function for the call_none method. Returns the new triple.
+
+        Args:
+            Ai: The matrix of the Bargmann function
+            bi: The vector of the Bargmann function
+            ci: The polynomial coefficients (or scalar)
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The new Abc triple.
+        """
+        gamma = math.astensor(zi[zi != None], dtype=math.complex128)
+
+        z_none = np.argwhere(zi == None).reshape(-1)
+        z_not_none = np.argwhere(zi != None).reshape(-1)
+        beta_indices = np.arange(len(zi), Ai.shape[-1])
+        new_indices = np.concatenate([z_none, beta_indices], axis=0)
+
+        # new A
+        new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
+
+        # new b
+        b_alpha = math.einsum(
+            "ij,j", math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1), gamma
+        )
+        b_beta = math.einsum(
+            "ij,j", math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1), gamma
+        )
+        new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
+
+        # new c
+        A_part = math.einsum(
+            "i,j,ij",
+            gamma,
+            gamma,
+            math.gather(math.gather(Ai, z_not_none, axis=0), z_not_none, axis=1),
+        )
+        b_part = math.einsum("j,j", math.gather(bi, z_not_none, axis=0), gamma)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)
+        new_c = ci * exp_sum
+        return new_A, new_b, new_c
+
+    def _call_none(self, z: Batch[Vector]) -> DiffOpPolyExpAnsatz:
+        r"""
+        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
+        For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self.call_none([np.array([1.0, None]])``
+        returns ``F(1.0, z2)`` as a new ansatz with a single variable.
+        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+
+        Args:
+            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
+
+        Returns:
+            A new ansatz.
+        """
+
+        batch_abc = self.batch_size
+        batch_arg = z.shape[0]
+        Abc = []
+        if batch_abc == 1 and batch_arg > 1:
+            for i in range(batch_arg):
+                Abc.append(self._call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
+        elif batch_arg == 1 and batch_abc > 1:
+            for i in range(batch_abc):
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
+        elif batch_abc == batch_arg:
+            for i in range(batch_abc):
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+        else:
+            raise ValueError(
+                "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
+            )
+        A, b, c = zip(*Abc)
+        return self.__class__(A=A, b=b, c=c)
 
     def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
