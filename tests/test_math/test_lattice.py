@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from mrmustard.lab import Gaussian, Dgate, Ggate
-from mrmustard.lab_dev import Sgate
+from mrmustard import lab_dev as mmld
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
@@ -153,10 +153,10 @@ def test_vanilla_average():
     "tests the vanilla average against other known stable methods"
     settings.USE_VANILLA_AVERAGE = True
     assert np.allclose(
-        Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
+        mmld.Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
         displacement((1000, 1000), 4.0 + 4.0j),
     )
-    sgate = Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
+    sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
     assert np.max(np.abs(sgate)) < 1
 
     settings.USING_VANILLA_AVERAGE = False
