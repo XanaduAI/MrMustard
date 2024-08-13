@@ -28,6 +28,7 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
     sector_idx,
     sector_u,
 )
+from mrmustard.math.lattice.strategies.displacement import displacement
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
@@ -145,3 +146,16 @@ def test_sector_u():
     for i in range(1, 10):
         u = sector_u(i, theta=1.129, phi=0.318)
         assert u @ u.conj().T == pytest.approx(np.eye(i + 1))
+
+
+def test_vanilla_average():
+    "tests the vanilla average against other known stable methods"
+    settings.USE_VANILLA_AVERAGE = True
+    assert np.allclose(
+        Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
+        displacement((1000, 1000), 4.0 + 4.0j),
+    )
+    sgate = Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
+    assert np.max(np.abs(sgate)) < 1
+
+    settings.USING_VANILLA_AVERAGE = False
