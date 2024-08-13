@@ -429,7 +429,7 @@ class CircuitComponent:
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         try:
-            As, bs, cs = self.bargmann
+            As, bs, cs = self.representation.triple
             if self.representation.ansatz.polynomial_shape[0] == 0:
                 auto_shape = self.auto_shape()
                 shape = shape or auto_shape
@@ -451,6 +451,12 @@ class CircuitComponent:
                     for A, b, c in zip(As, bs, cs)
                 ]
         except AttributeError:
+            auto_shape = self.auto_shape()
+            shape = shape or auto_shape
+            if len(shape) != len(auto_shape):
+                raise ValueError(
+                    f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                )
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -505,7 +511,7 @@ class CircuitComponent:
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         try:
-            bargmann = Bargmann(*self.bargmann)
+            bargmann = Bargmann(*self.representation.triple)
             return self._from_attributes(bargmann, self.wires, self.name)
         except AttributeError:
             A, b, _ = identity_Abc(self.wires.__len__())
