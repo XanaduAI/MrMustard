@@ -30,10 +30,10 @@ from typing import Optional, Sequence, Union
 from enum import Enum
 import warnings
 
+import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import numpy as np
 
 from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
@@ -329,7 +329,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
 
     def visualize_2d(
         self,
