@@ -36,7 +36,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
