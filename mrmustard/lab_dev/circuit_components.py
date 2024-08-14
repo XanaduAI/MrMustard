@@ -664,10 +664,7 @@ class CircuitComponent:
         not be called, and something else will be returned.
         """
         ret = self * other
-        try:
-            return ret.representation.scalar
-        except AttributeError:
-            return ret
+        return ret.representation.scalar
 
     def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
         r"""
@@ -694,19 +691,24 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
-        only_ket = not self.wires.bra and not other.wires.bra
-        only_bra = not self.wires.ket and not other.wires.ket
-        both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
+        s_k = self.wires.ket
+        s_b = self.wires.bra
+        o_k = other.wires.ket
+        o_b = other.wires.bra
+
+        only_ket = (not s_b and s_k) and (not o_b and o_k)
+        only_bra = (not s_k and s_b) and (not o_k and o_b)
+        both_sides = s_b and s_k and o_b and o_k
         if only_ket or only_bra or both_sides:
             return self._rshift_return(self @ other)
 
-        self_needs_bra = (not self.wires.bra) and other.wires.bra and other.wires.ket
-        self_needs_ket = (not self.wires.ket) and other.wires.bra and other.wires.ket
+        self_needs_bra = (not s_b and s_k) and (o_b and o_k)
+        self_needs_ket = (not s_k and s_b) and (o_b and o_k)
         if self_needs_bra or self_needs_ket:
             return self._rshift_return(self.adjoint @ (self @ other))
 
-        other_needs_bra = (self.wires.bra and self.wires.ket) and not other.wires.bra
-        other_needs_ket = (self.wires.bra and self.wires.ket) and not other.wires.ket
+        other_needs_bra = (s_b and s_k) and (not o_b and o_k)
+        other_needs_ket = (s_b and s_k) and (not o_k and o_b)
         if other_needs_bra or other_needs_ket:
             return self._rshift_return((self @ other) @ other.adjoint)
 
