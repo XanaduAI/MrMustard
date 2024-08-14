@@ -473,7 +473,8 @@ class CircuitComponent:
         fock = Fock(self.fock(shape, batched=True), batched=True)
         fock._original_bargmann_data = self.representation.data
         try:
-            ret = self._from_param_set(fock, self.wires, self.name)
+            ret = self._getitem_builtin(self.modes)
+            ret._representation = fock
         except TypeError:
             ret = self._from_attributes(fock, self.wires, self.name)
         return ret
@@ -496,33 +497,25 @@ class CircuitComponent:
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
-    def _from_param_set(
-        self, representation: Representation, wires: Wires, name: str | None = None
-    ) -> CircuitComponent:
+    def _getitem_builtin(self, modes: set[int]):
         r"""
-        Initializes a circuit component from it's ``ParameterSet``. This method differs from
-        ``_from_attributes`` in that it will return the same class instance rather than it's
-        nearest parent.
+        A convenience function to slice built-in circuit components (CCs).
 
-        Args:
-            representation: A representation for this circuit component.
-            wires: The wires of this component.
-            name: The name for this component (optional).
+        Built-in CCs come with a parameter set. To slice them, we simply slice the parameter
+        set, and then used the sliced parameter set to re-initialize them.
 
-        Returns:
-            A circuit component with the given attributes.
+        This approach avoids computing the representation, which may be expensive. Additionally,
+        it allows returning trainable CCs.
         """
+        # slice the parameter set
+        items = [i for i, m in enumerate(self.modes) if m in modes]
         kwargs = {}
-        for param_name, param in self._parameter_set.all_parameters.items():
-            kwargs[param_name] = param.value
+        for name, param in self._parameter_set[items].all_parameters.items():
+            kwargs[name] = param.value
             if isinstance(param, Variable):
-                kwargs[param_name + "_trainable"] = True
-                kwargs[param_name + "_bounds"] = param.bounds
-        ret = self.__class__(modes=self.modes, **kwargs)
-        ret._representation = representation
-        ret._wires = wires
-        ret._name = name
-        return ret
+                kwargs[name + "_trainable"] = True
+                kwargs[name + "_bounds"] = param.bounds
+        return self.__class__(modes=modes, **kwargs)
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
         r"""
