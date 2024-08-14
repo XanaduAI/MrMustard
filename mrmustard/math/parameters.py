@@ -99,13 +99,10 @@ class Constant:
     def __init__(self, value: any, name: str, dtype: any = None):
         if math.from_backend(value) and not math.is_trainable(value):
             self._value = value
-        elif dtype is not None:
-            self._value = math.new_constant(value, name, dtype)
-        elif type(value) in [list, int, float]:
-            self._value = math.new_constant(value, name)
-        else:
+        elif hasattr(value, "dtype"):
             self._value = math.new_constant(value, name, value.dtype)
-
+        else:
+            self._value = math.new_constant(value, name, dtype)
         self._name = name
 
     @property
@@ -165,12 +162,10 @@ class Variable:
         """
         if math.from_backend(value) and math.is_trainable(value):
             return value
-        elif dtype:
-            return math.new_variable(value, bounds, name, dtype)
-        elif type(value) in [list, int, float]:
-            return math.new_variable(value, bounds, name)
-        else:
+        elif hasattr(value, "dtype"):
             return math.new_variable(value, bounds, name, value.dtype)
+        else:
+            return math.new_variable(value, bounds, name, dtype)
 
     @property
     def bounds(self) -> Tuple[Optional[float], Optional[float]]:
