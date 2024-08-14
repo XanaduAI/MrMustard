@@ -470,7 +470,7 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = Fock(math.astensor(self.fock(shape, batched=True)), batched=True)
+        fock = Fock(self.fock(shape, batched=True), batched=True)
         fock._original_bargmann_data = self.representation.data
         try:
             ret = self._from_param_set(fock, self.wires, self.name)
