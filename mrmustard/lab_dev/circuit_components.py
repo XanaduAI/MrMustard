@@ -28,7 +28,13 @@ import ipywidgets as widgets
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.typing import Scalar, ComplexTensor
+from mrmustard.utils.typing import (
+    Scalar,
+    ComplexTensor,
+    ComplexMatrix,
+    ComplexVector,
+    Batch,
+)
 from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
@@ -71,7 +77,10 @@ class CircuitComponent:
             wires = [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
             modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = wires
             self._wires = Wires(
-                set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket)
+                set(modes_out_bra),
+                set(modes_in_bra),
+                set(modes_out_ket),
+                set(modes_in_ket),
             )
 
             # handle out-of-order modes
@@ -109,28 +118,6 @@ class CircuitComponent:
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
         return ret
-
-    @property
-    def bargmann(self) -> tuple:
-        r"""
-        The Bargmann parametrization of this component, if available.
-        It returns a triple (A, b, c) such that the Bargmann function of this component is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
-
-        .. code-block:: pycon
-
-            >>> from mrmustard.lab_dev import CircuitComponent, Coherent
-            >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann, modes_out_ket=[0])
-            >>> assert isinstance(coh_cc, CircuitComponent)
-            >>> assert coh == coh_cc  # equality looks at representation and wires
-        """
-        try:
-            return self.representation.triple
-        except AttributeError as e:
-            raise AttributeError(
-                f"Cannot compute triple from representation of type ``{self.representation.__class__.__qualname__}``."
-            ) from e
 
     @property
     def dual(self) -> CircuitComponent:
@@ -334,6 +321,33 @@ class CircuitComponent:
         """
         return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
+    def bargmann_triple(
+        self, batched: bool = False
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The Bargmann parametrization of this component, if available.
+        It returns a triple (A, b, c) such that the Bargmann function of this component is
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
+
+        If ``batched`` is ``False`` (default), it removes the batch dimension if it is of size 1.
+
+        .. code-block:: pycon
+
+            >>> from mrmustard.lab_dev import CircuitComponent, Coherent
+            >>> coh = Coherent(modes=[0], x=1.0)
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
+            >>> assert isinstance(coh_cc, CircuitComponent)
+            >>> assert coh == coh_cc  # equality looks at representation and wires
+        """
+        try:
+            A, b, c = self.representation.triple
+            if not batched and self.representation.ansatz.batch_size == 1:
+                return A[0], b[0], c[0]
+            else:
+                return A, b, c
+        except AttributeError as e:
+            raise AttributeError("No Bargmann data for this component.") from e
+
     def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
@@ -358,7 +372,7 @@ class CircuitComponent:
             )
 
         try:
-            As, bs, cs = self.bargmann
+            As, bs, cs = self.bargmann_triple(batched=True)
             if self.representation.ansatz.polynomial_shape[0] == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
