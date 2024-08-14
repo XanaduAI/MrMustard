@@ -1031,8 +1031,7 @@ class Ket(State):
         modes = set(modes)
 
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
+            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
 
         if self._parameter_set:
             # if ``self`` has a parameter set, it is a built-in state, and we slice the
