@@ -396,6 +396,49 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
+    def _decompose_ansatz_single(self,Ai,bi,ci):
+        dim_beta, shape_beta = self.polynomial_shape
+        dim_alpha = self.mat.shape[-1] - dim_beta
+        A_bar = math.block(
+            [
+                [
+                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
+                    Ai[:dim_alpha, dim_alpha:],
+                ],
+                [
+                    Ai[dim_alpha:, :dim_alpha],
+                    Ai[dim_alpha:, dim_alpha:],
+                ],
+            ]
+        )
+        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype),bi[dim_alpha:]),axis=0)
+        poly_bar = math.hermite_renormalized(
+            A_bar,
+            b_bar,
+            complex(1),
+            (math.sum(shape_beta),) * dim_alpha + shape_beta,
+        )
+        c_decomp = math.sum(
+            poly_bar * ci,
+            axes=math.arange(
+                len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
+            ).tolist(),
+        )
+        A_decomp = math.block(
+            [
+                [
+                    Ai[:dim_alpha, :dim_alpha],
+                        math.eye(dim_alpha, dtype=Ai.dtype),
+                ],
+                [
+                        math.eye((dim_alpha), dtype=Ai.dtype),
+                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
+                ],
+            ]
+        )
+        b_decomp = math.concat((bi[:dim_alpha],math.zeros((dim_alpha), dtype=bi.dtype)),axis=0)
+        return A_decomp,b_decomp,c_decomp
+
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
         This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
@@ -409,68 +452,15 @@ class PolyExpBase(Ansatz):
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
-            A_bar = math.block(
-                [
-                    [
-                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
-                        self.mat[..., :dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        self.mat[..., dim_alpha:, :dim_alpha],
-                        self.mat[..., dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
+            A_decomp = []
+            b_decomp = []
+            c_decomp = []
+            for i in range(batch_size):
+                A_decomp_i,b_decomp_i,c_decomp_i = self._decompose_ansatz_single(self.mat[i],self.vec[i],self.array[i])
+                A_decomp.append(A_decomp_i)
+                b_decomp.append(b_decomp_i)
+                c_decomp.append(c_decomp_i)
 
-            b_bar = math.block(
-                [
-                    [
-                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
-                        self.vec[..., dim_alpha:],
-                    ]
-                ]
-            )
-            poly_bar = math.hermite_renormalized_batch(
-                A_bar,
-                b_bar,
-                complex(1),
-                (batch_size,) + (math.sum(shape_beta),) * dim_alpha + shape_beta,
-            )
-            poly_bar = math.moveaxis(poly_bar, 0, dim_alpha)
-            c_decomp = math.sum(
-                poly_bar * self.array,
-                axes=math.arange(
-                    len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
-                ).tolist(),
-            )
-            c_decomp = math.moveaxis(c_decomp, -1, 0)
-
-            A_decomp = math.block(
-                [
-                    [
-                        self.mat[..., :dim_alpha, :dim_alpha],
-                        math.outer(
-                            math.ones(batch_size, dtype=self.mat.dtype),
-                            math.eye(dim_alpha, dtype=self.mat.dtype),
-                        ),
-                    ],
-                    [
-                        math.outer(
-                            math.ones(batch_size, dtype=self.mat.dtype),
-                            math.eye((dim_alpha), dtype=self.mat.dtype),
-                        ),
-                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
-                    ],
-                ]
-            )
-            b_decomp = math.block(
-                [
-                    [
-                        self.vec[..., :dim_alpha],
-                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
-                    ]
-                ]
-            )
             return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
             return PolyExpAnsatz(self.mat, self.vec, self.array)
@@ -626,7 +616,7 @@ class PolyExpAnsatz(PolyExpBase):
             poly = math.astensor(
                 [
                     math.hermite_renormalized_batch(
-                        A_poly[i], b_poly[i], complex(1), (batch_size_arg,) + shape_beta
+                        A_poly[i], b_poly[i], complex(1), shape_beta
                     )
                     for i in range(batch_size)
                 ]
