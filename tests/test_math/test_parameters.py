@@ -16,8 +16,8 @@
 Unit tests for :class:`Constant` and :class:`Variable`.
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard import math
 from mrmustard.math.parameters import (
