@@ -16,7 +16,7 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called, protected-access, import-outside-toplevel, too-complex
+# pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
