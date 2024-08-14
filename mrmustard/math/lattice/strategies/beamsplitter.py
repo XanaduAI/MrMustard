@@ -294,5 +294,5 @@ def apply_BS_schwinger(theta, phi, i, j, array):
         subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
         array[..., flat_idx] @= u[subset, ...][..., subset] if 0 < len(subset) < N else u
     # step 3: reshape back and reorder
-    array = array.reshape(shape_rest + shape)
-    array = array.transpose(np.argsort(order))
+    array.reshape(shape_rest + shape)
+    array.transpose(np.argsort(order))
