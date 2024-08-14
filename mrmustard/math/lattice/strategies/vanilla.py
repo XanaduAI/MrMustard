@@ -152,12 +152,12 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-
+    batch_shape = (b.shape[0],)
     # init output tensor
-    G = np.zeros(shape, dtype=np.complex128)
+    G = np.zeros(batch_shape+shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape[1:])  # We know the first dimension is the batch one
+    path = np.ndindex(shape)  # We know the first dimension is the batch one
 
     # write vacuum amplitude
     G[(slice(None),) + next(path)] = c

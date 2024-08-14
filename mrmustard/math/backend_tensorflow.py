@@ -496,7 +496,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     ) -> tf.Tensor:
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
-        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+        if settings.USE_VANILLA_AVERAGE
+            G = strategies.vanilla_average(tuple(shape), _A, _B, _C)
+        else:
+            G = strategies.vanilla_batch(tuple(shape), A, B, C)
         return G
 
     @tf.custom_gradient

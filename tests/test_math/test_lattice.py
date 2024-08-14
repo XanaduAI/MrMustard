@@ -83,10 +83,10 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
 
-    cutoffs = (batch_size, 20, 20, 20, 20)
+    cutoffs = (20, 20, 20, 20)
 
     # Vanilla MM
-    G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs[1:])
+    G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs)
 
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=0)
