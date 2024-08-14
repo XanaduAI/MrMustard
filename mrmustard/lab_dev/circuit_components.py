@@ -690,7 +690,33 @@ class CircuitComponent:
 
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-        return self._rshift_return(temporary(self, other))
+
+        s_k = self.wires.ket
+        s_b = self.wires.bra
+        o_k = other.wires.ket
+        o_b = other.wires.bra
+
+        only_ket = (not s_b and s_k) and (not o_b and o_k)
+        only_bra = (not s_k and s_b) and (not o_k and o_b)
+        both_sides = s_b and s_k and o_b and o_k
+
+        self_needs_bra = (not s_b and s_k) and (o_b and o_k)
+        self_needs_ket = (not s_k and s_b) and (o_b and o_k)
+
+        other_needs_bra = (s_b and s_k) and (not o_b and o_k)
+        other_needs_ket = (s_b and s_k) and (not o_k and o_b)
+
+        if only_ket or only_bra or both_sides:
+            ret = self @ other
+        elif self_needs_bra or self_needs_ket:
+            ret = self.adjoint @ (self @ other)
+        elif other_needs_bra or other_needs_ket:
+            ret = (self @ other) @ other.adjoint
+        else:
+            msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+            msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+            raise ValueError(msg)
+        return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -720,34 +746,3 @@ class CircuitComponent:
         rep_widget.layout.padding = "10px"
         wires_widget.layout.padding = "10px"
         display(widgets.Box([wires_widget, rep_widget]))
-
-
-def temporary(c1, c2):
-    s_k = c1.wires.ket
-    s_b = c1.wires.bra
-    o_k = c2.wires.ket
-    o_b = c2.wires.bra
-
-    only_ket = (not s_b and s_k) and (not o_b and o_k)
-    only_bra = (not s_k and s_b) and (not o_k and o_b)
-    both_sides = s_b and s_k and o_b and o_k
-
-    self_needs_bra = (not s_b and s_k) and (o_b and o_k)
-    self_needs_ket = (not s_k and s_b) and (o_b and o_k)
-
-    other_needs_bra = (s_b and s_k) and (not o_b and o_k)
-    other_needs_ket = (s_b and s_k) and (not o_k and o_b)
-
-    if only_ket or only_bra or both_sides:
-        ret = c1 @ c2
-    elif self_needs_bra or self_needs_ket:
-        ret = c1.adjoint @ (c1 @ c2)
-    elif other_needs_bra or other_needs_ket:
-        ret = (c1 @ c2) @ c2.adjoint
-    else:
-        msg = f"``>>`` not supported between {c1} and {c2} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
-        raise ValueError(msg)
-    return ret
