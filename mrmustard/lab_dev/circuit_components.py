@@ -699,24 +699,24 @@ class CircuitComponent:
         only_ket = (not s_b and s_k) and (not o_b and o_k)
         only_bra = (not s_k and s_b) and (not o_k and o_b)
         both_sides = s_b and s_k and o_b and o_k
-        if only_ket or only_bra or both_sides:
-            return self._rshift_return(self @ other)
 
         self_needs_bra = (not s_b and s_k) and (o_b and o_k)
         self_needs_ket = (not s_k and s_b) and (o_b and o_k)
-        if self_needs_bra or self_needs_ket:
-            return self._rshift_return(self.adjoint @ (self @ other))
 
         other_needs_bra = (s_b and s_k) and (not o_b and o_k)
         other_needs_ket = (s_b and s_k) and (not o_k and o_b)
-        if other_needs_bra or other_needs_ket:
-            return self._rshift_return((self @ other) @ other.adjoint)
 
-        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-        )
-        raise ValueError(msg)
+        if only_ket or only_bra or both_sides:
+            ret = self @ other
+        elif self_needs_bra or self_needs_ket:
+            ret = self.adjoint @ (self @ other)
+        elif other_needs_bra or other_needs_ket:
+            ret = (self @ other) @ other.adjoint
+        else:
+            msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+            msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+            raise ValueError(msg)
+        return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
