@@ -18,8 +18,8 @@
 
 from unittest.mock import patch
 
-from ipywidgets import Box, VBox, HBox, HTML
 import numpy as np
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings
@@ -418,14 +418,14 @@ class TestCircuitComponent:
         "tests that to_fock doesn't lose the bargmann representation"
         coh = Coherent([0], x=1.0)
         coh.to_fock(20)
-        assert coh.bargmann == Coherent([0], x=1.0).bargmann
+        assert coh.bargmann_triple() == Coherent([0], x=1.0).bargmann_triple()
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent([0], x=1.0)
         CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
-            CC.bargmann  # pylint: disable=pointless-statement
+            CC.bargmann_triple()  # pylint: disable=pointless-statement
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
