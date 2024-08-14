@@ -305,6 +305,10 @@ class TestCircuitComponent:
         assert math.allclose(result.representation.A, d0.representation.A)
         assert math.allclose(result.representation.b, d0.representation.b)
         assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+        result2 = 0.8 @ d0
+        assert math.allclose(result2.representation.A, d0.representation.A)
+        assert math.allclose(result2.representation.b, d0.representation.b)
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
