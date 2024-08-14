@@ -407,6 +407,9 @@ class TestCircuitComponent:
         result = 0.8 >> d0
         assert math.allclose(result, 0.8 * d0.representation.c)
 
+        result2 = d0 >> 0.8
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
+
     def test_repr(self):
         c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
         c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")

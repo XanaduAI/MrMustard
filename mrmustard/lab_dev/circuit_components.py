@@ -694,11 +694,6 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
-        msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-        msg += (
-            "whether or where to add missing components. Use ``@`` and specify all the components."
-        )
-
         only_ket = not self.wires.bra and not other.wires.bra
         only_bra = not self.wires.ket and not other.wires.ket
         both_sides = self.wires.bra and self.wires.ket and other.wires.bra and other.wires.ket
