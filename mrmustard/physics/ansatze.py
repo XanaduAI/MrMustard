@@ -44,7 +44,6 @@ __all__ = [
     "ArrayAnsatz",
     "PolyExpBase",
     "PolyExpAnsatz",
-    "DiffOpPolyExpAnsatz",
 ]
 
 
@@ -262,7 +261,7 @@ class PolyExpBase(Ansatz):
     def polynomial_shape(self) -> tuple[int, tuple]:
         r"""
         This method finds the dimensionality of the polynomial, i.e. how many wires
-        have polynomials attached to them and what the degree of the polynomial is
+        have polynomials attached to them and what the degree(+1) of the polynomial is
         on each of the wires.
         """
         dim_poly = len(self.array.shape) - 1
@@ -397,9 +396,9 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
-    def decompose_ansatz(self) -> DiffOpPolyExpAnsatz:
+    def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
-        This method decomposes a DiffOpPolyExpAnsatz. Given an ansatz of dimensions:
+        This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
         A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
         it can be rewritten as an ansatz of dimensions
         A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
@@ -474,9 +473,9 @@ class PolyExpBase(Ansatz):
                     ]
                 ]
             )
-            return DiffOpPolyExpAnsatz(A_decomp, b_decomp, c_decomp)
+            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
-            return DiffOpPolyExpAnsatz(self.mat, self.vec, self.array)
+            return PolyExpAnsatz(self.mat, self.vec, self.array)
 
 
 class PolyExpAnsatz(PolyExpBase):
@@ -485,40 +484,41 @@ class PolyExpAnsatz(PolyExpBase):
 
     Represents the ansatz function:
 
-        :math:`F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)`
-
-    where each :math:`poly_i` is a polynomial in ``z`` that can be expressed as
-
-        :math:`\textrm{poly}_i(z) = \sum_k c^(i)_k z^k`,
+        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
 
     with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
-    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
+    The dimension of ``z + y`` must be equal to the dimension of ``A`` and ``b``.
 
-    .. code-block::
+        .. code-block::
 
         >>> from mrmustard.physics.ansatze import PolyExpAnsatz
 
+
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array(1.0)
+        >>> c = np.array([[1.0,2.0,3.0]])
 
         >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
+        >>> z = np.array([[1.0],[2.0],[3.0]])
 
-        >>> # calculate the value of the function at ``z``
+        >>> # calculate the value of the function at the three different ``z``, since z is batched.
         >>> val = F(z)
 
+    A and b can be batched or not, but c needs to include an explicit batch dimension that matches A and b.
     Args:
         A: The list of square matrices :math:`A_i`
         b: The list of vectors :math:`b_i`
-        c: The array of coefficients for the polynomial terms in the ansatz.
+        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz.
+        An explicit batch dimension that matched A and b has to be given for c.
+
     """
 
     def __init__(
         self,
         A: Optional[Batch[Matrix]] = None,
         b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor | Scalar] = 1.0,
+        c: Batch[Tensor | Scalar] = np.array([[1.0]]),
         name: str = "",
     ):
         self.name = name
@@ -558,178 +558,25 @@ class PolyExpAnsatz(PolyExpBase):
         ret._kwargs = kwargs
         return ret
 
-    def __call__(self, z: Batch[Vector]) -> Scalar:
+    def __call__(self, z: Batch[Vector]) -> Union[Scalar, PolyExpAnsatz]:
         r"""
-        Value of this ansatz at ``z``.
+        Returns either the value of the ansatz or a new ansatz depending on the argument.
+        If the argument contains None, returns a new ansatz.
+        If the argument only contains numbers, returns the value of the ansatz at that argument.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
 
         Args:
             z: point in C^n where the function is evaluated
 
         Returns:
-            The value of the function.
+            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
         """
-        z = np.atleast_2d(z)  # shape (..., n)
-        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (..., 1, n, n))
-        A_part = 0.5 * math.sum(
-            zz * self.A, axes=[-1, -2]
-        )  # sum((...,1,n,n) * (b,n,n), [-1,-2]) ~ (...,b)
-        b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((...,1,n) * (b,n), -1) ~ (...,b)
-        exp_sum = np.exp(A_part + b_part)  # (..., b)
-        result = exp_sum * self.c  # (..., b)
-        val = np.sum(result, axis=-1)  # (...)
-        return val
-
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        r"""
-        Multiplies this ansatz by a scalar or another ansatz.
-
-        Args:
-            other: A scalar or another ansatz.
-
-        Raises:
-            TypeError: If other is neither a scalar nor an ansatz.
-
-        Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
-        """
-        if isinstance(other, PolyExpAnsatz):
-            new_a = [A1 + A2 for A1, A2 in itertools.product(self.A, other.A)]
-            new_b = [b1 + b2 for b1, b2 in itertools.product(self.b, other.b)]
-            new_c = [c1 * c2 for c1, c2 in itertools.product(self.c, other.c)]
-            return self.__class__(A=new_a, b=new_b, c=new_c)
+        if (np.array(z) == None).any():
+            return self._call_none(z)
         else:
-            try:
-                return self.__class__(self.A, self.b, self.c * other)
-            except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            return self._call_all(z)
 
-    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        r"""
-        Divides this ansatz by a scalar or another ansatz.
-
-        Args:
-            other: A scalar or another ansatz.
-
-        Raises:
-            TypeError: If other is neither a scalar nor an ansatz.
-
-        Returns:
-            PolyExpAnsatz: The division of this ansatz by other.
-        """
-        if isinstance(other, PolyExpAnsatz):
-            new_a = [A1 - A2 for A1, A2 in itertools.product(self.A, other.A)]
-            new_b = [b1 - b2 for b1, b2 in itertools.product(self.b, other.b)]
-            new_c = [c1 / c2 for c1, c2 in itertools.product(self.c, other.c)]
-            return self.__class__(A=new_a, b=new_b, c=new_c)
-        else:
-            try:
-                return self.__class__(self.A, self.b, self.c / other)
-            except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
-
-    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        r"""
-        Tensor product of this ansatz with another ansatz.
-        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
-        As it distributes over addition on both self and other,
-        the batch size of the result is the product of the batch
-        size of this anzatz and the other one.
-
-        Args:
-            other: Another ansatz.
-
-        Returns:
-            The tensor product of this ansatz and other.
-        """
-        As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
-        bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
-        cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
-        return self.__class__(As, bs, cs)
-
-
-class DiffOpPolyExpAnsatz(PolyExpBase):
-    r"""
-    The ansatz of the Fock-Bargmann representation.
-
-    Represents the ansatz function:
-
-        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
-
-    with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
-    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
-    The dimension of ``z + y`` must be equal to the dimension of ``A`` and ``b``.
-
-        .. code-block::
-
-        >>> from mrmustard.physics.ansatze import DiffOpPolyExpAnsatz
-
-        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
-        >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([[1.0,2.0,3.0]])
-
-        >>> F = DiffOpPolyExpAnsatz(A, b, c)
-        >>> z = np.array([[1.0],[2.0],[3.0]])
-
-        >>> # calculate the value of the function at the three different ``z``, since z is batched.
-        >>> val = F(z)
-
-    A and b can be batched or not, but c needs to include an explicit batch dimension that matches A and b.
-    Args:
-        A: The list of square matrices :math:`A_i`
-        b: The list of vectors :math:`b_i`
-        c: The list of arrays :math:`c_i` is coefficients for the polynomial terms in the ansatz.
-        An explicit batch dimension that matched A and b has to be given for c.
-
-    """
-
-    def __init__(
-        self,
-        A: Optional[Batch[Matrix]] = None,
-        b: Optional[Batch[Vector]] = None,
-        c: Batch[Tensor | Scalar] = np.array([[1.0]]),
-        name: str = "",
-    ):
-        self.name = name
-
-        if A is None and b is None and c is not None:
-            raise ValueError("Please provide either A or b.")
-        super().__init__(mat=A, vec=b, array=c)
-
-        if self.A.shape[0] != self.c.shape[0] or self.A.shape[0] != self.b.shape[0]:
-            raise ValueError("Batch size of A,b,c must be the same.")
-
-    @property
-    def A(self) -> Batch[ComplexMatrix]:
-        r"""
-        The list of square matrices :math:`A_i`.
-        """
-        return self.mat
-
-    @property
-    def b(self) -> Batch[ComplexVector]:
-        r"""
-        The list of vectors :math:`b_i`.
-        """
-        return self.vec
-
-    @property
-    def c(self) -> Batch[ComplexTensor]:
-        r"""
-        The array of coefficients for the polynomial terms in the ansatz.
-        """
-        return self.array
-
-    @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> DiffOpPolyExpAnsatz:
-        r"""
-        Returns a DiffOpPolyExpAnsatz object from a generator function.
-        """
-        ret = cls(None, None, None)
-        ret._fn = fn
-        ret._kwargs = kwargs
-        return ret
-
-    def __call__(self, z: Batch[Vector]) -> Scalar:
+    def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
         Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
@@ -797,7 +644,88 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             )  # (b_arg)
         return val
 
-    def __mul__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+    def _call_none_single(self, Ai, bi, ci, zi):
+        r"""
+        Helper function for the call_none method. Returns the new triple.
+
+        Args:
+            Ai: The matrix of the Bargmann function
+            bi: The vector of the Bargmann function
+            ci: The polynomial coefficients (or scalar)
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The new Abc triple.
+        """
+        gamma = math.astensor(zi[zi != None], dtype=math.complex128)
+
+        z_none = np.argwhere(zi == None).reshape(-1)
+        z_not_none = np.argwhere(zi != None).reshape(-1)
+        beta_indices = np.arange(len(zi), Ai.shape[-1])
+        new_indices = np.concatenate([z_none, beta_indices], axis=0)
+
+        # new A
+        new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
+
+        # new b
+        b_alpha = math.einsum(
+            "ij,j",
+            math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1),
+            gamma,
+        )
+        b_beta = math.einsum(
+            "ij,j",
+            math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
+            gamma,
+        )
+        new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
+
+        # new c
+        A_part = math.einsum(
+            "i,j,ij",
+            gamma,
+            gamma,
+            math.gather(math.gather(Ai, z_not_none, axis=0), z_not_none, axis=1),
+        )
+        b_part = math.einsum("j,j", math.gather(bi, z_not_none, axis=0), gamma)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)
+        new_c = ci * exp_sum
+        return new_A, new_b, new_c
+
+    def _call_none(self, z: Batch[Vector]) -> PolyExpAnsatz:
+        r"""
+        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
+        For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self.call_none([np.array([1.0, None]])``
+        returns ``F(1.0, z2)`` as a new ansatz with a single variable.
+        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+
+        Args:
+            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
+
+        Returns:
+            A new ansatz.
+        """
+
+        batch_abc = self.batch_size
+        batch_arg = z.shape[0]
+        Abc = []
+        if batch_abc == 1 and batch_arg > 1:
+            for i in range(batch_arg):
+                Abc.append(self._call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
+        elif batch_arg == 1 and batch_abc > 1:
+            for i in range(batch_abc):
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
+        elif batch_abc == batch_arg:
+            for i in range(batch_abc):
+                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+        else:
+            raise ValueError(
+                "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
+            )
+        A, b, c = zip(*Abc)
+        return self.__class__(A=A, b=b, c=c)
+
+    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -807,7 +735,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            DiffOpPolyExpAnsatz: The product of this ansatz and other.
+            PolyExpAnsatz: The product of this ansatz and other.
+
         """
 
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
@@ -843,7 +772,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        if isinstance(other, DiffOpPolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatz):
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
 
@@ -873,7 +802,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __truediv__(self, other: Union[Scalar, DiffOpPolyExpAnsatz]) -> DiffOpPolyExpAnsatz:
+    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -883,7 +812,8 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            DiffOpPolyExpAnsatz: The product of this ansatz and other.
+            PolyExpAnsatz: The product of this ansatz and other.
+
         """
 
         def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
@@ -919,7 +849,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        if isinstance(other, DiffOpPolyExpAnsatz):
+        if isinstance(other, PolyExpAnsatz):
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
@@ -951,7 +881,7 @@ class DiffOpPolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: DiffOpPolyExpAnsatz) -> DiffOpPolyExpAnsatz:
+    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,

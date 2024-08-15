@@ -23,6 +23,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.physics.gaussian_integrals import contract_two_Abc
 
 
 #  ~~~~~~~~~
@@ -217,6 +218,36 @@ def two_mode_squeezed_vacuum_state_Abc(
     c = math.prod(1 / math.cosh(r))
 
     return A, b, c
+
+
+def sauron_state_Abc(n: int, epsilon: float):
+    r"""
+    The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
+    ring of coherent states.
+
+    Args:
+        n: The number of photons.
+        epsilon: The size of the ring. The approximation is exact in the limit for epsilon that goes to zero.
+
+    Returns:
+        The ``(A, b, c)`` triple of the sauron state.
+    """
+
+    phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
+    cs = np.exp(1j * phases)
+    bs = (epsilon * cs)[..., None]
+    As = np.zeros([n + 1, 1, 1], dtype="complex128")
+
+    # normalization
+    prob = 0
+    for A1, b1, c1 in zip(As, bs, cs):
+        for A2, b2, c2 in zip(As, bs, cs):
+            prob += contract_two_Abc(
+                (np.conj(A1), np.conj(b1), np.conj(c1)), (A2, b2, c2), [0], [0]
+            )[2]
+    cs /= np.sqrt(prob)
+
+    return As, bs, cs
 
 
 def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Scalar]:
@@ -551,7 +582,9 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     return A, b, c
 
 
-def fock_damping_Abc(beta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def fock_damping_Abc(
+    beta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 

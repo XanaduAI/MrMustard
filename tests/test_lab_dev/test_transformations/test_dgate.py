@@ -20,6 +20,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.physics.representations import Fock
 
 
 class TestDgate:
@@ -74,6 +75,10 @@ class TestDgate:
 
         gate3.y.value = 2
         assert gate3.y.value == 2
+
+        gate_fock = gate3.to_fock()
+        assert isinstance(gate_fock.representation, Fock)
+        assert gate_fock.y.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

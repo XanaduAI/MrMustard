@@ -30,13 +30,12 @@ from typing import Optional, Sequence, Union
 from enum import Enum
 import warnings
 
+import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import numpy as np
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
@@ -142,7 +141,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.physics.representations import Bargmann
             >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.lab_dev.states.base import Ket
 
             >>> modes = [0, 1]
             >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
@@ -329,7 +328,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
 
     def visualize_2d(
         self,
@@ -581,27 +580,6 @@ class State(CircuitComponent):
         is_fock = isinstance(self.representation, Fock)
         display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
-    def _getitem_builtin_state(self, modes: set[int]):
-        r"""
-        A convenience function to slice built-in states.
-
-        Built-in states come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable states.
-        """
-        # slice the parameter set
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = {}
-        for name, param in self._parameter_set[items].all_parameters.items():
-            kwargs[name] = param.value
-            if isinstance(param, Variable):
-                kwargs[name + "_trainable"] = True
-                kwargs[name + "_bounds"] = param.bounds
-
-        return self.__class__(modes, **kwargs)
-
 
 class DM(State):
     r"""
@@ -812,7 +790,7 @@ class DM(State):
         if self._parameter_set:
             # if ``self`` has a parameter set it means it is a built-in state,
             # in which case we slice the parameters
-            return self._getitem_builtin_state(modes)
+            return self._getitem_builtin(modes)
 
         # if ``self`` has no parameter set it is not a built-in state,
         # in which case we trace the representation
@@ -1053,13 +1031,12 @@ class Ket(State):
         modes = set(modes)
 
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
+            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
 
         if self._parameter_set:
             # if ``self`` has a parameter set, it is a built-in state, and we slice the
             # parameters
-            return self._getitem_builtin_state(modes)
+            return self._getitem_builtin(modes)
 
         # if ``self`` has no parameter set, it is not a built-in state.
         # we must turn it into a density matrix and slice the representation
@@ -1108,7 +1085,10 @@ class Ket(State):
             / np.sqrt(2)
             * math.block(
                 [
-                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        math.eye(m, dtype=math.complex128),
+                        math.eye(m, dtype=math.complex128),
+                    ],
                     [
                         -1j * math.eye(m, dtype=math.complex128),
                         1j * math.eye(m, dtype=math.complex128),

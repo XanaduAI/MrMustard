@@ -14,8 +14,8 @@
 
 """IPython widgets for various objects in MrMustard."""
 
-import ipywidgets as widgets
 import numpy as np
+import ipywidgets as widgets
 import plotly.graph_objs as go
 
 from .css import FOCK, WIRES, TABLE, STATE
