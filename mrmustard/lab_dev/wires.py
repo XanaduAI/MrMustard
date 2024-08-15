@@ -199,7 +199,7 @@ class Wires:
     @cached_property
     def bra(self) -> Wires:
         r"""
-        New ``Wires`` object without ket wires.
+        New ``Wires`` object with only bra wires.
         """
         ret = Wires(self.args[0], self.args[1], set(), set())
         ret._original = self.original or self  # pylint: disable=protected-access
@@ -208,7 +208,7 @@ class Wires:
     @cached_property
     def classical(self) -> Wires:
         r"""
-        New ``Wires`` object without quantum wires.
+        New ``Wires`` object with only classical wires.
         """
         ret = Wires(set(), set(), set(), set(), self.args[4], self.args[5])
         ret._original = self.original or self  # pylint: disable=protected-access
@@ -257,7 +257,8 @@ class Wires:
     def ids_dicts(self) -> list[dict[int, int]]:
         r"""
         A list of dictionary mapping modes to ``ids``, one for each of the subsets
-        (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
+        (``output.bra``, ``input.bra``, ``output.ket``, ``input.ket``,
+        ``output.classical``, and ``input.classical``).
 
         If subsets are taken, ``ids_dicts`` refers to the parent object rather than to the
         child.
@@ -270,7 +271,8 @@ class Wires:
     def index_dicts(self) -> list[dict[int, int]]:
         r"""
         A list of dictionary mapping modes to indices, one for each of the subsets
-        (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
+        (``output.bra``, ``input.bra``, ``output.ket``, ``input.ket``,
+        ``output.classical``, and ``input.classical``).
 
         If subsets are taken, ``index_dicts`` refers to the parent object rather than to the
         child.
@@ -311,7 +313,7 @@ class Wires:
     @cached_property
     def ket(self) -> Wires:
         r"""
-        New ``Wires`` object without bra wires.
+        New ``Wires`` object with only ket wires.
         """
         ret = Wires(set(), set(), self.args[2], self.args[3])
         ret._original = self.original or self  # pylint: disable=protected-access
@@ -334,7 +336,7 @@ class Wires:
     @cached_property
     def output(self) -> Wires:
         r"""
-        New ``Wires`` object without input wires.
+        New ``Wires`` object with only output wires.
         """
         ret = Wires(self.args[0], set(), self.args[2], set(), self.args[4], set())
         ret._original = self.original or self  # pylint: disable=protected-access
@@ -350,6 +352,7 @@ class Wires:
     def __add__(self, other: Wires) -> Wires:
         r"""
         New ``Wires`` object that combines the wires of ``self`` and those of ``other``.
+
         Raises:
             ValueError: If any leftover wires would overlap.
         """
