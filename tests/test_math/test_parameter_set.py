@@ -68,6 +68,27 @@ class TestParameterSet:
         variables = ps.tagged_variables("ciao")
         assert variables == {"ciao/var1": var1}
 
+    def test_to_dict(self):
+        r"""
+        Tests the ``to_dict`` method.
+        """
+        const1 = Constant(1.2345, "const1")
+        const2 = Constant(2.3456, "const2")
+        var1 = Variable(3.4567, "var1")
+
+        ps = ParameterSet()
+        ps.add_parameter(const1)
+        ps.add_parameter(const2)
+        ps.add_parameter(var1)
+
+        assert ps.to_dict() == {
+            "const1": const1.value,
+            "const2": const2.value,
+            "var1": var1.value,
+            "var1_trainable": True,
+            "var1_bounds": (None, None),
+        }
+
     def test_to_string(self):
         r"""
         Tests the ``to_string`` method.

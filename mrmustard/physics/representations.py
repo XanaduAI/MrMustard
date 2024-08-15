@@ -20,9 +20,9 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
-from matplotlib import colors
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import colors
 
 from IPython.display import display
 

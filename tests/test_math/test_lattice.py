@@ -15,8 +15,8 @@
 """Tests for the lattice module"""
 
 import importlib
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.lab import Gaussian, Dgate, Ggate
 from mrmustard import settings, math

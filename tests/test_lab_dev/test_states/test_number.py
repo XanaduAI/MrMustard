@@ -53,6 +53,9 @@ class TestNumber:
         exp1 = fock_state((n,) * 2 if isinstance(n, int) else n, cutoffs)
         assert math.allclose(rep1, math.asnumpy(exp1).reshape(1, *exp1.shape))
 
+        rep2 = Number([0, 1], n, cutoffs).to_fock().representation.array
+        assert math.allclose(rep2, rep1)
+
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).representation
