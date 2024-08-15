@@ -18,8 +18,8 @@
 
 from unittest.mock import patch
 
-from ipywidgets import Box, VBox, HBox, HTML
 import numpy as np
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings
@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
+from ..random import Abc_triple
 
 
 # original settings
@@ -190,6 +191,14 @@ class TestCircuitComponent:
         assert d_fock.representation == Fock(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
+
+    def test_to_fock_poly_exp(self):
+        A, b, _ = Abc_triple(3)
+        c = np.random.random((1, 5))
+        barg = Bargmann(A, b, c)
+        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
+        poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
+        assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -409,14 +418,14 @@ class TestCircuitComponent:
         "tests that to_fock doesn't lose the bargmann representation"
         coh = Coherent([0], x=1.0)
         coh.to_fock(20)
-        assert coh.bargmann == Coherent([0], x=1.0).bargmann
+        assert coh.bargmann_triple() == Coherent([0], x=1.0).bargmann_triple()
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent([0], x=1.0)
         CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
-            CC.bargmann  # pylint: disable=pointless-statement
+            CC.bargmann_triple()  # pylint: disable=pointless-statement
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
