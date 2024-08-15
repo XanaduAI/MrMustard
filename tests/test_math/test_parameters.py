@@ -16,8 +16,8 @@
 Unit tests for :class:`Constant` and :class:`Variable`.
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard import math
 from mrmustard.math.parameters import (
@@ -50,6 +50,11 @@ class TestConstant:
 
         const3 = Constant(np.array([1, 2, 3]), "const3")
         assert np.allclose(const3.value, np.array([1, 2, 3]))
+
+        const4 = Constant(1, "const4", dtype="int64")
+        assert const4.value == 1
+        assert const4.name == "const4"
+        assert const4.value.dtype == "int64"
 
     def test_is_const(self):
         r"""
@@ -89,6 +94,11 @@ class TestVariable:
         assert np.allclose(var3.value, np.array([1, 2, 3]))
         assert var3.bounds == (0, 1)
         assert var3.update_fn == update_orthogonal
+
+        var4 = Variable(1, "var4", dtype="int64")
+        assert var4.value == 1
+        assert var4.name == "var4"
+        assert var4.value.dtype == "int64"
 
     def test_is_variable(self):
         r"""
