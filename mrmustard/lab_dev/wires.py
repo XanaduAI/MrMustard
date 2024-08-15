@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 from functools import cached_property
-from typing import Optional
 import numpy as np
 
 from IPython.display import display
@@ -164,12 +163,12 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Optional[set[int]] = None,
-        modes_in_bra: Optional[set[int]] = None,
-        modes_out_ket: Optional[set[int]] = None,
-        modes_in_ket: Optional[set[int]] = None,
-        classical_out: Optional[set[int]] = None,
-        classical_in: Optional[set[int]] = None,
+        modes_out_bra: set[int] | None = None,
+        modes_in_bra: set[int] | None = None,
+        modes_out_ket: set[int] | None = None,
+        modes_in_ket: set[int] | None = None,
+        classical_out: set[int] | None = None,
+        classical_in: set[int] | None = None,
     ) -> None:
         self.args: tuple[set, ...] = (
             modes_out_bra or set(),
@@ -187,6 +186,42 @@ class Wires:
 
         # Adds elements to the cache when calling ``__getitem__``
         self._mode_cache = {}
+
+    @cached_property
+    def adjoint(self) -> Wires:
+        r"""
+        New ``Wires`` object obtained by swapping ket and bra wires.
+        """
+        return Wires(
+            self.args[2], self.args[3], self.args[0], self.args[1], self.args[4], self.args[5]
+        )
+
+    @cached_property
+    def bra(self) -> Wires:
+        r"""
+        New ``Wires`` object without ket wires.
+        """
+        ret = Wires(self.args[0], self.args[1], set(), set())
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
+    def classical(self) -> Wires:
+        r"""
+        New ``Wires`` object without quantum wires.
+        """
+        ret = Wires(set(), set(), set(), set(), self.args[4], self.args[5])
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
+    def dual(self) -> Wires:
+        r"""
+        New ``Wires`` object obtained by swapping input and output wires.
+        """
+        return Wires(
+            self.args[1], self.args[0], self.args[3], self.args[2], self.args[5], self.args[4]
+        )
 
     @cached_property
     def id(self) -> int:
@@ -219,21 +254,17 @@ class Wires:
         return [id for d in self.ids_dicts for id in d.values()]
 
     @cached_property
-    def indices(self) -> tuple[int, ...]:
+    def ids_dicts(self) -> list[dict[int, int]]:
         r"""
-        The array of indices of this ``Wires`` in the standard order.
-        When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
-        to the subset, but it still counts them because indices refer to the original modes.
+        A list of dictionary mapping modes to ``ids``, one for each of the subsets
+        (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
 
-        .. code-block::
-
-            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
-            >>> assert w.indices == (0,1,2,3)
-            >>> assert w.input.indices == (2,3)
+        If subsets are taken, ``ids_dicts`` refers to the parent object rather than to the
+        child.
         """
-        return tuple(
-            self.index_dicts[t][m] for t, modes in enumerate(self.sorted_args) for m in modes
-        )
+        if self.original:
+            return self.original.ids_dicts
+        return [{m: i + self.id for m, i in d.items()} for d in self.index_dicts]
 
     @cached_property
     def index_dicts(self) -> list[dict[int, int]]:
@@ -252,22 +283,46 @@ class Wires:
         ]
 
     @cached_property
-    def ids_dicts(self) -> list[dict[int, int]]:
+    def indices(self) -> tuple[int, ...]:
         r"""
-        A list of dictionary mapping modes to ``ids``, one for each of the subsets
-        (``output.bra``, ``input.bra``, ``output.ket``, and ``input.ket``).
+        The array of indices of this ``Wires`` in the standard order.
+        When a subset is selected (e.g. ``.ket``), it doesn't include wires that do not belong
+        to the subset, but it still counts them because indices refer to the original modes.
 
-        If subsets are taken, ``ids_dicts`` refers to the parent object rather than to the
-        child.
+        .. code-block::
+
+            >>> w = Wires(modes_in_ket = {0,1}, modes_out_ket = {0,1})
+            >>> assert w.indices == (0,1,2,3)
+            >>> assert w.input.indices == (2,3)
         """
-        if self.original:
-            return self.original.ids_dicts
-        return [{m: i + self.id for m, i in d.items()} for d in self.index_dicts]
+        return tuple(
+            self.index_dicts[t][m] for t, modes in enumerate(self.sorted_args) for m in modes
+        )
 
     @cached_property
-    def sorted_args(self) -> tuple[list[int], ...]:
-        r"The sorted arguments. Allows to sort them only once."
-        return tuple(sorted(s) for s in self.args)
+    def input(self) -> Wires:
+        r"""
+        New ``Wires`` object without output wires.
+        """
+        ret = Wires(set(), self.args[1], set(), self.args[3], set(), self.args[5])
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
+    def ket(self) -> Wires:
+        r"""
+        New ``Wires`` object without bra wires.
+        """
+        ret = Wires(set(), set(), self.args[2], self.args[3])
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
+    def modes(self) -> set[int]:
+        r"""
+        The modes spanned by the wires.
+        """
+        return set.union(*self.args)
 
     @property
     def original(self):
@@ -277,67 +332,20 @@ class Wires:
         return self._original
 
     @cached_property
-    def modes(self) -> set[int]:
-        r"The modes spanned by the wires."
-        return set.union(*self.args)
-
-    @cached_property
-    def input(self) -> Wires:
-        r"New ``Wires`` object without output wires."
-        ret = Wires(set(), self.args[1], set(), self.args[3], set(), self.args[5])
-        ret._original = self.original or self  # pylint: disable=protected-access
-        return ret
-
-    @cached_property
     def output(self) -> Wires:
-        r"New ``Wires`` object without input wires."
+        r"""
+        New ``Wires`` object without input wires.
+        """
         ret = Wires(self.args[0], set(), self.args[2], set(), self.args[4], set())
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
     @cached_property
-    def ket(self) -> Wires:
-        r"New ``Wires`` object without bra wires."
-        ret = Wires(set(), set(), self.args[2], self.args[3])
-        ret._original = self.original or self  # pylint: disable=protected-access
-        return ret
-
-    @cached_property
-    def bra(self) -> Wires:
-        r"New ``Wires`` object without ket wires."
-        ret = Wires(self.args[0], self.args[1], set(), set())
-        ret._original = self.original or self  # pylint: disable=protected-access
-        return ret
-
-    @cached_property
-    def classical(self) -> Wires:
-        r"New ``Wires`` object without quantum wires."
-        ret = Wires(set(), set(), set(), set(), self.args[4], self.args[5])
-        ret._original = self.original or self  # pylint: disable=protected-access
-        return ret
-
-    @cached_property
-    def adjoint(self) -> Wires:
-        r"New ``Wires`` object obtained by swapping ket and bra wires."
-        return Wires(
-            self.args[2], self.args[3], self.args[0], self.args[1], self.args[4], self.args[5]
-        )
-
-    @cached_property
-    def dual(self) -> Wires:
-        r"New ``Wires`` object obtained by swapping input and output wires."
-        return Wires(
-            self.args[1], self.args[0], self.args[3], self.args[2], self.args[5], self.args[4]
-        )
-
-    def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
-        r"New ``Wires`` object with wires only on the given modes."
-        modes = {modes} if isinstance(modes, int) else set(modes)
-        if tuple(modes) not in self._mode_cache:
-            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3, 4, 5)))
-            w._original = self.original or self
-            self._mode_cache[tuple(modes)] = w
-        return self._mode_cache[tuple(modes)]
+    def sorted_args(self) -> tuple[list[int], ...]:
+        r"""
+        The sorted arguments. Allows to sort them only once.
+        """
+        return tuple(sorted(s) for s in self.args)
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -353,17 +361,32 @@ class Wires:
         return Wires(*new_args)
 
     def __bool__(self) -> bool:
-        r"Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise."
+        r"""
+        Returns ``True`` if this ``Wires`` object has any wires, ``False`` otherwise.
+        """
         return any(self.args)
-
-    def __len__(self) -> int:
-        r"""The number of wires."""
-        if self._len is None:
-            self._len = sum(map(len, self.args))
-        return self._len
 
     def __eq__(self, other) -> bool:
         return self.args == other.args
+
+    def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
+        r"""
+        New ``Wires`` object with wires only on the given modes.
+        """
+        modes = {modes} if isinstance(modes, int) else set(modes)
+        if tuple(modes) not in self._mode_cache:
+            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3, 4, 5)))
+            w._original = self.original or self
+            self._mode_cache[tuple(modes)] = w
+        return self._mode_cache[tuple(modes)]
+
+    def __len__(self) -> int:
+        r"""
+        The number of wires.
+        """
+        if self._len is None:
+            self._len = sum(map(len, self.args))
+        return self._len
 
     def __matmul__(self, other: Wires) -> tuple[Wires, list[int]]:
         r"""
