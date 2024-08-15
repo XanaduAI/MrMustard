@@ -141,8 +141,8 @@ class ParameterSet:
 
     def to_dict(self) -> dict[str, any]:
         r"""
-        Returns a dictionary representation of this paramter set such that
-        it is compatible with the signature of built in circuit components.
+        Returns a dictionary representation of this parameter set such that
+        it is compatible with the signature of built-in circuit components.
         """
         ret = {}
         for name, param in self.all_parameters.items():
