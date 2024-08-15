@@ -367,8 +367,8 @@ class State(CircuitComponent):
         """
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
-
-        state = self.to_fock()
+        shape = [max(50, d) for d in self.auto_shape()]
+        state = self.to_fock(shape)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
