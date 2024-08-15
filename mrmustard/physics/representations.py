@@ -101,12 +101,12 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def serialize(self) -> list[tuple[str, ArrayLike]]:
+    def serialize(self) -> dict[str, ArrayLike]:
         r"""Serialize a Representation."""
 
     @classmethod
     @abstractmethod
-    def deserialize(cls, data: dict) -> Representation:
+    def deserialize(cls, data: dict[str, ArrayLike]) -> Representation:
         r"""Deserialize a Representation."""
 
     def __eq__(self, other: Representation) -> bool:
@@ -522,14 +522,14 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
-    def serialize(self) -> list[tuple[str, ArrayLike]]:
+    def serialize(self) -> dict[str, ArrayLike]:
         """Serialize a Bargmann instance."""
-        return [("A", self.A), ("b", self.b), ("c", self.c)]
+        return {"A": self.A, "b": self.b, "c": self.c}
 
     @classmethod
-    def deserialize(cls, data: dict) -> Bargmann:
+    def deserialize(cls, data: dict[str, ArrayLike]) -> Bargmann:
         """Deserialize a Bargmann instance."""
-        return cls(data["A"], data["b"], data["c"])
+        return cls(**data)
 
     def _ipython_display_(self):
         display(widgets.bargmann(self))
@@ -790,12 +790,12 @@ class Fock(Representation):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
-    def serialize(self) -> list[tuple[str, ArrayLike]]:
+    def serialize(self) -> dict[str, ArrayLike]:
         """Serialize a Fock instance."""
-        return [("array", self.data)]
+        return {"array": self.data}
 
     @classmethod
-    def deserialize(cls, data: dict) -> Fock:
+    def deserialize(cls, data: dict[str, ArrayLike]) -> Fock:
         """Deserialize a Fock instance."""
         return cls(data["array"], batched=True)
 

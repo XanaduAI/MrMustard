@@ -36,7 +36,7 @@ def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
     .. code-block:: python
 
         @classmethod
-        def deserialize(cls, data: Dict) -> cls
+        def deserialize(cls, data: dict) -> cls
 
     Though not required to satisfy the interface, it is conventional for a
     class to implement an instance method called ``serialize`` that takes no

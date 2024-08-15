@@ -441,14 +441,14 @@ class Circuit:
 
         .. code-block:: python
 
-            def serialize(self) -> Tuple[Dict[str, Any], List[Tuple[str, arraylike]]]
+            def serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]
 
         The first part should be a JSON-serializable dict, and the second part should
         contain the (non-JSON-serializable) array-like data to be collected separately.
         """
         components, data = list(zip(*[c.serialize() for c in self.components]))
         kwargs = {
-            "arrays": {f"{key}:{i}": val for i, arrs in enumerate(data) for key, val in arrs},
+            "arrays": {f"{k}:{i}": v for i, arrs in enumerate(data) for k, v in arrs.items()},
             "path": self.path,
             "components": components,
         }
@@ -459,16 +459,12 @@ class Circuit:
         r"""Deserialize a Circuit."""
         comps, path = map(data.pop, ("components", "path"))
 
-        arrays = [{} for _ in comps]
         for k, v in data.items():
             kwarg, i = k.split(":")
-            arrays[int(i)][kwarg] = v
+            comps[int(i)][kwarg] = v
 
-        components = [
-            locate(comp_data.pop("class")).deserialize(arrays=arrs, **comp_data)
-            for arrs, comp_data in zip(arrays, comps)
-        ]
-        circ = cls(components)
+        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        circ = cls([c.deserialize(comp_data) for c, comp_data in zip(classes, comps)])
         if path:  # re-evaluates the hidden `_graph` property
             circ.path = [tuple(p) for p in path]
         return circ

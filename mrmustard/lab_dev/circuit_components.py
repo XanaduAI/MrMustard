@@ -107,7 +107,7 @@ class CircuitComponent:
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
 
-    def serialize(self) -> tuple[dict[str, Any], list[tuple[str, ArrayLike]]]:
+    def serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """Inner serialization to be used by Circuit.serialize()."""
         cls = type(self)
         serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
@@ -132,20 +132,19 @@ class CircuitComponent:
             for k, v in self.parameter_set.variables.items():
                 serializable[f"{k}_bounds"] = v.bounds
                 serializable[f"{k}_trainable"] = True
-            return serializable, [
-                (k, v.value) for k, v in self.parameter_set.all_parameters.items()
-            ]
+            return serializable, {k: v.value for k, v in self.parameter_set.all_parameters.items()}
 
-        return serializable, []
+        return serializable, {}
 
     @classmethod
-    def deserialize(cls, arrays=None, **data) -> CircuitComponent:
+    def deserialize(cls, data: dict) -> CircuitComponent:
         """Deserialization when within a circuit."""
         if "rep_class" in data:
-            rep = locate(data["rep_class"]).deserialize(arrays)
-            return cls._from_attributes(rep, Wires(*map(set, data["wires"])), name=data["name"])
+            rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
+            rep = locate(rep_class).deserialize(data)
+            return cls._from_attributes(rep, Wires(*map(set, wires)), name=name)
 
-        return cls(**data, **arrays)
+        return cls(**data)
 
     @property
     def adjoint(self) -> CircuitComponent:
