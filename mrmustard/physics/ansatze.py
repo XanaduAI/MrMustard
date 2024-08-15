@@ -447,7 +447,7 @@ class PolyExpBase(Ansatz):
         This decomposition is typically favourable if m>n, and will only run if that is the case.
         The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
         """
-        dim_beta, shape_beta = self.polynomial_shape
+        dim_beta, _ = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
