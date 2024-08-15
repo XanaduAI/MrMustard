@@ -485,7 +485,10 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_batch(
         self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: Tuple[int]
     ) -> np.ndarray:
-        G = vanilla_batch(tuple(shape), A, B, C)
+        if settings.USE_VANILLA_AVERAGE
+                G = vanilla_average(tuple(shape), A, B, C)
+        else:
+            G = vanilla_batch(tuple(shape), A, B, C)
         return G
 
     def hermite_renormalized_binomial(

@@ -131,6 +131,7 @@ def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
 
     G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
     G[next(path)] = c * np.ones(b.shape[-1], dtype=np.complex128)
+    # G[next(path)] = c
     for index in path:
         G[index] = steps.vanilla_average_step_batch(G, A, b, index)
     return G

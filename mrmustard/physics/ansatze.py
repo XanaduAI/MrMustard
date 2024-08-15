@@ -25,6 +25,8 @@ from warnings import warn
 
 import numpy as np
 
+from mrmustard.math.lattice.strategies.vanilla import vanilla_average,vanilla
+
 from mrmustard import math, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.utils.argsort import argsort_gen
@@ -412,12 +414,14 @@ class PolyExpBase(Ansatz):
             ]
         )
         b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype),bi[dim_alpha:]),axis=0)
-        poly_bar = math.hermite_renormalized(
+        poly_bar = vanilla_average(
+            (math.sum(shape_beta)+50,) * dim_alpha + shape_beta,
             A_bar,
             b_bar,
-            complex(1),
-            (math.sum(shape_beta),) * dim_alpha + shape_beta,
+            complex(1)
         )
+        print(A_bar.shape)
+        print(b_bar.shape)
         c_decomp = math.sum(
             poly_bar * ci,
             axes=math.arange(
@@ -598,8 +602,7 @@ class PolyExpAnsatz(PolyExpBase):
         b_part = math.sum(
             self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
-
-        exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
+        exp_sum = math.exp(1 / 2 * A_part+ b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
             val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
         else:
@@ -613,23 +616,43 @@ class PolyExpAnsatz(PolyExpBase):
             )  # (b_arg, b_abc, m)
             b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
             A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
+            # poly = math.astensor(
+            #     [
+            #         math.hermite_renormalized_batch(
+            #             A_poly[i], b_poly[i], complex(1), shape_beta
+            #         )
+            #         for i in range(batch_size)
+            #     ]
+            # )  # (b_abc,b_arg,poly)
             poly = math.astensor(
                 [
-                    math.hermite_renormalized_batch(
-                        A_poly[i], b_poly[i], complex(1), shape_beta
+                    vanilla_average(
+                        shape_beta,A_poly[i], b_poly[i], complex(1)
                     )
                     for i in range(batch_size)
                 ]
             )  # (b_abc,b_arg,poly)
+            # poly = math.astensor(
+            #     [
+            #         vanilla_average(
+            #             shape_beta,A_poly[i], b_poly[i], exp_sum[:,i]
+            #         )
+            #         for i in range(batch_size)
+            #     ]
+            # )  # (b_abc,b_arg,poly)
+            
+
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
+            poly_gmpy = np_to_gmpy(poly)
+            selfc_gmpy = np_to_gmpy(self.c)
             val = math.sum(
-                exp_sum
-                * math.sum(
-                    poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
+                exp_sum *
+                math.sum(
+                    poly_gmpy * selfc_gmpy, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
                 ),
                 axes=[-1],
             )  # (b_arg)
-        return val
+        return val,poly,self.c,exp_sum,A_poly,b_poly
 
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
