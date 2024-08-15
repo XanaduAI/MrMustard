@@ -83,8 +83,8 @@ class TestUnitary:
         u_component = CircuitComponent._from_attributes(
             unitary1.representation, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
-
         assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate, repr=Bargmann)"
+        assert repr(unitary1.to_fock(5)) == "Dgate(modes=[0, 1], name=Dgate, repr=Fock)"
         assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate, repr=Bargmann)"
         assert (
             repr(u_component.to_fock(5)) == "CircuitComponent(modes=[0, 1], name=Dgate, repr=Fock)"

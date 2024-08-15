@@ -116,6 +116,19 @@ class ParameterSet:
             ret[f"{tag}/{k}"] = v
         return ret
 
+    def to_dict(self) -> dict[str, any]:
+        r"""
+        Returns a dictionary representation of this parameter set such that
+        it is compatible with the signature of built-in circuit components.
+        """
+        ret = {}
+        for name, param in self.all_parameters.items():
+            ret[name] = param.value
+            if isinstance(param, Variable):
+                ret[name + "_trainable"] = True
+                ret[name + "_bounds"] = param.bounds
+        return ret
+
     def to_string(self, decimals: int) -> str:
         r"""
         Returns a string representation of the parameter values, separated by commas and rounded
