@@ -507,14 +507,8 @@ class CircuitComponent:
         This approach avoids computing the representation, which may be expensive. Additionally,
         it allows returning trainable CCs.
         """
-        # slice the parameter set
         items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = {}
-        for name, param in self._parameter_set[items].all_parameters.items():
-            kwargs[name] = param.value
-            if isinstance(param, Variable):
-                kwargs[name + "_trainable"] = True
-                kwargs[name + "_bounds"] = param.bounds
+        kwargs = self.parameter_set[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
 
     def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:

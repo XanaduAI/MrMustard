@@ -139,6 +139,19 @@ class ParameterSet:
             strings.append(string)
         return ", ".join(strings)
 
+    def to_dict(self) -> dict[str, any]:
+        r"""
+        Returns a dictionary representation of this paramter set such that
+        it is compatible with the signature of built in circuit components.
+        """
+        ret = {}
+        for name, param in self.all_parameters.items():
+            ret[name] = param.value
+            if isinstance(param, Variable):
+                ret[name + "_trainable"] = True
+                ret[name + "_bounds"] = param.bounds
+        return ret
+
     def __getitem__(self, items: Union[int, Sequence[int]]):
         r"""
         Returns a parameter set that contains slices of the parameters in this parameter set.
