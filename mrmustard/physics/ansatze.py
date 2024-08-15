@@ -415,10 +415,8 @@ class PolyExpBase(Ansatz):
         )
         b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype), bi[dim_alpha:]), axis=0)
         poly_bar = vanilla_average(
-            (math.sum(shape_beta) + 50,) * dim_alpha + shape_beta, A_bar, b_bar, complex(1)
+            (math.sum(shape_beta),) * dim_alpha + shape_beta, A_bar, b_bar, complex(1)
         )
-        print(A_bar.shape)
-        print(b_bar.shape)
         c_decomp = math.sum(
             poly_bar * ci,
             axes=math.arange(
@@ -639,12 +637,10 @@ class PolyExpAnsatz(PolyExpBase):
             # )  # (b_abc,b_arg,poly)
 
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
-            poly_gmpy = np_to_gmpy(poly)
-            selfc_gmpy = np_to_gmpy(self.c)
             val = math.sum(
                 exp_sum
                 * math.sum(
-                    poly_gmpy * selfc_gmpy,
+                    poly * self.c,
                     axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
                 axes=[-1],
