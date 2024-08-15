@@ -155,7 +155,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     """
     batch_shape = (b.shape[0],)
     # init output tensor
-    G = np.zeros(batch_shape+shape, dtype=np.complex128)
+    G = np.zeros(batch_shape + shape, dtype=np.complex128)
 
     # initialize path iterator
     path = np.ndindex(shape)  # We know the first dimension is the batch one
