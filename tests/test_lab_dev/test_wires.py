@@ -38,12 +38,21 @@ class TestWires:
         assert w.ids == [w.id + i for i in range(9)]
 
     def test_ids_with_subsets(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9, 10}, {11})
 
-        assert w.input.ids == [w.ids[3], w.ids[4], w.ids[5], w.ids[8]]
-        assert w.output.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[6], w.ids[7]]
+        assert w.input.ids == [w.ids[3], w.ids[4], w.ids[5], w.ids[8], w.ids[11]]
+        assert w.output.ids == [
+            w.ids[0],
+            w.ids[1],
+            w.ids[2],
+            w.ids[6],
+            w.ids[7],
+            w.ids[9],
+            w.ids[10],
+        ]
         assert w.bra.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[3], w.ids[4], w.ids[5]]
         assert w.ket.ids == [w.ids[6], w.ids[7], w.ids[8]]
+        assert w.classical.ids == [w.ids[9], w.ids[10], w.ids[11]]
 
         assert w.output.bra.ids == [w.ids[0], w.ids[1], w.ids[2]]
         assert w.input.bra.ids == [w.ids[3], w.ids[4], w.ids[5]]
