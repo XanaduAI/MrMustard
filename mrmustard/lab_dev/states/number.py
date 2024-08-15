@@ -76,17 +76,3 @@ class Number(Ket):
         self._representation = Fock.from_function(
             fock_state, n=self.n.value, cutoffs=self.cutoffs.value
         )
-
-    def serialize(self):
-        r"""
-        Serialize a Number instance.
-
-        Needs overriding because the parameters cannot be modified using math.
-        """
-        cls = type(self)
-        return {
-            "class": f"{cls.__module__}.{cls.__qualname__}",
-            "modes": tuple(self.wires.modes),
-            "n": self.n,
-            "cutoffs": tuple(self.cutoffs),
-        }, []
