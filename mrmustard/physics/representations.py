@@ -21,10 +21,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
 
-from matplotlib import colors
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import ArrayLike
+
+from matplotlib import colors
+import matplotlib.pyplot as plt
 
 from IPython.display import display
 
