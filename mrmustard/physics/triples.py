@@ -697,12 +697,7 @@ def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]
     """
     O2n = math.zeros((2 * n_modes, 2 * n_modes))
     Omega = math.J(n_modes)
-    A = (
-        math.block([[O2n, Omega], [-Omega, O2n]])
-        .reshape((2 * n_modes,) * 4)
-        .transpose([0, 2, 1, 3])  # out,out,in,in -> out,in,out,in (bra first)
-        .reshape((4 * n_modes, 4 * n_modes))
-    )
+    A = math.block([[O2n, -Omega], [Omega, O2n]])
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
