@@ -201,7 +201,7 @@ class Wires:
         r"""
         New ``Wires`` object with only bra wires.
         """
-        ret = Wires(self.args[0], self.args[1], set(), set())
+        ret = Wires(modes_out_bra=self.args[0], modes_in_bra=self.args[1])
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
@@ -210,7 +210,7 @@ class Wires:
         r"""
         New ``Wires`` object with only classical wires.
         """
-        ret = Wires(set(), set(), set(), set(), self.args[4], self.args[5])
+        ret = Wires(classical_out=self.args[4], classical_in=self.args[5])
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
@@ -315,7 +315,7 @@ class Wires:
         r"""
         New ``Wires`` object with only ket wires.
         """
-        ret = Wires(set(), set(), self.args[2], self.args[3])
+        ret = Wires(modes_out_ket=self.args[2], modes_in_ket=self.args[3])
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
