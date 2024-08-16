@@ -20,12 +20,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import Optional, Sequence
+from typing import Sequence
 
-from ..states import Number, ConditionalState, State
+from ..states import ConditionalState, State
 from .base import MeasurementDevice
 from ..circuit_components import CircuitComponent
-from ..sampler import Sampler
+from ..sampler import PNRSampler
 from mrmustard import settings, math
 
 __all__ = ["PNR"]
@@ -42,17 +42,10 @@ class PNR(MeasurementDevice):
     def __init__(
         self,
         modes: Sequence[int],
-        cutoff: Optional[int] = None,
+        cutoff: int | None = None,
     ):
         self._cutoff = cutoff or settings.AUTOCUTOFF_MAX_CUTOFF
-        super().__init__(
-            modes=set(modes),
-            name="PNR",
-            sampler=Sampler(
-                list(range(self.cutoff + 1)),
-                [Number(modes, n, self.cutoff) for n in range(self.cutoff + 1)],
-            ),
-        )
+        super().__init__(modes=modes, name="PNR", sampler=PNRSampler(cutoff))
 
     @property
     def cutoff(self) -> int:
@@ -77,19 +70,20 @@ class PNR(MeasurementDevice):
 
         # works if a mode is left over
         # if all modes measured should return an array of probabilities?
-        modes = [mode for mode in other.modes if mode not in self.modes]
-        states = [other >> meas_op.dual for meas_op in self.sampling_technique]
-        ret = ConditionalState(modes, range(len(self.sampling_technique)), states)
+        # modes = [mode for mode in other.modes if mode not in self.modes]
+        # states = [other >> meas_op.dual for meas_op in self.sampling_technique]
+        # ret = ConditionalState(modes, range(len(self.sampling_technique)), states)
 
-        # this should be handled by self.sampling_technique.sample
-        a = list(range(len(self.sampling_technique)))
-        p = [
-            state.probability if isinstance(state, State) else math.cast(math.pow(state, 2), float)
-            for state in ret.state_outcomes.values()
-        ]
-        p = p / sum(p)
-        rng = np.random.default_rng()
-        meas_outcome = rng.choice(a=a, p=p)
+        # # this should be handled by self.sampling_technique.sample
+        # a = list(range(len(self.sampling_technique)))
+        # p = [
+        #     state.probability if isinstance(state, State) else math.cast(math.pow(state, 2), float)
+        #     for state in ret.state_outcomes.values()
+        # ]
+        # p = p / sum(p)
+        # rng = np.random.default_rng()
+        # meas_outcome = rng.choice(a=a, p=p)
 
-        ret.meas_outcomes = meas_outcome
-        return ret if ret.modes else ret.state
+        # ret.meas_outcomes = meas_outcome
+        # return ret if ret.modes else ret.state
+        return 1.0

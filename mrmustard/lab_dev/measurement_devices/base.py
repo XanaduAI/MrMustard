@@ -33,9 +33,9 @@ class MeasurementDevice(CircuitComponent):
 
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         modes: tuple[int, ...] = (),
-        sampler: Optional[Sampler] = None,
+        sampler: Sampler | None = None,
     ):
         super().__init__(
             name=name or "MD" + "".join(str(m) for m in modes),
@@ -43,7 +43,6 @@ class MeasurementDevice(CircuitComponent):
             modes_in_ket=modes,
         )
 
-        # thinking this is either Sampler / ProbabilityDistribution / POVMs
         self._sampler = sampler
 
     @property
