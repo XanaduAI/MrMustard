@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,43 +12,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=too-many-branches
-
 """
-This module contains the sampler class.
 """
 
 from __future__ import annotations
 
+from typing import Any
 
-__all__ = ["Sampler"]
+import numpy as np
+
+from mrmustard import math
+
+from ..physics.representations import Fock
+from .states import State, Number, QuadratureEigenstate
+from .transformations import Identity
+
+__all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
 
 class Sampler:
     r""" """
 
-    def __init__(self, meas_outcomes, sampling_technique) -> None:
-        self._meas_outcomes = meas_outcomes
-        self._sampling_technique = sampling_technique
+    def __init__(
+        self, meas_out: list[Any], meas_ops: list[State], probs: None | list[float] = None
+    ):
+        self._meas_ops = meas_ops
+        self._meas_outcomes = meas_out
+        self._probs = probs
 
     @property
-    def meas_outcomes(self):
+    def meas_ops(self):
         r""" """
-        return self._meas_outcomes
+        return self._meas_ops
 
-    @property
-    def sampling_technique(self):
-        r""" """
-        return self._sampling_technique
+    def _verify_povms(self):
+        summation = sum(self.meas_ops[1:], self.meas_ops[0])
+        summation = summation / np.max(summation.representation.ansatz.array)
+        identity = (
+            Identity(summation.modes).to_fock()
+            if isinstance(summation.representation, Fock)
+            else Identity(summation.modes)
+        )
+        if summation.representation != identity.representation:
+            raise ValueError("POVMs do not sum to the identity.")
 
-    def sample(self):
+    def sample(self, state: State, n_samples: int) -> list[Any]:
         r""" """
-        pass
+        rng = np.random.default_rng()
+        return [rng.choice(a=self._meas_outcomes, p=self.probs(state)) for _ in range(n_samples)]
 
-    def prob_dist(self):
+    def probs(self, state: State | None = None):
         r""" """
-        pass
+        if self._probs is None:
+            states = [state >> meas_op.dual for meas_op in self.meas_ops]
+            probs = [
+                state.probability if isinstance(state, State) else math.real(state)
+                for state in states
+            ]
+            return probs / sum(probs)
+        return self._probs
 
-    def povms(self):
-        r""" """
-        pass
+
+class PNRSampler(Sampler):
+    r""" """
+
+    def __init__(self, cutoff: int) -> None:
+        super().__init__(list(range(cutoff)), [Number([0], n).dm() for n in range(cutoff)])
+
+
+class HomodyneSampler(Sampler):
+    r""" """
+
+    def __init__(
+        self,
+        q_bounds: tuple[float, float],
+        bin_num: int,
+    ):
+        qs = np.linspace(*q_bounds, num=bin_num)
+        super().__init__(qs, [QuadratureEigenstate([0], x=q, phi=0).dm() for q in qs])
