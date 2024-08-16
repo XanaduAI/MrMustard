@@ -430,21 +430,12 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
-    def serialize(self, filestem: str=None):
+    def serialize(self, filestem: str = None):
         r"""
         Serialize a Circuit.
 
         Args:
             filestem: An optional name to give the resulting file saved to disk.
-
-        All components must implement the following in order to serialize correctly:
-
-        .. code-block:: python
-
-            def serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]
-
-        The first part should be a JSON-serializable dict, and the second part should
-        contain the (non-JSON-serializable) array-like data to be collected separately.
         """
         components, data = list(zip(*[c.serialize() for c in self.components]))
         kwargs = {

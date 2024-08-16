@@ -108,7 +108,12 @@ class CircuitComponent:
                     self._representation = self._representation.reorder(tuple(perm))
 
     def serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
-        """Inner serialization to be used by Circuit.serialize()."""
+        """
+        Inner serialization to be used by Circuit.serialize().
+
+        The first dict must be JSON-serializable, and the second dict must contain
+        the (non-JSON-serializable) array-like data to be collected separately.
+        """
         cls = type(self)
         serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
         params = signature(cls).parameters
