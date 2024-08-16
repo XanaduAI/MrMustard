@@ -3,8 +3,8 @@ This module calculates all possible Fock representations of mode 0,where all oth
 This is done by applying the recursion relation in a selective manner.
 """
 
-import numba
 import numpy as np
+import numba
 from numba import int64, njit
 from numba.cpython.unsafe.tuple import tuple_setitem
 

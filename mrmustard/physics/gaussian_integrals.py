@@ -132,9 +132,15 @@ def complex_gaussian_integral(
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
 
-    c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
+    determinant = math.det(M)
+    if determinant != 0:
+        c_post = (
+            c
+            * math.sqrt((-1) ** n / determinant)
+            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        )
+    else:
+        c_post = math.real(c) * np.inf
 
     if math.asnumpy(not_idx).shape != (0,):
         D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
@@ -252,12 +258,16 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
         The reordered ``(A,b,c)`` triple
     """
     A, b, c = Abc
+    dim_poly = len(c.shape) - 1
 
     if order:
+        if dim_poly > 0:
+            if type(order) == list:
+                order.extend(np.arange(len(order), len(order) + dim_poly).tolist())
+            elif type(order) == tuple:
+                order = order + tuple(np.arange(len(order), len(order) + dim_poly))
         A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
         b = math.gather(b, order, axis=-1)
-        if len(c.shape) == len(order):
-            c = math.transpose(c, order)
     return A, b, c
 
 
@@ -368,3 +378,94 @@ def complex_gaussian_integral_2(
         b_post = math.zeros((0,), dtype=b.dtype)
 
     return A_post, b_post, c_post
+
+
+def join_Abc_poly(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+):
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
+    matrices and concatenating the ``b`` vectors.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+
+    Returns:
+        The joined ``(A,b,c)`` triple
+    """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    A1 = math.cast(A1, "complex128")
+    A2 = math.cast(A2, "complex128")
+    c1 = math.astensor(c1)
+    c2 = math.astensor(c2)
+
+    dim_n1 = len(c1.shape)
+    dim_n2 = len(c2.shape)
+
+    dim_m1 = A1.shape[-1] - dim_n1
+    dim_m2 = A2.shape[-1] - dim_n2
+
+    A12 = math.block(
+        [
+            [
+                A1[:dim_m1, :dim_m1],
+                math.zeros((dim_m1, dim_m2), dtype=A1.dtype),
+                A1[:dim_m1, dim_m1:],
+                math.zeros((dim_m1, dim_n2), dtype=A1.dtype),
+            ],
+            [
+                math.zeros((dim_m2, dim_m1), dtype=A1.dtype),
+                A2[:dim_m2:, :dim_m2],
+                math.zeros((dim_m2, dim_n1), dtype=A1.dtype),
+                A2[:dim_m2, dim_m2:],
+            ],
+            [
+                A1[dim_m1:, :dim_m1],
+                math.zeros((dim_n1, dim_m2), dtype=A1.dtype),
+                A1[dim_m1:, dim_m1:],
+                math.zeros((dim_n1, dim_n2), dtype=A1.dtype),
+            ],
+            [
+                math.zeros((dim_n2, dim_m1), dtype=A1.dtype),
+                A2[dim_m2:, :dim_m2],
+                math.zeros((dim_n2, dim_n1), dtype=A1.dtype),
+                A2[dim_m2:, dim_m2:],
+            ],
+        ]
+    )
+    b12 = math.concat((b1[:dim_m1], b2[:dim_m2], b1[dim_m1:], b2[dim_m2:]), axis=-1)
+    c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
+    return A12, b12, c12
+
+
+def contract_two_Abc_poly(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+):
+    r"""
+    Returns the contraction of two ``(A,b,c)`` triples with given indices.
+
+    Note that the indices must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
+    the corresponding complex variable with respect to your Abc triples.
+    For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
+    ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
+
+    Arguments:
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+        idx1: the indices of the first ``(A,b,c)`` triple to contract
+        idx2: the indices of the second ``(A,b,c)`` triple to contract
+
+    Returns:
+        The contracted ``(A,b,c)`` triple
+    """
+    Abc = join_Abc_poly(Abc1, Abc2)
+
+    dim_n1 = len(Abc1[2].shape)
+    return complex_gaussian_integral(
+        Abc, idx1, tuple(n + Abc1[0].shape[-1] - dim_n1 for n in idx2), measure=-1.0
+    )

@@ -38,6 +38,10 @@ class TestThermal:
         assert state.name == "Thermal"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
+    def test_get_item(self):
+        state = Thermal([0, 1], 3)
+        assert state[0] == Thermal([0], 3)
+
     def test_init_error(self):
         with pytest.raises(ValueError, match="nbar"):
             Thermal(modes=[0, 1], nbar=[2, 3, 4])

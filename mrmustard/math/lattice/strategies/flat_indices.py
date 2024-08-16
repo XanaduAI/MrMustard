@@ -21,9 +21,8 @@ Alternatevely, we can flatten the multi-dimensional array and index its elements
 """
 
 from typing import Iterator, Sequence
-from numba import njit
-
 import numpy as np
+from numba import njit
 
 
 @njit

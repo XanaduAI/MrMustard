@@ -30,13 +30,12 @@ from typing import Optional, Sequence, Union
 from enum import Enum
 import warnings
 
+import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import numpy as np
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
@@ -50,8 +49,6 @@ from mrmustard.utils.typing import (
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
-    norm_ket,
-    trace_dm,
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
@@ -144,7 +141,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.physics.representations import Bargmann
             >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.lab_dev.states.base import Ket
 
             >>> modes = [0, 1]
             >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
@@ -331,14 +328,14 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
 
     def visualize_2d(
         self,
         xbounds: tuple[int, int] = (-6, 6),
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -395,7 +392,7 @@ class State(CircuitComponent):
         fig = make_subplots(
             rows=2,
             cols=2,
-            column_widths=[2, 1],
+            column_widths=[5, 3],
             row_heights=[1, 2],
             vertical_spacing=0.05,
             horizontal_spacing=0.05,
@@ -409,12 +406,12 @@ class State(CircuitComponent):
             x=xs,
             y=-ps,
             z=math.transpose(z),
-            colorscale=colorscale,
+            coloraxis="coloraxis",
             name="Wigner function",
             autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
-        fig.update_traces(row=2, col=1, showscale=False)
+        fig.update_traces(row=2, col=1)
         fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
@@ -432,10 +429,11 @@ class State(CircuitComponent):
 
         fig.update_layout(
             height=500,
-            width=500,
+            width=580,
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_xaxes(
             showline=True,
@@ -461,7 +459,7 @@ class State(CircuitComponent):
         xbounds: tuple[int] = (-6, 6),
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
     ) -> Union[go.Figure, None]:
         r"""
@@ -499,7 +497,7 @@ class State(CircuitComponent):
                 x=xs,
                 y=ps,
                 z=z,
-                colorscale=colorscale,
+                coloraxis="coloraxis",
                 hovertemplate="x: %{x:.3f}"
                 + "<br>p: %{y:.3f}"
                 + "<br>W(x, p): %{z:.3f}<extra></extra>",
@@ -512,6 +510,7 @@ class State(CircuitComponent):
             height=500,
             margin=dict(l=0, r=0, b=0, t=0),
             scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
             contours_z=dict(
@@ -581,27 +580,6 @@ class State(CircuitComponent):
         is_fock = isinstance(self.representation, Fock)
         display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
-    def _getitem_builtin_state(self, modes: set[int]):
-        r"""
-        A convenience function to slice built-in states.
-
-        Built-in states come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable states.
-        """
-        # slice the parameter set
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = {}
-        for name, param in self._parameter_set[items].all_parameters.items():
-            kwargs[name] = param.value
-            if isinstance(param, Variable):
-                kwargs[name + "_trainable"] = True
-                kwargs[name + "_bounds"] = param.bounds
-
-        return self.__class__(modes, **kwargs)
-
 
 class DM(State):
     r"""
@@ -626,8 +604,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -656,7 +633,7 @@ class DM(State):
             except AttributeError:  # bargmann
                 repr = self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / trace_dm(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
@@ -813,7 +790,7 @@ class DM(State):
         if self._parameter_set:
             # if ``self`` has a parameter set it means it is a built-in state,
             # in which case we slice the parameters
-            return self._getitem_builtin_state(modes)
+            return self._getitem_builtin(modes)
 
         # if ``self`` has no parameter set it is not a built-in state,
         # in which case we trace the representation
@@ -900,7 +877,7 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:
@@ -929,7 +906,7 @@ class Ket(State):
             except AttributeError:  # bargmann
                 repr = self.representation.conj() & self.representation
                 A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / norm_ket(A, b, c)
+                repr = repr / self.probability
                 shape = autoshape_numba(
                     math.asnumpy(A),
                     math.asnumpy(b),
@@ -1054,13 +1031,12 @@ class Ket(State):
         modes = set(modes)
 
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
+            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
 
         if self._parameter_set:
             # if ``self`` has a parameter set, it is a built-in state, and we slice the
             # parameters
-            return self._getitem_builtin_state(modes)
+            return self._getitem_builtin(modes)
 
         # if ``self`` has no parameter set, it is not a built-in state.
         # we must turn it into a density matrix and slice the representation
@@ -1112,7 +1088,10 @@ class Ket(State):
             / np.sqrt(2)
             * math.block(
                 [
-                    [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                    [
+                        math.eye(m, dtype=math.complex128),
+                        math.eye(m, dtype=math.complex128),
+                    ],
                     [
                         -1j * math.eye(m, dtype=math.complex128),
                         1j * math.eye(m, dtype=math.complex128),

@@ -62,8 +62,7 @@ class TraceOut(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            modes_in_ket=modes,
-            modes_in_bra=modes,
+            wires=[(), modes, (), modes],
             representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )
