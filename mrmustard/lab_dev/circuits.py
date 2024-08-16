@@ -430,12 +430,12 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
-    def serialize(self, filestem=None):
+    def serialize(self, filestem: str=None):
         r"""
         Serialize a Circuit.
 
-        Keyword Args:
-            filestem (str): An optional name to give the resulting file saved to disk.
+        Args:
+            filestem: An optional name to give the resulting file saved to disk.
 
         All components must implement the following in order to serialize correctly:
 
