@@ -18,12 +18,12 @@ The class representing a number state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Sequence
 
-from mrmustard import math
 from mrmustard.physics.representations import Fock
 from mrmustard.physics.fock import fock_state
 from .base import Ket
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["Number"]
 
@@ -63,31 +63,16 @@ class Number(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        n: Union[int, Sequence[int]],
-        cutoffs: Optional[Union[int, Sequence[int]]] = None,
+        n: int | Sequence[int],
+        cutoffs: int | Sequence[int] | None = None,
     ) -> None:
-        if isinstance(n, int):
-            n = (n,) * len(modes)
-        elif len(n) != len(modes):
-            raise ValueError(f"The number of modes is {len(modes)}, but {n} has length {len(n)}.")
-        if isinstance(cutoffs, int):
-            cutoffs = (cutoffs,) * len(modes)
-        if cutoffs is not None and len(cutoffs) != len(modes):
-            raise ValueError(
-                f"The number of modes is {len(modes)}, but found {len(cutoffs)} cutoffs."
-            )
-        self.n = n
         super().__init__(modes=modes, name="N")
-        self.short_name = [str(n) for n in self.n]
-
-        for i, num in enumerate(n):
-            self.manual_shape[i] = num + 1 if cutoffs is None else cutoffs[i] + 1
-
-        self.cutoffs = math.atleast_1d(cutoffs) if cutoffs else self.n
-        if len(self.cutoffs) == 1:
-            self.cutoffs = math.tile(self.cutoffs, [len(modes)])
-        if len(self.cutoffs) != len(modes):
-            msg = f"Length of ``cutoffs`` must be 1 or {len(modes)}, found {len(self.cutoffs)}."
-            raise ValueError(msg)
-
-        self._representation = Fock.from_function(fock_state, n=self.n, cutoffs=self.cutoffs)
+        ns, cs = list(reshape_params(len(modes), n=n, cutoffs=n if cutoffs is None else cutoffs))
+        self._add_parameter(make_parameter(False, ns, "n", (None, None), dtype="int64"))
+        self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
+        self.short_name = [str(int(n)) for n in self.n.value]
+        for i, cutoff in enumerate(self.cutoffs.value):
+            self.manual_shape[i] = cutoff + 1
+        self._representation = Fock.from_function(
+            fock_state, n=self.n.value, cutoffs=self.cutoffs.value
+        )
