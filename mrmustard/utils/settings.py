@@ -14,9 +14,9 @@
 
 """A module containing global settings."""
 
-from pathlib import Path
-from typing import Union
+from __future__ import annotations
 
+from pathlib import Path
 from rich import print
 import rich.table
 import numpy as np
@@ -211,7 +211,7 @@ class Settings:
         return self._cache_dir
 
     @CACHE_DIR.setter
-    def CACHE_DIR(self, path: Union[str, Path]):
+    def CACHE_DIR(self, path: str | Path):
         self._cache_dir = Path(path)
         self._cache_dir.mkdir(exist_ok=True, parents=True)
 
