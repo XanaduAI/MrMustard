@@ -494,7 +494,7 @@ class TestCircuitComponent:
         name = "my_component"
         rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
         cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
-        kwargs, arrays = cc.serialize()
+        kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",
             "wires": cc.wires.sorted_args,
@@ -516,4 +516,4 @@ class TestCircuitComponent:
         with pytest.raises(
             TypeError, match="MyComponent does not seem to have any wires construction method"
         ):
-            cc.serialize()
+            cc._serialize()

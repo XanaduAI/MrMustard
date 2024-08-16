@@ -107,7 +107,7 @@ class CircuitComponent:
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
 
-    def serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
+    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
         Inner serialization to be used by Circuit.serialize().
 
@@ -142,7 +142,7 @@ class CircuitComponent:
         return serializable, {}
 
     @classmethod
-    def deserialize(cls, data: dict) -> CircuitComponent:
+    def _deserialize(cls, data: dict) -> CircuitComponent:
         """Deserialization when within a circuit."""
         if "rep_class" in data:
             rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])

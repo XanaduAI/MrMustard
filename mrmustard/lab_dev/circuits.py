@@ -437,7 +437,7 @@ class Circuit:
         Args:
             filestem: An optional name to give the resulting file saved to disk.
         """
-        components, data = list(zip(*[c.serialize() for c in self.components]))
+        components, data = list(zip(*[c._serialize() for c in self.components]))
         kwargs = {
             "arrays": {f"{k}:{i}": v for i, arrs in enumerate(data) for k, v in arrs.items()},
             "path": self.path,
@@ -455,7 +455,7 @@ class Circuit:
             comps[int(i)][kwarg] = v
 
         classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
-        circ = cls([c.deserialize(comp_data) for c, comp_data in zip(classes, comps)])
+        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
         if path:  # re-evaluates the hidden `_graph` property
             circ.path = [tuple(p) for p in path]
         return circ
