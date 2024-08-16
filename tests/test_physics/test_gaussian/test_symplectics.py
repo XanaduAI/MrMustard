@@ -56,7 +56,7 @@ def test_Sgate(r, phi):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     S = Sgate(r=r, phi=phi)[0]
-    cov = (Vacuum(2) >> S2 >> S).cov
+    cov = (Vacuum(2) >> S2 >> S).cov * 2 / settings.HBAR
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(squeezing(r, phi), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
@@ -69,7 +69,7 @@ def test_Pgate(s):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     P = Pgate(shearing=s, modes=[0])
-    cov = (Vacuum(2) >> S2 >> P).cov
+    cov = (Vacuum(2) >> S2 >> P).cov * 2 / settings.HBAR
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     P_expanded = expand(np.array([[1, 0], [s, 1]]), [0], 2)
     expected = P_expanded @ expected @ P_expanded.T
@@ -84,7 +84,7 @@ def test_CXgate(s):
     S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
     S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
     CX = CXgate(s=s, modes=[0, 1])
-    cov = (Vacuum(4) >> S2a >> S2b >> CX).cov
+    cov = (Vacuum(4) >> S2a >> S2b >> CX).cov * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
@@ -101,7 +101,7 @@ def test_CZgate(s):
     S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
     S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
     CZ = CZgate(s=s, modes=[0, 1])
-    cov = (Vacuum(4) >> S2a >> S2b >> CZ).cov
+    cov = (Vacuum(4) >> S2a >> S2b >> CZ).cov * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
@@ -116,7 +116,7 @@ def test_Rgate(theta):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     R = Rgate(angle=theta)
-    cov = (Vacuum(2) >> S2 >> R).cov
+    cov = (Vacuum(2) >> S2 >> R).cov * 2 / settings.HBAR
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(rotation(theta), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
@@ -129,7 +129,7 @@ def test_BSgate(theta, phi):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     BS = BSgate(theta=theta, phi=phi)
-    cov = ((Vacuum(4) >> S2[0, 2]) >> S2[1, 3] >> BS[0, 1]).cov
+    cov = ((Vacuum(4) >> S2[0, 2]) >> S2[1, 3] >> BS[0, 1]).cov * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
@@ -144,7 +144,7 @@ def test_S2gate(r, phi):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r, phi=phi)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
-    cov = (bell[0, 1, 2, 3] >> S2[0, 1]).cov
+    cov = (bell[0, 1, 2, 3] >> S2[0, 1]).cov * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
@@ -159,7 +159,7 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     r_choi = np.arcsinh(1.0)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
     MZ = MZgate(phi_a=phi_ex, phi_b=phi_in, internal=False)
-    cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov
+    cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov * 2 / settings.HBAR
 
     bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
@@ -182,7 +182,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     r_choi = np.arcsinh(1.0)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=True)
-    cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov
+    cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
