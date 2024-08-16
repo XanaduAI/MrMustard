@@ -396,6 +396,10 @@ def join_Abc_poly(
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
+
+    A1 = math.cast(A1, "complex128")
+    A2 = math.cast(A2, "complex128")
+
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
 
@@ -408,28 +412,28 @@ def join_Abc_poly(
     A12 = math.block(
         [
             [
-                math.cast(A1, "complex128")[:dim_m1, :dim_m1],
-                np.zeros((dim_m1, dim_m2)),
-                math.cast(A1, "complex128")[:dim_m1, dim_m1:],
-                np.zeros((dim_m1, dim_n2)),
+                A1[:dim_m1, :dim_m1],
+                math.zeros((dim_m1, dim_m2), dtype=A1.dtype),
+                A1[:dim_m1, dim_m1:],
+                math.zeros((dim_m1, dim_n2), dtype=A1.dtype),
             ],
             [
-                np.zeros((dim_m2, dim_m1)),
-                math.cast(A2, "complex128")[:dim_m2:, :dim_m2],
-                np.zeros((dim_m2, dim_n1)),
-                math.cast(A2, "complex128")[:dim_m2, dim_m2:],
+                math.zeros((dim_m2, dim_m1), dtype=A1.dtype),
+                A2[:dim_m2:, :dim_m2],
+                math.zeros((dim_m2, dim_n1), dtype=A1.dtype),
+                A2[:dim_m2, dim_m2:],
             ],
             [
-                math.cast(A1, "complex128")[dim_m1:, :dim_m1],
-                np.zeros((dim_n1, dim_m2)),
-                math.cast(A1, "complex128")[dim_m1:, dim_m1:],
-                np.zeros((dim_n1, dim_n2)),
+                A1[dim_m1:, :dim_m1],
+                math.zeros((dim_n1, dim_m2), dtype=A1.dtype),
+                A1[dim_m1:, dim_m1:],
+                math.zeros((dim_n1, dim_n2), dtype=A1.dtype),
             ],
             [
-                np.zeros((dim_n2, dim_m1)),
-                math.cast(A2, "complex128")[dim_m2:, :dim_m2],
-                np.zeros((dim_n2, dim_n1)),
-                math.cast(A2, "complex128")[dim_m2:, dim_m2:],
+                math.zeros((dim_n2, dim_m1), dtype=A1.dtype),
+                A2[dim_m2:, :dim_m2],
+                math.zeros((dim_n2, dim_n1), dtype=A1.dtype),
+                A2[dim_m2:, dim_m2:],
             ],
         ]
     )

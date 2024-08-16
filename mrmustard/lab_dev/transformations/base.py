@@ -128,7 +128,7 @@ class Operation(Transformation):
     ):
         super().__init__(
             representation=representation,
-            wires=[(), (), modes_in, modes_out],
+            wires=[(), (), modes_out, modes_in],
             name=name,
         )
 
@@ -195,8 +195,8 @@ class Unitary(Operation):
         c = complex(1)  # TODO: to be change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
-        _, _, c_prime = v.bargmann
-        c = 1 / math.sqrt(c_prime[0])
+        _, _, c_prime = v.bargmann_triple()
+        c = 1 / math.sqrt(c_prime)
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
     @classmethod

@@ -16,8 +16,8 @@
 
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.lab_dev.states import QuadratureEigenstate, Coherent
 from mrmustard import settings
@@ -60,7 +60,6 @@ class TestQuadratureEigenstate:
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
-
         settings._hbar_locked = False
         settings.HBAR = 2.0
 
@@ -69,9 +68,9 @@ class TestQuadratureEigenstate:
         settings._hbar_locked = False
         settings.HBAR = hbar
         q1 = QuadratureEigenstate([0], x=0, phi=0)
-        assert np.allclose(q0.bargmann[0], q1.bargmann[0])
-        assert np.allclose(q0.bargmann[1], q1.bargmann[1])
-        assert np.allclose(q0.bargmann[2], q1.bargmann[2])
+        assert np.allclose(q0.bargmann_triple()[0], q1.bargmann_triple()[0])
+        assert np.allclose(q0.bargmann_triple()[1], q1.bargmann_triple()[1])
+        assert np.allclose(q0.bargmann_triple()[2], q1.bargmann_triple()[2])
 
         settings._hbar_locked = False
         settings.HBAR = 2.0

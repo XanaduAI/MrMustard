@@ -233,15 +233,15 @@ class TestArrayAnsatz:
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
         (
             new_state_cov,
             new_state_means,
             new_state_coeff,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
-        assert math.allclose(state_cov, new_state_cov[0])
-        assert math.allclose(state_means, new_state_means[0])
-        assert math.allclose(1.0, new_state_coeff[0])
+        assert np.allclose(state_cov, new_state_cov[0])
+        assert np.allclose(state_means, new_state_means[0])
+        assert np.allclose(1.0, new_state_coeff[0])
 
         state_cov = np.array(
             [
@@ -256,16 +256,16 @@ class TestArrayAnsatz:
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
         (
             new_state_cov1,
             new_state_means1,
             new_state_coeff1,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
-        A22, b22, c22 = (
-            state >> BtoPS([0], 0) >> BtoPS([1], 0)
-        ).bargmann  # pylint: disable=protected-access
+        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann_triple(
+            batched=True
+        )  # pylint: disable=protected-access
         (
             new_state_cov22,
             new_state_means22,
@@ -578,3 +578,37 @@ class TestPolyExpAnsatz:
         assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
+
+    def test_call_none(self):
+        A1, b1, _ = Abc_triple(7)
+        A2, b2, _ = Abc_triple(7)
+        A3, b3, _ = Abc_triple(7)
+
+        batch = 3
+        c = np.random.random(size=(batch, 5, 5, 5)) / 1000
+
+        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
+        z0 = np.array([[None, 2, None, 5]])
+        z1 = np.array([[1, 2, 4, 5]])
+        z2 = np.array([[1, 4]])
+        obj_none = obj(z0)
+        val1 = obj(z1)
+        val2 = obj_none(z2)
+        assert np.allclose(val1, val2)
+
+        obj1 = PolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
+        z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
+        z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
+        z2 = np.array([[1, 4], [2, 4]])
+        obj1_none = obj1(z0)
+        obj1_none0 = PolyExpAnsatz(
+            obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
+        )
+        obj1_none1 = PolyExpAnsatz(
+            obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5)
+        )
+        val1 = obj1(z1)
+        val2 = np.array(
+            (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
+        ).reshape(-1)
+        assert np.allclose(val1, val2)
