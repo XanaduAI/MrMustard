@@ -496,7 +496,7 @@ class PolyExpAnsatz(PolyExpBase):
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([[1.0,2.0,3.0]])
-        
+
         >>> F = PolyExpAnsatz(A, b, c)
         >>> z = np.array([[1.0],[2.0],[3.0]])
 
