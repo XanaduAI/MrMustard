@@ -17,7 +17,6 @@ The classes representing states in quantum circuits.
 """
 
 from .base import *
-from .conditional_states import *
 from .coherent import *
 from .displaced_squeezed import *
 from .number import *

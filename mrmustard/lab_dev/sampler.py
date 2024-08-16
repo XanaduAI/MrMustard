@@ -24,10 +24,10 @@ import numpy as np
 from mrmustard import math
 
 from ..physics.representations import Fock
-from .states import State, Number, QuadratureEigenstate
+from .states import State, Number
 from .transformations import Identity
 
-__all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
+__all__ = ["Sampler", "PNRSampler"]
 
 
 class Sampler:
@@ -78,15 +78,3 @@ class PNRSampler(Sampler):
 
     def __init__(self, cutoff: int) -> None:
         super().__init__(list(range(cutoff)), [Number([0], n).dm() for n in range(cutoff)])
-
-
-class HomodyneSampler(Sampler):
-    r""" """
-
-    def __init__(
-        self,
-        q_bounds: tuple[float, float],
-        bin_num: int,
-    ):
-        qs = np.linspace(*q_bounds, num=bin_num)
-        super().__init__(qs, [QuadratureEigenstate([0], x=q, phi=0).dm() for q in qs])

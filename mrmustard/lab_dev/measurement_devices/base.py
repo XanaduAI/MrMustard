@@ -18,8 +18,6 @@ This module contains the base classes for measurement devices.
 
 from __future__ import annotations
 
-from typing import Optional, Any
-
 from ..circuit_components import CircuitComponent
 from ..sampler import Sampler
 
@@ -38,9 +36,9 @@ class MeasurementDevice(CircuitComponent):
         sampler: Sampler | None = None,
     ):
         super().__init__(
+            representation=None,
+            wires=[(), modes, (), modes, modes, ()],
             name=name or "MD" + "".join(str(m) for m in modes),
-            modes_in_bra=modes,
-            modes_in_ket=modes,
         )
 
         self._sampler = sampler
