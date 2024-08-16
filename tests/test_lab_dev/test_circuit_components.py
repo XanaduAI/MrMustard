@@ -501,7 +501,7 @@ class TestCircuitComponent:
             "rep_class": f"{Bargmann.__module__}.Bargmann",
             "name": name,
         }
-        assert arrays == [("A", rep.A), ("b", rep.b), ("c", rep.c)]
+        assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
 
     def test_serialize_fail_when_no_modes_input(self):
         """Test that the serializer fails if no modes or name+wires are present."""

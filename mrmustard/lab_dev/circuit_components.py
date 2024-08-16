@@ -117,7 +117,7 @@ class CircuitComponent:
             serializable["name"] = self.name
             serializable["wires"] = self.wires.sorted_args
             serializable["rep_class"] = f"{rep_cls.__module__}.{rep_cls.__qualname__}"
-            return serializable, self.representation.serialize()
+            return serializable, self.representation.to_dict()
 
         # handle modes parameter
         if "modes" in params:
@@ -141,7 +141,7 @@ class CircuitComponent:
         """Deserialization when within a circuit."""
         if "rep_class" in data:
             rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
-            rep = locate(rep_class).deserialize(data)
+            rep = locate(rep_class).from_dict(data)
             return cls._from_attributes(rep, Wires(*map(set, wires)), name=name)
 
         return cls(**data)
