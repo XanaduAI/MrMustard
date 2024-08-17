@@ -62,6 +62,7 @@ class Settings:
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
         self._precision_bits_hermite_poly: int = 128
+        self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.UNSAFE_ZIP_BATCH: bool = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
@@ -197,6 +198,16 @@ class Settings:
             jl.include("compactFock/singleLeftoverMode_grad.jl")
 
             self._julia_initialized = True
+
+    @property
+    def CACHE_DIR(self) -> Path:
+        """The directory in which serialized MrMustard objects are saved."""
+        return self._cache_dir
+
+    @CACHE_DIR.setter
+    def CACHE_DIR(self, path: str | Path):
+        self._cache_dir = Path(path)
+        self._cache_dir.mkdir(exist_ok=True, parents=True)
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
