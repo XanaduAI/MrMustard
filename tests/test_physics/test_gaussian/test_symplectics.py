@@ -23,7 +23,7 @@ from thewalrus.symplectic import (
     two_mode_squeezing,
 )
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab import (
     Amplifier,
     Attenuator,
