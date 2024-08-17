@@ -45,7 +45,7 @@ from mrmustard.physics.gaussian import controlled_X, controlled_Z
 @given(r=st.floats(0, 2))
 def test_two_mode_squeezing(r):
     """Tests that the two-mode squeezing operation is implemented correctly"""
-    cov = (Vacuum(num_modes=2) >> S2gate(r=r, phi=0.0)).cov
+    cov = (Vacuum(num_modes=2) >> S2gate(r=r, phi=0.0)).cov / settings.HBAR
     expected = two_mode_squeezing(2 * r, 0.0)
     assert np.allclose(cov, expected, atol=1e-6)
 
