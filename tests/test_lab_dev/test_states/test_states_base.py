@@ -246,13 +246,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(k1), res_k1)
         assert math.allclose(ket.expectation(k01), res_k01)
 
-        dm0 = Coherent([0], x=1, y=0.2).dm().to_fock(10)
+        dm0 = Coherent([0], x=1, y=0.2).dm()
         dm1 = Coherent([1], x=1, y=0.3).dm()
-        dm01 = Coherent([0, 1], x=1, y=[0.2, 0.3]).dm()
+        dm01 = Coherent([0, 1], x=1, y=[0.2, 0.3]).dm().to_fock(10).representation.array
 
         res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
         res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
-        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10)
+        res_dm01 = (ket @ ket.adjoint @ dm01.dual)
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
