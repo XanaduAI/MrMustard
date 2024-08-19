@@ -282,7 +282,8 @@ def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
     Only grandchildren with a cost below ``cost_bound`` are returned.
     Note that children without further children are included, so with
     a single call to this function we get all the descendants up to
-    the grandchildren level.
+    the grandchildren level including leaf nodes whether they are
+    children or grandchildren.
 
     Args:
         graph (Graph): A graph.
