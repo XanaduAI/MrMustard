@@ -527,7 +527,7 @@ class CircuitComponent:
             ret._representation = fock
         except TypeError:
             ret = self._from_attributes(fock, self.wires, self.name)
-        if ret.manual_shape:
+        if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
 
