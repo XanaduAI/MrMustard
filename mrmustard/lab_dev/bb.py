@@ -25,12 +25,10 @@ from typing import Generator
 Edge = tuple[int, int]
 
 
-class Component:
+class GraphComponent:
     r"""A lightweight "CircuitComponent" without the actual representation.
     Basically a wrapper around Wires, so that it can emulate components in
     a circuit. It exposes the repr, wires, shape, name and order (in the circuit).
-
-    TODO: this could be replaced by a simple CircuitComponent without the representation.
     """
 
     def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
@@ -44,17 +42,17 @@ class Component:
 
     @classmethod
     def from_circuitcomponent(cls, c: CircuitComponent):
-        return Component(
+        return GraphComponent(
             repr=str(c.representation.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
             name=c.__class__.__name__,
         )
 
-    def copy(self) -> Component:
-        return Component(self.repr, self.wires, self.shape, self.name)
+    def copy(self) -> GraphComponent:
+        return GraphComponent(self.repr, self.wires, self.shape, self.name)
 
-    def contraction_cost(self, other: Component) -> int:
+    def contraction_cost(self, other: GraphComponent) -> int:
         r"""
         Returns the computational cost in approx FLOPS for contracting this component with another
         one. Three cases are possible:
@@ -71,7 +69,7 @@ class Component:
         which scales like the cube of the number of contracted indices, i.e. ~ just 8 in the example above.
 
         Arguments:
-            other: Component
+            other: GraphComponent
 
         Returns:
             int: contraction cost in approx FLOPS
@@ -104,15 +102,15 @@ class Component:
             )
         return int(cost)
 
-    def __matmul__(self, other) -> Component:
-        """Returns the contracted Component."""
+    def __matmul__(self, other) -> GraphComponent:
+        """Returns the contracted GraphComponent."""
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
         shape_A = [n for i, n in enumerate(self.shape) if i not in idxA]
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = Component(
+        new_component = GraphComponent(
             "Bargmann" if self.repr == other.repr == "Bargmann" else "Fock",
             new_wires,
             new_shape,
@@ -144,14 +142,14 @@ class Graph(nx.DiGraph):
         return hash(
             tuple(self.nodes)
             + tuple(self.edges)
-            + tuple(self.solution)  # do we want this?
+            + tuple(self.solution)
             + tuple(sum((c.shape for c in self.components()), start=[]))
         )
 
-    def component(self, n) -> Component:
+    def component(self, n) -> GraphComponent:
         return self.nodes[n]["component"]
 
-    def components(self) -> Generator[Component, None, None]:
+    def components(self) -> Generator[GraphComponent, None, None]:
         for n in self.nodes:
             yield self.component(n)
 
@@ -196,8 +194,8 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
 def parse(components: list[CircuitComponent]) -> Graph:
     """Parses a list of CircuitComponents into a Graph.
 
-    Each node in the graph corresponds to a Component and an edge between two nodes indicates that
-    the Components are connected in the circuit. Whether they are connected by one wire
+    Each node in the graph corresponds to a GraphComponent and an edge between two nodes indicates that
+    the GraphComponents are connected in the circuit. Whether they are connected by one wire
     or by many, in the graph they will have a single edge between them.
 
     Args:
@@ -206,7 +204,7 @@ def parse(components: list[CircuitComponent]) -> Graph:
     validate(components)
     graph = Graph()
     for i, A in enumerate(components):
-        comp = Component.from_circuitcomponent(A)
+        comp = GraphComponent.from_circuitcomponent(A)
         graph.add_node(i, component=comp.copy())
         for j, B in enumerate(components[i + 1 :]):
             ovlp_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes

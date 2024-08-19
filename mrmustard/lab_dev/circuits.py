@@ -20,7 +20,7 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence, Union, Any
+from typing import Optional, Sequence, Union
 from pydoc import locate
 
 from mrmustard import math, settings
@@ -92,6 +92,7 @@ class Circuit:
         components with multimode Bargmann/Fock components leads to a higher total cost.
 
         Args:
+            n_init: The number of random contractions to find an initial cost upper bound.
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
             verbose: If True (default), the progress of the optimization is shown.
         """
@@ -151,7 +152,6 @@ class Circuit:
         1BB, 2BB, 1BF, 1FB, 1FF, 2FF. See explanation in the ``optimize`` method.
 
         Args:
-            graph: The graph to contract.
             n_init: The number of random contractions to find an initial cost upper bound.
             heuristics: A sequence of patterns to reduce in order.
             verbose: show the progress of the optimization.
