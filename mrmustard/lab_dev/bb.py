@@ -13,13 +13,13 @@
 # limitations under the License.
 
 from __future__ import annotations
+import random
+from queue import PriorityQueue
+from math import factorial
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 import networkx as nx
 import numpy as np
-from queue import PriorityQueue
-import random
-from math import factorial
 from typing import Generator
 
 Edge = tuple[int, int]
