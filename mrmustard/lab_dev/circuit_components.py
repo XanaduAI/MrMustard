@@ -414,7 +414,7 @@ class CircuitComponent:
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         try:
-            As, bs, cs = self.representation.triple
+            As, bs, cs = self.bargmann_triple(batched=True)
             if self.representation.ansatz.polynomial_shape[0] == 0:
                 auto_shape = self.auto_shape()
                 shape = shape or auto_shape
@@ -526,7 +526,7 @@ class CircuitComponent:
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
-        fock._original_bargmann_data = self.representation.data
+        fock._original_bargmann_data = self.bargmann_triple(batched=True)
         try:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
@@ -558,10 +558,10 @@ class CircuitComponent:
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         try:
-            bargmann = Bargmann(*self.representation.triple)
+            bargmann = Bargmann(*self.bargmann_triple(batched=True))
             return self._from_attributes(bargmann, self.wires, self.name)
         except AttributeError:
-            A, b, _ = identity_Abc(self.wires.__len__())
+            A, b, _ = identity_Abc(len(self.wires))
             bargmann = Bargmann(A, b, self.representation.data)
             bargmann._original_fock_data = self.representation.data
             return self._from_attributes(bargmann, self.wires, self.name)
