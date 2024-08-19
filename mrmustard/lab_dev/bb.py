@@ -191,7 +191,7 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
     return graph
 
 
-def parse(components: list[CircuitComponent]) -> Graph:
+def parse_components(components: list[CircuitComponent]) -> Graph:
     """Parses a list of CircuitComponents into a Graph.
 
     Each node in the graph corresponds to a GraphComponent and an edge between two nodes indicates that
@@ -201,7 +201,7 @@ def parse(components: list[CircuitComponent]) -> Graph:
     Args:
         components: A list of CircuitComponents.
     """
-    validate(components)
+    validate_components(components)
     graph = Graph()
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
@@ -222,7 +222,7 @@ def parse(components: list[CircuitComponent]) -> Graph:
     return graph
 
 
-def validate(components: list[CircuitComponent]) -> None:
+def validate_components(components: list[CircuitComponent]) -> None:
     """Raises an error if the components are not valid"""
     if len(components) == 0:
         return

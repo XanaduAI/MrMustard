@@ -79,7 +79,7 @@ class Circuit:
         components: Optional[Sequence[CircuitComponent]] = None,
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
-        self._graph = bb.parse(self.components)
+        self._graph = bb.parse_components(self.components)
         self.path: list[tuple[int, int]] = [
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
