@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Branch and bound algorithm for optimal contraction of a tensor network.
+"""
+
 from __future__ import annotations
 import random
 from queue import PriorityQueue
 from math import factorial
-from mrmustard.lab_dev.wires import Wires
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-import networkx as nx
 import numpy as np
 from typing import Generator
+import networkx as nx
+from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 Edge = tuple[int, int]
 
@@ -43,6 +47,9 @@ class GraphComponent:
 
     @classmethod
     def from_circuitcomponent(cls, c: CircuitComponent):
+        r"""
+        Creates a GraphComponent from a CircuitComponent.
+        """
         return GraphComponent(
             repr=str(c.representation.__class__.__name__),
             wires=Wires(*c.wires.args),
@@ -51,6 +58,7 @@ class GraphComponent:
         )
 
     def copy(self) -> GraphComponent:
+        """Returns a copy of the GraphComponent."""
         return GraphComponent(self.repr, self.wires, self.shape, self.name)
 
     def contraction_cost(self, other: GraphComponent) -> int:
@@ -134,6 +142,7 @@ class Graph(nx.DiGraph):
 
     @property
     def cost(self) -> int:
+        """Returns the total cost of the graph."""
         return sum(self.costs)
 
     def __lt__(self, other: Graph) -> bool:
@@ -269,11 +278,11 @@ def children(graph: Graph, cost_bound: int) -> set[Graph]:
     Returns:
         set[Graph]: The set of graphs obtained by contracting each edge.
     """
-    children = set()
+    children_set = set()
     for edge in sorted(graph.out_edges, key=lambda e: graph.out_edges[e]["cost"]):
         if graph.cost + graph.edges[edge]["cost"] < cost_bound:
-            children.add(contract(graph, edge))
-    return children
+            children_set.add(contract(graph, edge))
+    return children_set
 
 
 def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
@@ -292,14 +301,14 @@ def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
     Returns:
         set[Graph]: The set of grandchildren below the cost bound.
     """
-    grandchildren = set()
+    grandchildren_set = set()
     for child in children(graph, cost_bound):
         if child.number_of_edges() == 0:
-            grandchildren.add(child)
+            grandchildren_set.add(child)
             continue
         for grandchild in children(child, cost_bound):
-            grandchildren.add(grandchild)
-    return grandchildren
+            grandchildren_set.add(grandchild)
+    return grandchildren_set
 
 
 def assign_costs(graph: Graph, debug: int = 0) -> None:

@@ -353,19 +353,10 @@ class Wires:
         return ret
 
     def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+        r"""Returns the modes that overlap between the two ``Wires`` objects."""
         ovlp_ket = self.output.ket.modes & other.input.ket.modes
         ovlp_bra = self.output.bra.modes & other.input.bra.modes
         return ovlp_bra, ovlp_ket
-
-    @cached_property
-    def adjoint(self) -> Wires:
-        r"New ``Wires`` object obtained by swapping ket and bra wires."
-        return Wires(self.args[2], self.args[3], self.args[0], self.args[1])
-
-    @cached_property
-    def dual(self) -> Wires:
-        r"New ``Wires`` object obtained by swapping input and output wires."
-        return Wires(self.args[1], self.args[0], self.args[3], self.args[2])
 
     def sorted_args(self) -> tuple[list[int], ...]:
         r"""
