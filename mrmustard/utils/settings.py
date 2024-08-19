@@ -14,8 +14,8 @@
 
 """A module containing global settings."""
 
-from typing import Optional
 from __future__ import annotations
+from typing import Optional
 from pathlib import Path
 from rich import print
 import rich.table
@@ -57,8 +57,7 @@ class Settings:
     def __init__(self):
         self._hbar: float = 1.0
         self._hbar_locked: bool = False
-        self._seed: 
-          n[int] = np.random.randint(0, 2**31 - 1)
+        self._seed: int = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._julia_initialized: bool = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)

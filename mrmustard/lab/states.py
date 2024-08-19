@@ -478,7 +478,6 @@ class Fock(State):
             else:
                 getitem.append(slice(None))
                 cutoffs.append(other.cutoffs[i])
-        print(cutoffs)
         output = (
             other.ket(cutoffs)[tuple(getitem)]
             if other.is_hilbert_vector
