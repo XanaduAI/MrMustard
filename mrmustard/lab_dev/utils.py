@@ -18,7 +18,7 @@
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
 
-from typing import Callable, Generator, Optional, Tuple
+from typing import Callable, Generator, Tuple
 
 from mrmustard import math
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
@@ -28,7 +28,7 @@ def make_parameter(
     is_trainable: bool,
     value: any,
     name: str,
-    bounds: Tuple[Optional[float], Optional[float]],
+    bounds: Tuple[float | None, float | None],
     update_fn: Callable = update_euclidean,
     dtype: any = None,
 ):

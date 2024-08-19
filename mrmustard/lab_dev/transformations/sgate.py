@@ -18,7 +18,7 @@ The class representing a squeezing gate.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from .base import Unitary
 from ...physics.representations import Bargmann
@@ -83,12 +83,12 @@ class Sgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        r: Union[float, list[float]] = 0.0,
-        phi: Union[float, list[float]] = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        r_bounds: tuple[float | None, float | None] = (0.0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Sgate")
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))

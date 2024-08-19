@@ -25,7 +25,7 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Sequence
 
 from enum import Enum
 import warnings
@@ -131,7 +131,7 @@ class State(CircuitComponent):
         cls,
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
@@ -170,7 +170,7 @@ class State(CircuitComponent):
         cls,
         modes: Sequence[int],
         array: ComplexTensor,
-        name: Optional[str] = None,
+        name: str | None = None,
         batched: bool = False,
     ) -> State:
         r"""
@@ -212,8 +212,8 @@ class State(CircuitComponent):
         modes: Sequence[int],
         cov: ComplexMatrix,
         means: ComplexMatrix,
-        name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-5,
+        name: str | None = None,
+        atol_purity: float | None = 1e-5,
     ) -> Ket | DM:  # pylint: disable=abstract-method
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
@@ -249,7 +249,7 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         phi: float = 0.0,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> State:
         r"""
         Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
@@ -337,7 +337,7 @@ class State(CircuitComponent):
         resolution: int = 200,
         colorscale: str = "RdBu",
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+    ) -> go.Figure | None:
         r"""
         2D visualization of the Wigner function of this state.
 
@@ -461,7 +461,7 @@ class State(CircuitComponent):
         resolution: int = 200,
         colorscale: str = "RdBu",
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+    ) -> go.Figure | None:
         r"""
         3D visualization of the Wigner function of this state on a surface plot.
 
@@ -537,9 +537,9 @@ class State(CircuitComponent):
 
     def visualize_dm(
         self,
-        cutoff: Optional[int] = None,
+        cutoff: int | None = None,
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+    ) -> go.Figure | None:
         r"""
         Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
         on a heatmap.
@@ -596,8 +596,8 @@ class DM(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != 2 * len(modes):
             raise ValueError(
@@ -654,7 +654,7 @@ class DM(State):
         cls,
         modes: Sequence[int],
         triple: tuple,
-        name: Optional[str] = None,
+        name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
@@ -774,7 +774,7 @@ class DM(State):
             return DM(w.modes, result.representation)
         return result
 
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+    def __getitem__(self, modes: int | Sequence[int]) -> State:
         r"""
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
@@ -869,8 +869,8 @@ class Ket(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != len(modes):
             raise ValueError(
@@ -926,8 +926,8 @@ class Ket(State):
         cls,
         modes: Sequence[int],
         triple: tuple,
-        name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-5,
+        name: str | None = None,
+        atol_purity: float | None = 1e-5,
     ) -> Ket:
         cov, means, coeff = triple
         cov = math.astensor(cov)
@@ -1021,7 +1021,7 @@ class Ket(State):
 
         return result
 
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+    def __getitem__(self, modes: int | Sequence[int]) -> State:
         r"""
         Reduced density matrix obtained by tracing out all the modes except those in the given
         ``modes``. Note that the result is returned with modes in increasing order.

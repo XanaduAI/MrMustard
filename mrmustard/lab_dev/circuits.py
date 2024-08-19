@@ -21,7 +21,7 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence, Union
+from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import BSgate
@@ -71,7 +71,7 @@ class Circuit:
         components: A list of circuit components.
     """
 
-    def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
+    def __init__(self, components: Sequence[CircuitComponent] | None = None) -> None:
         self._components = [c._light_copy() for c in components] if components else []
         self._path = []
 
