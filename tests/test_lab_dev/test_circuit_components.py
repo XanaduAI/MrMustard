@@ -488,3 +488,32 @@ class TestCircuitComponent:
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
+
+    def test_serialize_default_behaviour(self):
+        """Test the default serializer."""
+        name = "my_component"
+        rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
+        cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
+        kwargs, arrays = cc._serialize()
+        assert kwargs == {
+            "class": f"{CircuitComponent.__module__}.CircuitComponent",
+            "wires": cc.wires.sorted_args,
+            "rep_class": f"{Bargmann.__module__}.Bargmann",
+            "name": name,
+        }
+        assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
+
+    def test_serialize_fail_when_no_modes_input(self):
+        """Test that the serializer fails if no modes or name+wires are present."""
+
+        class MyComponent(CircuitComponent):
+            """A dummy class without a valid modes kwarg."""
+
+            def __init__(self, rep, custom_modes):
+                super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
+
+        cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        with pytest.raises(
+            TypeError, match="MyComponent does not seem to have any wires construction method"
+        ):
+            cc._serialize()

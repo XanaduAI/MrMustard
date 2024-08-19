@@ -6,6 +6,9 @@
 
 * Added `sort` function to math backends.
 
+* Added the `serialize` module to save MrMustard objects to file.
+  [(#451)](https://github.com/XanaduAI/MrMustard/pull/451)
+
 ### Breaking changes
 
 ### Improvements

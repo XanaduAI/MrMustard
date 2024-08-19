@@ -69,9 +69,7 @@ class ParameterSet:
 
     @property
     def all_parameters(self) -> dict[str, Union[Constant, Variable]]:
-        ret = self.constants
-        ret.update(self.variables)
-        return ret
+        return self.constants | self.variables
 
     @property
     def names(self) -> Sequence[str]:

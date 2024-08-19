@@ -18,3 +18,4 @@ doc/_build
 doc/code/api/*
 coverage.xml
 .coverage
+/.serialize_cache/
