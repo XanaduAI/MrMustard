@@ -41,7 +41,7 @@ class BtoQ(Operation):
     def __init__(
         self,
         modes: Sequence[int],
-        phi: float,
+        phi: float = 0.0,
     ):
         repr = Bargmann.from_function(
             fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi

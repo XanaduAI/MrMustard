@@ -23,18 +23,20 @@ import numpy as np
 
 from mrmustard import math
 
-from ..physics.representations import Fock
 from .states import State, Number
-from .transformations import Identity
+from .circuit_components_utils import BtoQ
 
-__all__ = ["Sampler", "PNRSampler"]
+__all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
 
 class Sampler:
     r""" """
 
     def __init__(
-        self, meas_out: list[Any], meas_ops: list[State], probs: None | list[float] = None
+        self,
+        meas_out: list[Any],
+        meas_ops: list[State] | None = None,
+        probs: None | list[float] = None,
     ):
         self._meas_ops = meas_ops
         self._meas_outcomes = meas_out
@@ -44,17 +46,6 @@ class Sampler:
     def meas_ops(self):
         r""" """
         return self._meas_ops
-
-    def _verify_povms(self):
-        summation = sum(self.meas_ops[1:], self.meas_ops[0])
-        summation = summation / np.max(summation.representation.ansatz.array)
-        identity = (
-            Identity(summation.modes).to_fock()
-            if isinstance(summation.representation, Fock)
-            else Identity(summation.modes)
-        )
-        if summation.representation != identity.representation:
-            raise ValueError("POVMs do not sum to the identity.")
 
     def sample(self, state: State, n_samples: int) -> list[Any]:
         r""" """
@@ -78,3 +69,19 @@ class PNRSampler(Sampler):
 
     def __init__(self, cutoff: int) -> None:
         super().__init__(list(range(cutoff)), [Number([0], n).dm() for n in range(cutoff)])
+
+
+class HomodyneSampler(Sampler):
+    r""" """
+
+    def __init__(self, range: tuple[float, float] = (-5, 5), num: int = 100) -> None:
+        super().__init__(list(np.linspace(*range, num)))
+
+    def probs(self, state: State | None = None):
+        if self._probs is None:
+            q_state = state >> BtoQ([0], phi=np.pi / 2)
+
+            probs = [q_state.representation(np.array([[q]])) ** 2 for q in self._meas_outcomes]
+
+            return probs
+        return self._probs

@@ -31,9 +31,9 @@ class MeasurementDevice(CircuitComponent):
 
     def __init__(
         self,
-        name: str | None = None,
         modes: tuple[int, ...] = (),
         sampler: Sampler | None = None,
+        name: str | None = None,
     ):
         super().__init__(
             representation=None,
