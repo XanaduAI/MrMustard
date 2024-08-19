@@ -625,7 +625,13 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        scalar = ret.representation.scalar
+        if len(ret.representation.data) > 1:
+            if ret.representation.data[2][0].ndim > 0:
+                scalar = ret.representation.ansatz(np.array([]))
+            else:
+                scalar = ret.representation.scalar
+        else:
+            scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
