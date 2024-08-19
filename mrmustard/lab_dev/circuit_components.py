@@ -19,11 +19,14 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, protected-access, import-outside-toplevel
 from __future__ import annotations
 
+from inspect import signature
+from pydoc import locate
 from typing import Sequence
 import numbers
 from functools import cached_property
 
 import numpy as np
+from numpy.typing import ArrayLike
 import ipywidgets as widgets
 from IPython.display import display
 
@@ -103,6 +106,50 @@ class CircuitComponent:
                 )
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
+
+    def _serialize(self) -> tuple[dict[str, any], dict[str, ArrayLike]]:
+        """
+        Inner serialization to be used by Circuit.serialize().
+
+        The first dict must be JSON-serializable, and the second dict must contain
+        the (non-JSON-serializable) array-like data to be collected separately.
+        """
+        cls = type(self)
+        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
+        params = signature(cls).parameters
+        if "name" in params:  # assume abstract type, serialize the representation
+            rep_cls = type(self.representation)
+            serializable["name"] = self.name
+            serializable["wires"] = self.wires.sorted_args
+            serializable["rep_class"] = f"{rep_cls.__module__}.{rep_cls.__qualname__}"
+            return serializable, self.representation.to_dict()
+
+        # handle modes parameter
+        if "modes" in params:
+            serializable["modes"] = tuple(self.wires.modes)
+        elif "modes_out" in params and "modes_in" in params:
+            serializable["modes_out"] = tuple(self.wires.output.modes)
+            serializable["modes_in"] = tuple(self.wires.input.modes)
+        else:
+            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
+
+        if self.parameter_set:
+            for k, v in self.parameter_set.variables.items():
+                serializable[f"{k}_bounds"] = v.bounds
+                serializable[f"{k}_trainable"] = True
+            return serializable, {k: v.value for k, v in self.parameter_set.all_parameters.items()}
+
+        return serializable, {}
+
+    @classmethod
+    def _deserialize(cls, data: dict) -> CircuitComponent:
+        """Deserialization when within a circuit."""
+        if "rep_class" in data:
+            rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
+            rep = locate(rep_class).from_dict(data)
+            return cls._from_attributes(rep, Wires(*map(set, wires)), name=name)
+
+        return cls(**data)
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -479,7 +526,7 @@ class CircuitComponent:
             ret = self._from_attributes(fock, self.wires, self.name)
         return ret
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
+    def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
+from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
 from ...physics.representations import Bargmann
@@ -52,3 +53,4 @@ class BtoQ(Operation):
             representation=repr,
             name="BtoQ",
         )
+        self._add_parameter(Constant(phi, "phi"))

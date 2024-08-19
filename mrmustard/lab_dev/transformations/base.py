@@ -128,7 +128,7 @@ class Operation(Transformation):
     ):
         super().__init__(
             representation=representation,
-            wires=[(), (), modes_in, modes_out],
+            wires=[(), (), modes_out, modes_in],
             name=name,
         )
 
