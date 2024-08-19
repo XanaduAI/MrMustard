@@ -14,7 +14,9 @@
 
 """This module contains the classes to describe constant and variable parameters used in Mr Mustard."""
 
-from typing import Callable, Optional, Tuple
+from __future__ import annotations
+
+from typing import Callable
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -147,7 +149,7 @@ class Variable:
         self,
         value: any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         update_fn: Callable = update_euclidean,
         dtype: any = None,
     ):
@@ -168,7 +170,7 @@ class Variable:
             return math.new_variable(value, bounds, name, dtype)
 
     @property
-    def bounds(self) -> Tuple[Optional[float], Optional[float]]:
+    def bounds(self) -> tuple[float | None, float | None]:
         r"""
         The numerical bounds of this variable.
         """
@@ -182,7 +184,7 @@ class Variable:
         return self._name
 
     @property
-    def update_fn(self) -> Optional[Callable]:
+    def update_fn(self) -> Callable | None:
         r"""
         The function used to update this variable during training.
         """
@@ -205,9 +207,9 @@ class Variable:
 
     @staticmethod
     def orthogonal(
-        value: Optional[any],
+        value: any | None,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -231,7 +233,7 @@ class Variable:
     def symplectic(
         value: any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -255,7 +257,7 @@ class Variable:
     def unitary(
         value: any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
