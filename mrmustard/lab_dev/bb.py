@@ -269,7 +269,7 @@ def children(graph: Graph, cost_bound: int) -> set[Graph]:
         cost_bound (int): The maximum cost of the children.
 
     Returns:
-        set[Graph]: The set of graphs.obtained by contracting each edge.
+        set[Graph]: The set of graphs obtained by contracting each edge.
     """
     children = set()
     for edge in sorted(graph.out_edges, key=lambda e: graph.out_edges[e]["cost"]):
