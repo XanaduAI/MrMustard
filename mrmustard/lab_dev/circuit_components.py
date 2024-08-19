@@ -526,7 +526,7 @@ class CircuitComponent:
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
-        fock._original_bargmann_data = self.bargmann_triple(batched=True)
+        fock._original_bargmann_data = self.representation.data
         try:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
@@ -536,10 +536,8 @@ class CircuitComponent:
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
-        USE STORED BARGMANNN DATA!!!
-
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
-        UPDATE THINGS BELOW
+        If the original bargmann data is known the object will use that.
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
@@ -547,18 +545,16 @@ class CircuitComponent:
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
+            >>> d_bargmann = d_fock.to_bargmann()
 
-            >>> assert d_fock.name == d.name
-            >>> assert d_fock.wires == d.wires
-            >>> assert isinstance(d_fock.representation, Fock)
 
-        Args:
-            shape: The shape of the returned representation. If ``shape``is given as
-                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+            >>> assert d_bargmann.name == d.name
+            >>> assert d_bargmann.wires == d.wires
+            >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
         try:
             bargmann = Bargmann(*self.bargmann_triple(batched=True))
+            bargmann._original_fock_data = self.representation.data
             return self._from_attributes(bargmann, self.wires, self.name)
         except AttributeError:
             A, b, _ = identity_Abc(len(self.wires))
