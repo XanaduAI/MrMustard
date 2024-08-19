@@ -1060,14 +1060,11 @@ class Ket(State):
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
-        try:
-            result.state_outcomes
-        except AttributeError:
-            if not result.wires.input:
-                if not result.wires.bra:
-                    return Ket(result.wires.modes, result.representation)
-                elif result.wires.bra.modes == result.wires.ket.modes:
-                    result = DM(result.wires.modes, result.representation)
+        if not result.wires.input:
+            if not result.wires.bra:
+                return Ket(result.wires.modes, result.representation)
+            elif result.wires.bra.modes == result.wires.ket.modes:
+                result = DM(result.wires.modes, result.representation)
         return result
 
     @classmethod
