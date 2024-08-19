@@ -396,7 +396,7 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
-    def _decompose_ansatz_single(self,Ai,bi,ci):
+    def _decompose_ansatz_single(self, Ai, bi, ci):
         dim_beta, shape_beta = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
         A_bar = math.block(
@@ -411,7 +411,7 @@ class PolyExpBase(Ansatz):
                 ],
             ]
         )
-        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype),bi[dim_alpha:]),axis=0)
+        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype), bi[dim_alpha:]), axis=0)
         poly_bar = math.hermite_renormalized(
             A_bar,
             b_bar,
@@ -428,16 +428,16 @@ class PolyExpBase(Ansatz):
             [
                 [
                     Ai[:dim_alpha, :dim_alpha],
-                        math.eye(dim_alpha, dtype=Ai.dtype),
+                    math.eye(dim_alpha, dtype=Ai.dtype),
                 ],
                 [
-                        math.eye((dim_alpha), dtype=Ai.dtype),
+                    math.eye((dim_alpha), dtype=Ai.dtype),
                     math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
                 ],
             ]
         )
-        b_decomp = math.concat((bi[:dim_alpha],math.zeros((dim_alpha), dtype=bi.dtype)),axis=0)
-        return A_decomp,b_decomp,c_decomp
+        b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
+        return A_decomp, b_decomp, c_decomp
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -456,7 +456,9 @@ class PolyExpBase(Ansatz):
             b_decomp = []
             c_decomp = []
             for i in range(batch_size):
-                A_decomp_i,b_decomp_i,c_decomp_i = self._decompose_ansatz_single(self.mat[i],self.vec[i],self.array[i])
+                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
+                    self.mat[i], self.vec[i], self.array[i]
+                )
                 A_decomp.append(A_decomp_i)
                 b_decomp.append(b_decomp_i)
                 c_decomp.append(c_decomp_i)
@@ -615,9 +617,7 @@ class PolyExpAnsatz(PolyExpBase):
             A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
             poly = math.astensor(
                 [
-                    math.hermite_renormalized_batch(
-                        A_poly[i], b_poly[i], complex(1), shape_beta
-                    )
+                    math.hermite_renormalized_batch(A_poly[i], b_poly[i], complex(1), shape_beta)
                     for i in range(batch_size)
                 ]
             )  # (b_abc,b_arg,poly)
