@@ -16,7 +16,7 @@
 This module contains gaussian integral functions and related helper functions.
 """
 
-from typing import Sequence, Tuple
+from typing import Sequence
 import numpy as np
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
@@ -156,8 +156,8 @@ def complex_gaussian_integral(
 
 
 def join_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -180,8 +180,8 @@ def join_Abc(
 
 
 def join_Abc_real(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -272,8 +272,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
 
 def contract_two_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -381,8 +381,8 @@ def complex_gaussian_integral_2(
 
 
 def join_Abc_poly(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -441,8 +441,8 @@ def join_Abc_poly(
 
 
 def contract_two_Abc_poly(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
