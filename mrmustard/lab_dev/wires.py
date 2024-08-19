@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 from functools import cached_property
-from typing import Optional, Sequence
 import numpy as np
 
 from IPython.display import display
@@ -194,7 +193,12 @@ class Wires:
         New ``Wires`` object obtained by swapping ket and bra wires.
         """
         return Wires(
-            self.args[2], self.args[3], self.args[0], self.args[1], self.args[4], self.args[5]
+            self.args[2],
+            self.args[3],
+            self.args[0],
+            self.args[1],
+            self.args[4],
+            self.args[5],
         )
 
     @cached_property
@@ -221,7 +225,12 @@ class Wires:
         New ``Wires`` object obtained by swapping input and output wires.
         """
         return Wires(
-            self.args[1], self.args[0], self.args[3], self.args[2], self.args[5], self.args[4]
+            self.args[1],
+            self.args[0],
+            self.args[3],
+            self.args[2],
+            self.args[5],
+            self.args[4],
         )
 
     @cached_property
@@ -342,6 +351,11 @@ class Wires:
         ret = Wires(self.args[0], set(), self.args[2], set(), self.args[4], set())
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
+
+    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+        ovlp_ket = self.output.ket.modes & other.input.ket.modes
+        ovlp_bra = self.output.bra.modes & other.input.bra.modes
+        return ovlp_bra, ovlp_ket
 
     @cached_property
     def adjoint(self) -> Wires:
@@ -492,9 +506,8 @@ class Wires:
         return f"Wires{self.args}"
 
     def contracted_indices(self, other: Wires):
-        """Returns the indices being contracted on self and other"""
-        ovlp_bra = sorted(self.output.bra.modes & other.input.bra.modes)
-        ovlp_ket = sorted(self.output.ket.modes & other.input.ket.modes)
+        """Returns the indices being contracted on self and other on quantum wires."""
+        ovlp_bra, ovlp_ket = self.overlap(other)
         idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
         idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
         return idxA, idxB

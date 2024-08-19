@@ -28,7 +28,8 @@ Edge = tuple[int, int]
 class GraphComponent:
     r"""A lightweight "CircuitComponent" without the actual representation.
     Basically a wrapper around Wires, so that it can emulate components in
-    a circuit. It exposes the repr, wires, shape, name and order (in the circuit).
+    a circuit. It exposes the repr, wires, shape, name and cost of obtaining
+    the component from previous contractions.
     """
 
     def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
@@ -207,8 +208,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
         comp = GraphComponent.from_circuitcomponent(A)
         graph.add_node(i, component=comp.copy())
         for j, B in enumerate(components[i + 1 :]):
-            ovlp_ket = comp.wires.output.ket.modes & B.wires.input.ket.modes
-            ovlp_bra = comp.wires.output.bra.modes & B.wires.input.bra.modes
+            ovlp_bra, ovlp_ket = A.wires.overlap(B.wires)
             if ovlp_ket or ovlp_bra:
                 graph.add_edge(i, i + j + 1)
                 comp.wires = Wires(
