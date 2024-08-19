@@ -19,7 +19,6 @@ The lab module in development.
 from .circuit_components import *
 from .circuit_components_utils import *
 from .circuits import *
-from .measurement_devices import *
 from .states import *
 from .simulator import *
 from .transformations import *
