@@ -58,6 +58,7 @@ class Settings:
         self._hbar: float = 1.0
         self._hbar_locked: bool = False
         self._seed: int = np.random.randint(0, 2**31 - 1)
+        self._complex_warning: bool = False
         self.rng = np.random.default_rng(self._seed)
         self._julia_initialized: bool = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
