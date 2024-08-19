@@ -225,7 +225,7 @@ def parse(components: list[CircuitComponent]) -> Graph:
 
 
 def validate(components: list[CircuitComponent]) -> None:
-    "raises an error if the components are not valid"
+    """Raises an error if the components are not valid"""
     if len(components) == 0:
         return
     w = components[0].wires
