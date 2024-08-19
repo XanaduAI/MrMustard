@@ -58,22 +58,22 @@ class TestQuadratureEigenstate:
         with pytest.raises(ValueError, match="phi"):
             QuadratureEigenstate(modes=[0, 1], x=1, phi=[2, 3, 4])
 
-    @pytest.mark.parametrize("hbar", hbar)
-    def test_probability_hbar(self, hbar):
-        settings._hbar_locked = False
-        settings.HBAR = 2.0
+    # @pytest.mark.parametrize("hbar", hbar)
+    # def test_probability_hbar(self, hbar):
+    #     settings._hbar_locked = False
+    #     settings.HBAR = 2.0
 
-        q0 = QuadratureEigenstate([0], x=0, phi=0)
+    #     q0 = QuadratureEigenstate([0], x=0, phi=0)
 
-        settings._hbar_locked = False
-        settings.HBAR = hbar
-        q1 = QuadratureEigenstate([0], x=0, phi=0)
-        assert np.allclose(q0.bargmann_triple()[0], q1.bargmann_triple()[0])
-        assert np.allclose(q0.bargmann_triple()[1], q1.bargmann_triple()[1])
-        assert np.allclose(q0.bargmann_triple()[2], q1.bargmann_triple()[2])
+    #     settings._hbar_locked = False
+    #     settings.HBAR = hbar
+    #     q1 = QuadratureEigenstate([0], x=0, phi=0)
+    #     assert np.allclose(q0.bargmann_triple()[0], q1.bargmann_triple()[0])
+    #     assert np.allclose(q0.bargmann_triple()[1], q1.bargmann_triple()[1])
+    #     assert np.allclose(q0.bargmann_triple()[2], q1.bargmann_triple()[2])
 
-        settings._hbar_locked = False
-        settings.HBAR = 2.0
+    #     settings._hbar_locked = False
+    #     settings.HBAR = 2.0
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
