@@ -305,6 +305,10 @@ class TestCircuitComponent:
         assert math.allclose(result.representation.A, d0.representation.A)
         assert math.allclose(result.representation.b, d0.representation.b)
         assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+        result2 = 0.8 @ d0
+        assert math.allclose(result2.representation.A, d0.representation.A)
+        assert math.allclose(result2.representation.b, d0.representation.b)
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
@@ -378,6 +382,14 @@ class TestCircuitComponent:
 
         settings.AUTOSHAPE_MAX = 50
 
+    def test_rshift_error(self):
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate([0], x=0.1, y=0.1)
+        d0._wires = Wires()
+
+        with pytest.raises(ValueError, match="not clear"):
+            vac012 >> d0
+
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
         n1 = Number([1, 2], n=1).dual
@@ -406,6 +418,9 @@ class TestCircuitComponent:
         d0 = Dgate([0], x=0.1, y=0.1)
         result = 0.8 >> d0
         assert math.allclose(result, 0.8 * d0.representation.c)
+
+        result2 = d0 >> 0.8
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
 
     def test_repr(self):
         c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
@@ -473,3 +488,32 @@ class TestCircuitComponent:
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
+
+    def test_serialize_default_behaviour(self):
+        """Test the default serializer."""
+        name = "my_component"
+        rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
+        cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
+        kwargs, arrays = cc._serialize()
+        assert kwargs == {
+            "class": f"{CircuitComponent.__module__}.CircuitComponent",
+            "wires": cc.wires.sorted_args,
+            "rep_class": f"{Bargmann.__module__}.Bargmann",
+            "name": name,
+        }
+        assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
+
+    def test_serialize_fail_when_no_modes_input(self):
+        """Test that the serializer fails if no modes or name+wires are present."""
+
+        class MyComponent(CircuitComponent):
+            """A dummy class without a valid modes kwarg."""
+
+            def __init__(self, rep, custom_modes):
+                super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
+
+        cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        with pytest.raises(
+            TypeError, match="MyComponent does not seem to have any wires construction method"
+        ):
+            cc._serialize()

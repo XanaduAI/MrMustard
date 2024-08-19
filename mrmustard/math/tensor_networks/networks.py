@@ -17,10 +17,10 @@
 from __future__ import annotations
 
 from typing import Optional
+import numpy as np
 from opt_einsum import contract as opt_contract
 
 import networkx as nx
-import numpy as np
 import matplotlib.pyplot as plt
 
 from .tensors import Wire, Tensor

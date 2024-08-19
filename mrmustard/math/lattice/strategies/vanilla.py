@@ -144,7 +144,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the first term
+        shape (tuple[int, ...]): shape of the output tensor without the batch dimension
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
         c (complex): vacuum amplitude
@@ -152,7 +152,9 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
+    # the batch dimension
     batch_shape = (b.shape[0],)
+
     # init output tensor
     G = np.zeros(batch_shape+shape, dtype=np.complex128)
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
+from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
 from ...physics.representations import Bargmann
@@ -50,4 +51,5 @@ class BtoPS(Map):
             ),
             name="BtoPS",
         )
+        self._add_parameter(Constant(s, "s"))
         self.s = s

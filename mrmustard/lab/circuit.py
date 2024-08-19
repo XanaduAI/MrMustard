@@ -22,13 +22,13 @@ __all__ = ["Circuit"]
 
 from typing import List, Optional, Tuple
 
+import numpy as np
+
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard.lab.circuit_drawer import circuit_text
 from mrmustard.math.tensor_wrappers import XPMatrix, XPVector
-
-import numpy as np
 
 
 class Circuit(Transformation):
