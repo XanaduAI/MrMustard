@@ -527,7 +527,7 @@ class CircuitComponent:
             ret._representation = fock
         except TypeError:
             ret = self._from_attributes(fock, self.wires, self.name)
-        ret.manual_shape = ret.representation.array.shape[1:]
+        del ret.manual_shape
         return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
