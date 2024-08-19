@@ -20,9 +20,12 @@ This module contains the classes for the available representations.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
+
 import numpy as np
-import matplotlib.pyplot as plt
+from numpy.typing import ArrayLike
+
 from matplotlib import colors
+import matplotlib.pyplot as plt
 
 from IPython.display import display
 
@@ -96,6 +99,15 @@ class Representation(ABC):
         r"""
         Reorders the representation indices.
         """
+
+    @abstractmethod
+    def to_dict(self) -> dict[str, ArrayLike]:
+        r"""Serialize a Representation."""
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Representation:
+        r"""Deserialize a Representation."""
 
     def __eq__(self, other: Representation) -> bool:
         r"""
@@ -510,6 +522,15 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
+    def to_dict(self) -> dict[str, ArrayLike]:
+        """Serialize a Bargmann instance."""
+        return {"A": self.A, "b": self.b, "c": self.c}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Bargmann:
+        """Deserialize a Bargmann instance."""
+        return cls(**data)
+
     def _ipython_display_(self):
         display(widgets.bargmann(self))
 
@@ -768,6 +789,15 @@ class Fock(Representation):
             for j in range(n_batches_o):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
+
+    def to_dict(self) -> dict[str, ArrayLike]:
+        """Serialize a Fock instance."""
+        return {"array": self.data}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Fock:
+        """Deserialize a Fock instance."""
+        return cls(data["array"], batched=True)
 
     def _ipython_display_(self):
         w = widgets.fock(self)
