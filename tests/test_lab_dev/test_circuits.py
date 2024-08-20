@@ -285,9 +285,9 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
 
         circ = Circuit([vac, s01, bs01, bs12])
-        assert not load(circ.serialize())._path
+        assert load(circ.serialize()).path
 
-        circ.make_path()
-        assert circ._path
+        circ.optimize()
+        assert circ.path  # optimized path
 
-        assert load(circ.serialize())._path == circ.path
+        assert load(circ.serialize()).path == circ.path

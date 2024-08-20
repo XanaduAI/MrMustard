@@ -358,6 +358,7 @@ class Wires:
         ovlp_bra = self.output.bra.modes & other.input.bra.modes
         return ovlp_bra, ovlp_ket
 
+    @cached_property
     def sorted_args(self) -> tuple[list[int], ...]:
         r"""
         The sorted arguments. Allows to sort them only once.
