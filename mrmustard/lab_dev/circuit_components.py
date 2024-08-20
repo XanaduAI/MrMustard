@@ -542,7 +542,6 @@ class CircuitComponent:
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
-        If the original bargmann data is known the object will use that.
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
@@ -557,15 +556,15 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        try:
-            bargmann = Bargmann(*self.bargmann_triple(batched=True))
-            bargmann._original_fock_data = self.representation.data
-            return self._from_attributes(bargmann, self.wires, self.name)
-        except AttributeError:
-            A, b, _ = identity_Abc(len(self.wires))
-            bargmann = Bargmann(A, b, self.representation.data)
-            bargmann._original_fock_data = self.representation.data
-            return self._from_attributes(bargmann, self.wires, self.name)
+        # try:
+        #     bargmann = Bargmann(*self.bargmann_triple(batched=True))
+        #     bargmann._original_fock_data = self.representation.data
+        #     return self._from_attributes(bargmann, self.wires, self.name)
+        # except AttributeError:
+        A, b, _ = identity_Abc(len(self.wires))
+        bargmann = Bargmann(A, b, self.representation.data)
+        bargmann._original_fock_data = self.representation.data
+        return self._from_attributes(bargmann, self.wires, self.name)
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
