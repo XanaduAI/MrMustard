@@ -17,6 +17,7 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
+from __future__ import annotations
 
 from typing import Callable, Generator
 
