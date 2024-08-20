@@ -240,8 +240,7 @@ class TestCircuit:
         assert circ.path == [(1, 2), (0, 1)]
 
         circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
-        circ.optimize_fock_shapes(verbose=False)
-        circ.optimize_contraction_path(n_init=1, heuristics=(), verbose=False)  # without heuristics
+        circ.optimize(n_init=1, verbose=False)
         assert circ.path == [(1, 2), (0, 1)]
 
     def test_wrong_path(self):
