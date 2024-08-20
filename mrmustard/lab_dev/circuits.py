@@ -83,7 +83,6 @@ class Circuit:
         self.path: list[tuple[int, int]] = [
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
-        self._optimized_graph = bb.Graph()
 
     def optimize(self, n_init=100, with_BF_heuristic: bool = True, verbose: bool = True) -> None:
         r"""
@@ -96,13 +95,14 @@ class Circuit:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
             verbose: If True (default), the progress of the optimization is shown.
         """
-        self._optimize_fock_shapes(verbose)
-        if with_BF_heuristic:
-            self._optimize_contraction_path(
-                n_init, ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF"), verbose
-            )
-        else:
-            self._optimize_contraction_path(n_init, ("1BB", "2BB", "1FF", "2FF"), verbose)
+        self.optimize_fock_shapes(verbose)
+        heuristics = (
+            ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF")
+            if with_BF_heuristic
+            else ("1BB", "2BB", "1FF", "2FF")
+        )
+        optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
+        self.path = list(optimized_graph.solution)
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -127,7 +127,7 @@ class Circuit:
 
         return list(ret.values())[0]
 
-    def _optimize_fock_shapes(self, verbose: bool) -> None:
+    def optimize_fock_shapes(self, verbose: bool) -> None:
         r"""
         Optimizes the Fock shapes of the components in this circuit.
         It starts by matching the existing connected wires and keeps the smaller shape,
@@ -140,24 +140,6 @@ class Circuit:
         self._graph = bb.optimize_fock_shapes(self._graph, 0, verbose)
         for i, c in enumerate(self.components):
             c.manual_shape = self._graph.component(i).shape
-
-    def _optimize_contraction_path(
-        self,
-        n_init: int,
-        heuristics: tuple[str, ...],
-        verbose: bool,
-    ) -> None:
-        r"""
-        Optimizes the contraction path for this circuit. Possible heuristics are
-        1BB, 2BB, 1BF, 1FB, 1FF, 2FF. See explanation in the ``optimize`` method.
-
-        Args:
-            n_init: The number of random contractions to find an initial cost upper bound.
-            heuristics: A sequence of patterns to reduce in order.
-            verbose: show the progress of the optimization.
-        """
-        self._optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
-        self.path = list(self._optimized_graph.solution)
 
     def check_contraction(self, n: int) -> None:
         r"""
