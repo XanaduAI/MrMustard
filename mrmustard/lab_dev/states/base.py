@@ -337,6 +337,7 @@ class State(CircuitComponent):
         resolution: int = 200,
         colorscale: str = "RdBu",
         return_fig: bool = False,
+        min_shape: int = 50,
     ) -> Union[go.Figure, None]:
         r"""
         2D visualization of the Wigner function of this state.
@@ -358,6 +359,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
+            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -367,8 +369,8 @@ class State(CircuitComponent):
         """
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
-
-        state = self.to_fock()
+        shape = [max(min_shape, d) for d in self.auto_shape()]
+        state = self.to_fock(shape)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -461,6 +463,7 @@ class State(CircuitComponent):
         resolution: int = 200,
         colorscale: str = "RdBu",
         return_fig: bool = False,
+        min_shape: int = 50,
     ) -> Union[go.Figure, None]:
         r"""
         3D visualization of the Wigner function of this state on a surface plot.
@@ -472,6 +475,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
+            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
 
         Returns:
             A ``Plotly`` figure representing the state in 3D.
@@ -481,8 +485,8 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
-
-        state = self.to_fock()
+        shape = [max(min_shape, d) for d in self.auto_shape()]
+        state = self.to_fock(shape)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
