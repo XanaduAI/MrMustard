@@ -38,6 +38,7 @@ class TestNumber:
 
         assert state.name == "N"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert all(isinstance(x, int) for x in state.manual_shape)
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="n"):
