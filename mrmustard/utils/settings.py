@@ -59,6 +59,7 @@ class Settings:
         self._hbar_locked = False
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
+        self._precision_bits_hermite_poly = 128
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
@@ -94,7 +95,7 @@ class Settings:
         self.DISCRETIZATION_METHOD: str = "iterative"
         "The method used to discretize the Wigner function. Default is ``iterative``."
 
-        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # enough for a full step of rec relations
+        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # a full step of rec rel
         "The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 3."
 
         self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3
