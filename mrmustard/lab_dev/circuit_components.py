@@ -518,12 +518,17 @@ class CircuitComponent:
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
-        fock._original_bargmann_data = self.representation.data
+        try:
+            fock._original_bargmann_data = self.representation.triple
+        except AttributeError:
+            fock._original_bargmann_data = None
         try:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
         except TypeError:
             ret = self._from_attributes(fock, self.wires, self.name)
+        if "manual_shape" in ret.__dict__:
+            del ret.manual_shape
         return ret
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
