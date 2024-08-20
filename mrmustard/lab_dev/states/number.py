@@ -72,7 +72,7 @@ class Number(Ket):
         self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
         self.short_name = [str(int(n)) for n in self.n.value]
         for i, cutoff in enumerate(self.cutoffs.value):
-            self.manual_shape[i] = cutoff + 1
+            self.manual_shape[i] = int(cutoff) + 1
         self._representation = Fock.from_function(
             fock_state, n=self.n.value, cutoffs=self.cutoffs.value
         )
