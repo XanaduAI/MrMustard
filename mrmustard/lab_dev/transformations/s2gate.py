@@ -18,7 +18,7 @@ The class representing a two-mode squeezing gate.
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Optional, Sequence
 
 from .base import Unitary
 from ...physics.representations import Bargmann
@@ -73,13 +73,13 @@ class S2gate(Unitary):
 
     def __init__(
         self,
-        modes: Tuple[int, int],
+        modes: Sequence[int],
         r: float = 0.0,
         phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        r_bounds: tuple[Optional[float], Optional[float]] = (0, None),
+        phi_bounds: tuple[Optional[float], Optional[float]] = (None, None),
     ):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
