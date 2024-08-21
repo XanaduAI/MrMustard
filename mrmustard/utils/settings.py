@@ -60,6 +60,7 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly = 128
+        self._complex_warning = False
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
