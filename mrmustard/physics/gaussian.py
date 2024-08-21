@@ -18,7 +18,7 @@ This module contains functions for performing calculations on objects in the Gau
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any, Sequence
 
 from mrmustard import math, settings
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
@@ -730,7 +730,7 @@ def purity(cov: Matrix) -> Scalar:
     return 1 / math.sqrt(math.det((2 / settings.HBAR) * cov))
 
 
-def symplectic_eigenvals(cov: Matrix) -> any:
+def symplectic_eigenvals(cov: Matrix) -> Any:
     r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
     For a pure state, we expect the sympletic eigenvalues to be 1.

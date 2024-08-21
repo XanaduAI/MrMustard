@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from inspect import signature
 from pydoc import locate
-from typing import Sequence
+from typing import Any, Sequence
 import numbers
 from functools import cached_property
 
@@ -107,7 +107,7 @@ class CircuitComponent:
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
 
-    def _serialize(self) -> tuple[dict[str, any], dict[str, ArrayLike]]:
+    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
         Inner serialization to be used by Circuit.serialize().
 

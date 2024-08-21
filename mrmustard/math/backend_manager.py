@@ -20,7 +20,7 @@ import importlib.util
 import sys
 from functools import lru_cache
 from itertools import product
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 from scipy.special import binom
@@ -98,7 +98,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[any] | None = ()) -> any:
+    def _apply(self, fn: str, args: Sequence[Any] | None = ()) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
@@ -231,7 +231,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("any", (array,))
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: any = None) -> Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -597,7 +597,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eye_like", (array,))
 
-    def from_backend(self, value: any) -> bool:
+    def from_backend(self, value: Any) -> bool:
         r"""Whether the given tensor is a tensor of the concrete backend.
 
         Args:

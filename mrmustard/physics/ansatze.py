@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 from warnings import warn
 
 import numpy as np
@@ -66,7 +66,7 @@ class Ansatz(ABC):
         self._kwargs = {}
 
     @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: any) -> Ansatz:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
         r"""
         Returns an ansatz from a function and kwargs.
         """
@@ -99,7 +99,7 @@ class Ansatz(ABC):
             raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
-    def __call__(self, point: any) -> Scalar:
+    def __call__(self, point: Any) -> Scalar:
         r"""
         Evaluates this ansatz at a given point in the domain.
         """
@@ -547,7 +547,7 @@ class PolyExpAnsatz(PolyExpBase):
         return self.array
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: any) -> PolyExpAnsatz:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""
         Returns a PolyExpAnsatz object from a generator function.
         """
@@ -1017,7 +1017,7 @@ class ArrayAnsatz(Ansatz):
         return len(self.array.shape) - 1
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: any) -> ArrayAnsatz:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
         r"""
         Returns an ArrayAnsatz object from a generator function.
         """
@@ -1104,7 +1104,7 @@ class ArrayAnsatz(Ansatz):
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
         return self.__class__(array=new_array)
 
-    def __call__(self, point: any) -> Scalar:
+    def __call__(self, point: Any) -> Scalar:
         r"""
         Evaluates this ansatz at a given point in the domain.
         """
