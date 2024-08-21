@@ -2,7 +2,7 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
-from mrmustard.lab_dev import Unitary, Vacuum
+from mrmustard.lab_dev import Unitary, Vacuum, Channel
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
@@ -12,6 +12,8 @@ from mrmustard.physics.bargmann import (
     trace_dm,
     au2Symplectic,
     symplectic2Au,
+    X_of_channel,
+    Y_of_channel
 )
 
 
@@ -145,3 +147,17 @@ def test_symplectic2Au():
     )
 
     assert np.allclose(A, A_by_hand)
+
+
+def test_X_of_channel():
+    
+    X = X_of_channel(Channel.random([0]).representation.A[0])
+    assert np.allclose(np.imag(X), np.zeros_like(X))
+
+def test_Y_of_channel():
+    A = Channel.random([0]).representation.A[0]
+    X = X_of_channel(A)
+    Y = Y_of_channel(A)
+    omega = np.array([[0,1j],[-1j,0]])
+    channel_check = X@omega@X.T/2 - omega/2 + Y
+    assert np.all([mu > 0 for mu in np.linalg.eigvals(channel_check)])

@@ -202,3 +202,76 @@ def symplectic2Au(S):
     A = math.block([[A_1, A_2], [A_3, A_4]])
 
     return A
+
+
+def X_of_channel(A):
+    r"""
+    Outputting the X matrix corresponding to a channel determined by the "A"
+    matrix.
+
+    Args:
+        A: the A matrix of the channel
+    """
+    n = A.shape[-1] // 2
+    m = n // 2
+
+    perm = math.block(
+        [
+            [math.eye(m), math.zeros((m, 3 * m))],
+            [math.zeros((m, 2 * m)), math.eye(m), math.zeros((m, m))],
+            [math.zeros((m, m)), math.eye(m), math.zeros((m, 2 * m))],
+            [math.zeros((m, 3 * m)), math.eye(m)],
+        ]
+    )
+    A = perm @ A @ perm
+    X_tilde = (
+        -math.inv(np.eye(n) - math.Xmat(m) @ A[:n, :n])
+        @ math.Xmat(m)
+        @ A[:n, n:]
+        @ math.Xmat(m)
+    )
+    transformation = (
+        1
+        / math.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+        )
+    )
+    return -transformation @ X_tilde @ math.conj(transformation).T
+
+
+def Y_of_channel(A):
+    r"""
+    Computes the Y matrix associated to a channel, specified by its A matrix as input.
+
+    Args:
+        A: the "A" matrix of the channel
+    """
+    X = X_of_channel(A)
+    n = A.shape[-1] // 2
+    m = n // 2
+    perm = math.block(
+        [
+            [math.eye(m), math.zeros((m, 3 * m))],
+            [math.zeros((m, 2 * m)), math.eye(m), math.zeros((m, m))],
+            [math.zeros((m, m)), math.eye(m), math.zeros((m, 2 * m))],
+            [math.zeros((m, 3 * m)), math.eye(m)],
+        ]
+    )
+
+    B = (perm @ A @ perm)[
+        :n, :n
+    ]  # computes the A matrix of Vacuum >> phi, with phi being the channel we passed its A matrix to the function
+
+    sigma_H = math.inv(math.eye(n) - math.Xmat(m) @ B)  # the complex-Husimi covariance matrix
+
+    N = sigma_H[m:, m:]
+    M = sigma_H[:m, m:]
+    sigma = (
+        math.block([[math.real(N + M), math.imag(N + M)], [math.imag(M - N), math.real(N - M)]])
+        - math.eye(n) / 2
+    )
+    return sigma - X @ X.T / 2
