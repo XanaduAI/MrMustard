@@ -52,6 +52,17 @@ class TestWires:
         ]
         assert w.bra.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[3], w.ids[4], w.ids[5]]
         assert w.ket.ids == [w.ids[6], w.ids[7], w.ids[8]]
+        assert w.quantum.ids == [
+            w.ids[0],
+            w.ids[1],
+            w.ids[2],
+            w.ids[3],
+            w.ids[4],
+            w.ids[5],
+            w.ids[6],
+            w.ids[7],
+            w.ids[8],
+        ]
         assert w.classical.ids == [w.ids[9], w.ids[10], w.ids[11]]
 
         assert w.output.bra.ids == [w.ids[0], w.ids[1], w.ids[2]]

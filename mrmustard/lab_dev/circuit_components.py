@@ -423,6 +423,7 @@ class CircuitComponent:
                     )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
+                if not shape:
                     shape = shape or (settings.AUTOCUTOFF_MAX_CUTOFF,) * num_vars
                 arrays = [
                     math.sum(
@@ -553,10 +554,13 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        A, b, _ = identity_Abc(len(self.wires.quantum))
-        bargmann = Bargmann(A, b, self.representation.data)
-        bargmann._original_fock_data = self.representation.data
-        return self._from_attributes(bargmann, self.wires, self.name)
+        if isinstance(self.representation, Bargmann):
+            return self
+        else:
+            A, b, _ = identity_Abc(len(self.wires.quantum))
+            bargmann = Bargmann(A, b, self.representation.data)
+            bargmann._original_fock_data = self.representation.data
+            return self._from_attributes(bargmann, self.wires, self.name)
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
@@ -621,8 +625,8 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        if len(ret.representation.data) > 1:
-            if ret.representation.data[2][0].ndim > 0:
+        if isinstance(ret.representation, Bargmann):
+            if ret.representation.ansatz.polynomial_shape[0] > 0:
                 scalar = ret.representation.ansatz(np.array([]))
             else:
                 scalar = ret.representation.scalar
@@ -670,18 +674,13 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
+        if type(self.representation) == type(other.representation):
             self_rep = self.representation
             other_rep = other.representation
-        elif isinstance(self.representation, Fock) and isinstance(other.representation, Fock):
-            self_rep = self.representation
-            other_rep = other.representation
-        elif isinstance(self.representation, Bargmann) and isinstance(other.representation, Fock):
-            self_rep = self.representation
-            other_rep = other.to_bargmann().representation
-        elif isinstance(self.representation, Fock) and isinstance(other.representation, Bargmann):
+        else:
             self_rep = self.to_bargmann().representation
-            other_rep = other.representation
+            other_rep = other.to_bargmann().representation
+
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
