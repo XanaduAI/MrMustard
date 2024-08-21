@@ -227,17 +227,13 @@ def X_of_channel(A):
     X_tilde = (
         -math.inv(np.eye(n) - math.Xmat(m) @ A[:n, :n]) @ math.Xmat(m) @ A[:n, n:] @ math.Xmat(m)
     )
-    transformation = (
-        1
-        / math.sqrt(2)
-        * math.block(
-            [
-                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
-                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
-            ]
-        )
+    transformation = math.block(
+        [
+            [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+            [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+        ]
     )
-    return -transformation @ X_tilde @ math.conj(transformation).T
+    return -transformation @ X_tilde @ math.conj(transformation).T / 2
 
 
 def Y_of_channel(A):
