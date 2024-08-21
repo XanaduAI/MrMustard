@@ -560,8 +560,14 @@ class CircuitComponent:
             A, b, _ = identity_Abc(len(self.wires.quantum))
             bargmann = Bargmann(A, b, self.representation.data)
             bargmann._original_fock_data = self.representation.data
-            return self._from_attributes(bargmann, self.wires, self.name)
-
+            try:
+                ret = self._getitem_builtin(self.modes)
+                ret._representation = bargmann
+            except TypeError:
+                ret = self._from_attributes(bargmann, self.wires, self.name)
+            if "manual_shape" in ret.__dict__:
+                del ret.manual_shape
+            return ret
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
