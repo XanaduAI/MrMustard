@@ -15,7 +15,6 @@
 import numpy as np
 from numba import njit
 
-from mrmustard import math
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
