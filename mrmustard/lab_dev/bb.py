@@ -84,7 +84,6 @@ class GraphComponent:
             int: contraction cost in approx FLOPS
 
         TODO: this will need to be updated once we have the poly x exp ansatz.
-        TODO: be more precise on costs (profile properly? use wall time?)
         """
         idxA, idxB = self.wires.contracted_indices(other.wires)
         m = len(idxA)  # same as len(idxB)
