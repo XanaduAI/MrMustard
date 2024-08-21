@@ -435,11 +435,10 @@ class CircuitComponent:
                     for A, b, c in zip(As, bs, cs)
                 ]
         except AttributeError:
-            auto_shape = self.auto_shape()
-            shape = shape or auto_shape
-            if len(shape) != len(auto_shape):
+            shape = shape or self.auto_shape()
+            if len(shape) != num_vars:
                 raise ValueError(
-                    f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
