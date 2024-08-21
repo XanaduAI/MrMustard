@@ -156,7 +156,9 @@ def test_complex_gaussian_integral():
     assert np.allclose(res2[1], b3)
     assert np.allclose(res2[2], c3)
 
-    res3 = complex_gaussian_integral(join_Abc((A1, b1, c1), (A1, b1, c1)), [0, 1], [2, 3])
+    res3 = complex_gaussian_integral(
+        join_Abc((A1, math.cast(b1, "float64"), c1), (A1, b1, c1)), [0, 1], [2, 3]
+    )
     assert np.allclose(res3[0], 0)
     assert np.allclose(res3[1], 0)
     assert np.allclose(res3[2], 1)
