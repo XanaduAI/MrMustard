@@ -554,7 +554,7 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        A, b, _ = identity_Abc(len(self.wires))
+        A, b, _ = identity_Abc(len(self.wires.quantum))
         bargmann = Bargmann(A, b, self.representation.data)
         bargmann._original_fock_data = self.representation.data
         return self._from_attributes(bargmann, self.wires, self.name)
