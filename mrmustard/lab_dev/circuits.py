@@ -283,8 +283,7 @@ class Circuit:
 
         classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
         circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
-        if path:  # re-evaluates the hidden `_graph` property
-            circ.path = [tuple(p) for p in path]
+        circ.path = [tuple(p) for p in path]
         return circ
 
     def __eq__(self, other: Circuit) -> bool:
