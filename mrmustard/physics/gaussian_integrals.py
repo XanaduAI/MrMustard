@@ -116,6 +116,7 @@ def complex_gaussian_integral(
         ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
     """
     A, b, c = Abc
+
     if len(idx_z) != len(idx_zconj):
         raise ValueError(
             f"idx_z and idx_zconj must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
@@ -174,7 +175,7 @@ def join_Abc(
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
-    b12 = math.concat([b1, b2], axis=-1)
+    b12 = math.concat([math.cast(b1, "complex128"), math.cast(b2, "complex128")], axis=-1)
     c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
     return A12, b12, c12
 
