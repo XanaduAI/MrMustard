@@ -128,7 +128,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
         cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
-        assert math.allclose(coeff[0], 1.0)
+        assert math.allclose(coeff[0], 1.0 / (2 * np.pi))
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 
@@ -490,7 +490,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
-        assert coeff[0] == 1.0
+        assert coeff[0] == 1.0 / (2 * np.pi)
         assert math.allclose(cov[0], np.eye(2))
         assert math.allclose(means[0], np.array([2.0, 4.0]))
 

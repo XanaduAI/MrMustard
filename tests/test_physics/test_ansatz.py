@@ -275,8 +275,8 @@ class TestArrayAnsatz:
         assert math.allclose(new_state_cov1[0], state_cov)
         assert math.allclose(new_state_means1[0], state_means)
         assert math.allclose(new_state_means22[0], state_means)
-        assert math.allclose(new_state_coeff1[0], 1.0)
-        assert math.allclose(new_state_coeff22[0], 1.0)
+        assert math.allclose(new_state_coeff1[0], 1.0 / (2 * np.pi))
+        assert math.allclose(new_state_coeff22[0], 1.0 / (2 * np.pi))
 
 
 class TestPolyExpAnsatz:
