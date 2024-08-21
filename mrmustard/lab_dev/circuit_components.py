@@ -681,7 +681,6 @@ class CircuitComponent:
             self_rep = self.to_bargmann().representation
             other_rep = other.to_bargmann().representation
 
-
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
