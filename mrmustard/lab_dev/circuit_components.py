@@ -423,7 +423,6 @@ class CircuitComponent:
                     )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
-                if not shape:
                     shape = shape or (settings.AUTOCUTOFF_MAX_CUTOFF,) * num_vars
                 arrays = [
                     math.sum(
