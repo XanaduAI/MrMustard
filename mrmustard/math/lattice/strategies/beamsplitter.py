@@ -271,9 +271,8 @@ def sector_u(N: int, theta: float, phi: float) -> np.ndarray:
     return V @ np.diag(np.exp(1j * E)) @ np.conj(V.T)
 
 
-def apply_BS_schwinger(theta, phi, i, j, array):
+def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
     """Applies the BS with given theta, phi to indices i,j of the given array.
-    Note that it modifies the array in place.
 
     Args:
         theta (float): The angle of the beamsplitter.
@@ -294,5 +293,6 @@ def apply_BS_schwinger(theta, phi, i, j, array):
         subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
         array[..., flat_idx] @= u[subset, ...][..., subset] if 0 < len(subset) < N else u
     # step 3: reshape back and reorder
-    array.reshape(shape_rest + shape)
-    array.transpose(np.argsort(order))
+    array = array.reshape(shape_rest + shape)
+    array = array.transpose(np.argsort(order))
+    return array
