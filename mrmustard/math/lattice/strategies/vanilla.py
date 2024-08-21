@@ -60,7 +60,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     index_u_iter = np.ndindex(shape)
     next(index_u_iter)
 
-    # write vacuum amplitude /
+    # write vacuum amplitude
     ret[0] = c
 
     # iterate over the rest of the indices
