@@ -76,7 +76,7 @@ class Circuit:
 
     def __init__(
         self,
-        components: Optional[Sequence[CircuitComponent]] = None,
+        components: Sequence[CircuitComponent] | None = None,
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
         self._graph = bb.parse_components(self.components)
