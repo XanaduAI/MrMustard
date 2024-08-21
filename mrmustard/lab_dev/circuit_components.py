@@ -416,9 +416,8 @@ class CircuitComponent:
         try:
             As, bs, cs = self.bargmann_triple(batched=True)
             if self.representation.ansatz.polynomial_shape[0] == 0:
-                auto_shape = self.auto_shape()
-                shape = shape or auto_shape
-                if len(shape) != len(auto_shape):
+                shape = shape or self.auto_shape()
+                if len(shape) != num_vars:
                     raise ValueError(
                         f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
                     )
