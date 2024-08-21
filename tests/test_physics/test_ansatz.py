@@ -233,15 +233,15 @@ class TestArrayAnsatz:
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        A1, b1, c1 = state_after.bargmann_triple()
         (
             new_state_cov,
             new_state_means,
             new_state_coeff,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
-        assert np.allclose(state_cov, new_state_cov[0])
-        assert np.allclose(state_means, new_state_means[0])
-        assert np.allclose(1.0, new_state_coeff[0])
+        assert np.allclose(state_cov, new_state_cov)
+        assert np.allclose(state_means, new_state_means)
+        assert np.allclose(1.0 / (2 * np.pi), new_state_coeff)
 
         state_cov = np.array(
             [
@@ -256,27 +256,25 @@ class TestArrayAnsatz:
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        A1, b1, c1 = state_after.bargmann_triple()
         (
             new_state_cov1,
             new_state_means1,
             new_state_coeff1,
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
 
-        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann_triple(
-            batched=True
-        )  # pylint: disable=protected-access
+        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann_triple()
         (
             new_state_cov22,
             new_state_means22,
             new_state_coeff22,
         ) = bargmann_Abc_to_phasespace_cov_means(A22, b22, c22)
-        assert math.allclose(new_state_cov22[0], state_cov)
-        assert math.allclose(new_state_cov1[0], state_cov)
-        assert math.allclose(new_state_means1[0], state_means)
-        assert math.allclose(new_state_means22[0], state_means)
-        assert math.allclose(new_state_coeff1[0], 1.0 / (2 * np.pi))
-        assert math.allclose(new_state_coeff22[0], 1.0 / (2 * np.pi))
+        assert math.allclose(new_state_cov22, state_cov)
+        assert math.allclose(new_state_cov1, state_cov)
+        assert math.allclose(new_state_means1, state_means)
+        assert math.allclose(new_state_means22, state_means)
+        assert math.allclose(new_state_coeff1, 1 / (2 * np.pi) ** 2)
+        assert math.allclose(new_state_coeff22, 1 / (2 * np.pi) ** 2)
 
 
 class TestPolyExpAnsatz:
