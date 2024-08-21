@@ -26,7 +26,7 @@ from pydoc import locate
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev import bb
+from mrmustard.utils import branch_and_bound as bb
 
 __all__ = ["Circuit"]
 
@@ -84,7 +84,9 @@ class Circuit:
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
 
-    def optimize(self, n_init: int =100, with_BF_heuristic: bool = True, verbose: bool = True) -> None:
+    def optimize(
+        self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
+    ) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
         It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
@@ -302,6 +304,12 @@ class Circuit:
         The number of components in this circuit.
         """
         return len(self.components)
+
+    def __iter__(self):
+        r"""
+        An iterator over the components in this circuit.
+        """
+        return iter(self.components)
 
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""
