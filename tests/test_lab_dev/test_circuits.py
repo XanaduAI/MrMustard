@@ -29,6 +29,7 @@ from mrmustard.lab_dev.transformations import (
 )
 from mrmustard import settings
 from mrmustard.utils.serialize import load
+from mrmustard.lab_dev import bb
 
 
 class TestCircuit:
@@ -289,3 +290,18 @@ class TestCircuit:
         opt_path = circ.path
         assert opt_path != base_path
         assert load(circ.serialize()).path == opt_path
+
+    def test_graph_children_and_grandchildren(self):
+        """tests that the children function returns the correct graphs"""
+
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        bb.assign_costs(circ._graph)
+        children_set = bb.children(circ._graph, int(1e20))
+        for child in children_set:
+            assert isinstance(child, bb.Graph)
+            assert len(child.nodes) == 2
+
+        grandchildren_set = bb.grandchildren(circ._graph, int(1e20))
+        for grandchild in grandchildren_set:
+            assert isinstance(grandchild, bb.Graph)
+            assert len(grandchild.nodes) == 1
