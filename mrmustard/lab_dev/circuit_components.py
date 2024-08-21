@@ -554,11 +554,6 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        # try:
-        #     bargmann = Bargmann(*self.bargmann_triple(batched=True))
-        #     bargmann._original_fock_data = self.representation.data
-        #     return self._from_attributes(bargmann, self.wires, self.name)
-        # except AttributeError:
         A, b, _ = identity_Abc(len(self.wires))
         bargmann = Bargmann(A, b, self.representation.data)
         bargmann._original_fock_data = self.representation.data
