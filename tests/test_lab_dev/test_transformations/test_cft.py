@@ -26,6 +26,7 @@ class TestCFT:
     """
 
     def test_init(self):
+        "tests the initialization of the CFT gate"
         cft = CFT([0])
         assert cft.name == "CFT"
         assert cft.modes == [0]
