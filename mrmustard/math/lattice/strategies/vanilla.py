@@ -15,6 +15,7 @@
 import numpy as np
 from numba import njit
 
+from mrmustard import math
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
@@ -102,6 +103,9 @@ def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
     """
+    A = np.array(A)
+    b = np.array(b)
+    c = np.array(c)
     if b.ndim == 1:
         b = np.atleast_2d(b)
         return _vanilla_average_batch(shape, A, b, c)[..., 0]
