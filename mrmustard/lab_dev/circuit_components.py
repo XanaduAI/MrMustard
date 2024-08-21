@@ -419,7 +419,7 @@ class CircuitComponent:
                 shape = shape or self.auto_shape()
                 if len(shape) != num_vars:
                     raise ValueError(
-                        f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                        f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                     )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
