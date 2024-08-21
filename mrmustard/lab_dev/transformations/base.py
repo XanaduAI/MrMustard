@@ -323,8 +323,14 @@ class Channel(Map):
 
     @property
     def x(self):
+        r"""
+        Returns the X matrix corresponding to the channel.
+        """
         return X_of_channel(self.representation.A[0])
 
     @property
     def y(self):
+        r"""
+        Returns the Y matrix corresponding to the channel.
+        """
         return Y_of_channel(self.representation.A[0])

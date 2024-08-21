@@ -150,12 +150,18 @@ def test_symplectic2Au():
 
 
 def test_X_of_channel():
+    r"""
+    Tests the function X_of_channel.
+    """
 
     X = X_of_channel(Channel.random([0]).representation.A[0])
     assert np.allclose(np.imag(X), np.zeros_like(X))
 
 
 def test_Y_of_channel():
+    r"""
+    Tests the function Y_of_channel.
+    """
     A = Channel.random([0]).representation.A[0]
     X = X_of_channel(A)
     Y = Y_of_channel(A)
