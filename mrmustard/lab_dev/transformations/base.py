@@ -324,7 +324,7 @@ class Channel(Map):
     @property
     def x(self):
         return X_of_channel(self.representation.A[0])
-    
+
     @property
     def y(self):
         return Y_of_channel(self.representation.A[0])

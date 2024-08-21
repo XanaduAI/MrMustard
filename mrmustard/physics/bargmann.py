@@ -225,10 +225,7 @@ def X_of_channel(A):
     )
     A = perm @ A @ perm
     X_tilde = (
-        -math.inv(np.eye(n) - math.Xmat(m) @ A[:n, :n])
-        @ math.Xmat(m)
-        @ A[:n, n:]
-        @ math.Xmat(m)
+        -math.inv(np.eye(n) - math.Xmat(m) @ A[:n, :n]) @ math.Xmat(m) @ A[:n, n:] @ math.Xmat(m)
     )
     transformation = (
         1
