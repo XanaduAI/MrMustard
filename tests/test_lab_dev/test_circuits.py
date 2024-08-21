@@ -29,7 +29,7 @@ from mrmustard.lab_dev.transformations import (
 )
 from mrmustard import settings
 from mrmustard.utils.serialize import load
-from mrmustard.utils import branch_and_bound as bb
+import mrmustard.utils.branch_and_bound as bb
 
 
 class TestCircuit:
