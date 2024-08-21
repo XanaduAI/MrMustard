@@ -568,6 +568,7 @@ class CircuitComponent:
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
             return ret
+
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
