@@ -18,7 +18,7 @@ import importlib
 import numpy as np
 import pytest
 
-from mrmustard.lab import Gaussian, Dgate, Ggate
+from mrmustard.lab import Gaussian, Dgate
 from mrmustard import lab_dev as mmld
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
