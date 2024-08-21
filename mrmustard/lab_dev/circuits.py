@@ -20,7 +20,7 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence, Union
+from typing import Sequence, Union
 from pydoc import locate
 
 from mrmustard import math, settings
