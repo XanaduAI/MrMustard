@@ -543,7 +543,7 @@ class CircuitComponent:
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.representations import Bargmann
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
