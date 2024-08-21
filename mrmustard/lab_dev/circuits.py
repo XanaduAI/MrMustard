@@ -84,7 +84,7 @@ class Circuit:
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
 
-    def optimize(self, n_init=100, with_BF_heuristic: bool = True, verbose: bool = True) -> None:
+    def optimize(self, n_init: int =100, with_BF_heuristic: bool = True, verbose: bool = True) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
         It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
