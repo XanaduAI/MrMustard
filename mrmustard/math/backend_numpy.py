@@ -16,8 +16,10 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme
 
+from __future__ import annotations
+
 from math import lgamma as mlgamma
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 import numpy as np
 import scipy as sp
@@ -69,7 +71,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.any(array)
 
     def arange(
-        self, start: int, limit: Optional[int] = None, delta: int = 1, dtype=np.float64
+        self, start: int, limit: int | None = None, delta: int = 1, dtype=np.float64
     ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
@@ -82,7 +84,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         tensor = value
         return tensor
 
-    def astensor(self, array: Union[np.ndarray, np.ndarray], dtype=None) -> np.ndarray:
+    def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         array = np.array(array)
         return self.cast(array, dtype=dtype or array.dtype)
 
@@ -98,11 +100,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             array = array[None, ...]
         return array
 
-    def block(self, blocks: List[List[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
+    def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
-    def block_diag(self, *blocks: List[np.ndarray]) -> np.ndarray:
+    def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
 
     def boolean_mask(self, tensor: np.ndarray, mask: np.ndarray) -> np.ndarray:
@@ -118,7 +120,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def clip(self, array, a_min, a_max) -> np.ndarray:
         return np.clip(array, a_min, a_max)
 
-    def concat(self, values: List[np.ndarray], axis: int) -> np.ndarray:
+    def concat(self, values: list[np.ndarray], axis: int) -> np.ndarray:
         # tf.concat can concatenate lists of scalars, while np.concatenate errors
         try:
             return np.concatenate(values, axis)
@@ -180,7 +182,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return array
 
-    def einsum(self, string: str, *tensors) -> Optional[np.ndarray]:
+    def einsum(self, string: str, *tensors) -> np.ndarray | None:
         if type(string) is str:
             return np.einsum(string, *tensors)
         return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
@@ -244,17 +246,14 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.minimum(a, b)
 
     def moveaxis(
-        self,
-        array: np.ndarray,
-        old: Union[int, Sequence[int]],
-        new: Union[int, Sequence[int]],
+        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
     def new_variable(
         self,
         value,
-        bounds: Union[Tuple[Optional[float], Optional[float]], None],
+        bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype=np.float64,
     ):  # pylint: disable=unused-argument
@@ -279,7 +278,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pad(
         self,
         array: np.ndarray,
-        paddings: Sequence[Tuple[int, int]],
+        paddings: Sequence[tuple[int, int]],
         mode="CONSTANT",
         constant_values=0,
     ) -> np.ndarray:
@@ -298,7 +297,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def kron(self, tensor1: np.ndarray, tensor2: np.ndarray):
         return np.kron(tensor1, tensor2)
 
-    def prod(self, x: np.ndarray, axis: Union[None, int]):
+    def prod(self, x: np.ndarray, axis: int | None):
         return np.prod(x, axis=axis)
 
     def real(self, array: np.ndarray) -> np.ndarray:
@@ -338,7 +337,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return ret
 
     @Autocast()
-    def tensordot(self, a: np.ndarray, b: np.ndarray, axes: List[int]) -> np.ndarray:
+    def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
 
     def tile(self, array: np.ndarray, repeats: Sequence[int]) -> np.ndarray:
@@ -347,7 +346,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> Optional[np.ndarray]:
+    def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> np.ndarray | None:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
         return np.transpose(a, axes=perm)
@@ -445,7 +444,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return None
 
     def hermite_renormalized(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -483,7 +482,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return G
 
     def hermite_renormalized_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
         if settings.USE_VANILLA_AVERAGE:
             G = vanilla_average(tuple(shape), A, B, C)
@@ -496,9 +495,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         A: np.ndarray,
         B: np.ndarray,
         C: np.ndarray,
-        shape: Tuple[int],
-        max_l2: Optional[float],
-        global_cutoff: Optional[int],
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -528,7 +527,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return G
 
-    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -539,7 +538,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -548,7 +547,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -571,14 +570,14 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_diagonal_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -596,7 +595,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -605,7 +604,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the

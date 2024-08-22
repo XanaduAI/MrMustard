@@ -18,7 +18,7 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from .base import Operation
 from ...physics.representations import Bargmann
@@ -46,7 +46,7 @@ class FockDamping(Operation):
         >>> assert operator.modes == [0]
         >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
         >>> assert output_state.L2_norm < 1
-        
+
     Args:
         modes: The modes this gate is applied to.
         damping: The damping parameter.
@@ -55,7 +55,7 @@ class FockDamping(Operation):
 
     .. details::
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= e^{-\beta}\begin{bmatrix}
@@ -72,7 +72,7 @@ class FockDamping(Operation):
         modes: Sequence[int],
         damping: float | Sequence[float] | None = 0.0,
         damping_trainable: bool = False,
-        damping_bounds: Tuple[float | None, float | None] = (0.0, None),
+        damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="FockDamping")
         (betas,) = list(reshape_params(len(modes), damping=damping))

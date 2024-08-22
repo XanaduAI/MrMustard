@@ -20,8 +20,6 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from typing import List, Optional, Tuple
-
 import numpy as np
 
 from mrmustard import settings
@@ -38,13 +36,13 @@ class Circuit(Transformation):
         ops (list or none): A list of operations comprising the circuit.
     """
 
-    def __init__(self, ops: Optional[List] = None):
+    def __init__(self, ops: list | None = None):
         self._ops = list(ops) if ops is not None else []
         super().__init__(name="Circuit")
         self.reset()
 
     @property
-    def ops(self) -> Optional[List]:
+    def ops(self) -> list | None:
         r"""
         The list of operations comprising the circuit.
         """
@@ -53,7 +51,7 @@ class Circuit(Transformation):
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
         self._compiled: bool = False
-        self._modes: List[int] = []
+        self._modes: list[int] = []
 
     @property
     def num_modes(self) -> int:
@@ -73,7 +71,7 @@ class Circuit(Transformation):
     def XYd(
         self,
         allow_none: bool = True,
-    ) -> Tuple[
+    ) -> tuple[
         RealMatrix, RealMatrix, RealVector
     ]:  # NOTE: Overriding Transformation.XYd for efficiency
         X = XPMatrix(like_1=True)
@@ -105,7 +103,7 @@ class Circuit(Transformation):
         """Returns `true` if all operations in the circuit are unitary."""
         return all(op.is_unitary for op in self._ops)
 
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         raise NotImplementedError
 
     def __len__(self):

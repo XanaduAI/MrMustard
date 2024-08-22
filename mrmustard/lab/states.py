@@ -16,7 +16,9 @@
 This module implements the quantum states upon which a quantum circuits acts on.
 """
 
-from typing import List, Optional, Sequence, Tuple, Union
+from __future__ import annotations
+
+from typing import Sequence
 
 from mrmustard import math, settings
 from mrmustard.math.parameter_set import ParameterSet
@@ -85,14 +87,14 @@ class Coherent(State):
 
     def __init__(
         self,
-        x: Union[Optional[float], Optional[List[float]]] = 0.0,
-        y: Union[Optional[float], Optional[List[float]]] = 0.0,
+        x: float | list[float] | None = 0.0,
+        y: float | list[float] | None = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
-        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
+        modes: Sequence[int] | None = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         self._normalize = normalize
@@ -146,14 +148,14 @@ class SqueezedVacuum(State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector] = 0.0,
-        phi: Union[Scalar, Vector] = 0.0,
+        r: Scalar | Vector = 0.0,
+        phi: Scalar | Vector = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
+        r_bounds: tuple[float | None, float | None] = (0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        modes: Sequence[int] | None = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         self._modes = modes
@@ -198,14 +200,14 @@ class TMSV(State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector] = 0.0,
-        phi: Union[Scalar, Vector] = 0.0,
+        r: Scalar | Vector = 0.0,
+        phi: Scalar | Vector = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = (0, 1),
-        cutoffs: Optional[Sequence[int]] = None,
+        r_bounds: tuple[float | None, float | None] = (0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        modes: Sequence[int] | None = (0, 1),
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         self._normalize = normalize
@@ -251,11 +253,11 @@ class Thermal(State):
 
     def __init__(
         self,
-        nbar: Union[Scalar, Vector] = 0.0,
+        nbar: Scalar | Vector = 0.0,
         nbar_trainable: bool = False,
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
+        nbar_bounds: tuple[float | None, float | None] = (0, None),
+        modes: Sequence[int] | None = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         self._modes = modes
@@ -317,20 +319,20 @@ class DisplacedSqueezed(State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector] = 0.0,
-        phi: Union[Scalar, Vector] = 0.0,
-        x: Union[Scalar, Vector] = 0.0,
-        y: Union[Scalar, Vector] = 0.0,
+        r: Scalar | Vector = 0.0,
+        phi: Scalar | Vector = 0.0,
+        x: Scalar | Vector = 0.0,
+        y: Scalar | Vector = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         x_trainable: bool = False,
         y_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
+        r_bounds: tuple[float | None, float | None] = (0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
+        modes: Sequence[int] | None = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         self._modes = modes
@@ -392,9 +394,9 @@ class Gaussian(State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: List[int] = None,
-        cutoffs: Optional[Sequence[int]] = None,
+        eigenvalues_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         if symplectic is None:
@@ -447,8 +449,8 @@ class Fock(State):
     def __init__(
         self,
         n: Sequence[int],
-        modes: Sequence[int] = None,
-        cutoffs: Sequence[int] = None,
+        modes: Sequence[int] | None = None,
+        cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
         super().__init__(ket=fock.fock_state(n), cutoffs=cutoffs)
