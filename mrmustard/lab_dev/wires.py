@@ -220,6 +220,20 @@ class Wires:
         return ret
 
     @cached_property
+    def quantum(self) -> Wires:
+        r"""
+        New ``Wires`` object with only quantum wires.
+        """
+        ret = Wires(
+            modes_out_bra=self.args[0],
+            modes_in_bra=self.args[1],
+            modes_out_ket=self.args[2],
+            modes_in_ket=self.args[3],
+        )
+        ret._original = self.original or self  # pylint: disable=protected-access
+        return ret
+
+    @cached_property
     def dual(self) -> Wires:
         r"""
         New ``Wires`` object obtained by swapping input and output wires.

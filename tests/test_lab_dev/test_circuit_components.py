@@ -355,7 +355,7 @@ class TestCircuitComponent:
             >> a0.to_fock(N)
             >> a1.to_fock(N)
             >> a2.to_fock(N)
-        )
+        ).to_fock(N)
 
         assert r1 == r2
 
