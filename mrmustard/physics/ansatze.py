@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Union, Optional, Sequence
+from typing import Any, Callable, Sequence
 from warnings import warn
 
 import numpy as np
@@ -105,13 +105,13 @@ class Ansatz(ABC):
         """
 
     @abstractmethod
-    def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
+    def __truediv__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Divides this ansatz by another ansatz or by a scalar.
         """
 
     @abstractmethod
-    def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
+    def __mul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Multiplies this ansatz by another ansatz.
         """
@@ -247,15 +247,6 @@ class PolyExpBase(Ansatz):
         The batch size of this ansatz.
         """
         return self.mat.shape[0]
-
-    @property
-    def degree(self) -> int:
-        r"""
-        The polynomial degree of this ansatz.
-        """
-        if self.array.ndim == 1:
-            return 0
-        return self.array.shape[-1] - 1
 
     @property
     def polynomial_shape(self) -> tuple[int, tuple]:
@@ -516,8 +507,8 @@ class PolyExpAnsatz(PolyExpBase):
 
     def __init__(
         self,
-        A: Optional[Batch[Matrix]] = None,
-        b: Optional[Batch[Vector]] = None,
+        A: Batch[Matrix] | None = None,
+        b: Batch[Vector] | None = None,
         c: Batch[Tensor | Scalar] = np.array([[1.0]]),
         name: str = "",
     ):
@@ -558,7 +549,7 @@ class PolyExpAnsatz(PolyExpBase):
         ret._kwargs = kwargs
         return ret
 
-    def __call__(self, z: Batch[Vector]) -> Union[Scalar, PolyExpAnsatz]:
+    def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
         r"""
         Returns either the value of the ansatz or a new ansatz depending on the argument.
         If the argument contains None, returns a new ansatz.
@@ -725,7 +716,7 @@ class PolyExpAnsatz(PolyExpBase):
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
 
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -802,7 +793,7 @@ class PolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __truediv__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+    def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
@@ -1138,7 +1129,7 @@ class ArrayAnsatz(Ansatz):
         )
         return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
-    def __mul__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+    def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         r"""
         Multiplies this ansatz by another ansatz.
 
@@ -1174,7 +1165,7 @@ class ArrayAnsatz(Ansatz):
         """
         return self.__class__(array=-self.array)
 
-    def __truediv__(self, other: Union[Scalar, ArrayAnsatz]) -> ArrayAnsatz:
+    def __truediv__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         r"""
         Divides this ansatz by another ansatz.
 

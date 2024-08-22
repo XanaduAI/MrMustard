@@ -18,7 +18,7 @@ The class representing a coherent state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
@@ -70,12 +70,12 @@ class Coherent(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        x: Union[float, Sequence[float]] = 0.0,
-        y: Union[float, Sequence[float]] = 0.0,
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
-        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="Coherent")
         xs, ys = list(reshape_params(len(modes), x=x, y=y))

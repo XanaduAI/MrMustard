@@ -17,16 +17,19 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
-from typing import Callable, Optional, Tuple
+
+from __future__ import annotations
+
+from typing import Any, Callable
 
 from mrmustard.math.parameters import update_euclidean, Constant, Variable
 
 
 def make_parameter(
     is_trainable: bool,
-    value: any,
+    value: Any,
     name: str,
-    bounds: Tuple[Optional[float], Optional[float]],
+    bounds: tuple[float | None, float | None],
     update_fn: Callable = update_euclidean,
 ):
     r"""

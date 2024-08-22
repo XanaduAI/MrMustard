@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from inspect import signature
 from pydoc import locate
-from typing import Optional, Sequence, Union, Any
+from typing import Any, Sequence
 import numbers
 from functools import cached_property
 
@@ -42,6 +42,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.triples import identity_Abc
 
 __all__ = ["CircuitComponent"]
 
@@ -66,9 +67,9 @@ class CircuitComponent:
 
     def __init__(
         self,
-        representation: Optional[Bargmann | Fock] = None,
+        representation: Bargmann | Fock | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
@@ -185,7 +186,7 @@ class CircuitComponent:
         return ret
 
     @cached_property
-    def manual_shape(self) -> list[Optional[int]]:
+    def manual_shape(self) -> list[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
         it is a list of M ``None``s where M is the number of wires of the component.
@@ -257,7 +258,7 @@ class CircuitComponent:
         modes_in_bra: Sequence[int] = (),
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
@@ -286,7 +287,7 @@ class CircuitComponent:
         modes_in_ket: Sequence[int],
         triple: tuple,
         phi: float = 0.0,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
@@ -321,7 +322,7 @@ class CircuitComponent:
         cls,
         representation: Representation,
         wires: Wires,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Initializes a circuit component from a ``Representation``, a set of ``Wires``, a name.
@@ -395,7 +396,7 @@ class CircuitComponent:
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
+    def fock(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -409,21 +410,19 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
+        num_vars = self.representation.ansatz.num_vars
         if isinstance(shape, int):
-            shape = (shape,) * self.representation.ansatz.num_vars
-        auto_shape = self.auto_shape()
-        shape = shape or auto_shape
-        if len(shape) != len(auto_shape):
-            raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
-            )
-
+            shape = (shape,) * num_vars
         try:
             As, bs, cs = self.bargmann_triple(batched=True)
             if self.representation.ansatz.polynomial_shape[0] == 0:
+                shape = shape or self.auto_shape()
+                if len(shape) != num_vars:
+                    raise ValueError(
+                        f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
+                    )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             elif self.representation.ansatz.polynomial_shape[0] > 0:
-                num_vars = self.representation.ansatz.num_vars
                 arrays = [
                     math.sum(
                         math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
@@ -434,6 +433,11 @@ class CircuitComponent:
                     for A, b, c in zip(As, bs, cs)
                 ]
         except AttributeError:
+            shape = shape or self.auto_shape()
+            if len(shape) != num_vars:
+                raise ValueError(
+                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
+                )
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -531,7 +535,39 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
+    def to_bargmann(self) -> CircuitComponent:
+        r"""
+        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Bargmann
+
+            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d_fock = d.to_fock(shape=3)
+            >>> d_bargmann = d_fock.to_bargmann()
+
+
+            >>> assert d_bargmann.name == d.name
+            >>> assert d_bargmann.wires == d.wires
+            >>> assert isinstance(d_bargmann.representation, Bargmann)
+        """
+        if isinstance(self.representation, Bargmann):
+            return self
+        else:
+            A, b, _ = identity_Abc(len(self.wires.quantum))
+            bargmann = Bargmann(A, b, self.representation.data)
+            bargmann._original_fock_data = self.representation.data
+            try:
+                ret = self._getitem_builtin(self.modes)
+                ret._representation = bargmann
+            except TypeError:
+                ret = self._from_attributes(bargmann, self.wires, self.name)
+            if "manual_shape" in ret.__dict__:
+                del ret.manual_shape
+            return ret
+
+    def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
 
@@ -563,7 +599,7 @@ class CircuitComponent:
         kwargs = self.parameter_set[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
 
-    def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
+    def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
         which are a new object or the given one.
@@ -594,7 +630,13 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        scalar = ret.representation.scalar
+        if (
+            isinstance(ret.representation, Bargmann)
+            and ret.representation.ansatz.polynomial_shape[0] > 0
+        ):
+            scalar = ret.representation.ansatz(np.array([]))
+        else:
+            scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
@@ -637,26 +679,12 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-
-        if isinstance(self.representation, Bargmann) and isinstance(other.representation, Bargmann):
-            rep = self.representation[idx_z] @ other.representation[idx_zconj]
-            rep = rep.reorder(perm) if perm else rep
-            return CircuitComponent._from_attributes(rep, wires_result, None)
-
-        self_shape = list(self.auto_shape())
-        other_shape = list(other.auto_shape())
-        for z, zc in zip(idx_z, idx_zconj):
-            self_shape[z] = min(self_shape[z], other_shape[zc])
-            other_shape[zc] = self_shape[z]
-
-        if isinstance(self.representation, Fock):
-            self_rep = self.representation.reduce(self_shape)
+        if type(self.representation) == type(other.representation):
+            self_rep = self.representation
+            other_rep = other.representation
         else:
-            self_rep = self.to_fock(self_shape).representation
-        if isinstance(other.representation, Fock):
-            other_rep = other.representation.reduce(other_shape)
-        else:
-            other_rep = other.to_fock(other_shape).representation
+            self_rep = self.to_bargmann().representation
+            other_rep = other.to_bargmann().representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
