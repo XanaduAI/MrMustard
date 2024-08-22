@@ -36,6 +36,20 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
+    The vanilla algorithm implements the flattened version of the following recursion which
+    calculates the Fock amplitude at index :math:`k` using a pivot at index :math:`k - 1_i`
+    and its neighbours at indices :math:`k - 1_i - 1_j`:
+
+    .. math::
+
+         G_{k} = \frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
+
+    where :math:`1_i` is the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
+    In this formula :math:`k` is the vector of indices indexing into the Fock lattice.
+    In the implementation the indices are flattened into a single integer index.
+    This simplifies the bounds check when calculating the index of the pivot :math:`k-1_i`,
+    which need to be done only until the index is smaller than the maximum stride.
+
     Args:
         shape (tuple[int, ...]): shape of the output tensor
         A (np.ndarray): A matrix of the Bargmann representation
@@ -130,19 +144,21 @@ def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     elif b.ndim == 2:
         return np.moveaxis(_vanilla_average_batch(shape, A, b, c), -1, 0)
     else:
-        raise ValueError(f"Invalid shape for b: {b.shape}. It should be 1D or 2D.")
+        raise ValueError(
+            f"Invalid shape for b: {b.shape}. It should be 1D (non-batched) or 2D (batched)."
+        )
 
 
 @njit
 def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
+    r"""Like vanilla, but contributions are averaged over all available pivots.
     ``b`` is assumed to be batched, with batch in the first dimension.
     The output has a corresponding batch dimension of the same size, but on the last dimension.
 
     Args:
         shape: shape of the output tensor excluding the batch dimension, which is inferred from the shape of ``b``
         A: A matrix of the Fock-Bargmann representation
-        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
+        b: batched b vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
         c: vacuum amplitudes
 
     Returns:
