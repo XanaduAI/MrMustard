@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from inspect import signature
 from pydoc import locate
-from typing import Optional, Sequence, Union, Any
+from typing import Any, Sequence
 import numbers
 from functools import cached_property
 
@@ -67,9 +67,9 @@ class CircuitComponent:
 
     def __init__(
         self,
-        representation: Optional[Bargmann | Fock] = None,
+        representation: Bargmann | Fock | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
@@ -186,7 +186,7 @@ class CircuitComponent:
         return ret
 
     @cached_property
-    def manual_shape(self) -> list[Optional[int]]:
+    def manual_shape(self) -> list[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
         it is a list of M ``None``s where M is the number of wires of the component.
@@ -258,7 +258,7 @@ class CircuitComponent:
         modes_in_bra: Sequence[int] = (),
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
@@ -287,7 +287,7 @@ class CircuitComponent:
         modes_in_ket: Sequence[int],
         triple: tuple,
         phi: float = 0.0,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
@@ -322,7 +322,7 @@ class CircuitComponent:
         cls,
         representation: Representation,
         wires: Wires,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> CircuitComponent:
         r"""
         Initializes a circuit component from a ``Representation``, a set of ``Wires``, a name.
@@ -396,7 +396,7 @@ class CircuitComponent:
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock(self, shape: Optional[int | Sequence[int]] = None, batched=False) -> ComplexTensor:
+    def fock(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -569,7 +569,8 @@ class CircuitComponent:
                 del ret.manual_shape
             return ret
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
+
+    def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
 
@@ -601,7 +602,7 @@ class CircuitComponent:
         kwargs = self.parameter_set[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
 
-    def _light_copy(self, wires: Optional[Wires] = None) -> CircuitComponent:
+    def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
         which are a new object or the given one.
