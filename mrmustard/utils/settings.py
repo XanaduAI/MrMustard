@@ -156,7 +156,7 @@ class Settings:
         return self._seed
 
     @SEED.setter
-    def SEED(self, value: Optional[int]):
+    def SEED(self, value: int | None):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
 
