@@ -18,7 +18,7 @@ The class representing a noisy attenuator channel.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from .base import Channel
 from ...physics.representations import Bargmann
@@ -80,9 +80,9 @@ class Attenuator(Channel):
     def __init__(
         self,
         modes: Sequence[int],
-        transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
+        transmissivity: float | Sequence[float] | None = 1.0,
         transmissivity_trainable: bool = False,
-        transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Att")
         (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))

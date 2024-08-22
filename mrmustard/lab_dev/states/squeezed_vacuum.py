@@ -18,7 +18,7 @@ The class representing a squeezed vacuum state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
@@ -57,12 +57,12 @@ class SqueezedVacuum(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        r: Union[float, Sequence[float]] = 0.0,
-        phi: Union[float, Sequence[float]] = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        r_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="SqueezedVacuum")
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))

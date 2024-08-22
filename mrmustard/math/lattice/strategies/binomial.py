@@ -14,7 +14,7 @@
 
 " This module contains binomial strategies "
 
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 from numba import njit, typed, types
@@ -77,8 +77,8 @@ def binomial_dict(
     A: ComplexMatrix,
     b: ComplexVector,
     c: complex,
-    max_prob: Optional[float] = None,
-    global_cutoff: Optional[int] = None,
+    max_prob: float | None = None,
+    global_cutoff: int | None = None,
 ) -> dict[tuple[int, ...], complex]:
     r"""Factorial speedup strategy (fill ket by weight), python version with numba function/loop.
     Uses a dictionary to store the output.
@@ -133,7 +133,7 @@ def binomial_numba(
     c: complex,
     FP: dict[tuple[tuple[int, ...], int], list[tuple[int, ...]]],
     max_prob: float = 0.999,
-    global_cutoff: Optional[int] = None,
+    global_cutoff: int | None = None,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Binomial strategy (fill by weight), fully numba version."""
     if global_cutoff is None:

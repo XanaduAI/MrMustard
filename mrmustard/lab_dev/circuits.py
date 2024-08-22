@@ -20,9 +20,8 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Sequence, Union
+from typing import Sequence
 from pydoc import locate
-
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
@@ -311,7 +310,7 @@ class Circuit:
         """
         return iter(self.components)
 
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
+    def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
         ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if

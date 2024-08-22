@@ -18,7 +18,7 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 from .base import Unitary
 from ...physics.representations import Bargmann
@@ -95,8 +95,8 @@ class BSgate(Unitary):
         phi: float = 0.0,
         theta_trainable: bool = False,
         phi_trainable: bool = False,
-        theta_bounds: tuple[Optional[float], Optional[float]] = (None, None),
-        phi_bounds: tuple[Optional[float], Optional[float]] = (None, None),
+        theta_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")

@@ -69,12 +69,13 @@ Examples:
 
 # pylint: disable = wrong-import-position
 
+from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 from pathlib import Path
-from typing import Callable, Optional, Mapping, Sequence, Union
+from typing import Callable, Mapping, Sequence
 
 import os
 import numpy as np
@@ -130,13 +131,13 @@ class Callback:
     def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
         """User implemented custom trigger conditions."""
 
-    def call(self, **kwargs) -> Optional[Mapping]:  # pylint: disable=unused-argument
+    def call(self, **kwargs) -> Mapping | None:  # pylint: disable=unused-argument
         """User implemented main callback logic."""
 
-    def update_cost_fn(self, **kwargs) -> Optional[Callable]:  # pylint: disable=unused-argument
+    def update_cost_fn(self, **kwargs) -> Callable | None:  # pylint: disable=unused-argument
         """User implemented cost_fn modifier."""
 
-    def update_grads(self, **kwargs) -> Optional[Sequence]:  # pylint: disable=unused-argument
+    def update_grads(self, **kwargs) -> Sequence | None:  # pylint: disable=unused-argument
         """User implemented gradient modifier."""
 
     def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
@@ -190,17 +191,17 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
     """
 
     #: The root logdir for tensorboard logging.
-    root_logdir: Union[str, Path] = "./tb_logdir"
+    root_logdir: str | Path = "./tb_logdir"
 
     #: The tag for experiment subfolder to group similar optimizations together for easy comparisons.
     #: Defaults to the hash of all trainable variables' names.
-    experiment_tag: Optional[str] = None
+    experiment_tag: str | None = None
 
     #: Extra prefix to name the optimization experiment.
-    prefix: Optional[str] = None
+    prefix: str | None = None
 
     #: Transformation on cost for the purpose of better interpretation.
-    cost_converter: Optional[Callable] = None
+    cost_converter: Callable | None = None
 
     #: Whether to track gradients as well as the values for trainable parameters.
     track_grads: bool = False
