@@ -35,7 +35,7 @@ class Wires:
     bra and/or on the ket side. Additionally, they may have classical wires. Here are some examples
     for the types of components available on ``mrmustard.lab_dev``:
 
-     .. code-block::
+    .. code-block::
 
          A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
 
