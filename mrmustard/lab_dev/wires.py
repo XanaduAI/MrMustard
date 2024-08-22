@@ -352,18 +352,29 @@ class Wires:
         ret._original = self.original or self  # pylint: disable=protected-access
         return ret
 
-    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
-        r"""Returns the modes that overlap between the two ``Wires`` objects."""
-        ovlp_ket = self.output.ket.modes & other.input.ket.modes
-        ovlp_bra = self.output.bra.modes & other.input.bra.modes
-        return ovlp_bra, ovlp_ket
-
     @cached_property
     def sorted_args(self) -> tuple[list[int], ...]:
         r"""
         The sorted arguments. Allows to sort them only once.
         """
         return tuple(sorted(s) for s in self.args)
+
+    def contracted_indices(self, other: Wires):
+        r"""
+        Returns the indices being contracted on self and other on quantum wires.
+        """
+        ovlp_bra, ovlp_ket = self.overlap(other)
+        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
+        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
+        return idxA, idxB
+
+    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+        r"""
+        Returns the modes that overlap between the two ``Wires`` objects.
+        """
+        ovlp_ket = self.output.ket.modes & other.input.ket.modes
+        ovlp_bra = self.output.bra.modes & other.input.bra.modes
+        return ovlp_bra, ovlp_ket
 
     def __add__(self, other: Wires) -> Wires:
         r"""
@@ -496,13 +507,6 @@ class Wires:
 
     def __repr__(self) -> str:
         return f"Wires{self.args}"
-
-    def contracted_indices(self, other: Wires):
-        """Returns the indices being contracted on self and other on quantum wires."""
-        ovlp_bra, ovlp_ket = self.overlap(other)
-        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
-        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
-        return idxA, idxB
 
     def _ipython_display_(self):
         display(widgets.wires(self))
