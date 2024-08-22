@@ -25,7 +25,7 @@ from pydoc import locate
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-import mrmustard.lab_dev.branch_and_bound as bb
+import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
 
 __all__ = ["Circuit"]
 
