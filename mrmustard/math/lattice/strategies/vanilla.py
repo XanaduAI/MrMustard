@@ -50,6 +50,9 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     This simplifies the bounds check when calculating the index of the pivot :math:`k-1_i`,
     which need to be done only until the index is smaller than the maximum stride.
 
+    see https://quantum-journal.org/papers/q-2020-11-30-366/ and
+    https://arxiv.org/abs/2209.06069 for more details.
+
     Args:
         shape (tuple[int, ...]): shape of the output tensor
         A (np.ndarray): A matrix of the Bargmann representation
@@ -248,45 +251,45 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     Returns:
         tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
     """
-    shape = G.shape
+    # numba doesn't like tuples
+    shape_arr = np.array(G.shape)
 
-    # calculate the strides
-    strides = shape_to_strides(np.array(shape))
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(len(shape_arr) - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
     # linearize G
-    G_lin = G.flatten()
+    G_lin = G.flat
 
     # init gradients
-    D = G.ndim
+    D = len(shape_arr)
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
     db = np.zeros(D, dtype=np.complex128)  # component of dL/db
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
-    # initialize the indices.
-    # ``index`` is the index of the flattened output tensor, while
-    # ``index_u_iter`` iterates through the unravelled counterparts of
-    # ``index``.
-    index = 0
-    index_u_iter = np.ndindex(shape)
-    next(index_u_iter)
+    # initialize the n-dim index
+    flat_index = 0
+    nd_index = np.ndindex(G.shape)
+    next(nd_index)
 
-    for index_u in index_u_iter:
-        index += 1
+    # iterate over the indices (no need to split the loop in two parts)
+    for index_u in nd_index:
+        flat_index += 1
 
-        ns = lower_neighbors(index, strides, 0)
-
-        for i, _ in enumerate(db):
-            _, n = next(ns)
-            db[i] = np.sqrt(index_u[i]) * G_lin[n]
-            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
-            for j in range(i + 1, len(db)):
-                dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n - strides[j]]
+        # contributions from lower neighbours
+        for i in range(D):
+            pivot = flat_index - strides[i]
+            db[i] = SQRT[index_u[i]] * G_lin[pivot]
+            dA[i, i] = 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
+            for j in range(i + 1, D):
+                dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
 
         dLdA += dA * dLdG[index_u]
         dLdb += db * dLdG[index_u]
 
-    dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
+    dLdc = np.sum(G * dLdG) / c
 
     return dLdA, dLdb, dLdc
 
