@@ -30,6 +30,11 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 Edge = tuple[int, int]
 
 
+# =====================
+# ====== Classes ======
+# =====================
+
+
 class GraphComponent:
     r"""
     A lightweight "CircuitComponent" without the actual representation.
@@ -201,6 +206,11 @@ class Graph(nx.DiGraph):
             + tuple(self.solution)
             + tuple(sum((c.shape for c in self.components()), start=[]))
         )
+
+
+# =======================
+# ====== Functions ======
+# =======================
 
 
 def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
