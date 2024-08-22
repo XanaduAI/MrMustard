@@ -120,37 +120,37 @@ class Wires:
        13 (8) ─────▶ ║             ║─────▶ 13 (5)
                      ╚═════════════╝
 
-     To access the index of a subset of wires in standard order we can use the ``indices``
-     property:
+    To access the index of a subset of wires in standard order we can use the ``indices``
+    property:
 
-     .. code-block::
+    .. code-block::
 
-         >>> assert w.indices == (0,1,2,3,4,5,6,7,8)
-         >>> assert w.input.indices == (2,3,6,7,8)
+        >>> assert w.indices == (0,1,2,3,4,5,6,7,8)
+        >>> assert w.input.indices == (2,3,6,7,8)
 
-     Another important application of the ``Wires`` class is to contract the wires of two components.
-     This is done using the ``@`` operator. The result is a new ``Wires`` object that combines the wires
-     of the two components. Here's an example of a contraction of a single-mode density matrix going
-     into a single-mode channel:
+    Another important application of the ``Wires`` class is to contract the wires of two components.
+    This is done using the ``@`` operator. The result is a new ``Wires`` object that combines the wires
+    of the two components. Here's an example of a contraction of a single-mode density matrix going
+    into a single-mode channel:
 
-     .. code-block::
+    .. code-block::
 
-         >>> rho = Wires(modes_out_bra={0}, modes_in_bra={0})
-         >>> Phi = Wires(modes_out_bra={0}, modes_in_bra={0}, modes_out_ket={0}, modes_in_ket={0})
-         >>> rho_out, perm = rho @ Phi
-         >>> assert rho_out.modes == {0}
+        >>> rho = Wires(modes_out_bra={0}, modes_in_bra={0})
+        >>> Phi = Wires(modes_out_bra={0}, modes_in_bra={0}, modes_out_ket={0}, modes_in_ket={0})
+        >>> rho_out, perm = rho @ Phi
+        >>> assert rho_out.modes == {0}
 
-     Here's a diagram of the result of the contraction:
+    Here's a diagram of the result of the contraction:
 
-     .. code-block::
+    .. code-block::
 
-         ╔═══════╗      ╔═══════╗
-         ║       ║─────▶║       ║─────▶ 0
-         ║  rho  ║      ║  Phi  ║
-         ║       ║─────▶║       ║─────▶ 0
-         ╚═══════╝      ╚═══════╝
+        ╔═══════╗      ╔═══════╗
+        ║       ║─────▶║       ║─────▶ 0
+        ║  rho  ║      ║  Phi  ║
+        ║       ║─────▶║       ║─────▶ 0
+        ╚═══════╝      ╚═══════╝
 
-     The permutation that takes the contracted representations to the standard order is also returned.
+    The permutation that takes the contracted representations to the standard order is also returned.
 
     Args:
         modes_out_bra: The output modes on the bra side.
