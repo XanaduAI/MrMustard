@@ -28,7 +28,7 @@ from __future__ import annotations
 from typing import Optional, Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, X_of_channel, Y_of_channel
+from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
@@ -322,15 +322,8 @@ class Channel(Map):
         return self.is_CP and self.is_TP
 
     @property
-    def x(self):
+    def XY(self):
         r"""
-        Returns the X matrix corresponding to the channel.
+        Returns the X and Y matrix corresponding to the channel.
         """
-        return X_of_channel(self.representation.A[0])
-
-    @property
-    def y(self):
-        r"""
-        Returns the Y matrix corresponding to the channel.
-        """
-        return Y_of_channel(self.representation.A[0])
+        return XY_of_channel(self.representation.A[0])

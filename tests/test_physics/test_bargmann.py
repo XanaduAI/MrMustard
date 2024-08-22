@@ -12,8 +12,7 @@ from mrmustard.physics.bargmann import (
     trace_dm,
     au2Symplectic,
     symplectic2Au,
-    X_of_channel,
-    Y_of_channel,
+    XY_of_channel,
 )
 
 
@@ -149,22 +148,12 @@ def test_symplectic2Au():
     assert np.allclose(A, A_by_hand)
 
 
-def test_X_of_channel():
+def test_XY_of_channel():
     r"""
     Tests the function X_of_channel.
     """
 
-    X = X_of_channel(Channel.random([0]).representation.A[0])
-    assert np.allclose(np.imag(X), np.zeros_like(X))
-
-
-def test_Y_of_channel():
-    r"""
-    Tests the function Y_of_channel.
-    """
-    A = Channel.random([0]).representation.A[0]
-    X = X_of_channel(A)
-    Y = Y_of_channel(A)
+    X, Y = XY_of_channel(Channel.random([0]).representation.A[0])
     omega = np.array([[0, 1j], [-1j, 0]])
     channel_check = X @ omega @ X.T / 2 - omega / 2 + Y
     assert np.all([mu > 0 for mu in np.linalg.eigvals(channel_check)])

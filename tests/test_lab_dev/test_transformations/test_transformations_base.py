@@ -192,16 +192,12 @@ class TestChannel:
     def test_is_physical(self):
         assert Channel.random(range(5)).is_physical
 
-    def test_x(self):
+    def test_XY(self):
         U = Unitary.random([0, 1])
         u = U.representation
         unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj() @ u).triple)
-        assert np.allclose(unitary_channel.x, U.symplectic)
-        assert np.allclose(Attenuator([0], 0.2).x, np.sqrt(0.2) * np.eye(2))
+        X, Y = unitary_channel.XY
+        assert np.allclose(X, U.symplectic) and np.allclose(Y, np.zeros(4))
 
-    def test_y(self):
-        U = Unitary.random([0, 1])
-        u = U.representation
-        unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj() @ u).triple)
-        assert np.allclose(unitary_channel.y, np.zeros((4, 4)))
-        assert np.allclose(Attenuator([0], 0.3).y, (0.7 / 2) * np.eye(2))
+        X, Y = Attenuator([0], 0.2).XY
+        assert np.allclose(X, np.sqrt(0.2) * np.eye(2)) and np.allclose(Y, 0.4 * np.eye(2))
