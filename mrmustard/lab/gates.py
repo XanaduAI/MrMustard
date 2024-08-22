@@ -18,7 +18,9 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import List, Optional, Sequence, Tuple, Union
+from __future__ import annotations
+
+from typing import Sequence
 import numpy as np
 
 from mrmustard import settings
@@ -79,13 +81,13 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        x: Union[float, List[float]] = 0.0,
-        y: Union[float, List[float]] = 0.0,
+        x: float | list[float] = 0.0,
+        y: float | list[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
-        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         super().__init__(
@@ -101,8 +103,8 @@ class Dgate(Unitary):
 
     def U(
         self,
-        cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: Sequence[int] | None = None,
+        shape: Sequence[int] | None = None,
     ):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
@@ -183,13 +185,13 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        r: Union[float, list[float]] = 0.0,
-        phi: Union[float, list[float]] = 0.0,
+        r: float | list[float] = 0.0,
+        phi: float | list[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[list[int]] = None,
+        r_bounds: tuple[float | None, float | None] = (0.0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
@@ -200,8 +202,8 @@ class Sgate(Unitary):
 
     def U(
         self,
-        cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: Sequence[int] | None = None,
+        shape: Sequence[int] | None = None,
     ):
         r"""Returns the unitary representation of the Squeezing gate.
 
@@ -282,10 +284,10 @@ class Rgate(Unitary):
 
     def __init__(
         self,
-        angle: Union[float, list[float]] = 0.0,
+        angle: float | list[float] = 0.0,
         angle_trainable: bool = False,
-        angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[list[int]] = None,
+        angle_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
@@ -299,8 +301,8 @@ class Rgate(Unitary):
 
     def U(
         self,
-        cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: Sequence[int] | None = None,
+        shape: Sequence[int] | None = None,
         diag_only=False,
     ):
         r"""Returns the unitary representation of the Rotation gate.
@@ -377,10 +379,10 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        shearing: Union[Optional[float], Optional[list[float]]] = 0.0,
+        shearing: float | list[float] | None = 0.0,
         shearing_trainable: bool = False,
-        shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[list[int]] = None,
+        shearing_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(shearing)))),
@@ -414,10 +416,10 @@ class CXgate(Unitary):
 
     def __init__(
         self,
-        s: Optional[float] = 0.0,
+        s: float | None = 0.0,
         s_trainable: bool = False,
-        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        s_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0, 1],
@@ -449,10 +451,10 @@ class CZgate(Unitary):
 
     def __init__(
         self,
-        s: Optional[float] = 0.0,
+        s: float | None = 0.0,
         s_trainable: bool = False,
-        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        s_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0, 1],
@@ -491,9 +493,9 @@ class BSgate(Unitary):
         phi: float = 0.0,
         theta_trainable: bool = False,
         phi_trainable: bool = False,
-        theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[list[int]] = None,
+        theta_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0, 1],  # type: ignore
@@ -504,8 +506,8 @@ class BSgate(Unitary):
 
     def U(
         self,
-        cutoffs: Optional[List[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: list[int] | None = None,
+        shape: Sequence[int] | None = None,
         method=None,
     ):
         r"""Returns the unitary representation of the beam splitter.
@@ -587,10 +589,10 @@ class MZgate(Unitary):
         phi_b: float = 0.0,
         phi_a_trainable: bool = False,
         phi_b_trainable: bool = False,
-        phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_a_bounds: tuple[float | None, float | None] = (None, None),
+        phi_b_bounds: tuple[float | None, float | None] = (None, None),
         internal: bool = False,
-        modes: Optional[List[int]] = None,
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0, 1],
@@ -636,9 +638,9 @@ class S2gate(Unitary):
         phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        r_bounds: tuple[float | None, float | None] = (0.0, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0, 1],
@@ -675,9 +677,9 @@ class Interferometer(Unitary):
     def __init__(
         self,
         num_modes: int,
-        unitary: Optional[ComplexMatrix] = None,
+        unitary: ComplexMatrix | None = None,
         unitary_trainable: bool = False,
-        modes: Optional[list[int]] = None,
+        modes: list[int] | None = None,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -729,9 +731,9 @@ class RealInterferometer(Unitary):
     def __init__(
         self,
         num_modes: int,
-        orthogonal: Optional[RealMatrix] = None,
+        orthogonal: RealMatrix | None = None,
         orthogonal_trainable: bool = False,
-        modes: Optional[List[int]] = None,
+        modes: list[int] | None = None,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -792,9 +794,9 @@ class Ggate(Unitary):
     def __init__(
         self,
         num_modes: int,
-        symplectic: Optional[RealMatrix] = None,
+        symplectic: RealMatrix | None = None,
         symplectic_trainable: bool = False,
-        modes: Optional[list[int]] = None,
+        modes: list[int] | None = None,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -873,13 +875,13 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
+        transmissivity: float | list[float] | None = 1.0,
         nbar: float = 0.0,
         transmissivity_trainable: bool = False,
         nbar_trainable: bool = False,
-        transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[List[int]] = None,
+        transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
+        nbar_bounds: tuple[float | None, float | None] = (0.0, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
@@ -936,13 +938,13 @@ class Amplifier(Channel):
 
     def __init__(
         self,
-        gain: Union[Optional[float], Optional[List[float]]] = 1.0,
+        gain: float | list[float] | None = 1.0,
         nbar: float = 0.0,
         gain_trainable: bool = False,
         nbar_trainable: bool = False,
-        gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[list[int]] = None,
+        gain_bounds: tuple[float | None, float | None] = (1.0, None),
+        nbar_bounds: tuple[float | None, float | None] = (0.0, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(gain)))),
@@ -993,10 +995,10 @@ class AdditiveNoise(Channel):
 
     def __init__(
         self,
-        noise: Union[float, list[float]] = 0.0,
+        noise: float | list[float] = 0.0,
         noise_trainable: bool = False,
-        noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[list[int]] = None,
+        noise_bounds: tuple[float | None, float | None] = (0.0, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or list(range(len(math.atleast_1d(noise)))),
@@ -1023,10 +1025,10 @@ class PhaseNoise(Channel):
 
     def __init__(
         self,
-        phase_stdev: Union[Optional[float], Optional[List[float]]] = 0.0,
+        phase_stdev: float | list[float] | None = 0.0,
         phase_stdev_trainable: bool = False,
-        phase_stdev_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[List[int]] = None,
+        phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
+        modes: list[int] | None = None,
     ):
         super().__init__(
             modes=modes or [0],

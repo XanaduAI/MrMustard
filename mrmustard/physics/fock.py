@@ -18,8 +18,10 @@
 This module contains functions for performing calculations on objects in the Fock representations.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 import numpy as np
 
@@ -42,7 +44,7 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = None) -> Tensor:
+def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
     r"""
     The Fock array of a tensor product of one-mode ``Number`` states.
 
@@ -113,7 +115,7 @@ def wigner_to_fock_state(
     means: Vector,
     shape: Sequence[int],
     max_prob: float = 1.0,
-    max_photons: Optional[int] = None,
+    max_photons: int | None = None,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
@@ -265,7 +267,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return math.all_diagonals(dm, real=True)
 
 
-def U_to_choi(U: Tensor, Udual: Optional[Tensor] = None) -> Tensor:
+def U_to_choi(U: Tensor, Udual: Tensor | None = None) -> Tensor:
     r"""Converts a unitary transformation to a Choi tensor.
 
     Args:
@@ -488,7 +490,7 @@ def apply_choi_to_dm(
     choi: ComplexTensor,
     dm: ComplexTensor,
     choi_in_modes: Sequence[int],
-    choi_out_modes: Sequence[int] = None,
+    choi_out_modes: Sequence[int] | None = None,
 ):
     r"""Applies a choi operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
@@ -588,7 +590,7 @@ def apply_choi_to_ket(choi, ket, choi_in_modes, choi_out_modes=None):
 
 
 def contract_states(
-    stateA, stateB, a_is_dm: bool, b_is_dm: bool, modes: List[int], normalize: bool
+    stateA, stateB, a_is_dm: bool, b_is_dm: bool, modes: list[int], normalize: bool
 ):
     r"""Contracts two states in the specified modes.
     Assumes that the modes of B are a subset of the modes of A.
@@ -673,7 +675,7 @@ def is_mixed_dm(dm):
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
 
 
-def trace(dm, keep: List[int]):
+def trace(dm, keep: list[int]):
     r"""Computes the partial trace of a density matrix.
     The indices of the density matrix are in the order (out0, ..., outN-1, in0, ..., inN-1).
     The indices to keep are a subset of the N 'out' indices
@@ -819,7 +821,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
-    x: Optional[Vector] = None,
+    x: Vector | None = None,
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -866,7 +868,7 @@ def quadrature_distribution(
     return x, math.real(pdf)
 
 
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
+def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 

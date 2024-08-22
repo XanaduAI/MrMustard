@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
 
 import uuid
 
@@ -143,20 +142,20 @@ class Tensor(ABC):
     def __init__(
         self,
         name: str,
-        modes_in_ket: Optional[list[int]] = None,
-        modes_out_ket: Optional[list[int]] = None,
-        modes_in_bra: Optional[list[int]] = None,
-        modes_out_bra: Optional[list[int]] = None,
+        modes_in_ket: list[int] | None = None,
+        modes_out_ket: list[int] | None = None,
+        modes_in_bra: list[int] | None = None,
+        modes_out_bra: list[int] | None = None,
     ) -> None:
         self._name = name
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
     def _update_modes(
         self,
-        modes_in_ket: Optional[list[int]] = None,
-        modes_out_ket: Optional[list[int]] = None,
-        modes_in_bra: Optional[list[int]] = None,
-        modes_out_bra: Optional[list[int]] = None,
+        modes_in_ket: list[int] | None = None,
+        modes_out_ket: list[int] | None = None,
+        modes_in_bra: list[int] | None = None,
+        modes_out_bra: list[int] | None = None,
     ) -> None:
         r"""
         Updates the modes in this tensor by setting:
@@ -232,7 +231,7 @@ class Tensor(ABC):
             raise ValueError("modes are ambiguous for this Tensor.")
 
     @property
-    def modes_in(self) -> List[int]:
+    def modes_in(self) -> list[int]:
         r"""
         The list of input modes that are used by this Tensor.
 
@@ -245,7 +244,7 @@ class Tensor(ABC):
         return self._modes_in_bra
 
     @property
-    def modes_out(self) -> List[int]:
+    def modes_out(self) -> list[int]:
         r"""
         The list of output modes that are used by this Tensor.
 
@@ -271,7 +270,7 @@ class Tensor(ABC):
         """
         return self._output
 
-    def unpack_shape(self, shape: Tuple[int]):
+    def unpack_shape(self, shape: tuple[int]):
         r"""
         Unpack the given ``shape`` into the shapes of the input and output wires on ket and bra sides.
 
@@ -303,7 +302,7 @@ class Tensor(ABC):
         return shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra
 
     @property
-    def wires(self) -> List[Wire]:
+    def wires(self) -> list[Wire]:
         r"""
         The list of all wires in this tensor, sorted as ``[ket_in, ket_out, bra_in, bra_out]``.
         """
@@ -315,7 +314,7 @@ class Tensor(ABC):
         )
 
     @abstractmethod
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         r"""The value of this tensor.
 
         Args:
@@ -327,10 +326,10 @@ class Tensor(ABC):
 
     def change_modes(
         self,
-        modes_in_ket: Optional[list[int]] = None,
-        modes_out_ket: Optional[list[int]] = None,
-        modes_in_bra: Optional[list[int]] = None,
-        modes_out_bra: Optional[list[int]] = None,
+        modes_in_ket: list[int] | None = None,
+        modes_out_ket: list[int] | None = None,
+        modes_in_bra: list[int] | None = None,
+        modes_out_bra: list[int] | None = None,
     ) -> None:
         r"""
         Changes the modes in this tensor.
@@ -353,7 +352,7 @@ class Tensor(ABC):
                 raise ValueError(msg)
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
-    def shape(self, default_dim: Optional[int] = None, out_in=False):
+    def shape(self, default_dim: int | None = None, out_in=False):
         r"""
         Returns the shape of the underlying tensor, as inferred from the dimensions of the individual
         wires.
@@ -399,7 +398,7 @@ class AdjointView(Tensor):
             modes_out_bra=self._original.output.ket.keys(),
         )
 
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         r"""The value of this tensor.
 
         Args:
@@ -436,7 +435,7 @@ class DualView(Tensor):
             modes_out_bra=self._original.input.bra.keys(),
         )
 
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         r"""The value of this tensor.
 
         Args:

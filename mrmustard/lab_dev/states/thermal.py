@@ -18,7 +18,7 @@ The class representing a thermal state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
@@ -54,9 +54,9 @@ class Thermal(DM):
     def __init__(
         self,
         modes: Sequence[int],
-        nbar: Union[int, Sequence[int]] = 0,
+        nbar: int | Sequence[int] = 0,
         nbar_trainable: bool = False,
-        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+        nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         super().__init__(modes=modes, name="Thermal")
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))

@@ -14,7 +14,7 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -116,7 +116,7 @@ class ParameterSet:
             ret[f"{tag}/{k}"] = v
         return ret
 
-    def to_dict(self) -> dict[str, any]:
+    def to_dict(self) -> dict[str, Any]:
         r"""
         Returns a dictionary representation of this parameter set such that
         it is compatible with the signature of built-in circuit components.
