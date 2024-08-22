@@ -39,6 +39,7 @@ class Amplifier(Channel):
 
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Amplifier, Coherent
+        >>> from mrmustard import settings
 
         >>> amp = Amplifier([0], gain=4)
         >>> coh = Coherent([0], x=1.0, y=2.0)
