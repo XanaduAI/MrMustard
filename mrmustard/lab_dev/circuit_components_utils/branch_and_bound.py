@@ -159,8 +159,6 @@ class Graph(nx.DiGraph):
 
     def __init__(self, solution: tuple[Edge, ...] = (), costs: tuple[int, ...] = ()):
         super().__init__()
-        if len(solution) != len(costs):
-            raise ValueError("Solution and costs must have the same length.")
         self.solution = solution
         self.costs = costs
 
