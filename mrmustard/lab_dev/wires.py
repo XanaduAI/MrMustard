@@ -27,7 +27,7 @@ __all__ = ["Wires"]
 
 class Wires:
     r"""
-     A class with wire functionality for tensor network applications.
+    A class with wire functionality for tensor network applications.
 
     In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a tensor network picture,
@@ -37,72 +37,72 @@ class Wires:
 
     .. code-block::
 
-         A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
+        A channel acting on mode ``1`` has input and output wires on both ket and bra sides:
 
-         ┌──────┐   1  ╔═════════╗   1  ┌───────┐
-         │Bra in│─────▶║         ║─────▶│Bra out│
-         └──────┘      ║ Channel ║      └───────┘
-         ┌──────┐   1  ║         ║   1  ┌───────┐
-         │Ket in│─────▶║         ║─────▶│Ket out│
-         └──────┘      ╚═════════╝      └───────┘
-
-
-         A unitary acting on mode ``2`` has input and output wires on the ket side:
-
-         ┌──────┐   2  ╔═════════╗   2  ┌───────┐
-         │Ket in│─────▶║ Unitary ║─────▶│Ket out│
-         └──────┘      ╚═════════╝      └───────┘
+        ┌──────┐   1  ╔═════════╗   1  ┌───────┐
+        │Bra in│─────▶║         ║─────▶│Bra out│
+        └──────┘      ║ Channel ║      └───────┘
+        ┌──────┐   1  ║         ║   1  ┌───────┐
+        │Ket in│─────▶║         ║─────▶│Ket out│
+        └──────┘      ╚═════════╝      └───────┘
 
 
-         A density matrix representing the state of mode ``0`` has only output wires:
+        A unitary acting on mode ``2`` has input and output wires on the ket side:
 
-                         ╔═════════╗   0  ┌───────┐
-                         ║         ║─────▶│Bra out│
-                         ║ Density ║      └───────┘
-                         ║ Matrix  ║   0  ┌───────┐
-                         ║         ║─────▶│Ket out│
-                         ╚═════════╝      └───────┘
+        ┌──────┐   2  ╔═════════╗   2  ┌───────┐
+        │Ket in│─────▶║ Unitary ║─────▶│Ket out│
+        └──────┘      ╚═════════╝      └───────┘
 
 
-        A ket representing the state of mode ``1`` has only output wires:
+        A density matrix representing the state of mode ``0`` has only output wires:
 
-                         ╔═════════╗   1  ┌───────┐
-                         ║   Ket   ║─────▶│Ket out│
-                         ╚═════════╝      └───────┘
+                        ╔═════════╗   0  ┌───────┐
+                        ║         ║─────▶│Bra out│
+                        ║ Density ║      └───────┘
+                        ║ Matrix  ║   0  ┌───────┐
+                        ║         ║─────▶│Ket out│
+                        ╚═════════╝      └───────┘
 
-        A measurement acting on mode ``0`` has input wires on the ket side and classical output wires:
 
-        ┌──────┐   0  ╔═════════════╗   0  ┌─────────────┐
-        │Ket in│─────▶║ Measurement ║─────▶│Classical out│
-        └──────┘      ╚═════════════╝      └─────────────┘
+       A ket representing the state of mode ``1`` has only output wires:
+
+                        ╔═════════╗   1  ┌───────┐
+                        ║   Ket   ║─────▶│Ket out│
+                        ╚═════════╝      └───────┘
+
+       A measurement acting on mode ``0`` has input wires on the ket side and classical output wires:
+
+       ┌──────┐   0  ╔═════════════╗   0  ┌─────────────┐
+       │Ket in│─────▶║ Measurement ║─────▶│Classical out│
+       └──────┘      ╚═════════════╝      └─────────────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
 
-     .. code-block::
+    .. code-block::
 
-         >>> from mrmustard.lab_dev.wires import Wires
+        >>> from mrmustard.lab_dev.wires import Wires
 
-         >>> modes_out_bra={0, 1}
-         >>> modes_in_bra={1, 2}
-         >>> modes_out_ket={0, 13}
-         >>> modes_in_ket={1, 2, 13}
-         >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+        >>> modes_out_bra={0, 1}
+        >>> modes_in_bra={1, 2}
+        >>> modes_out_ket={0, 13}
+        >>> modes_in_ket={1, 2, 13}
+        >>> w = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
 
-         >>> # all the modes
-         >>> modes = w.modes
-         >>> assert w.modes == {0, 1, 2, 13}
+        >>> # all the modes
+        >>> modes = w.modes
+        >>> assert w.modes == {0, 1, 2, 13}
 
-         >>> # input/output modes
-         >>> assert w.input.modes == {1, 2, 13}
-         >>> assert w.output.modes == {0, 1, 13}
+        >>> # input/output modes
+        >>> assert w.input.modes == {1, 2, 13}
+        >>> assert w.output.modes == {0, 1, 13}
 
-         >>> # get ket/bra modes
-         >>> assert w.ket.modes == {0, 1, 2, 13}
-         >>> assert w.bra.modes == {0, 1, 2}
+        >>> # get ket/bra modes
+        >>> assert w.ket.modes == {0, 1, 2, 13}
+        >>> assert w.bra.modes == {0, 1, 2}
 
-         >>> # combined subsets
-         >>> assert w.output.ket.modes == {0, 13}
-         >>> assert w.input.bra.modes == {1, 2}
+        >>> # combined subsets
+        >>> assert w.output.ket.modes == {0, 13}
+        >>> assert w.input.bra.modes == {1, 2}
 
      Here's a diagram of the original ``Wires`` object in the example above,
      with the indices of the wires (the number in parenthesis) given in the "standard" order
