@@ -630,14 +630,11 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        if isinstance(ret.representation, Bargmann) and ret.representation.ansatz.polynomial_shape[0] > 0:
+        if (
+            isinstance(ret.representation, Bargmann)
+            and ret.representation.ansatz.polynomial_shape[0] > 0
+        ):
             scalar = ret.representation.ansatz(np.array([]))
-       else: 
-            scalar = ret.representation.scalar
-            if ret.representation.ansatz.polynomial_shape[0] > 0:
-                scalar = ret.representation.ansatz(np.array([]))
-            else:
-                scalar = ret.representation.scalar
         else:
             scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
