@@ -19,12 +19,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import (
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
 
 from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
 from mrmustard.math.backend_manager import BackendManager
@@ -68,10 +62,10 @@ class XPTensor(ABC):
     @abstractmethod  # so that XPTensor can't be instantiated directly
     def __init__(
         self,
-        tensor: Optional[Tensor],
+        tensor: Tensor | None,
         like_0: bool,
         is_vector: bool,
-        modes: Union[Tuple[List[int], List[int]], None],
+        modes: tuple[list[int], list[int]] | None,
     ):
         self.like_0 = like_0
         self.shape = (
@@ -101,11 +95,11 @@ class XPTensor(ABC):
         return None if self.tensor is None else self.tensor.dtype
 
     @property
-    def outmodes(self) -> List[int]:
+    def outmodes(self) -> list[int]:
         return self.modes[0]
 
     @property
-    def inmodes(self) -> List[int]:
+    def inmodes(self) -> list[int]:
         return self.modes[1]
 
     @property
@@ -113,11 +107,11 @@ class XPTensor(ABC):
         return len(self.outmodes)
 
     @property
-    def isMatrix(self) -> Optional[bool]:
+    def isMatrix(self) -> bool | None:
         return not self.is_vector
 
     @property
-    def isCoherence(self) -> Optional[bool]:
+    def isCoherence(self) -> bool | None:
         return self.isMatrix and self.outmodes != self.inmodes
 
     @property
@@ -137,7 +131,7 @@ class XPTensor(ABC):
             (self.inmodes, self.outmodes),
         )
 
-    def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
+    def to_xpxp(self) -> Matrix | Vector | None:
         if self.tensor is None:
             return None
         tensor = math.transpose(
@@ -145,7 +139,7 @@ class XPTensor(ABC):
         )  # from NN22 to N2N2 or from N2 to N2
         return math.reshape(tensor, [2 * s for s in self.shape])
 
-    def to_xxpp(self) -> Optional[Union[Matrix, Vector]]:
+    def to_xxpp(self) -> Matrix | Vector | None:
         if self.tensor is None:
             return None
         tensor = math.transpose(
@@ -156,10 +150,10 @@ class XPTensor(ABC):
     def __array__(self):
         return self.to_xxpp()
 
-    def modes_first(self) -> Optional[Tensor]:
+    def modes_first(self) -> Tensor | None:
         return self.tensor
 
-    def modes_last(self) -> Optional[Tensor]:
+    def modes_last(self) -> Tensor | None:
         if self.tensor is None:
             return None
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
@@ -232,10 +226,10 @@ class XPTensor(ABC):
         self.tensor = other * self.tensor
         return self
 
-    def __mul__(self, other: Scalar) -> Optional[XPTensor]:
+    def __mul__(self, other: Scalar) -> XPTensor | None:
         return other * self
 
-    def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector, Scalar]:
+    def __matmul__(self, other: XPMatrix | XPVector) -> XPMatrix | XPVector | Scalar:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(
                 f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
@@ -269,8 +263,8 @@ class XPTensor(ABC):
 
     # pylint: disable=too-many-statements
     def _mode_aware_matmul(
-        self, other: Union[XPMatrix, XPVector]
-    ) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
+        self, other: XPMatrix | XPVector
+    ) -> tuple[Tensor, tuple[list[int], list[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
 
@@ -369,7 +363,7 @@ class XPTensor(ABC):
         )  # only the common modes (the others are like 0)
         return math.sum(self.tensor[common] * other.tensor[common])
 
-    def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
+    def __add__(self, other: XPMatrix | XPVector) -> XPMatrix | XPVector:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(
                 f"unsupported operand type(s) for +: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
@@ -454,13 +448,13 @@ class XPTensor(ABC):
 
         return XPVector(to_update, outmodes)
 
-    def __sub__(self, other: Union[XPMatrix, XPVector]) -> Optional[XPTensor]:
+    def __sub__(self, other: XPMatrix | XPVector) -> XPTensor | None:
         return self + (-1) * other
 
-    def __truediv__(self, other: Scalar) -> Optional[XPTensor]:
+    def __truediv__(self, other: Scalar) -> XPTensor | None:
         return (1 / other) * self
 
-    def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
+    def __getitem__(self, modes: int | slice | list[int] | tuple) -> XPMatrix | XPVector:
         r"""Returns modes or subsets of modes from the XPTensor or coherences between modes using an
         intuitive notation.
 
@@ -535,7 +529,7 @@ class XPMatrix(XPTensor):
         tensor: Tensor = None,
         like_0: bool = None,
         like_1: bool = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        modes: tuple[list[int], list[int]] = ([], []),
     ):
         if like_0 is None and like_1 is None:
             raise ValueError("At least one of like_0 or like_1 must be set")
@@ -559,10 +553,10 @@ class XPMatrix(XPTensor):
     @classmethod
     def from_xxpp(
         cls,
-        tensor: Optional[Union[Matrix, Vector]],
-        like_0: Optional[bool] = None,
-        like_1: Optional[bool] = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        tensor: Matrix | Vector | None,
+        like_0: bool | None = None,
+        like_1: bool | None = None,
+        modes: tuple[list[int], list[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
@@ -572,10 +566,10 @@ class XPMatrix(XPTensor):
     @classmethod
     def from_xpxp(
         cls,
-        tensor: Optional[Union[Matrix, Vector]],
+        tensor: Matrix | Vector | None,
         like_0: bool = None,
         like_1: bool = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        modes: tuple[list[int], list[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
@@ -594,7 +588,7 @@ class XPVector(XPTensor):
         modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
     """
 
-    def __init__(self, tensor: Tensor = None, modes: Union[List[int], None] = None):
+    def __init__(self, tensor: Tensor = None, modes: list[int] | None = None):
         if modes is None and tensor is not None:
             modes = list(range(tensor.shape[0]))
         if modes is None and tensor is None:
@@ -608,8 +602,8 @@ class XPVector(XPTensor):
     @classmethod
     def from_xxpp(
         cls,
-        tensor: Optional[Union[Matrix, Vector]],
-        modes: Union[List[int], None] = None,
+        tensor: Matrix | Vector | None,
+        modes: list[int] | None = None,
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, (2, -1))
@@ -619,8 +613,8 @@ class XPVector(XPTensor):
     @classmethod
     def from_xpxp(
         cls,
-        tensor: Optional[Union[Matrix, Vector]],
-        modes: Union[List[int], None] = None,
+        tensor: Matrix | Vector | None,
+        modes: list[int] | None = None,
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, (-1, 2))

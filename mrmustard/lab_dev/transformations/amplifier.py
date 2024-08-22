@@ -18,7 +18,7 @@ The class representing a noisy amplifier channel.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from .base import Channel
 from ...physics.representations import Bargmann
@@ -79,9 +79,9 @@ class Amplifier(Channel):
     def __init__(
         self,
         modes: Sequence[int],
-        gain: Union[Optional[float], Optional[list[float]]] = 1.0,
+        gain: float | Sequence[float] | None = 1.0,
         gain_trainable: bool = False,
-        gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
+        gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Amp")
         (gs,) = list(reshape_params(len(modes), gain=gain))

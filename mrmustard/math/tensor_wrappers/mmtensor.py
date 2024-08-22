@@ -17,9 +17,11 @@
 """
 This module contains the implementation of a tensor wrapper class.
 """
+
+from __future__ import annotations
+
 import string
 from numbers import Number
-from typing import List, Optional, Union
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -136,7 +138,7 @@ class MMTensor:
             new_axis_labels,
         )
 
-    def contract(self, relabeling: Optional[List[str]] = None):
+    def contract(self, relabeling: list[str] | None = None):
         r"""
         Contract *this* tensor along the specified indices using einsum.
 
@@ -173,7 +175,7 @@ class MMTensor:
             [label for label in unique_labels if label not in repeated],
         )
 
-    def transpose(self, perm: Union[List[int], List[str]]):
+    def transpose(self, perm: list[int] | list[str]):
         """Transpose the tensor using a list of axis labels or indices."""
         if set(perm) == set(self.axis_labels):
             perm = [self.axis_labels.index(label) for label in perm]
