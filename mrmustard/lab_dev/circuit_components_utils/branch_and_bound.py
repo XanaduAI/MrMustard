@@ -18,6 +18,7 @@ Branch and bound algorithm for optimal contraction of a tensor network.
 
 from __future__ import annotations
 import random
+from copy import deepcopy
 from queue import PriorityQueue
 from math import factorial
 import numpy as np
@@ -57,12 +58,6 @@ class GraphComponent:
             shape=c.auto_shape(),
             name=c.__class__.__name__,
         )
-
-    def copy(self) -> GraphComponent:
-        r"""
-        Returns a copy of the GraphComponent.
-        """
-        return GraphComponent(self.repr, self.wires, self.shape, self.name)
 
     def contraction_cost(self, other: GraphComponent) -> int:
         r"""
@@ -225,7 +220,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     graph = Graph()
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
-        graph.add_node(i, component=comp.copy())
+        graph.add_node(i, component=deepcopy(comp))
         for j, B in enumerate(components[i + 1 :]):
             ovlp_bra, ovlp_ket = A.wires.overlap(B.wires)
             if ovlp_ket or ovlp_bra:
