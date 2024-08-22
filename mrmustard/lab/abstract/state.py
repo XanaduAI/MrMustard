@@ -20,11 +20,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Iterable,
-    List,
-    Optional,
     Sequence,
-    Tuple,
-    Union,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -114,7 +110,7 @@ class State:  # pylint: disable=too-many-public-methods
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
+    def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to a state.
 
@@ -141,7 +137,7 @@ class State:  # pylint: disable=too-many-public-methods
             return list(range(self.num_modes))
         return self._modes
 
-    def indices(self, modes) -> Union[Tuple[int], int]:
+    def indices(self, modes) -> int | tuple[int]:
         r"""Returns the indices of the given modes.
 
         Args:
@@ -175,12 +171,12 @@ class State:  # pylint: disable=too-many-public-methods
         return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
-    def means(self) -> Optional[RealVector]:
+    def means(self) -> RealVector | None:
         r"""Returns the means vector of the state."""
         return self._means
 
     @property
-    def cov(self) -> Optional[RealMatrix]:
+    def cov(self) -> RealMatrix | None:
         r"""Returns the covariance matrix of the state."""
         return self._cov
 
@@ -195,7 +191,7 @@ class State:  # pylint: disable=too-many-public-methods
         )
 
     @property
-    def cutoffs(self) -> List[int]:
+    def cutoffs(self) -> list[int]:
         r"""Returns the Hilbert space dimension of each mode."""
         if self._cutoffs is None:
             if self._ket is None and self._dm is None:
@@ -214,7 +210,7 @@ class State:  # pylint: disable=too-many-public-methods
         return self._cutoffs
 
     @property
-    def shape(self) -> List[int]:
+    def shape(self) -> list[int]:
         r"""Returns the shape of the state, accounting for ket/dm representation.
 
         If the state is in Gaussian representation, the shape is inferred from
@@ -274,10 +270,10 @@ class State:  # pylint: disable=too-many-public-methods
 
     def ket(
         self,
-        cutoffs: List[int] = None,
+        cutoffs: list[int] | None = None,
         max_prob: float = 1.0,
-        max_photons: int = None,
-    ) -> Optional[ComplexTensor]:
+        max_photons: int | None = None,
+    ) -> ComplexTensor | None:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
@@ -323,7 +319,7 @@ class State:  # pylint: disable=too-many-public-methods
                 return padded[tuple(slice(s) for s in cutoffs)]
         return self._ket[tuple(slice(s) for s in cutoffs)]
 
-    def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
+    def dm(self, cutoffs: list[int] | None = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
 
         Args:
@@ -376,7 +372,7 @@ class State:  # pylint: disable=too-many-public-methods
                 self._fock_probabilities = fock.ket_to_probs(ket)
         return self._fock_probabilities
 
-    def primal(self, other: Union[State, Transformation]) -> State:
+    def primal(self, other: State | Transformation) -> State:
         r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
 
         ``other << self`` is other projected onto ``self``.
@@ -399,7 +395,7 @@ class State:  # pylint: disable=too-many-public-methods
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
 
-    def _project_onto_state(self, other: State) -> Union[State, float]:
+    def _project_onto_state(self, other: State) -> State | float:
         """If states are gaussian use generaldyne measurement, else use
         the states' Fock representation."""
 
@@ -410,7 +406,7 @@ class State:  # pylint: disable=too-many-public-methods
         # either self or other is not gaussian
         return self._project_onto_fock(other)
 
-    def _project_onto_fock(self, other: State) -> Union[State, float]:
+    def _project_onto_fock(self, other: State) -> State | float:
         """Returns the post-measurement state of the projection between two non-Gaussian
         states on the remaining modes or the probability of the result. When doing homodyne sampling,
         returns the post-measurement state or the measument outcome if no modes remain.
@@ -459,7 +455,7 @@ class State:  # pylint: disable=too-many-public-methods
 
         return out_fock
 
-    def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+    def _project_onto_gaussian(self, other: State) -> State | float:
         """Returns the result of a generaldyne measurement given that states ``self`` and
         ``other`` are gaussian.
 
@@ -549,7 +545,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._modes = item
         return self
 
-    def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+    def bargmann(self, numpy=False) -> tuple[ComplexMatrix, ComplexVector, complex] | None:
         r"""Returns the Bargmann representation of the state.
         If numpy=True, returns the numpy arrays instead of the backend arrays.
         """
@@ -700,8 +696,8 @@ class State:  # pylint: disable=too-many-public-methods
 
 def mikkel_plot(
     rho: np.ndarray,
-    xbounds: Tuple[int] = (-6, 6),
-    ybounds: Tuple[int] = (-6, 6),
+    xbounds: tuple[int] = (-6, 6),
+    ybounds: tuple[int] = (-6, 6),
     **kwargs,
 ):  # pylint: disable=too-many-statements
     """Plots the Wigner function of a state given its density matrix.
