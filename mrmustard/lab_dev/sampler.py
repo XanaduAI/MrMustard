@@ -38,21 +38,21 @@ class Sampler:
     Args:
         meas_outcomes: The measurement outcomes for this sampler.
         meas_ops: The optional measurement operators of this sampler.
-        probs: An optional probability distribution for this sampler.
+        prob_dist: An optional probability distribution for this sampler.
     """
 
     def __init__(
         self,
         meas_outcomes: list[any],
         meas_ops: CircuitComponent | list[CircuitComponent] | None = None,
-        probs: list[float] | None = None,
+        prob_dist: list[float] | None = None,
     ):
         self._meas_ops = meas_ops
         self._meas_outcomes = meas_outcomes
-        self._probs = probs
+        self._prob_dist = prob_dist
 
     @property
-    def meas_ops(self) -> CircuitComponent | list[CircuitComponent]:
+    def meas_ops(self) -> CircuitComponent | list[CircuitComponent] | None:
         r"""
         The measurement operators of this sampler.
         """
@@ -85,14 +85,14 @@ class Sampler:
         Args:
             state: The state to generate the probability distribution with.
         """
-        if self._probs is None:
+        if self._prob_dist is None:
             states = [state >> meas_op.dual for meas_op in self.meas_ops]
             probs = [
                 state.probability if isinstance(state, State) else math.real(state) ** 2
                 for state in states
             ]
             return probs / sum(probs)
-        return self._probs
+        return self._prob_dist
 
 
 class PNRSampler(Sampler):
@@ -124,9 +124,9 @@ class HomodyneSampler(Sampler):
         super().__init__(list(np.linspace(*xbounds, num)), BtoQ(modes, phi=0))
 
     def probabilities(self, state: State | None = None):
-        if self._probs is None:
+        if self._prob_dist is None:
             q_state = state >> self.meas_ops
             probs = [math.real(q_state.representation([[q]])[0]) ** 2 for q in self._meas_outcomes]
             probs /= sum(probs)
             return probs
-        return self._probs
+        return self._prob_dist
