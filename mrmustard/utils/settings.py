@@ -15,7 +15,6 @@
 """A module containing global settings."""
 
 from __future__ import annotations
-from typing import Optional
 from pathlib import Path
 from rich import print
 import rich.table
