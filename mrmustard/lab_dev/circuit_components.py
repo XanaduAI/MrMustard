@@ -632,10 +632,6 @@ class CircuitComponent:
             >>> att = Attenuator([0], 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
-        try:
-            return other._rrshift_(self)
-        except AttributeError:
-            pass
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
