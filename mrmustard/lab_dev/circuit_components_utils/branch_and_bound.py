@@ -30,7 +30,8 @@ Edge = tuple[int, int]
 
 
 class GraphComponent:
-    r"""A lightweight "CircuitComponent" without the actual representation.
+    r"""
+    A lightweight "CircuitComponent" without the actual representation.
     Basically a wrapper around Wires, so that it can emulate components in
     a circuit. It exposes the repr, wires, shape, name and cost of obtaining
     the component from previous contractions.
@@ -58,7 +59,9 @@ class GraphComponent:
         )
 
     def copy(self) -> GraphComponent:
-        """Returns a copy of the GraphComponent."""
+        r"""
+        Returns a copy of the GraphComponent.
+        """
         return GraphComponent(self.repr, self.wires, self.shape, self.name)
 
     def contraction_cost(self, other: GraphComponent) -> int:
@@ -110,7 +113,9 @@ class GraphComponent:
         return int(cost)
 
     def __matmul__(self, other) -> GraphComponent:
-        """Returns the contracted GraphComponent."""
+        r"""
+        Returns the contracted GraphComponent.
+        """
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
         shape_A = [n for i, n in enumerate(self.shape) if i not in idxA]
@@ -131,7 +136,9 @@ class GraphComponent:
 
 
 class Graph(nx.DiGraph):
-    """Power pack for nx.DiGraph with additional attributes and methods."""
+    r"""
+    Power pack for nx.DiGraph with additional attributes and methods.
+    """
 
     def __init__(self, solution: tuple[Edge, ...] = (), costs: tuple[int, ...] = ()):
         super().__init__()
@@ -140,7 +147,9 @@ class Graph(nx.DiGraph):
 
     @property
     def cost(self) -> int:
-        """Returns the total cost of the graph."""
+        r"""
+        Returns the total cost of the graph.
+        """
         return sum(self.costs)
 
     def __lt__(self, other: Graph) -> bool:
@@ -163,7 +172,9 @@ class Graph(nx.DiGraph):
 
 
 def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
-    """Iteratively optimizes the Fock shapes of the components in the graph."""
+    r"""
+    Iteratively optimizes the Fock shapes of the components in the graph.
+    """
     h = hash(graph)
     for A, B in graph.edges:
         wires_A = graph.nodes[A]["component"].wires
@@ -200,7 +211,8 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
 
 
 def parse_components(components: list[CircuitComponent]) -> Graph:
-    """Parses a list of CircuitComponents into a Graph.
+    r"""
+    Parses a list of CircuitComponents into a Graph.
 
     Each node in the graph corresponds to a GraphComponent and an edge between two nodes indicates that
     the GraphComponents are connected in the circuit. Whether they are connected by one wire
@@ -230,7 +242,9 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
 
 
 def validate_components(components: list[CircuitComponent]) -> None:
-    """Raises an error if the components are not valid"""
+    r"""
+    Raises an error if the components are not valid.
+    """
     if len(components) == 0:
         return
     w = components[0].wires
@@ -239,7 +253,8 @@ def validate_components(components: list[CircuitComponent]) -> None:
 
 
 def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
-    """Contracts an edge in a graph and returns the contracted graph.
+    r"""
+    Contracts an edge in a graph and returns the contracted graph.
     Makes a copy of the original graph.
 
     Args:
@@ -262,7 +277,8 @@ def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
 
 
 def children(graph: Graph, cost_bound: int) -> set[Graph]:
-    """Returns a set of graphs obtained by contracting each edge.
+    r"""
+    Returns a set of graphs obtained by contracting each edge.
     Only graphs with a cost below ``cost_bound`` are returned.
     Two nodes are contracted by removing the edge between them and merging
     the two nodes into a single node. The shape of the new node
@@ -284,7 +300,7 @@ def children(graph: Graph, cost_bound: int) -> set[Graph]:
 
 
 def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
-    """
+    r"""
     A set of grandchildren constructed from each child's children.
     Only grandchildren with a cost below ``cost_bound`` are returned.
     Note that children without further children are included, so with
@@ -310,7 +326,9 @@ def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
 
 
 def assign_costs(graph: Graph, debug: int = 0) -> None:
-    """Assigns to each edge in the graph the cost of contracting the two nodes it connects."""
+    r"""
+    Assigns to each edge in the graph the cost of contracting the two nodes it connects.
+    """
     for edge in graph.edges:
         A = graph.nodes[edge[0]]["component"]
         B = graph.nodes[edge[1]]["component"]
@@ -322,7 +340,9 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
 
 
 def random_solution(graph: Graph) -> Graph:
-    r"""Returns a randomly contracted graph."""
+    r"""
+    Returns a randomly contracted graph.
+    """
     while graph.number_of_edges() > 0:
         edge = random.choice(list(graph.edges))
         graph = contract(graph, edge)
@@ -330,7 +350,8 @@ def random_solution(graph: Graph) -> Graph:
 
 
 def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
-    r"""Reduces the first pair of nodes that match the pattern in the code.
+    r"""
+    Reduces the first pair of nodes that match the pattern in the code.
     The first number and letter describe a node with that number of
     edges and that repr (B for Bargmann, F for Fock), and the last letter
     describes the repr of the second node.
@@ -353,7 +374,9 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
 
 
 def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
-    r"""Simplifies the graph by contracting all pairs of nodes that match the given pattern."""
+    r"""
+    Simplifies the graph by contracting all pairs of nodes that match the given pattern.
+    """
     edge = True
     while edge:
         graph, edge = reduce_first(graph, code)
@@ -368,7 +391,8 @@ def optimal_contraction(
     heuristics: tuple[str, ...],
     verbose: bool,
 ) -> Graph:
-    r"""Finds the optimal path to contract a graph.
+    r"""
+    Finds the optimal path to contract a graph.
 
     Args:
         graph: The graph to contract.
