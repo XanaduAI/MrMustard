@@ -104,9 +104,9 @@ class Wires:
         >>> assert w.output.ket.modes == {0, 13}
         >>> assert w.input.bra.modes == {1, 2}
 
-     Here's a diagram of the original ``Wires`` object in the example above,
-     with the indices of the wires (the number in parenthesis) given in the "standard" order
-     (``bra_out``, ``bra_in``, ``ket_out``, ``ket_in``, and the modes in sorted increasing order):
+    Here's a diagram of the original ``Wires`` object in the example above,
+    with the indices of the wires (the number in parenthesis) given in the "standard" order
+    (``bra_out``, ``bra_in``, ``ket_out``, ``ket_in``, and the modes in sorted increasing order):
 
     .. code-block::
 
