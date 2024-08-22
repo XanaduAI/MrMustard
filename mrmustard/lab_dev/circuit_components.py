@@ -569,7 +569,6 @@ class CircuitComponent:
                 del ret.manual_shape
             return ret
 
-
     def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to this circuit component and makes it accessible as an attribute.
