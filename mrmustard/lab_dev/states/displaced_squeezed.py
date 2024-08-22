@@ -18,7 +18,7 @@ The class representing a displaced squeezed state.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
@@ -63,18 +63,18 @@ class DisplacedSqueezed(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        x: Union[float, Sequence[float]] = 0.0,
-        y: Union[float, Sequence[float]] = 0.0,
-        r: Union[float, Sequence[float]] = 0.0,
-        phi: Union[float, Sequence[float]] = 0.0,
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
+        r_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="DisplacedSqueezed")
         params = reshape_params(len(modes), x=x, y=y, r=r, phi=phi)
