@@ -17,7 +17,7 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
+from .flat_indices import lower_neighbors, shape_to_strides
 
 __all__ = [
     "vanilla",
@@ -33,55 +33,74 @@ SQRT = np.sqrt(np.arange(100000))
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy.
-
-    Flattens the tensors, then fills it by iterating over all indices in the order
-    given by ``np.ndindex``. Finally, it reshapes the tensor before returning.
+    r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    This implementation works on flattened tensors and reshapes the tensor before returning.
 
     Args:
         shape (tuple[int, ...]): shape of the output tensor
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): B vector of the Fock-Bargmann representation
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): b vector of the Bargmann representation
         c (complex): vacuum amplitude
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    # calculate the strides
-    strides = shape_to_strides(np.array(shape))
+    # numba doesn't like tuples
+    shape_arr = np.array(shape)
+
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(len(shape_arr) - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
     # init flat output tensor
-    ret = np.array([0 + 0j] * np.prod(np.array(shape)))
+    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
 
-    # initialize the indeces.
-    # ``index`` is the index of the flattened output tensor, while
-    # ``index_u_iter`` iterates through the unravelled counterparts of
-    # ``index``.
-    index = 0
-    index_u_iter = np.ndindex(shape)
-    next(index_u_iter)
+    # initialize the n-dim index
+    nd_index = np.ndindex(shape)
 
-    # write vacuum amplitude
-    ret[0] = c
+    # write vacuum amplitude and skip corresponding n-dim index
+    G[0] = c
+    next(nd_index)
 
-    # iterate over the rest of the indices
-    for index_u in index_u_iter:
-        # update index
-        index += 1
+    # iterate over the indices smaller than max(strides) with pivot bound check
+    for flat_index in range(1, strides[0]):
+        index = next(nd_index)
 
-        # calculate pivot's contribution
-        i, pivot = first_available_pivot(index, strides)
-        value_at_index = b[i] * ret[pivot]
+        # calculate (flat) pivot
+        for i, s in enumerate(strides):
+            pivot = flat_index - s
+            if pivot >= 0:  # if pivot not outside array
+                break
 
-        # add the contribution of pivot's lower's neighbours
-        ns = lower_neighbors(pivot, strides, i)
-        (j0, n0) = next(ns)
-        value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
-        for j, n in ns:
-            value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
-        ret[index] = value_at_index / np.sqrt(index_u[i])
+        # contribution from pivot
+        value_at_index = b[i] * G[pivot]
 
-    return ret.reshape(shape)
+        # contributions from pivot's lower neighbours
+        # note the first is when j=i which needs a -1 in the sqrt from delta_ij
+        value_at_index += A[i, i] * SQRT[index[i] - 1] * G[pivot - strides[i]]
+        for j in range(i + 1, len(strides)):
+            value_at_index += A[i, j] * SQRT[index[j]] * G[pivot - strides[j]]
+        G[flat_index] = value_at_index / SQRT[index[i]]
+
+    # iterate over the rest of the indices (now i can always be 0, and we don't need bounds check)
+    for flat_index in range(strides[0], len(G)):
+        index = next(nd_index)
+
+        # pivot can be calculated without bounds check
+        pivot = flat_index - strides[0]
+
+        # contribution from pivot
+        value_at_index = b[0] * G[pivot]
+
+        # contribution from pivot's lower neighbours
+        # note the first is when j=0 which needs a -1 in the sqrt from delta_0j
+        value_at_index += A[0, 0] * SQRT[index[0] - 1] * G[pivot - strides[0]]
+        for j in range(1, len(strides)):
+            value_at_index += A[0, j] * SQRT[index[j]] * G[pivot - strides[j]]
+        G[flat_index] = value_at_index / SQRT[index[0]]
+
+    return G.reshape(shape)
 
 
 # NOTE: numba cannot compile a single function with two possible output shapes
