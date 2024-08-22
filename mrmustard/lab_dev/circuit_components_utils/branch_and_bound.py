@@ -36,6 +36,13 @@ class GraphComponent:
     Basically a wrapper around Wires, so that it can emulate components in
     a circuit. It exposes the repr, wires, shape, name and cost of obtaining
     the component from previous contractions.
+
+    Args:
+        repr: The name of the representation of the component.
+        wires: The wires of the component.
+        shape: The fock shape of the component.
+        name: The name of the component.
+        cost: The cost of obtaining this component.
     """
 
     def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
@@ -51,6 +58,9 @@ class GraphComponent:
     def from_circuitcomponent(cls, c: CircuitComponent):
         r"""
         Creates a GraphComponent from a CircuitComponent.
+
+        Args:
+            c: A CircuitComponent.
         """
         return GraphComponent(
             repr=str(c.representation.__class__.__name__),
@@ -110,6 +120,9 @@ class GraphComponent:
     def __matmul__(self, other) -> GraphComponent:
         r"""
         Returns the contracted GraphComponent.
+
+        Args:
+            other: Another GraphComponent
         """
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
@@ -133,10 +146,16 @@ class GraphComponent:
 class Graph(nx.DiGraph):
     r"""
     Power pack for nx.DiGraph with additional attributes and methods.
+
+    Args:
+        solution: The sequence of edges contracted to obtain this graph.
+        costs: The costs of contracting each edge in the current solution.
     """
 
     def __init__(self, solution: tuple[Edge, ...] = (), costs: tuple[int, ...] = ()):
         super().__init__()
+        if len(solution) != len(costs):
+            raise ValueError("Solution and costs must have the same length.")
         self.solution = solution
         self.costs = costs
 
@@ -147,10 +166,35 @@ class Graph(nx.DiGraph):
         """
         return sum(self.costs)
 
+    def component(self, n) -> GraphComponent:
+        r"""
+        Returns the ``GraphComponent`` associated with a node.
+
+        Args:
+            n: The node index.
+        """
+        return self.nodes[n]["component"]
+
+    def components(self) -> Generator[GraphComponent, None, None]:
+        r"""
+        Yields the ``GraphComponents`` associated with the nodes.
+        """
+        for n in self.nodes:
+            yield self.component(n)
+
     def __lt__(self, other: Graph) -> bool:
+        r"""
+        Compares two graphs by their cost. Used for sorting in the priority queue.
+
+        Args:
+            other: Another graph.
+        """
         return self.cost < other.cost
 
     def __hash__(self) -> int:
+        r"""
+        Returns a hash of the graph.
+        """
         return hash(
             tuple(self.nodes)
             + tuple(self.edges)
@@ -158,17 +202,15 @@ class Graph(nx.DiGraph):
             + tuple(sum((c.shape for c in self.components()), start=[]))
         )
 
-    def component(self, n) -> GraphComponent:
-        return self.nodes[n]["component"]
-
-    def components(self) -> Generator[GraphComponent, None, None]:
-        for n in self.nodes:
-            yield self.component(n)
-
 
 def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
     r"""
     Iteratively optimizes the Fock shapes of the components in the graph.
+
+    Args:
+        graph: The graph to optimize.
+        iteration: The iteration number.
+        verbose: Whether to print the progress.
     """
     h = hash(graph)
     for A, B in graph.edges:
@@ -238,7 +280,10 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
 
 def validate_components(components: list[CircuitComponent]) -> None:
     r"""
-    Raises an error if the components are not valid.
+    Raises an error if the components will not contract correctly.
+
+    Args:
+        components: A list of CircuitComponents.
     """
     if len(components) == 0:
         return
@@ -255,6 +300,7 @@ def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
     Args:
         graph (Graph): A graph.
         edge (tuple[int, int]): An edge to contract.
+        debug (int): Whether to print debug information.
 
     Returns:
         Graph: A new graph with the contracted edge.
@@ -323,6 +369,10 @@ def grandchildren(graph: Graph, cost_bound: int) -> set[Graph]:
 def assign_costs(graph: Graph, debug: int = 0) -> None:
     r"""
     Assigns to each edge in the graph the cost of contracting the two nodes it connects.
+
+    Args:
+        graph (Graph): A graph.
+        debug (int): Whether to print debug information
     """
     for edge in graph.edges:
         A = graph.nodes[edge[0]]["component"]
@@ -336,7 +386,13 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
 
 def random_solution(graph: Graph) -> Graph:
     r"""
-    Returns a randomly contracted graph.
+    Returns a random solution to contract a given graph.
+
+    Args:
+        graph (Graph): The initial graph.
+
+    Returns:
+        Graph: The contracted graph
     """
     while graph.number_of_edges() > 0:
         edge = random.choice(list(graph.edges))
@@ -355,6 +411,10 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     number of edges.
     We typically use codes like 1BB, 2BB, 1FF, 2FF by default because they are
     safe, and codes like 1BF, 1FB optionally as they are not always the best choice.
+
+    Args:
+        graph: A graph.
+        code: A pattern indicating the type of nodes to contract.
     """
     n, tA, tB = code
     for node in graph.nodes:
@@ -371,6 +431,11 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
 def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     r"""
     Simplifies the graph by contracting all pairs of nodes that match the given pattern.
+
+    Args:
+        graph: A graph.
+        code: A pattern indicating the type of nodes to contract.
+        verbose: Whether to print the progress.
     """
     edge = True
     while edge:
