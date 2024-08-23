@@ -14,8 +14,6 @@
 
 """Tests for the sampler."""
 
-import pytest
-
 from mrmustard.lab_dev.sampler import Sampler
 from mrmustard.lab_dev import Number, Vacuum
 
