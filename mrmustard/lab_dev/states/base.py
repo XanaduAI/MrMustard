@@ -908,16 +908,19 @@ class Ket(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                repr = self.representation.conj() & self.representation
-                A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / self.probability
-                shape = autoshape_numba(
-                    math.asnumpy(A),
-                    math.asnumpy(b),
-                    math.asnumpy(c),
-                    max_prob or settings.AUTOSHAPE_PROBABILITY,
-                    max_shape or settings.AUTOSHAPE_MAX,
-                )
+                if self.representation.ansatz.polynomial_shape[0]==0:
+                    repr = self.representation.conj() & self.representation
+                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                    repr = repr / self.probability
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                    )
+                else:
+                    shape = (settings.AUTOSHAPE_MAX,)
         else:
             warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
