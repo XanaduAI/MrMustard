@@ -14,7 +14,9 @@
 
 """This module contains the classes to describe constant and variable parameters used in Mr Mustard."""
 
-from typing import Callable, Optional, Tuple
+from __future__ import annotations
+
+from typing import Any, Callable
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -96,7 +98,7 @@ class Constant:
         dtype: The dtype of this constant.
     """
 
-    def __init__(self, value: any, name: str, dtype: any = None):
+    def __init__(self, value: Any, name: str, dtype: Any = None):
         if math.from_backend(value) and not math.is_trainable(value):
             self._value = value
         elif hasattr(value, "dtype"):
@@ -113,7 +115,7 @@ class Constant:
         return self._name
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         r"""
         The value of this constant.
         """
@@ -145,11 +147,11 @@ class Variable:
 
     def __init__(
         self,
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         update_fn: Callable = update_euclidean,
-        dtype: any = None,
+        dtype: Any = None,
     ):
         self._value = self._get_value(value, bounds, name, dtype)
         self._name = name
@@ -168,7 +170,7 @@ class Variable:
             return math.new_variable(value, bounds, name, dtype)
 
     @property
-    def bounds(self) -> Tuple[Optional[float], Optional[float]]:
+    def bounds(self) -> tuple[float | None, float | None]:
         r"""
         The numerical bounds of this variable.
         """
@@ -182,7 +184,7 @@ class Variable:
         return self._name
 
     @property
-    def update_fn(self) -> Optional[Callable]:
+    def update_fn(self) -> Callable | None:
         r"""
         The function used to update this variable during training.
         """
@@ -193,7 +195,7 @@ class Variable:
         self._update_fn = value
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         r"""
         The value of this variable.
         """
@@ -205,9 +207,9 @@ class Variable:
 
     @staticmethod
     def orthogonal(
-        value: Optional[any],
+        value: Any | None,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -229,9 +231,9 @@ class Variable:
 
     @staticmethod
     def symplectic(
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -253,9 +255,9 @@ class Variable:
 
     @staticmethod
     def unitary(
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""

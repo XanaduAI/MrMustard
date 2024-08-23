@@ -16,7 +16,9 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import Iterable, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Iterable
 
 from mrmustard import settings
 from mrmustard.physics import fock, gaussian
@@ -60,15 +62,15 @@ class PNRDetector(FockMeasurement):
 
     def __init__(
         self,
-        efficiency: Union[float, List[float]] = 1.0,
-        dark_counts: Union[float, List[float]] = 0.0,
+        efficiency: float | list[float] = 1.0,
+        dark_counts: float | list[float] = 0.0,
         efficiency_trainable: bool = False,
         dark_counts_trainable: bool = False,
-        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        efficiency_bounds: tuple[float | None, float | None] = (0.0, 1.0),
+        dark_counts_bounds: tuple[float | None, float | None] = (0.0, None),
         stochastic_channel: RealMatrix = None,
-        modes: List[int] = None,
-        cutoffs: Union[int, List[int]] = None,
+        modes: list[int] = None,
+        cutoffs: int | list[int] = None,
     ):
         self._stochastic_channel = stochastic_channel
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
@@ -99,7 +101,7 @@ class PNRDetector(FockMeasurement):
     def should_recompute_stochastic_channel(self):
         return self._should_recompute_stochastic_channel
 
-    def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+    def recompute_stochastic_channel(self, cutoffs: list[int] | None = None):
         """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
@@ -156,14 +158,14 @@ class ThresholdDetector(FockMeasurement):
 
     def __init__(
         self,
-        efficiency: Union[float, List[float]] = 1.0,
-        dark_count_prob: Union[float, List[float]] = 0.0,
+        efficiency: float | list[float] = 1.0,
+        dark_count_prob: float | list[float] = 0.0,
         efficiency_trainable: bool = False,
         dark_count_prob_trainable: bool = False,
-        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-        dark_count_prob_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        efficiency_bounds: tuple[float | None, float | None] = (0.0, 1.0),
+        dark_count_prob_bounds: tuple[float | None, float | None] = (0.0, None),
         stochastic_channel=None,
-        modes: List[int] = None,
+        modes: list[int] = None,
     ):
         if modes is not None:
             num_modes = len(modes)
@@ -204,7 +206,7 @@ class ThresholdDetector(FockMeasurement):
     def should_recompute_stochastic_channel(self):
         return self._should_recompute_stochastic_channel
 
-    def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+    def recompute_stochastic_channel(self, cutoffs: list[int] | None = None):
         """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
@@ -238,8 +240,8 @@ class Generaldyne(Measurement):
     def __init__(
         self,
         state: State,
-        outcome: Optional[RealVector] = None,
-        modes: Optional[Iterable[int]] = None,
+        outcome: RealVector | None = None,
+        modes: Iterable[int] | None = None,
     ) -> None:
         if not state.is_gaussian:
             raise TypeError("Generaldyne measurement state must be Gaussian.")
@@ -262,14 +264,14 @@ class Generaldyne(Measurement):
     def outcome(self) -> RealVector:
         return self.state.means
 
-    def primal(self, other: State) -> Union[State, float]:
+    def primal(self, other: State) -> State | float:
         if self.postselected:
             # return the projection of self.state onto other
             return self.state.primal(other)
 
         return super().primal(other)
 
-    def _measure_gaussian(self, other) -> Union[State, float]:
+    def _measure_gaussian(self, other) -> State | float:
         remaining_modes = list(set(other.modes) - set(self.modes))
 
         outcome, prob, new_cov, new_means = gaussian.general_dyne(
@@ -283,7 +285,7 @@ class Generaldyne(Measurement):
             else State(cov=new_cov, means=new_means, modes=remaining_modes, _norm=prob)
         )
 
-    def _measure_fock(self, other) -> Union[State, float]:
+    def _measure_fock(self, other) -> State | float:
         raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
 
 
@@ -301,9 +303,9 @@ class Heterodyne(Generaldyne):
 
     def __init__(
         self,
-        x: Union[float, List[float]] = 0.0,
-        y: Union[float, List[float]] = 0.0,
-        modes: List[int] = None,
+        x: float | list[float] = 0.0,
+        y: float | list[float] = 0.0,
+        modes: list[int] | None = None,
     ):
         if (x is None) ^ (y is None):  # XOR
             raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
@@ -338,10 +340,10 @@ class Homodyne(Generaldyne):
 
     def __init__(
         self,
-        quadrature_angle: Union[float, List[float]],
-        result: Optional[Union[float, List[float]]] = None,
-        modes: Optional[List[int]] = None,
-        r: Optional[Union[float, List[float]]] = None,
+        quadrature_angle: float | list[float],
+        result: float | list[float] | None = None,
+        modes: list[int] | None = None,
+        r: float | list[float] | None = None,
     ):
         self.r = r or settings.HOMODYNE_SQUEEZING
         self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
@@ -371,7 +373,7 @@ class Homodyne(Generaldyne):
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
-    def _measure_gaussian(self, other) -> Union[State, float]:
+    def _measure_gaussian(self, other) -> State | float:
         # rotate modes to be measured to the Homodyne basis
         other >>= Rgate(-self.quadrature_angle, modes=self.modes)
         self.state >>= Rgate(-self.quadrature_angle, modes=self.modes)
@@ -390,7 +392,7 @@ class Homodyne(Generaldyne):
 
         return out
 
-    def _measure_fock(self, other) -> Union[State, float]:
+    def _measure_fock(self, other) -> State | float:
         if len(self.modes) > 1:
             raise NotImplementedError(
                 "Multimode Homodyne sampling for Fock representation is not yet implemented."

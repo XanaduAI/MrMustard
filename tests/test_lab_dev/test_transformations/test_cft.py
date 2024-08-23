@@ -46,5 +46,5 @@ class TestCFT:
         Wigner = (state >> CFT([0]) >> BtoPS([0], s=0)).representation.ansatz
         X, Y = np.meshgrid(xvec, pvec)
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        assert np.isclose(Wigner(Z).real.max(), wigner.real.max(), atol=1e-8)
-        assert np.isclose(Wigner(Z).real.sum(), wigner.real.sum(), atol=1e-8)
+        assert np.isclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)
+        assert np.isclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)

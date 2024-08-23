@@ -16,7 +16,7 @@
 This module contains gaussian integral functions and related helper functions.
 """
 
-from typing import Sequence, Tuple
+from typing import Sequence
 import numpy as np
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
@@ -116,6 +116,7 @@ def complex_gaussian_integral(
         ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
     """
     A, b, c = Abc
+
     if len(idx_z) != len(idx_zconj):
         raise ValueError(
             f"idx_z and idx_zconj must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
@@ -156,8 +157,8 @@ def complex_gaussian_integral(
 
 
 def join_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -174,14 +175,14 @@ def join_Abc(
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
     A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
-    b12 = math.concat([b1, b2], axis=-1)
+    b12 = math.concat([math.cast(b1, "complex128"), math.cast(b2, "complex128")], axis=-1)
     c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
     return A12, b12, c12
 
 
 def join_Abc_real(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -272,8 +273,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
 
 def contract_two_Abc(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
@@ -381,8 +382,8 @@ def complex_gaussian_integral_2(
 
 
 def join_Abc_poly(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
 ):
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
     matrices and concatenating the ``b`` vectors.
@@ -396,8 +397,10 @@ def join_Abc_poly(
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
+
     A1 = math.cast(A1, "complex128")
     A2 = math.cast(A2, "complex128")
+
     c1 = math.astensor(c1)
     c2 = math.astensor(c2)
 
@@ -441,8 +444,8 @@ def join_Abc_poly(
 
 
 def contract_two_Abc_poly(
-    Abc1: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: Tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):

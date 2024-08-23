@@ -14,12 +14,13 @@
 
 """This module contains the backend manager."""
 
+from __future__ import annotations
 
 import importlib.util
 import sys
 from functools import lru_cache
 from itertools import product
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Sequence
 
 import numpy as np
 from scipy.special import binom
@@ -88,7 +89,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     _backend = BackendNumpy()
 
     # the configured Euclidean optimizer.
-    _euclidean_opt: Optional[type] = None
+    _euclidean_opt: type | None = None
 
     # whether or not the backend can be changed
     _is_immutable = False
@@ -97,7 +98,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Optional[Sequence[Any]] = ()) -> Any:
+    def _apply(self, fn: str, args: Sequence[Any] | None = ()) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
@@ -347,7 +348,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("boolean_mask", (tensor, mask))
 
-    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
+    def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
         r"""Returns a matrix made from the given blocks.
 
         Args:
@@ -408,9 +409,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("conj", (array,))
 
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
+    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
         r"""Returns a constraint function for the given bounds.
 
         A constraint function will clip the value to the interval given by the bounds.
@@ -432,7 +431,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         self,
         array: Tensor,
         filters: Tensor,
-        padding: Optional[str] = None,
+        padding: str | None = None,
         data_format="NWC",
     ) -> Tensor:  # TODO: remove strides and data_format?
         r"""Performs a convolution on array with filters.
@@ -609,7 +608,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
+    def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -630,7 +629,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def hermite_renormalized_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: Tuple[int]
+        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -650,7 +649,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_batch", (A, B, C, shape))
 
     def hermite_renormalized_diagonal(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
     ) -> Tensor:
         r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
@@ -658,7 +657,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
 
     def hermite_renormalized_diagonal_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
     ) -> Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
@@ -666,7 +665,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
     ) -> Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -825,7 +824,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     def new_variable(
         self,
         value: Tensor,
-        bounds: Tuple[Optional[float], Optional[float]],
+        bounds: tuple[float | None, float | None],
         name: str,
         dtype=None,
     ) -> Tensor:
@@ -905,7 +904,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     def pad(
         self,
         array: Tensor,
-        paddings: Sequence[Tuple[int, int]],
+        paddings: Sequence[tuple[int, int]],
         mode="CONSTANT",
         constant_values=0,
     ) -> Tensor:
@@ -1181,8 +1180,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("update_add_tensor", (tensor, indices, values))
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+        self, cost_fn: Callable, parameters: dict[str, list[Trainable]]
+    ) -> tuple[Tensor, dict[str, list[Tensor]]]:
         r"""The loss and gradients of the given cost function.
 
         Args:
@@ -1239,7 +1238,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
+    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
         """Removes dimensions of size 1 from the shape of a tensor.
 
         Args:
@@ -1446,7 +1445,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[O, I], [-I, O]])
 
     def add_at_modes(
-        self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]
+        self, old: Tensor, new: Tensor | None, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         """Adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes."""
         if new is None:
@@ -1506,7 +1505,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def matvec_at_modes(
-        self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
+        self, mat: Tensor | None, vec: Tensor, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         """Matrix-vector multiplication between a phase-space matrix and a vector in the specified modes."""
         if mat is None:
@@ -1542,7 +1541,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             * self.pow(1.0 - success_prob, self.maximum(in_ - out_, 0.0))
         )
 
-    def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
+    def convolve_probs_1d(self, prob: Tensor, other_probs: list[Tensor]) -> Tensor:
         """Convolution of a joint probability with a list of single-index probabilities."""
 
         if prob.ndim > 3 or len(other_probs) > 3:
