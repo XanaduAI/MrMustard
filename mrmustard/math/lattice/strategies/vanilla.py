@@ -21,13 +21,14 @@ from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strid
 
 __all__ = [
     "vanilla",
+    "vanilla_average",
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
     "autoshape_numba",
 ]
 
-SQRT = np.sqrt(np.arange(1000))
+SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
@@ -83,6 +84,61 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     return ret.reshape(shape)
 
 
+# NOTE: numba cannot compile a single function with two possible output shapes
+# so we wrap the numba function call in a python function
+def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+    r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
+    stable implementation because the errors are averaged out (or so we think).
+
+    Supports ``b`` as a batched tensor, with the batch dimension on the first index,
+    in which case the output tensor will have the same batch dimension.
+
+    Args:
+        shape: shape of the output tensor excluding the batch dimension
+        A: A matrix of the Fock-Bargmann representation
+        b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
+        c: vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
+    """
+    A = np.array(A)
+    b = np.array(b)
+    c = np.array(c)
+    if b.ndim == 1:
+        b = np.atleast_2d(b)
+        return _vanilla_average_batch(shape, A, b, c)[..., 0]
+    elif b.ndim == 2:
+        return np.moveaxis(_vanilla_average_batch(shape, A, b, c), -1, 0)
+    else:
+        raise ValueError(f"Invalid shape for b: {b.shape}. It should be 1D or 2D.")
+
+
+@njit
+def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
+    ``b`` is assumed to be batched, with batch in the first dimension.
+    The output has a corresponding batch dimension of the same size, but on the last dimension.
+
+    Args:
+        shape: shape of the output tensor excluding the batch dimension, which is inferred from the shape of ``b``
+        A: A matrix of the Fock-Bargmann representation
+        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
+        c: vacuum amplitudes
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape + (batch,)``
+    """
+    path = np.ndindex(shape)
+    b = np.transpose(b)  # put the batch dimension last (makes the code simpler)
+
+    G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
+    G[next(path)] = c * np.ones(b.shape[-1], dtype=np.complex128)
+    for index in path:
+        G[index] = steps.vanilla_average_step_batch(G, A, b, index)
+    return G
+
+
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
@@ -91,7 +147,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the first term
+        shape (tuple[int, ...]): shape of the output tensor without the batch dimension
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
         c (complex): vacuum amplitude
@@ -99,12 +155,14 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
+    # the batch dimension
+    batch_shape = (b.shape[0],)
 
     # init output tensor
-    G = np.zeros(shape, dtype=np.complex128)
+    G = np.zeros(batch_shape + shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape[1:])  # We know the first dimension is the batch one
+    path = np.ndindex(shape)
 
     # write vacuum amplitude
     G[(slice(None),) + next(path)] = c
