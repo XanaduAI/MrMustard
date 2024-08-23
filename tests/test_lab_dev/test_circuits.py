@@ -52,6 +52,7 @@ class TestCircuit:
 
     def test_propagate_shapes(self):
         MAX = settings.AUTOSHAPE_MAX
+        settings.AUTOSHAPE_PROBABILITY = 0.999
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
         circ.propagate_shapes()
@@ -61,6 +62,8 @@ class TestCircuit:
         assert [op.auto_shape() for op in circ] == [(6, 6), (MAX, MAX, MAX, MAX)]
         circ.propagate_shapes()
         assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
+
+        settings.AUTOSHAPE_PROBABILITY = 0.99999
 
     def test_make_path(self):
         vac = Vacuum([0, 1, 2])

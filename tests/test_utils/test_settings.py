@@ -30,13 +30,15 @@ class TestSettings:
         """Test the default values of the settings"""
         settings = Settings()
 
-        assert settings.HBAR == 2.0
+        assert settings.HBAR == 1.0
         assert settings.DEBUG is False
-        assert settings.AUTOSHAPE_PROBABILITY == 0.999  # capture at least 99.9% of the probability
+        assert (
+            settings.AUTOSHAPE_PROBABILITY == 0.99999
+        )  # capture at least 99.9% of the probability
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3
-        assert settings.DISCRETIZATION_METHOD == "iterative"
+        assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.EQ_TRANSFORMATION_CUTOFF == 3
         assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
@@ -99,7 +101,7 @@ class TestSettings:
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 0.02
         settings.EQ_TRANSFORMATION_RTOL_GAUSS = gauss_rtol
 
-        assert settings.HBAR == 2.0
+        assert settings.HBAR == 1.0
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
 
