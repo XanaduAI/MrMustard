@@ -437,6 +437,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm.manual_shape[0] = 1
         assert dm.auto_shape() == (1, 15, 8, 15)
 
+        dm = Coherent([0,1],x=1).dm() >> Number([1],10).dual
+        assert dm.auto_shape() == (settings.AUTOSHAPE_MAX,)
+
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
         state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
