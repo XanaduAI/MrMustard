@@ -162,7 +162,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     G = np.zeros(batch_shape + shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape) 
+    path = np.ndindex(shape)
 
     # write vacuum amplitude
     G[(slice(None),) + next(path)] = c
