@@ -59,3 +59,4 @@ class TestSampler:
 
         sampler = Sampler(meas_outcomes, meas_ops, prob_dist)
         assert all(sampler.sample() == 2)
+        assert all(sampler.sample(Vacuum([0])) == 0)
