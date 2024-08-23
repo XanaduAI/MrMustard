@@ -14,6 +14,8 @@
 
 """Tests for the sampler."""
 
+# pylint: disable=missing-function-docstring
+
 from mrmustard.lab_dev.sampler import Sampler
 from mrmustard.lab_dev import Number, Vacuum
 
