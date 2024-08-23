@@ -648,7 +648,7 @@ class DM(State):
                     )
                     shape = tuple(shape) + tuple(shape)
                 else:
-                    shape = (settings.AUTOSHAPE_MAX,)
+                    shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         else:
             warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
@@ -923,7 +923,7 @@ class Ket(State):
                         max_shape or settings.AUTOSHAPE_MAX,
                     )
                 else:
-                    shape = (settings.AUTOSHAPE_MAX,)
+                    shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         else:
             warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
