@@ -319,20 +319,32 @@ class CircuitComponent:
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(BBBB.representation, wires, name)
 
-    def quadrature_triple(self, phi: float = 0.0) -> tuple | ComplexTensor:
+    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
-        The quadrature representation triple of this circuit component.
+        Returns a circuit component with the quadrature representation of this component
+        in terms of A,b,c.
+
+        Args:
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, 
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
         """
         if isinstance(self.representation, Fock):
             raise NotImplementedError("Not implemented with Fock representation.")
 
         from .circuit_components_utils.b_to_q import BtoQ
 
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+        return self >> BtoQ(modes=self.modes, phi=phi)
+
+    def quadrature_triple(self, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The quadrature representation triple A,b,c of this circuit component.
+        """
+        if isinstance(self.representation, Fock):
+            raise NotImplementedError("Not implemented with Fock representation.")
+
+        QQQQ = self.to_quadrature(phi=phi)
         return QQQQ.representation.data
 
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> tuple | ComplexTensor:
@@ -349,13 +361,7 @@ class CircuitComponent:
             )
             return quad_basis
 
-        from mrmustard.lab_dev.circuit_components_utils import BtoQ
-
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+        QQQQ = self.to_quadrature(phi=phi)
         return QQQQ.representation.ansatz(quad)
 
     @classmethod
