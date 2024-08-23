@@ -15,7 +15,6 @@
 """A module containing global settings."""
 
 from __future__ import annotations
-
 from pathlib import Path
 from rich import print
 import rich.table
@@ -55,15 +54,15 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._hbar = 2.0
-        self._hbar_locked = False
-        self._seed = np.random.randint(0, 2**31 - 1)
+        self._hbar: float = 1.0
+        self._hbar_locked: bool = False
+        self._seed: int = np.random.randint(0, 2**31 - 1)
+        self._complex_warning: bool = False
         self.rng = np.random.default_rng(self._seed)
-        self._precision_bits_hermite_poly = 128
-        self._complex_warning = False
-        self._julia_initialized = (
-            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        )
+        self._precision_bits_hermite_poly: int = 128
+        self._complex_warning: bool = False
+        self._julia_initialized: bool = False
+        self._precision_bits_hermite_poly: int = 128
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.UNSAFE_ZIP_BATCH: bool = False
@@ -75,7 +74,7 @@ class Settings:
         self.DEBUG: bool = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
-        self.AUTOSHAPE_PROBABILITY: float = 0.999
+        self.AUTOSHAPE_PROBABILITY: float = 0.99999
         "The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is 0.999."
 
         self.AUTOCUTOFF_MAX_CUTOFF: int = 100  # TODO: remove in MM 1.0
@@ -93,10 +92,10 @@ class Settings:
         self.CIRCUIT_DECIMALS: int = 3
         "The number of decimal places to display when drawing a circuit."
 
-        self.DISCRETIZATION_METHOD: str = "iterative"
-        "The method used to discretize the Wigner function. Default is ``iterative``."
+        self.DISCRETIZATION_METHOD: str = "clenshaw"
+        "The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster)."
 
-        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # a full step of rec rel
+        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # enough for a full step of rec rel
         "The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 3."
 
         self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3
@@ -152,7 +151,7 @@ class Settings:
         self._hbar = value
 
     @property
-    def SEED(self):
+    def SEED(self) -> int:
         r"""Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
             self._seed = np.random.randint(0, 2**31 - 1)
@@ -160,7 +159,7 @@ class Settings:
         return self._seed
 
     @SEED.setter
-    def SEED(self, value: int):
+    def SEED(self, value: int | None):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
 
