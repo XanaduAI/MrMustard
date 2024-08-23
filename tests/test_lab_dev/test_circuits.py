@@ -63,6 +63,7 @@ class TestCircuit:
         assert [op.auto_shape() for op in circ] == [(6, 6), (MAX, MAX, MAX, MAX)]
         circ.optimize_fock_shapes(verbose=True)
         assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
+        settings.AUTOSHAPE_PROBABILITY = 0.99999
 
     def test_lookup_path(self, capfd):
         vac = Vacuum([0, 1, 2])
