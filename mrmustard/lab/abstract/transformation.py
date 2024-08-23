@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, Sequence
 
 import numpy as np
 
@@ -41,10 +41,10 @@ class Transformation(Tensor):
     def __init__(
         self,
         name: str,
-        modes_in_ket: Optional[list[int]] = None,
-        modes_out_ket: Optional[list[int]] = None,
-        modes_in_bra: Optional[list[int]] = None,
-        modes_out_bra: Optional[list[int]] = None,
+        modes_in_ket: list[int] | None = None,
+        modes_out_ket: list[int] | None = None,
+        modes_in_bra: list[int] | None = None,
+        modes_out_bra: list[int] | None = None,
     ):
         super().__init__(
             name=name,
@@ -55,7 +55,7 @@ class Transformation(Tensor):
         )
         self._parameter_set = ParameterSet()
 
-    def _add_parameter(self, parameter: Union[Constant, Variable]):
+    def _add_parameter(self, parameter: Constant | Variable):
         r"""
         Adds a parameter to a transformation.
 
@@ -136,25 +136,25 @@ class Transformation(Tensor):
         pass
 
     @property
-    def X_matrix(self) -> Optional[RealMatrix]:
+    def X_matrix(self) -> RealMatrix | None:
         return None
 
     @property
-    def Y_matrix(self) -> Optional[RealMatrix]:
+    def Y_matrix(self) -> RealMatrix | None:
         return None
 
     @property
-    def d_vector(self) -> Optional[RealVector]:
+    def d_vector(self) -> RealVector | None:
         return None
 
     @property
-    def X_matrix_dual(self) -> Optional[RealMatrix]:
+    def X_matrix_dual(self) -> RealMatrix | None:
         if (X := self.X_matrix) is None:
             return None
         return gaussian.math.inv(X)
 
     @property
-    def Y_matrix_dual(self) -> Optional[RealMatrix]:
+    def Y_matrix_dual(self) -> RealMatrix | None:
         if (Y := self.Y_matrix) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -162,7 +162,7 @@ class Transformation(Tensor):
         return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
-    def d_vector_dual(self) -> Optional[RealVector]:
+    def d_vector_dual(self) -> RealVector | None:
         if (d := self.d_vector) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -181,8 +181,8 @@ class Transformation(Tensor):
 
     def choi(
         self,
-        cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: Sequence[int] | None = None,
+        shape: Sequence[int] | None = None,
         dual: bool = False,
     ):
         r"""Returns the Choi representation of the transformation.
@@ -224,7 +224,7 @@ class Transformation(Tensor):
 
     def XYd(
         self, allow_none: bool = True
-    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> tuple[RealMatrix | None, RealMatrix | None, RealVector | None]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
@@ -238,7 +238,7 @@ class Transformation(Tensor):
 
     def XYd_dual(
         self, allow_none: bool = True
-    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> tuple[RealMatrix | None, RealMatrix | None, RealVector | None]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
@@ -290,7 +290,7 @@ class Transformation(Tensor):
         ops2 = other._ops if isinstance(other, Circuit) else [other]
         return Circuit(ops1 + ops2)
 
-    def __lshift__(self, other: Union[State, Transformation]):
+    def __lshift__(self, other: State | Transformation):
         r"""Applies the dual of self to other.
 
         If other is a state, the dual of self is applied to the state.
@@ -375,7 +375,7 @@ class Unitary(Transformation):
         super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
         self.is_unitary = True
 
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         return self.U(shape=shape)
 
     def _transform_fock(self, state: State, dual=False) -> State:
@@ -387,8 +387,8 @@ class Unitary(Transformation):
 
     def U(
         self,
-        cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
+        cutoffs: Sequence[int] | None = None,
+        shape: Sequence[int] | None = None,
     ):
         r"""Returns the unitary representation of the transformation.
 
@@ -456,7 +456,7 @@ class Channel(Transformation):
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    def value(self, shape: Tuple[int]):
+    def value(self, shape: tuple[int]):
         return self.choi(shape=shape)
 
     def __eq__(self, other):

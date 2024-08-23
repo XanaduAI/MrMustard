@@ -14,11 +14,12 @@
 
 """This module contains tests for the networks.py module."""
 
+import numpy as np
+
 from mrmustard.math.tensor_networks import Tensor, connect, draw
 
 from matplotlib.figure import Figure
 
-import numpy as np
 import pytest
 
 # ~~~~~~~

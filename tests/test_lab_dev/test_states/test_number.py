@@ -38,6 +38,7 @@ class TestNumber:
 
         assert state.name == "N"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert all(isinstance(x, int) for x in state.manual_shape)
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="n"):
@@ -52,6 +53,9 @@ class TestNumber:
         rep1 = Number([0, 1], n, cutoffs).representation.array
         exp1 = fock_state((n,) * 2 if isinstance(n, int) else n, cutoffs)
         assert math.allclose(rep1, math.asnumpy(exp1).reshape(1, *exp1.shape))
+
+        rep2 = Number([0, 1], n, cutoffs).to_fock().representation.array
+        assert math.allclose(rep2, rep1)
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

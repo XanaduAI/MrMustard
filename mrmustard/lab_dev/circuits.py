@@ -21,8 +21,10 @@ A class to quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence, Union
+from pydoc import locate
+from typing import Sequence
 from mrmustard import math, settings
+from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.transformations import BSgate
 
@@ -71,7 +73,7 @@ class Circuit:
         components: A list of circuit components.
     """
 
-    def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
+    def __init__(self, components: Sequence[CircuitComponent] | None = None) -> None:
         self._components = [c._light_copy() for c in components] if components else []
         self._path = []
 
@@ -125,6 +127,8 @@ class Circuit:
         .. code-block::
 
         >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
+        >>> from mrmustard import settings
+        >>> settings.AUTOSHAPE_PROBABILITY = 0.999
 
         >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         >>> assert [op.auto_shape() for op in circ] == [(5,), (50,50)]
@@ -427,6 +431,36 @@ class Circuit:
 
             remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
 
+    def serialize(self, filestem: str = None):
+        r"""
+        Serialize a Circuit.
+
+        Args:
+            filestem: An optional name to give the resulting file saved to disk.
+        """
+        components, data = list(zip(*[c._serialize() for c in self.components]))
+        kwargs = {
+            "arrays": {f"{k}:{i}": v for i, arrs in enumerate(data) for k, v in arrs.items()},
+            "path": self.path,
+            "components": components,
+        }
+        return save(type(self), filename=filestem, **kwargs)
+
+    @classmethod
+    def deserialize(cls, data: dict) -> Circuit:
+        r"""Deserialize a Circuit."""
+        comps, path = map(data.pop, ("components", "path"))
+
+        for k, v in data.items():
+            kwarg, i = k.split(":")
+            comps[int(i)][kwarg] = v
+
+        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
+        if path:  # re-evaluates the hidden `_graph` property
+            circ.path = [tuple(p) for p in path]
+        return circ
+
     def __eq__(self, other: Circuit) -> bool:
         return self.components == other.components
 
@@ -448,7 +482,7 @@ class Circuit:
         """
         return iter(self.components)
 
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
+    def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
         ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if

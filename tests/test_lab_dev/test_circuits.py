@@ -28,6 +28,7 @@ from mrmustard.lab_dev.transformations import (
     Attenuator,
 )
 from mrmustard import settings
+from mrmustard.utils.serialize import load
 
 
 class TestCircuit:
@@ -51,6 +52,7 @@ class TestCircuit:
 
     def test_propagate_shapes(self):
         MAX = settings.AUTOSHAPE_MAX
+        settings.AUTOSHAPE_PROBABILITY = 0.999
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
         circ.propagate_shapes()
@@ -60,6 +62,8 @@ class TestCircuit:
         assert [op.auto_shape() for op in circ] == [(6, 6), (MAX, MAX, MAX, MAX)]
         circ.propagate_shapes()
         assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
+
+        settings.AUTOSHAPE_PROBABILITY = 0.99999
 
     def test_make_path(self):
         vac = Vacuum([0, 1, 2])
@@ -285,3 +289,37 @@ class TestCircuit:
         r1 += "\nmode 1:   ──S(-1.0,-2.0)"
         r1 += "\n\n"
         assert repr(circ1) == r1
+
+    def test_serialize_makes_zip(self, tmpdir):
+        """Test that serialize makes a JSON and a zip."""
+        settings.CACHE_DIR = tmpdir
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        path = circ.serialize()
+        assert list(path.parent.glob("*")) == [path]
+        assert path.suffix == ".zip"
+
+        assert load(path) == circ
+        assert list(path.parent.glob("*")) == [path]
+
+    def test_serialize_custom_name(self, tmpdir):
+        """Test that circuits can be serialized with custom names."""
+        settings.CACHE_DIR = tmpdir
+        circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
+        path = circ.serialize(filestem="custom_name")
+        assert path.name == "custom_name.zip"
+
+    def test_path_is_loaded(self, tmpdir):
+        """Test that circuit paths are saved if already evaluated."""
+        settings.CACHE_DIR = tmpdir
+        vac = Vacuum([0, 1, 2])
+        s01 = Sgate([0, 1])
+        bs01 = BSgate([0, 1])
+        bs12 = BSgate([1, 2])
+
+        circ = Circuit([vac, s01, bs01, bs12])
+        assert not load(circ.serialize())._path
+
+        circ.make_path()
+        assert circ._path
+
+        assert load(circ.serialize())._path == circ.path

@@ -18,7 +18,7 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Sequence
 
 from .base import Unitary
 from ...physics.representations import Bargmann
@@ -55,9 +55,9 @@ class Rgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        phi: Union[float, list[float]] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         phi_trainable: bool = False,
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        phi_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
         (phis,) = list(reshape_params(len(modes), phi=phi))

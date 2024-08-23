@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+
 from hypothesis import strategies as st, given
 from hypothesis.extra.numpy import arrays
 from mrmustard.math.tensor_wrappers.xptensor import XPVector, XPMatrix
-import numpy as np
 
 even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)
 floats = st.floats(min_value=-1e3, max_value=1e3, allow_nan=False, allow_infinity=False)

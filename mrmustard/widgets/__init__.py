@@ -14,8 +14,8 @@
 
 """IPython widgets for various objects in MrMustard."""
 
-import ipywidgets as widgets
 import numpy as np
+import ipywidgets as widgets
 import plotly.graph_objs as go
 
 from .css import FOCK, WIRES, TABLE, STATE
@@ -38,16 +38,16 @@ def _batch_widget(obj, batch_size, widget_fn, *widget_args):
 
 def fock_1d(array):
     """Return a plot widget for a 2D Fock representation."""
-    layout = {"margin": NO_MARGIN, "height": 200, "width": 430}
-    mag_plot = go.Scatter(y=abs(array))
-    phase_plot = go.Scatter(y=np.angle(array))
+    layout = {"margin": NO_MARGIN, "height": 200, "width": 250}
+    mag_plot = go.Bar(y=abs(array))
+    phase_plot = go.Bar(y=np.angle(array))
     plots = [go.FigureWidget(p, layout=layout) for p in [mag_plot, phase_plot]]
     return widgets.Tab(plots, titles=["Magnitude", "Phase"])
 
 
 def fock_2d(array):
     """Return a plot widget for a 1D Fock representation."""
-    layout = {"height": 200, "width": 430, "margin": NO_MARGIN, "yaxis": {"autorange": "reversed"}}
+    layout = {"height": 200, "width": 250, "margin": NO_MARGIN, "yaxis": {"autorange": "reversed"}}
     mag_plot = go.Heatmap(z=abs(array), colorscale="viridis", showscale=False)
     phase_plot = go.Heatmap(z=np.angle(array), colorscale="agsunset", showscale=False)
     plots = [go.FigureWidget(data=p, layout=layout) for p in [mag_plot, phase_plot]]

@@ -13,12 +13,14 @@
 # limitations under the License.
 
 """
-The class representing a squeezed vacuum state.
+The class representing a quadrature eigenstate.
 """
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
+from typing import Sequence
+
+import numpy as np
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
@@ -30,7 +32,7 @@ __all__ = ["QuadratureEigenstate"]
 
 class QuadratureEigenstate(Ket):
     r"""
-    The `N`-mode Quadrature eigenstate .
+    The `N`-mode Quadrature eigenstate.
 
     .. code-block ::
 
@@ -58,8 +60,8 @@ class QuadratureEigenstate(Ket):
         phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         phi_trainable: bool = False,
-        x_bounds: Tuple[float | None, float | None] = (None, None),
-        phi_bounds: Tuple[float | None, float | None] = (None, None),
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="QuadratureEigenstate")
         xs, phis = list(reshape_params(len(modes), x=x, phi=phi))
@@ -68,3 +70,12 @@ class QuadratureEigenstate(Ket):
         self._representation = Bargmann.from_function(
             fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
         )
+
+        self.manual_shape = (50,)
+
+    @property
+    def L2_norm(self):
+        r"""
+        The L2 norm of this quadrature eigenstate.
+        """
+        return np.inf

@@ -25,7 +25,7 @@ representation.
 # pylint: disable=import-outside-toplevel
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au
@@ -46,7 +46,7 @@ class Transformation(CircuitComponent):
         modes_in: Sequence[int],
         triple: tuple,
         phi: float = 0,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> Operation:
         r"""
         Initialize an Operation from the given quadrature triple (A, b, c).
@@ -67,7 +67,7 @@ class Transformation(CircuitComponent):
         modes_out: Sequence[int],
         modes_in: Sequence[int],
         triple: tuple,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> Operation:
         r"""
         Initialize a Transformation from the given Bargmann triple (A,b,c)
@@ -123,12 +123,12 @@ class Operation(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         super().__init__(
             representation=representation,
-            wires=[(), (), modes_in, modes_out],
+            wires=[(), (), modes_out, modes_in],
             name=name,
         )
 
@@ -195,8 +195,8 @@ class Unitary(Operation):
         c = complex(1)  # TODO: to be change after poly*exp ansatz
         u = Unitary.from_bargmann(modes, modes, [A, b, c])
         v = u >> u.dual
-        _, _, c_prime = v.bargmann
-        c = 1 / math.sqrt(c_prime[0])
+        _, _, c_prime = v.bargmann_triple()
+        c = 1 / math.sqrt(c_prime)
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
     @classmethod
@@ -228,8 +228,8 @@ class Map(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         super().__init__(
             representation=representation,

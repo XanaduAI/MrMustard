@@ -18,8 +18,8 @@
 
 from unittest.mock import patch
 
-from ipywidgets import Box, VBox, HBox, HTML
 import numpy as np
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings
@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
+from ..random import Abc_triple
 
 
 # original settings
@@ -191,6 +192,14 @@ class TestCircuitComponent:
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
 
+    def test_to_fock_poly_exp(self):
+        A, b, _ = Abc_triple(3)
+        c = np.random.random((1, 5))
+        barg = Bargmann(A, b, c)
+        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
+        poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
+        assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
+
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)
         d2 = Dgate([1], x=0.2, y=0.2)
@@ -296,6 +305,10 @@ class TestCircuitComponent:
         assert math.allclose(result.representation.A, d0.representation.A)
         assert math.allclose(result.representation.b, d0.representation.b)
         assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+        result2 = 0.8 @ d0
+        assert math.allclose(result2.representation.A, d0.representation.A)
+        assert math.allclose(result2.representation.b, d0.representation.b)
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
@@ -342,7 +355,7 @@ class TestCircuitComponent:
             >> a0.to_fock(N)
             >> a1.to_fock(N)
             >> a2.to_fock(N)
-        )
+        ).to_fock(N)
 
         assert r1 == r2
 
@@ -368,6 +381,14 @@ class TestCircuitComponent:
         assert np.allclose(r1, r3)
 
         settings.AUTOSHAPE_MAX = 50
+
+    def test_rshift_error(self):
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate([0], x=0.1, y=0.1)
+        d0._wires = Wires()
+
+        with pytest.raises(ValueError, match="not clear"):
+            vac012 >> d0
 
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
@@ -398,6 +419,9 @@ class TestCircuitComponent:
         result = 0.8 >> d0
         assert math.allclose(result, 0.8 * d0.representation.c)
 
+        result2 = d0 >> 0.8
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
+
     def test_repr(self):
         c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
         c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")
@@ -409,14 +433,14 @@ class TestCircuitComponent:
         "tests that to_fock doesn't lose the bargmann representation"
         coh = Coherent([0], x=1.0)
         coh.to_fock(20)
-        assert coh.bargmann == Coherent([0], x=1.0).bargmann
+        assert coh.bargmann_triple() == Coherent([0], x=1.0).bargmann_triple()
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent([0], x=1.0)
         CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
-            CC.bargmann  # pylint: disable=pointless-statement
+            CC.bargmann_triple()  # pylint: disable=pointless-statement
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
@@ -464,3 +488,32 @@ class TestCircuitComponent:
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
+
+    def test_serialize_default_behaviour(self):
+        """Test the default serializer."""
+        name = "my_component"
+        rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
+        cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
+        kwargs, arrays = cc._serialize()
+        assert kwargs == {
+            "class": f"{CircuitComponent.__module__}.CircuitComponent",
+            "wires": cc.wires.sorted_args,
+            "rep_class": f"{Bargmann.__module__}.Bargmann",
+            "name": name,
+        }
+        assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
+
+    def test_serialize_fail_when_no_modes_input(self):
+        """Test that the serializer fails if no modes or name+wires are present."""
+
+        class MyComponent(CircuitComponent):
+            """A dummy class without a valid modes kwarg."""
+
+            def __init__(self, rep, custom_modes):
+                super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
+
+        cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        with pytest.raises(
+            TypeError, match="MyComponent does not seem to have any wires construction method"
+        ):
+            cc._serialize()

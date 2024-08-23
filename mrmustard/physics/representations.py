@@ -18,18 +18,20 @@ This module contains the classes for the available representations.
 """
 
 from __future__ import annotations
-from warnings import warn
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
+
+import numpy as np
+from numpy.typing import ArrayLike
+
 from matplotlib import colors
 import matplotlib.pyplot as plt
-import numpy as np
 
 from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
-    contract_two_Abc,
+    contract_two_Abc_poly,
     reorder_abc,
     complex_gaussian_integral,
 )
@@ -63,25 +65,6 @@ class Representation(ABC):
         The ansatz of the representation.
         """
 
-    @abstractmethod
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
-        r"""
-        Reorders the representation indices.
-        """
-
-    @classmethod
-    @abstractmethod
-    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
-        r"""
-        Returns a representation from an ansatz.
-        """
-
-    @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
-        r"""
-        Returns a representation from a function and kwargs.
-        """
-
     @property
     @abstractmethod
     def data(self) -> tuple | Tensor:
@@ -97,6 +80,34 @@ class Representation(ABC):
         The scalar part of the representation.
         For now it's ``c`` for Bargmann and the array for Fock.
         """
+
+    @classmethod
+    @abstractmethod
+    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
+        r"""
+        Returns a representation from an ansatz.
+        """
+
+    @abstractmethod
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+        r"""
+        Returns a representation from a function and kwargs.
+        """
+
+    @abstractmethod
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+        r"""
+        Reorders the representation indices.
+        """
+
+    @abstractmethod
+    def to_dict(self) -> dict[str, ArrayLike]:
+        r"""Serialize a Representation."""
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Representation:
+        r"""Deserialize a Representation."""
 
     def __eq__(self, other: Representation) -> bool:
         r"""
@@ -266,13 +277,6 @@ class Bargmann(Representation):
         """
         return self._ansatz
 
-    @classmethod
-    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
-        r"""
-        Returns a Bargmann object from an ansatz object.
-        """
-        return cls(ansatz.A, ansatz.b, ansatz.c)
-
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""
@@ -295,15 +299,6 @@ class Bargmann(Representation):
         return self.ansatz.c
 
     @property
-    def triple(
-        self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The batch of triples :math:`(A_i, b_i, c_i)`.
-        """
-        return self.A, self.b, self.c
-
-    @property
     def data(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
@@ -319,6 +314,22 @@ class Bargmann(Representation):
         """
         return self.c
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.A, self.b, self.c
+
+    @classmethod
+    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
+        r"""
+        Returns a Bargmann object from an ansatz object.
+        """
+        return cls(ansatz.A, ansatz.b, ansatz.c)
+
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
         r"""
@@ -333,53 +344,6 @@ class Bargmann(Representation):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
-
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
-        r"""
-        The partial trace over the given index pairs.
-
-        Args:
-            idx_z: The first part of the pairs of indices to trace over.
-            idx_zconj: The second part.
-
-        Returns:
-            Bargmann: the ansatz with the given indices traced over
-        """
-        if self.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Partial trace is only supported for ansatze with polynomial of degree ``0``."
-            )
-        A, b, c = [], [], []
-        for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
-            A.append(Aij)
-            b.append(bij)
-            c.append(cij)
-        return Bargmann(A, b, c)
-
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""
-        Reorders the indices of the ``A`` matrix and ``b`` vector of the ``(A, b, c)`` triple in
-        this Bargmann object.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.representations import Bargmann
-            >>> from mrmustard.physics.triples import displacement_gate_Abc
-
-            >>> rep_dgate1 = Bargmann(*displacement_gate_Abc([0.1, 0.2, 0.3]))
-            >>> rep_dgate2 = Bargmann(*displacement_gate_Abc([0.2, 0.3, 0.1]))
-
-            >>> assert rep_dgate1.reorder([1, 2, 0, 4, 5, 3]) == rep_dgate2
-
-        Args:
-            order: The new order.
-
-        Returns:
-            The reordered Bargmann object.
-        """
-        A, b, c = reorder_abc((self.A, self.b, self.c), order)
-        return self.__class__(A, b, c)
 
     def plot(
         self,
@@ -440,6 +404,49 @@ class Bargmann(Representation):
         plt.show(block=False)
         return fig, ax
 
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
+        r"""
+        Reorders the indices of the ``A`` matrix and ``b`` vector of the ``(A, b, c)`` triple in
+        this Bargmann object.
+
+        .. code-block::
+
+            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.triples import displacement_gate_Abc
+
+            >>> rep_dgate1 = Bargmann(*displacement_gate_Abc([0.1, 0.2, 0.3]))
+            >>> rep_dgate2 = Bargmann(*displacement_gate_Abc([0.2, 0.3, 0.1]))
+
+            >>> assert rep_dgate1.reorder([1, 2, 0, 4, 5, 3]) == rep_dgate2
+
+        Args:
+            order: The new order.
+
+        Returns:
+            The reordered Bargmann object.
+        """
+        A, b, c = reorder_abc((self.A, self.b, self.c), order)
+        return self.__class__(A, b, c)
+
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+        r"""
+        The partial trace over the given index pairs.
+
+        Args:
+            idx_z: The first part of the pairs of indices to trace over.
+            idx_zconj: The second part.
+
+        Returns:
+            Bargmann: the ansatz with the given indices traced over
+        """
+        A, b, c = [], [], []
+        for Abc in zip(self.A, self.b, self.c):
+            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
+            A.append(Aij)
+            b.append(bij)
+            c.append(cij)
+        return Bargmann(A, b, c)
+
     def __call__(self, z: ComplexTensor) -> ComplexTensor:
         r"""
         Evaluates the Bargmann function at the given array of points.
@@ -493,28 +500,32 @@ class Bargmann(Representation):
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
-            )
-
         Abc = []
         if settings.UNSAFE_ZIP_BATCH:
             if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
-                    "Batch size of the two ansatze must match since settings.UNSAFE_ZIP_BATCH is True."
+                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
                 )
             for (A1, b1, c1), (A2, b2, c2) in zip(
                 zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
             ):
-                Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
+
+    def to_dict(self) -> dict[str, ArrayLike]:
+        """Serialize a Bargmann instance."""
+        return {"A": self.A, "b": self.b, "c": self.c}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Bargmann:
+        """Deserialize a Bargmann instance."""
+        return cls(**data)
 
     def _ipython_display_(self):
         display(widgets.bargmann(self))
@@ -578,13 +589,6 @@ class Fock(Representation):
         """
         return self._ansatz
 
-    @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
-        r"""
-        Returns a Fock object from an ansatz object.
-        """
-        return cls(ansatz.array, batched=True)
-
     @property
     def array(self) -> Batch[Tensor]:
         r"""
@@ -600,6 +604,15 @@ class Fock(Representation):
         return self.array
 
     @property
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the representation.
+        I.e. the vacuum component of the Fock object, whatever it may be.
+        Given that the first axis of the array is the batch axis, this is the first element of the array.
+        """
+        return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+
+    @property
     def triple(self) -> tuple:
         r"""
         The data of the original Bargmann representation if it exists
@@ -610,14 +623,12 @@ class Fock(Representation):
             )
         return self._original_bargmann_data
 
-    @property
-    def scalar(self) -> Scalar:
+    @classmethod
+    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
         r"""
-        The scalar part of the representation.
-        I.e. the vacuum component of the Fock object, whatever it may be.
-        Given that the first axis of the array is the batch axis, this is the first element of the array.
+        Returns a Fock object from an ansatz object.
         """
-        return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
+        return cls(ansatz.array, batched=True)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
@@ -633,6 +644,82 @@ class Fock(Representation):
         new = self.from_ansatz(self.ansatz.conj)
         new._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return new
+
+    def reduce(self, shape: Union[int, Iterable[int]]) -> Fock:
+        r"""
+        Returns a new ``Fock`` with a sliced array.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.physics.representations import Fock
+
+            >>> array1 = math.arange(27).reshape((3, 3, 3))
+            >>> fock1 = Fock(array1)
+
+            >>> fock2 = fock1.reduce(3)
+            >>> assert fock1 == fock2
+
+            >>> fock3 = fock1.reduce(2)
+            >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
+            >>> assert fock3 == Fock(array3)
+
+            >>> fock4 = fock1.reduce((1, 3, 1))
+            >>> array4 = [[[0], [3], [6]]]
+            >>> assert fock4 == Fock(array4)
+
+        Args:
+            shape: The shape of the array of the returned ``Fock``.
+        """
+        return self.from_ansatz(self.ansatz.reduce(shape))
+
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
+        r"""
+        Reorders the indices of the array with the given order.
+
+        Args:
+            order: The order. Does not need to refer to the batch dimension.
+
+        Returns:
+            The reordered Fock.
+        """
+        return self.from_ansatz(
+            ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
+        )
+
+    def sum_batch(self) -> Fock:
+        r"""
+        Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
+
+        Returns:
+            The collapsed Fock object.
+        """
+        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
+
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
+        r"""
+        Implements the partial trace over the given index pairs.
+
+        Args:
+            idxs1: The first part of the pairs of indices to trace over.
+            idxs2: The second part.
+
+        Returns:
+            The traced-over Fock object.
+        """
+        if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
+            raise ValueError("idxs must be of equal length and disjoint")
+        order = (
+            [0]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
+            + [i + 1 for i in idxs1]
+            + [i + 1 for i in idxs2]
+        )
+        new_array = math.transpose(self.array, order)
+        n = np.prod(new_array.shape[-len(idxs2) :])
+        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
+        trace = math.trace(new_array)
+        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
         r"""
@@ -699,90 +786,14 @@ class Fock(Representation):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
         return self.from_ansatz(ArrayAnsatz(batched_array))
 
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
-        r"""
-        Implements the partial trace over the given index pairs.
+    def to_dict(self) -> dict[str, ArrayLike]:
+        """Serialize a Fock instance."""
+        return {"array": self.data}
 
-        Args:
-            idxs1: The first part of the pairs of indices to trace over.
-            idxs2: The second part.
-
-        Returns:
-            The traced-over Fock object.
-        """
-        if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
-            raise ValueError("idxs must be of equal length and disjoint")
-        order = (
-            [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
-            + [i + 1 for i in idxs1]
-            + [i + 1 for i in idxs2]
-        )
-        new_array = math.transpose(self.array, order)
-        n = np.prod(new_array.shape[-len(idxs2) :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
-        trace = math.trace(new_array)
-        return self.from_ansatz(ArrayAnsatz([trace] if trace.shape == () else trace))
-
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
-        r"""
-        Reorders the indices of the array with the given order.
-
-        Args:
-            order: The order. Does not need to refer to the batch dimension.
-
-        Returns:
-            The reordered Fock.
-        """
-        return self.from_ansatz(
-            ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]))
-        )
-
-    def reduce(self, shape: Union[int, Iterable[int]]) -> Fock:
-        r"""
-        Returns a new ``Fock`` with a sliced array.
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.physics.representations import Fock
-
-            >>> array1 = math.arange(27).reshape((3, 3, 3))
-            >>> fock1 = Fock(array1)
-
-            >>> fock2 = fock1.reduce(3)
-            >>> assert fock1 == fock2
-
-            >>> fock3 = fock1.reduce(2)
-            >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
-            >>> assert fock3 == Fock(array3)
-
-            >>> fock4 = fock1.reduce((1, 3, 1))
-            >>> array4 = [[[0], [3], [6]]]
-            >>> assert fock4 == Fock(array4)
-
-        Args:
-            shape: The shape of the array of the returned ``Fock``.
-        """
-        length = len(self.array.shape) - 1
-        shape = (shape,) * length if isinstance(shape, int) else shape
-        if len(shape) != length:
-            msg = f"Expected shape of length {length}, "
-            msg += f"given shape has length {len(shape)}."
-            raise ValueError(msg)
-
-        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
-            warn(
-                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
-            )
-            padded = math.pad(
-                self.array,
-                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
-            )
-            return self.from_ansatz(ArrayAnsatz(padded))
-
-        ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
-        return Fock(array=ret, batched=True)
+    @classmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Fock:
+        """Deserialize a Fock instance."""
+        return cls(data["array"], batched=True)
 
     def _ipython_display_(self):
         w = widgets.fock(self)
@@ -790,12 +801,3 @@ class Fock(Representation):
             print(repr(self))
             return
         display(w)
-
-    def sum_batch(self) -> Fock:
-        r"""
-        Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
-
-        Returns:
-            The collapsed Fock object.
-        """
-        return self.from_ansatz(ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
