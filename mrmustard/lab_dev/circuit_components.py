@@ -358,13 +358,6 @@ class CircuitComponent:
         QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
         return QQQQ.representation.ansatz(quad)
 
-    @property
-    def representation(self) -> Representation | None:
-        r"""
-        A representation of this circuit component.
-        """
-        return self._representation
-
     @classmethod
     def _from_attributes(
         cls,
