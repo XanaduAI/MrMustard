@@ -29,7 +29,7 @@ from typing import Optional, Sequence, Union
 
 from enum import Enum
 import warnings
-
+from mrmustard import settings
 import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
@@ -848,7 +848,7 @@ class DM(State):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return all(math.real(math.eigvals(gamma_A)) >= -settings.ATOL)
 
     @property
     def is_physical(self) -> bool:
