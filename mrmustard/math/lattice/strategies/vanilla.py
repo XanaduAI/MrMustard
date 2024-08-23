@@ -115,7 +115,7 @@ def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
 
 
 @njit
-def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
     ``b`` is assumed to be batched, with batch in the first dimension.
     The output has a corresponding batch dimension of the same size, but on the last dimension.
