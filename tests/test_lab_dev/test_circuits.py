@@ -53,6 +53,7 @@ class TestCircuit:
 
     def test_propagate_shapes(self):
         MAX = settings.AUTOSHAPE_MAX
+        settings.AUTOSHAPE_PROBABILITY = 0.999
         circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
         circ.optimize_fock_shapes(verbose=False)
