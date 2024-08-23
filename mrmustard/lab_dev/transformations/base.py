@@ -30,6 +30,7 @@ from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
+from mrmustard.utils.typing import ComplexMatrix
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
@@ -322,7 +323,7 @@ class Channel(Map):
         return self.is_CP and self.is_TP
 
     @property
-    def XY(self):
+    def XY(self) -> tuple[ComplexMatrix, ComplexMatrix]:
         r"""
         Returns the X and Y matrix corresponding to the channel.
         """
