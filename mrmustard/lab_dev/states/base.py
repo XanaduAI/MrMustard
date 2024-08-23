@@ -635,7 +635,7 @@ class DM(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0]==0:
+                if self.representation.ansatz.polynomial_shape[0] == 0:
                     repr = self.representation
                     A, b, c = repr.A[0], repr.b[0], repr.c[0]
                     repr = repr / self.probability
@@ -911,7 +911,7 @@ class Ket(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0]==0:
+                if self.representation.ansatz.polynomial_shape[0] == 0:
                     repr = self.representation.conj() & self.representation
                     A, b, c = repr.A[0], repr.b[0], repr.c[0]
                     repr = repr / self.probability
