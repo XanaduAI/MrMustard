@@ -22,8 +22,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pydoc import locate
-from typing import Optional, Sequence, Union
-
+from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
@@ -74,7 +73,7 @@ class Circuit:
         components: A list of circuit components.
     """
 
-    def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
+    def __init__(self, components: Sequence[CircuitComponent] | None = None) -> None:
         self._components = [c._light_copy() for c in components] if components else []
         self._path = []
 
@@ -128,6 +127,8 @@ class Circuit:
         .. code-block::
 
         >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
+        >>> from mrmustard import settings
+        >>> settings.AUTOSHAPE_PROBABILITY = 0.999
 
         >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         >>> assert [op.auto_shape() for op in circ] == [(5,), (50,50)]
@@ -481,7 +482,7 @@ class Circuit:
         """
         return iter(self.components)
 
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
+    def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
         ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if

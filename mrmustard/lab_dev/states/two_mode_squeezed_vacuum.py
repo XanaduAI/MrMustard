@@ -18,8 +18,6 @@ The class representing a two-mode squeezed vacuum state.
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
-
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 from .base import Ket
@@ -54,13 +52,13 @@ class TwoModeSqueezedVacuum(Ket):
 
     def __init__(
         self,
-        modes: Tuple[int, int],
+        modes: tuple[int, int],
         r: float = 0.0,
         phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        r_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(modes=modes, name="TwoModeSqueezedVacuum")
         rs, phis = list(reshape_params(int(len(modes) / 2), r=r, phi=phi))
