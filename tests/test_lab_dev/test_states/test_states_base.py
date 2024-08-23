@@ -74,7 +74,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket.manual_shape[0] = 19
         assert ket.auto_shape() == (19, 15)
 
-        ket = Coherent([0,1],x=1) >> Number([1],10).dual
+        ket = Coherent([0, 1], x=1) >> Number([1], 10).dual
         assert ket.auto_shape() == (settings.AUTOSHAPE_MAX,)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
@@ -437,7 +437,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm.manual_shape[0] = 1
         assert dm.auto_shape() == (1, 15, 8, 15)
 
-        dm = Coherent([0,1],x=1).dm() >> Number([1],10).dual
+        dm = Coherent([0, 1], x=1).dm() >> Number([1], 10).dual
         assert dm.auto_shape() == (settings.AUTOSHAPE_MAX,)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
