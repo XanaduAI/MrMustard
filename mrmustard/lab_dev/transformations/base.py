@@ -28,9 +28,10 @@ from __future__ import annotations
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.utils.typing import ComplexMatrix
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
-from mrmustard.utils.typing import ComplexMatrix
+
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
