@@ -65,6 +65,13 @@ class Sampler:
         """
         return self._meas_outcomes
 
+    @property
+    def prob_dist(self) -> list[float]:
+        r"""
+        The probability distribution of this sampler.
+        """
+        return self._prob_dist
+
     def sample(self, state: State, n_samples: int) -> list[any]:
         r"""
         Returns a list of measurement samples on a specified state.
@@ -85,14 +92,16 @@ class Sampler:
         Args:
             state: The state to generate the probability distribution with.
         """
-        if self._prob_dist is None:
+        if self.prob_dist is None:
+            if state is None:
+                raise ValueError("State must be provided.")
             states = [state >> meas_op.dual for meas_op in self.meas_ops]
             probs = [
                 state.probability if isinstance(state, State) else math.real(state) ** 2
                 for state in states
             ]
             return probs / sum(probs)
-        return self._prob_dist
+        return self.prob_dist
 
 
 class PNRSampler(Sampler):
@@ -124,9 +133,9 @@ class HomodyneSampler(Sampler):
         super().__init__(list(np.linspace(*xbounds, num)), BtoQ(modes, phi=0))
 
     def probabilities(self, state: State | None = None):
-        if self._prob_dist is None:
+        if self.prob_dist is None:
             q_state = state >> self.meas_ops
             probs = [math.real(q_state.representation([[q]])[0]) ** 2 for q in self._meas_outcomes]
             probs /= sum(probs)
             return probs
-        return self._prob_dist
+        return self.prob_dist
