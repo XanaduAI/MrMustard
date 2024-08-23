@@ -375,8 +375,10 @@ class Wires:
 
     def contracted_indices(self, other: Wires):
         r"""
-        Returns the indices being contracted on self and other on quantum wires.
-        """
+        Returns the indices being contracted between self and other when calling matmul.
+        
+        Args:
+            other: another Wires object
         ovlp_bra, ovlp_ket = self.overlap(other)
         idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
         idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
@@ -385,6 +387,9 @@ class Wires:
     def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
         r"""
         Returns the modes that overlap between the two ``Wires`` objects.
+        
+        Args:
+            other: Another ``Wires`` object.
         """
         ovlp_ket = self.output.ket.modes & other.input.ket.modes
         ovlp_bra = self.output.bra.modes & other.input.bra.modes
