@@ -415,14 +415,14 @@ class CircuitComponent:
             shape = (shape,) * num_vars
         try:
             As, bs, cs = self.bargmann_triple(batched=True)
+            shape = shape or self.auto_shape()
+            if len(shape) != num_vars:
+                raise ValueError(
+                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
+                )
             if self.representation.ansatz.polynomial_shape[0] == 0:
-                shape = shape or self.auto_shape()
-                if len(shape) != num_vars:
-                    raise ValueError(
-                        f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                    )
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
-            elif self.representation.ansatz.polynomial_shape[0] > 0:
+            else:
                 arrays = [
                     math.sum(
                         math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
