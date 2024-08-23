@@ -66,6 +66,6 @@ def all_pivots(
         index: the index to get the pivots of.
 
     Returns:
-        a generator of the index that was decremented and the pivot
+        a list of the indices that were decremented and the pivots
     """
     return [(i, tuple_setitem(index, i, v - 1)) for i, v in enumerate(index) if v > 0]
