@@ -72,9 +72,10 @@ class Sampler:
         """
         return self._prob_dist
 
-    def sample(self, state: State, n_samples: int) -> list[any]:
+    def sample(self, state: State | None = None, n_samples: int = 1000) -> list[any]:
         r"""
-        Returns a list of measurement samples on a specified state.
+        Returns a list of measurement samples on a specified state. If ``state`` is
+        ``None`` then uses a uniform probability distribution.
 
         Args:
             state: The state to generate samples of.
@@ -85,16 +86,13 @@ class Sampler:
 
     def probabilities(self, state: State | None = None) -> list[float]:
         r"""
-        Returns the probability distribution of this sampler. If ``probs`` was
-        not specified when initializing then a probability distribution is generated
-        using ``state``.
+        Returns the probability distribution of this sampler. If ``state`` is provided
+        then will compute the probability distribution w.r.t. the state.
 
         Args:
             state: The state to generate the probability distribution with.
         """
-        if self.prob_dist is None:
-            if state is None:
-                raise ValueError("State must be provided.")
+        if state is not None:
             states = [state >> meas_op.dual for meas_op in self.meas_ops]
             probs = [
                 state.probability if isinstance(state, State) else math.real(state) ** 2
@@ -133,7 +131,7 @@ class HomodyneSampler(Sampler):
         super().__init__(list(np.linspace(*xbounds, num)), BtoQ(modes, phi=0))
 
     def probabilities(self, state: State | None = None):
-        if self.prob_dist is None:
+        if state is not None:
             q_state = state >> self.meas_ops
             probs = [math.real(q_state.representation([[q]])[0]) ** 2 for q in self._meas_outcomes]
             probs /= sum(probs)
