@@ -1218,12 +1218,25 @@ def bargmann_Abc_to_phasespace_cov_means(
     coeff = c
     transformation = math.block(
         [
-            [math.eye(num_modes, dtype=math.complex128), math.eye(num_modes, dtype=math.complex128)],
-            [-1j * math.eye(num_modes, dtype=math.complex128), 1j * math.eye(num_modes, dtype=math.complex128)],
+            [
+                math.eye(num_modes, dtype=math.complex128),
+                math.eye(num_modes, dtype=math.complex128),
+            ],
+            [
+                -1j * math.eye(num_modes, dtype=math.complex128),
+                1j * math.eye(num_modes, dtype=math.complex128),
+            ],
         ]
     )
     cov = [
-        (transformation @ (math.inv(math.eye(2*num_modes) - math.Xmat(num_modes) @ Amat)) @ math.conj(transformation.T) - np.eye(2*num_modes)/2)* settings.HBAR for Amat in A
+        (
+            transformation
+            @ (math.inv(math.eye(2 * num_modes) - math.Xmat(num_modes) @ Amat))
+            @ math.conj(transformation.T)
+            - np.eye(2 * num_modes) / 2
+        )
+        * settings.HBAR
+        for Amat in A
     ]
     mean = [
         1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
