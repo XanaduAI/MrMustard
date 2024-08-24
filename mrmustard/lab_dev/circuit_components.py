@@ -325,7 +325,7 @@ class CircuitComponent:
         in terms of A,b,c.
 
         Args:
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, 
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
             A circuit component with the given quadrature representation.
@@ -530,22 +530,6 @@ class CircuitComponent:
         )
 
         return ret
-
-    def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
-        r"""
-        The quadrature representation data of this circuit component.
-        """
-        if isinstance(self.representation, Fock):
-            raise NotImplementedError("Not implemented with Fock representation.")
-
-        from .circuit_components_utils.b_to_q import BtoQ
-
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
-        return QQQQ.representation.data
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
