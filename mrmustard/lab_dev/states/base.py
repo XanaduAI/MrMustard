@@ -29,7 +29,6 @@ from typing import Sequence
 
 from enum import Enum
 import warnings
-from mrmustard import settings
 import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
