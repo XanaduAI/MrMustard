@@ -451,7 +451,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         Args:
             A: The A matrix.
             b: The b vector.
-            C: The C scalar.
+            c: The c scalar.
             shape: The shape of the final tensor.
 
         Returns:
@@ -490,12 +490,26 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def hermite_renormalized_batch(
         self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
-        _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
+        r"""Same as hermite_renormalized but works for a batch of different b's.
+
+        Args:
+            A: The A matrix.
+            b: The b vectors batched on the first axis.
+            c: The c scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial from different b values.
+        """
 
         if settings.STABLE_FOCK_CONVERSION:
-            G = strategies.vanilla_stable_batch(tuple(shape), _A, _b, _c)
+            G = tf.numpy_function(
+                strategies.vanilla_stable_batch,
+                [tuple(shape), A, b, c],
+                A.dtype,
+            )
         else:
-            G = strategies.vanilla_batch(tuple(shape), _A, _b, _c)
+            G = tf.numpy_function(strategies.vanilla_batch, [tuple(shape), A, b, c], A.dtype)
         return G
 
     @tf.custom_gradient

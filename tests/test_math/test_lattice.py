@@ -171,6 +171,7 @@ def test_vanilla_stable_batched():
     "tests the vanilla average against other known stable methods. batched version."
     settings.STABLE_FOCK_CONVERSION = True
     A, b, c = mmld.Ket.random([0, 1]).bargmann_triple(batched=True)
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)  # for tf backend
     batched = vanilla_stable_batch((4, 4), A[0], b, c[0])
     non_batched = vanilla_stable((4, 4), A[0], b[0], c[0])
 
