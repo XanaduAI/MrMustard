@@ -34,31 +34,6 @@ SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
 
 
 @njit
-def vanilla_average_step_batch(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexMatrix, index: tuple[int, ...]
-) -> complex:  # pragma: no cover
-    r"""Recurrence relation step where we average over all available pivots.
-    Assumes b is batched, with batch dimension on the *last* index (makes the code simpler).
-
-    Args:
-        G: fock amplitudes array with a batch dimension on the last index.
-        A: A matrix of the Fock-Bargmann representation
-        b: b vector of the Fock-Bargmann representation with a batch dimension on the last index
-        index: index of the amplitude to calculate (excluding the batch dimension)
-
-    Returns:
-        complex: vector of the amplitudes at the given index. The length of the vector is the same as the batch dimension.
-    """
-    all_contributions = np.zeros(b.shape[-1], dtype=np.complex128)
-    for N, (i, pivot) in enumerate(all_pivots(index)):  # we add all the contributions
-        pivot_contribution = b[i] * G[pivot]
-        for j, neighbor in lower_neighbors(pivot):
-            pivot_contribution += A[i, j] * SQRT[pivot[j]] * G[neighbor]
-        all_contributions += pivot_contribution / SQRT[index[i]]
-    return all_contributions / (N + 1)  # pylint: disable=undefined-loop-variable
-
-
-@njit
 def vanilla_step(
     G: ComplexTensor,
     A: ComplexMatrix,

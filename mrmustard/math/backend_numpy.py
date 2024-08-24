@@ -31,7 +31,13 @@ from scipy.stats import multivariate_normal
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from .lattice.strategies import binomial, vanilla, vanilla_average, vanilla_batch
+from .lattice.strategies import (
+    binomial,
+    vanilla,
+    vanilla_stable,
+    vanilla_stable_batch,
+    vanilla_batch,
+)
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -444,7 +450,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return None
 
     def hermite_renormalized(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -453,8 +459,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         Args:
             A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
+            b: The b vector.
+            c: The c scalar.
             shape: The shape of the final tensor.
 
         Returns:
@@ -464,30 +470,30 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
         if precision_bits == 128:  # numba
-            if settings.USE_VANILLA_AVERAGE:
-                G = vanilla_average(tuple(shape), A, B, C)
+            if settings.STABLE_FOCK_CONVERSION:
+                G = vanilla_stable(tuple(shape), A, b, c)
             else:
-                G = vanilla(tuple(shape), A, B, C)
+                G = vanilla(tuple(shape), A, b, c)
         else:  # julia (with precision_bits = 512)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            A, B, C = (
+            A, b, c = (
                 np.array(A).astype(np.complex128),
-                np.array(B).astype(np.complex128),
-                np.array(C).astype(np.complex128),
+                np.array(b).astype(np.complex128),
+                np.array(c).astype(np.complex128),
             )
-            G = jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
+            G = jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
 
         return G
 
     def hermite_renormalized_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
-        if settings.USE_VANILLA_AVERAGE:
-            G = vanilla_average(tuple(shape), A, B, C)
+        if settings.STABLE_FOCK_CONVERSION:
+            G = vanilla_stable_batch(tuple(shape), A, b, c)
         else:
-            G = vanilla_batch(tuple(shape), A, B, C)
+            G = vanilla_batch(tuple(shape), A, b, c)
         return G
 
     def hermite_renormalized_binomial(

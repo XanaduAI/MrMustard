@@ -441,16 +441,16 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: tuple[int]
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tuple[tf.Tensor, Callable]:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`exp(C + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
         Args:
             A: The A matrix.
-            B: The B vector.
+            b: The b vector.
             C: The C scalar.
             shape: The shape of the final tensor.
 
@@ -460,42 +460,42 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
-        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
 
         if precision_bits == 128:  # numba
-            if settings.USE_VANILLA_AVERAGE:
-                G = strategies.vanilla_average(tuple(shape), A, B, C)
+            if settings.STABLE_FOCK_CONVERSION:
+                G = strategies.vanilla_stable(tuple(shape), A, b, c)
             else:
-                G = strategies.vanilla(tuple(shape), A, B, C)
+                G = strategies.vanilla(tuple(shape), A, b, c)
         else:  # julia
             # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            A, B, C = (
+            A, b, c = (
                 A.astype(np.complex128),
                 B.astype(np.complex128),
                 C.astype(np.complex128),
             )
 
             G = self.astensor(
-                jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
+                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
             )
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 
     def hermite_renormalized_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: tuple[int]
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
 
-        if settings.USE_VANILLA_AVERAGE:
-            G = strategies.vanilla_average(tuple(shape), _A, _B, _C)
+        if settings.STABLE_FOCK_CONVERSION:
+            G = strategies.vanilla_stable_batch(tuple(shape), _A, _b, _c)
         else:
-            G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+            G = strategies.vanilla_batch(tuple(shape), _A, _b, _c)
         return G
 
     @tf.custom_gradient

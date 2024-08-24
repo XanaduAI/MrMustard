@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .flat_indices import lower_neighbors, shape_to_strides
 
 __all__ = [
     "vanilla",
-    "vanilla_average",
+    "vanilla_stable",
+    "vanilla_stable_batch",
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
@@ -120,61 +120,139 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     return G.reshape(shape)
 
 
-# NOTE: numba cannot compile a single function with two possible output shapes
-# so we wrap the numba function call in a python function
-def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
-    stable implementation because the errors are averaged out (or so we think).
+@njit
+def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+    r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    This implementation works on flattened tensors and reshapes the tensor before returning.
 
-    Supports ``b`` as a batched tensor, with the batch dimension on the first index,
-    in which case the output tensor will have the same batch dimension.
+    The vanilla algorithm implements the flattened version of the following recursion which
+    calculates the Fock amplitude at index :math:`k` using all available pivots at index :math:`k - 1_i`
+    for all :math:`i`, and their neighbours at indices :math:`k - 1_i - 1_j`:
+
+    .. math::
+
+         G_{k} = \frac{1}{N}\sum_i\frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
+
+    where :math:`N` is the number of valid pivots for the :math:`k`-th lattice point, :math:`1_i` is
+    the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
+    In the implementation the indices are flattened into a single integer index, which makes the
+    computations of the pivots more efficient.
+
+    see https://quantum-journal.org/papers/q-2020-11-30-366/ and
+    https://arxiv.org/abs/2209.06069 for more details.
 
     Args:
-        shape: shape of the output tensor excluding the batch dimension
-        A: A matrix of the Fock-Bargmann representation
-        b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
-        c: vacuum amplitude
+        shape (tuple[int, ...]): shape of the output tensor
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): b vector of the Bargmann representation
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+    D = b.shape[0]
+    shape_arr = np.array(shape)
+
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(D - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape[i]
+
+    # initialize flat output array and write vacuum amplitude
+    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
+    G[0] = c
+
+    # initialize flat index and n-dim iterator
+    idx = 0
+    nd_iterator = np.ndindex(shape)
+    next(nd_iterator)  # skip (0,0,...,0) as we already wrote it
+
+    for nd_idx in nd_iterator:
+        idx += 1
+        num_pivots = 0
+        vals = 0
+        for i in range(D):
+            if nd_idx[i] == 0:
+                continue  # pivot would be out of bounds
+            num_pivots += 1
+            pivot = idx - strides[i]
+
+            # contribution from i-th pivot
+            val = b[i] * G[pivot]
+
+            # contributions from lower neighbours of the pivot
+            # note we split lower neighbours in 3 parts (j<i, j==i, i<j)
+            # so that delta_ij is just 1 for j==i, and 0 elsewhere.
+            for j in range(i):
+                val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+            val += A[i, i] * SQRT[nd_idx[i] - 1] * G[pivot - strides[i]]
+
+            for j in range(i + 1, D):
+                val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+            # accumulate the contribution from the i-th pivot
+            vals += val / SQRT[nd_idx[i]]
+
+        # write the average
+        G[idx] = vals / num_pivots
+
+    return G.reshape(shape)
+
+
+@njit(parallel=True)
+def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+    """Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    See the documentation of ``vanilla_stable`` for more details about the non-batched version.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor excluding the batch dimension, which is inferred from ``b``
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): batched b vector of the Bargmann representation with batch on the first dimension
+        c (complex): vacuum amplitude
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
     """
-    A = np.array(A)
-    b = np.array(b)
-    c = np.array(c)
-    if b.ndim == 1:
-        b = np.atleast_2d(b)
-        return _vanilla_average_batch(shape, A, b, c)[..., 0]
-    elif b.ndim == 2:
-        return np.moveaxis(_vanilla_average_batch(shape, A, b, c), -1, 0)
-    else:
-        raise ValueError(
-            f"Invalid shape for b: {b.shape}. It should be 1D (non-batched) or 2D (batched)."
-        )
 
-
-@njit
-def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all available pivots.
-    ``b`` is assumed to be batched, with batch in the first dimension.
-    The output has a corresponding batch dimension of the same size, but on the last dimension.
-
-    Args:
-        shape: shape of the output tensor excluding the batch dimension, which is inferred from the shape of ``b``
-        A: A matrix of the Fock-Bargmann representation
-        b: batched b vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
-        c: vacuum amplitudes
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape + (batch,)``
-    """
-    path = np.ndindex(shape)
-    b = np.transpose(b)  # put the batch dimension last (makes the code simpler)
-
-    G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
-    G[next(path)] = c * np.ones(b.shape[-1], dtype=np.complex128)
-    for index in path:
-        G[index] = steps.vanilla_average_step_batch(G, A, b, index)
+    B = b.shape[0]
+    G = np.zeros((B,) + shape, dtype=np.complex128)
+    for k in prange(B):
+        G[k] = vanilla_stable(shape, A, b[k], c)
     return G
+
+
+# # NOTE: numba cannot compile a single function with two possible output shapes
+# # so we wrap the numba function call in a python function
+
+# def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+#     r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
+#     stable implementation because the errors are averaged out (or so we think).
+#
+#     Supports ``b`` as a batched tensor with the batch dimension on the first index,
+#     in which case the output tensor will have the same batch dimension on the first index.
+#
+#     Args:
+#         shape: shape of the output tensor excluding the batch dimension
+#         A: A matrix of the Fock-Bargmann representation
+#         b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
+#         c: vacuum amplitude
+#
+#     Returns:
+#         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
+#     """
+#     A = np.array(A)
+#     b = np.array(b)
+#     c = np.array(c)
+#     if b.ndim == 1:
+#         b = np.atleast_2d(b)
+#         return vanilla_stable_batch(shape, A, b, c)[..., 0]
+#     elif b.ndim == 2:
+#         return vanilla_stable_batch(shape, A, b, c)
+#     else:
+#         raise ValueError(
+#             f"Invalid shape for b: {b.shape}. It should be 1D (non-batched) or 2D (batched)."
+#         )
 
 
 @njit
@@ -241,7 +319,7 @@ def vanilla_jacobian(
 
 @njit
 def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
+    r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
     Args:
         G (np.ndarray): Tensor result of the forward pass
