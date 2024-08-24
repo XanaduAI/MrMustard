@@ -164,7 +164,6 @@ def test_vanilla_stable():
     )
     sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
     assert np.max(np.abs(sgate)) < 1
-
     settings.STABLE_FOCK_CONVERSION = False
 
 

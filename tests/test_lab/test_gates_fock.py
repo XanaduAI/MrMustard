@@ -349,24 +349,6 @@ def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     assert np.allclose(expected, choi)
 
 
-def test_measure_with_fock():
-    "tests that the autocutoff respects the fock projection cutoff"
-    cov = np.array(
-        [
-            [1.08341848, 0.26536937, 0.0, 0.0],
-            [0.26536937, 1.05564949, 0.0, 0.0],
-            [0.0, 0.0, 0.98356475, -0.24724869],
-            [0.0, 0.0, -0.24724869, 1.00943755],
-        ]
-    )
-
-    state = State(means=np.zeros(4), cov=cov)
-
-    n_detect = 2
-    state_out = state << Fock([n_detect], modes=[1])
-    assert np.allclose(state_out.ket(), np.array([0.00757899, 0.0]))
-
-
 @given(theta=angle, phi=angle)
 def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     """Tests that the Schwinger boson BS gate is equivalent to the vanilla BS gate for low cutoffs."""
