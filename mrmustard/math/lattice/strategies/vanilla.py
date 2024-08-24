@@ -215,9 +215,9 @@ def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
     """
 
-    b = b.shape[0]
-    G = np.zeros((b,) + shape, dtype=np.complex128)
-    for k in prange(b):
+    B = b.shape[0]
+    G = np.zeros((B,) + shape, dtype=np.complex128)
+    for k in prange(B):
         G[k] = vanilla_stable(shape, A, b[k], c)
     return G
 
