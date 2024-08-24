@@ -27,7 +27,7 @@ from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbors import lower_neighbors
-from mrmustard.math.lattice.pivots import first_available_pivot, all_pivots
+from mrmustard.math.lattice.pivots import first_available_pivot
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers

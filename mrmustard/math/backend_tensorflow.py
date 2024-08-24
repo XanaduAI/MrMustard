@@ -473,8 +473,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
             A, b, c = (
                 A.astype(np.complex128),
-                B.astype(np.complex128),
-                C.astype(np.complex128),
+                b.astype(np.complex128),
+                c.astype(np.complex128),
             )
 
             G = self.astensor(
