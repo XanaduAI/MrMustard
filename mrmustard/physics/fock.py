@@ -854,7 +854,7 @@ def quadrature_basis(
         if not np.isclose(phi, 0.0):
             theta = math.arange(cutoffs[dim]) * phi
             Ur = math.make_complex(math.cos(theta), math.sin(theta))
-            q_to_n *= Ur
+            q_to_n = math.einsum('a,ab->ab',Ur, q_to_n)
         if conjugates[dim]:
             q_to_n = math.conj(q_to_n)
         quad_basis_vecs += [math.cast(q_to_n, "complex128")]
