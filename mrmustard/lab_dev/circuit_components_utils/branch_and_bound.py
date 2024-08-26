@@ -50,9 +50,7 @@ class GraphComponent:
         cost: The cost of obtaining this component.
     """
 
-    def __init__(
-        self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0
-    ):
+    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
         self.repr = repr
@@ -484,9 +482,7 @@ def optimal_contraction(
         return graph
 
     if verbose:
-        print(
-            f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) ====="
-        )
+        print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
