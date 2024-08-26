@@ -198,7 +198,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
 
-    def test_quadrature(self):
+    def test_quadrature_single_mode_ket(self):
         x, y = 1, 2
         state = Coherent(modes=[0], x=x, y=y)
         q = np.linspace(-10, 10, 100)
@@ -208,6 +208,17 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(quad), psi_q)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
+
+    def test_quadrature_multimode_ket(self):
+        x, y = 1, 2
+        state = Coherent(modes=[0, 1], x=x, y=y)
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q, q]))
+        psi_q = coherent_state_quad(q, x, y) * coherent_state_quad(q, x, y)
+        assert math.allclose(state.quadrature(quad), psi_q)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(100).quadrature(quad), psi_q)
+        assert math.allclose(state.to_fock(100).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
@@ -574,13 +585,25 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
-    def test_quadrature(self):
+    def test_quadrature_single_mode_dm(self):
         x, y = 1, 2
         state = Coherent(modes=[0], x=x, y=y).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q, q + 1]))
         ket = coherent_state_quad(q + 1, x, y)
         bra = np.conj(coherent_state_quad(q, x, y))
+        assert math.allclose(state.quadrature(quad), bra * ket)
+        assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+
+    def test_quadrature_multimode_dm(self):
+        x, y = 1, 2
+        state = Coherent(modes=[0, 1], x=x, y=y).dm()
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q, q, q + 1, q + 1]))
+        ket = coherent_state_quad(q + 1, x, y) * coherent_state_quad(q + 1, x, y)
+        bra = np.conj(coherent_state_quad(q, x, y)) * np.conj(coherent_state_quad(q, x, y))
         assert math.allclose(state.quadrature(quad), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)

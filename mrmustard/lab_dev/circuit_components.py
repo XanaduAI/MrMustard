@@ -335,7 +335,12 @@ class CircuitComponent:
 
         from .circuit_components_utils.b_to_q import BtoQ
 
-        return self >> BtoQ(modes=self.modes, phi=phi)
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+        return QQQQ
 
     def quadrature_triple(self, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
@@ -351,13 +356,17 @@ class CircuitComponent:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
         """
-        if len(self.wires) > 2:
-            raise NotImplementedError("Not implemented for objects with more than 2 wires.")
 
         if isinstance(self.representation, Fock):
             fock_arrays = self.representation.array
+            # Find where all the bras and kets are so they can be conjugated appropriately
+            conjugates = [False] * len(self.wires.indices)
+            conjugates = [
+                conjugates[i] if i in self.wires.ket.indices else True
+                for i in range(len(self.wires.indices))
+            ]
             quad_basis = math.sum(
-                [quadrature_basis(array, quad, phi) for array in fock_arrays], axes=[0]
+                [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axes=[0]
             )
             return quad_basis
 

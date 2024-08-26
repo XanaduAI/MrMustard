@@ -727,7 +727,15 @@ class DM(State):
         r"""
         The (discretized) quadrature distribution of the circuit component.
         """
-        quad = math.transpose(math.astensor([quad, quad]))
+        quad = math.transpose(
+            math.astensor(
+                [
+                    quad,
+                ]
+                * 2
+                * self.n_modes
+            )
+        )
         return self.quadrature(quad, phi)
 
     def expectation(self, operator: CircuitComponent):
@@ -1000,7 +1008,14 @@ class Ket(State):
         r"""
         The (discretized) quadrature distribution of the circuit component.
         """
-        quad = math.transpose(math.astensor([quad]))
+        quad = math.transpose(
+            math.astensor(
+                [
+                    quad,
+                ]
+                * self.n_modes
+            )
+        )
         return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):

@@ -820,59 +820,57 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 def quadrature_basis(
     fock_array: Tensor,
-    quad: Vector | None = None,
-    quadrature_angle: float = 0.0,
+    quad: Batch[Vector],
+    conjugates: bool | list[bool] = False,
+    phi: Scalar = 0.0,
 ):
-    r"""Given the Fock basis representation of a 1D or 2D fock basis array, it generates the
+    r"""Given the Fock basis representation of a fock basis array, it generates the
     quadrature basis representation.
 
     Args:
-        fock_array (Tensor): 1D or 2D fock_array
+        fock_array (Tensor): fock tensor amplitudes
         quad (Batch[Vector]): points at which the quadrature basis is evaluated
-        quadrature_angle (float): angle of the quadrature basis vector
+        conjugates (list[bool]): which dimensions of the array to conjugate based on
+            whether it is a bra or a ket
+        phi (float): angle of the quadrature basis vector
 
     Returns:
         tuple(Tensor): quadrature basis representation at the points in quad
     """
     dims = len(fock_array.shape)
-    if dims > 2:
-        raise ValueError(
-            "Input fock array has dimension {fock_array.shape}. Make sure is either a 1D or 2D object."
-        )
 
     if quad.shape[-1] != dims:
         raise ValueError(
             "Input fock array has dimension {fock_array.shape}. Make sure quad has the same dimension."
         )
 
-    is_2d = dims == 2
-    cutoff = fock_array.shape[0]
+    if type(conjugates) is bool:
+        conjugates = [conjugates] * dims
 
-    if not np.isclose(quadrature_angle, 0.0):
-        # rotate mode to the homodyne basis
-        theta = -math.arange(cutoff) * quadrature_angle
-        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
-        fock_array = (
-            math.einsum("ij,jk,kl->il", Ur, fock_array, math.dagger(Ur))
-            if is_2d
-            else math.matvec(Ur, fock_array)
-        )
+    # Convert each dimension to quadrature
+    cutoffs = fock_array.shape
+    quad_basis_vecs = []
+    for dim in range(dims):
+        # construct quadrature basis vectors
+        q_to_n = oscillator_eigenstate(quad[..., dim], cutoffs[dim])
+        if not np.isclose(phi, 0.0):
+            theta = math.arange(cutoffs[dim]) * phi
+            Ur = math.make_complex(math.cos(theta), math.sin(theta))
+            q_to_n *= Ur
+        if conjugates[dim]:
+            q_to_n = math.conj(q_to_n)
+        quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
-    fock_quad_reps = (
-        math.conj(math.cast(oscillator_eigenstate(quad[..., 0], cutoff), "complex128"))
-        if not is_2d
-        else [
-            math.conj(math.cast(oscillator_eigenstate(quad[..., 0], cutoff), "complex128")),
-            math.cast(oscillator_eigenstate(quad[..., 1], cutoff), "complex128"),
-        ]
+    # alphabet of characters to use in einsum
+    subscripts = [chr(i) for i in range(98, 98 + dims)]
+    # contract with fock amplitudes
+    fock_string = "".join(subscripts[:dims])
+    q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
+    fock_array = math.einsum(
+        fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
     )
-    quad_basis = (
-        math.einsum("nm,nj,mj->j", fock_array, fock_quad_reps[0], fock_quad_reps[1])
-        if is_2d
-        else math.einsum("n,nj->j", fock_array, fock_quad_reps)
-    )
 
-    return quad_basis
+    return fock_array
 
 
 def quadrature_distribution(
@@ -901,7 +899,8 @@ def quadrature_distribution(
     is_dm = dims == 2
 
     quad = math.transpose(math.astensor([x] * dims))
-    quad_basis = quadrature_basis(state, quad, quadrature_angle)
+    conjugates = [False] if is_dm else [False, True]
+    quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
     return x, math.real(pdf)
