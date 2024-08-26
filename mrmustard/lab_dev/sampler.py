@@ -27,6 +27,7 @@ from mrmustard import math, settings
 from .states import State, Number
 from .circuit_components import CircuitComponent
 from .circuit_components_utils import BtoQ, TraceOut
+from ..physics.representations import Fock
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
@@ -95,10 +96,9 @@ class Sampler:
         if state is not None:
             states = [state.dm() >> meas_op.dm().dual for meas_op in self.meas_ops]
             probs = [
-                state.L2_norm if isinstance(state, State) else math.real(state) ** 2
-                for state in states
+                state.L2_norm if isinstance(state, State) else math.real(state) for state in states
             ]
-            return probs / sum(probs)
+            return probs
         return self.prob_dist
 
 
@@ -113,6 +113,12 @@ class PNRSampler(Sampler):
 
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
         super().__init__(list(range(cutoff)), [Number(modes, n) for n in range(cutoff)])
+
+    def probabilities(self, state: State | None = None) -> list[float] | None:
+        if isinstance(state.representation, Fock):
+            return state.representation.reduce((len(self.meas_ops),)).data ** 2
+        else:
+            return super().probabilities(state)
 
 
 class HomodyneSampler(Sampler):
