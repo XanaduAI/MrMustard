@@ -93,9 +93,9 @@ class Sampler:
             state: The state to generate the probability distribution with.
         """
         if state is not None:
-            states = [state >> meas_op.dual for meas_op in self.meas_ops]
+            states = [state.dm() >> meas_op.dm().dual for meas_op in self.meas_ops]
             probs = [
-                state.probability if isinstance(state, State) else math.real(state) ** 2
+                state.L2_norm if isinstance(state, State) else math.real(state) ** 2
                 for state in states
             ]
             return probs / sum(probs)
@@ -112,7 +112,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), [Number(modes, n).dm() for n in range(cutoff)])
+        super().__init__(list(range(cutoff)), [Number(modes, n) for n in range(cutoff)])
 
 
 class HomodyneSampler(Sampler):
