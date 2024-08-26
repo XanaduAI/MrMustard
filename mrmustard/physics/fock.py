@@ -896,7 +896,7 @@ def quadrature_distribution(
     is_dm = dims == 2
 
     quad = math.transpose(math.astensor([x] * dims))
-    conjugates = [False] if is_dm else [False, True]
+    conjugates = [False, True] if is_dm else [False]
     quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
