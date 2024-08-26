@@ -325,7 +325,7 @@ class CircuitComponent:
         in terms of A,b,c.
 
         Args:
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
             A circuit component with the given quadrature representation.
@@ -345,6 +345,12 @@ class CircuitComponent:
     def quadrature_triple(self, phi: float = 0.0) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The quadrature representation triple A,b,c of this circuit component.
+
+        Args:
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
         """
         if isinstance(self.representation, Fock):
             raise NotImplementedError("Not implemented with Fock representation.")
@@ -355,14 +361,20 @@ class CircuitComponent:
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
+        Args:
+            quad: discretized quadrature points to evaluate over in the
+                quadrature representation
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
         """
 
         if isinstance(self.representation, Fock):
             fock_arrays = self.representation.array
             # Find where all the bras and kets are so they can be conjugated appropriately
-            conjugates = [False] * len(self.wires.indices)
             conjugates = [
-                conjugates[i] if i in self.wires.ket.indices else True
+                False if i in self.wires.ket.indices else True
                 for i in range(len(self.wires.indices))
             ]
             quad_basis = math.sum(
@@ -371,7 +383,7 @@ class CircuitComponent:
             return quad_basis
 
         QQQQ = self.to_quadrature(phi=phi)
-        return QQQQ.representation.ansatz(quad)
+        return QQQQ.representation(quad)
 
     @classmethod
     def _from_attributes(

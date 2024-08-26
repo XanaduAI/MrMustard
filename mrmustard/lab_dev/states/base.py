@@ -334,6 +334,12 @@ class State(CircuitComponent):
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
         The (discretized) quadrature distribution of the State.
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
         """
         raise NotImplementedError
 
@@ -727,9 +733,6 @@ class DM(State):
         return self.L2_norm
 
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the circuit component.
-        """
         quad = math.transpose(
             math.astensor(
                 [
@@ -1011,9 +1014,6 @@ class Ket(State):
         return ret
 
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the circuit component.
-        """
         quad = math.transpose(
             math.astensor(
                 [

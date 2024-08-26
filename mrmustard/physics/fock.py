@@ -21,7 +21,7 @@ This module contains functions for performing calculations on objects in the Foc
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Sequence
+from typing import Sequence, Iterable
 
 import numpy as np
 
@@ -843,8 +843,7 @@ def quadrature_basis(
             f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}."
         )
 
-    if type(conjugates) is bool:
-        conjugates = [conjugates] * dims
+    conjugates = conjugates if isinstance(conjugates, Iterable) else [conjugates] * dims
 
     # construct quadrature basis vectors
     cutoffs = fock_array.shape
@@ -873,7 +872,7 @@ def quadrature_basis(
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
-    x: Vector = None,
+    x: Vector | None = None,
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
