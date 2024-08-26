@@ -20,6 +20,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
+from mrmustard.utils.typing import ComplexMatrix
 
 
 def cayley(X, c):
@@ -202,3 +203,49 @@ def symplectic2Au(S):
     A = math.block([[A_1, A_2], [A_3, A_4]])
 
     return A
+
+
+def XY_of_channel(A: ComplexMatrix):
+    r"""
+    Outputting the X and Y matrices corresponding to a channel determined by the "A"
+    matrix.
+
+    Args:
+        A: the A matrix of the channel
+    """
+    n = A.shape[-1] // 2
+    m = n // 2
+
+    # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
+    A_out = math.block(
+        [[A[:m, :m], A[:m, 2 * m : 3 * m]], [A[2 * m : 3 * m, :m], A[2 * m : 3 * m, 2 * m : 3 * m]]]
+    )
+    R = math.block(
+        [
+            [A[:m, m : 2 * m], A[:m, 3 * m :]],
+            [A[2 * m : 3 * m, m : 2 * m], A[2 * m : 3 * m, 3 * m :]],
+        ]
+    )
+    X_tilde = -math.inv(np.eye(n) - math.Xmat(m) @ A_out) @ math.Xmat(m) @ R @ math.Xmat(m)
+    transformation = math.block(
+        [
+            [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+            [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+        ]
+    )
+    X = -transformation @ X_tilde @ math.conj(transformation).T / 2
+
+    sigma_H = math.inv(math.eye(n) - math.Xmat(m) @ A_out)  # the complex-Husimi covariance matrix
+
+    N = sigma_H[m:, m:]
+    M = sigma_H[:m, m:]
+    sigma = (
+        math.block([[math.real(N + M), math.imag(N + M)], [math.imag(M - N), math.real(N - M)]])
+        - math.eye(n) / 2
+    )
+    Y = sigma - X @ X.T / 2
+    if math.norm(math.imag(X)) > settings.ATOL or math.norm(math.imag(Y)) > settings.ATOL:
+        raise ValueError(
+            "Invalid input for the A matrix of channel, caused imaginary X and/or Y matrices."
+        )
+    return math.real(X), math.real(Y)
