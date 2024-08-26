@@ -330,19 +330,23 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        if isinstance(self.representation, Fock):
-            raise NotImplementedError("Not implemented with Fock representation.")
-
         from .circuit_components_utils.b_to_q import BtoQ
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
         BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
         BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
+
+        object_to_convert = self
+        if isinstance(self.representation, Fock):
+            object_to_convert = self.to_bargmann()
+
+        QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
         return QQQQ
 
-    def quadrature_triple(self, phi: float = 0.0) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+    def quadrature_triple(
+        self, phi: float = 0.0
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The quadrature representation triple A,b,c of this circuit component.
 
