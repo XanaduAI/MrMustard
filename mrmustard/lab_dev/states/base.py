@@ -333,7 +333,7 @@ class State(CircuitComponent):
 
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
-        The (discretized) quadrature distribution of the circuit component.
+        The (discretized) quadrature distribution of the State.
         """
         raise NotImplementedError
 

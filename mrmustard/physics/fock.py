@@ -840,7 +840,7 @@ def quadrature_basis(
 
     if quad.shape[-1] != dims:
         raise ValueError(
-            "Input fock array has dimension {fock_array.shape}. Make sure quad has the same dimension."
+            f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}."
         )
 
     if type(conjugates) is bool:

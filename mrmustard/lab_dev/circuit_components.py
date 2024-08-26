@@ -342,7 +342,7 @@ class CircuitComponent:
         QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
         return QQQQ
 
-    def quadrature_triple(self, phi: float = 0.0) -> tuple | ComplexTensor:
+    def quadrature_triple(self, phi: float = 0.0) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The quadrature representation triple A,b,c of this circuit component.
         """
@@ -352,7 +352,7 @@ class CircuitComponent:
         QQQQ = self.to_quadrature(phi=phi)
         return QQQQ.representation.data
 
-    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> tuple | ComplexTensor:
+    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
         """
