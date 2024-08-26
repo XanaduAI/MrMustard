@@ -848,7 +848,7 @@ class DM(State):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return all(math.real(math.eigvals(gamma_A)) >= -settings.ATOL)
 
     @property
     def is_physical(self) -> bool:
