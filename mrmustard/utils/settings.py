@@ -59,14 +59,17 @@ class Settings:
         self._seed: int = np.random.randint(0, 2**31 - 1)
         self._complex_warning: bool = False
         self.rng = np.random.default_rng(self._seed)
-        self._julia_initialized: bool = (
-            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        )
+        self._precision_bits_hermite_poly: int = 128
+        self._complex_warning: bool = False
+        self._julia_initialized: bool = False
         self._precision_bits_hermite_poly: int = 128
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.UNSAFE_ZIP_BATCH: bool = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
+
+        self.USE_VANILLA_AVERAGE: bool = False
+        "Whether to use the vanilla_average function when computing Fock amplitudes (more stable, but slower). Default is False."
 
         self.DEBUG: bool = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
@@ -80,7 +83,7 @@ class Settings:
         self.AUTOCUTOFF_MIN_CUTOFF: int = 1  # TODO: remove in MM 1.0
         r"""The minimum value for autocutoff. Default is ``1``."""
 
-        self.AUTOSHAPE_MAX: int = 50  # TODO: add AUTOSHAPE_MIN in 1.0
+        self.AUTOSHAPE_MAX: int = 50
         r"""The max shape for the autoshape. Default is ``50``."""
 
         self.DRAW_CIRCUIT_PARAMS: bool = True
