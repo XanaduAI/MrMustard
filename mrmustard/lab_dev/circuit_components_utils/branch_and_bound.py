@@ -50,7 +50,9 @@ class GraphComponent:
         cost: The cost of obtaining this component.
     """
 
-    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
+    def __init__(
+        self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0
+    ):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
         self.repr = repr
@@ -270,19 +272,21 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     graph = Graph()
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
-        graph.add_node(i, component=deepcopy(comp))
+        wires = Wires(*A.wires.args)
+        comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
-            ovlp_bra, ovlp_ket = A.wires.overlap(B.wires)
+            ovlp_bra, ovlp_ket = wires.overlap(B.wires)
             if ovlp_ket or ovlp_bra:
                 graph.add_edge(i, i + j + 1)
-                comp.wires = Wires(
-                    comp.wires.args[0] - ovlp_bra,
-                    comp.wires.args[1],
-                    comp.wires.args[2] - ovlp_ket,
-                    comp.wires.args[3],
+                wires = Wires(
+                    wires.args[0] - ovlp_bra,
+                    wires.args[1],
+                    wires.args[2] - ovlp_ket,
+                    wires.args[3],
                 )
-            if not comp.wires.output:
+            if not wires.output:
                 break
+        graph.add_node(i, component=comp)
     return graph
 
 
@@ -480,13 +484,17 @@ def optimal_contraction(
         return graph
 
     if verbose:
-        print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
+        print(
+            f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) ====="
+        )
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
         rand = random_solution(graph.copy())
         best = rand if rand.cost < best.cost else best
     if verbose:
-        print(f"Best cost from {n_init} random contractions: {best.cost}\n")
+        print(
+            f"Best cost from {n_init} random contractions: {best.cost}. Solution: {best.solution}\n"
+        )
 
     queue = PriorityQueue()
     queue.put(graph)
@@ -509,4 +517,6 @@ def optimal_contraction(
             for g in grandchildren(candidate, cost_bound=best.cost):
                 if g not in queue.queue:
                     queue.put(g)
+    if verbose:
+        print(f"\n\nFinal path: best cost = {best.cost}. Solution is {best.solution}")
     return best
