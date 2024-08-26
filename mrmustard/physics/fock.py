@@ -824,8 +824,7 @@ def quadrature_basis(
     conjugates: bool | list[bool] = False,
     phi: Scalar = 0.0,
 ):
-    r"""Given the Fock basis representation of a fock basis array, it generates the
-    quadrature basis representation.
+    r"""Given the Fock basis representation return the quadrature basis representation.
 
     Args:
         fock_array (Tensor): fock tensor amplitudes
@@ -847,11 +846,10 @@ def quadrature_basis(
     if type(conjugates) is bool:
         conjugates = [conjugates] * dims
 
-    # Convert each dimension to quadrature
+    # construct quadrature basis vectors
     cutoffs = fock_array.shape
     quad_basis_vecs = []
     for dim in range(dims):
-        # construct quadrature basis vectors
         q_to_n = oscillator_eigenstate(quad[..., dim], cutoffs[dim])
         if not np.isclose(phi, 0.0):
             theta = math.arange(cutoffs[dim]) * phi
@@ -861,10 +859,9 @@ def quadrature_basis(
             q_to_n = math.conj(q_to_n)
         quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
-    # alphabet of characters to use in einsum
+    # Convert each dimension to quadrature
     subscripts = [chr(i) for i in range(98, 98 + dims)]
-    # contract with fock amplitudes
-    fock_string = "".join(subscripts[:dims])
+    fock_string = "".join(subscripts[:dims])  #'bcd....'
     q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
     fock_array = math.einsum(
         fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
