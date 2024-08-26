@@ -27,10 +27,35 @@ from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbors import lower_neighbors
-from mrmustard.math.lattice.pivots import first_available_pivot
+from mrmustard.math.lattice.pivots import first_available_pivot, all_pivots
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
-SQRT = np.sqrt(np.arange(100000))
+SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
+
+
+@njit
+def vanilla_average_step_batch(
+    G: ComplexTensor, A: ComplexMatrix, b: ComplexMatrix, index: tuple[int, ...]
+) -> complex:  # pragma: no cover
+    r"""Recurrence relation step where we average over all available pivots.
+    Assumes b is batched, with batch dimension on the *last* index (makes the code simpler).
+
+    Args:
+        G: fock amplitudes array with a batch dimension on the last index.
+        A: A matrix of the Fock-Bargmann representation
+        b: b vector of the Fock-Bargmann representation with a batch dimension on the last index
+        index: index of the amplitude to calculate (excluding the batch dimension)
+
+    Returns:
+        complex: vector of the amplitudes at the given index. The length of the vector is the same as the batch dimension.
+    """
+    all_contributions = np.zeros(b.shape[-1], dtype=np.complex128)
+    for N, (i, pivot) in enumerate(all_pivots(index)):  # we add all the contributions
+        pivot_contribution = b[i] * G[pivot]
+        for j, neighbor in lower_neighbors(pivot):
+            pivot_contribution += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+        all_contributions += pivot_contribution / SQRT[index[i]]
+    return all_contributions / (N + 1)  # pylint: disable=undefined-loop-variable
 
 
 @njit
@@ -74,28 +99,27 @@ def vanilla_step_batch(
     b: ComplexTensor,
     index: tuple[int, ...],
 ) -> complex:  # pragma: no cover
-    r"""Fock-Bargmann recurrence relation step, vanilla batched version.
+    r"""Fock-Bargmann recurrence relation step, batched version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.
     The necessary pivot and neighbours must have already been computed,
     as this step will read those values from G.
-    Note that this function is different from vanilla_step with b is no longer a vector,
-    it becomes a bathced vector with the batch dimension on the first index.
+    Note that this function is different from vanilla_step as b is no longer a vector,
+    it becomes a batched vector with the batch dimension on the first index.
 
     Args:
-        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
-        A (array): A matrix of the Fock-Bargmann representation
-        b (array): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
-        index (Sequence): index of the amplitude to calculate
+        G: fock amplitudes data store that supports getitem[tuple[int, ...]]
+        A: A matrix of the Fock-Bargmann representation
+        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
+        index: index of the amplitude to calculate
     Returns:
         array: the value of the amplitude at the given index according to each batch on the first index
     """
-    # get pivot
     i, pivot = first_available_pivot(index)
 
-    # pivot contribution
+    # contribution from G[pivot]
     value_at_index = b[..., i] * G[(slice(None),) + pivot]
-    # neighbors contribution
+    # contributions from G[neighbor]
     for j, neighbor in lower_neighbors(pivot):
         value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
 

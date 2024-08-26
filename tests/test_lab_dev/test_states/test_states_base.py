@@ -70,9 +70,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_auto_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
-        assert ket.auto_shape() == (5, 11)
+        assert ket.auto_shape() == (8, 15)
         ket.manual_shape[0] = 19
-        assert ket.auto_shape() == (19, 11)
+        assert ket.auto_shape() == (19, 15)
+
+        ket = Coherent([0, 1], x=1) >> Number([1], 10).dual
+        assert ket.auto_shape() == (settings.AUTOSHAPE_MAX,)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):
@@ -430,9 +433,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_auto_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.auto_shape() == (5, 11, 5, 11)
+        assert dm.auto_shape() == (8, 15, 8, 15)
         dm.manual_shape[0] = 1
-        assert dm.auto_shape() == (1, 11, 5, 11)
+        assert dm.auto_shape() == (1, 15, 8, 15)
+
+        dm = Coherent([0, 1], x=1).dm() >> Number([1], 10).dual
+        assert dm.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_bargmann(self, modes):

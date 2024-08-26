@@ -127,6 +127,8 @@ class Circuit:
         .. code-block::
 
         >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
+        >>> from mrmustard import settings
+        >>> settings.AUTOSHAPE_PROBABILITY = 0.999
 
         >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
         >>> assert [op.auto_shape() for op in circ] == [(5,), (50,50)]

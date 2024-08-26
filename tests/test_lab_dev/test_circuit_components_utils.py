@@ -32,8 +32,7 @@ from mrmustard.physics.gaussian_integrals import (
 from mrmustard.physics.representations import Bargmann
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM, Vacuum
-from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
 
 
@@ -243,23 +242,25 @@ class TestBtoQ:
         assert math.allclose(c0, cf)
 
     def test_BtoQ_with_displacement(self):
-        v = Vacuum([0])
-        x = 2
-        y = 1
-        d = Dgate([0], x, y)
-        state = v >> d
-        btq_q = BtoQ([0], 0)
-        btq_p = BtoQ([0], np.pi / 2)
-        btq_nq = BtoQ([0], np.pi)
-        btq_np = BtoQ([0], 3 * np.pi / 2)
+        "tests the BtoQ transformation with coherent states"
 
-        height = 1 / np.sqrt(2 * np.pi)
-        obj_q = Bargmann(*(state >> btq_q).representation.data)
-        obj_p = Bargmann(*(state >> btq_p).representation.data)
-        obj_nq = Bargmann(*(state >> btq_nq).representation.data)
-        obj_np = Bargmann(*(state >> btq_np).representation.data)
+        def wavefunction_coh(alpha, quad, axis_angle):
+            "alpha = x+iy of coherent state, quad is quadrature variable, axis_angle of quad axis"
+            A = -1 / settings.HBAR
+            b = np.exp(-1j * axis_angle) * np.sqrt(2 / settings.HBAR) * alpha
+            c = (
+                np.exp(-0.5 * np.abs(alpha) ** 2)
+                / np.power(np.pi * settings.HBAR, 0.25)
+                * np.exp(-0.5 * alpha**2 * np.exp(-2j * axis_angle))
+            )
+            return c * np.exp(0.5 * A * quad**2 + b * quad)
 
-        assert np.allclose(np.abs(obj_q(2 * x)) ** 2, height)
-        assert np.allclose(np.abs(obj_p(2 * y)) ** 2, height)
-        assert np.allclose(np.abs(obj_nq(2 * (-x))) ** 2, height)
-        assert np.allclose(np.abs(obj_np(2 * (-y))) ** 2, height)
+        x = np.random.random()
+        y = np.random.random()
+        axis_angle = np.random.random()
+        quad = np.random.random()
+
+        state = Coherent([0], x, y)
+        wavefunction = (state >> BtoQ([0], axis_angle)).representation.ansatz
+
+        assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))
