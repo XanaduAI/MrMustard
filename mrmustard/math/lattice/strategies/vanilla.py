@@ -80,7 +80,9 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     G[0] = c
     next(nd_index)
 
-    # iterate over the indices smaller than max(strides) with pivot bound check
+    # Iterate over the indices smaller than max(strides) with pivot bound check.
+    # The check is needed only if the flat index is smaller than the largest stride.
+    # Afterwards it will be safe to get the pivot by subtracting the first (largest) stride.
     for flat_index in range(1, strides[0]):
         index = next(nd_index)
 
@@ -100,7 +102,8 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
             value_at_index += A[i, j] * SQRT[index[j]] * G[pivot - strides[j]]
         G[flat_index] = value_at_index / SQRT[index[i]]
 
-    # iterate over the rest of the indices (now i can always be 0, and we don't need bounds check)
+    # Iterate over the rest of the indices.
+    # Now i can always be 0 (largest stride), and we don't need bounds check
     for flat_index in range(strides[0], len(G)):
         index = next(nd_index)
 
@@ -117,6 +120,8 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
             value_at_index += A[0, j] * SQRT[index[j]] * G[pivot - strides[j]]
         G[flat_index] = value_at_index / SQRT[index[0]]
 
+    print("========= G =========\n", G)
+    print()
     return G.reshape(shape)
 
 
@@ -222,94 +227,6 @@ def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     return G
 
 
-# # NOTE: numba cannot compile a single function with two possible output shapes
-# # so we wrap the numba function call in a python function
-
-# def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-#     r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
-#     stable implementation because the errors are averaged out (or so we think).
-#
-#     Supports ``b`` as a batched tensor with the batch dimension on the first index,
-#     in which case the output tensor will have the same batch dimension on the first index.
-#
-#     Args:
-#         shape: shape of the output tensor excluding the batch dimension
-#         A: A matrix of the Fock-Bargmann representation
-#         b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
-#         c: vacuum amplitude
-#
-#     Returns:
-#         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
-#     """
-#     A = np.array(A)
-#     b = np.array(b)
-#     c = np.array(c)
-#     if b.ndim == 1:
-#         b = np.atleast_2d(b)
-#         return vanilla_stable_batch(shape, A, b, c)[..., 0]
-#     elif b.ndim == 2:
-#         return vanilla_stable_batch(shape, A, b, c)
-#     else:
-#         raise ValueError(
-#             f"Invalid shape for b: {b.shape}. It should be 1D (non-batched) or 2D (batched)."
-#         )
-
-
-# NOTE: numba cannot compile a single function with two possible output shapes
-# so we wrap the numba function call in a python function
-def vanilla_average(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Like vanilla, but contributions are averaged over all pivots. This leads to a
-    stable implementation because the errors are averaged out (or so we think).
-
-    Supports ``b`` as a batched tensor, with the batch dimension on the first index,
-    in which case the output tensor will have the same batch dimension.
-
-    Args:
-        shape: shape of the output tensor excluding the batch dimension
-        A: A matrix of the Fock-Bargmann representation
-        b: B vector of the Fock-Bargmann representation (eventually batched with batch on the first dimension)
-        c: vacuum amplitude
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
-    """
-    A = np.array(A)
-    b = np.array(b)
-    c = np.array(c)
-    if b.ndim == 1:
-        b = np.atleast_2d(b)
-        return _vanilla_average_batch(shape, A, b, c)[..., 0]
-    elif b.ndim == 2:
-        return np.moveaxis(_vanilla_average_batch(shape, A, b, c), -1, 0)
-    else:
-        raise ValueError(f"Invalid shape for b: {b.shape}. It should be 1D or 2D.")
-
-
-@njit
-def _vanilla_average_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Like vanilla, but contributions are averaged over all pivots. Numba implementation.
-    ``b`` is assumed to be batched, with batch in the first dimension.
-    The output has a corresponding batch dimension of the same size, but on the last dimension.
-
-    Args:
-        shape: shape of the output tensor excluding the batch dimension, which is inferred from the shape of ``b``
-        A: A matrix of the Fock-Bargmann representation
-        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first dimension
-        c: vacuum amplitudes
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape + (batch,)``
-    """
-    path = np.ndindex(shape)
-    b = np.transpose(b)  # put the batch dimension last (makes the code simpler)
-
-    G = np.zeros(shape + (b.shape[-1],), dtype=np.complex128)
-    G[next(path)] = c * np.ones(b.shape[-1], dtype=np.complex128)
-    for index in path:
-        G[index] = steps.vanilla_average_step_batch(G, A, b, index)
-    return G
-
-
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
@@ -373,7 +290,9 @@ def vanilla_jacobian(
 
 
 @njit
-def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+def vanilla_vjp(
+    G, c, dLdG
+) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -407,24 +326,90 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     nd_index = np.ndindex(G.shape)
     next(nd_index)
 
-    # iterate over the indices (no need to split the loop in two parts)
-    for index_u in nd_index:
-        flat_index += 1
+    # first loop over the indices smaller than max(strides)
+    for flat_index in range(1, strides[0]):
+        index = next(nd_index)
 
-        # contributions from lower neighbours
-        for i in range(D):
-            pivot = flat_index - strides[i]
-            db[i] = SQRT[index_u[i]] * G_lin[pivot]
-            dA[i, i] = 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
-            for j in range(i + 1, D):
-                dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
+        # calculate (flat) pivot
+        for i, s in enumerate(strides):
+            pivot = flat_index - s
+            if pivot >= 0:
+                break
 
-        dLdA += dA * dLdG[index_u]
-        dLdb += db * dLdG[index_u]
+        db[i] = SQRT[index[i]] * G_lin[pivot]
+        dA[i, i] = 0.5 * SQRT[index[i]] * SQRT[index[i] - 1] * G_lin[pivot - strides[i]]
+        print(
+            "dA[i, i]",
+            dA[i, i],
+            f"SQRT[{index[i]}]",
+            f"SQRT[{index[i] - 1}]",
+            pivot - strides[i],
+            G_lin[pivot - strides[i]],
+        )
+        for j in range(i + 1, D):
+            dA[i, j] = SQRT[index[i]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+
+        dLdA += dA * dLdG[index]
+        dLdb += db * dLdG[index]
+
+    # second loop over the rest of the indices
+    for flat_index in range(strides[0], len(G_lin)):
+        index = next(nd_index)
+
+        # calculate (flat) pivot
+        pivot = flat_index - strides[0]
+
+        db[0] = SQRT[index[0]] * G_lin[pivot]
+        dA[0, 0] = 0.5 * SQRT[index[0]] * SQRT[index[0] - 1] * G_lin[pivot - strides[0]]
+        for j in range(1, D):
+            dA[0, j] = SQRT[index[0]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+
+        dLdA += dA * dLdG[index]
+        dLdb += db * dLdG[index]
 
     dLdc = np.sum(G * dLdG) / c
 
+    print("========= dLdA =========")
+    print(dLdA)
+    print()
     return dLdA, dLdb, dLdc
+
+    # iterate over the indices (no need to split the loop in two parts)
+    # for index_u in nd_index:
+    #     flat_index += 1
+    #
+    #     # calculate (flat) pivot
+    #     for i, s in enumerate(strides):
+    #         pivot = flat_index - s
+    #         if pivot >= 0:  # if pivot not outside array
+    #             break
+    #         db[i] = SQRT[index_u[i]] * G_lin[pivot]
+    #         dA[i, i] = (
+    #             0.5
+    #             * SQRT[index_u[i]]
+    #             * SQRT[index_u[i] - 1]
+    #             * G_lin[pivot - strides[i]]
+    #         )
+    #         print(
+    #             dA[i, i],
+    #             index_u[i],
+    #             index_u[i] - 1,
+    #             pivot - strides[i],
+    #             G_lin[pivot - strides[i]],
+    #         )
+    #         for j in range(i + 1, D):
+    #             dA[i, j] = (
+    #                 SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
+    #             )
+
+    #     dLdA += dA * dLdG[index_u]
+    #     dLdb += db * dLdG[index_u]
+    #
+    # dLdc = np.sum(G * dLdG) / c
+    #
+    # print(np.abs(dLdA), np.abs(dLdb), np.abs(dLdc))
+    #
+    # return dLdA, dLdb, dLdc
 
 
 @njit
@@ -513,13 +498,15 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
     for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
-        A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
-        A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2 * M - 2, 2 * M - 2)
-        )
-        A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2, 2 * M - 2)
-        )
+        A_mm = np.ascontiguousarray(
+            A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))
+        ).reshape((2, 2))
+        A_nn = np.ascontiguousarray(
+            A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))
+        ).reshape((2 * M - 2, 2 * M - 2))
+        A_mn = np.ascontiguousarray(
+            A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))
+        ).reshape((2, 2 * M - 2))
         A_nm = np.transpose(A_mn)
         b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))
         b_n = np.ascontiguousarray(b[idx_n].transpose()).reshape((2 * M - 2,))
@@ -538,7 +525,9 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
         norm = np.abs(c_)
         k = 0
         while norm < max_prob and k < max_shape:
-            buf2[(k + 1) % 2] = (b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]) / SQRT[k + 1]
+            buf2[(k + 1) % 2] = (
+                b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]
+            ) / SQRT[k + 1]
             buf3[(k + 1) % 2, 0] = (
                 b_[0] * buf2[(k + 1) % 2, 0]
                 + A_[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
