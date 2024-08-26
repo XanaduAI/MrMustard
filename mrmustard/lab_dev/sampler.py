@@ -22,11 +22,11 @@ from typing import Sequence
 
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 
 from .states import State, Number
 from .circuit_components import CircuitComponent
-from .circuit_components_utils import BtoQ
+from .circuit_components_utils import BtoQ, TraceOut
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
@@ -66,7 +66,7 @@ class Sampler:
         return self._meas_outcomes
 
     @property
-    def prob_dist(self) -> list[float]:
+    def prob_dist(self) -> list[float] | None:
         r"""
         The probability distribution of this sampler.
         """
@@ -74,17 +74,17 @@ class Sampler:
 
     def sample(self, state: State | None = None, n_samples: int = 1000) -> list[any]:
         r"""
-        Returns a list of measurement samples on a specified state. If ``state`` is
+        Returns a list of measurement samples on a specified state. If ``self.probabilities`` is
         ``None`` then uses a uniform probability distribution.
 
         Args:
             state: The state to generate samples of.
             n_samples: The number of samples to generate.
         """
-        rng = np.random.default_rng()
+        rng = settings.rng
         return rng.choice(a=self._meas_outcomes, p=self.probabilities(state), size=n_samples)
 
-    def probabilities(self, state: State | None = None) -> list[float]:
+    def probabilities(self, state: State | None = None) -> list[float] | None:
         r"""
         Returns the probability distribution of this sampler. If ``state`` is provided
         then will compute the probability distribution w.r.t. the state.
@@ -132,8 +132,19 @@ class HomodyneSampler(Sampler):
 
     def probabilities(self, state: State | None = None):
         if state is not None:
-            q_state = state >> self.meas_ops
-            probs = [math.real(q_state.representation([[q]])[0]) ** 2 for q in self._meas_outcomes]
-            probs /= sum(probs)
+
+            disjoint_modes = [mode for mode in state.modes if mode not in self.meas_ops.modes]
+            if disjoint_modes:
+                q_state = state.dm() >> TraceOut(disjoint_modes) >> self.meas_ops
+            else:
+                q_state = state.dm() >> self.meas_ops
+            z = [[x] * q_state.representation.ansatz.num_vars for x in self.meas_outcomes]
+            probs = math.real(q_state.representation(z)) * math.sqrt(settings.HBAR)
+
+            step = (self.meas_outcomes[-1] - self.meas_outcomes[0]) / (len(self.meas_outcomes) - 1)
+            prob_sum = sum(probs * step)
+
+            probs /= prob_sum
             return probs
+
         return self.prob_dist
