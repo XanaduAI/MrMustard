@@ -239,7 +239,11 @@ class TestCircuit:
         "tests the optimize method"
         # contracting the last two first is better
         circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
-        circ.optimize()  # with default heuristics
+        circ.optimize(with_BF_heuristic=True)  # with default heuristics
+        assert circ.path == [(1, 2), (0, 1)]
+
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ.optimize(with_BF_heuristic=False)  # without the BF heuristic
         assert circ.path == [(1, 2), (0, 1)]
 
         circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])

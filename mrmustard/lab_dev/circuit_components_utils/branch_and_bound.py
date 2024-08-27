@@ -485,7 +485,7 @@ def optimal_contraction(
         print(f"\n===== Branch and bound ({factorial(len(graph.nodes)):_d} paths) =====")
     best = Graph(costs=(np.inf,))  # will be replaced by first random contraction
     for _ in range(n_init):
-        rand = random_solution(graph.copy())
+        rand = random_solution(deepcopy(graph))
         best = rand if rand.cost < best.cost else best
     if verbose:
         print(
