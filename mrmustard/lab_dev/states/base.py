@@ -660,11 +660,7 @@ class DM(State):
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
         rep = self.representation.trace(idx_ket, idx_bra)
-        if isinstance(rep, Bargmann) and rep.ansatz.polynomial_shape[0] > 0:
-            scalar = rep([])
-        else:
-            scalar = rep.scalar
-        return math.real(math.sum(scalar))
+        return math.real(math.sum(rep.scalar))
 
     @property
     def _purities(self) -> RealVector:
