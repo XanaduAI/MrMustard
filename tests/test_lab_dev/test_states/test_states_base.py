@@ -358,7 +358,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_private_batched_properties(self):
         cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
-        assert np.allclose(cat._purities, np.ones(2))
         assert np.allclose(cat._probabilities, np.ones(2))
         assert np.allclose(cat._L2_norms, np.ones(2))
 

@@ -660,7 +660,11 @@ class DM(State):
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
         rep = self.representation.trace(idx_ket, idx_bra)
-        return math.real(math.sum(rep.scalar))
+        if isinstance(rep, Bargmann) and rep.ansatz.polynomial_shape[0] > 0:
+            scalar = rep([])
+        else:
+            scalar = rep.scalar
+        return math.real(math.sum(scalar))
 
     @property
     def _purities(self) -> RealVector:
@@ -926,11 +930,6 @@ class Ket(State):
     def _probabilities(self) -> RealVector:
         r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
         return self._L2_norms
-
-    @property
-    def _purities(self) -> float:
-        r"""Purity of each ket in the batch."""
-        return math.ones((self.representation.ansatz.batch_size,), math.float64)
 
     @classmethod
     def from_phase_space(
