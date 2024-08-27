@@ -105,7 +105,7 @@ class Circuit:
 
         i = list(G.nodes)[0]
         if len(G.nodes[i]["component"].wires) > 0:
-            raise ValueError("Cannot optimize a circuit with dangling wires yet.")
+            raise NotImplementedError("Cannot optimize a circuit with dangling wires yet.")
 
         self.optimize_fock_shapes(verbose)
         heuristics = (
