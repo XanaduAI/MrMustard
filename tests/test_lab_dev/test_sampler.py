@@ -16,7 +16,9 @@
 
 # pylint: disable=missing-function-docstring
 
-from mrmustard.lab_dev.sampler import Sampler
+import pytest
+
+from mrmustard.lab_dev.sampler import Sampler, PNRSampler
 from mrmustard.lab_dev import Number, Vacuum
 
 
@@ -54,6 +56,12 @@ class TestSampler:
         state = Vacuum([0])
         assert all(sampler2.probabilities(state) == [1, 0, 0])
 
+        with pytest.raises(ValueError, match="incompatible"):
+            sampler_two_mode = Sampler(
+                meas_outcomes, [Number([0, 1], n) for n in range(3)], prob_dist
+            )
+            sampler_two_mode.probabilities(state)
+
     def test_sample(self):
         meas_outcomes = list(range(3))
         meas_ops = [Number([0], n) for n in range(3)]
@@ -62,3 +70,17 @@ class TestSampler:
         sampler = Sampler(meas_outcomes, meas_ops, prob_dist)
         assert all(sampler.sample() == 2)
         assert all(sampler.sample(Vacuum([0])) == 0)
+
+
+class TestPNRSampler:
+    def test_init(self):
+        sampler = PNRSampler([0, 1], cutoff=10)
+        assert sampler.meas_outcomes == list(range(10))
+        assert sampler.meas_ops == [Number([0, 1], n) for n in range(10)]
+        assert sampler.prob_dist is None
+
+    def test_probabilities(self):
+        sampler = PNRSampler([0, 1], cutoff=10)
+
+        assert sampler.probabilities() is None
+        assert sampler.probabilities(Vacuum([0])) == []
