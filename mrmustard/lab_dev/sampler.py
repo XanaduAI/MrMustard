@@ -116,7 +116,7 @@ class PNRSampler(Sampler):
 
     def probabilities(self, state: State | None = None) -> list[float] | None:
         if isinstance(state.representation, Fock):
-            return state.representation.reduce((len(self.meas_ops),)).data ** 2
+            return math.real(state.representation.reduce((len(self.meas_ops),)).data[0]) ** 2
         else:
             return super().probabilities(state)
 
