@@ -387,6 +387,49 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
+    def _decompose_ansatz_single(self, Ai, bi, ci):
+        dim_beta, shape_beta = self.polynomial_shape
+        dim_alpha = self.mat.shape[-1] - dim_beta
+        A_bar = math.block(
+            [
+                [
+                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
+                    Ai[:dim_alpha, dim_alpha:],
+                ],
+                [
+                    Ai[dim_alpha:, :dim_alpha],
+                    Ai[dim_alpha:, dim_alpha:],
+                ],
+            ]
+        )
+        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype), bi[dim_alpha:]), axis=0)
+        poly_bar = math.hermite_renormalized(
+            A_bar,
+            b_bar,
+            complex(1),
+            (math.sum(shape_beta),) * dim_alpha + shape_beta,
+        )
+        c_decomp = math.sum(
+            poly_bar * ci,
+            axes=math.arange(
+                len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
+            ).tolist(),
+        )
+        A_decomp = math.block(
+            [
+                [
+                    Ai[:dim_alpha, :dim_alpha],
+                    math.eye(dim_alpha, dtype=Ai.dtype),
+                ],
+                [
+                    math.eye((dim_alpha), dtype=Ai.dtype),
+                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
+                ],
+            ]
+        )
+        b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
+        return A_decomp, b_decomp, c_decomp
+
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
         This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
@@ -396,72 +439,21 @@ class PolyExpBase(Ansatz):
         This decomposition is typically favourable if m>n, and will only run if that is the case.
         The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
         """
-        dim_beta, shape_beta = self.polynomial_shape
+        dim_beta, _ = self.polynomial_shape
         dim_alpha = self.mat.shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
-            A_bar = math.block(
-                [
-                    [
-                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
-                        self.mat[..., :dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        self.mat[..., dim_alpha:, :dim_alpha],
-                        self.mat[..., dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
+            A_decomp = []
+            b_decomp = []
+            c_decomp = []
+            for i in range(batch_size):
+                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
+                    self.mat[i], self.vec[i], self.array[i]
+                )
+                A_decomp.append(A_decomp_i)
+                b_decomp.append(b_decomp_i)
+                c_decomp.append(c_decomp_i)
 
-            b_bar = math.block(
-                [
-                    [
-                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
-                        self.vec[..., dim_alpha:],
-                    ]
-                ]
-            )
-            poly_bar = math.hermite_renormalized_batch(
-                A_bar,
-                b_bar,
-                complex(1),
-                (batch_size,) + (math.sum(shape_beta),) * dim_alpha + shape_beta,
-            )
-            poly_bar = math.moveaxis(poly_bar, 0, dim_alpha)
-            c_decomp = math.sum(
-                poly_bar * self.array,
-                axes=math.arange(
-                    len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
-                ).tolist(),
-            )
-            c_decomp = math.moveaxis(c_decomp, -1, 0)
-
-            A_decomp = math.block(
-                [
-                    [
-                        self.mat[..., :dim_alpha, :dim_alpha],
-                        math.outer(
-                            math.ones(batch_size, dtype=self.mat.dtype),
-                            math.eye(dim_alpha, dtype=self.mat.dtype),
-                        ),
-                    ],
-                    [
-                        math.outer(
-                            math.ones(batch_size, dtype=self.mat.dtype),
-                            math.eye((dim_alpha), dtype=self.mat.dtype),
-                        ),
-                        math.zeros((batch_size, dim_alpha, dim_alpha), dtype=self.mat.dtype),
-                    ],
-                ]
-            )
-            b_decomp = math.block(
-                [
-                    [
-                        self.vec[..., :dim_alpha],
-                        math.zeros((batch_size, dim_alpha), dtype=self.vec.dtype),
-                    ]
-                ]
-            )
             return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
             return PolyExpAnsatz(self.mat, self.vec, self.array)
@@ -587,7 +579,6 @@ class PolyExpAnsatz(PolyExpBase):
         batch_size = self.batch_size
 
         z = math.atleast_2d(z)  # shape (b_arg, n)
-        batch_size_arg = z.shape[0]
         if z.shape[-1] != dim_alpha or z.shape[-1] != self.num_vars:
             raise ValueError(
                 "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
@@ -617,9 +608,7 @@ class PolyExpAnsatz(PolyExpBase):
             A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
             poly = math.astensor(
                 [
-                    math.hermite_renormalized_batch(
-                        A_poly[i], b_poly[i], complex(1), (batch_size_arg,) + shape_beta
-                    )
+                    math.hermite_renormalized_batch(A_poly[i], b_poly[i], complex(1), shape_beta)
                     for i in range(batch_size)
                 ]
             )  # (b_abc,b_arg,poly)
@@ -627,7 +616,8 @@ class PolyExpAnsatz(PolyExpBase):
             val = math.sum(
                 exp_sum
                 * math.sum(
-                    poly * self.c, axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist()
+                    poly * self.c,
+                    axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
                 axes=[-1],
             )  # (b_arg)
@@ -658,10 +648,14 @@ class PolyExpAnsatz(PolyExpBase):
 
         # new b
         b_alpha = math.einsum(
-            "ij,j", math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1), gamma
+            "ij,j",
+            math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1),
+            gamma,
         )
         b_beta = math.einsum(
-            "ij,j", math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1), gamma
+            "ij,j",
+            math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
+            gamma,
         )
         new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
 
@@ -748,7 +742,8 @@ class PolyExpAnsatz(PolyExpBase):
 
         def mul_b(b1, b2, dim_alpha):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
+                -1,
             )
             return b3
 
@@ -757,7 +752,6 @@ class PolyExpAnsatz(PolyExpBase):
             return c3
 
         if isinstance(other, PolyExpAnsatz):
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
 
@@ -825,7 +819,8 @@ class PolyExpAnsatz(PolyExpBase):
 
         def div_b(b1, b2, dim_alpha):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]), -1
+                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
+                -1,
             )
             return b3
 
@@ -834,7 +829,6 @@ class PolyExpAnsatz(PolyExpBase):
             return c3
 
         if isinstance(other, PolyExpAnsatz):
-
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
@@ -913,7 +907,16 @@ class PolyExpAnsatz(PolyExpBase):
 
         def andb(b1, b2, dim_alpha1, dim_alpha2):
             b3 = math.reshape(
-                math.block([[b1[:dim_alpha1], b2[:dim_alpha2], b1[dim_alpha1:], b2[dim_alpha2:]]]),
+                math.block(
+                    [
+                        [
+                            b1[:dim_alpha1],
+                            b2[:dim_alpha2],
+                            b1[dim_alpha1:],
+                            b2[dim_alpha2:],
+                        ]
+                    ]
+                ),
                 -1,
             )
             return b3
