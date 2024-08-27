@@ -43,7 +43,7 @@ class Ggate(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        symplectic: The symplectic matrix of the gate.
+        symplectic: The symplectic matrix of the gate in the XXPP ordering.
     """
 
     short_name = "G"
