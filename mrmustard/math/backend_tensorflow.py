@@ -444,7 +444,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tuple[tf.Tensor, Callable]:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`c * exp(bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
