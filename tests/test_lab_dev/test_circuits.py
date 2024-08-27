@@ -238,15 +238,15 @@ class TestCircuit:
     def test_optimize_path(self):
         "tests the optimize method"
         # contracting the last two first is better
-        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Coherent([0], x=1.0).dual])
         circ.optimize(with_BF_heuristic=True)  # with default heuristics
         assert circ.path == [(1, 2), (0, 1)]
 
-        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Coherent([0], x=1.0).dual])
         circ.optimize(with_BF_heuristic=False)  # without the BF heuristic
         assert circ.path == [(1, 2), (0, 1)]
 
-        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Dgate([0], x=1.0)])
+        circ = Circuit([Number([0], n=15), Sgate([0], r=1.0), Coherent([0], x=1.0).dual])
         circ.optimize(n_init=1, verbose=False)
         assert circ.path == [(1, 2), (0, 1)]
 
@@ -283,12 +283,14 @@ class TestCircuit:
     def test_path_is_loaded(self, tmpdir):
         """Test that circuit paths are saved if already evaluated."""
         settings.CACHE_DIR = tmpdir
-        vac = Vacuum([0, 1, 2])
-        s01 = Sgate([0, 1])
+        vac = Vacuum([0])
+        S0 = Sgate([0])
+        s0 = SqueezedVacuum([1])
         bs01 = BSgate([0, 1])
-        bs12 = BSgate([1, 2])
+        c0 = Coherent([0]).dual
+        c1 = Coherent([1]).dual
 
-        circ = Circuit([vac, s01, bs01, bs12])
+        circ = Circuit([vac, S0, s0, bs01, c0, c1])
         base_path = circ.path
         assert load(circ.serialize()).path == base_path
 

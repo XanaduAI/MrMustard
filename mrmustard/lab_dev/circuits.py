@@ -20,6 +20,7 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
+from copy import deepcopy
 from typing import Sequence
 from pydoc import locate
 from mrmustard import math, settings
@@ -96,6 +97,16 @@ class Circuit:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
             verbose: If True (default), the progress of the optimization is shown.
         """
+        graph = deepcopy(self._graph)
+        bb.assign_costs(graph)
+        G = bb.random_solution(graph)
+        if len(G.nodes) > 1:
+            raise ValueError("Circuit has disconnected components.")
+
+        i = list(G.nodes)[0]
+        if len(G.nodes[i]["component"].wires) > 0:
+            raise ValueError("Cannot optimize a circuit with dangling wires yet.")
+
         self.optimize_fock_shapes(verbose)
         heuristics = (
             ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF")
