@@ -81,6 +81,7 @@ class Sampler:
         Args:
             state: The state to generate the probability distribution with.
         """
+        self._validate_state(state)
         if state is not None:
             states = [state.dm() >> meas_op.dual for meas_op in self.meas_ops]
             probs = [
@@ -109,7 +110,7 @@ class Sampler:
         Args:
             state: The state to validate.
         """
-        if self.meas_ops and state:
+        if self.meas_ops and state is not None:
             meas_op_modes = (
                 self.meas_ops[0].modes
                 if isinstance(self.meas_ops, Iterable)
@@ -135,7 +136,7 @@ class PNRSampler(Sampler):
 
     def probabilities(self, state: State | None = None) -> list[float] | None:
         self._validate_state(state)
-        if isinstance(state.representation, Fock):
+        if state is not None and isinstance(state.representation, Fock):
             return math.real(state.representation.reduce((len(self.meas_ops),)).data[0]) ** 2
         else:
             return super().probabilities(state)
