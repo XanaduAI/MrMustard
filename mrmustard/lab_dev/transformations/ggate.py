@@ -35,7 +35,7 @@ class Ggate(Unitary):
     .. code-block ::
 
         >>> from mrmustard import math
-        >>> from mrmustard.lab_dev import Ggate, Vacuum, Identity
+        >>> from mrmustard.lab_dev import Ggate, Vacuum, Identity, Ket
 
         >>> U = Ggate(modes=[0], symplectic=math.random_symplectic(1))
         >>> assert isinstance(Vacuum([0]) >> U, Ket)
