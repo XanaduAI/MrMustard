@@ -124,7 +124,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
 
 @njit
-def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
@@ -204,7 +204,7 @@ def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
 
 
 @njit(parallel=True)
-def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     """Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     See the documentation of ``vanilla_stable`` for more details about the non-batched version.
 
