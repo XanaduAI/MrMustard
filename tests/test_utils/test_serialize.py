@@ -138,7 +138,8 @@ class TestSerialize:
     def test_overlap_forbidden(self):
         """Test that array names must be distinct from non-array names."""
         with pytest.raises(
-            ValueError, match=r"Arrays cannot have the same name as generic data: {'val'}"
+            ValueError,
+            match=r"Arrays cannot have the same name as generic data: {'val'}",
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
 
@@ -189,14 +190,16 @@ class TestSerialize:
                 Attenuator([1, 2], transmissivity=0.1),
                 BtoPS([0], s=1),
                 TraceOut([0, 1]),
-                Thermal([1, 2], nbar=3),
-                Coherent([0, 1], x=[0.3, 0.4], y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)),
+                Thermal([0, 1], nbar=3),
+                Coherent([0, 1], x=[0.3, 0.4], y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)).dual,
                 DisplacedSqueezed([0], 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
-                Number([0, 1], n=[10, 20]),
-                QuadratureEigenstate([1, 2], x=1, phi=0, phi_trainable=True, phi_bounds=[-1, 1]),
+                Number([1], n=[20]),
+                QuadratureEigenstate(
+                    [0, 1, 2], x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)
+                ).dual,
                 SqueezedVacuum([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2),
-                TwoModeSqueezedVacuum([0, 1], r=0.3, phi=0.2),
-                Vacuum([1, 2]),
+                TwoModeSqueezedVacuum([0, 1], r=0.3, phi=0.2).dual,
+                Vacuum([2]).dual,
             ],
         )
         path = circ.serialize()
