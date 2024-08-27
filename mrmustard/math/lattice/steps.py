@@ -39,7 +39,7 @@ def vanilla_step(
     A: ComplexMatrix,
     b: ComplexVector,
     index: tuple[int, ...],
-) -> complex:
+) -> complex:  # pragma: no cover
     r"""Fock-Bargmann recurrence relation step, vanilla version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.
