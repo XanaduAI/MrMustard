@@ -120,8 +120,6 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
             value_at_index += A[0, j] * SQRT[index[j]] * G[pivot - strides[j]]
         G[flat_index] = value_at_index / SQRT[index[0]]
 
-    print("========= G =========\n", G)
-    print()
     return G.reshape(shape)
 
 
@@ -290,9 +288,7 @@ def vanilla_jacobian(
 
 
 @njit
-def vanilla_vjp(
-    G, c, dLdG
-) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -312,7 +308,7 @@ def vanilla_vjp(
         strides[i - 1] = strides[i] * shape_arr[i]
 
     # linearize G
-    G_lin = G.flat
+    G_lin = G.flatten()
 
     # init gradients
     D = len(shape_arr)
@@ -326,53 +322,85 @@ def vanilla_vjp(
     nd_index = np.ndindex(G.shape)
     next(nd_index)
 
-    # first loop over the indices smaller than max(strides)
-    for flat_index in range(1, strides[0]):
-        index = next(nd_index)
+    # numba doesn't like tuples
+    shape_arr = np.array(G.shape)
 
-        # calculate (flat) pivot
-        for i, s in enumerate(strides):
-            pivot = flat_index - s
-            if pivot >= 0:
-                break
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(len(shape_arr) - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
-        db[i] = SQRT[index[i]] * G_lin[pivot]
-        dA[i, i] = 0.5 * SQRT[index[i]] * SQRT[index[i] - 1] * G_lin[pivot - strides[i]]
-        print(
-            "dA[i, i]",
-            dA[i, i],
-            f"SQRT[{index[i]}]",
-            f"SQRT[{index[i] - 1}]",
-            pivot - strides[i],
-            G_lin[pivot - strides[i]],
-        )
-        for j in range(i + 1, D):
-            dA[i, j] = SQRT[index[i]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+    # linearize G
+    G_lin = G.flatten()
 
-        dLdA += dA * dLdG[index]
-        dLdb += db * dLdG[index]
+    # init gradients
+    D = len(shape_arr)
+    dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
+    db = np.zeros(D, dtype=np.complex128)  # component of dL/db
+    dLdA = np.zeros_like(dA)
+    dLdb = np.zeros_like(db)
 
-    # second loop over the rest of the indices
-    for flat_index in range(strides[0], len(G_lin)):
-        index = next(nd_index)
+    # initialize the n-dim index
+    flat_index = 0
+    nd_index = np.ndindex(G.shape)
+    next(nd_index)
 
-        # calculate (flat) pivot
-        pivot = flat_index - strides[0]
+    # iterate over the indices (no need to split the loop in two parts)
+    for index_u in nd_index:
+        flat_index += 1
 
-        db[0] = SQRT[index[0]] * G_lin[pivot]
-        dA[0, 0] = 0.5 * SQRT[index[0]] * SQRT[index[0] - 1] * G_lin[pivot - strides[0]]
-        for j in range(1, D):
-            dA[0, j] = SQRT[index[0]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+        # contributions from lower neighbours
+        for i in range(D):
+            pivot = flat_index - strides[i]
+            db[i] = SQRT[index_u[i]] * G_lin[pivot]
+            dA[i, i] = 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
+            for j in range(i + 1, D):
+                dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
 
-        dLdA += dA * dLdG[index]
-        dLdb += db * dLdG[index]
+        dLdA += dA * dLdG[index_u]
+        dLdb += db * dLdG[index_u]
 
     dLdc = np.sum(G * dLdG) / c
 
-    print("========= dLdA =========")
-    print(dLdA)
-    print()
     return dLdA, dLdb, dLdc
+
+    # # first loop over the indices smaller than max(strides)
+    # for flat_index in range(1, strides[0]):
+    #     index = next(nd_index)
+    #
+    #     # calculate (flat) pivot
+    #     for i, s in enumerate(strides):
+    #         pivot = flat_index - s
+    #         if pivot >= 0:
+    #             break
+    #
+    #     db[i] = SQRT[index[i]] * G_lin[pivot]
+    #     dA[i, i] = 0.5 * SQRT[index[i]] * SQRT[index[i] - 1] * G_lin[pivot - strides[i]]
+    #     for j in range(i + 1, D):
+    #         dA[i, j] = SQRT[index[i]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+    #
+    #     dLdA += dA * dLdG[index]
+    #     dLdb += db * dLdG[index]
+    #
+    # # second loop over the rest of the indices
+    # for flat_index in range(strides[0], len(G_lin)):
+    #     index = next(nd_index)
+    #
+    #     # calculate (flat) pivot
+    #     pivot = flat_index - strides[0]
+    #
+    #     db[0] = SQRT[index[0]] * G_lin[pivot]
+    #     dA[0, 0] = 0.5 * SQRT[index[0]] * SQRT[index[0] - 1] * G_lin[pivot - strides[0]]
+    #
+    #     for j in range(1, D):
+    #         dA[0, j] = SQRT[index[0]] * SQRT[index[j]] * G_lin[pivot - strides[j]]
+    #
+    #     dLdA += dA * dLdG[index]
+    #     dLdb += db * dLdG[index]
+    #
+    # dLdc = np.sum(G * dLdG) / c
+    #
+    # return dLdA, dLdb, dLdc
 
     # iterate over the indices (no need to split the loop in two parts)
     # for index_u in nd_index:
@@ -383,25 +411,19 @@ def vanilla_vjp(
     #         pivot = flat_index - s
     #         if pivot >= 0:  # if pivot not outside array
     #             break
-    #         db[i] = SQRT[index_u[i]] * G_lin[pivot]
-    #         dA[i, i] = (
-    #             0.5
-    #             * SQRT[index_u[i]]
-    #             * SQRT[index_u[i] - 1]
-    #             * G_lin[pivot - strides[i]]
+    #     db[i] = SQRT[index_u[i]] * G_lin[pivot]
+    #     dA[i, i] = (
+    #         0.5
+    #         * SQRT[index_u[i]]
+    #         * SQRT[index_u[i] - 1]
+    #         * G_lin[pivot - strides[i]]
+    #     )
+    #
+    #     for j in range(i + 1, D):
+    #         dA[i, j] = (
+    #             SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
     #         )
-    #         print(
-    #             dA[i, i],
-    #             index_u[i],
-    #             index_u[i] - 1,
-    #             pivot - strides[i],
-    #             G_lin[pivot - strides[i]],
-    #         )
-    #         for j in range(i + 1, D):
-    #             dA[i, j] = (
-    #                 SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
-    #             )
-
+    #
     #     dLdA += dA * dLdG[index_u]
     #     dLdb += db * dLdG[index_u]
     #
@@ -498,15 +520,13 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
     for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
-        A_mm = np.ascontiguousarray(
-            A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))
-        ).reshape((2, 2))
-        A_nn = np.ascontiguousarray(
-            A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))
-        ).reshape((2 * M - 2, 2 * M - 2))
-        A_mn = np.ascontiguousarray(
-            A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))
-        ).reshape((2, 2 * M - 2))
+        A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
+        A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2 * M - 2, 2 * M - 2)
+        )
+        A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
+            (2, 2 * M - 2)
+        )
         A_nm = np.transpose(A_mn)
         b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))
         b_n = np.ascontiguousarray(b[idx_n].transpose()).reshape((2 * M - 2,))
@@ -525,9 +545,7 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
         norm = np.abs(c_)
         k = 0
         while norm < max_prob and k < max_shape:
-            buf2[(k + 1) % 2] = (
-                b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]
-            ) / SQRT[k + 1]
+            buf2[(k + 1) % 2] = (b_ * buf3[k % 2, 1] + A_ @ buf2[k % 2] * SQRT[k]) / SQRT[k + 1]
             buf3[(k + 1) % 2, 0] = (
                 b_[0] * buf2[(k + 1) % 2, 0]
                 + A_[0, 0] * buf3[k % 2, 1] * SQRT[k + 1]
