@@ -862,11 +862,11 @@ def quadrature_basis(
     subscripts = [chr(i) for i in range(98, 98 + dims)]
     fock_string = "".join(subscripts[:dims])  #'bcd....'
     q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
-    fock_array = math.einsum(
+    quad_array = math.einsum(
         fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
     )
 
-    return fock_array
+    return quad_array
 
 
 def quadrature_distribution(
