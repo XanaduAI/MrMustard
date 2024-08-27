@@ -356,11 +356,7 @@ class CircuitComponent:
         Returns:
             A,b,c triple of the quadrature representation
         """
-        if isinstance(self.representation, Fock):
-            raise NotImplementedError("Not implemented with Fock representation.")
-
-        QQQQ = self.to_quadrature(phi=phi)
-        return QQQQ.representation.data
+        return self.to_quadrature(phi=phi).representation.data
 
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
