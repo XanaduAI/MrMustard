@@ -542,6 +542,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
 
+    def test_probability_from_ket(self):
+        ket_state = Vacuum([0, 1]) >> Number([0], n=1).dual
+        dm_state = ket_state.dm()
+        assert dm_state.probability == ket_state.probability
+
     def test_purity(self):
         state = Coherent([0], 1, 2).dm()
         assert math.allclose(state.purity, 1)
