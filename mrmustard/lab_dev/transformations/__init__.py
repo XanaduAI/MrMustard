@@ -22,6 +22,7 @@ from .base import *
 from .bsgate import *
 from .dgate import *
 from .fockdamping import *
+from .ggate import *
 from .identity import *
 from .rgate import *
 from .s2gate import *
