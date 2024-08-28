@@ -144,7 +144,7 @@ class TestBargmannRepresentation:
         fock = Fock(np.random.random((1, 4, 4, 4)), batched=True)
 
         with pytest.raises(ValueError):
-            bargmann + fock  # pylint: disable=pointless-statement
+            bargmann + fock
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):

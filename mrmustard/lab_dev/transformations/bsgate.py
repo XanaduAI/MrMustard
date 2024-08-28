@@ -18,8 +18,6 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Unitary
 from ...physics.representations import Bargmann
 from ...physics import triples
@@ -90,7 +88,7 @@ class BSgate(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         theta: float = 0.0,
         phi: float = 0.0,
         theta_trainable: bool = False,

@@ -463,10 +463,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
-            if settings.USE_VANILLA_AVERAGE:
-                G = strategies.vanilla_average(tuple(shape), A, B, C)
-            else:
-                G = strategies.vanilla(tuple(shape), A, B, C)
+            G = strategies.vanilla(tuple(shape), A, B, C)
         else:  # julia
             # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
@@ -492,10 +489,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     ) -> tf.Tensor:
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
-        if settings.USE_VANILLA_AVERAGE:
-            G = strategies.vanilla_average(tuple(shape), _A, _B, _C)
-        else:
-            G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
         return G
 
     @tf.custom_gradient

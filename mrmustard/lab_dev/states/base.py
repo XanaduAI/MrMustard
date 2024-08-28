@@ -29,6 +29,7 @@ from typing import Sequence
 
 from enum import Enum
 import warnings
+
 import numpy as np
 from IPython.display import display
 from plotly.subplots import make_subplots
@@ -369,7 +370,7 @@ class State(CircuitComponent):
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape))
+        state = self.to_fock(shape)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -485,7 +486,7 @@ class State(CircuitComponent):
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape))
+        state = self.to_fock(shape)
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -634,20 +635,17 @@ class DM(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0] == 0:
-                    repr = self.representation
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                    )
-                    shape = tuple(shape) + tuple(shape)
-                else:
-                    shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+                repr = self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / self.probability
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+                shape = tuple(shape) + tuple(shape)
         else:
             warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
@@ -850,7 +848,7 @@ class DM(State):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= -settings.ATOL)
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
 
     @property
     def is_physical(self) -> bool:
@@ -910,19 +908,16 @@ class Ket(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0] == 0:
-                    repr = self.representation.conj() & self.representation
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                    )
-                else:
-                    shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
+                repr = self.representation.conj() & self.representation
+                A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                repr = repr / self.probability
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
         else:
             warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
