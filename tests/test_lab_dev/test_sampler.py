@@ -16,8 +16,8 @@
 
 # pylint: disable=missing-function-docstring
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
 from mrmustard.lab_dev import Number, Vacuum, BtoQ
@@ -74,6 +74,10 @@ class TestSampler:
 
 
 class TestPNRSampler:
+    r"""
+    Tests ``PNRSampler`` objects.
+    """
+
     def test_init(self):
         sampler = PNRSampler([0, 1], cutoff=10)
         assert sampler.meas_outcomes == list(range(10))
@@ -89,6 +93,10 @@ class TestPNRSampler:
 
 
 class TestHomodyneSampler:
+    r"""
+    Tests ``HomodyneSampler`` objects.
+    """
+
     def test_init(self):
         sampler = HomodyneSampler([0, 1], bounds=(-5, 5), num=100)
         assert sampler.meas_ops == BtoQ([0, 1])
