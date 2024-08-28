@@ -544,7 +544,7 @@ class PolyExpAnsatz(PolyExpBase):
         Returns either the value of the ansatz or a new ansatz depending on the argument.
         If the argument contains None, returns a new ansatz.
         If the argument only contains numbers, returns the value of the ansatz at that argument.
-        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for further information.
 
         Args:
             z: point in C^n where the function is evaluated
