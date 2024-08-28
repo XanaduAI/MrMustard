@@ -18,10 +18,9 @@
 
 import pytest
 import numpy as np
-from mrmustard import math
 
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
-from mrmustard.lab_dev import Number, Vacuum, Coherent, BtoQ
+from mrmustard.lab_dev import Number, Vacuum, BtoQ
 
 
 class TestSampler:
