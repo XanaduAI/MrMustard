@@ -118,6 +118,8 @@ class Settings:
         self.ATOL: float = 1e-8
         "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
 
+        self._original_values = self.__dict__.copy()
+
     def __call__(self, **kwargs):
         "allows for setting multiple settings at once and saving the original values"
         disallowed = {
