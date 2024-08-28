@@ -162,8 +162,5 @@ class HomodyneSampler(Sampler):
             q_state = dm_state >> self.meas_ops
             z = [[x] * q_state.representation.ansatz.num_vars for x in self.meas_outcomes]
             probs = math.real(q_state.representation(z)) * math.sqrt(settings.HBAR)
-            step = (self.meas_outcomes[-1] - self.meas_outcomes[0]) / (len(self.meas_outcomes) - 1)
-            prob_sum = sum(probs * step)
-            probs /= prob_sum
-            return probs
+            return probs / sum(probs)
         return self.prob_dist
