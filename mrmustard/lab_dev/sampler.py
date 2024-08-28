@@ -134,13 +134,6 @@ class PNRSampler(Sampler):
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
         super().__init__(list(range(cutoff)), [Number(modes, n) for n in range(cutoff)])
 
-    def probabilities(self, state: State | None = None) -> list[float] | None:
-        self._validate_state(state)
-        if state is not None and isinstance(state.representation, Fock):
-            return math.real(state.representation.reduce((len(self.meas_ops),)).data[0]) ** 2
-        else:
-            return super().probabilities(state)
-
 
 class HomodyneSampler(Sampler):
     r"""
@@ -174,5 +167,4 @@ class HomodyneSampler(Sampler):
             prob_sum = sum(probs * step)
             probs /= prob_sum
             return probs
-
         return self.prob_dist

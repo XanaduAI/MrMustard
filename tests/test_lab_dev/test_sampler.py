@@ -18,8 +18,10 @@
 
 import pytest
 
+from mrmustard import math
+
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler
-from mrmustard.lab_dev import Number, Vacuum
+from mrmustard.lab_dev import Number, Vacuum, Coherent
 
 
 class TestSampler:
@@ -85,3 +87,7 @@ class TestPNRSampler:
         assert sampler.probabilities() is None
         assert sampler.probabilities(Vacuum([0, 1])) == vac_prob
         assert sampler.probabilities(Vacuum([0, 1, 2])) == vac_prob
+
+        state = Coherent([0, 1], x=[0, 1])
+        fock_state = state.to_fock()
+        assert math.allclose(sampler.probabilities(state), sampler.probabilities(fock_state))
