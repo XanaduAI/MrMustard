@@ -88,7 +88,7 @@ class Sampler:
                 state.probability if isinstance(state, State) else math.real(state)
                 for state in states
             ]
-            return probs
+            return probs / sum(probs)
         return self.prob_dist
 
     def sample(self, state: State | None = None, n_samples: int = 1000) -> list[any]:
@@ -133,6 +133,10 @@ class PNRSampler(Sampler):
 
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
         super().__init__(list(range(cutoff)), [Number(modes, n) for n in range(cutoff)])
+
+    def probabilities(self, state: State | None = None) -> list[float] | None:
+        fock_state = state.to_fock() if state else state
+        return super().probabilities(fock_state)
 
 
 class HomodyneSampler(Sampler):

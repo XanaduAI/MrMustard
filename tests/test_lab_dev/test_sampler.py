@@ -55,7 +55,7 @@ class TestSampler:
         assert sampler2.probabilities() is None
 
         state = Vacuum([0])
-        assert sampler2.probabilities(state) == [1, 0, 0]
+        assert all(sampler2.probabilities(state) == [1, 0, 0])
 
         with pytest.raises(ValueError, match="incompatible"):
             sampler_two_mode = Sampler(
@@ -88,8 +88,8 @@ class TestPNRSampler:
         sampler = PNRSampler([0, 1], cutoff=10)
         vac_prob = [1.0] + [0.0] * 9
         assert sampler.probabilities() is None
-        assert sampler.probabilities(Vacuum([0, 1])) == vac_prob
-        assert sampler.probabilities(Vacuum([0, 1, 2])) == vac_prob
+        assert all(sampler.probabilities(Vacuum([0, 1])) == vac_prob)
+        assert all(sampler.probabilities(Vacuum([0, 1, 2])) == vac_prob)
 
 
 class TestHomodyneSampler:
