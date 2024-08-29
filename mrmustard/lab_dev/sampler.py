@@ -117,7 +117,7 @@ class Sampler:
             )
             if not set(state.modes) >= set(meas_op_modes):
                 raise ValueError(
-                    "State is incompatible with the measurement operators of this sampler."
+                    f"State with modes {state.modes} is incompatible with the measurement operators with modes {meas_op_modes}."
                 )
 
 
