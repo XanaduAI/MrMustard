@@ -851,7 +851,7 @@ def quadrature_basis(
     for dim in range(dims):
         q_to_n = oscillator_eigenstate(quad[..., dim], shapes[dim])
         if not np.isclose(phi, 0.0):
-            theta = math.arange(shapes[dim]) * phi
+            theta = -math.arange(shapes[dim]) * phi
             Ur = math.make_complex(math.cos(theta), math.sin(theta))
             q_to_n = math.einsum("a,ab->ab", Ur, q_to_n)
         if conjugates[dim]:
