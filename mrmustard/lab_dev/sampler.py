@@ -82,7 +82,8 @@ class Sampler:
         """
         self._validate_state(state)
         if state is not None:
-            states = [state.dm() >> meas_op.dual for meas_op in self.meas_ops]
+            dm_state = state.dm()
+            states = [dm_state >> meas_op.dual for meas_op in self.meas_ops]
             probs = [
                 state.probability if isinstance(state, State) else math.real(state)
                 for state in states
