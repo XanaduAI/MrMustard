@@ -43,13 +43,13 @@ from mrmustard.widgets import state as state_widget
 autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)
 
 
-def coherent_state_quad(q, x, y,phi=0):
+def coherent_state_quad(q, x, y, phi=0):
     """From https://en.wikipedia.org/wiki/Coherent_state#The_wavefunction_of_a_coherent_state"""
     scale = np.sqrt(2 * settings.HBAR)
-    alpha = (x + 1j*y) * np.exp(-1j*phi)
-    phase = np.sin(2*phi+2*np.arctan2(x,y))*(x**2+y**2)/2
+    alpha = (x + 1j * y) * np.exp(-1j * phi)
+    phase = np.sin(2 * phi + 2 * np.arctan2(x, y)) * (x**2 + y**2) / 2
     return (
-        math.exp(-1j*phase)  # This global phase allows Coherent >> BtoQ to be equal
+        math.exp(-1j * phase)  # This global phase allows Coherent >> BtoQ to be equal
         * math.exp(1j * q * alpha.imag * 2 / scale)
         * math.exp(-((q - scale * alpha.real) ** 2) / (scale**2))
         / (np.pi * settings.HBAR) ** 0.25
@@ -202,9 +202,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert dm.name == ket.name
         assert dm.representation == (ket @ ket.adjoint).representation
         assert dm.wires == (ket @ ket.adjoint).wires
-    
-    @pytest.mark.parametrize("phi",[0,0.3,np.pi/4,np.pi/2])
-    def test_quadrature_single_mode_ket(self,phi):
+
+    @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
+    def test_quadrature_single_mode_ket(self, phi):
         x, y = 1, 2
         state = Coherent(modes=[0], x=x, y=y)
         q = np.linspace(-10, 10, 100)
