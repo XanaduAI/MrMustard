@@ -435,7 +435,7 @@ class CircuitComponent:
         except AttributeError:
             shape = shape or self.auto_shape()
             if len(shape) != num_vars:
-                raise ValueError(
+                raise AttributeError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             arrays = self.representation.reduce(shape).array
