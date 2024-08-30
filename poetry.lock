@@ -415,7 +415,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = ">=1.20,<2.0"
+numpy = ">=2.0"
 
 [package.extras]
 bokeh = ["bokeh", "selenium"]
