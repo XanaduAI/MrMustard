@@ -203,7 +203,8 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        return cls(modes, Bargmann(*triple), name)
+        multi_rep = {mode: None for mode in modes}
+        return cls(modes, Bargmann(*triple), multi_rep=multi_rep , name=name)
 
     @classmethod
     def from_fock(
@@ -310,7 +311,8 @@ class State(CircuitComponent):
         """
         QtoB = BtoQ(modes, phi).inverse()
         Q = cls(modes, Bargmann(*triple))
-        return cls(modes, (Q >> QtoB).representation, name)
+        multi_rep = {mode: 'Q' for mode in modes}
+        return cls(modes, (Q >> QtoB).representation, multi_rep=multi_rep ,name = name)
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -885,7 +887,7 @@ class Ket(State):
         self,
         modes: Sequence[int] = (),
         representation: Bargmann | Fock | None = None,
-        multi_rep: dict | None = None,
+        multi_rep : dict | None = None,
         name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != len(modes):
@@ -894,8 +896,8 @@ class Ket(State):
             )
         super().__init__(
             wires=[(), (), modes, ()],
-            multi_rep=multi_rep,
             name=name,
+            multi_rep=multi_rep
         )
         if representation is not None:
             self._representation = representation
@@ -948,10 +950,12 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
+        multi_rep = {mode: 'PS' for mode in modes}
         return Ket(
             modes,
             coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
-            name,
+            multi_rep=multi_rep,
+            name = name,
         )
 
     @classmethod
