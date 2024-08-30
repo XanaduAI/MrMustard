@@ -160,6 +160,15 @@ class CircuitComponent:
         return cls(**data)
 
     @property
+    def multi_rep(self) -> dict:
+        r"""
+        The multirepresentation of the object, is a dictionary from modes to either None,
+        'Q', or 'PS'.
+        None = Bargman, Q = Quandrature, PS = Phase Space
+        """
+        return self._multi_rep
+    
+    @property
     def adjoint(self) -> CircuitComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
