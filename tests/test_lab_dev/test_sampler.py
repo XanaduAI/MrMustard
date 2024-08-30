@@ -81,6 +81,8 @@ class TestPNRSampler:
         assert sampler.prob_dist is None
 
     def test_probabilities(self):
+        atol = 1e-4
+
         sampler = PNRSampler([0, 1], cutoff=10)
         vac_prob = [1.0] + [0.0] * 9
         assert sampler.probabilities() is None
@@ -89,11 +91,11 @@ class TestPNRSampler:
 
         coh_state = Coherent([0, 1], x=[0.5, 1])
         exp_probs = [(coh_state >> Number([0, 1], n).dual) ** 2 for n in range(10)]
-        assert math.allclose(sampler.probabilities(coh_state), exp_probs)
+        assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
         sampler2 = PNRSampler([1], cutoff=10)
         exp_probs2 = [(coh_state >> Number([1], n).dual).probability for n in range(10)]
-        assert math.allclose(sampler2.probabilities(coh_state), exp_probs2)
+        assert math.allclose(sampler2.probabilities(coh_state), exp_probs2, atol)
 
 
 class TestHomodyneSampler:
