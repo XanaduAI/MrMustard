@@ -194,7 +194,6 @@ class Unitary(Operation):
         m = len(modes)
         A = symplectic2Au(S)
         b = math.zeros(2 * m, dtype="complex128")
-        c = complex(1)  # TODO: to be change after poly*exp ansatz
         A_inin = math.atleast_2d(A[m:, m:])
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
         return Unitary.from_bargmann(modes, modes, [A, b, c])
