@@ -144,3 +144,9 @@ class TestSettings:
         settings.COMPLEX_WARNING = False
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1
+
+    def test_cannot_add_new_settings(self):
+        """Test that new settings are rejected (eg. typos)."""
+        settings = Settings()
+        with pytest.raises(AttributeError, match="unknown MrKite setting: 'HBARR'"):
+            settings.HBARR = 1.0

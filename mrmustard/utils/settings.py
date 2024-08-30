@@ -48,6 +48,8 @@ class Settings:
         150
     """
 
+    _frozen = False
+
     def __new__(cls):  # singleton
         if not hasattr(cls, "instance"):
             cls.instance = super(Settings, cls).__new__(cls)
@@ -121,6 +123,14 @@ class Settings:
 
         self.ATOL: float = 1e-8
         "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
+
+        self._frozen = True
+
+    def __setattr__(self, name, value):
+        """Once the class is initialized, do not allow the addition of new settings."""
+        if self._frozen and not hasattr(self, name):
+            raise AttributeError(f"unknown MrKite setting: '{name}'")
+        return super().__setattr__(name, value)
 
     @property
     def COMPLEX_WARNING(self):
