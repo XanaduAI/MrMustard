@@ -228,6 +228,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.to_fock(100).quadrature(quad), psi_q)
         assert math.allclose(state.to_fock(100).quadrature_distribution(q), abs(psi_q) ** 2)
 
+    def test_quadrature_multivariable_ket(self):
+        x, y = 1, 2
+        state = Coherent(modes=[0, 1], x=x, y=y)
+        q1 = np.linspace(-10, 10, 100)
+        q2 = np.linspace(-10, 10, 100)
+        quad = math.transpose(np.array([[qa, qb] for qa in q1 for qb in q2]))
+        psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
+        assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
+
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
         state = Coherent(modes=[0], x=x1, y=y1) + Coherent(modes=[0], x=x2, y=y2)
@@ -623,6 +632,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+
+    def test_quadrature_multivariable_dm(self):
+        x, y = 1, 2
+        state = Coherent(modes=[0, 1], x=x, y=y).dm()
+        q1 = np.linspace(-10, 10, 100)
+        q2 = np.linspace(-10, 10, 100)
+        quad = math.transpose(np.array([[qa, qb] for qa in q1 for qb in q2]))
+        psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
+        assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
