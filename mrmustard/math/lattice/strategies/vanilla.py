@@ -64,10 +64,11 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     """
     # numba doesn't like tuples
     shape_arr = np.array(shape)
+    D = b.shape[0]
 
     # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
     strides = np.ones_like(shape_arr)
-    for i in range(len(shape_arr) - 1, 0, -1):
+    for i in range(D - 1, 0, -1):
         strides[i - 1] = strides[i] * shape_arr[i]
 
     # init flat output tensor
@@ -98,7 +99,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         # contributions from pivot's lower neighbours
         # note the first is when j=i which needs a -1 in the sqrt from delta_ij
         value_at_index += A[i, i] * SQRT[index[i] - 1] * G[pivot - strides[i]]
-        for j in range(i + 1, len(strides)):
+        for j in range(i + 1, D):
             value_at_index += A[i, j] * SQRT[index[j]] * G[pivot - strides[j]]
         G[flat_index] = value_at_index / SQRT[index[i]]
 
@@ -116,7 +117,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         # contribution from pivot's lower neighbours
         # note the first is when j=0 which needs a -1 in the sqrt from delta_0j
         value_at_index += A[0, 0] * SQRT[index[0] - 1] * G[pivot - strides[0]]
-        for j in range(1, len(strides)):
+        for j in range(1, D):
             value_at_index += A[0, j] * SQRT[index[j]] * G[pivot - strides[j]]
         G[flat_index] = value_at_index / SQRT[index[0]]
 
@@ -153,8 +154,8 @@ def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma:
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    D = b.shape[0]
     shape_arr = np.array(shape)
+    D = b.shape[0]
 
     # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
     strides = np.ones_like(shape_arr)
@@ -329,21 +330,6 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     strides = np.ones_like(shape_arr)
     for i in range(len(shape_arr) - 1, 0, -1):
         strides[i - 1] = strides[i] * shape_arr[i]
-
-    # linearize G
-    G_lin = G.flatten()
-
-    # init gradients
-    D = len(shape_arr)
-    dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
-    db = np.zeros(D, dtype=np.complex128)  # component of dL/db
-    dLdA = np.zeros_like(dA)
-    dLdb = np.zeros_like(db)
-
-    # initialize the n-dim index
-    flat_index = 0
-    nd_index = np.ndindex(G.shape)
-    next(nd_index)
 
     # iterate over the indices (no need to split the loop in two parts)
     for index_u in nd_index:

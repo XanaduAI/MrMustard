@@ -479,9 +479,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
             A, b, c = (
-                np.array(A).astype(np.complex128),
-                np.array(b).astype(np.complex128),
-                np.array(c).astype(np.complex128),
+                np.array(A, dtype=np.complex128),
+                np.array(b, dtype=np.complex128),
+                np.array(c, dtype=np.complex128),
             )
             G = jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
 
