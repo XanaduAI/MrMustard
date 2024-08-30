@@ -17,6 +17,7 @@ Samplers for measurement devices.
 """
 
 from __future__ import annotations
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from typing import Sequence, Iterable
 
@@ -172,7 +173,7 @@ class PNRSampler(Sampler):
         idx = [n] * len(fock_array.shape)
         try:
             return math.real(fock_array[*idx])
-        except IndexError:
+        except (IndexError, InvalidArgumentError):
             return 0.0
 
 
