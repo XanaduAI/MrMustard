@@ -146,7 +146,7 @@ def au2Symplectic(A):
 
     # The formula to apply comes here
     S_1 = math.conj(math.inv(math.transpose(u_2)))
-    S_2 = - math.conj(math.solve(u_2.T, u_3))
+    S_2 = -math.conj(math.solve(u_2.T, u_3))
     S_3 = math.conj(S_2)
     S_4 = math.conj(S_1)
 
