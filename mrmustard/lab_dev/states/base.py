@@ -781,16 +781,33 @@ class DM(State):
         """
         return self
 
-    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
-        quad = math.transpose(
-            math.astensor(
-                [
-                    quad,
-                ]
-                * 2
-                * self.n_modes
+    def quadrature_distribution(
+        self, quad: Batch[Vector], phi: float = 0.0
+    ) -> tuple | ComplexTensor:
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * 2
+                    * self.n_modes
+                )
             )
-        )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.tile(
+                math.transpose(
+                    math.astensor(
+                        quad,
+                    )
+                ),
+                2,
+            )
+            print(quad.shape)
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
         return self.quadrature(quad, phi)
 
     def expectation(self, operator: CircuitComponent):
@@ -1063,14 +1080,26 @@ class Ket(State):
         return ret
 
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
-        quad = math.transpose(
-            math.astensor(
-                [
-                    quad,
-                ]
-                * self.n_modes
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * self.n_modes
+                )
             )
-        )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.transpose(
+                math.astensor(
+                    quad,
+                )
+            )
+            print(quad)
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
         return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):
