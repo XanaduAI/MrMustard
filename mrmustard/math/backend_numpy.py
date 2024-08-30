@@ -453,7 +453,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
