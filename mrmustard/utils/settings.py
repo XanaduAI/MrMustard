@@ -129,7 +129,7 @@ class Settings:
     def __setattr__(self, name, value):
         """Once the class is initialized, do not allow the addition of new settings."""
         if self._frozen and not hasattr(self, name):
-            raise AttributeError(f"unknown MrKite setting: '{name}'")
+            raise AttributeError(f"unknown MrMustard setting: '{name}'")
         return super().__setattr__(name, value)
 
     @property
