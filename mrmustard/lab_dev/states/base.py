@@ -601,6 +601,7 @@ class DM(State):
         self,
         modes: Sequence[int] = (),
         representation: Bargmann | Fock | None = None,
+        multi_rep: dict | None = None,
         name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != 2 * len(modes):
@@ -609,6 +610,7 @@ class DM(State):
             )
         super().__init__(
             wires=[modes, (), modes, ()],
+            multi_rep=multi_rep,
             name=name,
         )
         if representation is not None:
@@ -883,6 +885,7 @@ class Ket(State):
         self,
         modes: Sequence[int] = (),
         representation: Bargmann | Fock | None = None,
+        multi_rep: dict | None = None,
         name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != len(modes):
@@ -891,6 +894,7 @@ class Ket(State):
             )
         super().__init__(
             wires=[(), (), modes, ()],
+            multi_rep=multi_rep,
             name=name,
         )
         if representation is not None:

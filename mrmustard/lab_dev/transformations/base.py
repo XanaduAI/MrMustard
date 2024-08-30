@@ -126,12 +126,14 @@ class Operation(Transformation):
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
         representation: Bargmann | Fock | None = None,
+        multi_rep: dict | None = None,
         name: str | None = None,
     ):
         super().__init__(
             representation=representation,
             wires=[(), (), modes_out, modes_in],
             name=name,
+            multi_rep=multi_rep
         )
 
 
