@@ -60,6 +60,7 @@ class CircuitComponent:
             a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
             where if any of the modes are out of order the representation
             will be reordered.
+        multi_rep: A dictionary indicating what 
         name: The name of this component.
     """
 
@@ -69,12 +70,13 @@ class CircuitComponent:
         self,
         representation: Bargmann | Fock | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
-        name: str | None = None,
+        multi_rep: dict | None = None,
+        name: str | None = None
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
-
+        
         if isinstance(wires, Wires):
             self._wires = wires
         else:
@@ -107,6 +109,11 @@ class CircuitComponent:
                 )
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
+
+        if multi_rep:
+            self._multi_rep = multi_rep
+        else:
+            self._multi_rep = {key: None for key in self.wires.modes}
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
