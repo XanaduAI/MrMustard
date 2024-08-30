@@ -43,36 +43,36 @@ class Sampler:
 
     def __init__(
         self,
-        meas_outcomes: list[any],
-        meas_ops: CircuitComponent | list[CircuitComponent],
-        prob_dist: list[float] | None = None,
+        meas_outcomes: Sequence[any],
+        meas_ops: CircuitComponent | Sequence[CircuitComponent],
+        prob_dist: Sequence[float] | None = None,
     ):
         self._meas_ops = meas_ops
         self._meas_outcomes = meas_outcomes
         self._prob_dist = prob_dist
 
     @property
-    def meas_ops(self) -> CircuitComponent | list[CircuitComponent]:
+    def meas_ops(self) -> CircuitComponent | Sequence[CircuitComponent]:
         r"""
         The measurement operators of this sampler.
         """
         return self._meas_ops
 
     @property
-    def meas_outcomes(self) -> list[any]:
+    def meas_outcomes(self) -> Sequence[any]:
         r"""
         The measurement outcomes of this sampler.
         """
         return self._meas_outcomes
 
     @property
-    def prob_dist(self) -> list[float] | None:
+    def prob_dist(self) -> Sequence[float] | None:
         r"""
         The probability distribution of this sampler.
         """
         return self._prob_dist
 
-    def probabilities(self, state: State | None = None) -> list[float] | None:
+    def probabilities(self, state: State | None = None) -> Sequence[float] | None:
         r"""
         Returns the probability distribution of this sampler. If ``state`` is provided
         then will compute the probability distribution w.r.t. the state.
@@ -91,7 +91,7 @@ class Sampler:
             return probs / sum(probs)
         return self.prob_dist
 
-    def sample(self, state: State | None = None, n_samples: int = 1000) -> list[any]:
+    def sample(self, state: State | None = None, n_samples: int = 1000) -> np.ndarray:
         r"""
         Returns a list of measurement samples on a specified state. If ``self.probabilities`` is
         ``None`` then uses a uniform probability distribution.
@@ -145,7 +145,7 @@ class PNRSampler(Sampler):
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
         super().__init__(list(range(cutoff)), Number(modes, 0))
 
-    def probabilities(self, state: State | None = None) -> list[float] | None:
+    def probabilities(self, state=None):
         self._validate_state(state)
         if state:
             fock_state = state.dm().to_fock(len(self.meas_outcomes))
@@ -193,7 +193,7 @@ class HomodyneSampler(Sampler):
     ) -> None:
         super().__init__(list(np.linspace(*bounds, num)), BtoQ(modes, phi=phi))
 
-    def probabilities(self, state: State | None = None):
+    def probabilities(self, state=None):
         self._validate_state(state)
         if state is not None:
             trace_modes = self._trace_modes(state)
