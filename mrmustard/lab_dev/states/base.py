@@ -803,7 +803,6 @@ class DM(State):
                 ),
                 2,
             )
-            print(quad.shape)
         else:
             raise ValueError(
                 f"The dimensionality of quad should be 1, or match the number of modes."
