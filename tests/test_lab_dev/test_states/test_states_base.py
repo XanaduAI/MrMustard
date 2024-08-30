@@ -213,7 +213,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.quadrature(quad, phi=phi), psi_phi)
         assert math.allclose(state.quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(quad, phi=phi), psi_phi)
-        assert math.allclose(state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
+        assert math.allclose(
+            state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2
+        )
 
     def test_quadrature_multimode_ket(self):
         x, y = 1, 2
