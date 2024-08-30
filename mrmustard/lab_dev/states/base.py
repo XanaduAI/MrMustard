@@ -801,7 +801,7 @@ class DM(State):
                         quad,
                     )
                 ),
-                2,
+                (1, 2),
             )
         else:
             raise ValueError(
