@@ -36,9 +36,11 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     ComplexMatrix,
     ComplexVector,
+    Vector,
     Batch,
 )
 from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.physics.fock import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
@@ -317,6 +319,72 @@ class CircuitComponent:
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(BBBB.representation, wires, name)
 
+    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
+        r"""
+        Returns a circuit component with the quadrature representation of this component
+        in terms of A,b,c.
+
+        Args:
+            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        from .circuit_components_utils.b_to_q import BtoQ
+
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+
+        object_to_convert = self
+        if isinstance(self.representation, Fock):
+            object_to_convert = self.to_bargmann()
+
+        QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
+        return QQQQ
+
+    def quadrature_triple(
+        self, phi: float = 0.0
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The quadrature representation triple A,b,c of this circuit component.
+
+        Args:
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
+        """
+        return self.to_quadrature(phi=phi).representation.data
+
+    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature basis representation of the circuit component.
+        Args:
+            quad: discretized quadrature points to evaluate over in the
+                quadrature representation
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+
+        if isinstance(self.representation, Fock):
+            fock_arrays = self.representation.array
+            # Find where all the bras and kets are so they can be conjugated appropriately
+            conjugates = [
+                False if i in self.wires.ket.indices else True
+                for i in range(len(self.wires.indices))
+            ]
+            quad_basis = math.sum(
+                [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axes=[0]
+            )
+            return quad_basis
+
+        QQQQ = self.to_quadrature(phi=phi)
+        return QQQQ.representation(quad)
+
     @classmethod
     def _from_attributes(
         cls,
@@ -483,22 +551,6 @@ class CircuitComponent:
         )
 
         return ret
-
-    def quadrature(self, phi: float = 0.0) -> tuple | ComplexTensor:
-        r"""
-        The quadrature representation data of this circuit component.
-        """
-        if isinstance(self.representation, Fock):
-            raise NotImplementedError("Not implemented with Fock representation.")
-
-        from .circuit_components_utils.b_to_q import BtoQ
-
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ self @ BtoQ_ok) @ BtoQ_ob
-        return QQQQ.representation.data
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
