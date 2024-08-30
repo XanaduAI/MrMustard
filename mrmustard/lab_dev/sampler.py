@@ -149,7 +149,7 @@ class PNRSampler(Sampler):
     def probabilities(self, state=None):
         self._validate_state(state)
         if state:
-            fock_state = state.dm().to_fock()
+            fock_state = state.dm().to_fock(len(self.meas_outcomes))
             probs = [self._fock_prob(fock_state, n) for n in self.meas_outcomes]
             return probs
         return self._prob_dist
@@ -171,10 +171,7 @@ class PNRSampler(Sampler):
         )
         fock_array = fock_rep.data[0]
         idx = [n] * len(fock_array.shape)
-        try:
-            return math.real(fock_array[*idx])
-        except (IndexError, InvalidArgumentError):
-            return 0.0
+        return math.real(fock_array[*idx])
 
 
 class HomodyneSampler(Sampler):
