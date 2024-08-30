@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
-from mrmustard.lab_dev import Number, Vacuum, BtoQ
+from mrmustard.lab_dev import Coherent, Number, Vacuum, BtoQ
 
 
 class TestSampler:
@@ -86,6 +86,14 @@ class TestPNRSampler:
         assert sampler.probabilities() is None
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
         assert math.allclose(sampler.probabilities(Vacuum([0, 1, 2])), vac_prob)
+
+        coh_state = Coherent([0, 1], x=[0.5, 1])
+        exp_probs = [(coh_state >> Number([0, 1], n).dual) ** 2 for n in range(10)]
+        assert math.allclose(sampler.probabilities(coh_state), exp_probs)
+
+        sampler2 = PNRSampler([1], cutoff=10)
+        exp_probs2 = [(coh_state >> Number([1], n).dual).probability for n in range(10)]
+        assert math.allclose(sampler2.probabilities(coh_state), exp_probs2)
 
 
 class TestHomodyneSampler:
