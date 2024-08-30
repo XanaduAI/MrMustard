@@ -374,7 +374,7 @@ class CircuitComponent:
             fock_arrays = self.representation.array
             # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [
-                False if i in self.wires.ket.indices else True
+                i not in self.wires.key.indices
                 for i in range(len(self.wires.indices))
             ]
             quad_basis = math.sum(
