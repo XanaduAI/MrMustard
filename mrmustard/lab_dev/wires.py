@@ -64,17 +64,17 @@ class Wires:
                         ╚═════════╝      └───────┘
 
 
-        A ket representing the state of mode ``1`` has only output wires:
+       A ket representing the state of mode ``1`` has only output wires:
 
                         ╔═════════╗   1  ┌───────┐
                         ║   Ket   ║─────▶│Ket out│
                         ╚═════════╝      └───────┘
 
-        A measurement acting on mode ``0`` has input wires on the ket side and classical output wires:
+       A measurement acting on mode ``0`` has input wires on the ket side and classical output wires:
 
-        ┌──────┐   0  ╔═════════════╗   0  ┌─────────────┐
-        │Ket in│─────▶║ Measurement ║─────▶│Classical out│
-        └──────┘      ╚═════════════╝      └─────────────┘
+       ┌──────┐   0  ╔═════════════╗   0  ┌─────────────┐
+       │Ket in│─────▶║ Measurement ║─────▶│Classical out│
+       └──────┘      ╚═════════════╝      └─────────────┘
 
     The ``Wires`` class can then be used to create subsets of wires:
 
@@ -193,7 +193,12 @@ class Wires:
         New ``Wires`` object obtained by swapping ket and bra wires.
         """
         return Wires(
-            self.args[2], self.args[3], self.args[0], self.args[1], self.args[4], self.args[5]
+            self.args[2],
+            self.args[3],
+            self.args[0],
+            self.args[1],
+            self.args[4],
+            self.args[5],
         )
 
     @cached_property
@@ -234,7 +239,12 @@ class Wires:
         New ``Wires`` object obtained by swapping input and output wires.
         """
         return Wires(
-            self.args[1], self.args[0], self.args[3], self.args[2], self.args[5], self.args[4]
+            self.args[1],
+            self.args[0],
+            self.args[3],
+            self.args[2],
+            self.args[5],
+            self.args[4],
         )
 
     @cached_property
@@ -362,6 +372,29 @@ class Wires:
         The sorted arguments. Allows to sort them only once.
         """
         return tuple(sorted(s) for s in self.args)
+
+    def contracted_indices(self, other: Wires):
+        r"""
+        Returns the indices being contracted between self and other when calling matmul.
+
+        Args:
+            other: another Wires object
+        """
+        ovlp_bra, ovlp_ket = self.overlap(other)
+        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
+        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
+        return idxA, idxB
+
+    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+        r"""
+        Returns the modes that overlap between the two ``Wires`` objects.
+
+        Args:
+            other: Another ``Wires`` object.
+        """
+        ovlp_ket = self.output.ket.modes & other.input.ket.modes
+        ovlp_bra = self.output.bra.modes & other.input.bra.modes
+        return ovlp_bra, ovlp_ket
 
     def __add__(self, other: Wires) -> Wires:
         r"""

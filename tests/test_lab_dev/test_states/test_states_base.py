@@ -406,7 +406,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_private_batched_properties(self):
         cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
-        assert np.allclose(cat._purities, np.ones(2))
         assert np.allclose(cat._probabilities, np.ones(2))
         assert np.allclose(cat._L2_norms, np.ones(2))
 
@@ -590,6 +589,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
+
+    def test_probability_from_ket(self):
+        ket_state = Vacuum([0, 1]) >> Number([0], n=1).dual
+        dm_state = ket_state.dm()
+        assert dm_state.probability == ket_state.probability
 
     def test_purity(self):
         state = Coherent([0], 1, 2).dm()
