@@ -1094,7 +1094,6 @@ class Ket(State):
                     quad,
                 )
             )
-            print(quad)
         else:
             raise ValueError(
                 f"The dimensionality of quad should be 1, or match the number of modes."
