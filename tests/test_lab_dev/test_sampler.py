@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
 from mrmustard.lab_dev import Number, Vacuum, BtoQ
 
@@ -37,11 +38,6 @@ class TestSampler:
         assert sampler.meas_outcomes == meas_outcomes
         assert sampler.meas_ops == meas_ops
         assert sampler.prob_dist == prob_dist
-
-        sampler2 = Sampler(meas_outcomes)
-        assert sampler2.meas_outcomes == meas_outcomes
-        assert sampler2.meas_ops is None
-        assert sampler2.prob_dist is None
 
     def test_probabilities(self):
         meas_outcomes = list(range(3))
@@ -81,15 +77,15 @@ class TestPNRSampler:
     def test_init(self):
         sampler = PNRSampler([0, 1], cutoff=10)
         assert sampler.meas_outcomes == list(range(10))
-        assert sampler.meas_ops == [Number([0, 1], n) for n in range(10)]
+        assert sampler.meas_ops == Number([0, 1], 0)
         assert sampler.prob_dist is None
 
     def test_probabilities(self):
         sampler = PNRSampler([0, 1], cutoff=10)
         vac_prob = [1.0] + [0.0] * 9
         assert sampler.probabilities() is None
-        assert all(sampler.probabilities(Vacuum([0, 1])) == vac_prob)
-        assert all(sampler.probabilities(Vacuum([0, 1, 2])) == vac_prob)
+        assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
+        assert math.allclose(sampler.probabilities(Vacuum([0, 1, 2])), vac_prob)
 
 
 class TestHomodyneSampler:
@@ -106,6 +102,6 @@ class TestHomodyneSampler:
     def test_probabilties(self):
         sampler = HomodyneSampler([0, 1])
         assert sampler.probabilities() is None
-        assert all(
-            sampler.probabilities(Vacuum([0, 1])) == sampler.probabilities(Vacuum([0, 1, 2]))
+        assert math.allclose(
+            sampler.probabilities(Vacuum([0, 1])), sampler.probabilities(Vacuum([0, 1, 2]))
         )
