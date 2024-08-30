@@ -432,12 +432,12 @@ class CircuitComponent:
                     )
                     for A, b, c in zip(As, bs, cs)
                 ]
-        except AttributeError as exc:
+        except AttributeError:
             shape = shape or self.auto_shape()
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                ) from exc
+                )
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -630,7 +630,13 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        scalar = ret.representation.scalar
+        if (
+            isinstance(ret.representation, Bargmann)
+            and ret.representation.ansatz.polynomial_shape[0] > 0
+        ):
+            scalar = ret.representation.ansatz(np.array([]))
+        else:
+            scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:

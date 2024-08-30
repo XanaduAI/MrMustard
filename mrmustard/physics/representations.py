@@ -312,10 +312,7 @@ class Bargmann(Representation):
         r"""
         The scalar part of the representation.
         """
-        if self.ansatz.polynomial_shape[0] > 0:
-            return self([])
-        else:
-            return self.c
+        return self.c
 
     @property
     def triple(
