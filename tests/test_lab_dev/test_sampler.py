@@ -19,6 +19,8 @@
 import numpy as np
 import pytest
 
+from itertools import product
+
 from mrmustard import math
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
 from mrmustard.lab_dev import Coherent, Number, Vacuum, BtoQ
@@ -76,7 +78,7 @@ class TestPNRSampler:
 
     def test_init(self):
         sampler = PNRSampler([0, 1], cutoff=10)
-        assert sampler.meas_outcomes == list(range(10))
+        assert sampler.meas_outcomes == list(product(range(10), repeat=2))
         assert sampler.meas_ops == Number([0, 1], 0)
         assert sampler.prob_dist is None
 
@@ -84,13 +86,17 @@ class TestPNRSampler:
         atol = 1e-4
 
         sampler = PNRSampler([0, 1], cutoff=10)
-        vac_prob = [1.0] + [0.0] * 9
+        vac_prob = [1.0] + [0.0] * 99
         assert sampler.probabilities() is None
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
         assert math.allclose(sampler.probabilities(Vacuum([0, 1, 2])), vac_prob)
 
         coh_state = Coherent([0, 1], x=[0.5, 1])
-        exp_probs = [(coh_state >> Number([0, 1], n).dual) ** 2 for n in range(10)]
+        exp_probs = [
+            (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
+            for n0 in range(10)
+            for n1 in range(10)
+        ]
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
         sampler2 = PNRSampler([1], cutoff=10)
@@ -106,7 +112,7 @@ class TestHomodyneSampler:
     def test_init(self):
         sampler = HomodyneSampler([0, 1], bounds=(-5, 5), num=100)
         assert sampler.meas_ops == BtoQ([0, 1])
-        assert sampler.meas_outcomes == list(np.linspace(-5, 5, 100))
+        assert math.allclose(sampler.meas_outcomes, np.linspace(-5, 5, 100))
         assert sampler.prob_dist is None
 
     def test_probabilties(self):

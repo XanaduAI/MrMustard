@@ -17,7 +17,7 @@ Samplers for measurement devices.
 """
 
 from __future__ import annotations
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
+from itertools import product
 
 from typing import Sequence, Iterable
 
@@ -73,13 +73,17 @@ class Sampler:
         """
         return self._prob_dist
 
-    def probabilities(self, state: State | None = None) -> Sequence[float] | None:
+    def probabilities(
+        self, state: State | None = None, atol: float = 1e-4
+    ) -> Sequence[float] | None:
         r"""
         Returns the probability distribution of this sampler. If ``state`` is provided
         then will compute the probability distribution w.r.t. the state.
 
         Args:
             state: The state to generate the probability distribution with.
+            atol: The absolute tolerance used for validating the computed probability
+                distribution.
         """
         self._validate_state(state)
         if state is not None:
@@ -89,7 +93,7 @@ class Sampler:
                 state.probability if isinstance(state, State) else math.real(state)
                 for state in states
             ]
-            return probs / sum(probs)
+            return self._validate_probs(probs, 1, atol)
         return self.prob_dist
 
     def sample(self, state: State | None = None, n_samples: int = 1000) -> np.ndarray:
@@ -114,6 +118,23 @@ class Sampler:
         """
         meas_op = self.meas_ops[0] if isinstance(self.meas_ops, Iterable) else self.meas_ops
         return [mode for mode in state.modes if mode not in meas_op.modes]
+
+    def _validate_probs(self, probs: Sequence[float], dx: float, atol: float) -> Sequence[float]:
+        r"""
+        Validates that the given probability distribution sums to `1.0` within some
+        tolerance and returns a renormalized probability distribution to account for
+        small numerical errors.
+
+        Args:
+            probs: The probability distribution to validate.
+            dx: The uniform differential for the probability distribution.
+            atol: The absolute tolerance to validate with.
+        """
+        atol = atol or settings.ATOL
+        prob_sum = sum(probs * dx)
+        if not math.allclose(prob_sum, 1, atol):
+            raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
+        return math.real(probs / prob_sum)
 
     def _validate_state(self, state: State | None = None):
         r"""
@@ -144,23 +165,26 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, modes: Sequence[int], cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number(modes, 0))
+        super().__init__(list(product(range(cutoff), repeat=len(modes))), Number(modes, 0))
+        self._cutoff = cutoff
 
-    def probabilities(self, state=None):
+    def probabilities(self, state=None, atol=1e-4):
         self._validate_state(state)
         if state:
-            fock_state = state.dm().to_fock(len(self.meas_outcomes))
-            probs = [self._fock_prob(fock_state, n) for n in self.meas_outcomes]
-            return probs
+            fock_state = state.dm().to_fock(self._cutoff)
+            probs = math.astensor([self._fock_prob(fock_state, ns) for ns in self.meas_outcomes])
+            return self._validate_probs(probs, 1, atol)
         return self._prob_dist
 
-    def _fock_prob(self, fock_state: State, n: int) -> float:
+    def _fock_prob(self, fock_state: State, ns: tuple[int, ...]) -> float:
         r"""
-        Compute the fock amplitude for a given number of photons ``n``.
+        Compute the fock amplitude for a given tuple of photon numbers.
+        E.g. (1, 3) computes photon number `1` on the first mode and
+        `3` on the second.
 
         Args:
             fock_state: The state in the Fock representation.
-            n: The number of photons.
+            ns: The photon number tuple.
         """
         trace_modes = self._trace_modes(fock_state)
         trace_wires = fock_state.wires[trace_modes]
@@ -170,8 +194,7 @@ class PNRSampler(Sampler):
             else fock_state.representation
         )
         fock_array = fock_rep.data[0]
-        idx = [n] * len(fock_array.shape)
-        return math.real(fock_array[*idx])
+        return fock_array[*(ns * 2)]
 
 
 class HomodyneSampler(Sampler):
@@ -189,18 +212,20 @@ class HomodyneSampler(Sampler):
         self,
         modes: Sequence[int],
         phi: float = 0,
-        bounds: tuple[float, float] = (-5, 5),
-        num: int = 100,
+        bounds: tuple[float, float] = (-10, 10),
+        num: int = 1000,
     ) -> None:
-        super().__init__(list(np.linspace(*bounds, num)), BtoQ(modes, phi=phi))
+        meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
+        super().__init__(meas_outcomes, BtoQ(modes, phi=phi))
+        self._step = step
 
-    def probabilities(self, state=None):
+    def probabilities(self, state=None, atol=1e-4):
         self._validate_state(state)
         if state is not None:
             trace_modes = self._trace_modes(state)
             dm_state = state.dm() >> TraceOut(trace_modes) if trace_modes else state.dm()
             q_state = dm_state >> self.meas_ops
             z = [[x] * q_state.representation.ansatz.num_vars for x in self.meas_outcomes]
-            probs = math.real(q_state.representation(z)) * math.sqrt(settings.HBAR)
-            return probs / sum(probs)
+            probs = q_state.representation(z) * math.sqrt(settings.HBAR)
+            return self._validate_probs(probs, self._step, atol)
         return self.prob_dist
