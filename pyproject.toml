@@ -94,6 +94,9 @@ sphinxcontrib-bibtex = "^2.5.0"
 mistune = "0.8.4"
 xanadu-sphinx-theme = "0.1.0"
 
+[tool.setuptools.package-data]
+MrMustard = ["juliapkg.json"]
+
 [tool.black]
 line-length = 100
 
