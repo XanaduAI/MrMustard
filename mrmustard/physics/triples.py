@@ -702,6 +702,7 @@ def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]
     c = 1.0 + 0j
     return A, b, c
 
+
 # ~~~~~~~~~~~~~~~~
 # Kraus operators
 # ~~~~~~~~~~~~~~~~

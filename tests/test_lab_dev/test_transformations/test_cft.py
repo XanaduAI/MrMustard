@@ -21,7 +21,6 @@ from mrmustard.lab_dev.transformations.cft import CFT
 from mrmustard.physics.wigner import wigner_discretized
 
 
-
 class TestCFT:
     r"""
     Tests the CFT gate
@@ -33,14 +32,13 @@ class TestCFT:
         assert cft.name == "CFT"
         assert cft.modes == [0]
 
-
     def test_wigner_function(self):
         r"""
         Tests that the characteristic function is converted to the Wigner function
         for a single-mode squeezed state.
         """
         settings.HBAR = 2
-        settings.HBAR=2
+        settings.HBAR = 2
         state = DisplacedSqueezed([0], r=0.5, phi=0.0, x=1.0, y=0.0)
 
         state2 = DisplacedSqueezed([0], r=0.5, phi=np.pi, x=0.0, y=1.0)
