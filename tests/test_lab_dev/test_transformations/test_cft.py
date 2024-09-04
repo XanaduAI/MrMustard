@@ -16,8 +16,7 @@
 
 import numpy as np
 from mrmustard import math
-from mrmustard.lab_dev import BtoPS, DisplacedSqueezed
-from mrmustard.lab_dev.transformations.cft import CFT
+from mrmustard.lab_dev import CFT, BtoPS, DisplacedSqueezed
 from mrmustard.physics.wigner import wigner_discretized
 
 
