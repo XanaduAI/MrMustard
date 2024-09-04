@@ -15,10 +15,11 @@
 """Tests for the ``CFT`` class."""
 
 import numpy as np
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev import BtoPS, DisplacedSqueezed
 from mrmustard.lab_dev.transformations.cft import CFT
 from mrmustard.physics.wigner import wigner_discretized
+
 
 
 class TestCFT:
@@ -32,11 +33,13 @@ class TestCFT:
         assert cft.name == "CFT"
         assert cft.modes == [0]
 
+
     def test_wigner_function(self):
         r"""
         Tests that the characteristic function is converted to the Wigner function
         for a single-mode squeezed state.
         """
+        settings.HBAR = 2
         state = DisplacedSqueezed([0], r=0.5, phi=1.0, x=0.4, y=0.4)
 
         dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
