@@ -216,7 +216,7 @@ class HomodyneSampler(Sampler):
         num: int = 1000,
     ) -> None:
         meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
-        super().__init__(meas_outcomes, BtoQ(modes, phi=phi))
+        super().__init__(list(product(meas_outcomes, repeat=len(modes))), BtoQ(modes, phi=phi))
         self._step = step
 
     def probabilities(self, state=None, atol=1e-4):
@@ -225,7 +225,7 @@ class HomodyneSampler(Sampler):
             trace_modes = self._trace_modes(state)
             dm_state = state.dm() >> TraceOut(trace_modes) if trace_modes else state.dm()
             q_state = dm_state >> self.meas_ops
-            z = [[x] * q_state.representation.ansatz.num_vars for x in self.meas_outcomes]
+            z = [x * 2 for x in self.meas_outcomes]
             probs = q_state.representation(z) * math.sqrt(settings.HBAR)
-            return self._validate_probs(probs, self._step, atol)
+            return self._validate_probs(probs, self._step**2, atol)
         return self.prob_dist

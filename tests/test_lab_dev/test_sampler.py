@@ -112,7 +112,9 @@ class TestHomodyneSampler:
     def test_init(self):
         sampler = HomodyneSampler([0, 1], bounds=(-5, 5), num=100)
         assert sampler.meas_ops == BtoQ([0, 1])
-        assert math.allclose(sampler.meas_outcomes, np.linspace(-5, 5, 100))
+        assert math.allclose(
+            sampler.meas_outcomes, list(product(np.linspace(-5, 5, 100), repeat=2))
+        )
         assert sampler.prob_dist is None
 
     def test_probabilties(self):
