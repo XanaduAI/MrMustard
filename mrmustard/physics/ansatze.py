@@ -1208,6 +1208,10 @@ def bargmann_Abc_to_phasespace_cov_means(
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """
+    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) == 1
+    A = math.atleast_3d(A)
+    b = math.atleast_2d(b)
+    c = math.atleast_1d(c)
     num_modes = A.shape[-1] // 2
     Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
     W = math.transpose(math.conj(math.rotmat(num_modes)))
@@ -1219,4 +1223,6 @@ def bargmann_Abc_to_phasespace_cov_means(
         1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
         for bvec in b
     ]
-    return math.astensor(cov), math.astensor(mean), coeff
+    if batched:
+        return math.astensor(cov), math.astensor(mean), coeff
+    return cov[0], mean[0], coeff[0]

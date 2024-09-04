@@ -256,7 +256,7 @@ class TestArrayAnsatz:
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        A1, b1, c1 = state_after.bargmann_triple()
         (
             new_state_cov1,
             new_state_means1,
@@ -273,8 +273,8 @@ class TestArrayAnsatz:
         assert math.allclose(new_state_cov1, state_cov)
         assert math.allclose(new_state_means1, state_means)
         assert math.allclose(new_state_means22, state_means)
-        assert math.allclose(new_state_coeff1[0], 1.0 / (2 * np.pi))
-        assert math.allclose(new_state_coeff22[0], 1.0 / (2 * np.pi))
+        assert math.allclose(new_state_coeff1, 1 / (2 * np.pi) ** 2)
+        assert math.allclose(new_state_coeff22, 1 / (2 * np.pi) ** 2)
 
 
 class TestPolyExpAnsatz:
