@@ -680,6 +680,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     c = 1.0 / (2 * np.pi) ** n_modes + 0.0j
     return math.astensor(A), b, c
 
+
 def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
