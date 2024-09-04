@@ -47,6 +47,46 @@ from mrmustard.physics.triples import identity_Abc
 __all__ = ["CircuitComponent"]
 
 
+def multi_rep_contraction(str1, str2):
+    r"""
+    A representation's name in multi_rep can be either of the following:
+        None: Bargmann
+        Q: quadrature
+        PS: phase space
+        BtoQ: Bargmann to quadrature
+        BtoPS: Bargmann to phase space
+        QtoB: quadrature to Bargmann
+        PStoB: phase space to Bargmann
+
+    This function's goal is to compute the multiplication between any of these objects.
+
+        Args:
+            str1: The representation of the first object (on the input side)
+            str2: The representation of the second object (on the output side)
+
+    We have the following multiplication table implemented:
+    None * None = None
+    Q * Q = Q
+    PS * PS = PS
+
+    None * BtoQ = Q
+    None * BtoPS = PS
+
+    anything else raises an error.
+    """
+
+    if str1 == str2:
+        return str1
+    elif str1 == None and str2 == "BtoQ":
+        return "Q"
+    elif str1 == None and str2 == "BtoPS":
+        return "PS"
+    else:
+        raise ValueError(
+            f"Trying to multiply objects of inconsistant representation i.e., rep1={str1} and rep2={str2}"
+        )
+
+
 class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
@@ -60,7 +100,7 @@ class CircuitComponent:
             a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
             where if any of the modes are out of order the representation
             will be reordered.
-        multi_rep: A dictionary indicating what 
+        multi_rep: A dictionary indicating what
         name: The name of this component.
     """
 
@@ -71,12 +111,12 @@ class CircuitComponent:
         representation: Bargmann | Fock | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
         multi_rep: dict | None = None,
-        name: str | None = None
+        name: str | None = None,
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
-        
+
         if isinstance(wires, Wires):
             self._wires = wires
         else:
@@ -167,7 +207,7 @@ class CircuitComponent:
         None = Bargman, Q = Quandrature, PS = Phase Space
         """
         return self._multi_rep
-    
+
     @property
     def adjoint(self) -> CircuitComponent:
         r"""
@@ -179,7 +219,9 @@ class CircuitComponent:
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets + bras).conj() if self.representation else None
 
-        ret = CircuitComponent(rep, self.wires.adjoint, self.name)
+        ret = CircuitComponent(
+            rep, wires=self.wires.adjoint, multi_rep=self.multi_rep, name=self.name
+        )
         ret.short_name = self.short_name
         return ret
 
@@ -196,7 +238,7 @@ class CircuitComponent:
         ob = self.wires.bra.output.indices
         rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
 
-        ret = CircuitComponent(rep, self.wires.dual, self.name)
+        ret = CircuitComponent(rep, wires=self.wires.dual, multi_rep=self.multi_rep, name=self.name)
         ret.short_name = self.short_name
 
         return ret
@@ -274,6 +316,7 @@ class CircuitComponent:
         modes_in_bra: Sequence[int] = (),
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
+        multi_rep: dict | None = None,
         name: str | None = None,
     ) -> CircuitComponent:
         r"""
@@ -292,7 +335,7 @@ class CircuitComponent:
         """
         repr = Bargmann(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
-        return cls._from_attributes(repr, wires, name)
+        return cls._from_attributes(repr, wires=wires, multi_rep=multi_rep, name=name)
 
     @classmethod
     def from_quadrature(
@@ -331,13 +374,14 @@ class CircuitComponent:
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
         QQQQ = CircuitComponent._from_attributes(Bargmann(*triple), wires)
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
-        return cls._from_attributes(BBBB.representation, wires, name)
+        return cls._from_attributes(BBBB.representation, wires=wires, name=name)
 
     @classmethod
     def _from_attributes(
         cls,
         representation: Representation,
         wires: Wires,
+        multi_rep: dict | None = None,
         name: str | None = None,
     ) -> CircuitComponent:
         r"""
@@ -371,9 +415,10 @@ class CircuitComponent:
                 ret = tp()
                 ret._name = name
                 ret._representation = representation
+                ret._multi_rep = multi_rep
                 ret._wires = wires
                 return ret
-        return CircuitComponent(representation, wires, name)
+        return CircuitComponent(representation, wires=wires, multi_rep=multi_rep, name=name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -657,7 +702,7 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         rep = self.representation + other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(rep, wires=self.wires, name=name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -665,7 +710,7 @@ class CircuitComponent:
 
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
-        return self.representation == other.representation and self.wires == other.wires
+        return self.representation == other.representation and self.wires == other.wires and self.multi_rep == other.multi_rep
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
@@ -698,13 +743,28 @@ class CircuitComponent:
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_result, None)
+
+        multi_rep = {mode: None for mode in wires_result.modes}
+
+        for mode in wires_result.modes:
+            if mode in list(set(self.modes) & set(other.modes)):
+                multi_rep[mode] = multi_rep_contraction(self.multi_rep[mode], other.multi_rep[mode])
+            elif mode in self.modes:
+                multi_rep[mode] = self.multi_rep[mode]
+            else:
+                multi_rep[mode] = other.multi_rep[mode]
+
+        return CircuitComponent._from_attributes(
+            rep, wires=wires_result, multi_rep=multi_rep, name=None
+        )
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.representation * other, self.wires, self.name)
+        return self._from_attributes(
+            self.representation * other, wires=self.wires, multi_rep=self.multi_rep, name=self.name
+        )
 
     def __repr__(self) -> str:
         repr = self.representation
@@ -803,13 +863,15 @@ class CircuitComponent:
             raise ValueError("Cannot subtract components with different wires.")
         rep = self.representation - other.representation
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(rep, wires=self.wires, name=name)
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(self.representation / other, self.wires, self.name)
+        return self._from_attributes(
+            self.representation / other, wires=self.wires, multi_rep=self.multi_rep, name=self.name
+        )
 
     def _ipython_display_(self):
         # both reps might return None

@@ -51,6 +51,7 @@ class BtoQ(Operation):
             modes_out=modes,
             modes_in=modes,
             representation=repr,
+            multi_rep={mode: "BtoQ" for mode in modes},
             name="BtoQ",
         )
         self._add_parameter(Constant(phi, "phi"))
