@@ -59,18 +59,15 @@ class Settings:
         self._hbar_locked = False
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
-        self._precision_bits_hermite_poly: int = 128
-        self._complex_warning: bool = False
-        self._julia_initialized: bool = False
+        self._julia_initialized = (
+            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        )
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.UNSAFE_ZIP_BATCH = False
         "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
 
-        self.STABLE_FOCK_CONVERSION: bool = False
-        "Whether to use the ``vanilla_stable`` function when computing Fock amplitudes (more stable, but slower). Default is False."
-
-        self.DEBUG: bool = False
+        self.DEBUG = False
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
         self.AUTOSHAPE_PROBABILITY = 0.999

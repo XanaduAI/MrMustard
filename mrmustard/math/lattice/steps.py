@@ -30,7 +30,7 @@ from mrmustard.math.lattice.neighbors import lower_neighbors
 from mrmustard.math.lattice.pivots import first_available_pivot
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
-SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
+SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
@@ -39,7 +39,7 @@ def vanilla_step(
     A: ComplexMatrix,
     b: ComplexVector,
     index: tuple[int, ...],
-) -> complex:  # pragma: no cover
+) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.

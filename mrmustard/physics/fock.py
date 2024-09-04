@@ -21,7 +21,7 @@ This module contains functions for performing calculations on objects in the Foc
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Sequence, Iterable
+from typing import Sequence
 
 import numpy as np
 
@@ -35,7 +35,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector, Batch
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 
 SQRT = np.sqrt(np.arange(1e6))
 
@@ -818,57 +818,6 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
-def quadrature_basis(
-    fock_array: Tensor,
-    quad: Batch[Vector],
-    conjugates: bool | list[bool] = False,
-    phi: Scalar = 0.0,
-):
-    r"""Given the Fock basis representation return the quadrature basis representation.
-
-    Args:
-        fock_array (Tensor): fock tensor amplitudes
-        quad (Batch[Vector]): points at which the quadrature basis is evaluated
-        conjugates (list[bool]): which dimensions of the array to conjugate based on
-            whether it is a bra or a ket
-        phi (float): angle of the quadrature basis vector
-
-    Returns:
-        tuple(Tensor): quadrature basis representation at the points in quad
-    """
-    dims = len(fock_array.shape)
-
-    if quad.shape[-1] != dims:
-        raise ValueError(
-            f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}."
-        )
-
-    conjugates = conjugates if isinstance(conjugates, Iterable) else [conjugates] * dims
-
-    # construct quadrature basis vectors
-    shapes = fock_array.shape
-    quad_basis_vecs = []
-    for dim in range(dims):
-        q_to_n = oscillator_eigenstate(quad[..., dim], shapes[dim])
-        if not np.isclose(phi, 0.0):
-            theta = -math.arange(shapes[dim]) * phi
-            Ur = math.make_complex(math.cos(theta), math.sin(theta))
-            q_to_n = math.einsum("a,ab->ab", Ur, q_to_n)
-        if conjugates[dim]:
-            q_to_n = math.conj(q_to_n)
-        quad_basis_vecs += [math.cast(q_to_n, "complex128")]
-
-    # Convert each dimension to quadrature
-    subscripts = [chr(i) for i in range(98, 98 + dims)]
-    fock_string = "".join(subscripts[:dims])  #'bcd....'
-    q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
-    quad_array = math.einsum(
-        fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
-    )
-
-    return quad_array
-
-
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
@@ -887,17 +836,34 @@ def quadrature_distribution(
     Returns:
         tuple(Vector, Vector): coordinates at which the pdf is evaluated and the probability distribution
     """
+    dims = len(state.shape)
+    if dims > 2:
+        raise ValueError(
+            f"Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
+        )
+
+    is_dm = dims == 2
     cutoff = state.shape[0]
+
+    if not np.isclose(quadrature_angle, 0.0):
+        # rotate mode to the homodyne basis
+        theta = -math.arange(cutoff) * quadrature_angle
+        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+        state = (
+            math.einsum("ij,jk,kl->il", Ur, state, math.dagger(Ur))
+            if is_dm
+            else math.matvec(Ur, state)
+        )
+
     if x is None:
         x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
-    dims = len(state.shape)
-    is_dm = dims == 2
-
-    quad = math.transpose(math.astensor([x] * dims))
-    conjugates = [True, False] if is_dm else [False]
-    quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
-    pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
+    psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
+    pdf = (
+        math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
+        if is_dm
+        else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
+    )
 
     return x, math.real(pdf)
 
