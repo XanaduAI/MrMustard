@@ -16,10 +16,10 @@
 
 # pylint: disable=missing-function-docstring
 
+from itertools import product
+
 import numpy as np
 import pytest
-
-from itertools import product
 
 from mrmustard import math
 from mrmustard.lab_dev.sampler import Sampler, PNRSampler, HomodyneSampler
