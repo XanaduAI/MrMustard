@@ -40,9 +40,11 @@ class TestCFT:
         for a single-mode squeezed state.
         """
         settings.HBAR = 2
-        state = DisplacedSqueezed([0], r=0.5, phi=1.0, x=0.4, y=0.4)
+        settings.HBAR=2
+        state = DisplacedSqueezed([0], r=0.5, phi=0.0, x=1.0, y=0.0)
 
-        dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
+        state2 = DisplacedSqueezed([0], r=0.5, phi=np.pi, x=0.0, y=1.0)
+        dm = math.sum(state2.to_fock(100).dm().representation.array, axes=[0])
         xvec = np.linspace(-5, 5, 100)
         pvec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, xvec, pvec)
@@ -50,5 +52,5 @@ class TestCFT:
         Wigner = (state >> CFT([0]) >> BtoPS([0], s=0)).representation.ansatz
         X, Y = np.meshgrid(xvec, pvec)
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        assert np.isclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)
-        assert np.isclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)
+        assert math.allclose((np.real(Wigner(Z))), (np.real(wigner)), atol=1e-8)
+        assert math.allclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)
