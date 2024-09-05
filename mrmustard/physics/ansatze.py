@@ -1184,7 +1184,7 @@ class ArrayAnsatz(Ansatz):
 
 
 def bargmann_Abc_to_phasespace_cov_means(
-    A: Matrix, b: Vector, c: Scalar
+    A: Matrix, b: Vector, c: Scalar, batched: bool = False
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
@@ -1208,7 +1208,7 @@ def bargmann_Abc_to_phasespace_cov_means(
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """
-    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) == 1
+    # batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) == 1
     A = math.atleast_3d(A)
     b = math.atleast_2d(b)
     c = math.atleast_1d(c)

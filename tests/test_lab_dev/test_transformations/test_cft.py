@@ -37,18 +37,15 @@ class TestCFT:
         Tests that the characteristic function is converted to the Wigner function
         for a single-mode squeezed state.
         """
-        settings.HBAR = 2
-        settings.HBAR = 2
+
         state = DisplacedSqueezed([0], r=0.5, phi=0.0, x=1.0, y=0.0)
 
         state2 = DisplacedSqueezed([0], r=0.5, phi=np.pi, x=0.0, y=1.0)
         dm = math.sum(state2.to_fock(100).dm().representation.array, axes=[0])
-        xvec = np.linspace(-5, 5, 100)
-        pvec = np.linspace(-5, 5, 100)
-        wigner, _, _ = wigner_discretized(dm, xvec, pvec)
+        vec = np.linspace(-5, 5, 100)
+        wigner, _, _ = wigner_discretized(dm, vec, vec)
 
         Wigner = (state >> CFT([0]) >> BtoPS([0], s=0)).representation.ansatz
-        X, Y = np.meshgrid(xvec, pvec)
+        X, Y = np.meshgrid(vec*np.sqrt(2), vec*np.sqrt(2)) #scaling to take care of HBAR
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        assert math.allclose((np.real(Wigner(Z))), (np.real(wigner)), atol=1e-8)
-        assert math.allclose(np.max(np.real(Wigner(Z))), np.max(np.real(wigner)), atol=1e-8)
+        assert math.allclose(2*(np.real(Wigner(Z))), (np.real(wigner)), atol=1e-8) #scaling to take care of HBAR

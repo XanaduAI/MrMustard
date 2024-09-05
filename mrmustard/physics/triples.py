@@ -681,7 +681,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     return math.astensor(A), b, c
 
 
-def complex_fourier_transform_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
     Given a function :math:`f(z^*, z)`, the complex Fourier transform is defined as
