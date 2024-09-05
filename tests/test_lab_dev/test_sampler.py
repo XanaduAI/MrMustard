@@ -34,40 +34,25 @@ class TestSampler:
     def test_init(self):
         meas_outcomes = list(range(3))
         meas_ops = [Number([0], n) for n in range(3)]
-        prob_dist = [0.3, 0.4, 0.5]
-
-        sampler = Sampler(meas_outcomes, meas_ops, prob_dist)
+        sampler = Sampler(meas_outcomes, meas_ops)
         assert sampler.meas_outcomes == meas_outcomes
         assert sampler.meas_ops == meas_ops
-        assert sampler.prob_dist == prob_dist
 
     def test_probabilities(self):
         meas_outcomes = list(range(3))
         meas_ops = [Number([0], n) for n in range(3)]
-        prob_dist = [0.3, 0.4, 0.5]
-
-        sampler = Sampler(meas_outcomes, meas_ops, prob_dist)
-        assert sampler.probabilities() == prob_dist
-
-        sampler2 = Sampler(meas_outcomes, meas_ops)
-        assert sampler2.probabilities() is None
-
+        sampler = Sampler(meas_outcomes, meas_ops)
         state = Vacuum([0])
-        assert all(sampler2.probabilities(state) == [1, 0, 0])
+        assert all(sampler.probabilities(state) == [1, 0, 0])
 
         with pytest.raises(ValueError, match="incompatible"):
-            sampler_two_mode = Sampler(
-                meas_outcomes, [Number([0, 1], n) for n in range(3)], prob_dist
-            )
+            sampler_two_mode = Sampler(meas_outcomes, [Number([0, 1], n) for n in range(3)])
             sampler_two_mode.probabilities(state)
 
     def test_sample(self):
         meas_outcomes = list(range(3))
         meas_ops = [Number([0], n) for n in range(3)]
-        prob_dist = [0, 0, 1]
-
-        sampler = Sampler(meas_outcomes, meas_ops, prob_dist)
-        assert all(sampler.sample() == 2)
+        sampler = Sampler(meas_outcomes, meas_ops)
         assert all(sampler.sample(Vacuum([0])) == 0)
 
 
@@ -80,14 +65,12 @@ class TestPNRSampler:
         sampler = PNRSampler([0, 1], cutoff=10)
         assert sampler.meas_outcomes == list(product(range(10), repeat=2))
         assert sampler.meas_ops == Number([0, 1], 0)
-        assert sampler.prob_dist is None
 
     def test_probabilities(self):
         atol = 1e-4
 
         sampler = PNRSampler([0, 1], cutoff=10)
         vac_prob = [1.0] + [0.0] * 99
-        assert sampler.probabilities() is None
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
         assert math.allclose(sampler.probabilities(Vacuum([0, 1, 2])), vac_prob)
 
@@ -115,11 +98,9 @@ class TestHomodyneSampler:
         assert math.allclose(
             sampler.meas_outcomes, list(product(np.linspace(-5, 5, 100), repeat=2))
         )
-        assert sampler.prob_dist is None
 
     def test_probabilties(self):
         sampler = HomodyneSampler([0, 1])
-        assert sampler.probabilities() is None
         assert math.allclose(
             sampler.probabilities(Vacuum([0, 1])), sampler.probabilities(Vacuum([0, 1, 2]))
         )

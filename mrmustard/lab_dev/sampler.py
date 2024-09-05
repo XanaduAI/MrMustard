@@ -39,18 +39,15 @@ class Sampler:
     Args:
         meas_outcomes: The measurement outcomes for this sampler.
         meas_ops: The measurement operators of this sampler.
-        prob_dist: An optional probability distribution for this sampler.
     """
 
     def __init__(
         self,
         meas_outcomes: Sequence[any],
         meas_ops: CircuitComponent | Sequence[CircuitComponent],
-        prob_dist: Sequence[float] | None = None,
     ):
         self._meas_ops = meas_ops
         self._meas_outcomes = meas_outcomes
-        self._prob_dist = prob_dist
 
     @property
     def meas_ops(self) -> CircuitComponent | Sequence[CircuitComponent]:
@@ -66,16 +63,7 @@ class Sampler:
         """
         return self._meas_outcomes
 
-    @property
-    def prob_dist(self) -> Sequence[float] | None:
-        r"""
-        The probability distribution of this sampler.
-        """
-        return self._prob_dist
-
-    def probabilities(
-        self, state: State | None = None, atol: float = 1e-4
-    ) -> Sequence[float] | None:
+    def probabilities(self, state: State, atol: float = 1e-4) -> Sequence[float]:
         r"""
         Returns the probability distribution of this sampler. If ``state`` is provided
         then will compute the probability distribution w.r.t. the state.
@@ -86,20 +74,16 @@ class Sampler:
                 distribution.
         """
         self._validate_state(state)
-        if state is not None:
-            dm_state = state.dm()
-            states = [dm_state >> meas_op.dual for meas_op in self.meas_ops]
-            probs = [
-                state.probability if isinstance(state, State) else math.real(state)
-                for state in states
-            ]
-            return self._validate_probs(probs, 1, atol)
-        return self.prob_dist
+        dm_state = state.dm()
+        states = [dm_state >> meas_op.dual for meas_op in self.meas_ops]
+        probs = [
+            state.probability if isinstance(state, State) else math.real(state) for state in states
+        ]
+        return self._validate_probs(probs, 1, atol)
 
-    def sample(self, state: State | None = None, n_samples: int = 1000) -> np.ndarray:
+    def sample(self, state: State, n_samples: int = 1000) -> np.ndarray:
         r"""
-        Returns a list of measurement samples on a specified state. If ``self.probabilities`` is
-        ``None`` then uses a uniform probability distribution.
+        Returns an array of measurement samples on a specified state.
 
         Args:
             state: The state to generate samples of.
@@ -131,10 +115,11 @@ class Sampler:
             atol: The absolute tolerance to validate with.
         """
         atol = atol or settings.ATOL
-        prob_sum = sum(probs * dx)
+        probs_dx = probs * dx
+        prob_sum = sum(probs_dx)
         if not math.allclose(prob_sum, 1, atol):
             raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
-        return math.real(probs / prob_sum)
+        return math.real(probs_dx / prob_sum)
 
     def _validate_state(self, state: State | None = None):
         r"""
@@ -168,13 +153,11 @@ class PNRSampler(Sampler):
         super().__init__(list(product(range(cutoff), repeat=len(modes))), Number(modes, 0))
         self._cutoff = cutoff
 
-    def probabilities(self, state=None, atol=1e-4):
+    def probabilities(self, state, atol=1e-4):
         self._validate_state(state)
-        if state:
-            fock_state = state.dm().to_fock(self._cutoff)
-            probs = math.astensor([self._fock_prob(fock_state, ns) for ns in self.meas_outcomes])
-            return self._validate_probs(probs, 1, atol)
-        return self._prob_dist
+        fock_state = state.dm().to_fock(self._cutoff)
+        probs = math.astensor([self._fock_prob(fock_state, ns) for ns in self.meas_outcomes])
+        return self._validate_probs(probs, 1, atol)
 
     def _fock_prob(self, fock_state: State, ns: tuple[int, ...]) -> float:
         r"""
@@ -219,13 +202,11 @@ class HomodyneSampler(Sampler):
         super().__init__(list(product(meas_outcomes, repeat=len(modes))), BtoQ(modes, phi=phi))
         self._step = step
 
-    def probabilities(self, state=None, atol=1e-4):
+    def probabilities(self, state, atol=1e-4):
         self._validate_state(state)
-        if state is not None:
-            trace_modes = self._trace_modes(state)
-            dm_state = state.dm() >> TraceOut(trace_modes) if trace_modes else state.dm()
-            q_state = dm_state >> self.meas_ops
-            z = [x * 2 for x in self.meas_outcomes]
-            probs = q_state.representation(z) * math.sqrt(settings.HBAR)
-            return self._validate_probs(probs, self._step ** len(self.meas_ops.modes), atol)
-        return self.prob_dist
+        trace_modes = self._trace_modes(state)
+        dm_state = state.dm() >> TraceOut(trace_modes) if trace_modes else state.dm()
+        q_state = dm_state >> self.meas_ops
+        z = [x * 2 for x in self.meas_outcomes]
+        probs = q_state.representation(z) * math.sqrt(settings.HBAR)
+        return self._validate_probs(probs, self._step ** len(self.meas_ops.modes), atol)
