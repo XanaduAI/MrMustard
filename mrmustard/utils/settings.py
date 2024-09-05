@@ -49,15 +49,14 @@ class Settings:
     """
 
     def __new__(cls):  # singleton
-        if not hasattr(cls, "instance"):
-            cls.instance = super(Settings, cls).__new__(cls)
-        return cls.instance
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(Settings, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         self._hbar: float = 1.0
         self._hbar_locked: bool = False
         self._seed: int = np.random.randint(0, 2**31 - 1)
-        self._complex_warning: bool = False
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
         self._complex_warning: bool = False
@@ -70,7 +69,7 @@ class Settings:
         self.STABLE_FOCK_CONVERSION: bool = False
         "Whether to use the ``vanilla_stable`` function when computing Fock amplitudes (more stable, but slower). Default is False."
 
-        self.DEBUG: bool = False
+        self.DEBUG: bool = False  # TODO: remove in MM 1.0
         "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
 
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
@@ -94,25 +93,22 @@ class Settings:
         self.DISCRETIZATION_METHOD: str = "clenshaw"
         "The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster)."
 
-        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # enough for a full step of rec rel
+        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # TODO: remove in MM 1.0
         "The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 3."
 
-        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3
+        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3  # TODO: remove in MM 1.0
         "The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 1e-3."
 
-        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6
+        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6  # TODO: remove in MM 1.0
         "The relative tolerance used when comparing two transformations on Gaussian states. Default is 1e-6."
 
-        self.PRN_INTERNAL_CUTOFF: int = 50
-        "The cutoff used when computing the output of a PNR detection. Default is 50."
-
-        self.HOMODYNE_SQUEEZING: float = 10.0
+        self.HOMODYNE_SQUEEZING: float = 10.0  # TODO: remove in MM 1.0
         "The value of squeezing for homodyne measurements. Default is 10.0."
 
         self.PROGRESSBAR: bool = True
         "Whether or not to display the progress bar when performing training. Default is True."
 
-        self.PNR_INTERNAL_CUTOFF: int = 50
+        self.PNR_INTERNAL_CUTOFF: int = 50  # TODO: remove in MM 1.0
         "The cutoff used when computing the output of a PNR detection. Default is 50."
 
         self.BS_FOCK_METHOD: str = "vanilla"  # can be 'vanilla' or 'schwinger'
@@ -120,6 +116,31 @@ class Settings:
 
         self.ATOL: float = 1e-8
         "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
+
+        self._original_values = self.__dict__.copy()
+
+    def __call__(self, **kwargs):
+        "allows for setting multiple settings at once and saving the original values"
+        disallowed = {
+            "COMPLEX_WARNING",
+            "HBAR",
+            "SEED",
+            "PRECISION_BITS_HERMITE_POLY",
+            "CACHE_DIR",
+        } & kwargs.keys()
+        if disallowed:
+            raise ValueError(f"Cannot change the value of {disallowed} using a context manager.")
+        self._original_values = self.__dict__.copy()
+        self.__dict__.update(kwargs)
+        return self
+
+    def __enter__(self):
+        "context manager enter method"
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        "context manager exit method that resets the settings to their original values"
+        self.__dict__.update(self._original_values)
 
     @property
     def COMPLEX_WARNING(self):
@@ -136,7 +157,7 @@ class Settings:
 
     @property
     def HBAR(self):
-        r"""The value of the Planck constant. Default is ``2``.
+        r"""The value of the Planck constant. Default is ``1``.
 
         Cannot be changed after its value is queried for the first time.
         """
@@ -146,7 +167,7 @@ class Settings:
     @HBAR.setter
     def HBAR(self, value: float):
         if value != self._hbar and self._hbar_locked:
-            raise ValueError("Cannot change the value of `settings.HBAR`.")
+            raise ValueError("Cannot change the value of `settings.HBAR` in the current session.")
         self._hbar = value
 
     @property
