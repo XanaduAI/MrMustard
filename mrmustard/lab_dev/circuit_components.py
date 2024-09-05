@@ -43,48 +43,11 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.triples import identity_Abc
+from mrmustard.lab_dev.utils import multi_rep_contraction
 
 __all__ = ["CircuitComponent"]
 
 
-def multi_rep_contraction(str1, str2):
-    r"""
-    A representation's name in multi_rep can be either of the following:
-        None: Bargmann
-        Q: quadrature
-        PS: phase space
-        BtoQ: Bargmann to quadrature
-        BtoPS: Bargmann to phase space
-        QtoB: quadrature to Bargmann
-        PStoB: phase space to Bargmann
-
-    This function's goal is to compute the multiplication between any of these objects.
-
-        Args:
-            str1: The representation of the first object (on the input side)
-            str2: The representation of the second object (on the output side)
-
-    We have the following multiplication table implemented:
-    None * None = None
-    Q * Q = Q
-    PS * PS = PS
-
-    None * BtoQ = Q
-    None * BtoPS = PS
-
-    anything else raises an error.
-    """
-
-    if str1 == str2:
-        return str1
-    elif str1 == None and str2 == "BtoQ":
-        return "Q"
-    elif str1 == None and str2 == "BtoPS":
-        return "PS"
-    else:
-        raise ValueError(
-            f"Trying to multiply objects of inconsistant representation i.e., rep1={str1} and rep2={str2}"
-        )
 
 
 class CircuitComponent:
