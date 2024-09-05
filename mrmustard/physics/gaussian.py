@@ -16,7 +16,9 @@
 This module contains functions for performing calculations on objects in the Gaussian representations.
 """
 
-from typing import Any, Optional, Sequence, Tuple, Union
+from __future__ import annotations
+
+from typing import Any, Sequence
 
 from mrmustard import math, settings
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
@@ -39,7 +41,7 @@ def vacuum_cov(num_modes: int) -> Matrix:
     return math.eye(num_modes * 2, dtype=math.float64) * settings.HBAR / 2
 
 
-def vacuum_means(num_modes: int) -> Tuple[Matrix, Vector]:
+def vacuum_means(num_modes: int) -> tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
 
     Args:
@@ -70,7 +72,7 @@ def squeezed_vacuum_cov(r: Vector, phi: Vector) -> Matrix:
     return math.matmul(S, math.transpose(S)) * settings.HBAR / 2
 
 
-def thermal_cov(nbar: Vector) -> Tuple[Matrix, Vector]:
+def thermal_cov(nbar: Vector) -> tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
 
     The dimension depends on the dimensions of ``nbar``.
@@ -126,7 +128,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
+def rotation_symplectic(angle: Scalar | Vector) -> Matrix:
     r"""Symplectic matrix of a rotation gate.
 
     The dimension depends on the dimension of the angle.
@@ -148,7 +150,7 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     )
 
 
-def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
+def squeezing_symplectic(r: Scalar | Vector, phi: Scalar | Vector) -> Matrix:
     r"""Symplectic matrix of a squeezing gate.
 
     The dimension depends on the dimension of ``r`` and ``phi``.
@@ -180,7 +182,7 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     )
 
 
-def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> Vector:
+def displacement(x: Scalar | Vector, y: Scalar | Vector) -> Vector:
     r"""Returns the displacement vector for a displacement by :math:`alpha = x + iy`.
     The dimension depends on the dimensions of ``x`` and ``y``.
 
@@ -390,7 +392,7 @@ def CPTP(
     d: Vector,
     state_modes: Sequence[int],
     transf_modes: Sequence[int],
-) -> Tuple[Matrix, Vector]:
+) -> tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel.
 
     Computed as ``cov = X \cdot cov \cdot X^T + Y`` and ``d = X \cdot means + d``.
@@ -430,9 +432,7 @@ def CPTP(
     return cov, means
 
 
-def loss_XYd(
-    transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector]
-) -> Tuple[Matrix, Matrix, None]:
+def loss_XYd(transmissivity: Scalar | Vector, nbar: Scalar | Vector) -> tuple[Matrix, Matrix, None]:
     r"""Returns the ``X``, ``Y`` matrices and the ``d`` vector for the noisy loss (attenuator) channel.
 
     .. math::
@@ -459,7 +459,7 @@ def loss_XYd(
     return X, Y, None
 
 
-def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector]) -> Matrix:
+def amp_XYd(gain: Scalar | Vector, nbar: Scalar | Vector) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
     .. math::
@@ -489,7 +489,7 @@ def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector]) -> Matrix:
     return X, Y, None
 
 
-def noise_Y(noise: Union[Scalar, Vector]) -> Matrix:
+def noise_Y(noise: Scalar | Vector) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the additive noise channel ``(Y = noise * (\hbar / 2) * I)``
 
     Args:
@@ -503,7 +503,7 @@ def noise_Y(noise: Union[Scalar, Vector]) -> Matrix:
 
 def compose_channels_XYd(
     X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector
-) -> Tuple[Matrix, Matrix, Vector]:
+) -> tuple[Matrix, Matrix, Vector]:
     r"""Returns the combined ``X``, ``Y``, and ``d`` for two CPTP channels.
 
     Args:
@@ -547,9 +547,9 @@ def general_dyne(
     cov: Matrix,
     means: Vector,
     proj_cov: Matrix,
-    proj_means: Optional[Vector] = None,
-    modes: Optional[Sequence[int]] = None,
-) -> Tuple[Scalar, Matrix, Vector]:
+    proj_means: Vector | None = None,
+    modes: Sequence[int] | None = None,
+) -> tuple[Scalar, Matrix, Vector]:
     r"""Returns the results of a general-dyne measurement. If ``proj_means`` are not provided
     (as ``None``), they are sampled from the probability distribution.
 
@@ -656,7 +656,7 @@ def number_cov(cov: Matrix, means: Vector) -> Matrix:
     )
 
 
-def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
+def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> tuple[Matrix, Vector]:
     r"""Returns the covariances and means after discarding the specified modes.
 
     Args:
@@ -677,7 +677,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     return A_cov_block, A_means_vec
 
 
-def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
+def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> tuple[Matrix, Matrix, Matrix]:
     r"""Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB coherence block.
 
     Args:
@@ -699,7 +699,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
     return A_block, B_block, AB_block
 
 
-def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
+def partition_means(means: Vector, Amodes: Sequence[int]) -> tuple[Vector, Vector]:
     r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
 
     Args:
@@ -855,7 +855,7 @@ def log_negativity(cov: Matrix) -> float:
     Returns:
         float: the log-negativity
     """
-    vals = symplectic_eigenvals(cov) / (settings.HBAR / 2)
+    vals = symplectic_eigenvals(cov)
     vals_filtered = math.boolean_mask(
         vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.
@@ -867,7 +867,7 @@ def log_negativity(cov: Matrix) -> float:
     return 0
 
 
-def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
+def join_covs(covs: Sequence[Matrix]) -> tuple[Matrix, Vector]:
     r"""Joins the given covariance matrices into a single covariance matrix.
 
     Args:

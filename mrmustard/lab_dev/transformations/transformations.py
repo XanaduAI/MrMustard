@@ -86,7 +86,7 @@ class BSgate(Unitary):
                     e^{i\phi}\text{sin}(\theta) & \text{cos}(\theta)
                 \end{bmatrix} \\
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
@@ -152,10 +152,10 @@ class Dgate(Unitary):
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
         displacement gate is defined by
 
-        .. math:: 
+        .. math::
             S = I_N \text{ and } r = \sqrt{2\hbar}\big[\text{Re}(\bar{\alpha}), \text{Im}(\bar{\alpha})\big].
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -233,7 +233,7 @@ class Dgate(Unitary):
             array = fock.displacement(x[0], y[0], shape=shape)
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
-    
+
     def _from_attributes(
         cls,
         representation: Representation,
@@ -343,7 +343,7 @@ class Sgate(Unitary):
             d = O_{2N},
 
         where :math:`\text{diag}_N(\bar{a})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{a}`.
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -433,14 +433,14 @@ class S2gate(Unitary):
 
     .. details::
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A = \begin{bmatrix}
                     O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
                     e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
                     \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
-                    O & \sech(r) & e^{i\phi}\tanh(r) & 0     
+                    O & \sech(r) & e^{i\phi}\tanh(r) & 0
                 \end{bmatrix} \text{, }
             b = O_{4} \text{, and }
             c = \sech(r)
@@ -480,7 +480,7 @@ class Amplifier(Channel):
         >>> from mrmustard.lab_dev import Amplifier, Coherent
 
         >>> amp = Amplifier([0], gain=4)
-        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default) 
+        >>> coh = Coherent([0], x=1.0, y=2.0)  # units of hbar=2 (default)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
         >>> assert np.allclose(mu[0], np.array([4.0, 8.0]))
 
@@ -502,7 +502,7 @@ class Amplifier(Channel):
         where :math:`/bar{g}` is the gain and
         :math:`\text{diag}_N(\bar{g})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{g}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}
@@ -566,10 +566,10 @@ class Attenuator(Channel):
             Y = \text{sin}^2(\theta)I_{2N} \text{ , and }
             d = O_{4N}\:,
 
-        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and 
+        where the :math:`\theta=\text{arcos}(\sqrt{\bar{\eta}})`, :math:`\eta` is the transmissivity, and
         :math:`\text{diag}_N(\bar{\eta})` is the :math:`N\text{x}N` matrix with diagonal :math:`\bar{\eta}`.
 
-        Its ``(A,b,c)`` triple is given by 
+        Its ``(A,b,c)`` triple is given by
 
         .. math::
             A &= \begin{bmatrix}

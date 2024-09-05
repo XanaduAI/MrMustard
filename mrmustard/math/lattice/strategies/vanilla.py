@@ -13,105 +13,250 @@
 # limitations under the License.
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
 
 __all__ = [
     "vanilla",
+    "vanilla_stable",
+    "vanilla_stable_batch",
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
     "autoshape_numba",
 ]
 
-SQRT = np.sqrt(np.arange(1000))
+SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy.
+    r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    This implementation works on flattened tensors and reshapes the tensor before returning.
 
-    Flattens the tensors, then fills it by iterating over all indices in the order
-    given by ``np.ndindex``. Finally, it reshapes the tensor before returning.
+    The vanilla algorithm implements the flattened version of the following recursion which
+    calculates the Fock amplitude at index :math:`k` using a pivot at index :math:`k - 1_i`
+    and its neighbours at indices :math:`k - 1_i - 1_j`:
+
+    .. math::
+
+         G_{k} = \frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
+
+    where :math:`1_i` is the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
+    In this formula :math:`k` is the vector of indices indexing into the Fock lattice.
+    In the implementation the indices are flattened into a single integer index.
+    This simplifies the bounds check when calculating the index of the pivot :math:`k-1_i`,
+    which need to be done only until the index is smaller than the maximum stride.
+
+    see https://quantum-journal.org/papers/q-2020-11-30-366/ and
+    https://arxiv.org/abs/2209.06069 for more details.
 
     Args:
         shape (tuple[int, ...]): shape of the output tensor
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): B vector of the Fock-Bargmann representation
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): b vector of the Bargmann representation
         c (complex): vacuum amplitude
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    # calculate the strides
-    strides = shape_to_strides(np.array(shape))
+    # numba doesn't like tuples
+    shape_arr = np.array(shape)
+    D = b.shape[0]
+
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(D - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
     # init flat output tensor
-    ret = np.array([0 + 0j] * np.prod(np.array(shape)))
+    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
 
-    # initialize the indeces.
-    # ``index`` is the index of the flattened output tensor, while
-    # ``index_u_iter`` iterates through the unravelled counterparts of
-    # ``index``.
-    index = 0
-    index_u_iter = np.ndindex(shape)
-    next(index_u_iter)
+    # initialize the n-dim index
+    nd_index = np.ndindex(shape)
 
-    # write vacuum amplitude
-    ret[0] = c
+    # write vacuum amplitude and skip corresponding n-dim index
+    G[0] = c
+    next(nd_index)
 
-    # iterate over the rest of the indices
-    for index_u in index_u_iter:
-        # update index
-        index += 1
+    # Iterate over the indices smaller than max(strides) with pivot bound check.
+    # The check is needed only if the flat index is smaller than the largest stride.
+    # Afterwards it will be safe to get the pivot by subtracting the first (largest) stride.
+    for flat_index in range(1, strides[0]):
+        index = next(nd_index)
 
-        # calculate pivot's contribution
-        i, pivot = first_available_pivot(index, strides)
-        value_at_index = b[i] * ret[pivot]
+        # calculate (flat) pivot
+        for i, s in enumerate(strides):
+            pivot = flat_index - s
+            if pivot >= 0:  # if pivot not outside array
+                break
 
-        # add the contribution of pivot's lower's neighbours
-        ns = lower_neighbors(pivot, strides, i)
-        (j0, n0) = next(ns)
-        value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
-        for j, n in ns:
-            value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
-        ret[index] = value_at_index / np.sqrt(index_u[i])
+        # contribution from pivot
+        value_at_index = b[i] * G[pivot]
 
-    return ret.reshape(shape)
+        # contributions from pivot's lower neighbours
+        # note the first is when j=i which needs a -1 in the sqrt from delta_ij
+        value_at_index += A[i, i] * SQRT[index[i] - 1] * G[pivot - strides[i]]
+        for j in range(i + 1, D):
+            value_at_index += A[i, j] * SQRT[index[j]] * G[pivot - strides[j]]
+        G[flat_index] = value_at_index / SQRT[index[i]]
+
+    # Iterate over the rest of the indices.
+    # Now i can always be 0 (largest stride), and we don't need bounds check
+    for flat_index in range(strides[0], len(G)):
+        index = next(nd_index)
+
+        # pivot can be calculated without bounds check
+        pivot = flat_index - strides[0]
+
+        # contribution from pivot
+        value_at_index = b[0] * G[pivot]
+
+        # contribution from pivot's lower neighbours
+        # note the first is when j=0 which needs a -1 in the sqrt from delta_0j
+        value_at_index += A[0, 0] * SQRT[index[0] - 1] * G[pivot - strides[0]]
+        for j in range(1, D):
+            value_at_index += A[0, j] * SQRT[index[j]] * G[pivot - strides[j]]
+        G[flat_index] = value_at_index / SQRT[index[0]]
+
+    return G.reshape(shape)
+
+
+@njit
+def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    This implementation works on flattened tensors and reshapes the tensor before returning.
+
+    The vanilla algorithm implements the flattened version of the following recursion which
+    calculates the Fock amplitude at index :math:`k` using all available pivots at index :math:`k - 1_i`
+    for all :math:`i`, and their neighbours at indices :math:`k - 1_i - 1_j`:
+
+    .. math::
+
+         G_{k} = \frac{1}{N}\sum_i\frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
+
+    where :math:`N` is the number of valid pivots for the :math:`k`-th lattice point, :math:`1_i` is
+    the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
+    In the implementation the indices are flattened into a single integer index, which makes the
+    computations of the pivots more efficient.
+
+    see https://quantum-journal.org/papers/q-2020-11-30-366/ and
+    https://arxiv.org/abs/2209.06069 for more details.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): b vector of the Bargmann representation
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+    shape_arr = np.array(shape)
+    D = b.shape[0]
+
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(D - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape[i]
+
+    # initialize flat output array and write vacuum amplitude
+    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
+    G[0] = c
+
+    # initialize flat index and n-dim iterator
+    idx = 0
+    nd_iterator = np.ndindex(shape)
+    next(nd_iterator)  # skip (0,0,...,0) as we already wrote it
+
+    for nd_idx in nd_iterator:
+        idx += 1
+        num_pivots = 0
+        vals = 0
+        for i in range(D):
+            if nd_idx[i] == 0:
+                continue  # pivot would be out of bounds
+            num_pivots += 1
+            pivot = idx - strides[i]
+
+            # contribution from i-th pivot
+            val = b[i] * G[pivot]
+
+            # contributions from lower neighbours of the pivot
+            # note we split lower neighbours in 3 parts (j<i, j==i, i<j)
+            # so that delta_ij is just 1 for j==i, and 0 elsewhere.
+            for j in range(i):
+                val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+            val += A[i, i] * SQRT[nd_idx[i] - 1] * G[pivot - strides[i]]
+
+            for j in range(i + 1, D):
+                val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+            # accumulate the contribution from the i-th pivot
+            vals += val / SQRT[nd_idx[i]]
+
+        # write the average
+        G[idx] = vals / num_pivots
+
+    return G.reshape(shape)
+
+
+@njit(parallel=True)
+def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    """Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    See the documentation of ``vanilla_stable`` for more details about the non-batched version.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor excluding the batch dimension, which is inferred from ``b``
+        A (np.ndarray): A matrix of the Bargmann representation
+        b (np.ndarray): batched b vector of the Bargmann representation with batch on the first dimension
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
+    """
+
+    B = b.shape[0]
+    G = np.zeros((B,) + shape, dtype=np.complex128)
+    for k in prange(B):
+        G[k] = vanilla_stable(shape, A, b[k], c)
+    return G
 
 
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
-    last index.
+    first index.
 
     Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the last term
+        shape (tuple[int, ...]): shape of the output tensor without the batch dimension
         A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
+        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
         c (complex): vacuum amplitude
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
+    # the batch dimension
+    batch_shape = (b.shape[0],)
 
     # init output tensor
-    G = np.zeros(shape, dtype=np.complex128)
+    G = np.zeros(batch_shape + shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape[:-1])  # We know the last dimension is the batch one
+    path = np.ndindex(shape)
 
     # write vacuum amplitude
-    G[next(path)] = c
+    G[(slice(None),) + next(path)] = c
 
     # iterate over the rest of the indices
     for index in path:
-        G[index] = steps.vanilla_step_batch(G, A, b, index)
+        G[(slice(None),) + index] = steps.vanilla_step_batch(G, A, b, index)
 
     return G
 
@@ -145,7 +290,7 @@ def vanilla_jacobian(
 
 @njit
 def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
+    r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
     Args:
         G (np.ndarray): Tensor result of the forward pass
@@ -155,45 +300,53 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     Returns:
         tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
     """
-    shape = G.shape
+    # numba doesn't like tuples
+    shape_arr = np.array(G.shape)
 
-    # calculate the strides
-    strides = shape_to_strides(np.array(shape))
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(len(shape_arr) - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
     # linearize G
     G_lin = G.flatten()
 
     # init gradients
-    D = G.ndim
+    D = len(shape_arr)
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
     db = np.zeros(D, dtype=np.complex128)  # component of dL/db
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
-    # initialize the indices.
-    # ``index`` is the index of the flattened output tensor, while
-    # ``index_u_iter`` iterates through the unravelled counterparts of
-    # ``index``.
-    index = 0
-    index_u_iter = np.ndindex(shape)
-    next(index_u_iter)
+    # initialize the n-dim index
+    flat_index = 0
+    nd_index = np.ndindex(G.shape)
+    next(nd_index)
 
-    for index_u in index_u_iter:
-        index += 1
+    # numba doesn't like tuples
+    shape_arr = np.array(G.shape)
 
-        ns = lower_neighbors(index, strides, 0)
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = np.ones_like(shape_arr)
+    for i in range(len(shape_arr) - 1, 0, -1):
+        strides[i - 1] = strides[i] * shape_arr[i]
 
-        for i, _ in enumerate(db):
-            _, n = next(ns)
-            db[i] = np.sqrt(index_u[i]) * G_lin[n]
-            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
-            for j in range(i + 1, len(db)):
-                dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n - strides[j]]
+    # iterate over the indices (no need to split the loop in two parts)
+    for index_u in nd_index:
+        flat_index += 1
+
+        # contributions from lower neighbours
+        for i in range(D):
+            pivot = flat_index - strides[i]
+            db[i] = SQRT[index_u[i]] * G_lin[pivot]
+            dA[i, i] = 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
+            for j in range(i + 1, D):
+                dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
 
         dLdA += dA * dLdG[index_u]
         dLdb += db * dLdG[index_u]
 
-    dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
+    dLdc = np.sum(G * dLdG) / c
 
     return dLdA, dLdb, dLdc
 
@@ -327,5 +480,5 @@ def autoshape_numba(A, b, c, max_prob, max_shape) -> int:  # pragma: no cover
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-        shape[m] = k
+        shape[m] = k or 1
     return shape

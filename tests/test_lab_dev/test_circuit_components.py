@@ -16,14 +16,17 @@
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
+from unittest.mock import patch
+
 import numpy as np
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.circuit_components import CircuitComponent, AdjointView, DualView
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import (
     Ket,
     DM,
@@ -35,6 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
+from ..random import Abc_triple
 
 
 # original settings
@@ -52,7 +56,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         representation = Bargmann(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(representation, modes_out_ket=(1, 8), modes_in_ket=(1, 8), name=name)
+        cc = CircuitComponent(representation, wires=[(), (), (1, 8), (1, 8)], name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -62,9 +66,7 @@ class TestCircuitComponent:
 
     def test_missing_name(self):
         cc = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.2)),
-            modes_out_ket=(1, 8),
-            modes_in_ket=(1, 8),
+            Bargmann(*displacement_gate_Abc(0.1, 0.2)), wires=[(), (), (1, 8), (1, 8)]
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -80,13 +82,13 @@ class TestCircuitComponent:
         r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
         r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
 
-        cc1 = CircuitComponent(r1, modes_out_ket=m1, modes_in_ket=m1)
-        cc2 = CircuitComponent(r2, modes_out_ket=m2, modes_in_ket=m2)
+        cc1 = CircuitComponent(r1, wires=[(), (), m1, m1])
+        cc2 = CircuitComponent(r2, wires=[(), (), m2, m2])
         assert cc1 == cc2
 
         r3 = (cc1.adjoint @ cc1).representation
-        cc3 = CircuitComponent(r3, m2, m2, m2, m1)
-        cc4 = CircuitComponent(r3, m2, m2, m2, m2)
+        cc3 = CircuitComponent(r3, wires=[m2, m2, m2, m1])
+        cc4 = CircuitComponent(r3, wires=[m2, m2, m2, m2])
         assert cc3.representation == cc4.representation.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -109,14 +111,14 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
         cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
-        ccc = CircuitComponent.from_quadrature(set(), set(), {0}, {0}, cc.quadrature())
+        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_adj = d1.adjoint
 
-        assert isinstance(d1_adj, AdjointView)
+        assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
         assert (
@@ -133,7 +135,7 @@ class TestCircuitComponent:
         d1_dual = d1.dual
         vac = Vacuum([1, 8])
 
-        assert isinstance(d1_dual, DualView)
+        assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
         assert (vac >> d1 >> d1_dual).representation == vac.representation
@@ -146,9 +148,7 @@ class TestCircuitComponent:
 
     def test_light_copy(self):
         d1 = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.1)),
-            modes_out_ket=[1],
-            modes_in_ket=[1],
+            Bargmann(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
         )
         d1_cp = d1._light_copy()
 
@@ -191,6 +191,14 @@ class TestCircuitComponent:
         assert d_fock.representation == Fock(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
+
+    def test_to_fock_poly_exp(self):
+        A, b, _ = Abc_triple(3)
+        c = np.random.random((1, 5))
+        barg = Bargmann(A, b, c)
+        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
+        poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
+        assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -291,6 +299,17 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_matmul_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = d0 @ 0.8
+        assert math.allclose(result.representation.A, d0.representation.A)
+        assert math.allclose(result.representation.b, d0.representation.b)
+        assert math.allclose(result.representation.c, 0.8 * d0.representation.c)
+        result2 = 0.8 @ d0
+        assert math.allclose(result2.representation.A, d0.representation.A)
+        assert math.allclose(result2.representation.b, d0.representation.b)
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -336,7 +355,7 @@ class TestCircuitComponent:
             >> a0.to_fock(N)
             >> a1.to_fock(N)
             >> a2.to_fock(N)
-        )
+        ).to_fock(N)
 
         assert r1 == r2
 
@@ -363,6 +382,14 @@ class TestCircuitComponent:
 
         settings.AUTOSHAPE_MAX = 50
 
+    def test_rshift_error(self):
+        vac012 = Vacuum([0, 1, 2])
+        d0 = Dgate([0], x=0.1, y=0.1)
+        d0._wires = Wires()
+
+        with pytest.raises(ValueError, match="not clear"):
+            vac012 >> d0
+
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator([1], transmissivity=0.8)
         n1 = Number([1, 2], n=1).dual
@@ -387,9 +414,17 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def test_rshift_scalar(self):
+        d0 = Dgate([0], x=0.1, y=0.1)
+        result = 0.8 >> d0
+        assert math.allclose(result, 0.8 * d0.representation.c)
+
+        result2 = d0 >> 0.8
+        assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
+
     def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
+        c1 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)))
+        c2 = CircuitComponent(wires=Wires(modes_out_ket=(0, 1, 2)), name="my_component")
 
         assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
@@ -398,111 +433,87 @@ class TestCircuitComponent:
         "tests that to_fock doesn't lose the bargmann representation"
         coh = Coherent([0], x=1.0)
         coh.to_fock(20)
-        assert coh.bargmann == Coherent([0], x=1.0).bargmann
+        assert coh.bargmann_triple() == Coherent([0], x=1.0).bargmann_triple()
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent([0], x=1.0)
         CC = Ket.from_fock([0], coh.fock(20), batched=False)
         with pytest.raises(AttributeError):
-            CC.bargmann  # pylint: disable=pointless-statement
+            CC.bargmann_triple()  # pylint: disable=pointless-statement
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
         ket = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
-        back = Ket.from_quadrature([0], ket.quadrature())
+        back = Ket.from_quadrature([0], ket.quadrature_triple())
         assert ket == back
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
         dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = DM.from_quadrature([0], dm.quadrature())
+        back = DM.from_quadrature([0], dm.quadrature_triple())
         assert dm == back
 
     def test_quadrature_unitary(self):
         U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
-        back = Unitary.from_quadrature([0], [0], U.quadrature())
+        back = Unitary.from_quadrature([0], [0], U.quadrature_triple())
         assert U == back
 
     def test_quadrature_channel(self):
         C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = Channel.from_quadrature([0], [0], C.quadrature())
+        back = Channel.from_quadrature([0], [0], C.quadrature_triple())
         assert C == back
 
+    @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
+    @patch("mrmustard.lab_dev.circuit_components.display")
+    def test_ipython_repr(self, mock_display, is_fock, widget_cls):
+        """Test the IPython repr function."""
+        dgate = Dgate([1], x=0.1, y=0.1)
+        if is_fock:
+            dgate = dgate.to_fock()
+        dgate._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, Box)
+        [wires_widget, rep_widget] = box.children
+        assert isinstance(wires_widget, HTML)
+        assert type(rep_widget) is widget_cls
 
-class TestAdjointView:
-    r"""
-    Tests ``AdjointView`` objects.
-    """
+    @patch("mrmustard.lab_dev.circuit_components.display")
+    def test_ipython_repr_invalid_obj(self, mock_display):
+        """Test the IPython repr function."""
+        dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
+        dgate._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, VBox)
+        [title_widget, wires_widget] = box.children
+        assert isinstance(title_widget, HTML)
+        assert isinstance(wires_widget, HTML)
 
-    def test_init(self):
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d1_adj = AdjointView(d1)
+    def test_serialize_default_behaviour(self):
+        """Test the default serializer."""
+        name = "my_component"
+        rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
+        cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
+        kwargs, arrays = cc._serialize()
+        assert kwargs == {
+            "class": f"{CircuitComponent.__module__}.CircuitComponent",
+            "wires": cc.wires.sorted_args,
+            "rep_class": f"{Bargmann.__module__}.Bargmann",
+            "name": name,
+        }
+        assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
 
-        assert d1_adj.name == d1.name
-        assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.representation == d1.representation.conj()
+    def test_serialize_fail_when_no_modes_input(self):
+        """Test that the serializer fails if no modes or name+wires are present."""
 
-        d1_adj_adj = d1_adj.adjoint
-        assert d1_adj_adj.wires == d1.wires
-        assert d1_adj_adj.representation == d1.representation
+        class MyComponent(CircuitComponent):
+            """A dummy class without a valid modes kwarg."""
 
-    def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 2))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 2), name="my_component")
+            def __init__(self, rep, custom_modes):
+                super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
 
-        assert repr(c1.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert repr(c2.adjoint) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
-
-    def test_parameters_point_to_original_parameters(self):
-        r"""
-        Tests that the parameters of an AdjointView object point to those of the original object.
-        """
-        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
-        d1_adj = AdjointView(d1)
-
-        d1.x.value = 0.8
-
-        assert d1_adj.x.value == 0.8
-        assert d1_adj.representation == d1.representation.conj()
-
-
-class TestDualView:
-    r"""
-    Tests ``DualView`` objects.
-    """
-
-    def test_init(self):
-        r"""
-        Tests the ``__init__`` method.
-        """
-        d1 = Dgate([1], x=0.1, y=0.1)
-        d1_dual = DualView(d1)
-        vac = Vacuum([1])
-
-        assert d1_dual.name == d1.name
-        assert d1_dual.wires == d1.wires.dual
-        assert (vac >> d1 >> d1_dual).representation == vac.representation
-
-        d1_dual_dual = DualView(d1_dual)
-        assert d1_dual_dual.wires == d1.wires
-        assert d1_dual_dual.representation == d1.representation
-
-    def test_repr(self):
-        c1 = CircuitComponent(modes_out_ket=(0, 1, 3))
-        c2 = CircuitComponent(modes_out_ket=(0, 1, 3), name="my_component")
-
-        assert repr(c1.dual) == "CircuitComponent(modes=[0, 1, 3], name=CC013)"
-        assert repr(c2.dual) == "CircuitComponent(modes=[0, 1, 3], name=my_component)"
-
-    def test_parameters_point_to_original_parameters(self):
-        r"""
-        Tests that the parameters of a DualView object point to those of the original object.
-        """
-        d1 = Dgate(modes=[0], x=0.1, y=0.2, x_trainable=True)
-        d1_dual = DualView(d1)
-        vac = Vacuum([0])
-        d1.x.value = 0.8
-
-        assert d1_dual.x.value == 0.8
-        assert (vac >> d1 >> d1_dual).representation == vac.representation
+        cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        with pytest.raises(
+            TypeError, match="MyComponent does not seem to have any wires construction method"
+        ):
+            cc._serialize()

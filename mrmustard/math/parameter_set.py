@@ -14,7 +14,7 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -69,9 +69,7 @@ class ParameterSet:
 
     @property
     def all_parameters(self) -> dict[str, Union[Constant, Variable]]:
-        ret = self.constants
-        ret.update(self.variables)
-        return ret
+        return self.constants | self.variables
 
     @property
     def names(self) -> Sequence[str]:
@@ -116,6 +114,19 @@ class ParameterSet:
         ret = {}
         for k, v in self.variables.items():
             ret[f"{tag}/{k}"] = v
+        return ret
+
+    def to_dict(self) -> dict[str, Any]:
+        r"""
+        Returns a dictionary representation of this parameter set such that
+        it is compatible with the signature of built-in circuit components.
+        """
+        ret = {}
+        for name, param in self.all_parameters.items():
+            ret[name] = param.value
+            if isinstance(param, Variable):
+                ret[name + "_trainable"] = True
+                ret[name + "_bounds"] = param.bounds
         return ret
 
     def to_string(self, decimals: int) -> str:

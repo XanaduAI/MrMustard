@@ -30,7 +30,7 @@ from mrmustard.math.lattice.neighbors import lower_neighbors
 from mrmustard.math.lattice.pivots import first_available_pivot
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
-SQRT = np.sqrt(np.arange(100000))
+SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
 
 
 @njit
@@ -39,7 +39,7 @@ def vanilla_step(
     A: ComplexMatrix,
     b: ComplexVector,
     index: tuple[int, ...],
-) -> complex:
+) -> complex:  # pragma: no cover
     r"""Fock-Bargmann recurrence relation step, vanilla version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.
@@ -74,31 +74,29 @@ def vanilla_step_batch(
     b: ComplexTensor,
     index: tuple[int, ...],
 ) -> complex:  # pragma: no cover
-    r"""Fock-Bargmann recurrence relation step, vanilla batched version.
+    r"""Fock-Bargmann recurrence relation step, batched version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.
     The necessary pivot and neighbours must have already been computed,
     as this step will read those values from G.
-    Note that this function is different from vanilla_step with b is no longer a vector,
-    it becomes a bathced vector with the batch dimension on the last index.
+    Note that this function is different from vanilla_step as b is no longer a vector,
+    it becomes a batched vector with the batch dimension on the first index.
 
     Args:
-        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
-        A (array): A matrix of the Fock-Bargmann representation
-        b (array): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
-        index (Sequence): index of the amplitude to calculate
+        G: fock amplitudes data store that supports getitem[tuple[int, ...]]
+        A: A matrix of the Fock-Bargmann representation
+        b: batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
+        index: index of the amplitude to calculate
     Returns:
-        array: the value of the amplitude at the given index according to each batch on the last index
+        array: the value of the amplitude at the given index according to each batch on the first index
     """
-    # get pivot
     i, pivot = first_available_pivot(index)
 
-    # pivot contribution
-    value_at_index = b[i] * G[pivot]
-
-    # neighbors contribution
+    # contribution from G[pivot]
+    value_at_index = b[..., i] * G[(slice(None),) + pivot]
+    # contributions from G[neighbor]
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
 
     return value_at_index / SQRT[index[i]]
 
@@ -205,7 +203,10 @@ def vanilla_step_dict(
 
 @njit
 def binomial_step(
-    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[ComplexTensor, float]:
     r"""Computes a whole subspace of the ``G`` tensor at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
@@ -233,7 +234,10 @@ def binomial_step(
 
 @njit
 def binomial_step_dict(
-    G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
 ) -> tuple[types.DictType, float]:
     r"""Computes a whole subspace of the ``G`` dict at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).

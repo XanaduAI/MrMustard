@@ -13,22 +13,19 @@
 # limitations under the License.
 
 """
-A set of components that do not correspond to physical elements of a circuit, but can be used to
-perform useful mathematical calculations.
+The class representing a trace out operation.
 """
-
-# pylint: disable=super-init-not-called, protected-access
 
 from __future__ import annotations
 from typing import Sequence
 
 from mrmustard import math
 from mrmustard.physics import triples
-from mrmustard.lab_dev.transformations import Map, Operation
-from .circuit_components import CircuitComponent
-from ..physics.representations import Bargmann
 
-__all__ = ["TraceOut", "BtoPS", "BtoQ"]
+from ..circuit_components import CircuitComponent
+from ...physics.representations import Bargmann
+
+__all__ = ["TraceOut"]
 
 
 class TraceOut(CircuitComponent):
@@ -65,8 +62,7 @@ class TraceOut(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            modes_in_ket=modes,
-            modes_in_bra=modes,
+            wires=[(), modes, (), modes],
             representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )
@@ -93,57 +89,5 @@ class TraceOut(CircuitComponent):
             repr = other.representation.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
-        cpt = other._from_attributes(repr, wires)
+        cpt = other._from_attributes(repr, wires)  # pylint:disable=protected-access
         return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
-
-
-class BtoPS(Map):
-    r"""The `s`-parametrized ``Dgate`` as a ``Map``.
-
-    Used internally as a ``Channel`` for transformations between representations.
-
-    Args:
-        num_modes: The number of modes of this channel.
-        s: The `s` parameter of this channel.
-    """
-
-    def __init__(
-        self,
-        modes: Sequence[int],
-        s: float,
-    ):
-        super().__init__(
-            modes_out=modes,
-            modes_in=modes,
-            representation=Bargmann.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
-            ),
-            name="BtoPS",
-        )
-        self.s = s
-
-
-class BtoQ(Operation):
-    r"""The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
-    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
-    ones unless they support inner products in quadrature representation.
-
-    Args:
-        modes: The modes of this channel.
-        phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
-    """
-
-    def __init__(
-        self,
-        modes: Sequence[int],
-        phi: float,
-    ):
-        repr = Bargmann.from_function(
-            fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
-        )
-        super().__init__(
-            modes_out=modes,
-            modes_in=modes,
-            representation=repr,
-            name="BtoQ",
-        )

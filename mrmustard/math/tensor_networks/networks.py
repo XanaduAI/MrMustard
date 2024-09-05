@@ -16,17 +16,16 @@
 
 from __future__ import annotations
 
-from typing import Optional
+import numpy as np
 from opt_einsum import contract as opt_contract
 
 import networkx as nx
-import numpy as np
 import matplotlib.pyplot as plt
 
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
+def connect(wire1: Wire, wire2: Wire, dim: int | None = None):
     r"""
     Connects two wires in a tensor network.
 
@@ -135,7 +134,12 @@ def draw(
 
     fig = plt.figure(figsize=figsize)
     nx.draw_networkx_nodes(
-        graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
+        graph,
+        pos,
+        edgecolors="gray",
+        alpha=0.9,
+        node_size=node_size,
+        node_color=node_color,
     )
     nx.draw_networkx_edges(graph, pos, edge_color="lightgreen", width=4, alpha=0.6)
     nx.draw_networkx_edges(

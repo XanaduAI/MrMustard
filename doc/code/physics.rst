@@ -6,7 +6,7 @@ mrmustard.physics
 
     physics/ansatze
     physics/representations
-    
+
 .. toctree::
     :maxdepth: 1
 

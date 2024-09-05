@@ -156,7 +156,9 @@ def test_complex_gaussian_integral():
     assert np.allclose(res2[1], b3)
     assert np.allclose(res2[2], c3)
 
-    res3 = complex_gaussian_integral(join_Abc((A1, b1, c1), (A1, b1, c1)), [0, 1], [2, 3])
+    res3 = complex_gaussian_integral(
+        join_Abc((A1, math.cast(b1, "float64"), c1), (A1, b1, c1)), [0, 1], [2, 3]
+    )
     assert np.allclose(res3[0], 0)
     assert np.allclose(res3[1], 0)
     assert np.allclose(res3[2], 1)
@@ -212,10 +214,15 @@ def test_reorder_abc():
     assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
     assert all(np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c)))
-    c = np.array([[6, 7], [8, 9]])
-    flipped = reorder_abc((A, b, c), (1, 0))  #  test transposition of c
+
+    A = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
+    b = np.array([4, 5, 6])
+    c = np.array([[1, 2, 3]])
+    same = reorder_abc((A, b, c), (0, 1))
+    assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
+    flipped = reorder_abc((A, b, c), (1, 0))
     assert all(
-        np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c.T))
+        np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0, 2], :][:, [1, 0, 2]], b[[1, 0, 2]], c))
     )
 
 

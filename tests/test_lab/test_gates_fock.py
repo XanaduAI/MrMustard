@@ -70,7 +70,10 @@ def test_attenuator_on_fock():
     assert not (Fock(10) >> Attenuator(0.5)).is_pure
 
 
-@given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
+@given(
+    state=n_mode_pure_state(num_modes=2),
+    xxyy=array_of_(medium_float, minlen=4, maxlen=4),
+)
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
@@ -344,24 +347,6 @@ def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     expected = np.dot(col, row)
 
     assert np.allclose(expected, choi)
-
-
-def test_measure_with_fock():
-    "tests that the autocutoff respects the fock projection cutoff"
-    cov = np.array(
-        [
-            [1.08341848, 0.26536937, 0.0, 0.0],
-            [0.26536937, 1.05564949, 0.0, 0.0],
-            [0.0, 0.0, 0.98356475, -0.24724869],
-            [0.0, 0.0, -0.24724869, 1.00943755],
-        ]
-    )
-
-    state = State(means=np.zeros(4), cov=cov)
-
-    n_detect = 2
-    state_out = state << Fock([n_detect], modes=[1])
-    assert np.allclose(state_out.ket(), np.array([0.00757899, 0.0]))
 
 
 @given(theta=angle, phi=angle)

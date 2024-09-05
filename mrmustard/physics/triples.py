@@ -18,10 +18,12 @@ various states and transformations.
 """
 
 from typing import Generator, Iterable, Union
-from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar
 
 import numpy as np
+
+from mrmustard import math, settings
+from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.physics.gaussian_integrals import contract_two_Abc
 
 
 #  ~~~~~~~~~
@@ -197,7 +199,7 @@ def two_mode_squeezed_vacuum_state_Abc(
 
     If one of the input parameters has length ``1``, it is tiled so that its length matches
     that of the other one. For example, passing ``r=[1,2,3,4]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1]``.
+    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1,1]``.
 
     Args:
         r: The squeezing magnitudes.
@@ -214,6 +216,63 @@ def two_mode_squeezed_vacuum_state_Abc(
     A = math.block([[O, tanhr], [tanhr, O]])
     b = _vacuum_B_vector(n_modes)
     c = math.prod(1 / math.cosh(r))
+
+    return A, b, c
+
+
+def sauron_state_Abc(n: int, epsilon: float):
+    r"""
+    The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
+    ring of coherent states.
+
+    Args:
+        n: The number of photons.
+        epsilon: The size of the ring. The approximation is exact in the limit for epsilon that goes to zero.
+
+    Returns:
+        The ``(A, b, c)`` triple of the sauron state.
+    """
+
+    phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
+    cs = np.exp(1j * phases)
+    bs = (epsilon * cs)[..., None]
+    As = np.zeros([n + 1, 1, 1], dtype="complex128")
+
+    # normalization
+    prob = 0
+    for A1, b1, c1 in zip(As, bs, cs):
+        for A2, b2, c2 in zip(As, bs, cs):
+            prob += contract_two_Abc(
+                (np.conj(A1), np.conj(b1), np.conj(c1)), (A2, b2, c2), [0], [0]
+            )[2]
+    cs /= np.sqrt(prob)
+
+    return As, bs, cs
+
+
+def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of a tensor product of quadrature eigenstates.
+
+    The number of modes depends on the length of the input parameters.
+
+    If one of the input parameters has length ``1``, it is tiled so that its length matches
+    that of the other one. For example, passing ``x=[1,2,3]`` and ``phi=1`` is equivalent to
+    passing ``x=[1,2,3]`` and ``phi=[1,1,1]``.
+
+    Args:
+        r: The squeezing magnitudes.
+        phi: The squeezing angles.
+
+    Returns:
+        The ``(A, b, c)`` triple of the squeezed vacuum states.
+    """
+    hbar = settings.HBAR
+    x, phi = list(_reshape(x=x, phi=phi))
+
+    A = -math.diag(math.exp(1j * 2 * phi))
+    b = x * math.exp(1j * phi) * math.sqrt(2 / hbar)
+    c = math.prod(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)))
 
     return A, b, c
 
@@ -523,18 +582,26 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     return A, b, c
 
 
-def fock_damping_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def fock_damping_Abc(
+    beta: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
     Args:
-        n_modes: The number of modes.
+        beta: The damping parameter.
 
     Returns:
-        The ``(A, b, c)`` triple of the Fock damping channels.
+        The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    A = _X_matrix_for_unitary(n_modes * 2)
-    b = _vacuum_B_vector(n_modes * 4)
+    beta = math.atleast_1d(beta, math.complex128)
+    n_modes = len(beta)
+
+    O_n = math.zeros((n_modes, n_modes), math.complex128)
+    B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
+
+    A = math.block([[O_n, B_n], [B_n, O_n]])
+    b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
 
     return A, b, c

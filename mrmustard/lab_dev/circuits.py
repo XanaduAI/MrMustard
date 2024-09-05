@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=too-many-branches
 
 """
-A class to quantum circuits.
+A class to simulate quantum circuits.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence, Union
+from copy import deepcopy
+from typing import Sequence
+from pydoc import locate
 from mrmustard import math, settings
+from mrmustard.utils.serialize import save
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.transformations import BSgate
+import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
 
 __all__ = ["Circuit"]
 
@@ -36,8 +38,9 @@ class Circuit:
     are contracted is specified by the ``path`` attribute.
 
     Different orders of contraction lead to the same result, but the cost of the contraction
-    can vary significantly. The ``path`` attribute is used to specify the order in which the
-    components are contracted.
+    can vary significantly. The ``optimize`` method optimizes the Fock shapes and the contraction
+    path of the circuit, while the ``contract`` method contracts the components in the order
+    specified by the ``path`` attribute.
 
     .. code-block::
 
@@ -71,160 +74,91 @@ class Circuit:
         components: A list of circuit components.
     """
 
-    def __init__(self, components: Optional[Sequence[CircuitComponent]] = None) -> None:
-        self._components = [c._light_copy() for c in components] if components else []
-        self._path = []
+    def __init__(
+        self,
+        components: Sequence[CircuitComponent] | None = None,
+    ) -> None:
+        self.components = [c._light_copy() for c in components] if components else []
+        self._graph = bb.parse_components(self.components)
+        self.path: list[tuple[int, int]] = [
+            (0, i) for i in range(1, len(self.components))
+        ]  # default path (likely not optimal)
 
-        # a dictionary to keep track of the underlying graph, mapping the ``ids`` of output wires
-        # to the ``ids`` of the input wires that they are being contracted with. It is initialized
-        # automatically (once and for all) when a path is validated for the first time.
-        self._graph: dict[int, int] = {}
-
-    @property
-    def indices_dict(self) -> dict[int, dict[int, dict[int, int]]]:
+    def optimize(
+        self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
+    ) -> None:
         r"""
-        A dictionary that maps the index of each component to all the components it is connected to.
-        For each connected component, the value is a dictionary with a key-value pair for each component
-        connected to the first one, where the key is the index of this component and the value is
-        a dictionary with all the wire index pairs that are being contracted between the two components.
-
-        For example, if components[i] is connected to components[j] and they are contracting two wires
-        at index pairs (a, b) and (c, d), then indices_dict[i][j] = {a: b, c:d}.
-
-        This dictionary is used to propagate the shapes of the components in the circuit.
-        """
-        if not hasattr(self, "_idxdict"):
-            self._idxdict = self._indices_dict()
-        return self._idxdict
-
-    def _indices_dict(self):
-        ret = dict()
-        for i, opA in enumerate(self.components):
-            out_idx = set(opA.wires.output.indices)
-            indices: dict[int, dict[int, int]] = dict()
-            for j, opB in enumerate(self.components[i + 1 :]):
-                ovlp_bra = opA.wires.output.bra.modes & opB.wires.input.bra.modes
-                ovlp_ket = opA.wires.output.ket.modes & opB.wires.input.ket.modes
-                if not (ovlp_bra or ovlp_ket):
-                    continue
-                iA = opA.wires.output.bra[ovlp_bra].indices + opA.wires.output.ket[ovlp_ket].indices
-                iB = opB.wires.input.bra[ovlp_bra].indices + opB.wires.input.ket[ovlp_ket].indices
-                if not out_idx.intersection(iA):
-                    continue
-                indices[i + j + 1] = dict(zip(iA, iB))
-                out_idx -= set(iA)
-                if not out_idx:
-                    break
-            ret[i] = indices
-        return ret
-
-    def propagate_shapes(self):
-        r"""Propagates the shape information so that the shapes of the components are better
-        than those provided by the auto_shape attribute.
-
-        .. code-block::
-
-        >>> from mrmustard.lab_dev import BSgate, Dgate, Coherent, Circuit, SqueezedVacuum
-
-        >>> circ = Circuit([Coherent([0], x=1.0), Dgate([0], 0.1)])
-        >>> assert [op.auto_shape() for op in circ] == [(5,), (50,50)]
-        >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape() for op in circ] == [(5,), (50, 5)]
-
-        >>> circ = Circuit([SqueezedVacuum([0,1], r=[0.5,-0.5]), BSgate([0,1], 0.9)])
-        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (50, 50, 50, 50)]
-        >>> circ.propagate_shapes()
-        >>> assert [op.auto_shape() for op in circ] == [(6, 6), (12, 12, 6, 6)]
-        """
-
-        for component in self:
-            component.manual_shape = list(component.auto_shape())
-
-        # update the manual_shapes until convergence
-        changes = self._update_shapes()
-        while changes:
-            changes = self._update_shapes()
-
-    def _update_shapes(self) -> bool:
-        r"""Updates the shapes of the components in the circuit graph by propagating the known shapes.
-        If two wires are connected and one of them has shape n and the other None, the shape of the
-        wire with None is updated to n. If both wires have a shape, the minimum is taken.
-
-        For a BSgate, we apply the rule that the sum of the shapes of the inputs must be equal to the sum of
-        the shapes of the outputs.
-
-        It returns True if any shape was updated, False otherwise.
-        """
-        changes = False
-        # get shapes from neighbors if needed
-        for i, component in enumerate(self.components):
-            for j, indices in self.indices_dict[i].items():
-                for a, b in indices.items():
-                    s_ia = self.components[i].manual_shape[a]
-                    s_jb = self.components[j].manual_shape[b]
-                    s = min(s_ia or 1e42, s_jb or 1e42) if (s_ia or s_jb) else None
-                    if self.components[j].manual_shape[b] != s:
-                        self.components[j].manual_shape[b] = s
-                        changes = True
-                    if self.components[i].manual_shape[a] != s:
-                        self.components[i].manual_shape[a] = s
-                        changes = True
-
-        # propagate through BSgates
-        for i, component in enumerate(self.components):
-            if isinstance(component, BSgate):
-                a, b, c, d = component.manual_shape
-                if c and d:
-                    if not a or a > c + d:
-                        a = c + d
-                        changes = True
-                    if not b or b > c + d:
-                        b = c + d
-                        changes = True
-                if a and b:
-                    if not c or c > a + b:
-                        c = a + b
-                        changes = True
-                    if not d or d > a + b:
-                        d = a + b
-                        changes = True
-
-                self.components[i].manual_shape = [a, b, c, d]
-
-        return changes
-
-    @property
-    def components(self) -> Sequence[CircuitComponent]:
-        r"""
-        The components in this circuit.
-        """
-        return self._components
-
-    @property
-    def path(self) -> list[tuple[int, int]]:
-        r"""
-        A list describing the desired contraction path followed by the ``Simulator``.
-        """
-        return self._path
-
-    @path.setter
-    def path(self, value: list[tuple[int, int]]) -> None:
-        r"""
-        A function to set the path.
-
-        In addition to setting the path, it validates it using the ``validate_path`` method.
+        Optimizes the Fock shapes and the contraction path of this circuit.
+        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
+        components with multimode Bargmann/Fock components leads to a higher total cost.
 
         Args:
-            path: The path.
+            n_init: The number of random contractions to find an initial cost upper bound.
+            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
+            verbose: If True (default), the progress of the optimization is shown.
         """
-        self.validate_path(value)
-        self._path = value
+        graph = deepcopy(self._graph)
+        bb.assign_costs(graph)
+        G = bb.random_solution(graph)
+        if len(G.nodes) > 1:
+            raise ValueError("Circuit has disconnected components.")
 
-    def lookup_path(self) -> None:
+        i = list(G.nodes)[0]
+        if len(G.nodes[i]["component"].wires) > 0:
+            raise NotImplementedError("Cannot optimize a circuit with dangling wires yet.")
+
+        self.optimize_fock_shapes(verbose)
+        heuristics = (
+            ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF")
+            if with_BF_heuristic
+            else ("1BB", "2BB", "1FF", "2FF")
+        )
+        optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
+        self.path = list(optimized_graph.solution)
+
+    def contract(self) -> CircuitComponent:
         r"""
-        An auxiliary function that helps building the contraction path for this circuit.
+        Contracts the components in this circuit in the order specified by the ``path`` attribute.
 
-        Shows the remaining components and the corresponding contraction indices.
+        Returns:
+            The result of contracting the circuit.
+
+        Raises:
+            ValueError: If ``circuit`` has an incomplete path.
+        """
+        if len(self.path) != len(self) - 1:
+            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, found "
+            msg += (
+                f"{len(self.path)}. Please run the ``.optimize()`` method or set the path manually."
+            )
+            raise ValueError(msg)
+
+        ret = dict(enumerate(self.components))
+        for idx0, idx1 in self.path:
+            ret[idx0] = ret[idx0] >> ret.pop(idx1)
+
+        return list(ret.values())[0]
+
+    def optimize_fock_shapes(self, verbose: bool) -> None:
+        r"""
+        Optimizes the Fock shapes of the components in this circuit.
+        It starts by matching the existing connected wires and keeps the smaller shape,
+        then it enforces the BSgate symmetry (conservation of photon number) to further
+        reduce the shapes across the circuit.
+        This operation acts in place.
+        """
+        if verbose:
+            print("===== Optimizing Fock shapes =====")
+        self._graph = bb.optimize_fock_shapes(self._graph, 0, verbose)
+        for i, c in enumerate(self.components):
+            c.manual_shape = self._graph.component(i).shape
+
+    def check_contraction(self, n: int) -> None:
+        r"""
+        An auxiliary function that helps visualize the contraction path of the circuit.
+
+        Shows the remaining components and the corresponding contraction indices after n
+        of the contractions in ``self.path``.
 
         .. code-block::
 
@@ -239,7 +173,7 @@ class Circuit:
 
                 >>> # ``circ`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
-                >>> circ.lookup_path()
+                >>> circ.check_contraction(0)  # no contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗
@@ -264,9 +198,10 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> # start building the path
-                >>> circ.path = [(0, 1)]
-                >>> circ.lookup_path()
+                >>> # start building the path manually
+                >>> circ.path = ((0, 1), (2, 3), (0, 2))
+
+                >>> circ.check_contraction(1)  # after 1 contraction
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -286,8 +221,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.path = [(0, 1), (2, 3)]
-                >>> circ.lookup_path()
+                >>> circ.check_contraction(2)  # after 2 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -303,8 +237,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.path = [(0, 1), (2, 3), (0, 2)]
-                >>> circ.lookup_path()
+                >>> circ.check_contraction(3)  # after 3 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
@@ -319,7 +252,7 @@ class Circuit:
             ValueError: If ``circuit.path`` contains invalid contractions.
         """
         remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
-        for idx0, idx1 in self.path:
+        for idx0, idx1 in self.path[:n]:
             try:
                 left = remaining[idx0].components
                 right = remaining.pop(idx1).components
@@ -336,105 +269,45 @@ class Circuit:
 
         print(msg)
 
-    def make_path(self, strategy: str = "l2r") -> None:
+    def serialize(self, filestem: str = None):
         r"""
-        Automatically generates a path for this circuit.
-
-        The available strategies are:
-            * ``l2r``: The two left-most components are contracted together, then the
-                resulting component is contracted with the third one from the left, et cetera.
-            * ``r2l``: The two right-most components are contracted together, then the
-                resulting component is contracted with the third one from the right, et cetera.
+        Serialize a Circuit.
 
         Args:
-            strategy: The strategy used to generate the path.
+            filestem: An optional name to give the resulting file saved to disk.
         """
-        if strategy == "l2r":
-            self.path = [(0, i) for i in range(1, len(self))]
-        elif strategy == "r2l":
-            self.path = [(i, i + 1) for i in range(len(self) - 2, -1, -1)]
-        else:
-            msg = f"Strategy ``{strategy}`` is not available."
-            raise ValueError(msg)
+        components, data = list(zip(*[c._serialize() for c in self.components]))
+        kwargs = {
+            "arrays": {f"{k}:{i}": v for i, arrs in enumerate(data) for k, v in arrs.items()},
+            "path": self.path,
+            "components": components,
+        }
+        return save(type(self), filename=filestem, **kwargs)
 
-    def validate_path(self, path) -> None:
-        r"""
-        A convenience function to check whether a given contraction path is valid for this circuit.
+    @classmethod
+    def deserialize(cls, data: dict) -> Circuit:
+        r"""Deserialize a Circuit."""
+        comps, path = map(data.pop, ("components", "path"))
 
-        Uses the wires' ``ids`` to understand what pairs of wires would be contracted, if the
-        simulation was carried from left to right. Next, it checks whether ``path`` is an equivalent
-        contraction path, meaning that it instructs to contract the same wires as a ``l2r`` path.
+        for k, v in data.items():
+            kwarg, i = k.split(":")
+            comps[int(i)][kwarg] = v
 
-        Args:
-            path: A candidate contraction path.
-
-        Raises:
-            ValueError: If the given path is not equivalent to a left-to-right path.
-        """
-        wires = [c.wires for c in self.components]
-
-        # if at least one of the ``Wires`` has wires on the bra side, add the adjoint
-        # to all the other ``Wires``
-        add_adjoints = len(set(bool(w.bra) for w in wires)) != 1
-        if add_adjoints:
-            wires = [(w @ w.adjoint)[0] if bool(w.bra) is False else w for w in wires]
-
-        # if the circuit has no graph, compute it
-        if not self._graph:
-            # a dictionary to store the ``ids`` of the dangling wires
-            ids_dangling_wires = {m: {"ket": None, "bra": None} for w in wires for m in w.modes}
-
-            # populate the graph
-            for w in wires:
-                # if there is a dangling wire, add a contraction
-                for m in w.input.ket.modes:  # ket side
-                    if ids_dangling_wires[m]["ket"]:
-                        self._graph[ids_dangling_wires[m]["ket"]] = w.input.ket[m].ids[0]
-                        ids_dangling_wires[m]["ket"] = None
-                for m in w.input.bra.modes:  # bra side
-                    if ids_dangling_wires[m]["bra"]:
-                        self._graph[ids_dangling_wires[m]["bra"]] = w.input.bra[m].ids[0]
-                        ids_dangling_wires[m]["bra"] = None
-
-                # update the dangling wires
-                for m in w.output.ket.modes:  # ket side
-                    if w.output.ket[m].ids:
-                        if ids_dangling_wires[m]["ket"]:
-                            raise ValueError("Dangling wires cannot be overwritten.")
-                        ids_dangling_wires[m]["ket"] = w.output.ket[m].ids[0]
-                for m in w.output.bra.modes:  # bra side
-                    if w.output.bra[m].ids:
-                        if ids_dangling_wires[m]["bra"]:
-                            raise ValueError("Dangling wires cannot be overwritten.")
-                        ids_dangling_wires[m]["bra"] = w.output.bra[m].ids[0]
-
-        # use ``self._graph`` to validate the path
-        remaining = dict(enumerate(wires))
-        for i1, i2 in path:
-            overlap_ket = remaining[i1].output.ket.modes & remaining[i2].input.ket.modes
-            for m in overlap_ket:
-                key = remaining[i1].output.ket[m].ids[0]
-                val = remaining[i2].input.ket[m].ids[0]
-                if self._graph[key] != val:
-                    raise ValueError(f"The contraction ``{(i1, i2)}`` is invalid.")
-
-            overlap_bra = remaining[i1].output.bra.modes & remaining[i2].input.bra.modes
-            for m in overlap_bra:
-                key = remaining[i1].output.bra[m].ids[0]
-                val = remaining[i2].input.bra[m].ids[0]
-                if self._graph[key] != val:
-                    raise ValueError(f"The contraction ``{i1, i2}`` is invalid.")
-
-            remaining[i1] = (remaining[i1] @ remaining.pop(i2))[0]
+        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
+        circ.path = [tuple(p) for p in path]
+        return circ
 
     def __eq__(self, other: Circuit) -> bool:
+        if not isinstance(other, Circuit):
+            return false
         return self.components == other.components
 
     def __getitem__(self, idx: int) -> CircuitComponent:
         r"""
         The component in position ``idx`` of this circuit's components.
         """
-        return self._components[idx]
+        return self.components[idx]
 
     def __len__(self):
         r"""
@@ -448,7 +321,7 @@ class Circuit:
         """
         return iter(self.components)
 
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
+    def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
         Returns a ``Circuit`` that contains all the components of ``self`` as well as
         ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if

@@ -15,10 +15,11 @@
 """Tests for the lattice module"""
 
 import importlib
-import pytest
 import numpy as np
+import pytest
 
-from mrmustard.lab import Gaussian, Dgate, Ggate
+from mrmustard.lab import Gaussian, Dgate
+from mrmustard import lab_dev as mmld
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
@@ -27,6 +28,11 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
     beamsplitter,
     sector_idx,
     sector_u,
+)
+from mrmustard.math.lattice.strategies.displacement import displacement
+from mrmustard.math.lattice.strategies.vanilla import (
+    vanilla_stable,
+    vanilla_stable_batch,
 )
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
@@ -80,18 +86,16 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
 
-    cutoffs = (20, 20, 20, 20, batch_size)
-
     # Vanilla MM
-    G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs[:-1])
+    G_ref = math.hermite_renormalized(A, B, C, shape=(3, 4, 5, 2, 6, 4))
 
     # replicate the B
-    B_batched = np.stack((B,) * batch_size, axis=1)
+    B_batched = np.stack((B,) * batch_size, axis=0)
 
-    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
+    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
 
     for nb in range(batch_size):
-        assert np.allclose(G_ref, G_batched[:, :, :, :, nb])
+        assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
 
 
 @pytest.mark.parametrize("batch_size", [1, 3])
@@ -118,16 +122,18 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
 
 def test_bs_schwinger():
     "test that the schwinger method to apply a BS works correctly"
-    G = np.array(Gaussian(2).ket(cutoffs=[20, 20]))
+    G = mmld.Ket.random([0, 1]).fock([20, 20])
+    G = math.asnumpy(G)
     BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
     manual = np.einsum("ab, cdab", G, BS)
-    apply_BS_schwinger(1.0, 1.0, 0, 1, G)
+    G = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
     assert np.allclose(manual, G)
 
-    Gg = np.array(Ggate(2).U([20, 20]))
+    Gg = mmld.Unitary.random([0, 1]).fock([20, 20, 20, 20])
+    Gg = math.asnumpy(Gg)
     BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
     manual = np.einsum("cdab, abef", BS, Gg)
-    apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
+    Gg = apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
     assert np.allclose(manual, Gg)
 
 
@@ -145,3 +151,28 @@ def test_sector_u():
     for i in range(1, 10):
         u = sector_u(i, theta=1.129, phi=0.318)
         assert u @ u.conj().T == pytest.approx(np.eye(i + 1))
+
+
+def test_vanilla_stable():
+    "tests the vanilla stable against other known stable methods"
+    settings.STABLE_FOCK_CONVERSION = True
+    assert np.allclose(
+        mmld.Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
+        displacement((1000, 1000), 4.0 + 4.0j),
+    )
+    sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
+    assert np.max(np.abs(sgate)) < 1
+    settings.STABLE_FOCK_CONVERSION = False
+
+
+def test_vanilla_stable_batched():
+    "tests the vanilla average against other known stable methods. batched version."
+    settings.STABLE_FOCK_CONVERSION = True
+    A, b, c = mmld.Ket.random([0, 1]).bargmann_triple(batched=True)
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)  # for tf backend
+    batched = vanilla_stable_batch((4, 4), A[0], b, c[0])
+    non_batched = vanilla_stable((4, 4), A[0], b[0], c[0])
+
+    assert np.allclose(batched[0], non_batched)
+
+    settings.STABLE_FOCK_CONVERSION = False

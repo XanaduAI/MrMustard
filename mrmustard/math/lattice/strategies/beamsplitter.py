@@ -6,7 +6,7 @@
 
 #     http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless required by applicable law or agreed to in writing, software 
+# Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -271,9 +271,8 @@ def sector_u(N: int, theta: float, phi: float) -> np.ndarray:
     return V @ np.diag(np.exp(1j * E)) @ np.conj(V.T)
 
 
-def apply_BS_schwinger(theta, phi, i, j, array):
+def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
     """Applies the BS with given theta, phi to indices i,j of the given array.
-    Note that it modifies the array in place.
 
     Args:
         theta (float): The angle of the beamsplitter.
@@ -296,3 +295,4 @@ def apply_BS_schwinger(theta, phi, i, j, array):
     # step 3: reshape back and reorder
     array = array.reshape(shape_rest + shape)
     array = array.transpose(np.argsort(order))
+    return array

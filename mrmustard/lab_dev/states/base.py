@@ -25,18 +25,17 @@ representation.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
-import os
+from typing import Sequence
 
 from enum import Enum
-from IPython.display import display, HTML
-from mako.template import Template
+import warnings
+
+import numpy as np
+from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import numpy as np
-import warnings
-from mrmustard import math, settings
-from mrmustard.math.parameters import Variable
+
+from mrmustard import math, settings, widgets
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
@@ -46,12 +45,11 @@ from mrmustard.utils.typing import (
     ComplexVector,
     RealVector,
     Scalar,
+    Vector,
 )
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
-    norm_ket,
-    trace_dm,
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
@@ -129,12 +127,52 @@ class State(CircuitComponent):
     Base class for all states.
     """
 
+    @property
+    def is_pure(self):
+        r"""
+        Whether this state is pure.
+        """
+        return math.allclose(self.purity, 1.0)
+
+    @property
+    def L2_norm(self) -> float:
+        r"""
+        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        """
+        return math.sum(math.real(self >> self.dual))
+
+    @property
+    def probability(self) -> float:
+        r"""
+        Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
+        :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
+        """
+        raise NotImplementedError
+
+    @property
+    def purity(self) -> float:
+        r"""
+        The purity of this state.
+        """
+        raise NotImplementedError
+
+    @property
+    def _L2_norms(self) -> RealVector:
+        r"""
+        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
+        element-wise along the batch dimension.
+        """
+        settings.UNSAFE_ZIP_BATCH = True
+        rep = self >> self.dual
+        settings.UNSAFE_ZIP_BATCH = False
+        return math.real(rep)
+
     @classmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
@@ -144,7 +182,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.physics.representations import Bargmann
             >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.lab_dev.states.base import Ket
 
             >>> modes = [0, 1]
             >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
@@ -173,7 +211,7 @@ class State(CircuitComponent):
         cls,
         modes: Sequence[int],
         array: ComplexTensor,
-        name: Optional[str] = None,
+        name: str | None = None,
         batched: bool = False,
     ) -> State:
         r"""
@@ -215,8 +253,8 @@ class State(CircuitComponent):
         modes: Sequence[int],
         cov: ComplexMatrix,
         means: ComplexMatrix,
-        name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-5,
+        name: str | None = None,
+        atol_purity: float | None = 1e-5,
     ) -> Ket | DM:  # pylint: disable=abstract-method
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
@@ -252,7 +290,7 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         phi: float = 0.0,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> State:
         r"""
         Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
@@ -275,46 +313,6 @@ class State(CircuitComponent):
         Q = cls(modes, Bargmann(*triple))
         return cls(modes, (Q >> QtoB).representation, name)
 
-    @property
-    def _L2_norms(self) -> RealVector:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
-        element-wise along the batch dimension.
-        """
-        settings.UNSAFE_ZIP_BATCH = True
-        rep = self >> self.dual
-        settings.UNSAFE_ZIP_BATCH = False
-        return math.real(rep)
-
-    @property
-    def L2_norm(self) -> float:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
-        """
-        return math.sum(math.real(self >> self.dual))
-
-    @property
-    def probability(self) -> float:
-        r"""
-        Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
-        :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
-        """
-        raise NotImplementedError
-
-    @property
-    def purity(self) -> float:
-        r"""
-        The purity of this state.
-        """
-        raise NotImplementedError
-
-    @property
-    def is_pure(self):
-        r"""
-        Whether this state is pure.
-        """
-        return math.allclose(self.purity, 1.0)
-
     def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.
@@ -331,16 +329,29 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann)
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the State.
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
+        """
+        raise NotImplementedError
 
     def visualize_2d(
         self,
         xbounds: tuple[int, int] = (-6, 6),
         pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+        min_shape: int = 50,
+    ) -> go.Figure | None:
         r"""
         2D visualization of the Wigner function of this state.
 
@@ -361,6 +372,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
+            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -370,8 +382,8 @@ class State(CircuitComponent):
         """
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
-
-        state = self.to_fock()
+        shape = [max(min_shape, d) for d in self.auto_shape()]
+        state = self.to_fock(tuple(shape))
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -395,7 +407,7 @@ class State(CircuitComponent):
         fig = make_subplots(
             rows=2,
             cols=2,
-            column_widths=[2, 1],
+            column_widths=[5, 3],
             row_heights=[1, 2],
             vertical_spacing=0.05,
             horizontal_spacing=0.05,
@@ -409,12 +421,12 @@ class State(CircuitComponent):
             x=xs,
             y=-ps,
             z=math.transpose(z),
-            colorscale=colorscale,
+            coloraxis="coloraxis",
             name="Wigner function",
             autocolorscale=False,
         )
         fig.add_trace(fig_21, row=2, col=1)
-        fig.update_traces(row=2, col=1, showscale=False)
+        fig.update_traces(row=2, col=1)
         fig.update_xaxes(range=xbounds, title_text="x", row=2, col=1)
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
@@ -432,10 +444,11 @@ class State(CircuitComponent):
 
         fig.update_layout(
             height=500,
-            width=500,
+            width=580,
             plot_bgcolor="aliceblue",
             margin=dict(l=20, r=20, t=30, b=20),
             showlegend=False,
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_xaxes(
             showline=True,
@@ -454,17 +467,17 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_3d(
         self,
         xbounds: tuple[int] = (-6, 6),
         pbounds: tuple[int] = (-6, 6),
         resolution: int = 200,
-        colorscale: str = "viridis",
+        colorscale: str = "RdBu",
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+        min_shape: int = 50,
+    ) -> go.Figure | None:
         r"""
         3D visualization of the Wigner function of this state on a surface plot.
 
@@ -475,6 +488,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
+            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
 
         Returns:
             A ``Plotly`` figure representing the state in 3D.
@@ -484,8 +498,8 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
-
-        state = self.to_fock()
+        shape = [max(min_shape, d) for d in self.auto_shape()]
+        state = self.to_fock(tuple(shape))
         state = state if isinstance(state, DM) else state.dm()
         dm = math.sum(state.representation.array, axes=[0])
 
@@ -500,7 +514,7 @@ class State(CircuitComponent):
                 x=xs,
                 y=ps,
                 z=z,
-                colorscale=colorscale,
+                coloraxis="coloraxis",
                 hovertemplate="x: %{x:.3f}"
                 + "<br>p: %{y:.3f}"
                 + "<br>W(x, p): %{z:.3f}<extra></extra>",
@@ -513,6 +527,7 @@ class State(CircuitComponent):
             height=500,
             margin=dict(l=0, r=0, b=0, t=0),
             scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
             contours_z=dict(
@@ -535,14 +550,13 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
     def visualize_dm(
         self,
-        cutoff: Optional[int] = None,
+        cutoff: int | None = None,
         return_fig: bool = False,
-    ) -> Union[go.Figure, None]:
+    ) -> go.Figure | None:
         r"""
         Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
         on a heatmap.
@@ -576,33 +590,12 @@ class State(CircuitComponent):
 
         if return_fig:
             return fig
-        html = fig.to_html(full_html=False, include_plotlyjs="cdn")  # pragma: no cover
-        display(HTML(html))  # pragma: no cover
+        display(fig)
 
-    def _repr_html_(self):  # pragma: no cover
-        template = Template(filename=os.path.dirname(__file__) + "/assets/states.txt")
-        display(HTML(template.render(state=self)))
-
-    def _getitem_builtin_state(self, modes: set[int]):
-        r"""
-        A convenience function to slice built-in states.
-
-        Built-in states come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable states.
-        """
-        # slice the parameter set
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = {}
-        for name, param in self._parameter_set[items].all_parameters.items():
-            kwargs[name] = param.value
-            if isinstance(param, Variable):
-                kwargs[name + "_trainable"] = True
-                kwargs[name + "_bounds"] = param.bounds
-
-        return self.__class__(modes, **kwargs)
+    def _ipython_display_(self):  # pragma: no cover
+        is_ket = isinstance(self, Ket)
+        is_fock = isinstance(self.representation, Fock)
+        display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
 
 class DM(State):
@@ -620,66 +613,81 @@ class DM(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != 2 * len(modes):
             raise ValueError(
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_bra=modes,
-            modes_out_ket=modes,
+            wires=[modes, (), modes, ()],
             name=name,
         )
         if representation is not None:
             self._representation = representation
 
-    def auto_shape(
-        self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    @property
+    def is_positive(self) -> bool:
         r"""
-        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
-        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``manual_shape``.
-
-        Args:
-            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+        Whether this DM is a positive operator.
         """
-        # experimental:
-        if self.representation.ansatz.batch_size == 1:
-            try:  # fock
-                shape = self._representation.array.shape[1:]
-            except AttributeError:  # bargmann
-                repr = self.representation
-                A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / trace_dm(A, b, c)
-                shape = autoshape_numba(
-                    math.asnumpy(A),
-                    math.asnumpy(b),
-                    math.asnumpy(c),
-                    max_prob or settings.AUTOSHAPE_PROBABILITY,
-                    max_shape or settings.AUTOSHAPE_MAX,
-                )
-                shape = tuple(shape) + tuple(shape)
-        else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
-            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
-        if respect_manual_shape:
-            return tuple(c or s for c, s in zip(self.manual_shape, shape))
-        return tuple(shape)
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.representation.A[0]
+        m = A.shape[-1] // 2
+        gamma_A = A[:m, m:]
+
+        if (
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+        ):  # checks if gamma_A is Hermitian
+            return False
+
+        return all(math.real(math.eigvals(gamma_A)) >= 0)
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether this DM is a physical density operator.
+        """
+        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
+
+    @property
+    def probability(self) -> float:
+        r"""Probability (trace) of this DM, using the batch dimension of the Ansatz
+        as a convex combination of states."""
+        return math.sum(self._probabilities)
+
+    @property
+    def purity(self) -> float:
+        return self.L2_norm
+
+    @property
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise probabilities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states.
+        """
+        idx_ket = self.wires.output.ket.indices
+        idx_bra = self.wires.output.bra.indices
+        rep = self.representation.trace(idx_ket, idx_bra)
+        return math.real(math.sum(rep.scalar))
+
+    @property
+    def _purities(self) -> RealVector:
+        r"""Element-wise purities along the batch dimension of this DM.
+        Useful for cases where the batch dimension does not mean a convex combination of states.
+        """
+        return self._L2_norms / self._probabilities
 
     @classmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
         triple: tuple,
-        name: Optional[str] = None,
+        name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
@@ -704,36 +712,102 @@ class DM(State):
             name,
         )
 
-    def normalize(self) -> DM:
+    @classmethod
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
-        Returns a rescaled version of the state such that its probability is 1.
+        Samples a random density matrix. The final state has zero displacement.
+
+        Args:
+        modes: the modes where the state is defined over
+        m: is the number modes to be considered for tracing out from a random pure state (Ket)
+        if not specified, m is considered to be len(modes)
         """
-        return self / self.probability
+        if m is None:
+            m = len(modes)
 
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""Element-wise probabilities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states."""
-        idx_ket = self.wires.output.ket.indices
-        idx_bra = self.wires.output.bra.indices
-        rep = self.representation.trace(idx_ket, idx_bra)
-        return math.real(math.sum(rep.scalar))
+        max_idx = max(modes)
 
-    @property
-    def probability(self) -> float:
-        r"""Probability (trace) of this DM, using the batch dimension of the Ansatz
-        as a convex combination of states."""
-        return math.sum(self._probabilities)
+        ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        full_wires = list(modes) + ancilla
 
-    @property
-    def _purities(self) -> RealVector:
-        r"""Element-wise purities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states."""
-        return self._L2_norms / self._probabilities
+        psi = Ket.random(full_wires, max_r)
+        return psi[modes]
 
-    @property
-    def purity(self) -> float:
-        return self.L2_norm
+    def auto_shape(
+        self, max_prob=None, max_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
+        r"""
+        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+        non-None values in ``manual_shape``.
+
+        Args:
+            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+        """
+        # experimental:
+        if self.representation.ansatz.batch_size == 1:
+            try:  # fock
+                shape = self._representation.array.shape[1:]
+            except AttributeError:  # bargmann
+                if self.representation.ansatz.polynomial_shape[0] == 0:
+                    repr = self.representation
+                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                    repr = repr / self.probability
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                    )
+                    shape = tuple(shape) + tuple(shape)
+                else:
+                    shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+        else:
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
+            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
+        return tuple(shape)
+
+    def dm(self) -> DM:
+        r"""
+        The ``DM`` object obtained from this ``DM``.
+        """
+        return self
+
+    def quadrature_distribution(
+        self, quad: Batch[Vector], phi: float = 0.0
+    ) -> tuple | ComplexTensor:
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * 2
+                    * self.n_modes
+                )
+            )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.tile(
+                math.transpose(
+                    math.astensor(
+                        quad,
+                    )
+                ),
+                (1, 2),
+            )
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
+        return self.quadrature(quad, phi)
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -778,6 +852,42 @@ class DM(State):
 
         return result
 
+    def normalize(self) -> DM:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        return self / self.probability
+
+    def __getitem__(self, modes: int | Sequence[int]) -> State:
+        r"""
+        Traces out all the modes except those given.
+        The result is returned with modes in increasing order.
+        """
+        if isinstance(modes, int):
+            modes = [modes]
+        modes = set(modes)
+
+        if not modes.issubset(self.modes):
+            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
+            raise ValueError(msg)
+
+        if self._parameter_set:
+            # if ``self`` has a parameter set it means it is a built-in state,
+            # in which case we slice the parameters
+            return self._getitem_builtin(modes)
+
+        # if ``self`` has no parameter set it is not a built-in state,
+        # in which case we trace the representation
+        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        representation = self.representation.trace(idxz, idxz_conj)
+
+        return self.__class__._from_attributes(
+            representation, wires, self.name
+        )  # pylint: disable=protected-access
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
@@ -797,36 +907,6 @@ class DM(State):
             return DM(w.modes, result.representation)
         return result
 
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
-        r"""
-        Traces out all the modes except those given.
-        The result is returned with modes in increasing order.
-        """
-        if isinstance(modes, int):
-            modes = [modes]
-        modes = set(modes)
-
-        if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
-
-        if self._parameter_set:
-            # if ``self`` has a parameter set it means it is a built-in state,
-            # in which case we slice the parameters
-            return self._getitem_builtin_state(modes)
-
-        # if ``self`` has no parameter set it is not a built-in state,
-        # in which case we trace the representation
-        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
-
-        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
-        representation = self.representation.trace(idxz, idxz_conj)
-
-        return self.__class__._from_attributes(
-            representation, wires, self.name
-        )  # pylint: disable=protected-access
-
 
 class Ket(State):
     r"""
@@ -843,19 +923,110 @@ class Ket(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Optional[Bargmann | Fock] = None,
-        name: Optional[str] = None,
+        representation: Bargmann | Fock | None = None,
+        name: str | None = None,
     ):
         if representation and representation.ansatz.num_vars != len(modes):
             raise ValueError(
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            modes_out_ket=modes,
+            wires=[(), (), modes, ()],
             name=name,
         )
         if representation is not None:
             self._representation = representation
+
+    @property
+    def is_physical(self) -> bool:
+        r"""
+        Whether the ket object is a physical one.
+        """
+        batch_dim = self.representation.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+
+        A = self.representation.A[0]
+
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            self.probability, 1, settings.ATOL
+        )
+
+    @property
+    def probability(self) -> float:
+        r"""Probability of this Ket (L2 norm squared)."""
+        return self.L2_norm
+
+    @property
+    def purity(self) -> float:
+        return 1.0
+
+    @property
+    def _probabilities(self) -> RealVector:
+        r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
+        return self._L2_norms
+
+    @classmethod
+    def from_phase_space(
+        cls,
+        modes: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+        atol_purity: float | None = 1e-5,
+    ) -> Ket:
+        cov, means, coeff = triple
+        cov = math.astensor(cov)
+        means = math.astensor(means)
+        shape_check(cov, means, 2 * len(modes), "Phase space")
+        if atol_purity:
+            p = purity(cov)
+            if p < 1.0 - atol_purity:
+                msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
+                raise ValueError(msg)
+        return Ket(
+            modes,
+            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            name,
+        )
+
+    @classmethod
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
+        r"""
+        Generates a random zero displacement state.
+
+        Args:
+            modes: The modes of the state.
+            max_r: Maximum squeezing parameter over which we make random choices.
+        Output is a Ket
+        """
+
+        m = len(modes)
+        S = math.random_symplectic(m, max_r)
+        transformation = (
+            1
+            / np.sqrt(2)
+            * math.block(
+                [
+                    [
+                        math.eye(m, dtype=math.complex128),
+                        math.eye(m, dtype=math.complex128),
+                    ],
+                    [
+                        -1j * math.eye(m, dtype=math.complex128),
+                        1j * math.eye(m, dtype=math.complex128),
+                    ],
+                ]
+            )
+        )
+        S = math.conj(math.transpose(transformation)) @ S @ transformation
+        S_1 = S[:m, :m]
+        S_2 = S[:m, m:]
+        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+        b = math.zeros(m, dtype=A.dtype)
+        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
+        return psi.normalize()
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
@@ -878,70 +1049,25 @@ class Ket(State):
             try:  # fock
                 shape = self._representation.array.shape[1:]
             except AttributeError:  # bargmann
-                repr = self.representation.conj() & self.representation
-                A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                repr = repr / norm_ket(A, b, c)
-                shape = autoshape_numba(
-                    math.asnumpy(A),
-                    math.asnumpy(b),
-                    math.asnumpy(c),
-                    max_prob or settings.AUTOSHAPE_PROBABILITY,
-                    max_shape or settings.AUTOSHAPE_MAX,
-                )
+                if self.representation.ansatz.polynomial_shape[0] == 0:
+                    repr = self.representation.conj() & self.representation
+                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
+                    repr = repr / self.probability
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                    )
+                else:
+                    shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         else:
-            warnings.warn("auto_shape not yet implemented for batched states.")
+            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
-
-    @classmethod
-    def from_phase_space(
-        cls,
-        modes: Sequence[int],
-        triple: tuple,
-        name: Optional[str] = None,
-        atol_purity: Optional[float] = 1e-5,
-    ) -> Ket:
-        cov, means, coeff = triple
-        cov = math.astensor(cov)
-        means = math.astensor(means)
-        shape_check(cov, means, 2 * len(modes), "Phase space")
-        if atol_purity:
-            p = purity(cov)
-            if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
-                raise ValueError(msg)
-        return Ket(
-            modes,
-            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
-            name,
-        )
-
-    def normalize(self) -> Ket:
-        r"""
-        Returns a rescaled version of the state such that its probability is 1
-        """
-        return self / math.sqrt(self.probability)
-
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
-        return self._L2_norms
-
-    @property
-    def probability(self) -> float:
-        r"""Probability of this Ket (L2 norm squared)."""
-        return self.L2_norm
-
-    @property
-    def _purities(self) -> float:
-        r"""Purity of each ket in the batch."""
-        return math.ones((self.representation.ansatz.batch_size,), math.float64)
-
-    @property
-    def purity(self) -> float:
-        return 1.0
 
     def dm(self) -> DM:
         r"""
@@ -951,6 +1077,28 @@ class Ket(State):
         ret = DM._from_attributes(dm.representation, dm.wires, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * self.n_modes
+                )
+            )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.transpose(
+                math.astensor(
+                    quad,
+                )
+            )
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
+        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -995,7 +1143,13 @@ class Ket(State):
 
         return result
 
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> State:
+    def normalize(self) -> Ket:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1
+        """
+        return self / math.sqrt(self.probability)
+
+    def __getitem__(self, modes: int | Sequence[int]) -> State:
         r"""
         Reduced density matrix obtained by tracing out all the modes except those in the given
         ``modes``. Note that the result is returned with modes in increasing order.
@@ -1005,13 +1159,12 @@ class Ket(State):
         modes = set(modes)
 
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
+            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
 
         if self._parameter_set:
             # if ``self`` has a parameter set, it is a built-in state, and we slice the
             # parameters
-            return self._getitem_builtin_state(modes)
+            return self._getitem_builtin(modes)
 
         # if ``self`` has no parameter set, it is not a built-in state.
         # we must turn it into a density matrix and slice the representation

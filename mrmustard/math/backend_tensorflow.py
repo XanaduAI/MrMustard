@@ -16,7 +16,8 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from __future__ import annotations
+from typing import Callable, Sequence
 
 from importlib import metadata
 import os
@@ -91,7 +92,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         tensor.assign(value)
         return tensor
 
-    def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
+    def astensor(self, array: np.ndarray | tf.Tensor, dtype=None) -> tf.Tensor:
         dtype = dtype or np.array(array).dtype.name
         return tf.convert_to_tensor(array, dtype)
 
@@ -115,7 +116,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             axis=-2,
         )
 
-    def block(self, blocks: List[List[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
+    def block(self, blocks: list[list[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
@@ -138,9 +139,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
+    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
         bounds = (
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
@@ -160,7 +159,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         self,
         array: tf.Tensor,
         filters: tf.Tensor,
-        padding: Optional[str] = None,
+        padding: str | None = None,
         data_format="NWC",
     ) -> tf.Tensor:
         padding = padding or "VALID"
@@ -245,10 +244,15 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
 
+    def moveaxis(
+        self, array: tf.Tensor, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> tf.Tensor:
+        return tf.experimental.numpy.moveaxis(array, old, new)
+
     def new_variable(
         self,
         value,
-        bounds: Union[Tuple[Optional[float], Optional[float]], None],
+        bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype=None,
     ):
@@ -280,7 +284,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def pad(
         self,
         array: tf.Tensor,
-        paddings: Sequence[Tuple[int, int]],
+        paddings: Sequence[tuple[int, int]],
         mode="CONSTANT",
         constant_values=0,
     ) -> tf.Tensor:
@@ -297,7 +301,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def kron(self, tensor1: tf.Tensor, tensor2: tf.Tensor):
         return tf.experimental.numpy.kron(tensor1, tensor2)
 
-    def prod(self, x: tf.Tensor, axis: Union[None, int]):
+    def prod(self, x: tf.Tensor, axis: int | None):
         return tf.math.reduce_prod(x, axis=axis)
 
     def real(self, array: tf.Tensor) -> tf.Tensor:
@@ -334,7 +338,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.reduce_sum(array, axes)
 
     @Autocast()
-    def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:
+    def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: list[int]) -> tf.Tensor:
         return tf.tensordot(a, b, axes)
 
     def tile(self, array: tf.Tensor, repeats: Sequence[int]) -> tf.Tensor:
@@ -419,8 +423,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return AdamOpt(learning_rate=0.001)
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: List[Trainable]
-    ) -> Tuple[tf.Tensor, List[tf.Tensor]]:
+        self, cost_fn: Callable, parameters: list[Trainable]
+    ) -> tuple[tf.Tensor, list[tf.Tensor]]:
         r"""Computes the loss and gradients of the given cost function.
 
         Args:
@@ -437,17 +441,17 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
-    ) -> Tuple[tf.Tensor, Callable]:
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
+    ) -> tuple[tf.Tensor, Callable]:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`c * exp(bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
         Args:
             A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
+            b: The b vector.
+            c: The c scalar.
             shape: The shape of the final tensor.
 
         Returns:
@@ -456,36 +460,53 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
-        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
 
         if precision_bits == 128:  # numba
-            G = strategies.vanilla(tuple(shape), A, B, C)
+            if settings.STABLE_FOCK_CONVERSION:
+                G = strategies.vanilla_stable(tuple(shape), A, b, c)
+            else:
+                G = strategies.vanilla(tuple(shape), A, b, c)
         else:  # julia
             # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
             from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
 
-            A, B, C = (
+            A, b, c = (
                 A.astype(np.complex128),
-                B.astype(np.complex128),
-                C.astype(np.complex128),
+                b.astype(np.complex128),
+                c.astype(np.complex128),
             )
 
             G = self.astensor(
-                jl.Vanilla.vanilla(A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits)
+                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
             )
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 
     def hermite_renormalized_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        r"""Same as hermite_renormalized but works for a batch of different b's.
 
-        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+        Args:
+            A: The A matrix.
+            b: The b vectors batched on the first axis.
+            c: The c scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial from different b values.
+        """
+        _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
+
+        if settings.STABLE_FOCK_CONVERSION:
+            G = strategies.vanilla_stable_batch(tuple(shape), _A, _b, _c)
+        else:
+            G = strategies.vanilla_batch(tuple(shape), _A, _b, _c)
         return G
 
     @tf.custom_gradient
@@ -494,9 +515,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         A: tf.Tensor,
         B: tf.Tensor,
         C: tf.Tensor,
-        shape: Tuple[int],
-        max_l2: Optional[float],
-        global_cutoff: Optional[int],
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -531,7 +552,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         return G, grad
 
-    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
         r"""In mrmustard.math.compactFock.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -544,14 +565,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -609,14 +630,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return poly0, grad
 
     def hermite_renormalized_diagonal_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -638,7 +659,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -648,7 +669,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the

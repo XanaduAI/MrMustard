@@ -30,13 +30,13 @@ class TestSettings:
         """Test the default values of the settings"""
         settings = Settings()
 
-        assert settings.HBAR == 2.0
+        assert settings.HBAR == 1.0
         assert settings.DEBUG is False
-        assert settings.AUTOSHAPE_PROBABILITY == 0.999  # capture at least 99.9% of the probability
+        assert settings.AUTOSHAPE_PROBABILITY == 0.99999
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3
-        assert settings.DISCRETIZATION_METHOD == "iterative"
+        assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.EQ_TRANSFORMATION_CUTOFF == 3
         assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
@@ -44,62 +44,27 @@ class TestSettings:
         assert settings.HOMODYNE_SQUEEZING == 10.0
         assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
-        assert settings.BS_FOCK_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
+        assert settings.BS_FOCK_METHOD == "vanilla"
 
     def test_setters(self):
         settings = Settings()
 
-        ap0 = settings.AUTOSHAPE_PROBABILITY
-        settings.AUTOSHAPE_PROBABILITY = 0.1
-        assert settings.AUTOSHAPE_PROBABILITY == 0.1
-        settings.AUTOSHAPE_PROBABILITY = ap0
-
-        db0 = settings.DEBUG
-        settings.DEBUG = True
-        assert settings.DEBUG is True
-        settings.DEBUG = db0
-
-        dbsm0 = settings.BS_FOCK_METHOD
-        settings.BS_FOCK_METHOD = "schwinger"
-        assert settings.BS_FOCK_METHOD == "schwinger"
-        settings.BS_FOCK_METHOD = dbsm0
-
-        eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
-        settings.EQ_TRANSFORMATION_CUTOFF = 2
-        assert settings.EQ_TRANSFORMATION_CUTOFF == 2
-        settings.EQ_TRANSFORMATION_CUTOFF = eqtc0
-
-        pnr0 = settings.PNR_INTERNAL_CUTOFF
-        settings.PNR_INTERNAL_CUTOFF = False
-        assert settings.PNR_INTERNAL_CUTOFF is False
-        settings.PNR_INTERNAL_CUTOFF = pnr0
-
-        pb0 = settings.PROGRESSBAR
-        settings.PROGRESSBAR = False
-        assert settings.PROGRESSBAR is False
-        settings.PROGRESSBAR = pb0
+        cw = settings.COMPLEX_WARNING
+        settings.COMPLEX_WARNING = not cw
+        assert settings.COMPLEX_WARNING == (not cw)
+        settings.COMPLEX_WARNING = cw
 
         s0 = settings.SEED
         settings.SEED = None
         assert settings.SEED is not None
         settings.SEED = s0
 
-        hs0 = settings.HOMODYNE_SQUEEZING
-        settings.HOMODYNE_SQUEEZING = 20.1
-        assert settings.HOMODYNE_SQUEEZING == 20.1
-        settings.HOMODYNE_SQUEEZING = hs0
+        p0 = settings.PRECISION_BITS_HERMITE_POLY
+        settings.PRECISION_BITS_HERMITE_POLY = 256
+        assert settings.PRECISION_BITS_HERMITE_POLY == 256
+        settings.PRECISION_BITS_HERMITE_POLY = p0
 
-        fock_rtol = settings.EQ_TRANSFORMATION_RTOL_FOCK
-        settings.EQ_TRANSFORMATION_RTOL_FOCK = 0.02
-        assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 0.02
-        settings.EQ_TRANSFORMATION_RTOL_FOCK = fock_rtol
-
-        gauss_rtol = settings.EQ_TRANSFORMATION_RTOL_GAUSS
-        settings.EQ_TRANSFORMATION_RTOL_GAUSS = 0.02
-        assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 0.02
-        settings.EQ_TRANSFORMATION_RTOL_GAUSS = gauss_rtol
-
-        assert settings.HBAR == 2.0
+        assert settings.HBAR == 1.0
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
 
@@ -110,7 +75,7 @@ class TestSettings:
         """Test that the random seed is set randomly as MM is initialized."""
         settings = Settings()
         seed0 = settings.SEED
-        del Settings.instance
+        del Settings._instance
         settings = Settings()
         seed1 = settings.SEED
         assert seed0 != seed1
@@ -142,3 +107,19 @@ class TestSettings:
         settings.COMPLEX_WARNING = False
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1
+
+    def test_context_manager(self):
+        """Test that the context manager works correctly."""
+        settings = Settings()
+
+        with settings(AUTOSHAPE_PROBABILITY=0.1):
+            assert settings.AUTOSHAPE_PROBABILITY == 0.1
+        assert settings.AUTOSHAPE_PROBABILITY == 0.99999
+
+    def test_context_manager_disallowed(self):
+        """Test that the context manager disallows changing some settings."""
+        settings = Settings()
+
+        with pytest.raises(ValueError, match="Cannot change"):
+            with settings(HBAR=0.5):
+                pass

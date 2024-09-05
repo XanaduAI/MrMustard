@@ -18,8 +18,10 @@
 This module contains functions for performing calculations on objects in the Fock representations.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Sequence, Iterable
 
 import numpy as np
 
@@ -33,7 +35,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector, Batch
 
 SQRT = np.sqrt(np.arange(1e6))
 
@@ -42,7 +44,7 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = None) -> Tensor:
+def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
     r"""
     The Fock array of a tensor product of one-mode ``Number`` states.
 
@@ -58,7 +60,7 @@ def fock_state(n: Sequence[int], cutoffs: Optional[Union[int, Sequence[int]]] = 
     """
     n = math.atleast_1d(n)
     if cutoffs is None:
-        cutoffs = [ni for ni in n]
+        cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
 
@@ -113,7 +115,7 @@ def wigner_to_fock_state(
     means: Vector,
     shape: Sequence[int],
     max_prob: float = 1.0,
-    max_photons: Optional[int] = None,
+    max_photons: int | None = None,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
@@ -265,7 +267,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return math.all_diagonals(dm, real=True)
 
 
-def U_to_choi(U: Tensor, Udual: Optional[Tensor] = None) -> Tensor:
+def U_to_choi(U: Tensor, Udual: Tensor | None = None) -> Tensor:
     r"""Converts a unitary transformation to a Choi tensor.
 
     Args:
@@ -488,7 +490,7 @@ def apply_choi_to_dm(
     choi: ComplexTensor,
     dm: ComplexTensor,
     choi_in_modes: Sequence[int],
-    choi_out_modes: Sequence[int] = None,
+    choi_out_modes: Sequence[int] | None = None,
 ):
     r"""Applies a choi operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
@@ -588,7 +590,7 @@ def apply_choi_to_ket(choi, ket, choi_in_modes, choi_out_modes=None):
 
 
 def contract_states(
-    stateA, stateB, a_is_dm: bool, b_is_dm: bool, modes: List[int], normalize: bool
+    stateA, stateB, a_is_dm: bool, b_is_dm: bool, modes: list[int], normalize: bool
 ):
     r"""Contracts two states in the specified modes.
     Assumes that the modes of B are a subset of the modes of A.
@@ -673,7 +675,7 @@ def is_mixed_dm(dm):
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
 
 
-def trace(dm, keep: List[int]):
+def trace(dm, keep: list[int]):
     r"""Computes the partial trace of a density matrix.
     The indices of the density matrix are in the order (out0, ..., outN-1, in0, ..., inN-1).
     The indices to keep are a subset of the N 'out' indices
@@ -816,10 +818,61 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
+def quadrature_basis(
+    fock_array: Tensor,
+    quad: Batch[Vector],
+    conjugates: bool | list[bool] = False,
+    phi: Scalar = 0.0,
+):
+    r"""Given the Fock basis representation return the quadrature basis representation.
+
+    Args:
+        fock_array (Tensor): fock tensor amplitudes
+        quad (Batch[Vector]): points at which the quadrature basis is evaluated
+        conjugates (list[bool]): which dimensions of the array to conjugate based on
+            whether it is a bra or a ket
+        phi (float): angle of the quadrature basis vector
+
+    Returns:
+        tuple(Tensor): quadrature basis representation at the points in quad
+    """
+    dims = len(fock_array.shape)
+
+    if quad.shape[-1] != dims:
+        raise ValueError(
+            f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}."
+        )
+
+    conjugates = conjugates if isinstance(conjugates, Iterable) else [conjugates] * dims
+
+    # construct quadrature basis vectors
+    shapes = fock_array.shape
+    quad_basis_vecs = []
+    for dim in range(dims):
+        q_to_n = oscillator_eigenstate(quad[..., dim], shapes[dim])
+        if not np.isclose(phi, 0.0):
+            theta = -math.arange(shapes[dim]) * phi
+            Ur = math.make_complex(math.cos(theta), math.sin(theta))
+            q_to_n = math.einsum("a,ab->ab", Ur, q_to_n)
+        if conjugates[dim]:
+            q_to_n = math.conj(q_to_n)
+        quad_basis_vecs += [math.cast(q_to_n, "complex128")]
+
+    # Convert each dimension to quadrature
+    subscripts = [chr(i) for i in range(98, 98 + dims)]
+    fock_string = "".join(subscripts[:dims])  #'bcd....'
+    q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
+    quad_array = math.einsum(
+        fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
+    )
+
+    return quad_array
+
+
 def quadrature_distribution(
     state: Tensor,
     quadrature_angle: float = 0.0,
-    x: Vector = None,
+    x: Vector | None = None,
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -834,39 +887,22 @@ def quadrature_distribution(
     Returns:
         tuple(Vector, Vector): coordinates at which the pdf is evaluated and the probability distribution
     """
-    dims = len(state.shape)
-    if dims > 2:
-        raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
-        )
-
-    is_dm = dims == 2
     cutoff = state.shape[0]
-
-    if not np.isclose(quadrature_angle, 0.0):
-        # rotate mode to the homodyne basis
-        theta = -math.arange(cutoff) * quadrature_angle
-        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
-        state = (
-            math.einsum("ij,jk,kl->il", Ur, state, math.dagger(Ur))
-            if is_dm
-            else math.matvec(Ur, state)
-        )
-
     if x is None:
         x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
-    psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
-    pdf = (
-        math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
-        if is_dm
-        else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
-    )
+    dims = len(state.shape)
+    is_dm = dims == 2
+
+    quad = math.transpose(math.astensor([x] * dims))
+    conjugates = [True, False] if is_dm else [False]
+    quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
+    pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
     return x, math.real(pdf)
 
 
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
+def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 

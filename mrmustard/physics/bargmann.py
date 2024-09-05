@@ -20,6 +20,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
+from mrmustard.utils.typing import ComplexMatrix
 
 
 def cayley(X, c):
@@ -81,7 +82,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
             [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)],
         ]
     )
-    I = math.eye(N, dtype="complex128")
+    I = math.eye(N, dtype=math.complex128)
     o = math.zeros_like(I)
     R = math.block(
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
@@ -94,7 +95,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     )
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
-    return A, B, math.cast(C, "complex128")
+    return A, B, math.cast(C, math.complex128)
 
 
 def wigner_to_bargmann_U(X, d):
@@ -127,3 +128,124 @@ def trace_dm(A, b, c):
         / math.sqrt((-1) ** (A.shape[-1] // 2) * math.det(M))
     )
     return math.real(trace)
+
+
+def au2Symplectic(A):
+    r"""
+    helper for finding the Au of a unitary from its symplectic rep.
+    Au : in bra-ket order
+    """
+    # A represents the A matrix corresponding to unitary U
+    A = A * (1.0 + 0.0 * 1j)
+    m = A.shape[-1]
+    m = m // 2
+
+    # identifying blocks of A_u
+    u_2 = A[..., :m, m:]
+    u_3 = A[..., m:, m:]
+
+    # The formula to apply comes here
+    S_1 = math.conj(math.inv(math.transpose(u_2)))
+    S_2 = -S_1 @ math.conj(u_3)
+    S_3 = math.conj(S_2)
+    S_4 = math.conj(S_1)
+
+    S = math.block([[S_1, S_2], [S_3, S_4]])
+
+    transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+        )
+    )
+
+    return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
+
+
+def symplectic2Au(S):
+    r"""
+    The inverse of au2Symplectic i.e., returns symplectic, given Au
+
+    S: symplectic in XXPP order
+    """
+    m = S.shape[-1]
+    m = m // 2
+    # the following lines of code transform the quadrature symplectic matrix to
+    # the annihilation one
+    transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            ]
+        )
+    )
+    S = np.conjugate(math.transpose(transformation)) @ S @ transformation
+    # identifying blocks of S
+    S_1 = S[:m, :m]
+    S_2 = S[:m, m:]
+
+    # TODO: broadcasting/batch stuff consider a batch dimension
+
+    # the formula to apply comes here
+    A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+    A_2 = math.conj(math.inv(math.transpose(S_1)))
+    A_3 = math.transpose(A_2)
+    A_4 = -math.conj(math.solve(S_1, S_2))
+    # -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
+
+    A = math.block([[A_1, A_2], [A_3, A_4]])
+
+    return A
+
+
+def XY_of_channel(A: ComplexMatrix):
+    r"""
+    Outputting the X and Y matrices corresponding to a channel determined by the "A"
+    matrix.
+
+    Args:
+        A: the A matrix of the channel
+    """
+    n = A.shape[-1] // 2
+    m = n // 2
+
+    # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
+    A_out = math.block(
+        [[A[:m, :m], A[:m, 2 * m : 3 * m]], [A[2 * m : 3 * m, :m], A[2 * m : 3 * m, 2 * m : 3 * m]]]
+    )
+    R = math.block(
+        [
+            [A[:m, m : 2 * m], A[:m, 3 * m :]],
+            [A[2 * m : 3 * m, m : 2 * m], A[2 * m : 3 * m, 3 * m :]],
+        ]
+    )
+    X_tilde = -math.inv(np.eye(n) - math.Xmat(m) @ A_out) @ math.Xmat(m) @ R @ math.Xmat(m)
+    transformation = math.block(
+        [
+            [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
+            [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+        ]
+    )
+    X = -transformation @ X_tilde @ math.conj(transformation).T / 2
+
+    sigma_H = math.inv(math.eye(n) - math.Xmat(m) @ A_out)  # the complex-Husimi covariance matrix
+
+    N = sigma_H[m:, m:]
+    M = sigma_H[:m, m:]
+    sigma = (
+        math.block([[math.real(N + M), math.imag(N + M)], [math.imag(M - N), math.real(N - M)]])
+        - math.eye(n) / 2
+    )
+    Y = sigma - X @ X.T / 2
+    if math.norm(math.imag(X)) > settings.ATOL or math.norm(math.imag(Y)) > settings.ATOL:
+        raise ValueError(
+            "Invalid input for the A matrix of channel, caused imaginary X and/or Y matrices."
+        )
+    return math.real(X), math.real(Y)
