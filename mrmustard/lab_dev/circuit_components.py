@@ -607,9 +607,12 @@ class CircuitComponent:
         if isinstance(self.representation, Bargmann):
             return self
         else:
-            A, b, _ = identity_Abc(len(self.wires.quantum))
-            bargmann = Bargmann(A, b, self.representation.data)
-            bargmann._original_fock_data = self.representation.data
+            if self.representation._original_bargmann_data:
+                A, b, c = self.representation._original_bargmann_data
+            else:
+                A, b, _ = identity_Abc(len(self.wires.quantum))
+                c = self.representation.data
+            bargmann = Bargmann(A, b, c)
             try:
                 ret = self._getitem_builtin(self.modes)
                 ret._representation = bargmann
