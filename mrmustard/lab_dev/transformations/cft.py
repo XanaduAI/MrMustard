@@ -30,6 +30,12 @@ class CFT(Map):
 
     Args:
         num_modes: number of modes of this channel.
+
+    .. details::
+        For a function f defined on the complex domain, we can define the following Complex Fourier Transform (aka symplectic Fourier Transform):
+        .. math::
+            \hat f(\zeta) = \int f(z) \exp(z \bar{\zeta} - \bar{z} \zeta)
+        this formulation can be extended to multi-variables by taking the transform over many (i.e., by as many zeta variables as needed)
     """
 
     def __init__(
