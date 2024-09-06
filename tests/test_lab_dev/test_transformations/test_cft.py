@@ -16,7 +16,7 @@
 
 import numpy as np
 from mrmustard import math, settings
-from mrmustard.lab_dev import BtoPS, DisplacedSqueezed
+from mrmustard.lab_dev import BtoPS, Ket, Dgate
 from mrmustard.lab_dev.transformations.cft import CFT
 from mrmustard.physics.wigner import wigner_discretized
 
@@ -38,18 +38,17 @@ class TestCFT:
         for a single-mode squeezed state.
         """
 
-        state = DisplacedSqueezed([0], r=0.5, phi=0.0, x=1.0, y=0.0)
+        state = Ket.random([0]) >> Dgate([0],x=1.0,y=0.1)
 
-        state2 = DisplacedSqueezed([0], r=0.5, phi=np.pi, x=0.0, y=1.0)
-        dm = math.sum(state2.to_fock(100).dm().representation.array, axes=[0])
+        dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> CFT([0]) >> BtoPS([0], s=0)).representation.ansatz
+        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).representation.ansatz
         X, Y = np.meshgrid(
             vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
         )  # scaling to take care of HBAR
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
-            2 / settings.HBAR * (np.real(Wigner(Z))), (np.real(wigner)), atol=1e-8
+            2 / settings.HBAR * (np.real(Wigner(Z))), (np.real(wigner.T)), atol=1e-8
         )  # scaling to take care of HBAR
