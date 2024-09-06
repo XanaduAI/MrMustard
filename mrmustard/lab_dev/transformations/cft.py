@@ -23,6 +23,7 @@ from mrmustard.physics import triples
 
 __all__ = ["CFT"]
 
+
 class CFT(Map):
     r"""The Complex Fourier Transformation as a channel.
     The main use is to convert between Characteristic functions and phase space functions.
