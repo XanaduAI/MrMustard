@@ -21,6 +21,7 @@ from mrmustard.lab_dev.transformations.base import Map
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 
+__all__ = ["CFT"]
 
 class CFT(Map):
     r"""The Complex Fourier Transformation as a channel.
