@@ -329,7 +329,9 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
+        return bargmann_Abc_to_phasespace_cov_means(
+            *new_state.bargmann_triple(batched=True), batched=True
+        )
 
     def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
         r"""
