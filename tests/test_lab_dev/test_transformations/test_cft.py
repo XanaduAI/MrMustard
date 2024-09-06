@@ -38,7 +38,7 @@ class TestCFT:
         for a single-mode squeezed state.
         """
 
-        state = Ket.random([0]) >> Dgate([0],x=1.0,y=0.1)
+        state = Ket.random([0]) >> Dgate([0], x=1.0, y=0.1)
 
         dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
         vec = np.linspace(-5, 5, 100)
