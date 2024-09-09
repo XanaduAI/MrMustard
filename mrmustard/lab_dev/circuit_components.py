@@ -40,7 +40,7 @@ from mrmustard.utils.typing import (
     Batch,
 )
 from mrmustard.physics.representations import Representation, Bargmann, Fock
-from mrmustard.physics.fock import quadrature_basis
+from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires

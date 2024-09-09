@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
-from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     real_gaussian_integral,

@@ -21,7 +21,7 @@ import pytest
 from mrmustard.lab import Gaussian, Dgate
 from mrmustard import lab_dev as mmld
 from mrmustard import settings, math
-from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,

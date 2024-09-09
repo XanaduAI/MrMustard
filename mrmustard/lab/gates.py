@@ -24,7 +24,7 @@ from typing import Sequence
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock_utils, gaussian
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 from mrmustard import math
 from mrmustard.math.parameters import (
@@ -146,9 +146,9 @@ class Dgate(Unitary):
             Ud = None
             for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
-                    Ud = fock.displacement(x[idx], y[idx], shape=out_in)
+                    Ud = fock_utils.displacement(x[idx], y[idx], shape=out_in)
                 else:
-                    U_next = fock.displacement(x[idx], y[idx], shape=out_in)
+                    U_next = fock_utils.displacement(x[idx], y[idx], shape=out_in)
                     Ud = math.outer(Ud, U_next)
 
             return math.transpose(
@@ -156,7 +156,7 @@ class Dgate(Unitary):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.displacement(x[0], y[0], shape=shape)
+            return fock_utils.displacement(x[0], y[0], shape=shape)
 
 
 class Sgate(Unitary):
@@ -244,16 +244,16 @@ class Sgate(Unitary):
             Us = None
             for idx, single_shape in enumerate(zip(shape[:N], shape[N:])):
                 if Us is None:
-                    Us = fock.squeezer(r[idx], phi[idx], shape=single_shape)
+                    Us = fock_utils.squeezer(r[idx], phi[idx], shape=single_shape)
                 else:
-                    U_next = fock.squeezer(r[idx], phi[idx], shape=single_shape)
+                    U_next = fock_utils.squeezer(r[idx], phi[idx], shape=single_shape)
                     Us = math.outer(Us, U_next)
             return math.transpose(
                 Us,
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.squeezer(r[0], phi[0], shape=shape)
+            return fock_utils.squeezer(r[0], phi[0], shape=shape)
 
     @property
     def X_matrix(self):
@@ -541,7 +541,7 @@ class BSgate(Unitary):
 
         shape = shape or cutoffs
 
-        return fock.beamsplitter(
+        return fock_utils.beamsplitter(
             self.theta.value,
             self.phi.value,
             shape=shape,
@@ -1049,7 +1049,7 @@ class PhaseNoise(Channel):
         idx = state.modes.index(self.modes[0])
         if state.is_pure:
             ket = state.ket()
-            dm = fock.ket_to_dm(ket)
+            dm = fock_utils.ket_to_dm(ket)
         else:
             dm = state.dm()
 

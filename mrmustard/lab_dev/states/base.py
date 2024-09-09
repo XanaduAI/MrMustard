@@ -36,7 +36,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from mrmustard import math, settings, widgets
-from mrmustard.physics.fock import quadrature_distribution
+from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     Batch,
@@ -47,7 +47,7 @@ from mrmustard.utils.typing import (
     Scalar,
     Vector,
 )
-from mrmustard.physics.bargmann import (
+from mrmustard.physics.bargmann_utils import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
 )

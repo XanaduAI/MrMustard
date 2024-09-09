@@ -3,7 +3,7 @@ import numpy as np
 from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
 from mrmustard.lab_dev import Unitary, Vacuum, Channel
-from mrmustard.physics.bargmann import (
+from mrmustard.physics.bargmann_utils import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
