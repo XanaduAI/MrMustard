@@ -45,6 +45,7 @@ from mrmustard.utils.typing import (
     ComplexVector,
     RealVector,
     Scalar,
+    Vector,
 )
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
@@ -328,7 +329,21 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
+        return bargmann_Abc_to_phasespace_cov_means(
+            *new_state.bargmann_triple(batched=True), batched=True
+        )
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the State.
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
+        """
+        raise NotImplementedError
 
     def visualize_2d(
         self,
@@ -768,6 +783,34 @@ class DM(State):
         """
         return self
 
+    def quadrature_distribution(
+        self, quad: Batch[Vector], phi: float = 0.0
+    ) -> tuple | ComplexTensor:
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * 2
+                    * self.n_modes
+                )
+            )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.tile(
+                math.transpose(
+                    math.astensor(
+                        quad,
+                    )
+                ),
+                (1, 2),
+            )
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
+        return self.quadrature(quad, phi)
+
     def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator with respect to this DM.
@@ -1036,6 +1079,28 @@ class Ket(State):
         ret = DM._from_attributes(dm.representation, dm.wires, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
+
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+        if len(quad.shape) == 1:
+            quad = math.transpose(
+                math.astensor(
+                    [
+                        quad,
+                    ]
+                    * self.n_modes
+                )
+            )
+        elif len(quad.shape) == self.n_modes:
+            quad = math.transpose(
+                math.astensor(
+                    quad,
+                )
+            )
+        else:
+            raise ValueError(
+                f"The dimensionality of quad should be 1, or match the number of modes."
+            )
+        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):
         r"""
