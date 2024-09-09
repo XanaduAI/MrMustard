@@ -192,6 +192,12 @@ class TestCircuitComponent:
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
 
+    def test_to_fock_bargmann_Dgate(self):
+        d = Dgate([1], x=0.1, y=0.1)
+        d_fock = d.to_fock(shape=(4, 6))
+        d_barg = d_fock.to_bargmann()
+        assert d_barg == d
+
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))

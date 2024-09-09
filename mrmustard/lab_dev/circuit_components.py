@@ -575,9 +575,9 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock._original_bargmann_data = self.representation.triple
+            fock.ansatz._original_abc_data = self.representation.triple
         except AttributeError:
-            fock._original_bargmann_data = None
+            fock.ansatz._original_abc_data = None
         try:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
@@ -607,9 +607,12 @@ class CircuitComponent:
         if isinstance(self.representation, Bargmann):
             return self
         else:
-            A, b, _ = identity_Abc(len(self.wires.quantum))
-            bargmann = Bargmann(A, b, self.representation.data)
-            bargmann._original_fock_data = self.representation.data
+            if self.representation.ansatz._original_abc_data:
+                A, b, c = self.representation.ansatz._original_abc_data
+            else:
+                A, b, _ = identity_Abc(len(self.wires.quantum))
+                c = self.representation.data
+            bargmann = Bargmann(A, b, c)
             try:
                 ret = self._getitem_builtin(self.modes)
                 ret._representation = bargmann
