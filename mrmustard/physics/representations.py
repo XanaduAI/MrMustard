@@ -97,7 +97,7 @@ class Representation(ABC):
         return self.ansatz.triple
 
     @classmethod
-    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
+    def from_ansatz(cls, ansatz: Ansatz) -> Representation:
         r"""
         Returns a representation from an ansatz.
         """
