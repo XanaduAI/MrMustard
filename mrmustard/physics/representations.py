@@ -324,7 +324,7 @@ class Bargmann(Representation):
         r"""
         The batch of triples :math:`(A_i, b_i, c_i)`.
         """
-        return self.A, self.b, self.c
+        return self.ansatz.triple
 
     @classmethod
     def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
@@ -619,13 +619,9 @@ class Fock(Representation):
     @property
     def triple(self) -> tuple:
         r"""
-        The data of the original Bargmann representation if it exists
+        The data of the original Bargmann representation if it exists.
         """
-        if self.ansatz._original_abc_data is None:
-            raise AttributeError(
-                "This Fock object does not have an original Bargmann representation."
-            )
-        return self.ansatz._original_abc_data
+        return self.ansatz.triple
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ

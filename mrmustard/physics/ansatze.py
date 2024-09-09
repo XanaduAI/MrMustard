@@ -529,6 +529,15 @@ class PolyExpAnsatz(PolyExpBase):
         """
         return self.array
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.A, self.b, self.c
+
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""
@@ -1010,6 +1019,17 @@ class ArrayAnsatz(Ansatz):
         The number of variables in this ansatz.
         """
         return len(self.array.shape) - 1
+
+    @property
+    def triple(self) -> tuple:
+        r"""
+        The data of the original PolyExpAnsatz if it exists.
+        """
+        if self._original_abc_data is None:
+            raise AttributeError(
+                "This Fock object does not have an original Bargmann representation."
+            )
+        return self._original_abc_data
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
