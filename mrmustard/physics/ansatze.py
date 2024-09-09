@@ -972,6 +972,7 @@ class ArrayAnsatz(Ansatz):
 
         self._array = array if batched else [array]
         self._backend_array = False
+        self._original_abc_data = None
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -1144,7 +1145,13 @@ class ArrayAnsatz(Ansatz):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
-            return self.__class__(array=self.array * other)
+            ret = self.__class__(array=self.array * other)
+            ret._original_abc_data = (
+                tuple(i * j for i, j in zip(self._original_abc_data, (1, 1, other)))
+                if self._original_abc_data is not None
+                else None
+            )
+            return ret
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -1180,7 +1187,13 @@ class ArrayAnsatz(Ansatz):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            return self.__class__(array=self.array / other)
+            ret = self.__class__(array=self.array / other)
+            ret._original_abc_data = (
+                tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
+                if self._original_abc_data is not None
+                else None
+            )
+            return ret
 
 
 def bargmann_Abc_to_phasespace_cov_means(

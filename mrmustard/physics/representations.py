@@ -582,7 +582,6 @@ class Fock(Representation):
 
     def __init__(self, array: Batch[Tensor], batched=False):
         self._contract_idxs: tuple[int, ...] = ()
-        self._original_bargmann_data = None
         self._ansatz = ArrayAnsatz(array=array, batched=batched)
 
     @property
@@ -620,18 +619,20 @@ class Fock(Representation):
         r"""
         The data of the original Bargmann representation if it exists
         """
-        if self._original_bargmann_data is None:
+        if self.ansatz._original_abc_data is None:
             raise AttributeError(
                 "This Fock object does not have an original Bargmann representation."
             )
-        return self._original_bargmann_data
+        return self.ansatz._original_abc_data
 
     @classmethod
     def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
         r"""
         Returns a Fock object from an ansatz object.
         """
-        return cls(ansatz.array, batched=True)
+        ret = cls(ansatz.array, batched=True)
+        ret.ansatz._original_abc_data = ansatz._original_abc_data
+        return ret
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
