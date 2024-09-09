@@ -172,59 +172,6 @@ class PolyExpBase(Ansatz):
 
         self._simplified = False
 
-    def __neg__(self) -> PolyExpBase:
-        return self.__class__(self.mat, self.vec, -self.array)
-
-    def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(other) and np.allclose(self.array, other.array, atol=1e-10)
-
-    def _equal_no_array(self, other: PolyExpBase) -> bool:
-        self.simplify()
-        other.simplify()
-        return np.allclose(self.vec, other.vec, atol=1e-10) and np.allclose(
-            self.mat, other.mat, atol=1e-10
-        )
-
-    def __add__(self, other: PolyExpBase) -> PolyExpBase:
-        r"""
-        Adds two ansatze together. This means concatenating them in the batch dimension.
-        In the case where c is a polynomial of different shapes it will add padding zeros to make
-        the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
-        shape of the combined object will be (2,5,4,5).
-        """
-        combined_matrices = math.concat([self.mat, other.mat], axis=0)
-        combined_vectors = math.concat([self.vec, other.vec], axis=0)
-
-        a0s = self.array.shape[1:]
-        a1s = other.array.shape[1:]
-        if a0s == a1s:
-            combined_arrays = math.concat([self.array, other.array], axis=0)
-        else:
-            s_max = np.maximum(np.array(a0s), np.array(a1s))
-
-            padding_array0 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a0s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
-
-            padding_array1 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a1s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
-            a0_new = np.pad(self.array, padding_tuple0, "constant")
-            a1_new = np.pad(other.array, padding_tuple1, "constant")
-            combined_arrays = math.concat([a0_new, a1_new], axis=0)
-        # note output is not simplified
-        return self.__class__(combined_matrices, combined_vectors, combined_arrays)
-
     @property
     def array(self) -> Batch[ComplexMatrix]:
         r"""
@@ -344,48 +291,33 @@ class PolyExpBase(Ansatz):
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
-    def _generate_ansatz(self):
+    def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
-        This method computes and sets the matrix, vector and array given a function
-        and some kwargs.
+        This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
+        A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
+        it can be rewritten as an ansatz of dimensions
+        A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
+        This decomposition is typically favourable if m>n, and will only run if that is the case.
+        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
         """
-        names = list(self._kwargs.keys())
-        vars = list(self._kwargs.values())
+        dim_beta, _ = self.polynomial_shape
+        dim_alpha = self.mat.shape[-1] - dim_beta
+        batch_size = self.batch_size
+        if dim_beta > dim_alpha:
+            A_decomp = []
+            b_decomp = []
+            c_decomp = []
+            for i in range(batch_size):
+                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
+                    self.mat[i], self.vec[i], self.array[i]
+                )
+                A_decomp.append(A_decomp_i)
+                b_decomp.append(b_decomp_i)
+                c_decomp.append(c_decomp_i)
 
-        params = {}
-        param_types = []
-        for name, param in zip(names, vars):
-            try:
-                params[name] = param.value
-                param_types.append(type(param))
-            except AttributeError:
-                params[name] = param
-
-        if self._array is None or Variable in param_types:
-            mat, vec, array = self._fn(**params)
-            self.mat = mat
-            self.vec = vec
-            self.array = array
-
-    def _order_batch(self):
-        r"""
-        This method orders the batch dimension by the lexicographical order of the
-        flattened arrays (mat, vec, array). This is a very cheap way to enforce
-        an ordering of the batch dimension, which is useful for simplification and for
-        determining (in)equality between two Bargmann representations.
-        """
-        generators = [
-            itertools.chain(
-                math.asnumpy(self.vec[i]).flat,
-                math.asnumpy(self.mat[i]).flat,
-                math.asnumpy(self.array[i]).flat,
-            )
-            for i in range(self.batch_size)
-        ]
-        sorted_indices = argsort_gen(generators)
-        self.mat = math.gather(self.mat, sorted_indices, axis=0)
-        self.vec = math.gather(self.vec, sorted_indices, axis=0)
-        self.array = math.gather(self.array, sorted_indices, axis=0)
+            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
+        else:
+            return PolyExpAnsatz(self.mat, self.vec, self.array)
 
     def _decompose_ansatz_single(self, Ai, bi, ci):
         dim_beta, shape_beta = self.polynomial_shape
@@ -430,33 +362,101 @@ class PolyExpBase(Ansatz):
         b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
         return A_decomp, b_decomp, c_decomp
 
-    def decompose_ansatz(self) -> PolyExpAnsatz:
-        r"""
-        This method decomposes a PolyExpAnsatz. Given an ansatz of dimensions:
-        A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
-        it can be rewritten as an ansatz of dimensions
-        A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
-        This decomposition is typically favourable if m>n, and will only run if that is the case.
-        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
-        """
-        dim_beta, _ = self.polynomial_shape
-        dim_alpha = self.mat.shape[-1] - dim_beta
-        batch_size = self.batch_size
-        if dim_beta > dim_alpha:
-            A_decomp = []
-            b_decomp = []
-            c_decomp = []
-            for i in range(batch_size):
-                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
-                    self.mat[i], self.vec[i], self.array[i]
-                )
-                A_decomp.append(A_decomp_i)
-                b_decomp.append(b_decomp_i)
-                c_decomp.append(c_decomp_i)
+    def _equal_no_array(self, other: PolyExpBase) -> bool:
+        self.simplify()
+        other.simplify()
+        return np.allclose(self.vec, other.vec, atol=1e-10) and np.allclose(
+            self.mat, other.mat, atol=1e-10
+        )
 
-            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the matrix, vector and array given a function
+        and some kwargs.
+        """
+        names = list(self._kwargs.keys())
+        vars = list(self._kwargs.values())
+
+        params = {}
+        param_types = []
+        for name, param in zip(names, vars):
+            try:
+                params[name] = param.value
+                param_types.append(type(param))
+            except AttributeError:
+                params[name] = param
+
+        if self._array is None or Variable in param_types:
+            mat, vec, array = self._fn(**params)
+            self.mat = mat
+            self.vec = vec
+            self.array = array
+
+    def _order_batch(self):
+        r"""
+        This method orders the batch dimension by the lexicographical order of the
+        flattened arrays (mat, vec, array). This is a very cheap way to enforce
+        an ordering of the batch dimension, which is useful for simplification and for
+        determining (in)equality between two Bargmann representations.
+        """
+        generators = [
+            itertools.chain(
+                math.asnumpy(self.vec[i]).flat,
+                math.asnumpy(self.mat[i]).flat,
+                math.asnumpy(self.array[i]).flat,
+            )
+            for i in range(self.batch_size)
+        ]
+        sorted_indices = argsort_gen(generators)
+        self.mat = math.gather(self.mat, sorted_indices, axis=0)
+        self.vec = math.gather(self.vec, sorted_indices, axis=0)
+        self.array = math.gather(self.array, sorted_indices, axis=0)
+
+    def __add__(self, other: PolyExpBase) -> PolyExpBase:
+        r"""
+        Adds two ansatze together. This means concatenating them in the batch dimension.
+        In the case where c is a polynomial of different shapes it will add padding zeros to make
+        the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
+        shape of the combined object will be (2,5,4,5).
+        """
+        combined_matrices = math.concat([self.mat, other.mat], axis=0)
+        combined_vectors = math.concat([self.vec, other.vec], axis=0)
+
+        a0s = self.array.shape[1:]
+        a1s = other.array.shape[1:]
+        if a0s == a1s:
+            combined_arrays = math.concat([self.array, other.array], axis=0)
         else:
-            return PolyExpAnsatz(self.mat, self.vec, self.array)
+            s_max = np.maximum(np.array(a0s), np.array(a1s))
+
+            padding_array0 = np.array(
+                (
+                    np.zeros(len(s_max) + 1),
+                    np.concatenate((np.array([0]), np.array((s_max - a0s)))),
+                ),
+                dtype=int,
+            ).T
+            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
+
+            padding_array1 = np.array(
+                (
+                    np.zeros(len(s_max) + 1),
+                    np.concatenate((np.array([0]), np.array((s_max - a1s)))),
+                ),
+                dtype=int,
+            ).T
+            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
+            a0_new = np.pad(self.array, padding_tuple0, "constant")
+            a1_new = np.pad(other.array, padding_tuple1, "constant")
+            combined_arrays = math.concat([a0_new, a1_new], axis=0)
+        # note output is not simplified
+        return self.__class__(combined_matrices, combined_vectors, combined_arrays)
+
+    def __eq__(self, other: PolyExpBase) -> bool:
+        return self._equal_no_array(other) and np.allclose(self.array, other.array, atol=1e-10)
+
+    def __neg__(self) -> PolyExpBase:
+        return self.__class__(self.mat, self.vec, -self.array)
 
 
 class PolyExpAnsatz(PolyExpBase):
@@ -529,6 +529,15 @@ class PolyExpAnsatz(PolyExpBase):
         """
         return self.array
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.A, self.b, self.c
+
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""
@@ -538,24 +547,6 @@ class PolyExpAnsatz(PolyExpBase):
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
-
-    def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
-        r"""
-        Returns either the value of the ansatz or a new ansatz depending on the argument.
-        If the argument contains None, returns a new ansatz.
-        If the argument only contains numbers, returns the value of the ansatz at that argument.
-        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
-
-        Args:
-            z: point in C^n where the function is evaluated
-
-        Returns:
-            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
-        """
-        if (np.array(z) == None).any():
-            return self._call_none(z)
-        else:
-            return self._call_all(z)
 
     def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
@@ -702,6 +693,110 @@ class PolyExpAnsatz(PolyExpBase):
             )
         A, b, c = zip(*Abc)
         return self.__class__(A=A, b=b, c=c)
+
+    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+        r"""Tensor product of this ansatz with another ansatz.
+        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
+        As it distributes over addition on both self and other,
+        the batch size of the result is the product of the batch
+        size of this anzatz and the other one.
+
+        Args:
+            other: Another ansatz.
+
+        Returns:
+            The tensor product of this ansatz and other.
+        """
+
+        def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
+            A3 = math.block(
+                [
+                    [
+                        A1[:dim_alpha1, :dim_alpha1],
+                        math.zeros((dim_alpha1, dim_alpha2), dtype=math.complex128),
+                        A1[:dim_alpha1, dim_alpha1:],
+                        math.zeros((dim_alpha1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        math.zeros((dim_alpha2, dim_alpha1), dtype=math.complex128),
+                        A2[:dim_alpha2:, :dim_alpha2],
+                        math.zeros((dim_alpha2, dim_beta1), dtype=math.complex128),
+                        A2[:dim_alpha2, dim_alpha2:],
+                    ],
+                    [
+                        A1[dim_alpha1:, :dim_alpha1],
+                        math.zeros((dim_beta1, dim_alpha2), dtype=math.complex128),
+                        A1[dim_alpha1:, dim_alpha1:],
+                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        math.zeros((dim_beta2, dim_alpha1), dtype=math.complex128),
+                        A2[dim_alpha2:, :dim_alpha2],
+                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
+                        A2[dim_alpha2:, dim_alpha2:],
+                    ],
+                ]
+            )
+            return A3
+
+        def andb(b1, b2, dim_alpha1, dim_alpha2):
+            b3 = math.reshape(
+                math.block(
+                    [
+                        [
+                            b1[:dim_alpha1],
+                            b2[:dim_alpha2],
+                            b1[dim_alpha1:],
+                            b2[dim_alpha2:],
+                        ]
+                    ]
+                ),
+                -1,
+            )
+            return b3
+
+        def andc(c1, c2):
+            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+            return c3
+
+        dim_beta1, _ = self.polynomial_shape
+        dim_beta2, _ = other.polynomial_shape
+
+        dim_alpha1 = self.A.shape[-1] - dim_beta1
+        dim_alpha2 = other.A.shape[-1] - dim_beta2
+
+        As = [
+            andA(
+                math.cast(A1, "complex128"),
+                math.cast(A2, "complex128"),
+                dim_alpha1,
+                dim_alpha2,
+                dim_beta1,
+                dim_beta2,
+            )
+            for A1, A2 in itertools.product(self.A, other.A)
+        ]
+        bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
+        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
+        return self.__class__(As, bs, cs)
+
+    def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
+        r"""
+        Returns either the value of the ansatz or a new ansatz depending on the argument.
+        If the argument contains None, returns a new ansatz.
+        If the argument only contains numbers, returns the value of the ansatz at that argument.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+
+        Args:
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
+        """
+        if (np.array(z) == None).any():
+            return self._call_none(z)
+        else:
+            return self._call_all(z)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
@@ -859,92 +954,6 @@ class PolyExpAnsatz(PolyExpBase):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        r"""Tensor product of this ansatz with another ansatz.
-        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
-        As it distributes over addition on both self and other,
-        the batch size of the result is the product of the batch
-        size of this anzatz and the other one.
-
-        Args:
-            other: Another ansatz.
-
-        Returns:
-            The tensor product of this ansatz and other.
-        """
-
-        def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha1, :dim_alpha1],
-                        math.zeros((dim_alpha1, dim_alpha2), dtype=math.complex128),
-                        A1[:dim_alpha1, dim_alpha1:],
-                        math.zeros((dim_alpha1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        math.zeros((dim_alpha2, dim_alpha1), dtype=math.complex128),
-                        A2[:dim_alpha2:, :dim_alpha2],
-                        math.zeros((dim_alpha2, dim_beta1), dtype=math.complex128),
-                        A2[:dim_alpha2, dim_alpha2:],
-                    ],
-                    [
-                        A1[dim_alpha1:, :dim_alpha1],
-                        math.zeros((dim_beta1, dim_alpha2), dtype=math.complex128),
-                        A1[dim_alpha1:, dim_alpha1:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        math.zeros((dim_beta2, dim_alpha1), dtype=math.complex128),
-                        A2[dim_alpha2:, :dim_alpha2],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha2:, dim_alpha2:],
-                    ],
-                ]
-            )
-            return A3
-
-        def andb(b1, b2, dim_alpha1, dim_alpha2):
-            b3 = math.reshape(
-                math.block(
-                    [
-                        [
-                            b1[:dim_alpha1],
-                            b2[:dim_alpha2],
-                            b1[dim_alpha1:],
-                            b2[dim_alpha2:],
-                        ]
-                    ]
-                ),
-                -1,
-            )
-            return b3
-
-        def andc(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        dim_beta1, _ = self.polynomial_shape
-        dim_beta2, _ = other.polynomial_shape
-
-        dim_alpha1 = self.A.shape[-1] - dim_beta1
-        dim_alpha2 = other.A.shape[-1] - dim_beta2
-
-        As = [
-            andA(
-                math.cast(A1, "complex128"),
-                math.cast(A2, "complex128"),
-                dim_alpha1,
-                dim_alpha2,
-                dim_beta1,
-                dim_beta2,
-            )
-            for A1, A2 in itertools.product(self.A, other.A)
-        ]
-        bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
-        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
-        return self.__class__(As, bs, cs)
-
 
 class ArrayAnsatz(Ansatz):
     r"""
@@ -972,6 +981,7 @@ class ArrayAnsatz(Ansatz):
 
         self._array = array if batched else [array]
         self._backend_array = False
+        self._original_abc_data = None
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -1009,6 +1019,17 @@ class ArrayAnsatz(Ansatz):
         The number of variables in this ansatz.
         """
         return len(self.array.shape) - 1
+
+    @property
+    def triple(self) -> tuple:
+        r"""
+        The data of the original PolyExpAnsatz if it exists.
+        """
+        if self._original_abc_data is None:
+            raise AttributeError(
+                "This Fock object does not have an original Bargmann representation."
+            )
+        return self._original_abc_data
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
@@ -1144,7 +1165,13 @@ class ArrayAnsatz(Ansatz):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
-            return self.__class__(array=self.array * other)
+            ret = self.__class__(array=self.array * other)
+            ret._original_abc_data = (
+                tuple(i * j for i, j in zip(self._original_abc_data, (1, 1, other)))
+                if self._original_abc_data is not None
+                else None
+            )
+            return ret
 
     def __neg__(self) -> ArrayAnsatz:
         r"""
@@ -1180,7 +1207,13 @@ class ArrayAnsatz(Ansatz):
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            return self.__class__(array=self.array / other)
+            ret = self.__class__(array=self.array / other)
+            ret._original_abc_data = (
+                tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
+                if self._original_abc_data is not None
+                else None
+            )
+            return ret
 
 
 def bargmann_Abc_to_phasespace_cov_means(
