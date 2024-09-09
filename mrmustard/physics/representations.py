@@ -331,7 +331,9 @@ class Bargmann(Representation):
         r"""
         Returns a Bargmann object from an ansatz object.
         """
-        return cls(ansatz.A, ansatz.b, ansatz.c)
+        ret = cls(None, None, None)
+        ret._ansatz = ansatz
+        return ret
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
@@ -630,8 +632,8 @@ class Fock(Representation):
         r"""
         Returns a Fock object from an ansatz object.
         """
-        ret = cls(ansatz.array, batched=True)
-        ret.ansatz._original_abc_data = ansatz._original_abc_data
+        ret = cls(None)
+        ret._ansatz = ansatz
         return ret
 
     @classmethod
