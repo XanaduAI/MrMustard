@@ -65,7 +65,7 @@ class TestSettings:
         settings.PRECISION_BITS_HERMITE_POLY = p0
 
         assert settings.HBAR == 1.0
-        with pytest.raises(ValueError, match="Cannot change"):
+        with pytest.warns(UserWarning, match="Changing HBAR can conflict with prior computations"):
             settings.HBAR = 3
 
         with pytest.raises(ValueError, match="precision_bits_hermite_poly"):

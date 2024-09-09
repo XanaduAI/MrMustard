@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 from pathlib import Path
+import warnings
+
 from rich import print
 import rich.table
 import numpy as np
@@ -57,7 +59,6 @@ class Settings:
 
     def __init__(self):
         self._hbar: float = 1.0
-        self._hbar_locked: bool = False
         self._seed: int = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
@@ -124,7 +125,7 @@ class Settings:
 
     def __setattr__(self, name, value):
         """Once the class is initialized, do not allow the addition of new settings."""
-        if self._frozen and name != "HBAR" and not hasattr(self, name):
+        if self._frozen and not hasattr(self, name):
             raise AttributeError(f"unknown MrMustard setting: '{name}'")
         return super().__setattr__(name, value)
 
@@ -170,13 +171,11 @@ class Settings:
 
         Cannot be changed after its value is queried for the first time.
         """
-        self._hbar_locked = True
         return self._hbar
 
     @HBAR.setter
     def HBAR(self, value: float):
-        if value != self._hbar and self._hbar_locked:
-            raise ValueError("Cannot change the value of `settings.HBAR` in the current session.")
+        warnings.warn("Changing HBAR can conflict with prior computations.")
         self._hbar = value
 
     @property
