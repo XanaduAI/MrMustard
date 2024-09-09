@@ -51,9 +51,8 @@ class TestDgate:
         state = SqueezedVacuum([0], r=1.0)
         # displacement gate in fock representation for large displacement
         dgate = Dgate([0], x=10.0).to_fock(150)
-        assert ((state.to_fock() >> dgate).probability < 1) and np.all(
-            math.abs(dgate.fock(150) < 1)
-        )
+        assert (state.to_fock() >> dgate).probability < 1
+        assert np.all(math.abs(dgate.fock(150)) < 1)
 
     def test_representation(self):
         rep1 = Dgate(modes=[0], x=0.1, y=0.1).representation
