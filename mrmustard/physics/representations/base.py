@@ -30,6 +30,7 @@ from mrmustard.utils.typing import (
     ComplexVector,
     Scalar,
     Tensor,
+    Vector,
 )
 
 __all__ = ["Representation"]
@@ -135,4 +136,112 @@ class Representation(ABC):
         r"""
         This method computes and sets data given a function
         and some kwargs.
+        """
+
+    @abstractmethod
+    def __add__(self, other: Representation) -> Representation:
+        r"""
+        Adds this representation and another representation.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            The addition of this representation and other.
+        """
+
+    @abstractmethod
+    def __and__(self, other: Representation) -> Representation:
+        r"""
+        Tensor product of this representation with another.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            The tensor product of this representation and other.
+        """
+
+    @abstractmethod
+    def __call__(self, z: Batch[Vector]) -> Scalar | Representation:
+        r"""
+        Evaluates this representation at a given point in the domain.
+
+        Args:
+            z: point in C^n where the function is evaluated
+
+        Returns:
+            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
+        """
+
+    @abstractmethod
+    def __eq__(self, other: Representation) -> bool:
+        r"""
+        Whether this representation is equal to another.
+        """
+
+    @abstractmethod
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+        r"""
+        Returns a copy of self with the given indices marked for contraction.
+        """
+
+    @abstractmethod
+    def __matmul__(self, other: Representation) -> Representation:
+        r"""
+        Implements the inner product of representations over the marked indices.
+
+        Args:
+            other: Another representation.
+
+        Returns:
+            The resulting representation.
+        """
+
+    @abstractmethod
+    def __mul__(self, other: Scalar | Representation) -> Representation:
+        r"""
+        Multiplies this representation by a scalar or another representation.
+
+        Args:
+            other: A scalar or another representation.
+
+        Raises:
+            TypeError: If other is neither a scalar nor a representation.
+
+        Returns:
+            The product of this representation and other.
+        """
+
+    @abstractmethod
+    def __neg__(self) -> Representation:
+        r"""
+        Negates the values in the representation.
+        """
+
+    def __rmul__(self, other: Representation | Scalar) -> Representation:
+        r"""
+        Multiplies this representation by another or by a scalar on the right.
+        """
+        return self.__mul__(other)
+
+    def __sub__(self, other: Representation) -> Representation:
+        r"""
+        Subtracts other from this representation.
+        """
+        try:
+            return self.__add__(-other)
+        except AttributeError as e:
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
+
+    @abstractmethod
+    def __truediv__(self, other: Scalar | Representation) -> Representation:
+        r"""
+        Divides this representation by another representation.
+
+        Args:
+            other: A scalar or another representation.
+
+        Returns:
+            The division of this representation and other.
         """

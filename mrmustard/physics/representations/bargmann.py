@@ -150,9 +150,6 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = 1.0,
         name: str = "",
     ):
-        if A is None and b is None and c is not None:
-            raise ValueError("Please provide either A or b.")
-
         super().__init__()
         self._A = A
         self._b = b
@@ -801,13 +798,7 @@ class Bargmann(Representation):
     def __eq__(self, other: Bargmann) -> bool:
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
-    def __neg__(self) -> Bargmann:
-        return Bargmann(self.A, self.b, -self.c)
-
     def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
-        r"""
-        A copy of self with the given indices marked for contraction.
-        """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.num_vars:
@@ -819,29 +810,6 @@ class Bargmann(Representation):
         return ret
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
-        r"""
-        Implements the inner product in Bargmann representation.
-
-        ..code-block::
-
-        >>> from mrmustard.physics.representations import Bargmann
-        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-        >>> rep1 = Bargmann(*vacuum_state_Abc(1))
-        >>> rep2 = Bargmann(*displacement_gate_Abc(1))
-        >>> rep3 = rep1[0] @ rep2[1]
-        >>> assert np.allclose(rep3.A, [[0,],])
-        >>> assert np.allclose(rep3.b, [1,])
-
-         Args:
-             other: Another Bargmann representation.
-
-         Returns:
-            Bargmann: the resulting Bargmann representation.
-
-        """
-        if not isinstance(other, Bargmann):
-            raise NotImplementedError("Only matmul Bargmann with Bargmann")
-
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
@@ -864,19 +832,6 @@ class Bargmann(Representation):
         return Bargmann(A, b, c)
 
     def __mul__(self, other: Scalar | Bargmann) -> Bargmann:
-        r"""Multiplies this representation by a scalar or another Bargmann representation.
-
-        Args:
-            other: A scalar or another Bargmann representation.
-
-        Raises:
-            TypeError: If other is neither a scalar nor a Bargmann representation.
-
-        Returns:
-            Bargmann: The product of this representation and other.
-
-        """
-
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
@@ -940,36 +895,10 @@ class Bargmann(Representation):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __rmul__(self, other: Bargmann | Scalar) -> Bargmann:
-        r"""
-        Multiplies this representation by another or by a scalar on the right.
-        """
-        return self.__mul__(other)
-
-    def __sub__(self, other):
-        r"""
-        Subtracts other from this representation.
-        """
-        try:
-            return self.__add__(-other)
-        except AttributeError as e:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
+    def __neg__(self) -> Bargmann:
+        return Bargmann(self.A, self.b, -self.c)
 
     def __truediv__(self, other: Scalar | Bargmann) -> Bargmann:
-        r"""
-        Multiplies this Bargmann by a scalar or another Bargmann.
-
-        Args:
-            other: A scalar or another Bargmann.
-
-        Raises:
-            TypeError: If other is neither a scalar nor a Bargmann.
-
-        Returns:
-            Bargmann: The product of this Bargmann and other.
-
-        """
-
         def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [

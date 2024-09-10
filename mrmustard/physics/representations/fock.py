@@ -28,11 +28,7 @@ from numpy.typing import ArrayLike
 from IPython.display import display
 
 from mrmustard import math, widgets
-from mrmustard.utils.typing import (
-    Batch,
-    Scalar,
-    Tensor,
-)
+from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
 from .base import Representation
 
@@ -246,18 +242,6 @@ class Fock(Representation):
         display(w)
 
     def __add__(self, other: Fock) -> Fock:
-        r"""
-        Adds the array of this Fock representation and the array of another Fock representation.
-
-        Args:
-            other: Another Fock representation.
-
-        Raises:
-            ValueError: If the arrays don't have the same shape.
-
-        Returns:
-            ArrayAnsatz: The addition of this representation and other.
-        """
         try:
             diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
             if diff < 0:
@@ -273,41 +257,19 @@ class Fock(Representation):
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: Fock) -> Fock:
-        r"""
-        Tensor product of this Fock representation with another Fock representation.
-
-        Args:
-            other: Another Fock representation.
-
-        Returns:
-            The tensor product of this representation and other.
-            Batch size is the product of two batches.
-        """
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
         return Fock(array=new_array, batched=True)
 
-    def __call__(self, point: Any) -> Scalar:
-        r"""
-        Evaluates this representation at a given point in the domain.
-        """
+    def __call__(self, z: Batch[Vector]) -> Scalar:
         raise AttributeError("Cannot call Fock.")
 
     def __eq__(self, other: Representation) -> bool:
-        r"""
-        Whether this ansatz's array is equal to another ansatz's array.
-
-        Note that the comparison is done by numpy allclose with numpy's default rtol and atol.
-
-        """
         slices = (slice(0, None),) + tuple(
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
         return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
-        r"""
-        Returns a copy of self with the given indices marked for contraction.
-        """
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.num_vars:
@@ -319,29 +281,6 @@ class Fock(Representation):
         return ret
 
     def __matmul__(self, other: Fock) -> Fock:
-        r"""
-        Implements the inner product of fock arrays over the marked indices.
-
-        .. code-block::
-            >>> from mrmustard.physics.representations import Fock
-            >>> f = Fock(np.random.random((3, 5, 10)))  # 10 is reduced to 8
-            >>> g = Fock(np.random.random((2, 5, 8)))
-            >>> h = f[1,2] @ g[1,2]
-            >>> assert h.array.shape == (1,3,2)  # batch size is 1
-            >>> f = Fock(np.random.random((3, 5, 10)), batched=True)
-            >>> g = Fock(np.random.random((2, 5, 8)), batched=True)
-            >>> h = f[0,1] @ g[0,1]
-            >>> assert h.array.shape == (6,)  # batch size is 3 x 2 = 6
-
-        Args:
-            other: Another representation.
-
-        Returns:
-            A ``Fock``representation.
-        """
-        if not isinstance(other, Fock):
-            raise NotImplementedError("only matmul Fock with Fock")
-
         idx_s = list(self._contract_idxs)
         idx_o = list(other._contract_idxs)
 
@@ -370,18 +309,6 @@ class Fock(Representation):
         return Fock(batched_array, batched=True)
 
     def __mul__(self, other: Scalar | Fock) -> Fock:
-        r"""
-        Multiplies this Fock representation by another Fock representation.
-
-        Args:
-            other: A scalar or another Fock representation.
-
-        Raises:
-            ValueError: If both of array don't have the same shape.
-
-        Returns:
-            ArrayAnsatz: The product of this representation and other.
-        """
         if isinstance(other, Fock):
             try:
                 diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
@@ -406,39 +333,9 @@ class Fock(Representation):
             return ret
 
     def __neg__(self) -> Fock:
-        r"""
-        Negates the values in the array.
-        """
         return Fock(array=-self.array, batched=True)
 
-    def __rmul__(self, other: Fock | Scalar) -> Fock:
-        r"""
-        Multiplies this representation by another or by a scalar on the right.
-        """
-        return self.__mul__(other)
-
-    def __sub__(self, other: Fock) -> Fock:
-        r"""
-        Subtracts other from this ansatz.
-        """
-        try:
-            return self.__add__(-other)
-        except AttributeError as e:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
-
     def __truediv__(self, other: Scalar | Fock) -> Fock:
-        r"""
-        Divides this Fock representation by another Fock representation.
-
-        Args:
-            other: A scalar or another Fock representation.
-
-        Raises:
-            ValueError: If the arrays don't have the same shape.
-
-        Returns:
-            ArrayAnsatz: The division of this representation and other.
-        """
         if isinstance(other, Fock):
             try:
                 diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
