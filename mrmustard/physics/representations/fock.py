@@ -14,7 +14,7 @@
 
 
 """
-This module contains the classes for the available representations.
+This module contains the Fock representation.
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ class Fock(Representation):
     @property
     def array(self) -> Batch[Tensor]:
         r"""
-        The array of this ansatz.
+        The array of this representation.
         """
         self._generate_ansatz()
         if not self._backend_array:
@@ -109,32 +109,20 @@ class Fock(Representation):
 
     @property
     def batch_size(self):
-        r"""
-        The batch size of this ansatz.
-        """
         return self.array.shape[0]
 
     @property
     def conj(self):
-        r"""
-        The conjugate of this ansatz.
-        """
         ret = Fock(math.conj(self.array), batched=True)
         ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
 
     @property
     def data(self) -> Batch[Tensor]:
-        r"""
-        The data of the representation.
-        """
         return self.array
 
     @property
     def num_vars(self) -> int:
-        r"""
-        The number of variables in this ansatz.
-        """
         return len(self.array.shape) - 1
 
     @property
@@ -159,14 +147,10 @@ class Fock(Representation):
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> Fock:
-        """Deserialize a Fock instance."""
         return cls(data["array"], batched=True)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
-        r"""
-        Returns a Fock object from a generator function.
-        """
         ret = cls(None, True)
         ret._fn = fn
         ret._kwargs = kwargs
@@ -221,16 +205,6 @@ class Fock(Representation):
         return Fock(array=ret, batched=True)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
-        r"""
-        Reorders the indices of the array with the given order.
-
-        Args:
-            order: The order. Does not need to refer to the batch dimension.
-
-        Returns:
-            The reordered Fock.
-        """
-
         return Fock(math.transpose(self.array, [0] + [i + 1 for i in order]), batched=True)
 
     def sum_batch(self) -> Fock:
@@ -243,20 +217,9 @@ class Fock(Representation):
         return Fock(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
 
     def to_dict(self) -> dict[str, ArrayLike]:
-        """Serialize a Fock instance."""
         return {"array": self.data}
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
-        r"""
-        Implements the partial trace over the given index pairs.
-
-        Args:
-            idxs1: The first part of the pairs of indices to trace over.
-            idxs2: The second part.
-
-        Returns:
-            The traced-over Fock object.
-        """
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
@@ -272,10 +235,6 @@ class Fock(Representation):
         return Fock([trace] if trace.shape == () else trace, batched=True)
 
     def _generate_ansatz(self):
-        r"""
-        This method computes and sets the array given a function
-        and some kwargs.
-        """
         if self._array is None:
             self.array = [self._fn(**self._kwargs)]
 

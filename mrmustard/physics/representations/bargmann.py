@@ -195,9 +195,6 @@ class Bargmann(Representation):
 
     @property
     def batch_size(self):
-        r"""
-        The batch size of this representation.
-        """
         return self.c.shape[0]
 
     @property
@@ -218,9 +215,6 @@ class Bargmann(Representation):
 
     @property
     def conj(self):
-        r"""
-        The conjugate of this Bargmann object.
-        """
         ret = Bargmann(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
@@ -229,16 +223,10 @@ class Bargmann(Representation):
     def data(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The data of the representation.
-        """
         return self.triple
 
     @property
     def num_vars(self):
-        r"""
-        The number of variables in this ansatz.
-        """
         return self.A.shape[-1] - self.polynomial_shape[0]
 
     @property
@@ -254,9 +242,6 @@ class Bargmann(Representation):
 
     @property
     def scalar(self) -> Batch[ComplexTensor]:
-        r"""
-        The scalar part of the representation.
-        """
         if self.polynomial_shape[0] > 0:
             return self([])
         else:
@@ -266,21 +251,14 @@ class Bargmann(Representation):
     def triple(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The batch of triples :math:`(A_i, b_i, c_i)`.
-        """
         return self.A, self.b, self.c
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> Bargmann:
-        """Deserialize a Bargmann instance."""
         return cls(**data)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
-        r"""
-        Returns a Bargmann object from a generator function.
-        """
         ret = cls(None, None, None)
         ret._fn = fn
         ret._kwargs = kwargs
@@ -374,26 +352,6 @@ class Bargmann(Representation):
         return fig, ax
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
-        r"""
-        Reorders the indices of the ``A`` matrix and ``b`` vector of the ``(A, b, c)`` triple in
-        this Bargmann object.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.representations import Bargmann
-            >>> from mrmustard.physics.triples import displacement_gate_Abc
-
-            >>> rep_dgate1 = Bargmann(*displacement_gate_Abc([0.1, 0.2, 0.3]))
-            >>> rep_dgate2 = Bargmann(*displacement_gate_Abc([0.2, 0.3, 0.1]))
-
-            >>> assert rep_dgate1.reorder([1, 2, 0, 4, 5, 3]) == rep_dgate2
-
-        Args:
-            order: The new order.
-
-        Returns:
-            The reordered Bargmann object.
-        """
         A, b, c = reorder_abc(self.triple, order)
         return Bargmann(A, b, c)
 
@@ -444,23 +402,12 @@ class Bargmann(Representation):
         self._simplified = True
 
     def to_dict(self) -> dict[str, ArrayLike]:
-        """Serialize a Bargmann instance."""
         return {"A": self.A, "b": self.b, "c": self.c}
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
-        r"""
-        The partial trace over the given index pairs.
-
-        Args:
-            idx_z: The first part of the pairs of indices to trace over.
-            idx_zconj: The second part.
-
-        Returns:
-            Bargmann: the ansatz with the given indices traced over
-        """
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Bargmann:
         A, b, c = [], [], []
         for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
+            Aij, bij, cij = complex_gaussian_integral(Abc, idxs1, idxs2, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)

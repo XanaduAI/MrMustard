@@ -14,12 +14,14 @@
 
 
 """
-This module contains the classes for the available representations.
+This module contains the base representation class.
 """
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable
+
+from numpy.typing import ArrayLike
 
 from mrmustard.utils.typing import (
     Batch,
@@ -36,10 +38,6 @@ __all__ = ["Representation"]
 class Representation(ABC):
     r"""
     A base class for representations.
-
-    Representations can be initialized using the ``from_ansatz`` method, which automatically equips
-    them with all the functionality required to perform mathematical operations, such as equality,
-    multiplication, subtraction, etc.
     """
 
     def __init__(self) -> None:
@@ -49,10 +47,31 @@ class Representation(ABC):
 
     @property
     @abstractmethod
+    def batch_size(self) -> int:
+        r"""
+        The batch size of the representation.
+        """
+
+    @property
+    @abstractmethod
+    def conj(self) -> Representation:
+        r"""
+        The conjugate of the representation.
+        """
+
+    @property
+    @abstractmethod
     def data(self) -> tuple | Tensor:
         r"""
         The data of the representation.
         For now, it's the triple for Bargmann and the array for Fock.
+        """
+
+    @property
+    @abstractmethod
+    def num_vars(self) -> int:
+        r"""
+        The number of variables in the representation.
         """
 
     @property
@@ -72,6 +91,14 @@ class Representation(ABC):
         The batch of triples :math:`(A_i, b_i, c_i)`.
         """
 
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Representation:
+        r"""
+        Deserialize a Representation.
+        """
+
+    @classmethod
     @abstractmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
         r"""
@@ -82,4 +109,30 @@ class Representation(ABC):
     def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
         r"""
         Reorders the representation indices.
+        """
+
+    @abstractmethod
+    def to_dict(self) -> dict[str, ArrayLike]:
+        r"""
+        Serialize a Representation.
+        """
+
+    @abstractmethod
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Representation:
+        r"""
+        Implements the partial trace over the given index pairs.
+
+        Args:
+            idxs1: The first part of the pairs of indices to trace over.
+            idxs2: The second part.
+
+        Returns:
+            The traced-over representation.
+        """
+
+    @abstractmethod
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets data given a function
+        and some kwargs.
         """
