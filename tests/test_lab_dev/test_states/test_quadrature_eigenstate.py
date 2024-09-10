@@ -60,7 +60,6 @@ class TestQuadratureEigenstate:
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
-
         with settings(HBAR=2.0):
             q0 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
 
@@ -89,5 +88,5 @@ class TestQuadratureEigenstate:
 
     def test_with_coherent(self):
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
-        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
+        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], np.sqrt(2), 0).dual
         assert np.allclose(val0, val1)
