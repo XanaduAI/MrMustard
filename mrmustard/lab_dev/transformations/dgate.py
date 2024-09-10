@@ -25,7 +25,7 @@ from mrmustard import math
 
 from .base import Unitary
 from ...physics.representations import Bargmann
-from ...physics import triples, fock
+from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Dgate"]
@@ -113,7 +113,7 @@ class Dgate(Unitary):
             array: The Fock representation of this component.
         """
         if isinstance(shape, int):
-            shape = (shape,) * self.representation.ansatz.num_vars
+            shape = (shape,) * self.representation.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
         if len(shape) != len(auto_shape):
@@ -129,9 +129,9 @@ class Dgate(Unitary):
             Ud = None
             for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
-                    Ud = fock.displacement(x[idx], y[idx], shape=out_in)
+                    Ud = fock_utils.displacement(x[idx], y[idx], shape=out_in)
                 else:
-                    U_next = fock.displacement(x[idx], y[idx], shape=out_in)
+                    U_next = fock_utils.displacement(x[idx], y[idx], shape=out_in)
                     Ud = math.outer(Ud, U_next)
 
             array = math.transpose(
@@ -139,6 +139,6 @@ class Dgate(Unitary):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            array = fock.displacement(x[0], y[0], shape=shape)
+            array = fock_utils.displacement(x[0], y[0], shape=shape)
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
