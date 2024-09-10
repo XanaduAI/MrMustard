@@ -88,5 +88,5 @@ class TestQuadratureEigenstate:
 
     def test_with_coherent(self):
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
-        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], np.sqrt(2), 0).dual
+        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], np.sqrt(2 * settings.HBAR), 0).dual
         assert np.allclose(val0, val1)
