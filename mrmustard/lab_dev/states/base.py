@@ -55,7 +55,7 @@ from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
-from mrmustard.physics.ansatze import (
+from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
