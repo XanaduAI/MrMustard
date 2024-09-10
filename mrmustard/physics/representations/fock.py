@@ -201,7 +201,7 @@ class Fock:
         Returns:
             The collapsed Fock object.
         """
-        return Fock(math.sum(self.array, axes=[0]), batched=True)
+        return Fock(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         """Serialize a Fock instance."""
@@ -316,7 +316,7 @@ class Fock:
                 raise IndexError(
                     f"Index {i} out of bounds for representation with {self.num_vars} variables."
                 )
-        ret = Fock(self.array)
+        ret = Fock(self.array, batched=True)
         ret._contract_idxs = idx
         return ret
 
