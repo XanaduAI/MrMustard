@@ -62,15 +62,13 @@ class TestQuadratureEigenstate:
     def test_probability_hbar(self, hbar):
         settings.HBAR = 2.0
 
-        q0 = QuadratureEigenstate([0], x=0, phi=0)
+        with settings(HBAR=2.0):
+            q0 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
 
-        settings.HBAR = hbar
-        q1 = QuadratureEigenstate([0], x=0, phi=0)
-        assert np.allclose(q0.bargmann_triple()[0], q1.bargmann_triple()[0])
-        assert np.allclose(q0.bargmann_triple()[1], q1.bargmann_triple()[1])
-        assert np.allclose(q0.bargmann_triple()[2], q1.bargmann_triple()[2])
+        with settings(HBAR=hbar):
+            q1 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
 
-        settings.HBAR = 2.0
+        assert all(np.allclose(a, b) for a, b in zip(q0, q1))
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
