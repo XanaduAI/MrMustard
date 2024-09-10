@@ -68,14 +68,14 @@ def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> 
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
         raise ValueError(msg)
 
-    shape = tuple([c + 1 for c in cutoffs])
+    shape = tuple(c + 1 for c in cutoffs)
     array = np.zeros(shape, dtype=np.complex128)
 
     try:
         array[tuple(n)] = 1
-    except IndexError:
+    except IndexError as e:
         msg = "Photon numbers cannot be larger than the corresponding cutoffs."
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
     return math.astensor(array)
 

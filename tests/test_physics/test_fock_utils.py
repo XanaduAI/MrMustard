@@ -47,6 +47,9 @@ st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 
 
 def test_fock_state():
+    r"""
+    Tests that the `fock_state` method gives expected values.
+    """
     n = [4, 5, 6]
 
     array1 = fock_utils.fock_state(n)
@@ -63,6 +66,9 @@ def test_fock_state():
 
 
 def test_fock_state_error():
+    r"""
+    Tests that the `fock_state` method handles errors as expected.
+    """
     n = [4, 5]
 
     with pytest.raises(ValueError):
