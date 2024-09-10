@@ -120,7 +120,7 @@ class Fock(Representation):
         The conjugate of this ansatz.
         """
         ret = Fock(math.conj(self.array), batched=True)
-        ret._contract_idxs = self._contract_idxs
+        ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
 
     @property
