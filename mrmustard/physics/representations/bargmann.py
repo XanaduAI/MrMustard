@@ -55,6 +55,7 @@ from .base import Representation
 __all__ = ["Bargmann"]
 
 
+# pylint: disable=too-many-instance-attributes
 class Bargmann(Representation):
     r"""
     The Fock-Bargmann representation of a broad class of quantum states, transformations,
