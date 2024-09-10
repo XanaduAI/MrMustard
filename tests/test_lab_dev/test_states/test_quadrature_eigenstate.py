@@ -60,7 +60,6 @@ class TestQuadratureEigenstate:
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
-        settings.HBAR = 2.0
 
         with settings(HBAR=2.0):
             q0 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
