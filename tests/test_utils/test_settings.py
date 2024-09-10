@@ -118,14 +118,8 @@ class TestSettings:
         """Test that the context manager works correctly."""
         settings = Settings()
 
-        with settings(AUTOSHAPE_PROBABILITY=0.1):
+        with settings(AUTOSHAPE_PROBABILITY=0.1, HBAR=5.0):
             assert settings.AUTOSHAPE_PROBABILITY == 0.1
+            assert settings.HBAR == 5.0
         assert settings.AUTOSHAPE_PROBABILITY == 0.99999
-
-    def test_context_manager_disallowed(self):
-        """Test that the context manager disallows changing some settings."""
-        settings = Settings()
-
-        with pytest.raises(ValueError, match="Cannot change"):
-            with settings(HBAR=0.5):
-                pass
+        assert settings.HBAR == 1.0

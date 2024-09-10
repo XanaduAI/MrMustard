@@ -120,7 +120,7 @@ class Settings:
         self.ATOL: float = 1e-8
         "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
 
-        self._original_values = self.__dict__.copy()
+        self._original_values = {}
         self._frozen = True
 
     def __setattr__(self, name, value):
@@ -131,17 +131,9 @@ class Settings:
 
     def __call__(self, **kwargs):
         "allows for setting multiple settings at once and saving the original values"
-        disallowed = {
-            "COMPLEX_WARNING",
-            "HBAR",
-            "SEED",
-            "PRECISION_BITS_HERMITE_POLY",
-            "CACHE_DIR",
-        } & kwargs.keys()
-        if disallowed:
-            raise ValueError(f"Cannot change the value of {disallowed} using a context manager.")
-        self._original_values = self.__dict__.copy()
-        self.__dict__.update(kwargs)
+        self._original_values = {k: getattr(self, k) for k in kwargs}
+        for k, v in kwargs.items():
+            setattr(self, k, v)
         return self
 
     def __enter__(self):
@@ -150,7 +142,8 @@ class Settings:
 
     def __exit__(self, exc_type, exc_value, traceback):
         "context manager exit method that resets the settings to their original values"
-        self.__dict__.update(self._original_values)
+        for k, v in self._original_values.items():
+            setattr(self, k, v)
 
     @property
     def COMPLEX_WARNING(self):
