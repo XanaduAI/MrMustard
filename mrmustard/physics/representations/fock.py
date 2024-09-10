@@ -39,15 +39,54 @@ from .base import Representation
 __all__ = ["Fock"]
 
 
-class Fock:
-    r""" """
+class Fock(Representation):
+    r"""
+    The Fock representation of a broad class of quantum states, transformations, measurements,
+    channels, etc.
+
+    The ansatz available in this representation is ``ArrayAnsatz``.
+
+    This function allows for vector space operations on Fock objects including
+    linear combinations, outer product (``&``), and inner product (``@``).
+
+    .. code-block::
+
+        >>> from mrmustard.physics.representations import Fock
+
+        >>> # initialize Fock objects
+        >>> array1 = np.random.random((5,7,8))
+        >>> array2 = np.random.random((5,7,8))
+        >>> array3 = np.random.random((3,5,7,8)) # where 3 is the batch.
+        >>> fock1 = Fock(array1)
+        >>> fock2 = Fock(array2)
+        >>> fock3 = Fock(array3, batched=True)
+
+        >>> # linear combination can be done with the same batch dimension
+        >>> fock4 = 1.3 * fock1 - fock2 * 2.1
+
+        >>> # division by a scalar
+        >>> fock5 = fock1 / 1.3
+
+        >>> # inner product by contracting on marked indices
+        >>> fock6 = fock1[2] @ fock3[2]
+
+        >>> # outer product (tensor product)
+        >>> fock7 = fock1 & fock3
+
+        >>> # conjugation
+        >>> fock8 = fock1.conj()
+
+    Args:
+        array: the (batched) array in Fock representation.
+        batched: whether the array input has a batch dimension.
+
+    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
+    correct batch shape.
+
+    """
 
     def __init__(self, array: Batch[Tensor], batched=False):
-
-        self._fn = None
-        self._kwargs = {}
-        self._contract_idxs: tuple[int, ...] = ()
-
+        super().__init__()
         self._array = array if batched else [array]
         self._backend_array = False
         self._original_abc_data = None

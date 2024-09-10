@@ -50,10 +50,12 @@ from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
 
+from .base import Representation
+
 __all__ = ["Bargmann"]
 
 
-class Bargmann:
+class Bargmann(Representation):
     r"""
     The Fock-Bargmann representation of a broad class of quantum states, transformations,
     measurements, channels, etc.
@@ -146,22 +148,17 @@ class Bargmann:
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
         name: str = "",
-        batched: bool = False,
     ):
         if A is None and b is None and c is not None:
             raise ValueError("Please provide either A or b.")
 
-        # Representation base class
-        self._contract_idxs: tuple[int, ...] = ()
-        self._fn = None
-        self._kwargs = {}
-        self.name = name
-
+        super().__init__()
         self._A = A
         self._b = b
         self._c = c
         self._backends = [False, False, False]
         self._simplified = False
+        self.name = name
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
