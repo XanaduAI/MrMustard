@@ -163,7 +163,7 @@ class CircuitComponent:
         """
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets + bras).conj() if self.representation else None
+        rep = self.representation.reorder(kets + bras).conj if self.representation else None
 
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
@@ -180,7 +180,7 @@ class CircuitComponent:
         ik = self.wires.ket.input.indices
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
-        rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
+        rep = self.representation.reorder(ib + ob + ik + ok).conj if self.representation else None
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name
@@ -457,7 +457,7 @@ class CircuitComponent:
         """
         try:
             A, b, c = self.representation.triple
-            if not batched and self.representation.ansatz.batch_size == 1:
+            if not batched and self.representation.batch_size == 1:
                 return A[0], b[0], c[0]
             else:
                 return A, b, c
@@ -478,7 +478,7 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        num_vars = self.representation.ansatz.num_vars
+        num_vars = self.representation.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         try:
@@ -488,7 +488,7 @@ class CircuitComponent:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
-            if self.representation.ansatz.polynomial_shape[0] == 0:
+            if self.representation.polynomial_shape[0] == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             else:
                 arrays = [
@@ -575,9 +575,9 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock.ansatz._original_abc_data = self.representation.triple
+            fock._original_abc_data = self.representation.triple
         except AttributeError:
-            fock.ansatz._original_abc_data = None
+            fock._original_abc_data = None
         try:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
@@ -607,8 +607,8 @@ class CircuitComponent:
         if isinstance(self.representation, Bargmann):
             return self
         else:
-            if self.representation.ansatz._original_abc_data:
-                A, b, c = self.representation.ansatz._original_abc_data
+            if self.representation._original_abc_data:
+                A, b, c = self.representation._original_abc_data
             else:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.representation.data

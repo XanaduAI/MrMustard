@@ -103,7 +103,7 @@ class Bargmann(Representation):
 
     .. code-block ::
 
-        >>> trace = (rep_coh @ rep_coh.conj()).trace([0], [1])
+        >>> trace = (rep_coh @ rep_coh.conj).trace([0], [1])
         >>> assert np.allclose(trace.A, 0)
         >>> assert np.allclose(trace.b, 0)
         >>> assert trace.c == 1
@@ -216,6 +216,15 @@ class Bargmann(Representation):
         self._backends[2] = False
 
     @property
+    def conj(self):
+        r"""
+        The conjugate of this Bargmann object.
+        """
+        ret = Bargmann(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
+        return ret
+
+    @property
     def data(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
@@ -274,14 +283,6 @@ class Bargmann(Representation):
         ret = cls(None, None, None)
         ret._fn = fn
         ret._kwargs = kwargs
-        return ret
-
-    def conj(self):
-        r"""
-        The conjugate of this Bargmann object.
-        """
-        ret = Bargmann(math.conj(self.A), math.conj(self.b), math.conj(self.c))
-        ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
 
     def decompose_ansatz(self) -> Bargmann:
@@ -991,7 +992,7 @@ class Bargmann(Representation):
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __rmul__(self, other: any | Scalar) -> any:
+    def __rmul__(self, other: Bargmann | Scalar) -> Bargmann:
         r"""
         Multiplies this representation by another or by a scalar on the right.
         """

@@ -74,7 +74,7 @@ class Fock(Representation):
         >>> fock7 = fock1 & fock3
 
         >>> # conjugation
-        >>> fock8 = fock1.conj()
+        >>> fock8 = fock1.conj
 
     Args:
         array: the (batched) array in Fock representation.

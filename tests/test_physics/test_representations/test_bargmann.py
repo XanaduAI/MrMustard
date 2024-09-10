@@ -56,7 +56,7 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_conj(self, triple):
         A, b, c = triple
-        bargmann = Bargmann(*triple).conj()
+        bargmann = Bargmann(*triple).conj
 
         assert np.allclose(bargmann.A, math.conj(A))
         assert np.allclose(bargmann.b, math.conj(b))
