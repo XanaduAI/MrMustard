@@ -13,6 +13,7 @@
 # limitations under the License.
 
 r"""
+The classes for representations in circuit components.
 """
 
 from .base import *
