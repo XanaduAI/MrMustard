@@ -111,7 +111,7 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
         cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
-        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature())
+        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
@@ -191,6 +191,12 @@ class TestCircuitComponent:
         assert d_fock.representation == Fock(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
+
+    def test_to_fock_bargmann_Dgate(self):
+        d = Dgate([1], x=0.1, y=0.1)
+        d_fock = d.to_fock(shape=(4, 6))
+        d_barg = d_fock.to_bargmann()
+        assert d_barg == d
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
@@ -445,23 +451,23 @@ class TestCircuitComponent:
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
         ket = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2)
-        back = Ket.from_quadrature([0], ket.quadrature())
+        back = Ket.from_quadrature([0], ket.quadrature_triple())
         assert ket == back
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
         dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = DM.from_quadrature([0], dm.quadrature())
+        back = DM.from_quadrature([0], dm.quadrature_triple())
         assert dm == back
 
     def test_quadrature_unitary(self):
         U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
-        back = Unitary.from_quadrature([0], [0], U.quadrature())
+        back = Unitary.from_quadrature([0], [0], U.quadrature_triple())
         assert U == back
 
     def test_quadrature_channel(self):
         C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = Channel.from_quadrature([0], [0], C.quadrature())
+        back = Channel.from_quadrature([0], [0], C.quadrature_triple())
         assert C == back
 
     @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])

@@ -17,9 +17,9 @@
 # pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
 import pytest
-
+import numpy as np
 from mrmustard import math
-from mrmustard.lab_dev.transformations import Dgate
+from mrmustard.lab_dev import Dgate, SqueezedVacuum
 from mrmustard.physics.representations import Fock
 
 
@@ -45,6 +45,14 @@ class TestDgate:
 
         with pytest.raises(ValueError, match="y"):
             Dgate(modes=[0, 1], x=1, y=[2, 3, 4])
+
+    def test_to_fock_method(self):
+        # test stable Dgate in fock basis
+        state = SqueezedVacuum([0], r=1.0)
+        # displacement gate in fock representation for large displacement
+        dgate = Dgate([0], x=10.0).to_fock(150)
+        assert (state.to_fock() >> dgate).probability < 1
+        assert np.all(math.abs(dgate.fock(150)) < 1)
 
     def test_representation(self):
         rep1 = Dgate(modes=[0], x=0.1, y=0.1).representation

@@ -21,6 +21,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
 
+from inspect import signature
+
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -58,12 +60,16 @@ class Representation(ABC):
     multiplication, subtraction, etc.
     """
 
+    def __init__(self) -> None:
+        self._contract_idxs: tuple[int, ...] = ()
+        self._ansatz = None
+
     @property
-    @abstractmethod
     def ansatz(self) -> Ansatz:
         r"""
         The ansatz of the representation.
         """
+        return self._ansatz
 
     @property
     @abstractmethod
@@ -81,12 +87,23 @@ class Representation(ABC):
         For now it's ``c`` for Bargmann and the array for Fock.
         """
 
+    @property
+    def triple(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The batch of triples :math:`(A_i, b_i, c_i)`.
+        """
+        return self.ansatz.triple
+
     @classmethod
-    @abstractmethod
-    def from_ansatz(cls, ansatz: Ansatz) -> Representation:  # pragma: no cover
+    def from_ansatz(cls, ansatz: Ansatz) -> Representation:
         r"""
         Returns a representation from an ansatz.
         """
+        ret = cls(**{key: None for key in signature(cls).parameters.keys()})
+        ret._ansatz = ansatz
+        return ret
 
     @abstractmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
@@ -267,15 +284,8 @@ class Bargmann(Representation):
         b: Batch[ComplexVector],
         c: Batch[ComplexTensor] = 1.0,
     ):
-        self._contract_idxs: tuple[int, ...] = ()
+        super().__init__()
         self._ansatz = PolyExpAnsatz(A=A, b=b, c=c)
-
-    @property
-    def ansatz(self) -> PolyExpAnsatz:
-        r"""
-        The ansatz of the representation.
-        """
-        return self._ansatz
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -316,22 +326,6 @@ class Bargmann(Representation):
             return self([])
         else:
             return self.c
-
-    @property
-    def triple(
-        self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The batch of triples :math:`(A_i, b_i, c_i)`.
-        """
-        return self.A, self.b, self.c
-
-    @classmethod
-    def from_ansatz(cls, ansatz: PolyExpAnsatz) -> Bargmann:  # pylint: disable=arguments-differ
-        r"""
-        Returns a Bargmann object from an ansatz object.
-        """
-        return cls(ansatz.A, ansatz.b, ansatz.c)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
@@ -581,16 +575,8 @@ class Fock(Representation):
     """
 
     def __init__(self, array: Batch[Tensor], batched=False):
-        self._contract_idxs: tuple[int, ...] = ()
-        self._original_bargmann_data = None
+        super().__init__()
         self._ansatz = ArrayAnsatz(array=array, batched=batched)
-
-    @property
-    def ansatz(self) -> ArrayAnsatz:
-        r"""
-        The ansatz of the representation.
-        """
-        return self._ansatz
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -614,24 +600,6 @@ class Fock(Representation):
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
         return self.array[(slice(None),) + (0,) * self.ansatz.num_vars]
-
-    @property
-    def triple(self) -> tuple:
-        r"""
-        The data of the original Bargmann representation if it exists
-        """
-        if self._original_bargmann_data is None:
-            raise AttributeError(
-                "This Fock object does not have an original Bargmann representation."
-            )
-        return self._original_bargmann_data
-
-    @classmethod
-    def from_ansatz(cls, ansatz: ArrayAnsatz) -> Fock:  # pylint: disable=arguments-differ
-        r"""
-        Returns a Fock object from an ansatz object.
-        """
-        return cls(ansatz.array, batched=True)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:

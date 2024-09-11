@@ -30,7 +30,10 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
     sector_u,
 )
 from mrmustard.math.lattice.strategies.displacement import displacement
-from mrmustard.math.lattice.strategies.vanilla import vanilla_average
+from mrmustard.math.lattice.strategies.vanilla import (
+    vanilla_stable,
+    vanilla_stable_batch,
+)
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
@@ -83,15 +86,13 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
 
-    cutoffs = (20, 20, 20, 20)
-
     # Vanilla MM
-    G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs)
+    G_ref = math.hermite_renormalized(A, B, C, shape=(3, 4, 5, 2, 6, 4))
 
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=0)
 
-    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
+    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
@@ -152,26 +153,26 @@ def test_sector_u():
         assert u @ u.conj().T == pytest.approx(np.eye(i + 1))
 
 
-def test_vanilla_average():
-    "tests the vanilla average against other known stable methods"
-    settings.USE_VANILLA_AVERAGE = True
+def test_vanilla_stable():
+    "tests the vanilla stable against other known stable methods"
+    settings.STABLE_FOCK_CONVERSION = True
     assert np.allclose(
         mmld.Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
         displacement((1000, 1000), 4.0 + 4.0j),
     )
     sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
     assert np.max(np.abs(sgate)) < 1
+    settings.STABLE_FOCK_CONVERSION = False
 
-    settings.USE_VANILLA_AVERAGE = False
 
-
-def test_vanilla_average_batched():
+def test_vanilla_stable_batched():
     "tests the vanilla average against other known stable methods. batched version."
-    settings.USE_VANILLA_AVERAGE = True
+    settings.STABLE_FOCK_CONVERSION = True
     A, b, c = mmld.Ket.random([0, 1]).bargmann_triple(batched=True)
-    batched = vanilla_average((4, 4), A[0], b, c[0])
-    non_batched = vanilla_average((4, 4), A[0], b[0], c[0])
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)  # for tf backend
+    batched = vanilla_stable_batch((4, 4), A[0], b, c[0])
+    non_batched = vanilla_stable((4, 4), A[0], b[0], c[0])
 
     assert np.allclose(batched[0], non_batched)
 
-    settings.USE_VANILLA_AVERAGE = False
+    settings.STABLE_FOCK_CONVERSION = False
