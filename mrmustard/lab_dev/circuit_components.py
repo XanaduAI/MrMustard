@@ -709,13 +709,30 @@ class CircuitComponent:
 
         multi_rep = {mode: None for mode in wires_result.modes}
 
-        for mode in wires_result.modes:
-            if mode in list(set(self.modes) & set(other.modes)):
-                multi_rep[mode] = multi_rep_contraction(self.multi_rep[mode], other.multi_rep[mode])
-            elif mode in self.modes:
-                multi_rep[mode] = self.multi_rep[mode]
-            else:
-                multi_rep[mode] = other.multi_rep[mode]
+        # for mode in wires_result.modes:
+        #     if mode in list(set(self.modes) & set(other.modes)):
+        #         multi_rep[mode] = multi_rep_contraction(self.multi_rep[mode], other.multi_rep[mode])
+        #     elif mode in self.modes:
+        #         multi_rep[mode] = self.multi_rep[mode]
+        #     else:
+        #         multi_rep[mode] = other.multi_rep[mode]
+
+        if other.name == 'BtoQ':
+            for mode in other.modes:
+                multi_rep[mode] = 'Q'
+        else:
+            for mode in wires_result.modes:
+
+                if mode in list(set(self.modes) & set(other.modes)):
+                    if self.multi_rep[mode] == other.multi_rep[mode]:
+                        multi_rep[mode] = self.multi_rep[mode]
+                    else:
+                        raise ValueError(f"The objects with representations {self.multi_rep[mode]} and {other.multi_rep[mode]} cannot be contracted")
+                elif mode in self.modes:
+                        multi_rep[mode] = self.multi_rep[mode]
+                        
+                else:
+                    multi_rep[mode] = other.multi_rep[mode]
 
         return CircuitComponent._from_attributes(
             rep, wires=wires_result, multi_rep=multi_rep, name=None
