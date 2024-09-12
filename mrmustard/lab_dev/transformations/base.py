@@ -99,7 +99,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Batched transformations are not supported.")
 
         # compute the inverse
-        A, b, _ = self.dual.representation.conj().triple  # apply X(.)X
+        A, b, _ = self.dual._representation.conj().triple  # apply X(.)X
         almost_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
@@ -233,13 +233,13 @@ class Map(Transformation):
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
         representation: Bargmann | Fock | None = None,
-        multi_rep : dict | None = None,
+        multi_rep: dict | None = None,
         name: str | None = None,
     ):
         super().__init__(
             representation=representation,
             wires=[modes_out, modes_in, modes_out, modes_in],
-            multi_rep = multi_rep,
+            multi_rep=multi_rep,
             name=name or self.__class__.__name__,
         )
 

@@ -49,7 +49,7 @@ class BtoPS(Map):
             representation=Bargmann.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
-            multi_rep = {mode: "BtoPS" for mode in modes},
+            multi_rep={mode: "BtoPS" for mode in modes},
             name="BtoPS",
         )
         self._add_parameter(Constant(s, "s"))

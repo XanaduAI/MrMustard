@@ -132,3 +132,9 @@ def multi_rep_contraction(str1, str2):
         raise ValueError(
             f"Trying to multiply objects of inconsistant representation i.e., rep1={str1} and rep2={str2}"
         )
+
+
+def BtoQ_mult_table(s: str) -> str:
+    if s:
+        return None
+    return "Q"

@@ -43,11 +43,9 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.triples import identity_Abc
-from mrmustard.lab_dev.utils import multi_rep_contraction
+from mrmustard.lab_dev.utils import BtoQ_mult_table
 
 __all__ = ["CircuitComponent"]
-
-
 
 
 class CircuitComponent:
@@ -262,7 +260,12 @@ class CircuitComponent:
         r"""
         A representation of this circuit component.
         """
-        return self._representation
+        from .circuit_components_utils import BtoQ
+        copy_of_self = self
+        for mode in self.modes:
+            if self.multi_rep[mode] == 'Q':
+                copy_of_self = (copy_of_self @ BtoQ([mode]).inverse())
+        return copy_of_self._representation
 
     @property
     def wires(self) -> Wires:
@@ -673,7 +676,11 @@ class CircuitComponent:
 
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
-        return self.representation == other.representation and self.wires == other.wires and self.multi_rep == other.multi_rep
+        return (
+            self.representation == other.representation
+            and self.wires == other.wires
+            and self.multi_rep == other.multi_rep
+        )
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
@@ -697,46 +704,17 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
-            self_rep = self.representation
-            other_rep = other.representation
-        else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
+        if type(self._representation) == type(other._representation):
+            self_rep = self._representation
+            other_rep = other._representation
+        else:  # maybe we want to change back to .rep here?
+            self_rep = self.to_bargmann()._representation
+            other_rep = other.to_bargmann()._representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
 
-        multi_rep = {mode: None for mode in wires_result.modes}
-
-        # for mode in wires_result.modes:
-        #     if mode in list(set(self.modes) & set(other.modes)):
-        #         multi_rep[mode] = multi_rep_contraction(self.multi_rep[mode], other.multi_rep[mode])
-        #     elif mode in self.modes:
-        #         multi_rep[mode] = self.multi_rep[mode]
-        #     else:
-        #         multi_rep[mode] = other.multi_rep[mode]
-
-        if other.name == 'BtoQ':
-            for mode in other.modes:
-                multi_rep[mode] = 'Q'
-        else:
-            for mode in wires_result.modes:
-
-                if mode in list(set(self.modes) & set(other.modes)):
-                    if self.multi_rep[mode] == other.multi_rep[mode]:
-                        multi_rep[mode] = self.multi_rep[mode]
-                    else:
-                        raise ValueError(f"The objects with representations {self.multi_rep[mode]} and {other.multi_rep[mode]} cannot be contracted")
-                elif mode in self.modes:
-                        multi_rep[mode] = self.multi_rep[mode]
-                        
-                else:
-                    multi_rep[mode] = other.multi_rep[mode]
-
-        return CircuitComponent._from_attributes(
-            rep, wires=wires_result, multi_rep=multi_rep, name=None
-        )
+        return CircuitComponent._from_attributes(rep, wires=wires_result, name=None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -802,38 +780,57 @@ class CircuitComponent:
             >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
             >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
         """
-        if hasattr(other, "__custom_rrshift__"):
-            return other.__custom_rrshift__(self)
+        from .circuit_components_utils import BtoQ
 
-        if isinstance(other, (numbers.Number, np.ndarray)):
-            return self * other
+        if not isinstance(other, BtoQ):
+            if hasattr(other, "__custom_rrshift__"):
+                return other.__custom_rrshift__(self)
 
-        s_k = self.wires.ket
-        s_b = self.wires.bra
-        o_k = other.wires.ket
-        o_b = other.wires.bra
+            if isinstance(other, (numbers.Number, np.ndarray)):
+                return self * other
 
-        only_ket = (not s_b and s_k) and (not o_b and o_k)
-        only_bra = (not s_k and s_b) and (not o_k and o_b)
-        both_sides = s_b and s_k and o_b and o_k
+            s_k = self.wires.ket
+            s_b = self.wires.bra
+            o_k = other.wires.ket
+            o_b = other.wires.bra
 
-        self_needs_bra = (not s_b and s_k) and (o_b and o_k)
-        self_needs_ket = (not s_k and s_b) and (o_b and o_k)
+            only_ket = (not s_b and s_k) and (not o_b and o_k)
+            only_bra = (not s_k and s_b) and (not o_k and o_b)
+            both_sides = s_b and s_k and o_b and o_k
 
-        other_needs_bra = (s_b and s_k) and (not o_b and o_k)
-        other_needs_ket = (s_b and s_k) and (not o_k and o_b)
+            self_needs_bra = (not s_b and s_k) and (o_b and o_k)
+            self_needs_ket = (not s_k and s_b) and (o_b and o_k)
 
-        if only_ket or only_bra or both_sides:
-            ret = self @ other
-        elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
-        elif other_needs_bra or other_needs_ket:
-            ret = (self @ other) @ other.adjoint
+            other_needs_bra = (s_b and s_k) and (not o_b and o_k)
+            other_needs_ket = (s_b and s_k) and (not o_k and o_b)
+
+            if only_ket or only_bra or both_sides:
+                ret = self @ other
+            elif self_needs_bra or self_needs_ket:
+                ret = self.adjoint @ (self @ other)
+            elif other_needs_bra or other_needs_ket:
+                ret = (self @ other) @ other.adjoint
+            else:
+                msg = f"``>>`` not supported between {self} and {other} because it's not clear "
+                msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+                raise ValueError(msg)
+
+            for mode in ret.modes:
+                if mode in list(set(self.modes) & set(other.modes)):
+                    if not self.multi_rep[mode]:
+                        ret.multi_rep[mode] = self.multi_rep[mode]
+                    elif not other.multi_rep[mode]:
+                        ret.multi_rep[mode] = self.multi_rep[mode]
+                elif mode in self.modes:
+                    ret.multi_rep[mode] = self.multi_rep[mode]
+                else:
+                    ret.multi_rep[mode] = other.multi_rep[mode]
+
+            return self._rshift_return(ret)
         else:
-            msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-            msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
-            raise ValueError(msg)
-        return self._rshift_return(ret)
+            for mode in other.modes:
+                self.multi_rep[mode] = BtoQ_mult_table(self.multi_rep[mode])
+            return self
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
