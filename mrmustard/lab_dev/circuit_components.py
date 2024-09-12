@@ -831,7 +831,7 @@ class CircuitComponent:
             return self._rshift_return(ret)
         else:
             for mode in other.modes:
-                self.multi_rep[mode] = BtoQ_mult_table(self.multi_rep[mode])
+                self._multi_rep[mode] = BtoQ_mult_table(self._multi_rep[mode])
             return self
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
