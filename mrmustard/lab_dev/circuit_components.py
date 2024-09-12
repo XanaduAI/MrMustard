@@ -261,10 +261,11 @@ class CircuitComponent:
         A representation of this circuit component.
         """
         from .circuit_components_utils import BtoQ
+
         copy_of_self = self
         for mode in self.modes:
-            if self.multi_rep[mode] == 'Q':
-                copy_of_self = (copy_of_self @ BtoQ([mode]).inverse())
+            if self.multi_rep[mode] == "Q":
+                copy_of_self = copy_of_self @ BtoQ([mode]).inverse()
         return copy_of_self._representation
 
     @property
@@ -814,17 +815,18 @@ class CircuitComponent:
                 msg = f"``>>`` not supported between {self} and {other} because it's not clear "
                 msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
                 raise ValueError(msg)
-
+            
+            ret._multi_rep = {mode: None for mode in ret.modes}
             for mode in ret.modes:
                 if mode in list(set(self.modes) & set(other.modes)):
                     if not self.multi_rep[mode]:
-                        ret.multi_rep[mode] = self.multi_rep[mode]
+                        ret._multi_rep[mode] = self.multi_rep[mode]
                     elif not other.multi_rep[mode]:
-                        ret.multi_rep[mode] = self.multi_rep[mode]
+                        ret._multi_rep[mode] = self.multi_rep[mode]
                 elif mode in self.modes:
-                    ret.multi_rep[mode] = self.multi_rep[mode]
+                    ret._multi_rep[mode] = self.multi_rep[mode]
                 else:
-                    ret.multi_rep[mode] = other.multi_rep[mode]
+                    ret._multi_rep[mode] = other.multi_rep[mode]
 
             return self._rshift_return(ret)
         else:
