@@ -177,7 +177,7 @@ class PNRSampler(Sampler):
             else fock_state.representation
         )
         fock_array = fock_rep.data[0]
-        return fock_array[*(ns * 2)]
+        return math.real(fock_array[(ns * 2)])
 
 
 class HomodyneSampler(Sampler):
