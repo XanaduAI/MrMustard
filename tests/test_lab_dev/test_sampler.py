@@ -88,3 +88,17 @@ class TestHomodyneSampler:
             for x in sampler2.meas_outcomes
         ]
         assert math.allclose(sampler2.probabilities(state), exp_probs)
+
+    def test_sample(self):
+        n_samples = 1000
+        sampler = HomodyneSampler()
+        state = Coherent([0], x=[0.1])
+        samples = sampler.sample(state, n_samples)
+
+        count = np.zeros_like(sampler.meas_outcomes)
+        for sample in samples:
+            idx = sampler.meas_outcomes.index(sample)
+            count[idx] += 1
+        probs = count / n_samples
+
+        np.allclose(probs, sampler.probabilities(state), atol=1e-2)
