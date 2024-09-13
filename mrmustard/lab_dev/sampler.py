@@ -76,16 +76,17 @@ class Sampler(ABC):
                 distribution.
         """
 
-    def sample(self, state: State, n_samples: int = 1000) -> np.ndarray:
+    def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
         r"""
         Returns an array of samples given a state.
 
         Args:
             state: The state to sample.
             n_samples: The number of samples to generate.
+            seed: An optional seed for random sampling.
         """
         initial_mode = state.modes[0]
-        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples)
+        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         if len(state.modes) == 1:
             return initial_samples
@@ -100,15 +101,18 @@ class Sampler(ABC):
                 ret.append(np.append([unique_sample], sample))
         return np.array(ret)
 
-    def sample_prob_dist(self, state: State, n_samples: int = 1000) -> np.ndarray:
+    def sample_prob_dist(
+        self, state: State, n_samples: int = 1000, seed: int | None = None
+    ) -> np.ndarray:
         r"""
         Samples a a state by computing the probability distribution.
 
         Args:
             state: The state to sample.
             n_samples: The number of samples to generate.
+            seed: An optional seed for random sampling.
         """
-        rng = settings.rng
+        rng = np.random.default_rng(seed) if seed else settings.rng
         return rng.choice(
             a=list(product(self.meas_outcomes, repeat=len(state.modes))),
             p=self.probabilities(state),
