@@ -21,7 +21,7 @@ from itertools import product
 
 from abc import ABC, abstractmethod
 
-from typing import Sequence, Iterable
+from typing import Sequence
 
 import numpy as np
 

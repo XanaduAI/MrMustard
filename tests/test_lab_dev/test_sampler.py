@@ -16,14 +16,11 @@
 
 # pylint: disable=missing-function-docstring
 
-from itertools import product
-
 import numpy as np
-import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab_dev.sampler import PNRSampler, HomodyneSampler
-from mrmustard.lab_dev import Coherent, Number, Vacuum, BtoQ, QuadratureEigenstate
+from mrmustard.lab_dev import Coherent, Number, Vacuum, QuadratureEigenstate
 
 
 class TestPNRSampler:
