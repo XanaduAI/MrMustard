@@ -91,14 +91,14 @@ class Sampler(ABC):
             return initial_samples
 
         unique_samples, counts = np.unique(initial_samples, return_counts=True)
-        temp = []
+        ret = []
         for unique_sample, counts in zip(unique_samples, counts):
             meas_op = self.meas_ops[self.meas_outcomes.index(unique_sample)].on([initial_mode])
             reduced_state = (state >> meas_op.dual).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
-                temp.append(np.append([unique_sample], sample))
-        return np.array(temp)
+                ret.append(np.append([unique_sample], sample))
+        return np.array(ret)
 
     def sample_prob_dist(self, state: State, n_samples: int = 1000) -> np.ndarray:
         r"""
