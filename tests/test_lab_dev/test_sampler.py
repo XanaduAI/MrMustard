@@ -113,4 +113,4 @@ class TestHomodyneSampler:
             count[idx] += 1
         probs = count / n_samples
 
-        np.allclose(probs, sampler.probabilities(state), atol=1e-2)
+        assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
