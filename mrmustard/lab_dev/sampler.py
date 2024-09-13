@@ -19,20 +19,22 @@ Samplers for measurement devices.
 from __future__ import annotations
 from itertools import product
 
+from abc import ABC, abstractmethod
+
 from typing import Sequence, Iterable
 
 import numpy as np
 
 from mrmustard import math, settings
 
-from .states import State, Number
+from .states import State, Number, QuadratureEigenstate
 from .circuit_components import CircuitComponent
-from .circuit_components_utils import BtoQ, TraceOut
+from .circuit_components_utils import BtoQ
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
 
-class Sampler:
+class Sampler(ABC):
     r"""
     A sampler for measurements of quantum circuits.
 
@@ -63,45 +65,55 @@ class Sampler:
         """
         return self._meas_outcomes
 
+    @abstractmethod
     def probabilities(self, state: State, atol: float = 1e-4) -> Sequence[float]:
         r"""
-        Returns the probability distribution of this sampler. If ``state`` is provided
-        then will compute the probability distribution w.r.t. the state.
+        Returns the probability distribution of a state w.r.t. measurement outcomes.
 
         Args:
-            state: The state to generate the probability distribution with.
+            state: The state to generate the probability distribution of.
             atol: The absolute tolerance used for validating the computed probability
                 distribution.
         """
-        self._validate_state(state)
-        dm_state = state.dm()
-        states = [dm_state >> meas_op.dual for meas_op in self.meas_ops]
-        probs = [
-            state.probability if isinstance(state, State) else math.real(state) for state in states
-        ]
-        return self._validate_probs(probs, 1, atol)
 
     def sample(self, state: State, n_samples: int = 1000) -> np.ndarray:
         r"""
-        Returns an array of measurement samples on a specified state.
+        Returns an array of samples given a state.
 
         Args:
-            state: The state to generate samples of.
+            state: The state to sample.
+            n_samples: The number of samples to generate.
+        """
+        initial_mode = state.modes[0]
+        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples)
+
+        if len(state.modes) == 1:
+            return initial_samples
+
+        unique_samples, counts = np.unique(initial_samples, return_counts=True)
+        temp = []
+        for unique_sample, counts in zip(unique_samples, counts):
+            meas_op = self.meas_ops[self.meas_outcomes.index(unique_sample)].on([initial_mode])
+            reduced_state = (state >> meas_op.dual).normalize()
+            samples = self.sample(reduced_state, counts)
+            for sample in samples:
+                temp.append(np.append([unique_sample], sample))
+        return np.array(temp)
+
+    def sample_prob_dist(self, state: State, n_samples: int = 1000) -> np.ndarray:
+        r"""
+        Samples a a state by computing the probability distribution.
+
+        Args:
+            state: The state to sample.
             n_samples: The number of samples to generate.
         """
         rng = settings.rng
-        return rng.choice(a=self._meas_outcomes, p=self.probabilities(state), size=n_samples)
-
-    def _trace_modes(self, state: State) -> list[int]:
-        r"""
-        Computes a list of modes to trace out based on the given state
-        and the set of measurement operators.
-
-        Args:
-            state: The state to trace out.
-        """
-        meas_op = self.meas_ops[0] if isinstance(self.meas_ops, Iterable) else self.meas_ops
-        return [mode for mode in state.modes if mode not in meas_op.modes]
+        return rng.choice(
+            a=list(product(self.meas_outcomes, repeat=len(state.modes))),
+            p=self.probabilities(state),
+            size=n_samples,
+        )
 
     def _validate_probs(self, probs: Sequence[float], dx: float, atol: float) -> Sequence[float]:
         r"""
@@ -121,63 +133,28 @@ class Sampler:
             raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
         return math.real(probs_dx / prob_sum)
 
-    def _validate_state(self, state: State | None = None):
-        r"""
-        Validates that the modes of ``state`` and ``self.meas_ops`` are compatible with one another.
-
-        Args:
-            state: The state to validate.
-        """
-        if state is not None:
-            meas_op_modes = (
-                self.meas_ops[0].modes
-                if isinstance(self.meas_ops, Iterable)
-                else self.meas_ops.modes
-            )
-            if not set(state.modes) >= set(meas_op_modes):
-                raise ValueError(
-                    f"State with modes {state.modes} is incompatible with the measurement operators with modes {meas_op_modes}."
-                )
-
 
 class PNRSampler(Sampler):
     r"""
     A sampler for photon-number resolving (PNR) detectors.
 
     Args:
-        modes: The measured modes.
         cutoff: The photon number cutoff.
     """
 
-    def __init__(self, modes: Sequence[int], cutoff: int) -> None:
-        super().__init__(list(product(range(cutoff), repeat=len(modes))), Number(modes, 0))
+    def __init__(self, cutoff: int) -> None:
+        super().__init__(list(range(cutoff)), [Number([0], n) for n in range(cutoff)])
         self._cutoff = cutoff
 
     def probabilities(self, state, atol=1e-4):
-        self._validate_state(state)
         fock_state = state.dm().to_fock(self._cutoff)
-        probs = math.astensor([self._fock_prob(fock_state, ns) for ns in self.meas_outcomes])
-        return self._validate_probs(probs, 1, atol)
-
-    def _fock_prob(self, fock_state: State, ns: tuple[int, ...]) -> float:
-        r"""
-        Compute the fock amplitude for a given tuple of photon numbers.
-        E.g. (1, 3) computes photon number `1` on the first mode and
-        `3` on the second.
-
-        Args:
-            fock_state: The state in the Fock representation.
-            ns: The photon number tuple.
-        """
-        trace_modes = self._trace_modes(fock_state)
-        trace_wires = fock_state.wires[trace_modes]
-        fock_rep = (
-            fock_state.representation.trace(trace_wires.bra.indices, trace_wires.ket.indices)
-            if trace_modes
-            else fock_state.representation
+        probs = math.astensor(
+            [
+                fock_state.representation.data[0][(ns * 2)]
+                for ns in product(self.meas_outcomes, repeat=len(state.modes))
+            ]
         )
-        fock_array = fock_rep.data[0]
-        return math.real(fock_array[(ns * 2)])
+        return self._validate_probs(probs, 1, atol)
 
 
 class HomodyneSampler(Sampler):
@@ -185,7 +162,6 @@ class HomodyneSampler(Sampler):
     A sampler for homodyne measurements.
 
     Args:
-        modes: The measured modes.
         phi: The quadrature angle where ``0`` corresponds to ``x`` and ``\pi/2`` to ``p``.
         bounds: The range of values to discretize over.
         num: The number of points to discretize over.
@@ -193,20 +169,18 @@ class HomodyneSampler(Sampler):
 
     def __init__(
         self,
-        modes: Sequence[int],
         phi: float = 0,
         bounds: tuple[float, float] = (-10, 10),
         num: int = 1000,
     ) -> None:
         meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
-        super().__init__(list(product(meas_outcomes, repeat=len(modes))), BtoQ(modes, phi=phi))
+        super().__init__(
+            list(meas_outcomes), [QuadratureEigenstate([0], x=x, phi=phi) for x in meas_outcomes]
+        )
         self._step = step
 
     def probabilities(self, state, atol=1e-4):
-        self._validate_state(state)
-        trace_modes = self._trace_modes(state)
-        dm_state = state.dm() >> TraceOut(trace_modes) if trace_modes else state.dm()
-        q_state = dm_state >> self.meas_ops
-        z = [x * 2 for x in self.meas_outcomes]
+        q_state = state.dm() >> BtoQ(state.modes, phi=self.meas_ops[0].phi.value[0])
+        z = [x * 2 for x in product(self.meas_outcomes, repeat=len(state.modes))]
         probs = q_state.representation(z) * math.sqrt(settings.HBAR)
-        return self._validate_probs(probs, self._step ** len(self.meas_ops.modes), atol)
+        return self._validate_probs(probs, self._step ** len(state.modes), atol)
