@@ -48,6 +48,14 @@ class TestPNRSampler:
         ]
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
+    def test_sample(self):
+        sampler = PNRSampler(cutoff=10)
+
+        assert not np.any(sampler.sample(Vacuum([0])))
+        assert not np.any(sampler.sample_prob_dist(Vacuum([0])))
+        assert not np.any(sampler.sample(Vacuum([0, 1])))
+        assert not np.any(sampler.sample_prob_dist(Vacuum([0, 1])))
+
 
 class TestHomodyneSampler:
     r"""
@@ -55,8 +63,10 @@ class TestHomodyneSampler:
     """
 
     def test_init(self):
-        sampler = HomodyneSampler(bounds=(-5, 5), num=100)
-        assert sampler.povms == [QuadratureEigenstate([0], x=x) for x in sampler.meas_outcomes]
+        sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
+        assert sampler.povms == [
+            QuadratureEigenstate([0], x=x, phi=0.5) for x in sampler.meas_outcomes
+        ]
         assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
 
     def test_probabilties(self):
@@ -69,3 +79,12 @@ class TestHomodyneSampler:
             for x in sampler.meas_outcomes
         ]
         assert math.allclose(sampler.probabilities(state), exp_probs)
+
+        sampler2 = HomodyneSampler(phi=np.pi / 2)
+
+        exp_probs = [
+            (state.dm() >> QuadratureEigenstate([0], x, phi=np.pi / 2).dual)
+            * sampler2._step  # pylint: disable=protected-access
+            for x in sampler2.meas_outcomes
+        ]
+        assert math.allclose(sampler2.probabilities(state), exp_probs)
