@@ -845,10 +845,11 @@ class DM(State):
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
+        new_multi_rep = {mode: self.multi_rep[mode] for mode in modes}
         representation = self.representation.trace(idxz, idxz_conj)
 
         return self.__class__._from_attributes(
-            representation, wires, self.name
+            representation, wires = wires, multi_rep=new_multi_rep ,name = self.name
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -1038,7 +1039,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret = DM._from_attributes(dm._representation, wires = dm.wires, multi_rep=dm.multi_rep ,name = self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
