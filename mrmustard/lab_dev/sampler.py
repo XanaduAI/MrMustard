@@ -40,23 +40,23 @@ class Sampler(ABC):
 
     Args:
         meas_outcomes: The measurement outcomes for this sampler.
-        meas_ops: The measurement operators of this sampler.
+        povms: The POVMs of this sampler.
     """
 
     def __init__(
         self,
         meas_outcomes: Sequence[any],
-        meas_ops: CircuitComponent | Sequence[CircuitComponent],
+        povms: CircuitComponent | Sequence[CircuitComponent],
     ):
-        self._meas_ops = meas_ops
+        self._povms = povms
         self._meas_outcomes = meas_outcomes
 
     @property
-    def meas_ops(self) -> CircuitComponent | Sequence[CircuitComponent]:
+    def povms(self) -> CircuitComponent | Sequence[CircuitComponent]:
         r"""
-        The measurement operators of this sampler.
+        The POVMs of this sampler.
         """
-        return self._meas_ops
+        return self._povms
 
     @property
     def meas_outcomes(self) -> Sequence[any]:
@@ -93,7 +93,7 @@ class Sampler(ABC):
         unique_samples, counts = np.unique(initial_samples, return_counts=True)
         ret = []
         for unique_sample, counts in zip(unique_samples, counts):
-            meas_op = self.meas_ops[self.meas_outcomes.index(unique_sample)].on([initial_mode])
+            meas_op = self.povms[self.meas_outcomes.index(unique_sample)].on([initial_mode])
             reduced_state = (state >> meas_op.dual).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
@@ -180,7 +180,7 @@ class HomodyneSampler(Sampler):
         self._step = step
 
     def probabilities(self, state, atol=1e-4):
-        q_state = state.dm() >> BtoQ(state.modes, phi=self.meas_ops[0].phi.value[0])
+        q_state = state.dm() >> BtoQ(state.modes, phi=self.povms[0].phi.value[0])
         z = [x * 2 for x in product(self.meas_outcomes, repeat=len(state.modes))]
         probs = q_state.representation(z) * math.sqrt(settings.HBAR)
         return self._validate_probs(probs, self._step ** len(state.modes), atol)
