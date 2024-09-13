@@ -49,12 +49,24 @@ class TestPNRSampler:
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
     def test_sample(self):
+        n_samples = 1000
         sampler = PNRSampler(cutoff=10)
 
         assert not np.any(sampler.sample(Vacuum([0])))
         assert not np.any(sampler.sample_prob_dist(Vacuum([0])))
         assert not np.any(sampler.sample(Vacuum([0, 1])))
         assert not np.any(sampler.sample_prob_dist(Vacuum([0, 1])))
+
+        state = Coherent([0], x=[0.1])
+        samples = sampler.sample(state, n_samples)
+
+        count = np.zeros_like(sampler.meas_outcomes)
+        for sample in samples:
+            idx = sampler.meas_outcomes.index(sample)
+            count[idx] += 1
+        probs = count / n_samples
+
+        assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
 
 
 class TestHomodyneSampler:
