@@ -21,7 +21,7 @@ from itertools import product
 
 from abc import ABC, abstractmethod
 
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class Sampler(ABC):
 
     def __init__(
         self,
-        meas_outcomes: Sequence[any],
+        meas_outcomes: Sequence[Any],
         povms: CircuitComponent | Sequence[CircuitComponent],
     ):
         self._povms = povms
@@ -59,7 +59,7 @@ class Sampler(ABC):
         return self._povms
 
     @property
-    def meas_outcomes(self) -> Sequence[any]:
+    def meas_outcomes(self) -> Sequence[Any]:
         r"""
         The measurement outcomes of this sampler.
         """
