@@ -94,7 +94,7 @@ class Sampler(ABC):
         unique_samples, counts = np.unique(initial_samples, return_counts=True)
         ret = []
         for unique_sample, counts in zip(unique_samples, counts):
-            reduced_state = self._reduced_state(state, unique_sample, [initial_mode])
+            reduced_state = self._reduced_state(state, unique_sample, [initial_mode]).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
@@ -118,10 +118,17 @@ class Sampler(ABC):
             size=n_samples,
         )
 
-    def _reduced_state(self, state: State, meas_outcome: Any, modes: Sequence[int]):
-        r""" """
-        meas_op = self.povms[self.meas_outcomes.index(meas_outcome)].on(modes)
-        return (state >> meas_op.dual).normalize()
+    def _reduce(self, cc: CircuitComponent, meas_outcome: Any, mode: int):
+        r"""
+        Contracts a given circuit component with a POVM associated to ``meas_outcome``.
+
+        Args:
+            cc:
+            meas_outcome:
+            mode:
+        """
+        meas_op = self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
+        return cc >> meas_op.dual
 
     def _validate_probs(self, probs: Sequence[float], dx: float, atol: float) -> Sequence[float]:
         r"""

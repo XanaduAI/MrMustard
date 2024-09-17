@@ -18,7 +18,11 @@ This module contains the base classes for measurement devices.
 
 from __future__ import annotations
 
-from ..circuit_components import CircuitComponent
+import numpy as np
+
+from ..circuit_components import CircuitComponent, Wires
+from ..conditional_circuit_components import ConditionalCircuitComponent
+
 from ..sampler import Sampler
 
 __all__ = ["MeasurementDevice"]
@@ -47,3 +51,27 @@ class MeasurementDevice(CircuitComponent):
     def sampler(self):
         r""" """
         return self._sampler
+
+    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | float:
+        r"""
+        A custom ``>>`` operator for the ``PNR`` component.
+        It allows ``PNR`` to carry the method that processes ``other >> PNR``.
+        """
+        if isinstance(other, ConditionalCircuitComponent):
+            return other
+
+        elif isinstance(other, CircuitComponent):
+            wires = Wires(
+                modes_out_bra=set(np.setdiff1d(list(other.wires.args[0]), self.modes)),
+                modes_in_bra=other.wires.args[1],
+                modes_out_ket=set(np.setdiff1d(list(other.wires.args[2]), self.modes)),
+                modes_in_ket=other.wires.args[3],
+                classical_out=set(self.modes),
+            )
+            ret = ConditionalCircuitComponent(other, wires, "")
+
+            for mode in self.modes:
+                ret._meas_devices[mode] = self.sampler
+                ret._meas_outcomes[mode] = self.sampler.sample(other[mode], 1)[0]
+
+            return ret
