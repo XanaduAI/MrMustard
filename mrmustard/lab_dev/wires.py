@@ -423,7 +423,7 @@ class Wires:
         r"""
         New ``Wires`` object with wires only on the given modes.
         """
-        modes = {modes} if isinstance(modes, int) else set(modes)
+        modes = {modes} if isinstance(modes, (int, np.integer)) else set(modes)
         if tuple(modes) not in self._mode_cache:
             w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3, 4, 5)))
             w._original = self.original or self

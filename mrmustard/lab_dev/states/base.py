@@ -1190,7 +1190,7 @@ class Ket(State):
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
-        if not result.wires.input:
+        if not result.wires.input and not result.wires.classical:
             if not result.wires.bra:
                 return Ket(result.wires.modes, result.representation)
             elif result.wires.bra.modes == result.wires.ket.modes:
