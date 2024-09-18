@@ -152,14 +152,7 @@ class PNRSampler(Sampler):
         self._cutoff = cutoff
 
     def probabilities(self, state, atol=1e-4):
-        fock_state = state.dm().to_fock(self._cutoff)
-        probs = math.astensor(
-            [
-                fock_state.representation.data[0][(ns * 2)]
-                for ns in product(self.meas_outcomes, repeat=len(state.modes))
-            ]
-        )
-        return self._validate_probs(probs, atol)
+        return self._validate_probs(state.fock_distribution(self._cutoff), atol)
 
 
 class HomodyneSampler(Sampler):
