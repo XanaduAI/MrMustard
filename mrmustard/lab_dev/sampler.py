@@ -71,7 +71,8 @@ class Sampler(ABC):
         Returns the probability distribution of a state w.r.t. measurement outcomes.
 
         Args:
-            state: The state to generate the probability distribution of.
+            state: The state to generate the probability distribution of. Note: the
+                input state must be normalized.
             atol: The absolute tolerance used for validating the computed probability
                 distribution.
         """
@@ -84,6 +85,9 @@ class Sampler(ABC):
             state: The state to sample.
             n_samples: The number of samples to generate.
             seed: An optional seed for random sampling.
+
+        Returns:
+            An array of samples such that the shape is ``(n_samples, n_modes)``.
         """
         initial_mode = state.modes[0]
         initial_samples = self.sample_prob_dist(state[initial_mode], n_samples, seed)
@@ -105,7 +109,7 @@ class Sampler(ABC):
         self, state: State, n_samples: int = 1000, seed: int | None = None
     ) -> np.ndarray:
         r"""
-        Samples a a state by computing the probability distribution.
+        Samples a state by computing the probability distribution.
 
         Args:
             state: The state to sample.

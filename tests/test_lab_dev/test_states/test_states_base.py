@@ -233,7 +233,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state = Coherent(modes=[0, 1], x=x, y=y)
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
-        quad = math.transpose(np.array([[qa, qb] for qa in q1 for qb in q2]))
+        quad = np.array([[qa, qb] for qa in q1 for qb in q2])
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
 
@@ -638,7 +638,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state = Coherent(modes=[0, 1], x=x, y=y).dm()
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
-        quad = math.transpose(np.array([[qa, qb] for qa in q1 for qb in q2]))
+        quad = np.array([[qa, qb] for qa in q1 for qb in q2])
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
 
