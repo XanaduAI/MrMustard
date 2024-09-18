@@ -188,7 +188,5 @@ class HomodyneSampler(Sampler):
         self._step = step
 
     def probabilities(self, state, atol=1e-4):
-        q_state = state.dm() >> BtoQ(state.modes, phi=self.povms[0].phi.value[0])
-        z = [x * 2 for x in product(self.meas_outcomes, repeat=len(state.modes))]
-        probs = q_state.representation(z) * math.sqrt(settings.HBAR)
+        probs = state.quadrature_distribution(self.meas_outcomes, self.povms[0].phi.value[0])
         return self._validate_probs(probs, self._step ** len(state.modes), atol)

@@ -334,7 +334,7 @@ class State(CircuitComponent):
             *new_state.bargmann_triple(batched=True), batched=True
         )
 
-    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature distribution of the State.
 
@@ -345,18 +345,19 @@ class State(CircuitComponent):
         Returns:
             The quadrature distribution.
         """
+        quad = math.astensor(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
             raise ValueError(
                 f"The dimensionality of quad should be 1, or match the number of modes."
             )
 
         if len(quad.shape) == 1:
-            quad = math.transpose(math.astensor([quad] * self.n_modes))
+            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
 
         if isinstance(self, Ket):
             return math.abs(self.quadrature(quad, phi)) ** 2
         else:
-            quad = math.tile(math.astensor(quad), (1, 2))
+            quad = math.tile(quad, (1, 2))
             return self.quadrature(quad, phi)
 
     def visualize_2d(
