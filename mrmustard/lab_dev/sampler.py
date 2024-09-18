@@ -72,8 +72,8 @@ class Sampler(ABC):
         Args:
             state: The state to generate the probability distribution of. Note: the
                 input state must be normalized.
-            atol: The absolute tolerance used for validating the computed probability
-                distribution.
+            atol: The absolute tolerance used for validating that the computed
+                probability distribution sums to ``1``.
         """
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
@@ -122,23 +122,21 @@ class Sampler(ABC):
             size=n_samples,
         )
 
-    def _validate_probs(self, probs: Sequence[float], dx: float, atol: float) -> Sequence[float]:
+    def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
         r"""
-        Validates that the given probability distribution sums to `1.0` within some
+        Validates that the given probability distribution sums to ``1`` within some
         tolerance and returns a renormalized probability distribution to account for
         small numerical errors.
 
         Args:
             probs: The probability distribution to validate.
-            dx: The uniform differential for the probability distribution.
             atol: The absolute tolerance to validate with.
         """
         atol = atol or settings.ATOL
-        probs_dx = probs * dx
-        prob_sum = sum(probs_dx)
+        prob_sum = sum(probs)
         if not math.allclose(prob_sum, 1, atol):
             raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
-        return math.real(probs_dx / prob_sum)
+        return math.real(probs / prob_sum)
 
 
 class PNRSampler(Sampler):
@@ -161,7 +159,7 @@ class PNRSampler(Sampler):
                 for ns in product(self.meas_outcomes, repeat=len(state.modes))
             ]
         )
-        return self._validate_probs(probs, 1, atol)
+        return self._validate_probs(probs, atol)
 
 
 class HomodyneSampler(Sampler):
@@ -187,5 +185,7 @@ class HomodyneSampler(Sampler):
         self._step = step
 
     def probabilities(self, state, atol=1e-4):
-        probs = state.quadrature_distribution(self.meas_outcomes, self.povms[0].phi.value[0])
-        return self._validate_probs(probs, self._step ** len(state.modes), atol)
+        probs = state.quadrature_distribution(
+            self.meas_outcomes, self.povms[0].phi.value[0]
+        ) * self._step ** len(state.modes)
+        return self._validate_probs(probs, atol)
