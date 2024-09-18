@@ -348,7 +348,7 @@ class State(CircuitComponent):
         quad = math.astensor(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
             raise ValueError(
-                f"The dimensionality of quad should be 1, or match the number of modes."
+                "The dimensionality of quad should be 1, or match the number of modes."
             )
 
         if len(quad.shape) == 1:

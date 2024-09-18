@@ -17,6 +17,7 @@
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import numpy as np
+from itertools import product
 from ipywidgets import Box, HBox, VBox, HTML
 from plotly.graph_objs import FigureWidget
 import pytest
@@ -221,8 +222,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         x, y = 1, 2
         state = Coherent(modes=[0, 1], x=x, y=y)
         q = np.linspace(-10, 10, 100)
-        quad = math.transpose(math.astensor([q, q]))
-        psi_q = coherent_state_quad(q, x, y) * coherent_state_quad(q, x, y)
+        quad = math.astensor(list(product(q, repeat=state.n_modes)))
+        psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         assert math.allclose(state.quadrature(quad), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
         assert math.allclose(state.to_fock(100).quadrature(quad), psi_q)

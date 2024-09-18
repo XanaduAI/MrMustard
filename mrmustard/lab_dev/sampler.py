@@ -29,7 +29,6 @@ from mrmustard import math, settings
 
 from .states import State, Number, QuadratureEigenstate
 from .circuit_components import CircuitComponent
-from .circuit_components_utils import BtoQ
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
