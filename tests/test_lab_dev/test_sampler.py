@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev.sampler import PNRSampler, HomodyneSampler
 from mrmustard.lab_dev import Coherent, Number, Vacuum, QuadratureEigenstate
 
@@ -85,20 +85,18 @@ class TestHomodyneSampler:
         sampler = HomodyneSampler()
 
         state = Coherent([0], x=[0.1])
-        exp_probs = [
-            (state.dm() >> QuadratureEigenstate([0], x).dual)
-            * sampler._step  # pylint: disable=protected-access
-            for x in sampler.meas_outcomes
-        ]
+
+        exp_probs = (
+            state.quadrature_distribution(sampler.meas_outcomes) * sampler._step
+        )  # pylint: disable=protected-access
         assert math.allclose(sampler.probabilities(state), exp_probs)
 
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
-        exp_probs = [
-            (state.dm() >> QuadratureEigenstate([0], x, phi=np.pi / 2).dual)
-            * sampler2._step  # pylint: disable=protected-access
-            for x in sampler2.meas_outcomes
-        ]
+        exp_probs = (
+            state.quadrature_distribution(sampler2.meas_outcomes, sampler2.povms[0].phi.value[0])
+            * sampler2._step
+        )  # pylint: disable=protected-access
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
     def test_sample(self):
@@ -114,3 +112,45 @@ class TestHomodyneSampler:
         probs = count / n_samples
 
         assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
+
+    def test_sample_mean_coherent(self):
+        r"""
+        Porting test from strawberry fields:
+        https://github.com/XanaduAI/strawberryfields/blob/master/tests/backend/test_homodyne.py#L56
+        """
+        N_MEAS = 300
+        NUM_STDS = 10.0
+        std_10 = NUM_STDS / np.sqrt(N_MEAS)
+        alpha = 1.0 + 1.0j
+        x = np.empty(0)
+        tol = settings.ATOL
+
+        state = Coherent([0], x=math.real(alpha), y=math.imag(alpha))
+        sampler = HomodyneSampler()
+
+        for _ in range(N_MEAS):
+            meas_result = sampler.sample(state, 1)[0]
+            x = np.append(x, meas_result)
+
+        assert math.allclose(x.mean(), 2 * alpha.real, atol=std_10 + tol)
+
+    def test_sample_mean_and_std_vacuum(self):
+        r"""
+        Porting test from strawberry fields:
+        https://github.com/XanaduAI/strawberryfields/blob/master/tests/backend/test_homodyne.py#L40
+        """
+        N_MEAS = 300
+        NUM_STDS = 10.0
+        std_10 = NUM_STDS / np.sqrt(N_MEAS)
+        x = np.empty(0)
+        tol = settings.ATOL
+
+        state = Vacuum([0])
+        sampler = HomodyneSampler()
+
+        for _ in range(N_MEAS):
+            meas_result = sampler.sample(state, 1)[0]
+            x = np.append(x, meas_result)
+
+        assert np.allclose(x.mean(), 0.0, atol=std_10 + tol, rtol=0)
+        assert np.allclose(x.std(), 1.0, atol=std_10 + tol, rtol=0)
