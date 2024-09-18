@@ -354,7 +354,6 @@ class State(CircuitComponent):
             quad = math.transpose(math.astensor([quad] * self.n_modes))
 
         if isinstance(self, Ket):
-            quad = math.tile(math.astensor(quad), (1, 1))
             return math.abs(self.quadrature(quad, phi)) ** 2
         else:
             quad = math.tile(math.astensor(quad), (1, 2))
