@@ -87,16 +87,17 @@ class TestHomodyneSampler:
         state = Coherent([0], x=[0.1])
 
         exp_probs = (
-            state.quadrature_distribution(sampler.meas_outcomes) * sampler._step
-        )  # pylint: disable=protected-access
+            state.quadrature_distribution(sampler.meas_outcomes)
+            * sampler._step  # pylint: disable=protected-access
+        )
         assert math.allclose(sampler.probabilities(state), exp_probs)
 
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
         exp_probs = (
             state.quadrature_distribution(sampler2.meas_outcomes, sampler2.povms[0].phi.value[0])
-            * sampler2._step
-        )  # pylint: disable=protected-access
+            * sampler2._step  # pylint: disable=protected-access
+        )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
     def test_sample(self):
