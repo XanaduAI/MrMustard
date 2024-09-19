@@ -107,6 +107,9 @@ class TestParameterSet:
         assert ps.to_string(10) == "1.2345, 2.3456, 3.4567"
 
     def test_eq(self):
+        r"""
+        Tests the ``__eq__`` method.
+        """
         const1 = Constant(1, "c1")
         const2 = Constant([2, 3, 4], "c2")
         var1 = Variable(5, "v1")
