@@ -218,6 +218,9 @@ class ParameterSet:
         return False
 
     def __eq__(self, other: Any) -> bool:
+        r"""
+        Returns whether ``other`` is equivalent to this parameter set.
+        """
         if not isinstance(other, ParameterSet):
             return False
         return (
