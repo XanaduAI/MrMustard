@@ -164,9 +164,10 @@ class CircuitComponent:
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets + bras).conj() if self.representation else None
-
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @property
@@ -184,7 +185,8 @@ class CircuitComponent:
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name
-
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @cached_property
