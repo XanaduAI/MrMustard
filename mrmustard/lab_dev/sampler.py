@@ -98,7 +98,7 @@ class Sampler(ABC):
         ret = []
         for unique_sample, counts in zip(unique_samples, counts):
             meas_op = self.povms[self.meas_outcomes.index(unique_sample)].on([initial_mode])
-            reduced_state = (state >> meas_op.dual).normalize()
+            reduced_state = (state >> meas_op).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
@@ -148,7 +148,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), [Number([0], n) for n in range(cutoff)])
+        super().__init__(list(range(cutoff)), [Number([0], n).dual for n in range(cutoff)])
         self._cutoff = cutoff
 
     def probabilities(self, state, atol=1e-4):
@@ -173,7 +173,8 @@ class HomodyneSampler(Sampler):
     ) -> None:
         meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
         super().__init__(
-            list(meas_outcomes), [QuadratureEigenstate([0], x=x, phi=phi) for x in meas_outcomes]
+            list(meas_outcomes),
+            [QuadratureEigenstate([0], x=x, phi=phi).dual for x in meas_outcomes],
         )
         self._step = step
 

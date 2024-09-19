@@ -31,7 +31,7 @@ class TestPNRSampler:
     def test_init(self):
         sampler = PNRSampler(cutoff=10)
         assert sampler.meas_outcomes == list(range(10))
-        assert sampler.povms == [Number([0], n) for n in range(10)]
+        assert sampler.povms == [Number([0], n).dual for n in range(10)]
 
     def test_probabilities(self):
         atol = 1e-4
@@ -77,7 +77,7 @@ class TestHomodyneSampler:
     def test_init(self):
         sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
         assert sampler.povms == [
-            QuadratureEigenstate([0], x=x, phi=0.5) for x in sampler.meas_outcomes
+            QuadratureEigenstate([0], x=x, phi=0.5).dual for x in sampler.meas_outcomes
         ]
         assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
 
