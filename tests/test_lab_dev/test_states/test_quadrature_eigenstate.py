@@ -60,20 +60,13 @@ class TestQuadratureEigenstate:
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
-        settings._hbar_locked = False
-        settings.HBAR = 2.0
+        with settings(HBAR=2.0):
+            q0 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
 
-        q0 = QuadratureEigenstate([0], x=0, phi=0)
+        with settings(HBAR=hbar):
+            q1 = QuadratureEigenstate([0], x=0, phi=0).bargmann_triple()
 
-        settings._hbar_locked = False
-        settings.HBAR = hbar
-        q1 = QuadratureEigenstate([0], x=0, phi=0)
-        assert np.allclose(q0.bargmann_triple()[0], q1.bargmann_triple()[0])
-        assert np.allclose(q0.bargmann_triple()[1], q1.bargmann_triple()[1])
-        assert np.allclose(q0.bargmann_triple()[2], q1.bargmann_triple()[2])
-
-        settings._hbar_locked = False
-        settings.HBAR = 2.0
+        assert all(np.allclose(a, b) for a, b in zip(q0, q1))
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
@@ -95,5 +88,5 @@ class TestQuadratureEigenstate:
 
     def test_with_coherent(self):
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual
-        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], 2, 0).dual
+        val1 = Coherent([0], 1, 0) >> QuadratureEigenstate([0], np.sqrt(2 * settings.HBAR), 0).dual
         assert np.allclose(val0, val1)

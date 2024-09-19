@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent
 
 
@@ -37,8 +37,9 @@ class TestVisualization:
     path = Path(__file__).parent.parent / "assets"
 
     def test_visualize_2d(self):
-        st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        with settings(HBAR=2.0):
+            st = Coherent([0], y=1) + Coherent([0], y=-1)
+            fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
         if self.regenerate_assets:
@@ -60,8 +61,9 @@ class TestVisualization:
             Coherent([0, 1]).visualize_2d(20)
 
     def test_visualize_3d(self):
-        st = Coherent([0], y=1) + Coherent([0], y=-1)
-        fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
+        with settings(HBAR=2.0):
+            st = Coherent([0], y=1) + Coherent([0], y=-1)
+            fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
         if self.regenerate_assets:

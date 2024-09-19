@@ -27,3 +27,4 @@ from .identity import *
 from .rgate import *
 from .s2gate import *
 from .sgate import *
+from .cft import *
