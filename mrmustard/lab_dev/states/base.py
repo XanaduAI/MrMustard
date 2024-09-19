@@ -316,7 +316,7 @@ class State(CircuitComponent):
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
-        Returns the Fock distribution of the state.
+        Returns the Fock distribution of the state up to some cutoff.
 
         Args:
             cutoff: The photon cutoff.
@@ -326,7 +326,6 @@ class State(CircuitComponent):
         """
         fock_array = self.fock(cutoff)
         if isinstance(self, Ket):
-
             probs = (
                 math.astensor(
                     [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
