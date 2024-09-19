@@ -50,6 +50,8 @@ class Sampler(ABC):
         self._povms = povms
         self._meas_outcomes = meas_outcomes
 
+        self._outcome_arg = None
+
     @property
     def povms(self) -> CircuitComponent | Sequence[CircuitComponent]:
         r"""
@@ -97,7 +99,7 @@ class Sampler(ABC):
         unique_samples, counts = np.unique(initial_samples, return_counts=True)
         ret = []
         for unique_sample, counts in zip(unique_samples, counts):
-            meas_op = self.povms[self.meas_outcomes.index(unique_sample)].on([initial_mode])
+            meas_op = self._get_povm(unique_sample, initial_mode).dual
             reduced_state = (state >> meas_op).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
@@ -121,6 +123,24 @@ class Sampler(ABC):
             p=self.probabilities(state),
             size=n_samples,
         )
+
+    def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
+        r"""
+        Returns the POVM associated with a given outcome on a given mode.
+
+        Args:
+            meas_outcome: The measurement outcome.
+            mode: The mode.
+
+        Returns:
+            The POVM circuit component.
+        """
+        if isinstance(self.povms, CircuitComponent):
+            kwargs = self.povms.parameter_set.to_dict()
+            kwargs[self._outcome_arg] = meas_outcome
+            return self.povms.__class__(modes=[mode], **kwargs)
+        else:
+            return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
         r"""
@@ -148,8 +168,9 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), [Number([0], n).dual for n in range(cutoff)])
+        super().__init__(list(range(cutoff)), Number([0], 0))
         self._cutoff = cutoff
+        self._outcome_arg = "n"
 
     def probabilities(self, state, atol=1e-4):
         return self._validate_probs(state.fock_distribution(self._cutoff), atol)
@@ -174,12 +195,13 @@ class HomodyneSampler(Sampler):
         meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
         super().__init__(
             list(meas_outcomes),
-            [QuadratureEigenstate([0], x=x, phi=phi).dual for x in meas_outcomes],
+            QuadratureEigenstate([0], x=0, phi=phi),
         )
         self._step = step
+        self._outcome_arg = "x"
 
     def probabilities(self, state, atol=1e-4):
         probs = state.quadrature_distribution(
-            self.meas_outcomes, self.povms[0].phi.value[0]
+            self.meas_outcomes, self.povms.phi.value[0]
         ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
