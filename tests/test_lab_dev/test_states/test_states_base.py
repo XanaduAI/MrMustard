@@ -633,8 +633,16 @@ class TestDM:  # pylint:disable=too-many-public-methods
         )
         assert math.allclose(state.quadrature(quad), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        # assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
-        # assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+
+        quad_slice = math.transpose(math.astensor([q, q, q + 1, q + 1]))
+        q_slice = math.transpose(math.astensor([q] * state.n_modes))
+        ket_slice = coherent_state_quad(q + 1, x, y) * coherent_state_quad(q + 1, x, y)
+        bra_slice = np.conj(coherent_state_quad(q, x, y)) * np.conj(coherent_state_quad(q, x, y))
+
+        assert math.allclose(state.to_fock(40).quadrature(quad_slice), bra_slice * ket_slice)
+        assert math.allclose(
+            state.to_fock(40).quadrature_distribution(q_slice), math.abs(bra_slice) ** 2
+        )
 
     def test_quadrature_multivariable_dm(self):
         x, y = 1, 2
