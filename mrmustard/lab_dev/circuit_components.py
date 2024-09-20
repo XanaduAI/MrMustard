@@ -558,7 +558,7 @@ class CircuitComponent:
             ret = self._getitem_builtin(self.modes)
             ret._representation = fock
         except TypeError:
-            ret = self._from_attributes(fock, self.wires, self.name)
+            ret = self._from_attributes(fock, wires = self.wires, multi_rep = self.multi_rep, name = self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
@@ -831,7 +831,10 @@ class CircuitComponent:
             return self._rshift_return(ret)
         else:
             for mode in other.modes:
-                self._multi_rep[mode] = BtoQ_mult_table(self._multi_rep[mode])
+                if self.multi_rep[mode] == 'Q':
+                    self._multi_rep[mode] = None
+                else:
+                    self._multi_rep[mode] = 'Q'
             return self
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:

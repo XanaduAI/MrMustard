@@ -135,6 +135,7 @@ def multi_rep_contraction(str1, str2):
 
 
 def BtoQ_mult_table(s: str) -> str:
-    if s:
+    if s == 'Q':
         return None
-    return "Q"
+    else:
+        return 'Q'

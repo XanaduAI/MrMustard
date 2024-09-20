@@ -101,14 +101,15 @@ class Transformation(CircuitComponent):
         # compute the inverse
         A, b, _ = self.dual._representation.conj().triple  # apply X(.)X
         almost_inverse = self._from_attributes(
-            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
+            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), wires = self.wires, multi_rep = self.multi_rep
         )
         almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.representation.c
         actual_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
-            self.wires,
-            self.name + "_inv",
+            wires = self.wires,
+            multi_rep = self.multi_rep,
+            name = self.name + "_inv",
         )
         return actual_inverse
 
