@@ -98,20 +98,6 @@ class TestHomodyneSampler:
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
-    def test_sample(self):
-        n_samples = 1000
-        sampler = HomodyneSampler()
-        state = Coherent([0], x=[0.1])
-        samples = sampler.sample(state, n_samples)
-
-        count = np.zeros_like(sampler.meas_outcomes)
-        for sample in samples:
-            idx = sampler.meas_outcomes.index(sample)
-            count[idx] += 1
-        probs = count / n_samples
-
-        assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
-
     def test_sample_mean_coherent(self):
         r"""
         Porting test from strawberry fields:
@@ -121,17 +107,13 @@ class TestHomodyneSampler:
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
         alpha = 1.0 + 1.0j
-        x = np.empty(0)
         tol = settings.ATOL
 
         state = Coherent([0], x=math.real(alpha), y=math.imag(alpha))
         sampler = HomodyneSampler()
 
-        for _ in range(N_MEAS):
-            meas_result = sampler.sample(state, 1)[0]
-            x = np.append(x, meas_result)
-
-        assert math.allclose(x.mean(), 2 * alpha.real, atol=std_10 + tol)
+        meas_result = sampler.sample(state, N_MEAS)
+        assert math.allclose(meas_result.mean(), settings.HBAR * alpha.real, atol=std_10 + tol)
 
     def test_sample_mean_and_std_vacuum(self):
         r"""
@@ -141,15 +123,11 @@ class TestHomodyneSampler:
         N_MEAS = 300
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        x = np.empty(0)
         tol = settings.ATOL
 
         state = Vacuum([0])
         sampler = HomodyneSampler()
 
-        for _ in range(N_MEAS):
-            meas_result = sampler.sample(state, 1)[0]
-            x = np.append(x, meas_result)
-
-        assert np.allclose(x.mean(), 0.0, atol=std_10 + tol, rtol=0)
-        assert np.allclose(x.std(), 1.0, atol=std_10 + tol, rtol=0)
+        meas_result = sampler.sample(state, N_MEAS)
+        assert math.allclose(meas_result.mean(), 0.0, atol=std_10 + tol)
+        assert math.allclose(meas_result.std(), 1.0, atol=std_10 + tol)

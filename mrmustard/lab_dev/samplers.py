@@ -27,8 +27,9 @@ import numpy as np
 
 from mrmustard import math, settings
 
-from .states import State, Number, QuadratureEigenstate
+from .states import State, Number, QuadratureEigenstate, Ket
 from .circuit_components import CircuitComponent
+from .circuit_components_utils import BtoQ
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
@@ -205,3 +206,24 @@ class HomodyneSampler(Sampler):
             self.meas_outcomes, self.povms.phi.value[0]
         ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
+
+    def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
+        initial_mode = state.modes[0]
+        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples, seed)
+
+        if len(state.modes) == 1:
+            return initial_samples
+
+        unique_samples, counts = np.unique(initial_samples, return_counts=True)
+        ret = []
+        for unique_sample, counts in zip(unique_samples, counts):
+            quad = math.astensor([[unique_sample] + [None] * (state.n_modes - 1)])
+            quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
+            reduced_rep = (state >> BtoQ([initial_mode])).representation(quad)
+            reduced_state = state.__class__.from_bargmann(state.modes[1:], reduced_rep.triple)
+            prob = reduced_state.probability
+            reduced_state = reduced_state / prob
+            samples = self.sample(reduced_state, counts)
+            for sample in samples:
+                ret.append(np.append([unique_sample], sample))
+        return np.array(ret)

@@ -25,6 +25,7 @@ representation.
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from itertools import product
 from typing import Sequence
 
@@ -143,19 +144,19 @@ class State(CircuitComponent):
         return math.sum(math.real(self >> self.dual))
 
     @property
+    @abstractmethod
     def probability(self) -> float:
         r"""
         Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
         :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
         """
-        raise NotImplementedError
 
     @property
+    @abstractmethod
     def purity(self) -> float:
         r"""
         The purity of this state.
         """
-        raise NotImplementedError
 
     @property
     def _L2_norms(self) -> RealVector:
@@ -169,6 +170,7 @@ class State(CircuitComponent):
         return math.real(rep)
 
     @classmethod
+    @abstractmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
@@ -194,7 +196,7 @@ class State(CircuitComponent):
             >>> assert isinstance(coh, Ket)
 
         Args:
-            modes: The modes of this states.
+            modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
 
@@ -205,9 +207,9 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        return cls(modes, Bargmann(*triple), name)
 
     @classmethod
+    @abstractmethod
     def from_fock(
         cls,
         modes: Sequence[int],
@@ -234,7 +236,7 @@ class State(CircuitComponent):
             >>> assert isinstance(coh, Ket)
 
         Args:
-            modes: The modes of this states.
+            modes: The modes of this state.
             array: The Fock array.
             name: The name of this state.
             batched: Whether the given array is batched.
@@ -246,9 +248,9 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
-        return cls(modes, Fock(array, batched), name)
 
     @classmethod
+    @abstractmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -283,9 +285,9 @@ class State(CircuitComponent):
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
         """
-        raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_quadrature(
         cls,
         modes: Sequence[int],
@@ -310,9 +312,6 @@ class State(CircuitComponent):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = cls(modes, Bargmann(*triple))
-        return cls(modes, (Q >> QtoB).representation, name)
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
@@ -724,6 +723,25 @@ class DM(State):
         return self._L2_norms / self._probabilities
 
     @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: str | None = None,
+    ) -> State:
+        return DM(modes, Bargmann(*triple), name)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> State:
+        return DM(modes, Fock(array, batched), name)
+
+    @classmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -752,6 +770,35 @@ class DM(State):
             Bargmann.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> State:
+        r"""
+        Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
+        as `c * exp(0.5 z^T A z + b^T z)` in the quadrature representation.
+
+        Args:
+            modes: The modes of this state.
+            triple: The ``(A, b, c)`` triple.
+            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
+            name: The name of this state.
+
+        Returns:
+            A state of type ``cls``.
+
+        Raises:
+            ValueError: If the given triple has shapes that are inconsistent
+                with the number of modes.
+        """
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = DM(modes, Bargmann(*triple))
+        return DM(modes, (Q >> QtoB).representation, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
@@ -982,6 +1029,25 @@ class Ket(State):
         return self._L2_norms
 
     @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: str | None = None,
+    ) -> State:
+        return Ket(modes, Bargmann(*triple), name)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> State:
+        return Ket(modes, Fock(array, batched), name)
+
+    @classmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -1003,6 +1069,18 @@ class Ket(State):
             coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> State:
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = Ket(modes, Bargmann(*triple))
+        return Ket(modes, (Q >> QtoB).representation, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
