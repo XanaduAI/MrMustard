@@ -17,10 +17,11 @@
 # pylint: disable=missing-function-docstring
 
 import numpy as np
+import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab_dev.samplers import PNRSampler, HomodyneSampler
-from mrmustard.lab_dev import Coherent, Number, Vacuum, QuadratureEigenstate
+from mrmustard.lab_dev import Coherent, Number, Vacuum
 
 
 class TestPNRSampler:
@@ -76,8 +77,14 @@ class TestHomodyneSampler:
 
     def test_init(self):
         sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
-        assert sampler.povms == QuadratureEigenstate([0], x=0, phi=0.5)
+        assert sampler.povms is None
+        assert sampler._phi == 0.5  # pylint: disable=protected-access
         assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
+
+    def test_povm_error(self):
+        sampler = HomodyneSampler()
+        with pytest.raises(ValueError, match="no POVMs"):
+            sampler._get_povm(0, 0)  # pylint: disable=protected-access
 
     def test_probabilties(self):
         sampler = HomodyneSampler()
@@ -93,7 +100,9 @@ class TestHomodyneSampler:
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
         exp_probs = (
-            state.quadrature_distribution(sampler2.meas_outcomes, sampler2.povms[0].phi.value[0])
+            state.quadrature_distribution(
+                sampler2.meas_outcomes, sampler2._phi
+            )  # pylint: disable=protected-access
             * sampler2._step  # pylint: disable=protected-access
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)

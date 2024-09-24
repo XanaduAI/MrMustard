@@ -40,21 +40,20 @@ class Sampler(ABC):
 
     Args:
         meas_outcomes: The measurement outcomes for this sampler.
-        povms: The POVMs of this sampler.
+        povms: The (optional) POVMs of this sampler.
     """
 
     def __init__(
         self,
         meas_outcomes: Sequence[Any],
-        povms: CircuitComponent | Sequence[CircuitComponent],
+        povms: CircuitComponent | Sequence[CircuitComponent] | None = None,
     ):
         self._povms = povms
         self._meas_outcomes = meas_outcomes
-
         self._outcome_arg = None
 
     @property
-    def povms(self) -> CircuitComponent | Sequence[CircuitComponent]:
+    def povms(self) -> CircuitComponent | Sequence[CircuitComponent] | None:
         r"""
         The POVMs of this sampler.
         """
@@ -135,7 +134,12 @@ class Sampler(ABC):
 
         Returns:
             The POVM circuit component.
+
+        Raises:
+            ValueError: If this sampler has no POVMs.
         """
+        if self._povms is None:
+            raise ValueError("This sampler has no POVMs defined.")
         if isinstance(self.povms, CircuitComponent):
             kwargs = self.povms.parameter_set.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
@@ -194,17 +198,15 @@ class HomodyneSampler(Sampler):
         num: int = 1000,
     ) -> None:
         meas_outcomes, step = np.linspace(*bounds, num, retstep=True)
-        super().__init__(
-            list(meas_outcomes),
-            QuadratureEigenstate([0], x=0, phi=phi),
-        )
+        super().__init__(list(meas_outcomes))
         self._step = step
+        self._phi = phi
         self._outcome_arg = "x"
 
     def probabilities(self, state, atol=1e-4):
-        probs = state.quadrature_distribution(
-            self.meas_outcomes, self.povms.phi.value[0]
-        ) * self._step ** len(state.modes)
+        probs = state.quadrature_distribution(self.meas_outcomes, self._phi) * self._step ** len(
+            state.modes
+        )
         return self._validate_probs(probs, atol)
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
@@ -219,9 +221,7 @@ class HomodyneSampler(Sampler):
         for unique_sample, counts in zip(unique_samples, counts):
             quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
             quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
-            reduced_rep = (
-                state >> BtoQ([initial_mode], phi=self.povms.phi.value[0])
-            ).representation(quad)
+            reduced_rep = (state >> BtoQ([initial_mode], phi=self._phi)).representation(quad)
             reduced_state = state.__class__.from_bargmann(
                 state.modes[1:], reduced_rep.triple
             ).normalize()
