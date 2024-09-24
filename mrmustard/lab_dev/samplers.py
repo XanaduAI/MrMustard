@@ -27,7 +27,7 @@ import numpy as np
 
 from mrmustard import math, settings
 
-from .states import State, Number, QuadratureEigenstate, Ket
+from .states import State, Number, Ket
 from .circuit_components import CircuitComponent
 from .circuit_components_utils import BtoQ
 

@@ -101,8 +101,8 @@ class TestHomodyneSampler:
 
         exp_probs = (
             state.quadrature_distribution(
-                sampler2.meas_outcomes, sampler2._phi
-            )  # pylint: disable=protected-access
+                sampler2.meas_outcomes, sampler2._phi  # pylint: disable=protected-access
+            )
             * sampler2._step  # pylint: disable=protected-access
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
