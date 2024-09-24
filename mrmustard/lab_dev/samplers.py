@@ -220,9 +220,9 @@ class HomodyneSampler(Sampler):
             quad = math.astensor([[unique_sample] + [None] * (state.n_modes - 1)])
             quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
             reduced_rep = (state >> BtoQ([initial_mode])).representation(quad)
-            reduced_state = state.__class__.from_bargmann(state.modes[1:], reduced_rep.triple)
-            prob = reduced_state.probability
-            reduced_state = reduced_state / prob
+            reduced_state = state.__class__.from_bargmann(
+                state.modes[1:], reduced_rep.triple
+            ).normalize()
             samples = self.sample(reduced_state, counts)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))

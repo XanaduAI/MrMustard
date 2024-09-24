@@ -106,14 +106,16 @@ class TestHomodyneSampler:
         N_MEAS = 300
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        alpha = 1.0 + 1.0j
+        alpha = [1.0 + 1.0j, 1.0 + 1.0j]
         tol = settings.ATOL
 
-        state = Coherent([0], x=math.real(alpha), y=math.imag(alpha))
+        state = Coherent([0, 1], x=math.real(alpha), y=math.imag(alpha))
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)
-        assert math.allclose(meas_result.mean(), settings.HBAR * alpha.real, atol=std_10 + tol)
+        assert math.allclose(
+            meas_result.mean(axis=0), settings.HBAR * math.real(alpha), atol=std_10 + tol
+        )
 
     def test_sample_mean_and_std_vacuum(self):
         r"""
@@ -125,9 +127,9 @@ class TestHomodyneSampler:
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
         tol = settings.ATOL
 
-        state = Vacuum([0])
+        state = Vacuum([0, 1])
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)
-        assert math.allclose(meas_result.mean(), 0.0, atol=std_10 + tol)
-        assert math.allclose(meas_result.std(), 1.0, atol=std_10 + tol)
+        assert math.allclose(meas_result.mean(axis=0), [0.0, 0.0], atol=std_10 + tol)
+        assert math.allclose(meas_result.std(axis=0), [1.0, 1.0], atol=std_10 + tol)
