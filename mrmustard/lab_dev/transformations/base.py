@@ -214,14 +214,11 @@ class Unitary(Operation):
         modes: the modes that we want the unitary to act on (should be a list of int)
         S: the symplectic representation (in XXPP order)
         """
-        m = len(S)
+        m = len(modes)
         A = symplectic2Au(S)
-        b = math.zeros(m, dtype="complex128")
-        c = complex(1)  # TODO: to be change after poly*exp ansatz
-        u = Unitary.from_bargmann(modes, modes, [A, b, c])
-        v = u >> u.dual
-        _, _, c_prime = v.bargmann_triple()
-        c = 1 / math.sqrt(c_prime)
+        b = math.zeros(2 * m, dtype="complex128")
+        A_inin = math.atleast_2d(A[m:, m:])
+        c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
     @classmethod

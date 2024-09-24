@@ -146,7 +146,7 @@ def au2Symplectic(A):
 
     # The formula to apply comes here
     S_1 = math.conj(math.inv(math.transpose(u_2)))
-    S_2 = -S_1 @ math.conj(u_3)
+    S_2 = -math.conj(math.solve(u_2.T, u_3))
     S_3 = math.conj(S_2)
     S_4 = math.conj(S_1)
 
@@ -157,8 +157,14 @@ def au2Symplectic(A):
         / np.sqrt(2)
         * math.block(
             [
-                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
-                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    -1j * math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
             ]
         )
     )
@@ -176,17 +182,8 @@ def symplectic2Au(S):
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
-    transformation = (
-        1
-        / np.sqrt(2)
-        * math.block(
-            [
-                [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
-                [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
-            ]
-        )
-    )
-    S = np.conjugate(math.transpose(transformation)) @ S @ transformation
+    R = math.rotmat(m)
+    S = R @ S @ math.dagger(R)
     # identifying blocks of S
     S_1 = S[:m, :m]
     S_2 = S[:m, m:]
@@ -198,7 +195,6 @@ def symplectic2Au(S):
     A_2 = math.conj(math.inv(math.transpose(S_1)))
     A_3 = math.transpose(A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
-    # -np.conjugate(np.linalg.pinv(S_1)) @ np.conjugate(S_2)
 
     A = math.block([[A_1, A_2], [A_3, A_4]])
 
@@ -218,7 +214,10 @@ def XY_of_channel(A: ComplexMatrix):
 
     # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
     A_out = math.block(
-        [[A[:m, :m], A[:m, 2 * m : 3 * m]], [A[2 * m : 3 * m, :m], A[2 * m : 3 * m, 2 * m : 3 * m]]]
+        [
+            [A[:m, :m], A[:m, 2 * m : 3 * m]],
+            [A[2 * m : 3 * m, :m], A[2 * m : 3 * m, 2 * m : 3 * m]],
+        ]
     )
     R = math.block(
         [
@@ -230,7 +229,10 @@ def XY_of_channel(A: ComplexMatrix):
     transformation = math.block(
         [
             [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],
-            [-1j * math.eye(m, dtype=math.complex128), 1j * math.eye(m, dtype=math.complex128)],
+            [
+                -1j * math.eye(m, dtype=math.complex128),
+                1j * math.eye(m, dtype=math.complex128),
+            ],
         ]
     )
     X = -transformation @ X_tilde @ math.conj(transformation).T / 2

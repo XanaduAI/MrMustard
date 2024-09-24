@@ -632,10 +632,6 @@ class CircuitComponent:
             ValueError: If the the given parameter is incompatible with the number
                 of modes (e.g. for parallel gates).
         """
-        if parameter.value.shape != ():
-            length = sum(parameter.value.shape)
-            if length != 1 and length != len(self.modes):
-                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
