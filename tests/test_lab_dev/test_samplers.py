@@ -54,9 +54,9 @@ class TestPNRSampler:
         sampler = PNRSampler(cutoff=10)
 
         assert not np.any(sampler.sample(Vacuum([0])))
-        assert not np.any(sampler.sample_prob_dist(Vacuum([0])))
+        assert not np.any(sampler.sample_prob_dist(Vacuum([0]))[0])
         assert not np.any(sampler.sample(Vacuum([0, 1])))
-        assert not np.any(sampler.sample_prob_dist(Vacuum([0, 1])))
+        assert not np.any(sampler.sample_prob_dist(Vacuum([0, 1]))[0])
 
         state = Coherent([0], x=[0.1])
         samples = sampler.sample(state, n_samples)

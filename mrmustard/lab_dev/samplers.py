@@ -91,7 +91,7 @@ class Sampler(ABC):
             An array of samples such that the shape is ``(n_samples, n_modes)``.
         """
         initial_mode = state.modes[0]
-        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples, seed)
+        initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         if len(state.modes) == 1:
             return initial_samples
@@ -100,7 +100,9 @@ class Sampler(ABC):
         ret = []
         for unique_sample, counts in zip(unique_samples, counts):
             meas_op = self._get_povm(unique_sample, initial_mode).dual
-            reduced_state = (state >> meas_op).normalize()
+            prob = probs[initial_samples.tolist().index(unique_sample)]
+            norm = math.sqrt(prob) if isinstance(state, Ket) else prob
+            reduced_state = (state >> meas_op) / norm
             samples = self.sample(reduced_state, counts)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
@@ -108,7 +110,7 @@ class Sampler(ABC):
 
     def sample_prob_dist(
         self, state: State, n_samples: int = 1000, seed: int | None = None
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray]:
         r"""
         Samples a state by computing the probability distribution.
 
@@ -116,13 +118,20 @@ class Sampler(ABC):
             state: The state to sample.
             n_samples: The number of samples to generate.
             seed: An optional seed for random sampling.
+
+        Returns:
+            A tuple of the generated samples and the probability
+            of obtaining the sample.
         """
         rng = np.random.default_rng(seed) if seed else settings.rng
-        return rng.choice(
-            a=list(product(self.meas_outcomes, repeat=len(state.modes))),
+        probs = self.probabilities(state)
+        meas_outcomes = list(product(self.meas_outcomes, repeat=len(state.modes)))
+        samples = rng.choice(
+            a=meas_outcomes,
             p=self.probabilities(state),
             size=n_samples,
         )
+        return samples, np.array([probs[meas_outcomes.index(tuple(sample))] for sample in samples])
 
     def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
         r"""
@@ -211,7 +220,7 @@ class HomodyneSampler(Sampler):
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
         initial_mode = state.modes[0]
-        initial_samples = self.sample_prob_dist(state[initial_mode], n_samples, seed)
+        initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         if len(state.modes) == 1:
             return initial_samples
@@ -222,10 +231,11 @@ class HomodyneSampler(Sampler):
             quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
             quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
             reduced_rep = (state >> BtoQ([initial_mode], phi=self._phi)).representation(quad)
-            reduced_state = state.__class__.from_bargmann(
-                state.modes[1:], reduced_rep.triple
-            ).normalize()
-            samples = self.sample(reduced_state, counts)
+            reduced_state = state.__class__.from_bargmann(state.modes[1:], reduced_rep.triple)
+            prob = probs[initial_samples.tolist().index(unique_sample)] / self._step
+            norm = math.sqrt(prob) if isinstance(state, Ket) else prob
+            normalized_reduced_state = reduced_state / norm
+            samples = self.sample(normalized_reduced_state, counts)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
         return np.array(ret)
