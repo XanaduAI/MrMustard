@@ -723,7 +723,7 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
+        if type(self.representation) is type(other.representation):
             self_rep = self.representation
             other_rep = other.representation
         else:
