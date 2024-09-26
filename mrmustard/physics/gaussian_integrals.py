@@ -458,7 +458,7 @@ def complex_gaussian_integral_2(
         raise ValueError(
             f"idx1 and idx2 must have the same length, got {len(idx1)} and {len(idx2)}"
         )
-    if not (A1.shape[0] == b1.shape[0] == c1.shape[0] == A2.shape[0] == b2.shape[0] == c2.shape[0]):
+    if not A1.shape[0] == b1.shape[0] == c1.shape[0] == A2.shape[0] == b2.shape[0] == c2.shape[0]:
         raise ValueError(
             f"Batch size mismatch: got {A1.shape[0]} for A1, {b1.shape[0]} for b1, {c1.shape[0]} for c1, {A2.shape[0]} for A2, {b2.shape[0]} for b2, {c2.shape[0]} for c2."
         )
