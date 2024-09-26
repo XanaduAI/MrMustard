@@ -210,7 +210,6 @@ class HomodyneSampler(Sampler):
         super().__init__(list(meas_outcomes))
         self._step = step
         self._phi = phi
-        self._outcome_arg = "x"
 
     def probabilities(self, state, atol=1e-4):
         probs = state.quadrature_distribution(self.meas_outcomes, self._phi) * self._step ** len(
