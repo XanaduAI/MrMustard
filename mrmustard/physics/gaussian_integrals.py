@@ -451,17 +451,8 @@ def complex_gaussian_integral_2(
         A2 = math.atleast_3d(A2)
         b1 = math.atleast_2d(b1)
         b2 = math.atleast_2d(b2)
-        c1_scalar = len(c1.shape) == 0
-        c2_scalar = len(c2.shape) == 0
         c1 = math.atleast_1d(c1)
         c2 = math.atleast_1d(c2)
-    else:
-        # if c1_scalar := (len(c1.shape) == 1):
-        #     c1 = math.expand_dims(c1, axis=-1)
-        # if c2_scalar := (len(c2.shape) == 1):
-        #     c2 = math.expand_dims(c2, axis=-1)
-        c1_scalar = len(c1.shape) == 1
-        c2_scalar = len(c2.shape) == 1
 
     if len(idx1) != len(idx2):
         raise ValueError(
