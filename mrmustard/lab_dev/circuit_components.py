@@ -375,10 +375,7 @@ class CircuitComponent:
         if isinstance(self.representation, Fock):
             fock_arrays = self.representation.array
             # Find where all the bras and kets are so they can be conjugated appropriately
-            conjugates = [
-                False if i in self.wires.ket.indices else True
-                for i in range(len(self.wires.indices))
-            ]
+            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.sum(
                 [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axes=[0]
             )
@@ -577,7 +574,8 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock.ansatz._original_abc_data = self.representation.triple
+            if self.representation.ansatz.polynomial_shape[0] == 0:
+                fock.ansatz._original_abc_data = self.representation.triple
         except AttributeError:
             fock.ansatz._original_abc_data = None
         try:
@@ -635,10 +633,6 @@ class CircuitComponent:
             ValueError: If the the given parameter is incompatible with the number
                 of modes (e.g. for parallel gates).
         """
-        if parameter.value.shape != ():
-            length = sum(parameter.value.shape)
-            if length != 1 and length != len(self.modes):
-                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
