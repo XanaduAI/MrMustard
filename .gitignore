@@ -1,3 +1,5 @@
+.venv
+
 .DS_Store
 .vscode
 *.egg-info*
