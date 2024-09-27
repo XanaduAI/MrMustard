@@ -471,7 +471,7 @@ def complex_gaussian_integral_2(
     m = len(idx1)  # number of variable pairs to integrate over
     idx = tuple(idx1) + tuple(i + n1 for i in idx2)
 
-    A = np.zeros((batch, n1 + n2, n1 + n2), dtype=A1.dtype)
+    A = math.zeros((batch, n1 + n2, n1 + n2), dtype=A1.dtype)
     for i in range(batch):
         A[i] = math.block_diag(A1[i], A2[i])
     b = math.concat([b1, b2], axis=-1)
