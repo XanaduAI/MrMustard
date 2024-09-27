@@ -572,7 +572,8 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock.ansatz._original_abc_data = self.representation.triple
+            if self.representation.ansatz.polynomial_shape[0] == 0:
+                fock.ansatz._original_abc_data = self.representation.triple
         except AttributeError:
             fock.ansatz._original_abc_data = None
         try:
