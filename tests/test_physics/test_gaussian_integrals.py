@@ -232,10 +232,10 @@ def test_complex_gaussian_integral_2_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
 
-    res1 = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3], batched=False)
+    res1 = complex_gaussian_integral_2((A1, b1), (A2, b2), [0, 1], [2, 3])
     assert np.allclose(res1[0], A3)
     assert np.allclose(res1[1], b3)
-    assert np.allclose(res1[2], c3)
+    assert np.allclose(res1[2] * c1 * c2, c3)
 
 
 def test_complex_gaussian_integral_2_batched():
@@ -257,30 +257,7 @@ def test_complex_gaussian_integral_2_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    res1 = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], batched=True)
+    res1 = complex_gaussian_integral_2((A1, b1), (A2, b2), [0], [1])
     assert np.allclose(res1[0], A3)
     assert np.allclose(res1[1], b3)
-    assert np.allclose(res1[2], c3)
-
-
-def test_complex_gaussian_integral_2_batched_poly():
-    """tests that the ``complex_gaussian_integral_2`` method works for batched inputs with c polynomial."""
-    A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, delta=0.3)
-    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, delta=0.4)
-    A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
-    A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
-    A1 = math.astensor([A1, A1])
-    A2 = math.astensor([A2a, A2b])
-    A3 = math.astensor([A3a, A3b])
-    b1 = math.astensor([b1, b1])
-    b2 = math.astensor([b2a, b2b])
-    b3 = math.astensor([b3a, b3b])
-    c1 = math.expand_dims(math.astensor([c1, c1]), axis=-1)
-    c2 = math.expand_dims(math.astensor([c2a, c2b]), axis=-1)
-    c3 = math.reshape(math.astensor([c3a, c3b]), (2, 1, 1))
-
-    res1 = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], batched=True)
-    assert np.allclose(res1[0], A3)
-    assert np.allclose(res1[1], b3)
-    assert np.allclose(res1[2], c3)
+    assert np.allclose(res1[2] * c1 * c2, c3)

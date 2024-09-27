@@ -395,22 +395,20 @@ def contract_two_Abc_poly(
 
 
 def complex_gaussian_integral_2(
-    Abc1: tuple,
-    Abc2: tuple,
+    Ab1: tuple,
+    Ab2: tuple,
     idx1: Sequence[int],
     idx2: Sequence[int],
     measure: float = -1,
-    batched: bool = False,
 ):
     r"""Computes the (optionally batched) Gaussian integral of the product of two exponential functions of complex quadratic forms with
-    respect to an exponential measure. The first dimension of the ``Abc`` parameters is batched over. The ``c`` parameter
-    is allowed to have additional dimensions which are to be combined using an outer product.
-    When ``batched=True``, this function expects ``A1.shape=(b,n1,n1)``, ``A2.shape=(b,n2,n2)``, ``b1.shape=(b,n1)``, ``b2.shape=(b,n2)``,
-    ``c1.shape=(b,d1*)``, ``c2.shape=(b,d2*)``. The output is the A,b,c parametrization of the exponential of a quadratic form
-    with parameters of shape ``A.shape=(b,n1+n2-2m,n1+n2-2m)``, ``b.shape=(b,n1+n2-2m)``, ``c.shape=(b,d1*,d2*)``.
-    When ``batched=False``, this function expects ``A1.shape=(n1,n1)``, ``A2.shape=(n2,n2)``, ``b1.shape=(n1,)``, ``b2.shape=(n2,)``,
-    ``c1.shape=(d1*)``, ``c2.shape=(d2*)``. The output is the A,b,c parametrization of the exponential of a quadratic form
-    with parameters of shape ``A.shape=(n1+n2-2m,n1+n2-2m)``, ``b.shape=(n1+n2-2m)``, ``c.shape=(d1*,d2*)``.
+    respect to an exponential measure. The first dimension of the ``Ab`` parameters can be batched over.
+    Inputs are batched when ``A1.shape=(b,n1,n1)``, ``A2.shape=(b,n2,n2)``, ``b1.shape=(b,n1)``, ``b2.shape=(b,n2)``,
+    The output is then the A,b,c parametrization of the exponential of a quadratic form
+    with parameters of shape ``A.shape=(b,n1+n2-2m,n1+n2-2m)``, ``b.shape=(b,n1+n2-2m)``, ``c.shape=(b,)``.
+    Inputs are not batched when ``A1.shape=(n1,n1)``, ``A2.shape=(n2,n2)``, ``b1.shape=(n1,)``, ``b2.shape=(n2,)``,
+    The output is then the A,b,c parametrization of the exponential of a quadratic form
+    with parameters of shape ``A.shape=(n1+n2-2m,n1+n2-2m)``, ``b.shape=(n1+n2-2m)``, ``c.shape=()``.
 
     The integral is defined as
 
@@ -421,16 +419,16 @@ def complex_gaussian_integral_2(
     Therefore the resulting function is a new exponential of a quadratic form defined over ``n_1 + n_2 - 2m`` variables.
 
     The functions are assumed to be in the form
-    :math:`F_i(z) = c_i\textrm{exp}(0.5 z^T A_i z + b_i^T z),\quad z\in\mathbb{C}^{n_i}`
+    :math:`F_i(z) = \exp(0.5 z^T A_i z + b_i^T z),\quad z\in\mathbb{C}^{n_i}`
 
-    where ``A_i`` is complex symmetric
+    where ``A_i`` is complex symmetric.
 
     The integration measure is given by (``s`` here is the ``measure`` argument):
-    :math:`dmu(z) = \textrm{exp}(s * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(s * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
+    :math:`dmu(z) = \textrm{exp}(s * |z|^2) \frac{d^{2n}z}{\pi^m} = \frac{1}{\pi^m}\textrm{exp}(s * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
     Arguments:
-        A1,b1,c1: the ``(A,b,c)`` triple that defines ``F_1(z)``
-        A2,b2,c2: the ``(A,b,c)`` triple that defines ``F_2(z^*)``
+        A1,b1: the ``(A,b)`` tuple that defines ``F_1(z)``
+        A2,b2: the ``(A,b)`` tuple that defines ``F_2(z^*)``
         idx1: the tuple of indices indicating which variables of F_1 to integrate over
         idx2: the tuple of indices indicating which variables of F_2 to integrate over
         measure: the exponent of the measure (default is -1: Bargmann measure)
@@ -439,45 +437,43 @@ def complex_gaussian_integral_2(
         The ``(A,b,c)`` triple of the result of the integral.
 
     Raises:
-        ValueError: If ``idx1`` and ``idx2`` have different lengths or if A_i, b_i and c_i have non-matching batch size.
+        ValueError: If ``idx1`` and ``idx2`` have different lengths or if A_i, b_i have non-matching batch size.
     """
-    # first we ensure that Ai, bi, ci have the correct shapes
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
+    if len(idx1) != len(idx2):
+        raise ValueError(
+            f"idx1 and idx2 must have the same length, got {len(idx1)} and {len(idx2)}"
+        )
+
+    A1, b1 = Ab1
+    A2, b2 = Ab2
+
+    if len(A1.shape) != len(A2.shape) or len(b1.shape) != len(b2.shape):
+        raise ValueError("shape mismatch between A1, A2 or b1, b2")
+
+    batched = len(A1.shape) == 3  # same as len(A2.shape) now
     if not batched:
         A1 = math.atleast_3d(A1)
         A2 = math.atleast_3d(A2)
         b1 = math.atleast_2d(b1)
         b2 = math.atleast_2d(b2)
-        c1 = math.atleast_1d(c1)
-        c2 = math.atleast_1d(c2)
 
-    if len(idx1) != len(idx2):
+    if not A1.shape[0] == b1.shape[0] == A2.shape[0] == b2.shape[0]:
         raise ValueError(
-            f"idx1 and idx2 must have the same length, got {len(idx1)} and {len(idx2)}"
-        )
-    if not A1.shape[0] == b1.shape[0] == c1.shape[0] == A2.shape[0] == b2.shape[0] == c2.shape[0]:
-        raise ValueError(
-            f"Batch size mismatch: got {A1.shape[0]} for A1, {b1.shape[0]} for b1, {c1.shape[0]} for c1, {A2.shape[0]} for A2, {b2.shape[0]} for b2, {c2.shape[0]} for c2."
+            f"Batch size mismatch: got {A1.shape[0]} for A1, {b1.shape[0]} for b1, {A2.shape[0]} for A2, {b2.shape[0]} for b2."
         )
 
     # get various sizes for later
     (batch, n1, _) = A1.shape
     (_, n2, _) = A2.shape
-    d1 = c1.shape[1:]
-    d2 = c2.shape[1:]
     m = len(idx1)  # number of variable pairs to integrate over
     idx = tuple(idx1) + tuple(i + n1 for i in idx2)
 
-    A = math.zeros((batch, n1 + n2, n1 + n2), dtype=A1.dtype)
-    for i in range(batch):
-        A[i] = math.block_diag(A1[i], A2[i])
+    Z = math.zeros((batch, n1, n2), dtype=A1.dtype)
+    A1Z = math.concat([A1, Z], axis=-1)
+    ZA2 = math.concat([math.transpose(Z, (0, 2, 1)), A2], axis=-1)
+    A = math.concat([A1Z, ZA2], axis=-2)
     b = math.concat([b1, b2], axis=-1)
-    c = math.einsum("bj,bk->bjk", math.reshape(c1, (batch, -1)), math.reshape(c2, (batch, -1)))
-    c = math.reshape(c, (batch,) + d1 + d2)
-
+    c = math.ones((batch,), dtype=A1.dtype)
     if len(idx) == 0:
         return A, b, c
 
@@ -490,7 +486,7 @@ def complex_gaussian_integral_2(
     bM = math.gather(b, idx, axis=-1)
     cpart1 = math.sqrt(math.cast((-1) ** m / math.det(M), "complex128"))
     cpart2 = math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1]))
-    c_post = math.einsum("b...,b->b...", c, cpart1 * cpart2)
+    c_post = cpart1 * cpart2
     D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
     bR = math.gather(b, not_idx, axis=-1)
