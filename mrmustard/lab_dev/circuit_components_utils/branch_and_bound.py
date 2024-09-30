@@ -277,9 +277,9 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
             if ovlp_ket or ovlp_bra:
                 graph.add_edge(i, i + j + 1)
                 wires = Wires(
-                    wires.args[0] - ovlp_bra,
+                    {k: v for k, v in wires.args[0].items() if k not in ovlp_bra},
                     wires.args[1],
-                    wires.args[2] - ovlp_ket,
+                    {k: v for k, v in wires.args[2].items() if k not in ovlp_ket},
                     wires.args[3],
                 )
             if not wires.output:

@@ -18,11 +18,29 @@ from __future__ import annotations
 from functools import cached_property
 import numpy as np
 
+from typing import Iterable
+
 from IPython.display import display
 
 from mrmustard import widgets
 
+from enum import Enum
+
 __all__ = ["Wires"]
+
+
+class RepEnum(Enum):
+    r"""
+    An enum to represent what representation a wire is in.
+    """
+
+    BARGMANN = 1
+    FOCK = 2
+    QUADRATURE = 3
+    PHASESPACE = 4
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 class Wires:
@@ -163,20 +181,59 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: set[int] | None = None,
-        modes_in_bra: set[int] | None = None,
-        modes_out_ket: set[int] | None = None,
-        modes_in_ket: set[int] | None = None,
-        classical_out: set[int] | None = None,
-        classical_in: set[int] | None = None,
+        modes_out_bra: set[int] | dict[int, RepEnum] | None = None,
+        modes_in_bra: set[int] | dict[int, RepEnum] | None = None,
+        modes_out_ket: set[int] | dict[int, RepEnum] | None = None,
+        modes_in_ket: set[int] | dict[int, RepEnum] | None = None,
+        classical_out: set[int] | dict[int, RepEnum] | None = None,
+        classical_in: set[int] | dict[int, RepEnum] | None = None,
     ) -> None:
-        self.args: tuple[set, ...] = (
-            modes_out_bra or set(),
-            modes_in_bra or set(),
-            modes_out_ket or set(),
-            modes_in_ket or set(),
-            classical_out or set(),
-            classical_in or set(),
+
+        modes_out_bra = modes_out_bra or dict()
+        modes_in_bra = modes_in_bra or dict()
+        modes_out_ket = modes_out_ket or dict()
+        modes_in_ket = modes_in_ket or dict()
+        classical_out = classical_out or dict()
+        classical_in = classical_in or dict()
+
+        modes_out_bra = (
+            dict.fromkeys(modes_out_bra, RepEnum.BARGMANN)
+            if isinstance(modes_out_bra, Iterable)
+            else modes_out_bra
+        )
+        modes_in_bra = (
+            dict.fromkeys(modes_in_bra, RepEnum.BARGMANN)
+            if isinstance(modes_in_bra, Iterable)
+            else modes_in_bra
+        )
+        modes_out_ket = (
+            dict.fromkeys(modes_out_ket, RepEnum.BARGMANN)
+            if isinstance(modes_out_ket, Iterable)
+            else modes_out_ket
+        )
+        modes_in_ket = (
+            dict.fromkeys(modes_in_ket, RepEnum.BARGMANN)
+            if isinstance(modes_in_ket, Iterable)
+            else modes_in_ket
+        )
+        classical_out = (
+            dict.fromkeys(classical_out, RepEnum.BARGMANN)
+            if isinstance(classical_out, Iterable)
+            else classical_out
+        )
+        classical_in = (
+            dict.fromkeys(classical_in, RepEnum.BARGMANN)
+            if isinstance(classical_in, Iterable)
+            else classical_in
+        )
+
+        self.args: tuple[dict, ...] = (
+            modes_out_bra,
+            modes_in_bra,
+            modes_out_ket,
+            modes_in_ket,
+            classical_out,
+            classical_in,
         )
         self._len = None
 
@@ -304,7 +361,7 @@ class Wires:
         if self.original:
             return self.original.index_dicts
         return [
-            {m: i + sum(len(s) for s in self.args[:t]) for i, m in enumerate(lst)}
+            {m: i + sum(len(s.keys()) for s in self.args[:t]) for i, m in enumerate(lst)}
             for t, lst in enumerate(self.sorted_args)
         ]
 
@@ -348,7 +405,7 @@ class Wires:
         r"""
         The modes spanned by the wires.
         """
-        return set.union(*self.args)
+        return set.union(*[set(arg.keys()) for arg in self.args])
 
     @property
     def original(self):
@@ -371,7 +428,7 @@ class Wires:
         r"""
         The sorted arguments. Allows to sort them only once.
         """
-        return tuple(sorted(s) for s in self.args)
+        return tuple(sorted(set(s.keys())) for s in self.args)
 
     def contracted_indices(self, other: Wires):
         r"""
@@ -405,7 +462,7 @@ class Wires:
         """
         new_args = []
         for t, (m1, m2) in enumerate(zip(self.args, other.args)):
-            if m := m1 & m2:
+            if m := m1.keys() & m2.keys():
                 raise ValueError(f"{t}-type wires overlap at mode {m}.")
             new_args.append(m1 | m2)
         return Wires(*new_args)
@@ -425,7 +482,12 @@ class Wires:
         """
         modes = {modes} if isinstance(modes, int) else set(modes)
         if tuple(modes) not in self._mode_cache:
-            w = Wires(*(self.args[t] & modes for t in (0, 1, 2, 3, 4, 5)))
+            w = Wires(
+                *(
+                    {mode: self.args[t][mode] for mode in modes if mode in self.args[t]}
+                    for t in (0, 1, 2, 3, 4, 5)
+                )
+            )
             w._original = self.original or self
             self._mode_cache[tuple(modes)] = w
         return self._mode_cache[tuple(modes)]
@@ -487,18 +549,47 @@ class Wires:
             raise ValueError("Cannot contract a subset of wires.")
         A, B, a, b, E, F = self.args
         C, D, c, d, G, H = other.args
-        sets = (A - D, B, a - d, b, E - H, F, C, D - A, c, d - a, G, H - E)
-        if m := sets[0] & sets[6]:
+
+        contractions = ((A, D), (a, d), (E, H), (D, A), (d, a), (H, E))
+
+        set_diffs = []
+        for contraction in contractions:
+            temp = {}
+            for k, v in contraction[0].items():
+                if k not in contraction[1]:
+                    temp[k] = v
+                elif v != contraction[1][k]:
+                    raise ValueError(
+                        f"Represenation {v} does not match representation {contraction[1][k]}."
+                    )
+            set_diffs.append(temp)
+
+        sets = (
+            set_diffs[0],
+            B,
+            set_diffs[1],
+            b,
+            set_diffs[2],
+            F,
+            C,
+            set_diffs[3],
+            c,
+            set_diffs[4],
+            G,
+            set_diffs[5],
+        )
+
+        if m := sets[0].keys() & sets[6].keys():
             raise ValueError(f"Output bra modes {m} overlap.")
-        if m := sets[1] & sets[7]:
+        if m := sets[1].keys() & sets[7].keys():
             raise ValueError(f"Input bra modes {m} overlap.")
-        if m := sets[2] & sets[8]:
+        if m := sets[2].keys() & sets[8].keys():
             raise ValueError(f"Output ket modes {m} overlap.")
-        if m := sets[3] & sets[9]:
+        if m := sets[3].keys() & sets[9].keys():
             raise ValueError(f"Input ket modes {m} overlap.")
-        if m := sets[4] & sets[10]:
+        if m := sets[4].keys() & sets[10].keys():
             raise ValueError(f"Output classical modes {m} overlap.")
-        if m := sets[5] & sets[11]:
+        if m := sets[5].keys() & sets[11].keys():
             raise ValueError(f"Input classical modes {m} overlap.")
         bra_out = sets[0] | sets[6]  # (self.output.bra - other.input.bra) | other.output.bra
         bra_in = sets[1] | sets[7]  # self.input.bra | (other.input.bra - self.output.bra)
@@ -514,14 +605,14 @@ class Wires:
 
         # preserve ids
         for t in (0, 1, 2, 3, 4, 5):
-            for m in w.args[t]:
+            for m in w.args[t].keys():
                 w.ids_dicts[t][m] = self.ids_dicts[t][m] if m in sets[t] else other.ids_dicts[t][m]
 
         # calculate permutation
         result_ids = [id for d in w.ids_dicts for id in d.values()]
         self_other_ids = [
-            self.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t])
-        ] + [other.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t + 6])]
+            self.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t].keys())
+        ] + [other.ids_dicts[t][m] for t in (0, 1, 2, 3, 4, 5) for m in sorted(sets[t + 6].keys())]
         perm = [self_other_ids.index(id) for id in result_ids]
         return w, perm
 
