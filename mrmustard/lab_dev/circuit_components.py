@@ -43,7 +43,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.physics.fock import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.wires import Wires, RepEnum
 from mrmustard.physics.triples import identity_Abc
 
 __all__ = ["CircuitComponent"]
@@ -82,11 +82,14 @@ class CircuitComponent:
         else:
             wires = [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
             modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = wires
+            rep_enum = (
+                RepEnum[representation.__class__.__name__.upper()] if representation else RepEnum(1)
+            )
             self._wires = Wires(
-                set(modes_out_bra),
-                set(modes_in_bra),
-                set(modes_out_ket),
-                set(modes_in_ket),
+                dict.fromkeys(modes_out_bra, rep_enum),
+                dict.fromkeys(modes_in_bra, rep_enum),
+                dict.fromkeys(modes_out_ket, rep_enum),
+                dict.fromkeys(modes_in_ket, rep_enum),
             )
 
             # handle out-of-order modes
@@ -277,7 +280,12 @@ class CircuitComponent:
             A circuit component with the given Bargmann representation.
         """
         repr = Bargmann(*triple)
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            dict.fromkeys(modes_out_bra, RepEnum.BARGMANN),
+            dict.fromkeys(modes_in_bra, RepEnum.BARGMANN),
+            dict.fromkeys(modes_out_ket, RepEnum.BARGMANN),
+            dict.fromkeys(modes_in_ket, RepEnum.BARGMANN),
+        )
         return cls._from_attributes(repr, wires, name)
 
     @classmethod
@@ -309,7 +317,12 @@ class CircuitComponent:
         """
         from .circuit_components_utils.b_to_q import BtoQ
 
-        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        wires = Wires(
+            dict.fromkeys(modes_out_bra, RepEnum.BARGMANN),
+            dict.fromkeys(modes_in_bra, RepEnum.BARGMANN),
+            dict.fromkeys(modes_out_ket, RepEnum.BARGMANN),
+            dict.fromkeys(modes_in_ket, RepEnum.BARGMANN),
+        )
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
@@ -540,11 +553,16 @@ class CircuitComponent:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
+        rep_enum = (
+            RepEnum[self.representation.__class__.__name__.upper()]
+            if self.representation
+            else RepEnum(1)
+        )
         ret._wires = Wires(
-            modes_out_bra=set(modes) if ob else set(),
-            modes_in_bra=set(modes) if ib else set(),
-            modes_out_ket=set(modes) if ok else set(),
-            modes_in_ket=set(modes) if ik else set(),
+            modes_out_bra=dict.fromkeys(set(modes), rep_enum) if ob else None,
+            modes_in_bra=dict.fromkeys(set(modes), rep_enum) if ib else None,
+            modes_out_ket=dict.fromkeys(set(modes), rep_enum) if ok else None,
+            modes_in_ket=dict.fromkeys(set(modes), rep_enum) if ik else None,
         )
 
         return ret
@@ -583,6 +601,9 @@ class CircuitComponent:
             ret = self._from_attributes(fock, self.wires, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
+
+        wires = self.wires
+        ret._wires = wires
         return ret
 
     def to_bargmann(self) -> CircuitComponent:

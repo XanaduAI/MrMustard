@@ -181,12 +181,12 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: set[int] | dict[int, RepEnum] | None = None,
-        modes_in_bra: set[int] | dict[int, RepEnum] | None = None,
-        modes_out_ket: set[int] | dict[int, RepEnum] | None = None,
-        modes_in_ket: set[int] | dict[int, RepEnum] | None = None,
-        classical_out: set[int] | dict[int, RepEnum] | None = None,
-        classical_in: set[int] | dict[int, RepEnum] | None = None,
+        modes_out_bra: dict[int, RepEnum] | None = None,
+        modes_in_bra: dict[int, RepEnum] | None = None,
+        modes_out_ket: dict[int, RepEnum] | None = None,
+        modes_in_ket: dict[int, RepEnum] | None = None,
+        classical_out: dict[int, RepEnum] | None = None,
+        classical_in: dict[int, RepEnum] | None = None,
     ) -> None:
 
         modes_out_bra = modes_out_bra or dict()
@@ -195,37 +195,6 @@ class Wires:
         modes_in_ket = modes_in_ket or dict()
         classical_out = classical_out or dict()
         classical_in = classical_in or dict()
-
-        modes_out_bra = (
-            dict.fromkeys(modes_out_bra, RepEnum.BARGMANN)
-            if isinstance(modes_out_bra, Iterable)
-            else modes_out_bra
-        )
-        modes_in_bra = (
-            dict.fromkeys(modes_in_bra, RepEnum.BARGMANN)
-            if isinstance(modes_in_bra, Iterable)
-            else modes_in_bra
-        )
-        modes_out_ket = (
-            dict.fromkeys(modes_out_ket, RepEnum.BARGMANN)
-            if isinstance(modes_out_ket, Iterable)
-            else modes_out_ket
-        )
-        modes_in_ket = (
-            dict.fromkeys(modes_in_ket, RepEnum.BARGMANN)
-            if isinstance(modes_in_ket, Iterable)
-            else modes_in_ket
-        )
-        classical_out = (
-            dict.fromkeys(classical_out, RepEnum.BARGMANN)
-            if isinstance(classical_out, Iterable)
-            else classical_out
-        )
-        classical_in = (
-            dict.fromkeys(classical_in, RepEnum.BARGMANN)
-            if isinstance(classical_in, Iterable)
-            else classical_in
-        )
 
         self.args: tuple[dict, ...] = (
             modes_out_bra,
