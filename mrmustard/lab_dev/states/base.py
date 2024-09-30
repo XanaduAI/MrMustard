@@ -60,7 +60,7 @@ from mrmustard.physics.ansatze import (
 )
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 
 __all__ = ["State", "DM", "Ket"]
 

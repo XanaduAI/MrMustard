@@ -43,7 +43,7 @@ from mrmustard.physics.representations import Representation, Bargmann, Fock
 from mrmustard.physics.fock import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.physics.triples import identity_Abc
 
 __all__ = ["CircuitComponent"]

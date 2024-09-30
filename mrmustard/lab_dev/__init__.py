@@ -21,4 +21,3 @@ from .circuit_components_utils import *
 from .circuits import *
 from .states import *
 from .transformations import *
-from .wires import Wires

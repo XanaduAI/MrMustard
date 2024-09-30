@@ -37,7 +37,7 @@ from mrmustard.lab_dev.states import (
     SqueezedVacuum,
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 from ..random import Abc_triple
 
 
