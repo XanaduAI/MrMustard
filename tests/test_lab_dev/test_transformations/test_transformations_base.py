@@ -30,7 +30,7 @@ from mrmustard.lab_dev.transformations import (
     Unitary,
     Operation,
 )
-from mrmustard.lab_dev.wires import Wires, RepEnum
+from mrmustard.physics.wires import Wires, RepEnum
 from mrmustard.lab_dev.states import Vacuum
 
 

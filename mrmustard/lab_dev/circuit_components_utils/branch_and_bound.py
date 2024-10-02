@@ -24,7 +24,7 @@ from math import factorial
 import numpy as np
 from typing import Generator
 import networkx as nx
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 Edge = tuple[int, int]

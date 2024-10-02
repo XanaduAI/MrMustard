@@ -22,35 +22,10 @@ from IPython.display import display
 
 from mrmustard import widgets
 
-from enum import Enum
 
-from mrmustard.physics.representations import Representation
+from mrmustard.physics.representations import RepEnum
 
 __all__ = ["Wires"]
-
-
-class RepEnum(Enum):
-    r"""
-    An enum to represent what representation a wire is in.
-    """
-
-    NONETYPE = 0
-    BARGMANN = 1
-    FOCK = 2
-    QUADRATURE = 3
-    PHASESPACE = 4
-
-    @classmethod
-    def from_representation(cls, value: Representation):
-        r""" """
-        return cls[value.__class__.__name__.upper()]
-
-    @classmethod
-    def _missing_(cls, value):
-        return cls.NONETYPE
-
-    def __repr__(self) -> str:
-        return self.name
 
 
 class Wires:

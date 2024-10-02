@@ -24,7 +24,7 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.representations import Bargmann
-from ..wires import Wires
+from ...physics.wires import Wires
 
 __all__ = ["TraceOut"]
 

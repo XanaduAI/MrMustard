@@ -21,6 +21,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Union
 
+from enum import Enum
+
 from inspect import signature
 
 import numpy as np
@@ -49,6 +51,30 @@ from mrmustard.utils.typing import (
 from mrmustard import widgets
 
 __all__ = ["Representation", "Bargmann", "Fock"]
+
+
+class RepEnum(Enum):
+    r"""
+    An enum to represent what representation a wire is in.
+    """
+
+    NONETYPE = 0
+    BARGMANN = 1
+    FOCK = 2
+    QUADRATURE = 3
+    PHASESPACE = 4
+
+    @classmethod
+    def from_representation(cls, value: Representation):
+        r""" """
+        return cls[value.__class__.__name__.upper()]
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.NONETYPE
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 class Representation(ABC):
