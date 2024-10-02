@@ -23,7 +23,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar
-from mrmustard.physics.gaussian_integrals import contract_two_Abc
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 
 
 #  ~~~~~~~~~
@@ -242,7 +242,7 @@ def sauron_state_Abc(n: int, epsilon: float):
     prob = 0
     for A1, b1, c1 in zip(As, bs, cs):
         for A2, b2, c2 in zip(As, bs, cs):
-            prob += contract_two_Abc(
+            prob += complex_gaussian_integral_2(
                 (np.conj(A1), np.conj(b1), np.conj(c1)), (A2, b2, c2), [0], [0]
             )[2]
     cs /= np.sqrt(prob)
@@ -282,7 +282,9 @@ def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Sc
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, Scalar]:
+def thermal_state_Abc(
+    nbar: Union[float, Iterable[float]],
+) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of thermal states.
 

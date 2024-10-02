@@ -33,9 +33,9 @@ from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
-    contract_two_Abc_poly,
     reorder_abc,
-    complex_gaussian_integral,
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
 )
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
@@ -506,11 +506,13 @@ class Bargmann(Representation):
             for (A1, b1, c1), (A2, b2, c2) in zip(
                 zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
             ):
-                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                Abc.append(complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+                    Abc.append(
+                        complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
+                    )
 
         A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
