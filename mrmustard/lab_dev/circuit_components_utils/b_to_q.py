@@ -54,3 +54,30 @@ class BtoQ(Operation):
             name="BtoQ",
         )
         self._add_parameter(Constant(phi, "phi"))
+
+    @property
+    def adjoint(self) -> BtoQ:
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        rep = self.representation.reorder(kets + bras).conj() if self.representation else None
+
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = rep
+        ret._wires = self.wires.adjoint
+        ret.short_name = self.short_name
+        return ret
+
+    @property
+    def dual(self) -> BtoQ:
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
+
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = rep
+        ret._wires = self.wires.dual
+        ret.short_name = self.short_name
+
+        return ret

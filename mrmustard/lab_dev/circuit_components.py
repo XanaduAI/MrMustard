@@ -553,11 +553,7 @@ class CircuitComponent:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
         ret = self._light_copy()
-        rep_enum = (
-            RepEnum[self.representation.__class__.__name__.upper()]
-            if self.representation
-            else RepEnum(1)
-        )
+        rep_enum = RepEnum.from_representation(self.representation)
         ret._wires = Wires(
             modes_out_bra=dict.fromkeys(set(modes), rep_enum) if ob else None,
             modes_in_bra=dict.fromkeys(set(modes), rep_enum) if ib else None,
@@ -602,7 +598,7 @@ class CircuitComponent:
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
 
-        wires = self.wires
+        wires = Wires(*({k: RepEnum.FOCK for k in arg.keys()} for arg in self.wires.args))
         ret._wires = wires
         return ret
 
@@ -639,6 +635,9 @@ class CircuitComponent:
                 ret = self._from_attributes(bargmann, self.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
+
+            wires = Wires(*({k: RepEnum.BARGMANN for k in arg.keys()} for arg in self.wires.args))
+            ret._wires = wires
             return ret
 
     def _add_parameter(self, parameter: Constant | Variable):
@@ -741,16 +740,17 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
-            self_rep = self.representation
-            other_rep = other.representation
+        if type(self.representation) is type(other.representation):
+            self_cc = self
+            other_cc = other
         else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
+            self_cc = self.to_bargmann()
+            other_cc = other.to_bargmann()
 
-        rep = self_rep[idx_z] @ other_rep[idx_zconj]
+        wires_result, perm = self_cc.wires @ other_cc.wires
+        idx_z, idx_zconj = self_cc._matmul_indices(other_cc)
+
+        rep = self_cc.representation[idx_z] @ other_cc.representation[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return CircuitComponent._from_attributes(rep, wires_result, None)
 

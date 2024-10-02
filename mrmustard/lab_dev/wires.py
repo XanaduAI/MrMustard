@@ -18,13 +18,13 @@ from __future__ import annotations
 from functools import cached_property
 import numpy as np
 
-from typing import Iterable
-
 from IPython.display import display
 
 from mrmustard import widgets
 
 from enum import Enum
+
+from mrmustard.physics.representations import Representation
 
 __all__ = ["Wires"]
 
@@ -34,10 +34,20 @@ class RepEnum(Enum):
     An enum to represent what representation a wire is in.
     """
 
+    NONETYPE = 0
     BARGMANN = 1
     FOCK = 2
     QUADRATURE = 3
     PHASESPACE = 4
+
+    @classmethod
+    def from_representation(cls, value: Representation):
+        r""" """
+        return cls[value.__class__.__name__.upper()]
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.NONETYPE
 
     def __repr__(self) -> str:
         return self.name
@@ -181,20 +191,51 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: dict[int, RepEnum] | None = None,
-        modes_in_bra: dict[int, RepEnum] | None = None,
-        modes_out_ket: dict[int, RepEnum] | None = None,
-        modes_in_ket: dict[int, RepEnum] | None = None,
-        classical_out: dict[int, RepEnum] | None = None,
-        classical_in: dict[int, RepEnum] | None = None,
+        modes_out_bra: set[int] | dict[int, RepEnum] | None = None,
+        modes_in_bra: set[int] | dict[int, RepEnum] | None = None,
+        modes_out_ket: set[int] | dict[int, RepEnum] | None = None,
+        modes_in_ket: set[int] | dict[int, RepEnum] | None = None,
+        classical_out: set[int] | dict[int, RepEnum] | None = None,
+        classical_in: set[int] | dict[int, RepEnum] | None = None,
     ) -> None:
 
-        modes_out_bra = modes_out_bra or dict()
-        modes_in_bra = modes_in_bra or dict()
-        modes_out_ket = modes_out_ket or dict()
-        modes_in_ket = modes_in_ket or dict()
-        classical_out = classical_out or dict()
-        classical_in = classical_in or dict()
+        modes_out_bra = modes_out_bra or {}
+        modes_in_bra = modes_in_bra or {}
+        modes_out_ket = modes_out_ket or {}
+        modes_in_ket = modes_in_ket or {}
+        classical_out = classical_out or {}
+        classical_in = classical_in or {}
+
+        modes_out_bra = (
+            modes_out_bra
+            if isinstance(modes_out_bra, dict)
+            else dict.fromkeys(modes_out_bra, RepEnum(None))
+        )
+        modes_in_bra = (
+            modes_in_bra
+            if isinstance(modes_in_bra, dict)
+            else dict.fromkeys(modes_in_bra, RepEnum(None))
+        )
+        modes_out_ket = (
+            modes_out_ket
+            if isinstance(modes_out_ket, dict)
+            else dict.fromkeys(modes_out_ket, RepEnum(None))
+        )
+        modes_in_ket = (
+            modes_in_ket
+            if isinstance(modes_in_ket, dict)
+            else dict.fromkeys(modes_in_ket, RepEnum(None))
+        )
+        classical_out = (
+            classical_out
+            if isinstance(classical_out, dict)
+            else dict.fromkeys(classical_out, RepEnum(None))
+        )
+        classical_in = (
+            classical_in
+            if isinstance(classical_in, dict)
+            else dict.fromkeys(classical_in, RepEnum(None))
+        )
 
         self.args: tuple[dict, ...] = (
             modes_out_bra,
@@ -527,7 +568,11 @@ class Wires:
             for k, v in contraction[0].items():
                 if k not in contraction[1]:
                     temp[k] = v
-                elif v != contraction[1][k]:
+                elif (
+                    v is not RepEnum.NONETYPE
+                    and contraction[1][k] is not RepEnum.NONETYPE
+                    and v != contraction[1][k]
+                ):
                     raise ValueError(
                         f"Represenation {v} does not match representation {contraction[1][k]}."
                     )

@@ -30,7 +30,7 @@ from mrmustard.lab_dev.transformations import (
     Unitary,
     Operation,
 )
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.wires import Wires, RepEnum
 from mrmustard.lab_dev.states import Vacuum
 
 
@@ -60,7 +60,10 @@ class TestUnitary:
 
         assert gate.name[:1] == (name or "U")[:1]
         assert list(gate.modes) == sorted(modes)
-        assert gate.wires == Wires(modes_in_ket=modes, modes_out_ket=modes)
+        assert gate.wires == Wires(
+            modes_in_ket=dict.fromkeys(modes, RepEnum.BARGMANN),
+            modes_out_ket=dict.fromkeys(modes, RepEnum.BARGMANN),
+        )
 
     def test_rshift(self):
         unitary1 = Dgate([0, 1], 1)
@@ -131,10 +134,10 @@ class TestChannel:
         assert gate.name[:2] == (name or "Ch")[:2]
         assert list(gate.modes) == sorted(modes)
         assert gate.wires == Wires(
-            modes_out_bra=modes,
-            modes_in_bra=modes,
-            modes_out_ket=modes,
-            modes_in_ket=modes,
+            modes_out_bra=dict.fromkeys(modes, RepEnum.BARGMANN),
+            modes_in_bra=dict.fromkeys(modes, RepEnum.BARGMANN),
+            modes_out_ket=dict.fromkeys(modes, RepEnum.BARGMANN),
+            modes_in_ket=dict.fromkeys(modes, RepEnum.BARGMANN),
         )
 
     def test_init_from_bargmann(self):

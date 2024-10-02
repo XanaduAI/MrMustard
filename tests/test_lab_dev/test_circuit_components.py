@@ -37,7 +37,7 @@ from mrmustard.lab_dev.states import (
     SqueezedVacuum,
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.wires import Wires, RepEnum
 from ..random import Abc_triple
 
 
@@ -60,7 +60,10 @@ class TestCircuitComponent:
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
-        assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
+        assert cc.wires == Wires(
+            modes_out_ket={1: RepEnum.BARGMANN, 8: RepEnum.BARGMANN},
+            modes_in_ket={1: RepEnum.BARGMANN, 8: RepEnum.BARGMANN},
+        )
         assert cc.representation == representation
         assert cc.manual_shape == [None] * 4
 
@@ -258,7 +261,10 @@ class TestCircuitComponent:
         result = vac012 @ d012
         result = result @ result.adjoint @ a0 @ a1 @ a2
 
-        assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
+        assert result.wires == Wires(
+            modes_out_bra={0: RepEnum.BARGMANN, 1: RepEnum.BARGMANN, 2: RepEnum.BARGMANN},
+            modes_out_ket={0: RepEnum.BARGMANN, 1: RepEnum.BARGMANN, 2: RepEnum.BARGMANN},
+        )
         assert np.allclose(result.representation.A, 0)
         assert np.allclose(
             result.representation.b,
@@ -329,7 +335,10 @@ class TestCircuitComponent:
 
         result = vac012 >> d0 >> d1 >> d2 >> a0 >> a1 >> a2
 
-        assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
+        assert result.wires == Wires(
+            modes_out_bra={0: RepEnum.BARGMANN, 1: RepEnum.BARGMANN, 2: RepEnum.BARGMANN},
+            modes_out_ket={0: RepEnum.BARGMANN, 1: RepEnum.BARGMANN, 2: RepEnum.BARGMANN},
+        )
         assert np.allclose(result.representation.A, 0)
         assert np.allclose(
             result.representation.b,

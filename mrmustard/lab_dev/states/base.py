@@ -60,7 +60,7 @@ from mrmustard.physics.ansatze import (
 )
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.wires import Wires, RepEnum
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -245,7 +245,9 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
-        return cls(modes, Fock(array, batched), name)
+        ret = cls(modes, Fock(array, batched), name)
+        ret._wires = Wires(*({k: RepEnum.FOCK for k in arg.keys()} for arg in ret.wires.args))
+        return ret
 
     @classmethod
     def from_phase_space(
@@ -906,7 +908,9 @@ class DM(State):
 
         w = result.wires
         if not w.input and w.bra.modes == w.ket.modes:
-            return DM(w.modes, result.representation)
+            ret = DM(w.modes, result.representation)
+            ret._wires = result.wires
+            return ret
         return result
 
 
@@ -1192,7 +1196,10 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.wires.modes, result.representation)
+                ret = Ket(result.wires.modes, result.representation)
+                ret._wires = result.wires
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.representation)
+                ret = DM(result.wires.modes, result.representation)
+                ret._wires = result.wires
+            return ret
         return result

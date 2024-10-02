@@ -32,12 +32,12 @@ class TestWires:
     def test_init(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
         assert w.args == (
-            {0: RepEnum.BARGMANN, 1: RepEnum.BARGMANN, 2: RepEnum.BARGMANN},
-            {3: RepEnum.BARGMANN, 4: RepEnum.BARGMANN, 5: RepEnum.BARGMANN},
-            {6: RepEnum.BARGMANN, 7: RepEnum.BARGMANN},
-            {8: RepEnum.BARGMANN},
-            {9: RepEnum.BARGMANN},
-            {10: RepEnum.BARGMANN},
+            {0: RepEnum.NONETYPE, 1: RepEnum.NONETYPE, 2: RepEnum.NONETYPE},
+            {3: RepEnum.NONETYPE, 4: RepEnum.NONETYPE, 5: RepEnum.NONETYPE},
+            {6: RepEnum.NONETYPE, 7: RepEnum.NONETYPE},
+            {8: RepEnum.NONETYPE},
+            {9: RepEnum.NONETYPE},
+            {10: RepEnum.NONETYPE},
         )
 
     def test_ids(self):
@@ -200,12 +200,12 @@ class TestWires:
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12}, {19}, {17})
         new_wires, perm = u @ v
         assert new_wires.args == (
-            {0: RepEnum.BARGMANN, 5: RepEnum.BARGMANN, 9: RepEnum.BARGMANN, 14: RepEnum.BARGMANN},
-            {2: RepEnum.BARGMANN, 6: RepEnum.BARGMANN, 10: RepEnum.BARGMANN, 15: RepEnum.BARGMANN},
-            {2: RepEnum.BARGMANN, 7: RepEnum.BARGMANN, 11: RepEnum.BARGMANN},
-            {4: RepEnum.BARGMANN, 8: RepEnum.BARGMANN, 12: RepEnum.BARGMANN},
-            {16: RepEnum.BARGMANN, 19: RepEnum.BARGMANN},
-            {18: RepEnum.BARGMANN},
+            {0: RepEnum.NONETYPE, 5: RepEnum.NONETYPE, 9: RepEnum.NONETYPE, 14: RepEnum.NONETYPE},
+            {2: RepEnum.NONETYPE, 6: RepEnum.NONETYPE, 10: RepEnum.NONETYPE, 15: RepEnum.NONETYPE},
+            {2: RepEnum.NONETYPE, 7: RepEnum.NONETYPE, 11: RepEnum.NONETYPE},
+            {4: RepEnum.NONETYPE, 8: RepEnum.NONETYPE, 12: RepEnum.NONETYPE},
+            {16: RepEnum.NONETYPE, 19: RepEnum.NONETYPE},
+            {18: RepEnum.NONETYPE},
         )
         assert perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
 

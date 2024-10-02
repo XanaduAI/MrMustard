@@ -24,6 +24,7 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.representations import Bargmann
+from ..wires import Wires
 
 __all__ = ["TraceOut"]
 
@@ -61,8 +62,9 @@ class TraceOut(CircuitComponent):
         self,
         modes: Sequence[int],
     ):
+        wires = Wires((), modes, (), modes)
         super().__init__(
-            wires=[(), modes, (), modes],
+            wires=wires,
             representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )

@@ -36,7 +36,7 @@ from mrmustard.lab_dev.states import (
     Vacuum,
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.wires import Wires, RepEnum
 from mrmustard.widgets import state as state_widget
 
 # original settings
@@ -73,7 +73,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
-        assert state.wires == Wires(modes_out_ket=set(modes))
+        assert state.wires == Wires(modes_out_ket=dict.fromkeys(set(modes), RepEnum.BARGMANN))
 
     def test_manual_shape(self):
         ket = Coherent([0, 1], x=[1, 2])
@@ -479,7 +479,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
-        assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+        assert state.wires == Wires(
+            modes_out_bra=dict.fromkeys(modes, RepEnum.BARGMANN),
+            modes_out_ket=dict.fromkeys(modes, RepEnum.BARGMANN),
+        )
 
     def test_manual_shape(self):
         dm = Coherent([0, 1], x=[1, 2]).dm()
