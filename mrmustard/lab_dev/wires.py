@@ -325,6 +325,11 @@ class Wires:
             self.index_dicts[t][m] for t, modes in enumerate(self.sorted_args) for m in modes
         )
 
+    
+    @cached_property
+    def index_to_mode_dict(self) -> dict[int, int]:
+        return {i: m for d in self.index_dicts for m,i in d.items()}
+
     @cached_property
     def input(self) -> Wires:
         r"""

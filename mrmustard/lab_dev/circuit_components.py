@@ -76,7 +76,7 @@ class CircuitComponent:
         self._name = name
         self._parameter_set = ParameterSet()
         self._representation = representation
-
+    
         if isinstance(wires, Wires):
             self._wires = wires
         else:
@@ -109,6 +109,13 @@ class CircuitComponent:
                 )
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
+
+    
+    @property
+    def _index_representation(self):
+        if not hasattr(self, '_index_representation_'):
+            self._index_representation_ = {i: ('B', None) for i in self.wires.indices}
+        return self._index_representation_
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -585,7 +592,7 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def to_bargmann(self) -> CircuitComponent:
+    def to_bargmann(self, indices: Sequence[int] | None = None) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
         .. code-block::
@@ -602,9 +609,39 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        if isinstance(self.representation, Bargmann):
+        from .circuit_components_utils import BtoQ, BtoPS
+        if isinstance(self.representation, Bargmann):# TODO: better name for Bargmann class
+            # check cc rep
+            if not indices:
+                indices = self.wires.indices
+            
+            for i in indices:
+                name, arg =  self._index_representation[i]
+                if name == 'Q':
+                    self._index_representation[i] = ('B', None)
+                    if i in self.wires.output.bra.indices:
+                        self = self @ BtoQ([self.wires.index_to_mode_dict[i]], phi = arg).adjoint.inverse()
+                    if i in self.wires.output.ket.indices:
+                        self = self @ BtoQ([self.wires.index_to_mode_dict[i]], phi = arg).inverse()
+                    if i in self.wires.input.bra.indices:
+                        self = BtoQ([self.wires.index_to_mode_dict[i]], phi = arg).dual.adjoint.inverse() @ self
+                    if i in self.wires.input.bra.indices:
+                        self = BtoQ([self.wires.index_to_mode_dict[i]], phi = arg).dual.inverse() @ self 
+                    
+
+                if name == 'PS':
+                    self._index_representation[i] = ('B', None)
+                    if i in self.wires.output.bra.indices:
+                        self = self @ BtoPS([self.wires.index_to_mode_dict[i]], s = arg).adjoint.inverse()
+                    if i in self.wires.output.ket.indices:
+                        self = self @ BtoPS([self.wires.index_to_mode_dict[i]], s = arg).inverse()
+                    if i in self.wires.input.bra.indices:
+                        self = BtoPS([self.wires.index_to_mode_dict[i]], s = arg).dual.adjoint.inverse() @ self
+                    if i in self.wires.input.bra.indices:
+                        self = BtoPS([self.wires.index_to_mode_dict[i]], s = arg).dual.inverse() @ self 
+
             return self
-        else:
+        elif isinstance(self.representation, Fock):
             if self.representation.ansatz._original_abc_data:
                 A, b, c = self.representation.ansatz._original_abc_data
             else:
@@ -717,21 +754,52 @@ class CircuitComponent:
             >>> att = Attenuator([0], 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
+
+
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
+        
+        if type(self.representation) == type(other.representation) == Fock:
             self_rep = self.representation
             other_rep = other.representation
         else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
+            index_self, index_other = self.wires.contracted_indices(other.wires)
+            self_rep = self.to_bargmann(index_self).representation
+            other_rep = other.to_bargmann(index_other).representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_result, None)
+        result = CircuitComponent._from_attributes(rep, wires_result, None)
+        result._helper_update_wire_rep(other)
+
+        return result
+
+    def _helper_update_wire_rep(self,other):
+        
+        from .circuit_components_utils import BtoQ, BtoPS
+        if isinstance(other, BtoQ):
+            btoq_param = math.atleast_1d(other.phi.value)
+            if other.wires.bra:
+                for k, m in enumerate(other.modes):
+                    i = self.wires.index_dicts[0][m]
+                    self._index_representation[i] = ('Q', float(btoq_param[k]))
+            elif other.wires.ket:
+                for k, m in enumerate(other.modes):
+                    i = self.wires.index_dicts[2][m]
+                    self._index_representation[i] = ('Q', float(btoq_param[k]))
+        
+        if isinstance(other, BtoPS):
+            if other.wires.bra:
+                for k, m in enumerate(other.modes):
+                    i = self.wires.index_dicts[0][m]
+                    self._index_representation[i] = ('PS', float(other.s.value[k]))
+            elif other.wires.ket:
+                for k, m in enumerate(other.modes):
+                    i = self.wires.index_dicts[2][m]
+                    self._index_representation[i] = ('PS', float(other.s.value[k]))
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
