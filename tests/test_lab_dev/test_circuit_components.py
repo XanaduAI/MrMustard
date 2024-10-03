@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.physics.wires import Wires
+from mrmustard.physics.multi_representations import MultiRepresentation
 from ..random import Abc_triple
 
 
@@ -169,7 +170,7 @@ class TestCircuitComponent:
         assert isinstance(d67.r, Variable)
         assert math.allclose(d89.r.value, d67.r.value)
         assert bool(d67.parameter_set) is True
-        assert d67._representation is d89._representation
+        assert d67.representation is d89.representation
 
     def test_on_error(self):
         with pytest.raises(ValueError):
@@ -393,7 +394,7 @@ class TestCircuitComponent:
     def test_rshift_error(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
-        d0._wires = Wires()
+        d0._multi_rep = MultiRepresentation(d0.representation, Wires())
 
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0

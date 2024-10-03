@@ -44,7 +44,7 @@ from mrmustard.physics.fock import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.triples import identity_Abc
+from mrmustard.physics.multi_representations import MultiRepresentation
 
 __all__ = ["CircuitComponent"]
 
@@ -75,20 +75,17 @@ class CircuitComponent:
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
-        self._representation = representation
 
-        if isinstance(wires, Wires):
-            self._wires = wires
-        else:
-            wires = [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
-            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = wires
-            self._wires = Wires(
+        if not isinstance(wires, Wires):
+            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = (
+                [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
+            )
+            wires = Wires(
                 set(modes_out_bra),
                 set(modes_in_bra),
                 set(modes_out_ket),
                 set(modes_in_ket),
             )
-
             # handle out-of-order modes
             ob = tuple(sorted(modes_out_bra))
             ib = tuple(sorted(modes_in_bra))
@@ -107,8 +104,13 @@ class CircuitComponent:
                     + tuple(np.argsort(modes_out_ket) + offsets[1])
                     + tuple(np.argsort(modes_in_ket) + offsets[2])
                 )
-                if self._representation:
-                    self._representation = self._representation.reorder(tuple(perm))
+                if representation is not None:
+                    self._multi_rep = MultiRepresentation(
+                        representation.reorder(tuple(perm)), wires
+                    )
+
+        if not hasattr(self, "_multi_rep"):
+            self._multi_rep = MultiRepresentation(representation, wires)
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -243,14 +245,14 @@ class CircuitComponent:
         r"""
         A representation of this circuit component.
         """
-        return self._representation
+        return self._multi_rep.representation
 
     @property
     def wires(self) -> Wires:
         r"""
         The wires of this component.
         """
-        return self._wires
+        return self._multi_rep.wires
 
     @classmethod
     def from_bargmann(
@@ -419,8 +421,7 @@ class CircuitComponent:
             if tp.__name__ in types:
                 ret = tp()
                 ret._name = name
-                ret._representation = representation
-                ret._wires = wires
+                ret._multi_rep = MultiRepresentation(representation, wires)
                 return ret
         return CircuitComponent(representation, wires, name)
 
@@ -452,14 +453,7 @@ class CircuitComponent:
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
-        try:
-            A, b, c = self.representation.triple
-            if not batched and self.representation.ansatz.batch_size == 1:
-                return A[0], b[0], c[0]
-            else:
-                return A, b, c
-        except AttributeError as e:
-            raise AttributeError("No Bargmann data for this component.") from e
+        return self._multi_rep.bargmann_triple(batched)
 
     def fock(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
         r"""
@@ -475,38 +469,7 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        num_vars = self.representation.ansatz.num_vars
-        if isinstance(shape, int):
-            shape = (shape,) * num_vars
-        try:
-            As, bs, cs = self.bargmann_triple(batched=True)
-            shape = shape or self.auto_shape()
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
-            if self.representation.ansatz.polynomial_shape[0] == 0:
-                arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
-            else:
-                arrays = [
-                    math.sum(
-                        math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
-                        axes=math.arange(
-                            num_vars, num_vars + len(c.shape), dtype=math.int32
-                        ).tolist(),
-                    )
-                    for A, b, c in zip(As, bs, cs)
-                ]
-        except AttributeError:
-            shape = shape or self.auto_shape()
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
-            arrays = self.representation.reduce(shape).array
-        array = math.sum(arrays, axes=[0])
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+        return self._multi_rep.fock(shape or self.auto_shape(), batched)
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
         r"""
@@ -539,50 +502,14 @@ class CircuitComponent:
         for subset in subsets:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        ret = self._light_copy()
-        ret._wires = Wires(
-            modes_out_bra=set(modes) if ob else set(),
-            modes_in_bra=set(modes) if ib else set(),
-            modes_out_ket=set(modes) if ok else set(),
-            modes_in_ket=set(modes) if ik else set(),
+        ret = self._light_copy(
+            Wires(
+                modes_out_bra=set(modes) if ob else set(),
+                modes_in_bra=set(modes) if ib else set(),
+                modes_out_ket=set(modes) if ok else set(),
+                modes_in_ket=set(modes) if ik else set(),
+            )
         )
-
-        return ret
-
-    def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
-        r"""
-        Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
-
-        .. code-block::
-
-            >>> from mrmustard.lab_dev import Dgate
-            >>> from mrmustard.physics.representations import Fock
-
-            >>> d = Dgate([1], x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=3)
-
-            >>> assert d_fock.name == d.name
-            >>> assert d_fock.wires == d.wires
-            >>> assert isinstance(d_fock.representation, Fock)
-
-        Args:
-            shape: The shape of the returned representation. If ``shape``is given as
-                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
-        """
-        fock = Fock(self.fock(shape, batched=True), batched=True)
-        try:
-            if self.representation.ansatz.polynomial_shape[0] == 0:
-                fock.ansatz._original_abc_data = self.representation.triple
-        except AttributeError:
-            fock.ansatz._original_abc_data = None
-        try:
-            ret = self._getitem_builtin(self.modes)
-            ret._representation = fock
-        except TypeError:
-            ret = self._from_attributes(fock, self.wires, self.name)
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def to_bargmann(self) -> CircuitComponent:
@@ -605,20 +532,46 @@ class CircuitComponent:
         if isinstance(self.representation, Bargmann):
             return self
         else:
-            if self.representation.ansatz._original_abc_data:
-                A, b, c = self.representation.ansatz._original_abc_data
-            else:
-                A, b, _ = identity_Abc(len(self.wires.quantum))
-                c = self.representation.data
-            bargmann = Bargmann(A, b, c)
+            mult_rep = self._multi_rep.to_bargmann()
             try:
                 ret = self._getitem_builtin(self.modes)
-                ret._representation = bargmann
+                ret._multi_rep = mult_rep
             except TypeError:
-                ret = self._from_attributes(bargmann, self.wires, self.name)
+                ret = self._from_attributes(mult_rep.representation, mult_rep.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
             return ret
+
+    def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
+        r"""
+        Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Dgate
+            >>> from mrmustard.physics.representations import Fock
+
+            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d_fock = d.to_fock(shape=3)
+
+            >>> assert d_fock.name == d.name
+            >>> assert d_fock.wires == d.wires
+            >>> assert isinstance(d_fock.representation, Fock)
+
+        Args:
+            shape: The shape of the returned representation. If ``shape``is given as
+                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
+                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        """
+        mult_rep = self._multi_rep.to_fock(shape or self.auto_shape())
+        try:
+            ret = self._getitem_builtin(self.modes)
+            ret._multi_rep = mult_rep
+        except TypeError:
+            ret = self._from_attributes(mult_rep.representation, mult_rep.wires, self.name)
+        if "manual_shape" in ret.__dict__:
+            del ret.manual_shape
+        return ret
 
     def _add_parameter(self, parameter: Constant | Variable):
         r"""
@@ -656,22 +609,10 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_wires"] = wires or Wires(*self.wires.args)
+        instance.__dict__["_multi_rep"] = MultiRepresentation(
+            self.representation, wires or Wires(*self.wires.args)
+        )
         return instance
-
-    def _matmul_indices(self, other: CircuitComponent) -> tuple[tuple[int, ...], tuple[int, ...]]:
-        r"""
-        Finds the indices of the wires being contracted when ``self @ other`` is called.
-        """
-        # find the indices of the wires being contracted on the bra side
-        bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
-        idx_z = self.wires.bra.output[bra_modes].indices
-        idx_zconj = other.wires.bra.input[bra_modes].indices
-        # find the indices of the wires being contracted on the ket side
-        ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
-        idx_z += self.wires.ket.output[ket_modes].indices
-        idx_zconj += other.wires.ket.input[ket_modes].indices
-        return idx_z, idx_zconj
 
     def _rshift_return(
         self, ret: CircuitComponent | np.ndarray | complex
@@ -696,9 +637,12 @@ class CircuitComponent:
         r"""
         Whether this component is equal to another component.
 
-        Compares representations and wires, but not the other attributes (e.g. name and parameter set).
+        Compares multi-representations, but not the other attributes
+        (e.g. name and parameter set).
         """
-        return self.representation == other.representation and self.wires == other.wires
+        if isinstance(other, CircuitComponent):
+            return self._multi_rep == other._multi_rep
+        return False
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
@@ -719,19 +663,8 @@ class CircuitComponent:
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
-            self_rep = self.representation
-            other_rep = other.representation
-        else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
-
-        rep = self_rep[idx_z] @ other_rep[idx_zconj]
-        rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_result, None)
+        result = self._multi_rep @ other._multi_rep
+        return CircuitComponent._from_attributes(result.representation, result.wires, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""

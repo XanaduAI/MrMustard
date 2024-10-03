@@ -16,6 +16,7 @@ r"""The Sauron state is an approximation of the `n`-th Fock states using a ring 
 
 from typing import Sequence
 from mrmustard.lab_dev.states.base import Ket
+from mrmustard.physics.multi_representations import MultiRepresentation
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 
@@ -42,6 +43,9 @@ class Sauron(Ket):
         super().__init__(name=f"Sauron-{n}", modes=modes)
         self._add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
-        self._representation = Bargmann.from_function(
-            triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
+        self._multi_rep = MultiRepresentation(
+            Bargmann.from_function(
+                triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
+            ),
+            self.wires,
         )

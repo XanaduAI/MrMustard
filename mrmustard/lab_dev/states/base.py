@@ -623,11 +623,10 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
+            representation=representation,
             wires=[modes, (), modes, ()],
             name=name,
         )
-        if representation is not None:
-            self._representation = representation
 
     @property
     def is_positive(self) -> bool:
@@ -754,7 +753,7 @@ class DM(State):
         # experimental:
         if self.representation.ansatz.batch_size == 1:
             try:  # fock
-                shape = self._representation.array.shape[1:]
+                shape = self.representation.array.shape[1:]
             except AttributeError:  # bargmann
                 if self.representation.ansatz.polynomial_shape[0] == 0:
                     repr = self.representation
@@ -933,11 +932,10 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
+            representation=representation,
             wires=[(), (), modes, ()],
             name=name,
         )
-        if representation is not None:
-            self._representation = representation
 
     @property
     def is_physical(self) -> bool:
@@ -1049,7 +1047,7 @@ class Ket(State):
         # experimental:
         if self.representation.ansatz.batch_size == 1:
             try:  # fock
-                shape = self._representation.array.shape[1:]
+                shape = self.representation.array.shape[1:]
             except AttributeError:  # bargmann
                 if self.representation.ansatz.polynomial_shape[0] == 0:
                     repr = self.representation.conj() & self.representation

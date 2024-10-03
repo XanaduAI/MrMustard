@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from mrmustard.physics.multi_representations import MultiRepresentation
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 from .base import DM
@@ -61,5 +62,6 @@ class Thermal(DM):
         super().__init__(modes=modes, name="Thermal")
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
-
-        self._representation = Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar)
+        self._multi_rep = MultiRepresentation(
+            Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar), self.wires
+        )

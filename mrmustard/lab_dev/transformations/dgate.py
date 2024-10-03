@@ -24,6 +24,7 @@ from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
 
 from .base import Unitary
+from ...physics.multi_representations import MultiRepresentation
 from ...physics.representations import Bargmann
 from ...physics import triples, fock
 from ..utils import make_parameter, reshape_params
@@ -94,13 +95,12 @@ class Dgate(Unitary):
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-
-        self._representation = Bargmann.from_function(
-            fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+        self._multi_rep = MultiRepresentation(
+            Bargmann.from_function(fn=triples.displacement_gate_Abc, x=self.x, y=self.y), self.wires
         )
 
     def fock(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
-        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
+        r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.

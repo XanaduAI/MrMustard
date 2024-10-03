@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from mrmustard.physics.multi_representations import MultiRepresentation
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
 from .base import Ket
@@ -82,6 +83,6 @@ class Coherent(Ket):
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.coherent_state_Abc, x=self.x, y=self.y
+        self._multi_rep = MultiRepresentation(
+            Bargmann.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y), self.wires
         )
