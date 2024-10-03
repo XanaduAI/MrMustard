@@ -18,16 +18,14 @@ This module contains the class for multi-representations.
 """
 
 from __future__ import annotations
-from typing import Any, Sequence
+from typing import Sequence
 from enum import Enum
 
-from mrmustard import settings, math, widgets as mmwidgets
+from mrmustard import math
 from mrmustard.utils.typing import (
-    Scalar,
     ComplexTensor,
     ComplexMatrix,
     ComplexVector,
-    Vector,
     Batch,
 )
 
@@ -51,7 +49,9 @@ class RepEnum(Enum):
 
     @classmethod
     def from_representation(cls, value: Representation):
-        r""" """
+        r"""
+        Returns a ``RepEnum`` from a ``Representation``.
+        """
         return cls[value.__class__.__name__.upper()]
 
     @classmethod
@@ -83,10 +83,9 @@ class MultiRepresentation:
     ) -> None:
         self._representation = representation
         self._wires = wires
-        rep_enum = (
-            RepEnum[representation.__class__.__name__.upper()] if representation else RepEnum(1)
+        self._wire_reps = wire_reps or dict.fromkeys(
+            wires.modes, RepEnum.from_representation(representation)
         )
-        self._wire_reps = wire_reps or dict.fromkeys(wires.modes, rep_enum)
 
     @property
     def representation(self) -> Representation | None:
