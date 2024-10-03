@@ -25,7 +25,7 @@ from mrmustard import math
 
 from .base import Unitary
 from ...physics.multi_representations import MultiRepresentation
-from ...physics.representations import Bargmann
+from ...physics.representations import Bargmann, Fock
 from ...physics import triples, fock
 from ..utils import make_parameter, reshape_params
 
@@ -142,3 +142,10 @@ class Dgate(Unitary):
             array = fock.displacement(x[0], y[0], shape=shape)
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
+
+    def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
+        fock = Fock(self.fock(shape, batched=True), batched=True)
+        fock.ansatz._original_abc_data = self.representation.triple
+        ret = self._getitem_builtin(self.modes)
+        ret._multi_rep = MultiRepresentation(fock, self.wires)
+        return ret

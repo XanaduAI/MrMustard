@@ -61,6 +61,7 @@ from mrmustard.physics.ansatze import (
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.physics.wires import Wires
+from mrmustard.physics.multi_representations import MultiRepresentation
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -623,10 +624,10 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            representation=representation,
             wires=[modes, (), modes, ()],
             name=name,
         )
+        self._multi_rep = MultiRepresentation(representation, self.wires)
 
     @property
     def is_positive(self) -> bool:
@@ -932,10 +933,10 @@ class Ket(State):
                 f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
             )
         super().__init__(
-            representation=representation,
             wires=[(), (), modes, ()],
             name=name,
         )
+        self._multi_rep = MultiRepresentation(representation, self.wires)
 
     @property
     def is_physical(self) -> bool:
