@@ -122,6 +122,7 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.parameter_set == d1.parameter_set
         assert (
             d1_adj.representation == d1.representation.conj()
         )  # this holds for the Dgate but not in general
@@ -129,6 +130,8 @@ class TestCircuitComponent:
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
         assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.parameter_set == d1_adj.parameter_set
+        assert d1_adj_adj.parameter_set == d1.parameter_set
         assert d1_adj_adj.representation == d1.representation
 
     def test_dual(self):
@@ -139,11 +142,14 @@ class TestCircuitComponent:
         assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.parameter_set == d1.parameter_set
         assert (vac >> d1 >> d1_dual).representation == vac.representation
         assert (vac >> d1_dual >> d1).representation == vac.representation
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.parameter_set == d1_dual.parameter_set
+        assert d1_dual_dual.parameter_set == d1.parameter_set
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
