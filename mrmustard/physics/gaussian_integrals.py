@@ -337,14 +337,14 @@ def complex_gaussian_integral_1(
 
     not_idx = tuple(i for i in range(n) if i not in idx)
 
-    I = math.eye(m, dtype=A.dtype)
+    eye = math.eye(m, dtype=A.dtype)
     Z = math.zeros((m, m), dtype=A.dtype)
-    X = math.block([[Z, I], [I, Z]])
+    X = math.block([[Z, eye], [eye, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
 
     determinant = math.det(M)
-    if np.any(math.abs(determinant)) > 1e-12:
+    if np.all(math.abs(determinant)) > 1e-12:
         c_post = (
             c
             * math.sqrt(math.cast((-1) ** m / determinant, "complex128"))

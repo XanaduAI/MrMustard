@@ -143,7 +143,7 @@ def test_join_Abc_nonbatched():
 
 
 def test_join_Abc_batched():
-    """Tests the ``join_Abc`` method for batched inputs."""
+    """Tests the ``join_Abc`` method for batched inputs (and with polynomial c)."""
     A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
     b1 = np.array([[5, 6], [7, 8]])
     c1 = np.array([7, 8])
