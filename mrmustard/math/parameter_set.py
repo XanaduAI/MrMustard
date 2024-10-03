@@ -216,3 +216,15 @@ class ParameterSet:
         if self._constants or self._variables:
             return True
         return False
+
+    def __eq__(self, other: Any) -> bool:
+        r"""
+        Returns whether ``other`` is equivalent to this parameter set.
+        """
+        if not isinstance(other, ParameterSet):
+            return False
+        return (
+            self._names == other._names
+            and self._constants == other._constants
+            and self._variables == other._variables
+        )
