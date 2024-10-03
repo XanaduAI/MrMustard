@@ -63,6 +63,8 @@ class RepEnum(Enum):
 
 
 class MultiRepresentation:
+    # TODO: merge current Representation and Anstaz -> Ansatz
+    # TODO: rename to Representation
     r"""
     A class for multi-representations.
 
