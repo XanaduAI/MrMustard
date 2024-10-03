@@ -499,12 +499,12 @@ class CircuitComponent:
                     )
                     for A, b, c in zip(As, bs, cs)
                 ]
-        except AttributeError:
+        except AttributeError as e:
             shape = shape or self.auto_shape()
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
+                ) from e
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -724,7 +724,7 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
+        if type(self.representation) is type(other.representation):
             self_rep = self.representation
             other_rep = other.representation
         else:
