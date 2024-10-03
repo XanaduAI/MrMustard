@@ -25,6 +25,8 @@ representation.
 # pylint: disable=import-outside-toplevel
 from __future__ import annotations
 
+from abc import abstractmethod
+
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
@@ -42,6 +44,22 @@ class Transformation(CircuitComponent):
     """
 
     @classmethod
+    @abstractmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        r"""
+        Initialize a Transformation from the given Bargmann triple (A,b,c)
+        which parametrizes the Bargmann function of the transformation as
+        :math:`c * exp(0.5*z^T A z + b^T z)`.
+        """
+
+    @classmethod
+    @abstractmethod
     def from_quadrature(
         cls,
         modes_out: Sequence[int],
@@ -49,34 +67,12 @@ class Transformation(CircuitComponent):
         triple: tuple,
         phi: float = 0,
         name: str | None = None,
-    ) -> Operation:
+    ) -> Transformation:
         r"""
-        Initialize an Operation from the given quadrature triple (A, b, c).
+        Initialize a Transformation from the given quadrature triple (A, b, c).
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from ..circuit_components_utils.b_to_q import BtoQ
-
-        QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = cls(modes_out, modes_in, Bargmann(*triple))
-        BB = QtoB_in >> QQ >> QtoB_out
-        return cls(modes_out, modes_in, BB.representation, name)
-
-    @classmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Operation:
-        r"""
-        Initialize a Transformation from the given Bargmann triple (A,b,c)
-        which parametrizes the Bargmann function of the transformation as
-        :math:`c * exp(0.5*z^T A z + b^T z)`.
-        """
-        return cls(modes_out, modes_in, Bargmann(*triple), name)
 
     def inverse(self) -> Transformation:
         r"""
@@ -134,6 +130,33 @@ class Operation(Transformation):
             name=name,
         )
 
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        return Operation(modes_out, modes_in, Bargmann(*triple), name)
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        phi: float = 0,
+        name: str | None = None,
+    ) -> Transformation:
+        from ..circuit_components_utils.b_to_q import BtoQ
+
+        QtoB_out = BtoQ(modes_out, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
+        QQ = Operation(modes_out, modes_in, Bargmann(*triple))
+        BB = QtoB_in >> QQ >> QtoB_out
+        return Operation(modes_out, modes_in, BB.representation, name)
+
 
 class Unitary(Operation):
     r"""
@@ -149,33 +172,6 @@ class Unitary(Operation):
 
     short_name = "U"
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
-
-        For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
-        channel requires an input on the bra side as well.
-
-        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
-        ``Channel``, and a ``CircuitComponent`` otherwise.
-        """
-        ret = super().__rshift__(other)
-
-        if isinstance(other, Unitary):
-            return Unitary._from_attributes(ret.representation, ret.wires)
-        elif isinstance(other, Channel):
-            return Channel._from_attributes(ret.representation, ret.wires)
-        return ret
-
-    def inverse(self) -> Unitary:
-        unitary_dual = self.dual
-        return Unitary._from_attributes(
-            representation=unitary_dual.representation,
-            wires=unitary_dual.wires,
-            name=unitary_dual.name,
-        )
-
     @property
     def symplectic(self):
         r"""
@@ -183,6 +179,33 @@ class Unitary(Operation):
         """
         batch_size = self.representation.ansatz.batch_size
         return [au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        return Unitary(modes_out, modes_in, Bargmann(*triple), name)
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        phi: float = 0,
+        name: str | None = None,
+    ) -> Transformation:
+        from ..circuit_components_utils.b_to_q import BtoQ
+
+        QtoB_out = BtoQ(modes_out, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
+        QQ = Unitary(modes_out, modes_in, Bargmann(*triple))
+        BB = QtoB_in >> QQ >> QtoB_out
+        return Unitary(modes_out, modes_in, BB.representation, name)
 
     @classmethod
     def from_symplectic(cls, modes, S) -> Unitary:
@@ -208,6 +231,33 @@ class Unitary(Operation):
         m = len(modes)
         S = math.random_symplectic(m, max_r)
         return Unitary.from_symplectic(modes, S)
+
+    def inverse(self) -> Unitary:
+        unitary_dual = self.dual
+        return Unitary._from_attributes(
+            representation=unitary_dual.representation,
+            wires=unitary_dual.wires,
+            name=unitary_dual.name,
+        )
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
+        channel requires an input on the bra side as well.
+
+        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
+        ``Channel``, and a ``CircuitComponent`` otherwise.
+        """
+        ret = super().__rshift__(other)
+
+        if isinstance(other, Unitary):
+            return Unitary._from_attributes(ret.representation, ret.wires)
+        elif isinstance(other, Channel):
+            return Channel._from_attributes(ret.representation, ret.wires)
+        return ret
 
 
 class Map(Transformation):
@@ -236,6 +286,33 @@ class Map(Transformation):
             name=name or self.__class__.__name__,
         )
 
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        return Map(modes_out, modes_in, Bargmann(*triple), name)
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        phi: float = 0,
+        name: str | None = None,
+    ) -> Transformation:
+        from ..circuit_components_utils.b_to_q import BtoQ
+
+        QtoB_out = BtoQ(modes_out, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
+        QQ = Map(modes_out, modes_in, Bargmann(*triple))
+        BB = QtoB_in >> QQ >> QtoB_out
+        return Map(modes_out, modes_in, BB.representation, name)
+
 
 class Channel(Map):
     r"""
@@ -249,36 +326,6 @@ class Channel(Map):
     """
 
     short_name = "Ch"
-
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
-
-        Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
-        """
-        ret = super().__rshift__(other)
-        if isinstance(other, (Channel, Unitary)):
-            return Channel._from_attributes(ret.representation, ret.wires)
-        return ret
-
-    @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
-        r"""
-        A random channel without displacement.
-
-        Args:
-            modes: The modes of the channel.
-            max_r: The maximum squeezing parameter.
-        """
-        from mrmustard.lab_dev.states import Vacuum
-
-        m = len(modes)
-        U = Unitary.random(range(3 * m), max_r)
-        u_psi = Vacuum(range(2 * m)) >> U
-        A = u_psi.representation
-        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
-        return Channel.from_bargmann(modes, modes, kraus.triple)
 
     @property
     def is_CP(self) -> bool:
@@ -326,3 +373,60 @@ class Channel(Map):
         Returns the X and Y matrix corresponding to the channel.
         """
         return XY_of_channel(self.representation.A[0])
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        return Channel(modes_out, modes_in, Bargmann(*triple), name)
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        phi: float = 0,
+        name: str | None = None,
+    ) -> Transformation:
+        from ..circuit_components_utils.b_to_q import BtoQ
+
+        QtoB_out = BtoQ(modes_out, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
+        QQ = Channel(modes_out, modes_in, Bargmann(*triple))
+        BB = QtoB_in >> QQ >> QtoB_out
+        return Channel(modes_out, modes_in, BB.representation, name)
+
+    @classmethod
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
+        r"""
+        A random channel without displacement.
+
+        Args:
+            modes: The modes of the channel.
+            max_r: The maximum squeezing parameter.
+        """
+        from mrmustard.lab_dev.states import Vacuum
+
+        m = len(modes)
+        U = Unitary.random(range(3 * m), max_r)
+        u_psi = Vacuum(range(2 * m)) >> U
+        A = u_psi.representation
+        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        return Channel.from_bargmann(modes, modes, kraus.triple)
+
+    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
+        they are missing.
+
+        Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
+        """
+        ret = super().__rshift__(other)
+        if isinstance(other, (Channel, Unitary)):
+            return Channel._from_attributes(ret.representation, ret.wires)
+        return ret
