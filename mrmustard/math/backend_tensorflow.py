@@ -483,7 +483,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
-            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None
 
         return G, grad
 
