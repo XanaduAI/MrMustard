@@ -202,7 +202,7 @@ class TestCircuitComponent:
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
-        assert d_fock.representation.ansatz._original_abc_data == d.representation.triple
+        assert d_fock.representation._original_abc_data == d.representation.triple
         assert d_barg == d
 
     def test_to_fock_poly_exp(self):
@@ -211,7 +211,7 @@ class TestCircuitComponent:
         barg = Bargmann(A, b, c)
         fock_cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
-        assert fock_cc.representation.ansatz._original_abc_data is None
+        assert fock_cc.representation._original_abc_data is None
         assert np.allclose(fock_cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
