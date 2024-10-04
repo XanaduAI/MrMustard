@@ -121,6 +121,7 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.parameter_set == d1.parameter_set
         assert (
             d1_adj.representation == d1.representation.conj
         )  # this holds for the Dgate but not in general
@@ -128,6 +129,8 @@ class TestCircuitComponent:
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
         assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.parameter_set == d1_adj.parameter_set
+        assert d1_adj_adj.parameter_set == d1.parameter_set
         assert d1_adj_adj.representation == d1.representation
 
     def test_dual(self):
@@ -138,11 +141,14 @@ class TestCircuitComponent:
         assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.parameter_set == d1.parameter_set
         assert (vac >> d1 >> d1_dual).representation == vac.representation
         assert (vac >> d1_dual >> d1).representation == vac.representation
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.parameter_set == d1_dual.parameter_set
+        assert d1_dual_dual.parameter_set == d1.parameter_set
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
@@ -196,15 +202,17 @@ class TestCircuitComponent:
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
+        assert d_fock.representation.ansatz._original_abc_data == d.representation.triple
         assert d_barg == d
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
         barg = Bargmann(A, b, c)
-        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
+        fock_cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
-        assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
+        assert fock_cc.representation.ansatz._original_abc_data is None
+        assert np.allclose(fock_cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)

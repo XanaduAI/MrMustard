@@ -167,6 +167,8 @@ class CircuitComponent:
 
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @property
@@ -184,7 +186,8 @@ class CircuitComponent:
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name
-
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @cached_property
@@ -497,12 +500,12 @@ class CircuitComponent:
                     )
                     for A, b, c in zip(As, bs, cs)
                 ]
-        except AttributeError:
+        except AttributeError as e:
             shape = shape or self.auto_shape()
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
+                ) from e
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -572,7 +575,8 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock._original_abc_data = self.representation.triple
+            if self.representation.polynomial_shape[0] == 0:
+                fock._original_abc_data = self.representation.triple
         except AttributeError:
             fock._original_abc_data = None
         try:
@@ -721,7 +725,7 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
+        if type(self.representation) is type(other.representation):
             self_rep = self.representation
             other_rep = other.representation
         else:

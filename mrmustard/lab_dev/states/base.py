@@ -25,6 +25,8 @@ representation.
 
 from __future__ import annotations
 
+from abc import abstractmethod
+from itertools import product
 from typing import Sequence
 
 from enum import Enum
@@ -142,19 +144,19 @@ class State(CircuitComponent):
         return math.sum(math.real(self >> self.dual))
 
     @property
+    @abstractmethod
     def probability(self) -> float:
         r"""
         Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
         :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
         """
-        raise NotImplementedError
 
     @property
+    @abstractmethod
     def purity(self) -> float:
         r"""
         The purity of this state.
         """
-        raise NotImplementedError
 
     @property
     def _L2_norms(self) -> RealVector:
@@ -168,6 +170,7 @@ class State(CircuitComponent):
         return math.real(rep)
 
     @classmethod
+    @abstractmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
@@ -193,7 +196,7 @@ class State(CircuitComponent):
             >>> assert isinstance(coh, Ket)
 
         Args:
-            modes: The modes of this states.
+            modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
 
@@ -204,9 +207,9 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        return cls(modes, Bargmann(*triple), name)
 
     @classmethod
+    @abstractmethod
     def from_fock(
         cls,
         modes: Sequence[int],
@@ -233,7 +236,7 @@ class State(CircuitComponent):
             >>> assert isinstance(coh, Ket)
 
         Args:
-            modes: The modes of this states.
+            modes: The modes of this state.
             array: The Fock array.
             name: The name of this state.
             batched: Whether the given array is batched.
@@ -245,9 +248,9 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
-        return cls(modes, Fock(array, batched), name)
 
     @classmethod
+    @abstractmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -282,9 +285,9 @@ class State(CircuitComponent):
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
         """
-        raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_quadrature(
         cls,
         modes: Sequence[int],
@@ -309,9 +312,30 @@ class State(CircuitComponent):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = cls(modes, Bargmann(*triple))
-        return cls(modes, (Q >> QtoB).representation, name)
+
+    def fock_distribution(self, cutoff: int) -> ComplexTensor:
+        r"""
+        Returns the Fock distribution of the state up to some cutoff.
+
+        Args:
+            cutoff: The photon cutoff.
+
+        Returns:
+            The Fock distribution.
+        """
+        fock_array = self.fock(cutoff)
+        if isinstance(self, Ket):
+            probs = (
+                math.astensor(
+                    [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+                )
+                ** 2
+            )
+        else:
+            probs = math.astensor(
+                [fock_array[ns * 2] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+            )
+        return probs
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -333,17 +357,31 @@ class State(CircuitComponent):
             *new_state.bargmann_triple(batched=True), batched=True
         )
 
-    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
+    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature distribution of the State.
+
         Args:
             quad: the discretized quadrature axis over which the distribution is computed.
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
-            A,b,c triple of the quadrature representation
+            The quadrature distribution.
         """
-        raise NotImplementedError
+        quad = math.astensor(quad)
+        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
+            raise ValueError(
+                "The dimensionality of quad should be 1, or match the number of modes."
+            )
+
+        if len(quad.shape) == 1:
+            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
+
+        if isinstance(self, Ket):
+            return math.abs(self.quadrature(quad, phi)) ** 2
+        else:
+            quad = math.tile(quad, (1, 2))
+            return self.quadrature(quad, phi)
 
     def visualize_2d(
         self,
@@ -685,6 +723,25 @@ class DM(State):
         return self._L2_norms / self._probabilities
 
     @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: str | None = None,
+    ) -> State:
+        return DM(modes, Bargmann(*triple), name)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> State:
+        return DM(modes, Fock(array, batched), name)
+
+    @classmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -713,6 +770,35 @@ class DM(State):
             Bargmann.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> State:
+        r"""
+        Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
+        as `c * exp(0.5 z^T A z + b^T z)` in the quadrature representation.
+
+        Args:
+            modes: The modes of this state.
+            triple: The ``(A, b, c)`` triple.
+            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
+            name: The name of this state.
+
+        Returns:
+            A state of type ``cls``.
+
+        Raises:
+            ValueError: If the given triple has shapes that are inconsistent
+                with the number of modes.
+        """
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = DM(modes, Bargmann(*triple))
+        return DM(modes, (Q >> QtoB).representation, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
@@ -782,34 +868,6 @@ class DM(State):
         The ``DM`` object obtained from this ``DM``.
         """
         return self
-
-    def quadrature_distribution(
-        self, quad: Batch[Vector], phi: float = 0.0
-    ) -> tuple | ComplexTensor:
-        if len(quad.shape) == 1:
-            quad = math.transpose(
-                math.astensor(
-                    [
-                        quad,
-                    ]
-                    * 2
-                    * self.n_modes
-                )
-            )
-        elif len(quad.shape) == self.n_modes:
-            quad = math.tile(
-                math.transpose(
-                    math.astensor(
-                        quad,
-                    )
-                ),
-                (1, 2),
-            )
-        else:
-            raise ValueError(
-                f"The dimensionality of quad should be 1, or match the number of modes."
-            )
-        return self.quadrature(quad, phi)
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -971,6 +1029,25 @@ class Ket(State):
         return self._L2_norms
 
     @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        name: str | None = None,
+    ) -> State:
+        return Ket(modes, Bargmann(*triple), name)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> State:
+        return Ket(modes, Fock(array, batched), name)
+
+    @classmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -992,6 +1069,18 @@ class Ket(State):
             coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
+
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> State:
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = Ket(modes, Bargmann(*triple))
+        return Ket(modes, (Q >> QtoB).representation, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
@@ -1079,28 +1168,6 @@ class Ket(State):
         ret = DM._from_attributes(dm.representation, dm.wires, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
-
-    def quadrature_distribution(self, quad: Vector, phi: float = 0.0) -> tuple | ComplexTensor:
-        if len(quad.shape) == 1:
-            quad = math.transpose(
-                math.astensor(
-                    [
-                        quad,
-                    ]
-                    * self.n_modes
-                )
-            )
-        elif len(quad.shape) == self.n_modes:
-            quad = math.transpose(
-                math.astensor(
-                    quad,
-                )
-            )
-        else:
-            raise ValueError(
-                f"The dimensionality of quad should be 1, or match the number of modes."
-            )
-        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def expectation(self, operator: CircuitComponent):
         r"""
