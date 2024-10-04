@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for circuit components utils."""
+"""Tests for BtoPS."""
 
 # pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
 
