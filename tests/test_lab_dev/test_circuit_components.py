@@ -38,6 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.lab_dev.wires import Wires
+from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS
 from ..random import Abc_triple
 
 
@@ -111,7 +112,8 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
         cc = CircuitComponent._from_attributes(c.representation, c.wires, c.name)
-        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
+        cc_q = BtoQ([0]).dual @ cc @ BtoQ([0])
+        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc_q.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
@@ -389,6 +391,13 @@ class TestCircuitComponent:
         assert np.allclose(r1, r3)
 
         settings.AUTOSHAPE_MAX = 50
+
+    def test_rshift_mixed_representation(self):
+        psi = Ket.random([0])
+        phi = Ket.random([0,1])
+        r1 = psi @ phi.dual
+        r2 = (psi @ BtoQ([0])) @ phi.dual
+        assert r1 == r2
 
     def test_rshift_error(self):
         vac012 = Vacuum([0, 1, 2])
