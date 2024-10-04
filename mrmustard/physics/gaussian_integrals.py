@@ -263,9 +263,9 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
     if order:
         if dim_poly > 0:
-            if type(order) == list:
+            if type(order) is list:
                 order.extend(np.arange(len(order), len(order) + dim_poly).tolist())
-            elif type(order) == tuple:
+            elif type(order) is tuple:
                 order = order + tuple(np.arange(len(order), len(order) + dim_poly))
         A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
         b = math.gather(b, order, axis=-1)
