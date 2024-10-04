@@ -25,8 +25,7 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
     join_Abc_real,
 )
-from mrmustard.lab_dev.circuit_components_utils import BtoQ
-from mrmustard.lab_dev.states import Coherent
+from mrmustard.lab_dev import Coherent, BtoQ, Identity
 
 
 class TestBtoQ:
@@ -54,6 +53,12 @@ class TestBtoQ:
         assert dual_btoq.wires == btoq.wires.dual
         assert dual_btoq.phi == btoq.phi
         assert isinstance(dual_btoq, BtoQ)
+
+    def test_inverse(self):
+        btoq = BtoQ([0], 0.5)
+        inv_btoq = btoq.inverse()
+        assert (btoq >> inv_btoq) == Identity([0])
+        assert isinstance(inv_btoq, BtoQ)
 
     def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
         A0 = np.array([[0.5, 0.3], [0.3, 0.5]])

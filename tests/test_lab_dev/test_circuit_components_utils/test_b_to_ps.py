@@ -23,8 +23,7 @@ from mrmustard import math
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import contract_two_Abc
-from mrmustard.lab_dev.circuit_components_utils import BtoPS
-from mrmustard.lab_dev.states import DM
+from mrmustard.lab_dev import DM, BtoPS, Identity
 
 
 class TestBtoPS:
@@ -42,7 +41,7 @@ class TestBtoPS:
         assert dsmap.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_adjoint(self):
-        btops = BtoPS([0], 0.5)
+        btops = BtoPS([0], 0)
         adjoint_btops = btops.adjoint
 
         bras = btops.wires.bra.indices
@@ -53,7 +52,7 @@ class TestBtoPS:
         assert isinstance(adjoint_btops, BtoPS)
 
     def test_dual(self):
-        btops = BtoPS([0], 0.5)
+        btops = BtoPS([0], 0)
         dual_btops = btops.dual
 
         ok = btops.wires.ket.output.indices
@@ -64,6 +63,12 @@ class TestBtoPS:
         assert dual_btops.wires == btops.wires.dual
         assert dual_btops.s == btops.s
         assert isinstance(dual_btops, BtoPS)
+
+    def test_inverse(self):
+        btops = BtoPS([0], 0)
+        inv_btops = btops.inverse()
+        assert (btops >> inv_btops) == (Identity([0]) @ Identity([0]).adjoint)
+        assert isinstance(inv_btops, BtoPS)
 
     def test_representation(self):
         rep1 = BtoPS(modes=[0], s=0).representation
