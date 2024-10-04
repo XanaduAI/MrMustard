@@ -64,6 +64,7 @@ class BtoQ(Operation):
         ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
         ret._wires = self.wires.adjoint
+        ret._name = self.name + "_adj"
         return ret
 
     @property
@@ -75,4 +76,13 @@ class BtoQ(Operation):
         ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
         ret._wires = self.wires.dual
+        ret._name = self.name + "_dual"
+        return ret
+
+    def inverse(self):
+        inv = super().inverse()
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = inv.representation
+        ret._wires = inv.wires
+        ret._name = inv.name
         return ret

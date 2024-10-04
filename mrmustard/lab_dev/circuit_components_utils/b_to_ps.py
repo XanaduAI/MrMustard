@@ -64,7 +64,7 @@ class BtoPS(Map):
         ret = BtoPS(self.modes, self.s)
         ret._representation = rep
         ret._wires = self.wires.adjoint
-        ret.short_name = self.short_name
+        ret._name = self.name + "_adj"
         return ret
 
     @property
@@ -78,4 +78,13 @@ class BtoPS(Map):
         ret = BtoPS(self.modes, self.s)
         ret._representation = rep
         ret._wires = self.wires.dual
+        ret._name = self.name + "_dual"
+        return ret
+
+    def inverse(self):
+        inv = super().inverse()
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = inv.representation
+        ret._wires = inv.wires
+        ret._name = inv.name
         return ret
