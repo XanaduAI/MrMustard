@@ -178,6 +178,11 @@ class TestBargmannRepresentation:
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
+        c2 = np.random.uniform(-10, 10, size=(1, 4))
+        ansatz2 = Bargmann(A, b, c2)
+        decomp_ansatz2 = ansatz2.decompose_ansatz()
+        assert np.allclose(decomp_ansatz2.A, ansatz2.A)
+
     def test_decompose_ansatz_batch(self):
         """
         In this test the batch dimension of both ``z`` and ``Abc`` is tested.
@@ -344,15 +349,22 @@ class TestBargmannRepresentation:
 
         ansatz = ansatz + ansatz
 
-        assert np.allclose(ansatz.A[0], ansatz.A[1])
-        assert np.allclose(ansatz.A[0], A)
-        assert np.allclose(ansatz.b[0], ansatz.b[1])
-        assert np.allclose(ansatz.b[0], b)
+        assert math.allclose(ansatz.A[0], ansatz.A[1])
+        assert math.allclose(ansatz.A[0], A)
+        assert math.allclose(ansatz.b[0], ansatz.b[1])
+        assert math.allclose(ansatz.b[0], b)
 
         ansatz.simplify_v2()
         assert len(ansatz.A) == 1
         assert len(ansatz.b) == 1
-        assert np.allclose(ansatz.c, 2 * c)
+        assert math.allclose(ansatz.c, 2 * c)
+
+        A, b, c = ansatz.triple
+
+        ansatz.simplify_v2()
+        assert math.allclose(ansatz.A, A)
+        assert math.allclose(ansatz.b, b)
+        assert math.allclose(ansatz.c, c)
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
