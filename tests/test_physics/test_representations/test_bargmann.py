@@ -388,51 +388,46 @@ class TestBargmannRepresentation:
         assert np.allclose(bargmann.b, b)
         assert np.allclose(bargmann.c, c)
 
-    # @patch("mrmustard.physics.representations.bargmann.display")
-    # def test_ipython_repr(self, mock_display):
-    #     """Test the IPython repr function."""
-    #     rep = Bargmann(*Abc_triple(2))
-    #     rep._ipython_display_()  # pylint:disable=protected-access
-    #     [box] = mock_display.call_args.args
-    #     assert isinstance(box, Box)
-    #     assert box.layout.max_width == "50%"
+    @patch("mrmustard.physics.representations.bargmann.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        rep = Bargmann(*Abc_triple(2))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, Box)
+        assert box.layout.max_width == "50%"
 
-    #     # data on left, eigvals on right
-    #     [data_vbox, eigs_vbox] = box.children
-    #     assert isinstance(data_vbox, VBox)
-    #     assert isinstance(eigs_vbox, VBox)
+        # data on left, eigvals on right
+        [data_vbox, eigs_vbox] = box.children
+        assert isinstance(data_vbox, VBox)
+        assert isinstance(eigs_vbox, VBox)
 
-    #     # data forms a stack: header, ansatz, triple data
-    #     [header, sub, table] = data_vbox.children
-    #     assert isinstance(header, HTML)
-    #     assert isinstance(sub, HBox)
-    #     assert isinstance(table, HTML)
+        # data forms a stack: header, ansatz, triple data
+        [header, sub, table] = data_vbox.children
+        assert isinstance(header, HTML)
+        assert isinstance(sub, IntText)
+        assert isinstance(table, HTML)
 
-    #     # ansatz goes beside button to modify rounding
-    #     [ansatz, round_w] = sub.children
-    #     assert isinstance(ansatz, HTML)
-    #     assert isinstance(round_w, IntText)
+        # eigvals have a header and a unit circle plot
+        [eig_header, unit_circle] = eigs_vbox.children
+        assert isinstance(eig_header, HTML)
+        assert isinstance(unit_circle, FigureWidget)
 
-    #     # eigvals have a header and a unit circle plot
-    #     [eig_header, unit_circle] = eigs_vbox.children
-    #     assert isinstance(eig_header, HTML)
-    #     assert isinstance(unit_circle, FigureWidget)
+    @patch("mrmustard.physics.representations.bargmann.display")
+    def test_ipython_repr_batched(self, mock_display):
+        """Test the IPython repr function for a batched repr."""
+        A1, b1, c1 = Abc_triple(2)
+        A2, b2, c2 = Abc_triple(2)
+        rep = Bargmann(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [vbox] = mock_display.call_args.args
+        assert isinstance(vbox, VBox)
 
-    # @patch("mrmustard.physics.representations.bargmann.display")
-    # def test_ipython_repr_batched(self, mock_display):
-    #     """Test the IPython repr function for a batched repr."""
-    #     A1, b1, c1 = Abc_triple(2)
-    #     A2, b2, c2 = Abc_triple(2)
-    #     rep = Bargmann(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
-    #     rep._ipython_display_()  # pylint:disable=protected-access
-    #     [vbox] = mock_display.call_args.args
-    #     assert isinstance(vbox, VBox)
+        [slider, stack] = vbox.children
+        assert isinstance(slider, IntSlider)
+        assert slider.max == 1  # the batch size - 1
+        assert isinstance(stack, Stack)
 
-    #     [slider, stack] = vbox.children
-    #     assert isinstance(slider, IntSlider)
-    #     assert slider.max == 1  # the batch size - 1
-    #     assert isinstance(stack, Stack)
-
-    #     # max_width is spot-check that this is bargmann widget
-    #     assert len(stack.children) == 2
-    #     assert all(box.layout.max_width == "50%" for box in stack.children)
+        # max_width is spot-check that this is bargmann widget
+        assert len(stack.children) == 2
+        assert all(box.layout.max_width == "50%" for box in stack.children)

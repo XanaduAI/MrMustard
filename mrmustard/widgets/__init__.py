@@ -70,10 +70,7 @@ def fock(rep):
 
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
-        TABLE + "<table class=table-fock>"
-        f"<tr><th>Ansatz</th><td>{rep.ansatz.__class__.__qualname__}</td></tr>"
-        f"<tr><th>Shape</th><td>{shape}</td></tr>"
-        "</table>"
+        TABLE + "<table class=table-fock>" f"<tr><th>Shape</th><td>{shape}</td></tr>" "</table>"
     )
     left_widget = widgets.VBox(children=[header_widget, table_widget])
     plot_widget.layout.padding = "10px"
@@ -120,15 +117,6 @@ def bargmann(rep, batch_idx=None):
     round_w = widgets.IntText(value=round_default, description="Rounding (negative -> none):")
     round_w.style.description_width = "230px"
     header_w = widgets.HTML("<h1>Bargmann Representation</h1>")
-    sub_w = widgets.HBox(
-        [
-            widgets.HTML(
-                '<div style="font-weight: bold; font-size: 18px">Ansatz:</div>'
-                f"{rep.ansatz.__class__.__qualname__}</br>"
-            ),
-            round_w,
-        ]
-    )
     triple_w = widgets.HTML(TABLE + triple_fstr.format(*get_abc_str(A, b, c, round_default)))
     eigs_header_w = widgets.HTML("<h2>Eigenvalues of A</h2>")
     eigvals_w = go.FigureWidget(
@@ -175,7 +163,7 @@ def bargmann(rep, batch_idx=None):
 
     eigs_vbox = widgets.VBox([eigs_header_w, eigvals_w])
     return widgets.Box(
-        [widgets.VBox([header_w, sub_w, triple_w]), eigs_vbox],
+        [widgets.VBox([header_w, round_w, triple_w]), eigs_vbox],
         layout=widgets.Layout(max_width="50%", flex_flow="row wrap"),
     )
 

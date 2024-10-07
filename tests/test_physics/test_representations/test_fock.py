@@ -222,40 +222,40 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         assert isinstance(aa1_scalar, Fock)
         assert np.allclose(aa1_scalar.array, array / 6)
 
-    # @pytest.mark.parametrize("shape", [(1, 8), (1, 8, 8)])
-    # @patch("mrmustard.physics.representations.display")
-    # def test_ipython_repr(self, mock_display, shape):
-    #     """Test the IPython repr function."""
-    #     rep = Fock(np.random.random(shape), batched=True)
-    #     rep._ipython_display_()  # pylint:disable=protected-access
-    #     [hbox] = mock_display.call_args.args
-    #     assert isinstance(hbox, HBox)
+    @pytest.mark.parametrize("shape", [(1, 8), (1, 8, 8)])
+    @patch("mrmustard.physics.representations.fock.display")
+    def test_ipython_repr(self, mock_display, shape):
+        """Test the IPython repr function."""
+        rep = Fock(np.random.random(shape), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [hbox] = mock_display.call_args.args
+        assert isinstance(hbox, HBox)
 
-    #     # the CSS, the header+ansatz, and the tabs of plots
-    #     [css, left, plots] = hbox.children
-    #     assert isinstance(css, HTML)
-    #     assert isinstance(left, VBox)
-    #     assert isinstance(plots, Tab)
+        # the CSS, the header+ansatz, and the tabs of plots
+        [css, left, plots] = hbox.children
+        assert isinstance(css, HTML)
+        assert isinstance(left, VBox)
+        assert isinstance(plots, Tab)
 
-    #     # left contains header and ansatz
-    #     left = left.children
-    #     assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
+        # left contains header and ansatz
+        left = left.children
+        assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
 
-    #     # one plot for magnitude, another for phase
-    #     assert plots.titles == ("Magnitude", "Phase")
-    #     plots = plots.children
-    #     assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
+        # one plot for magnitude, another for phase
+        assert plots.titles == ("Magnitude", "Phase")
+        plots = plots.children
+        assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
 
-    # @patch("mrmustard.physics.representations.display")
-    # def test_ipython_repr_expects_batch_1(self, mock_display):
-    #     """Test the IPython repr function does nothing with real batch."""
-    #     rep = Fock(np.random.random((2, 8)), batched=True)
-    #     rep._ipython_display_()  # pylint:disable=protected-access
-    #     mock_display.assert_not_called()
+    @patch("mrmustard.physics.representations.fock.display")
+    def test_ipython_repr_expects_batch_1(self, mock_display):
+        """Test the IPython repr function does nothing with real batch."""
+        rep = Fock(np.random.random((2, 8)), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        mock_display.assert_not_called()
 
-    # @patch("mrmustard.physics.representations.display")
-    # def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
-    #     """Test the IPython repr function does nothing with 4+ dims."""
-    #     rep = Fock(np.random.random((1, 4, 4, 4)), batched=True)
-    #     rep._ipython_display_()  # pylint:disable=protected-access
-    #     mock_display.assert_not_called()
+    @patch("mrmustard.physics.representations.fock.display")
+    def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
+        """Test the IPython repr function does nothing with 4+ dims."""
+        rep = Fock(np.random.random((1, 4, 4, 4)), batched=True)
+        rep._ipython_display_()  # pylint:disable=protected-access
+        mock_display.assert_not_called()
