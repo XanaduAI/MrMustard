@@ -112,6 +112,10 @@ class CircuitComponent:
 
     @property
     def _index_representation(self):
+        r"""
+        A hidden property that keeps track of representations for each index. If it does not exist already,
+        we initialize to Bargmann (B) on all indices.
+        """
         if not hasattr(self, "_index_representation_"):
             self._index_representation_ = {i: ("B", None) for i in self.wires.indices}
         return self._index_representation_
@@ -810,6 +814,9 @@ class CircuitComponent:
         return result
 
     def _helper_update_output_wire_rep(self, other):
+        r"""
+        Updates the representations on the output wires, upon matmul by BtoQ or BtoPS
+        """
 
         from .circuit_components_utils import BtoQ, BtoPS
 
@@ -835,6 +842,10 @@ class CircuitComponent:
                     self._index_representation[i] = ("PS", float(other.s.value[k]))
 
     def _helper_update_input_wire_rep(self, other):
+        r"""
+        Updates the representations on the input wires, upon matmul by BtoQ or BtoPS
+        """
+
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):

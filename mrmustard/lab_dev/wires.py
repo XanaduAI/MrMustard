@@ -327,6 +327,10 @@ class Wires:
 
     @cached_property
     def index_to_mode_dict(self) -> dict[int, int]:
+        r"""
+        A dictionary that maps indecies to modes. For example, for D = Dgate([0],x=1), we
+        have {0: 0, 1:0} since all wires (indices) correspond to mode 0.
+        """
         return {i: m for d in self.index_dicts for m, i in d.items()}
 
     @cached_property
