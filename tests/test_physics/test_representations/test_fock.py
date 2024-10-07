@@ -14,6 +14,8 @@
 
 """This module contains tests for ``Representation`` objects."""
 
+# pylint: disable = missing-function-docstring
+
 from unittest.mock import patch
 
 import numpy as np
@@ -26,8 +28,6 @@ from mrmustard.physics.representations.fock import Fock
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
-
-# pylint: disable = missing-function-docstring
 
 
 class TestFockRepresentation:  # pylint:disable=too-many-public-methods

@@ -14,6 +14,8 @@
 
 """This module contains tests for ``Representation`` objects."""
 
+# pylint: disable = too-many-public-methods
+
 from unittest.mock import patch
 
 import numpy as np
