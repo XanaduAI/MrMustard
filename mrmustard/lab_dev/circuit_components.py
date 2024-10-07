@@ -787,7 +787,12 @@ class CircuitComponent:
             self_rep = self.representation
             other_rep = other.representation
         else:
-            if (not isinstance(self, BtoQ)) and (not isinstance(other, BtoQ)):
+            if (
+                (not isinstance(self, BtoQ))
+                and (not isinstance(other, BtoQ))
+                and (not isinstance(self, BtoPS))
+                and (not isinstance(other, BtoPS))
+            ):
                 index_self, index_other = self.wires.contracted_indices(other.wires)
                 self_rep = self.to_bargmann(index_self).representation
                 other_rep = other.to_bargmann(index_other).representation
