@@ -835,7 +835,7 @@ class CircuitComponent:
                     self._index_representation[i] = ("Q", float(btoq_param[k]))
 
         if isinstance(other, BtoPS):
-            btops_param = math.atleast_1d(other.s)
+            btops_param = math.atleast_1d(other.s.value)
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[0][m]
@@ -867,11 +867,11 @@ class CircuitComponent:
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", float(other.s[k]))
+                    self._index_representation[i] = ("PS", float(other.s.value[k]))
             elif other.wires.ket:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", float(other.s[k]))
+                    self._index_representation[i] = ("PS", float(other.s.value[k]))
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""

@@ -25,6 +25,7 @@ from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
 from ...physics.representations import Bargmann
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["BtoPS"]
 
@@ -52,8 +53,8 @@ class BtoPS(Map):
             ),
             name="BtoPS",
         )
-        self._add_parameter(Constant(s, "s"))
-        self.s = s
+        ss = next(reshape_params(len(modes), s=s))
+        self._add_parameter(make_parameter(False, ss, "s", (None, None)))
 
     @property
     def adjoint(self) -> BtoPS:
@@ -61,7 +62,7 @@ class BtoPS(Map):
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets + bras).conj()
 
-        ret = BtoPS(self.modes, self.s)
+        ret = BtoPS(self.modes, self.s.value)
         ret._representation = rep
         ret._wires = self.wires.adjoint
         ret._name = self.name + "_adj"
@@ -75,7 +76,7 @@ class BtoPS(Map):
         ob = self.wires.bra.output.indices
         rep = self.representation.reorder(ib + ob + ik + ok).conj()
 
-        ret = BtoPS(self.modes, self.s)
+        ret = BtoPS(self.modes, self.s.value)
         ret._representation = rep
         ret._wires = self.wires.dual
         ret._name = self.name + "_dual"
@@ -83,7 +84,7 @@ class BtoPS(Map):
 
     def inverse(self):
         inv = super().inverse()
-        ret = BtoPS(self.modes, self.s)
+        ret = BtoPS(self.modes, self.s.value)
         ret._representation = inv.representation
         ret._wires = inv.wires
         ret._name = inv.name
