@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains tests for ``Representation`` objects."""
+"""This module contains tests for ``Fock`` objects."""
 
-# pylint: disable = missing-function-docstring
+# pylint: disable = missing-function-docstring, disable=too-many-public-methods
 
 from unittest.mock import patch
 
@@ -23,14 +23,11 @@ from ipywidgets import HBox, VBox, HTML, Tab
 from plotly.graph_objs import FigureWidget
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.physics.representations.fock import Fock
 
-# original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 
-
-class TestFockRepresentation:  # pylint:disable=too-many-public-methods
+class TestFockRepresentation:
     r"""Tests the Fock Representation."""
 
     array578 = np.random.random((5, 7, 8))

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains tests for ``Representation`` objects."""
+"""This module contains tests for ``Bargmann`` objects."""
 
-# pylint: disable = too-many-public-methods
+# pylint: disable = too-many-public-methods, missing-function-docstring
 
 from unittest.mock import patch
 
@@ -23,7 +23,7 @@ from ipywidgets import Box, VBox, HTML, IntText, Stack, IntSlider
 from plotly.graph_objs import FigureWidget
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
@@ -32,11 +32,6 @@ from mrmustard.physics.representations.bargmann import Bargmann
 from mrmustard.physics.representations.fock import Fock
 
 from ...random import Abc_triple
-
-# original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
-
-# pylint: disable = missing-function-docstring
 
 
 class TestBargmannRepresentation:
