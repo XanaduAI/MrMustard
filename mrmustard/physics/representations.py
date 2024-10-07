@@ -48,8 +48,6 @@ from mrmustard.utils.typing import (
 )
 from mrmustard import widgets
 
-from .wires import Wires
-
 __all__ = ["Representation", "Bargmann", "Fock"]
 
 
