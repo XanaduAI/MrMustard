@@ -65,3 +65,7 @@ class Ggate(Unitary):
             ),
             self.wires,
         )
+
+    @property
+    def symplectic(self):
+        return self.parameter_set.symplectic.value
