@@ -657,38 +657,41 @@ class Bargmann(Representation):
         the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
         shape of the combined object will be (2,5,4,5).
         """
-        combined_matrices = math.concat([self.A, other.A], axis=0)
-        combined_vectors = math.concat([self.b, other.b], axis=0)
+        try:
+            combined_matrices = math.concat([self.A, other.A], axis=0)
+            combined_vectors = math.concat([self.b, other.b], axis=0)
 
-        a0s = self.c.shape[1:]
-        a1s = other.c.shape[1:]
-        if a0s == a1s:
-            combined_arrays = math.concat([self.c, other.c], axis=0)
-        else:
-            s_max = np.maximum(np.array(a0s), np.array(a1s))
+            a0s = self.c.shape[1:]
+            a1s = other.c.shape[1:]
+            if a0s == a1s:
+                combined_arrays = math.concat([self.c, other.c], axis=0)
+            else:
+                s_max = np.maximum(np.array(a0s), np.array(a1s))
 
-            padding_array0 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a0s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
+                padding_array0 = np.array(
+                    (
+                        np.zeros(len(s_max) + 1),
+                        np.concatenate((np.array([0]), np.array((s_max - a0s)))),
+                    ),
+                    dtype=int,
+                ).T
+                padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
 
-            padding_array1 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a1s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
-            a0_new = np.pad(self.c, padding_tuple0, "constant")
-            a1_new = np.pad(other.c, padding_tuple1, "constant")
-            combined_arrays = math.concat([a0_new, a1_new], axis=0)
-        # note output is not simplified
-        return Bargmann(combined_matrices, combined_vectors, combined_arrays)
+                padding_array1 = np.array(
+                    (
+                        np.zeros(len(s_max) + 1),
+                        np.concatenate((np.array([0]), np.array((s_max - a1s)))),
+                    ),
+                    dtype=int,
+                ).T
+                padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
+                a0_new = np.pad(self.c, padding_tuple0, "constant")
+                a1_new = np.pad(other.c, padding_tuple1, "constant")
+                combined_arrays = math.concat([a0_new, a1_new], axis=0)
+            # note output is not simplified
+            return Bargmann(combined_matrices, combined_vectors, combined_arrays)
+        except Exception as e:
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: Bargmann) -> Bargmann:
         r"""
