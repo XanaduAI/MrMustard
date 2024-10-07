@@ -597,7 +597,8 @@ class CircuitComponent:
 
     def to_bargmann(self, indices: Sequence[int] | None = None) -> CircuitComponent:
         r"""
-        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation on the specified "indices."
+        If "indices" are not specified, all indices are transformed into bargmann. 
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
