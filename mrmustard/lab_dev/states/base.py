@@ -38,7 +38,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from mrmustard import math, settings, widgets
-from mrmustard.physics.fock import quadrature_distribution
+from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     Batch,
@@ -49,7 +49,7 @@ from mrmustard.utils.typing import (
     Scalar,
     Vector,
 )
-from mrmustard.physics.bargmann import (
+from mrmustard.physics.bargmann_utils import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
 )
@@ -57,7 +57,7 @@ from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.utils import shape_check
-from mrmustard.physics.ansatze import (
+from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
@@ -657,9 +657,9 @@ class DM(State):
         representation: Bargmann | Fock | None = None,
         name: str | None = None,
     ):
-        if representation and representation.ansatz.num_vars != 2 * len(modes):
+        if representation and representation.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected a representation with {2*len(modes)} variables, found {representation.ansatz.num_vars}."
+                f"Expected a representation with {2*len(modes)} variables, found {representation.num_vars}."
             )
         super().__init__(
             wires=[modes, (), modes, ()],
@@ -672,7 +672,7 @@ class DM(State):
         r"""
         Whether this DM is a positive operator.
         """
-        batch_dim = self.representation.ansatz.batch_size
+        batch_dim = self.representation.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -838,11 +838,11 @@ class DM(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.representation.ansatz.batch_size == 1:
+        if self.representation.batch_size == 1:
             try:  # fock
                 shape = self.representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0] == 0:
+                if self.representation.polynomial_shape[0] == 0:
                     repr = self.representation
                     A, b, c = repr.A[0], repr.b[0], repr.c[0]
                     repr = repr / self.probability
@@ -986,9 +986,9 @@ class Ket(State):
         representation: Bargmann | Fock | None = None,
         name: str | None = None,
     ):
-        if representation and representation.ansatz.num_vars != len(modes):
+        if representation and representation.num_vars != len(modes):
             raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
+                f"Expected a representation with {len(modes)} variables, found {representation.num_vars}."
             )
         super().__init__(
             wires=[(), (), modes, ()],
@@ -1001,7 +1001,7 @@ class Ket(State):
         r"""
         Whether the ket object is a physical one.
         """
-        batch_dim = self.representation.ansatz.batch_size
+        batch_dim = self.representation.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -1135,12 +1135,12 @@ class Ket(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.representation.ansatz.batch_size == 1:
+        if self.representation.batch_size == 1:
             try:  # fock
                 shape = self.representation.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0] == 0:
-                    repr = self.representation.conj() & self.representation
+                if self.representation.polynomial_shape[0] == 0:
+                    repr = self.representation.conj & self.representation
                     A, b, c = repr.A[0], repr.b[0], repr.c[0]
                     repr = repr / self.probability
                     shape = autoshape_numba(

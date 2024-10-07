@@ -40,7 +40,7 @@ from mrmustard.utils.typing import (
     Batch,
 )
 from mrmustard.physics.representations import Representation, Bargmann, Fock
-from mrmustard.physics.fock import quadrature_basis
+from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.wires import Wires
@@ -165,7 +165,8 @@ class CircuitComponent:
         """
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets + bras).conj() if self.representation else None
+        rep = self.representation.reorder(kets + bras).conj if self.representation else None
+
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
@@ -183,7 +184,7 @@ class CircuitComponent:
         ik = self.wires.ket.input.indices
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
-        rep = self.representation.reorder(ib + ob + ik + ok).conj() if self.representation else None
+        rep = self.representation.reorder(ib + ob + ik + ok).conj if self.representation else None
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name

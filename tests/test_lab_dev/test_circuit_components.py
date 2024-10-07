@@ -124,7 +124,7 @@ class TestCircuitComponent:
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.parameter_set == d1.parameter_set
         assert (
-            d1_adj.representation == d1.representation.conj()
+            d1_adj.representation == d1.representation.conj
         )  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
@@ -203,7 +203,7 @@ class TestCircuitComponent:
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
-        assert d_fock.representation.ansatz._original_abc_data == d.representation.triple
+        assert d_fock.representation._original_abc_data == d.representation.triple
         assert d_barg == d
 
     def test_to_fock_poly_exp(self):
@@ -212,7 +212,7 @@ class TestCircuitComponent:
         barg = Bargmann(A, b, c)
         fock_cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
-        assert fock_cc.representation.ansatz._original_abc_data is None
+        assert fock_cc.representation._original_abc_data is None
         assert np.allclose(fock_cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
@@ -491,7 +491,7 @@ class TestCircuitComponent:
         assert isinstance(box, Box)
         [wires_widget, rep_widget] = box.children
         assert isinstance(wires_widget, HTML)
-        assert type(rep_widget) is widget_cls
+        assert isinstance(rep_widget, widget_cls)
 
     @patch("mrmustard.lab_dev.circuit_components.display")
     def test_ipython_repr_invalid_obj(self, mock_display):

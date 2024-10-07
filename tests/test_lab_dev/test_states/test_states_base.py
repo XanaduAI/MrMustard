@@ -24,10 +24,14 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
+from mrmustard.physics.bargmann_utils import (
+    bargmann_Abc_to_phasespace_cov_means,
+    wigner_to_bargmann_rho,
+)
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.circuit_components_utils import BtoPS, TraceOut
 from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,
@@ -519,6 +523,55 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
             DM.from_fock([0], state01.fock(5), "my_dm", True)
+
+    def test_bargmann_Abc_to_phasespace_cov_means(self):
+        # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
+        state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
+        state_means = np.array([0.2, 0.3])
+        state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
+        state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
+        A1, b1, c1 = state_after.bargmann_triple()
+        (
+            new_state_cov,
+            new_state_means,
+            new_state_coeff,
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
+        assert np.allclose(state_cov, new_state_cov)
+        assert np.allclose(state_means, new_state_means)
+        assert np.allclose(1.0 / (2 * np.pi), new_state_coeff)
+
+        state_cov = np.array(
+            [
+                [1.00918303, -0.33243548, 0.15202393, -0.07540124],
+                [-0.33243548, 1.2203162, -0.03961978, 0.30853472],
+                [0.15202393, -0.03961978, 1.11158673, 0.28786279],
+                [-0.07540124, 0.30853472, 0.28786279, 0.97833402],
+            ]
+        )
+        state_means = np.array([0.4, 0.6, 0.0, 0.0])
+        A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
+        state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
+
+        state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        A1, b1, c1 = state_after.bargmann_triple()
+        (
+            new_state_cov1,
+            new_state_means1,
+            new_state_coeff1,
+        ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
+
+        A22, b22, c22 = (state >> BtoPS([0], 0) >> BtoPS([1], 0)).bargmann_triple()
+        (
+            new_state_cov22,
+            new_state_means22,
+            new_state_coeff22,
+        ) = bargmann_Abc_to_phasespace_cov_means(A22, b22, c22)
+        assert math.allclose(new_state_cov22, state_cov)
+        assert math.allclose(new_state_cov1, state_cov)
+        assert math.allclose(new_state_means1, state_means)
+        assert math.allclose(new_state_means22, state_means)
+        assert math.allclose(new_state_coeff1, 1 / (2 * np.pi) ** 2)
+        assert math.allclose(new_state_coeff22, 1 / (2 * np.pi) ** 2)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()

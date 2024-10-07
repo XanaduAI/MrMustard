@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
-from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     real_gaussian_integral,
@@ -261,6 +261,6 @@ class TestBtoQ:
         quad = np.random.random()
 
         state = Coherent([0], x, y)
-        wavefunction = (state >> BtoQ([0], axis_angle)).representation.ansatz
+        wavefunction = (state >> BtoQ([0], axis_angle)).representation
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))
