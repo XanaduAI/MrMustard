@@ -89,6 +89,11 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
             math.reshape(np.einsum("bcde, pfgh -> bpcdefgh", self.array1578, self.array5578), -1),
         )
 
+    def test_call(self):
+        fock = Fock(self.array1578, batched=True)
+        with pytest.raises(AttributeError, match="Cannot call"):
+            fock(0)
+
     def test_conj(self):
         fock = Fock(self.array1578, batched=True)
         fock_conj = fock.conj

@@ -70,6 +70,23 @@ class TestBargmannRepresentation:
         assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
         assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
 
+        A1, b1, _ = Abc_triple(5)
+        c1 = np.random.random(size=(1, 3, 3))
+        A2, b2, _ = Abc_triple(5)
+        c2 = np.random.random(size=(1, 2, 2))
+
+        bargmann3 = Bargmann(A1, b1, c1)
+        bargmann4 = Bargmann(A2, b2, c2)
+
+        bargmann_add2 = bargmann3 + bargmann4
+
+        assert np.allclose(bargmann_add2.A[0], A1)
+        assert np.allclose(bargmann_add2.b[0], b1)
+        assert np.allclose(bargmann_add2.c[0], c1[0])
+        assert np.allclose(bargmann_add2.A[1], A2)
+        assert np.allclose(bargmann_add2.b[1], b2)
+        assert np.allclose(bargmann_add2.c[1][:2, :2], c2[0])
+
     def test_add_error(self):
         bargmann = Bargmann(*Abc_triple(3))
         fock = Fock(np.random.random((1, 4, 4, 4)), batched=True)
