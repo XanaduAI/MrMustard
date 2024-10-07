@@ -835,14 +835,15 @@ class CircuitComponent:
                     self._index_representation[i] = ("Q", float(btoq_param[k]))
 
         if isinstance(other, BtoPS):
+            btops_param = math.atleast_1d(other.s)
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("PS", float(other.s[k]))
+                    self._index_representation[i] = ("PS", float(btops_param[k]))
             elif other.wires.ket:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("PS", float(other.s[k]))
+                    self._index_representation[i] = ("PS", float(btops_param[k]))
 
     def _helper_update_input_wire_rep(self, other):
         r"""
