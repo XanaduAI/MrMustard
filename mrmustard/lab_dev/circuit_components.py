@@ -838,11 +838,11 @@ class CircuitComponent:
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", float(other.s[k]))
             elif other.wires.ket:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", float(other.s[k]))
 
     def _helper_update_input_wire_rep(self, other):
         r"""
@@ -866,11 +866,11 @@ class CircuitComponent:
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", float(other.s[k]))
             elif other.wires.ket:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", float(other.s[k]))
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
