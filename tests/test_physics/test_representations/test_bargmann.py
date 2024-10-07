@@ -19,7 +19,7 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import Box, HBox, VBox, HTML, IntText, Stack, IntSlider
+from ipywidgets import Box, VBox, HTML, IntText, Stack, IntSlider
 from plotly.graph_objs import FigureWidget
 import pytest
 
