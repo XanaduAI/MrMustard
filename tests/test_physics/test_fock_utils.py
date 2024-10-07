@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the fock.py file."""
+"""Tests for the fock_utils.py file."""
 
 # pylint: disable=pointless-statement
 
@@ -472,12 +472,14 @@ def test_displacement_values():
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_means(x, y):
+    """Tests the mean photon number."""
     assert np.allclose(State(ket=Coherent(x, y).ket([80])).number_means, x * x + y * y)
     assert np.allclose(State(dm=Coherent(x, y).dm([80])).number_means, x * x + y * y)
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_variances_coh(x, y):
+    """Tests the variance of the number operator."""
     assert np.allclose(
         fock_utils.number_variances(Coherent(x, y).ket([80]), False)[0], x * x + y * y
     )
@@ -485,10 +487,12 @@ def test_number_variances_coh(x, y):
 
 
 def test_number_variances_fock():
+    """Tests the variance of the number operator in Fock."""
     assert np.allclose(fock_utils.number_variances(Fock(n=1).ket(), False), 0)
     assert np.allclose(fock_utils.number_variances(Fock(n=1).dm(), True), 0)
 
 
 def test_normalize_dm():
+    """Tests normalizing a DM."""
     dm = np.array([[0.2, 0], [0, 0.2]])
     assert np.allclose(fock_utils.normalize(dm, True), np.array([[0.5, 0], [0, 0.5]]))

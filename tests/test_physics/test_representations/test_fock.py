@@ -65,19 +65,19 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         aa2 = Fock(array=array2)
 
         with pytest.raises(Exception, match="Cannot add"):
-            aa1 + aa2
+            aa1 + aa2  # pylint: disable=pointless-statement
 
         with pytest.raises(Exception, match="Cannot add"):
-            aa1 - aa2
+            aa1 - aa2  # pylint: disable=pointless-statement
 
         with pytest.raises(Exception, match="Cannot multiply"):
-            aa1 * aa2
+            aa1 * aa2  # pylint: disable=pointless-statement
 
         with pytest.raises(Exception, match="Cannot divide"):
-            aa1 / aa2
+            aa1 / aa2  # pylint: disable=pointless-statement
 
         with pytest.raises(Exception):
-            aa1 == aa2
+            aa1 == aa2  # pylint: disable=pointless-statement
 
     def test_and(self):
         fock1 = Fock(self.array1578, batched=True)

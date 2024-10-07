@@ -218,8 +218,8 @@ class TestBargmannRepresentation:
         ansatz = Bargmann(A, b, c)
         ansatz2 = Bargmann(2 * A, 2 * b, 2 * c)
 
-        assert ansatz == ansatz
-        assert ansatz2 == ansatz2
+        assert ansatz == ansatz  # pylint: disable= comparison-with-itself
+        assert ansatz2 == ansatz2  # pylint: disable= comparison-with-itself
         assert ansatz != ansatz2
         assert ansatz2 != ansatz
 
