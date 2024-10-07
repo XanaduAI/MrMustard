@@ -49,11 +49,35 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         assert fock.array.shape == (1, 5, 7, 8)
         assert np.allclose(fock.array[0, :, :, :], self.array578)
 
-    def test_sum_batch(self):
-        fock = Fock(self.array2578, batched=True)
-        fock_collapsed = fock.sum_batch()[0]
-        assert fock_collapsed.array.shape == (1, 5, 7, 8)
-        assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
+    def test_add(self):
+        fock1 = Fock(self.array2578, batched=True)
+        fock2 = Fock(self.array5578, batched=True)
+        fock1_add_fock2 = fock1 + fock2
+        assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
+        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0])
+        assert np.allclose(fock1_add_fock2.array[4], self.array2578[0] + self.array5578[4])
+        assert np.allclose(fock1_add_fock2.array[5], self.array2578[1] + self.array5578[0])
+
+    def test_algebra_with_different_shape_of_array_raise_errors(self):
+        array = np.random.random((2, 4, 5))
+        array2 = np.random.random((3, 4, 8, 9))
+        aa1 = Fock(array=array)
+        aa2 = Fock(array=array2)
+
+        with pytest.raises(Exception, match="Cannot add"):
+            aa1 + aa2
+
+        with pytest.raises(Exception, match="Cannot add"):
+            aa1 - aa2
+
+        with pytest.raises(Exception, match="Cannot multiply"):
+            aa1 * aa2
+
+        with pytest.raises(Exception, match="Cannot divide"):
+            aa1 / aa2
+
+        with pytest.raises(Exception):
+            aa1 == aa2
 
     def test_and(self):
         fock1 = Fock(self.array1578, batched=True)
@@ -65,40 +89,21 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
             math.reshape(np.einsum("bcde, pfgh -> bpcdefgh", self.array1578, self.array5578), -1),
         )
 
-    def test_multiply_a_scalar(self):
-        fock1 = Fock(self.array1578, batched=True)
-        fock_test = 1.3 * fock1
-        assert np.allclose(fock_test.array, 1.3 * self.array1578)
-
-    def test_mul(self):
-        fock1 = Fock(self.array1578, batched=True)
-        fock2 = Fock(self.array5578, batched=True)
-        fock1_mul_fock2 = fock1 * fock2
-        assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
-        assert np.allclose(
-            math.reshape(fock1_mul_fock2.array, -1),
-            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, self.array5578), -1),
-        )
+    def test_conj(self):
+        fock = Fock(self.array1578, batched=True)
+        fock_conj = fock.conj
+        assert np.allclose(fock_conj.array, np.conj(self.array1578))
 
     def test_divide_on_a_scalar(self):
         fock1 = Fock(self.array1578, batched=True)
         fock_test = fock1 / 1.5
         assert np.allclose(fock_test.array, self.array1578 / 1.5)
 
-    def test_truediv(self):
-        fock1 = Fock(self.array1578, batched=True)
-        fock2 = Fock(self.array5578, batched=True)
-        fock1_mul_fock2 = fock1 / fock2
-        assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
-        assert np.allclose(
-            math.reshape(fock1_mul_fock2.array, -1),
-            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, 1 / self.array5578), -1),
-        )
-
-    def test_conj(self):
-        fock = Fock(self.array1578, batched=True)
-        fock_conj = fock.conj
-        assert np.allclose(fock_conj.array, np.conj(self.array1578))
+    def test_equal(self):
+        array = np.random.random((2, 4, 5))
+        aa1 = Fock(array=array)
+        aa2 = Fock(array=array)
+        assert aa1 == aa2
 
     def test_matmul_fock_fock(self):
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
@@ -111,37 +116,27 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
             math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
         )
 
-    def test_add(self):
-        fock1 = Fock(self.array2578, batched=True)
+    def test_mul(self):
+        fock1 = Fock(self.array1578, batched=True)
         fock2 = Fock(self.array5578, batched=True)
-        fock1_add_fock2 = fock1 + fock2
-        assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0])
-        assert np.allclose(fock1_add_fock2.array[4], self.array2578[0] + self.array5578[4])
-        assert np.allclose(fock1_add_fock2.array[5], self.array2578[1] + self.array5578[0])
+        fock1_mul_fock2 = fock1 * fock2
+        assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
+        assert np.allclose(
+            math.reshape(fock1_mul_fock2.array, -1),
+            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, self.array5578), -1),
+        )
 
-    def test_sub(self):
-        fock1 = Fock(self.array2578, batched=True)
-        fock2 = Fock(self.array5578, batched=True)
-        fock1_sub_fock2 = fock1 - fock2
-        assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
-        assert np.allclose(fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0])
-        assert np.allclose(fock1_sub_fock2.array[4], self.array2578[0] - self.array5578[4])
-        assert np.allclose(fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4])
+    def test_multiply_a_scalar(self):
+        fock1 = Fock(self.array1578, batched=True)
+        fock_test = 1.3 * fock1
+        assert np.allclose(fock_test.array, 1.3 * self.array1578)
 
-    def test_trace(self):
-        array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
-        fock1 = Fock(array1, batched=True)
-        fock2 = fock1.trace(idxs1=[0, 3], idxs2=[1, 6])
-        assert fock2.array.shape == (2, 1, 4, 1, 3)
-        assert np.allclose(fock2.array, np.einsum("bccefghfj -> beghj", array1))
-
-    def test_reorder(self):
-        array1 = math.astensor(np.arange(8).reshape((1, 2, 2, 2)))
-        fock1 = Fock(array1, batched=True)
-        fock2 = fock1.reorder(order=(2, 1, 0))
-        assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
-        assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
+    def test_neg(self):
+        array = np.random.random((2, 4, 5))
+        aa = Fock(array=array)
+        minusaa = -aa
+        assert isinstance(minusaa, Fock)
+        assert np.allclose(minusaa.array, -array)
 
     @pytest.mark.parametrize("batched", [True, False])
     def test_reduce(self, batched):
@@ -175,6 +170,52 @@ class TestFockRepresentation:  # pylint:disable=too-many-public-methods
         with pytest.warns(UserWarning):
             fock1 = fock.reduce((8, 8, 8))
         assert fock1.array.shape == (1, 8, 8, 8)
+
+    def test_reorder(self):
+        array1 = math.astensor(np.arange(8).reshape((1, 2, 2, 2)))
+        fock1 = Fock(array1, batched=True)
+        fock2 = fock1.reorder(order=(2, 1, 0))
+        assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
+        assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
+
+    def test_sub(self):
+        fock1 = Fock(self.array2578, batched=True)
+        fock2 = Fock(self.array5578, batched=True)
+        fock1_sub_fock2 = fock1 - fock2
+        assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
+        assert np.allclose(fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0])
+        assert np.allclose(fock1_sub_fock2.array[4], self.array2578[0] - self.array5578[4])
+        assert np.allclose(fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4])
+
+    def test_sum_batch(self):
+        fock = Fock(self.array2578, batched=True)
+        fock_collapsed = fock.sum_batch()[0]
+        assert fock_collapsed.array.shape == (1, 5, 7, 8)
+        assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
+
+    def test_trace(self):
+        array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
+        fock1 = Fock(array1, batched=True)
+        fock2 = fock1.trace(idxs1=[0, 3], idxs2=[1, 6])
+        assert fock2.array.shape == (2, 1, 4, 1, 3)
+        assert np.allclose(fock2.array, np.einsum("bccefghfj -> beghj", array1))
+
+    def test_truediv(self):
+        fock1 = Fock(self.array1578, batched=True)
+        fock2 = Fock(self.array5578, batched=True)
+        fock1_mul_fock2 = fock1 / fock2
+        assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
+        assert np.allclose(
+            math.reshape(fock1_mul_fock2.array, -1),
+            math.reshape(np.einsum("bcde, pcde -> bpcde", self.array1578, 1 / self.array5578), -1),
+        )
+
+    def test_truediv_a_scalar(self):
+        array = np.random.random((2, 4, 5))
+        aa1 = Fock(array=array)
+        aa1_scalar = aa1 / 6
+        assert isinstance(aa1_scalar, Fock)
+        assert np.allclose(aa1_scalar.array, array / 6)
 
     # @pytest.mark.parametrize("shape", [(1, 8), (1, 8, 8)])
     # @patch("mrmustard.physics.representations.display")
