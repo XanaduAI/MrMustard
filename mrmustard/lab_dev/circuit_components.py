@@ -824,7 +824,7 @@ class CircuitComponent:
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):
-            btoq_param = math.atleast_1d(other.phi)
+            btoq_param = math.atleast_1d(other.phi.value)
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[0][m]
@@ -853,7 +853,7 @@ class CircuitComponent:
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):
-            btoq_param = math.atleast_1d(other.phi)
+            btoq_param = math.atleast_1d(other.phi.value)
             if other.wires.bra:
                 for k, m in enumerate(other.modes):
                     i = self.wires.index_dicts[1][m]
