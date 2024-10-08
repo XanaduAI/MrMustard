@@ -563,7 +563,7 @@ class CircuitComponent:
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert isinstance(d_fock.representation, ArrayAnsatz)
+            >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as

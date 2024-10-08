@@ -4,6 +4,7 @@ mrmustard.physics
 .. toctree::
     :maxdepth: 1
 
+    physics/wires
     physics/representations
 
 .. toctree::

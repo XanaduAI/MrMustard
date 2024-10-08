@@ -80,7 +80,7 @@ class Wires:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev.wires import Wires
+        >>> from mrmustard.physics.wires import Wires
 
         >>> modes_out_bra={0, 1}
         >>> modes_in_bra={1, 2}
