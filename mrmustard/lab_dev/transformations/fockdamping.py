@@ -21,8 +21,8 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Operation
-from ...physics.multi_representations import MultiRepresentation
-from ...physics.representations import Bargmann
+from ...physics.representations import Representation
+from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
@@ -86,6 +86,6 @@ class FockDamping(Operation):
                 None,
             )
         )
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.fock_damping_Abc, beta=self.damping), self.wires
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(fn=triples.fock_damping_Abc, beta=self.damping), self.wires
         )

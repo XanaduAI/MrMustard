@@ -20,8 +20,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.multi_representations import MultiRepresentation
-from mrmustard.physics.representations import Fock
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.fock_utils import fock_state
 from .base import Ket
 from ..utils import make_parameter, reshape_params
@@ -75,6 +75,7 @@ class Number(Ket):
         for i, cutoff in enumerate(self.cutoffs.value):
             self.manual_shape[i] = int(cutoff) + 1
 
-        self._multi_rep = MultiRepresentation(
-            Fock.from_function(fock_state, n=self.n.value, cutoffs=self.cutoffs.value), self.wires
+        self._multi_rep = Representation(
+            ArrayAnsatz.from_function(fock_state, n=self.n.value, cutoffs=self.cutoffs.value),
+            self.wires,
         )

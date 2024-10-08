@@ -25,7 +25,7 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.triples import displacement_gate_Abc
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import (
     Ket,
@@ -38,7 +38,7 @@ from mrmustard.lab_dev.states import (
 )
 from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.multi_representations import MultiRepresentation
+from mrmustard.physics.representations import Representation
 from ..random import Abc_triple
 
 
@@ -56,7 +56,7 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_init(self, x, y):
         name = "my_component"
-        representation = Bargmann(*displacement_gate_Abc(x, y))
+        representation = PolyExpAnsatz(*displacement_gate_Abc(x, y))
         cc = CircuitComponent(representation, wires=[(), (), (1, 8), (1, 8)], name=name)
 
         assert cc.name == name
@@ -67,21 +67,21 @@ class TestCircuitComponent:
 
     def test_missing_name(self):
         cc = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.2)), wires=[(), (), (1, 8), (1, 8)]
+            PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), wires=[(), (), (1, 8), (1, 8)]
         )
         cc._name = None
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
         cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
-        assert cc.representation == Bargmann(*displacement_gate_Abc(0.1, 0.2))
+        assert cc.representation == PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
 
     def test_modes_init_out_of_order(self):
         m1 = (8, 1)
         m2 = (1, 8)
 
-        r1 = Bargmann(*displacement_gate_Abc(x=[0.1, 0.2]))
-        r2 = Bargmann(*displacement_gate_Abc(x=[0.2, 0.1]))
+        r1 = PolyExpAnsatz(*displacement_gate_Abc(x=[0.1, 0.2]))
+        r2 = PolyExpAnsatz(*displacement_gate_Abc(x=[0.2, 0.1]))
 
         cc1 = CircuitComponent(r1, wires=[(), (), m1, m1])
         cc2 = CircuitComponent(r2, wires=[(), (), m2, m2])
@@ -155,7 +155,7 @@ class TestCircuitComponent:
 
     def test_light_copy(self):
         d1 = CircuitComponent(
-            Bargmann(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
+            PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
         )
         d1_cp = d1._light_copy()
 
@@ -185,17 +185,17 @@ class TestCircuitComponent:
     def test_to_fock_ket(self):
         vac = Vacuum([1, 2])
         vac_fock = vac.to_fock(shape=[1, 2])
-        assert vac_fock.representation == Fock(np.array([[1], [0]]))
+        assert vac_fock.representation == ArrayAnsatz(np.array([[1], [0]]))
 
     def test_to_fock_Number(self):
         num = Number([3], n=4)
         num_f = num.to_fock(shape=(6,))
-        assert num_f.representation == Fock(np.array([0, 0, 0, 0, 1, 0]))
+        assert num_f.representation == ArrayAnsatz(np.array([0, 0, 0, 0, 1, 0]))
 
     def test_to_fock_Dgate(self):
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
-        assert d_fock.representation == Fock(
+        assert d_fock.representation == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
 
@@ -209,7 +209,7 @@ class TestCircuitComponent:
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
-        barg = Bargmann(A, b, c)
+        barg = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.representation._original_abc_data is None
@@ -400,7 +400,7 @@ class TestCircuitComponent:
     def test_rshift_error(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
-        d0._multi_rep = MultiRepresentation(d0.representation, Wires())
+        d0._multi_rep = Representation(d0.representation, Wires())
 
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0
@@ -507,13 +507,13 @@ class TestCircuitComponent:
     def test_serialize_default_behaviour(self):
         """Test the default serializer."""
         name = "my_component"
-        rep = Bargmann(*displacement_gate_Abc(0.1, 0.4))
+        rep = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
         cc = CircuitComponent(rep, wires=[(), (), (1, 8), (1, 8)], name=name)
         kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",
             "wires": cc.wires.sorted_args,
-            "rep_class": f"{Bargmann.__module__}.Bargmann",
+            "rep_class": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
             "name": name,
         }
         assert arrays == {"A": rep.A, "b": rep.b, "c": rep.c}
@@ -527,7 +527,7 @@ class TestCircuitComponent:
             def __init__(self, rep, custom_modes):
                 super().__init__(rep, wires=[custom_modes] * 4, name="my_component")
 
-        cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
         with pytest.raises(
             TypeError, match="MyComponent does not seem to have any wires construction method"
         ):

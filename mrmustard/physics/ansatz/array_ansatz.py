@@ -14,7 +14,7 @@
 
 
 """
-This module contains the Fock representation.
+This module contains the array ansatz.
 """
 
 from __future__ import annotations
@@ -30,12 +30,12 @@ from IPython.display import display
 from mrmustard import math, widgets
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
-from .base import Representation
+from .base import Ansatz
 
-__all__ = ["Fock"]
+__all__ = ["ArrayAnsatz"]
 
 
-class Fock(Representation):
+class ArrayAnsatz(Ansatz):
     r"""
     The Fock representation of a broad class of quantum states, transformations, measurements,
     channels, etc.
@@ -109,7 +109,7 @@ class Fock(Representation):
 
     @property
     def conj(self):
-        ret = Fock(math.conj(self.array), batched=True)
+        ret = ArrayAnsatz(math.conj(self.array), batched=True)
         ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
 
@@ -142,17 +142,17 @@ class Fock(Representation):
         return self._original_abc_data
 
     @classmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> Fock:
+    def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
         return cls(data["array"], batched=True)
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Fock:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
         ret = cls(None, True)
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
 
-    def reduce(self, shape: int | Sequence[int]) -> Fock:
+    def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
         Returns a new ``Fock`` with a sliced array.
 
@@ -195,27 +195,27 @@ class Fock(Representation):
                 self.array,
                 [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
             )
-            return Fock(padded, batched=True)
+            return ArrayAnsatz(padded, batched=True)
 
         ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
-        return Fock(array=ret, batched=True)
+        return ArrayAnsatz(array=ret, batched=True)
 
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Fock:
-        return Fock(math.transpose(self.array, [0] + [i + 1 for i in order]), batched=True)
+    def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
+        return ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]), batched=True)
 
-    def sum_batch(self) -> Fock:
+    def sum_batch(self) -> ArrayAnsatz:
         r"""
         Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
 
         Returns:
             The collapsed Fock object.
         """
-        return Fock(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
+        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
 
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Fock:
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> ArrayAnsatz:
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
             raise ValueError("idxs must be of equal length and disjoint")
         order = (
@@ -228,7 +228,7 @@ class Fock(Representation):
         n = np.prod(new_array.shape[-len(idxs2) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
         trace = math.trace(new_array)
-        return Fock([trace] if trace.shape == () else trace, batched=True)
+        return ArrayAnsatz([trace] if trace.shape == () else trace, batched=True)
 
     def _generate_ansatz(self):
         if self._array is None:
@@ -241,7 +241,7 @@ class Fock(Representation):
             return
         display(w)
 
-    def __add__(self, other: Fock) -> Fock:
+    def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         try:
             diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
             if diff < 0:
@@ -252,35 +252,35 @@ class Fock(Representation):
                 new_array = [
                     a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                 ]
-            return Fock(array=new_array, batched=True)
+            return ArrayAnsatz(array=new_array, batched=True)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: Fock) -> Fock:
+    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return Fock(array=new_array, batched=True)
+        return ArrayAnsatz(array=new_array, batched=True)
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         raise AttributeError("Cannot call Fock.")
 
-    def __eq__(self, other: Representation) -> bool:
+    def __eq__(self, other: Ansatz) -> bool:
         slices = (slice(0, None),) + tuple(
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
         return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Fock:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> ArrayAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.num_vars:
                 raise IndexError(
                     f"Index {i} out of bounds for representation with {self.num_vars} variables."
                 )
-        ret = Fock(self.array, batched=True)
+        ret = ArrayAnsatz(self.array, batched=True)
         ret._contract_idxs = idx
         return ret
 
-    def __matmul__(self, other: Fock) -> Fock:
+    def __matmul__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         idx_s = list(self._contract_idxs)
         idx_o = list(other._contract_idxs)
 
@@ -306,10 +306,10 @@ class Fock(Representation):
         for i in range(n_batches_s):
             for j in range(n_batches_o):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
-        return Fock(batched_array, batched=True)
+        return ArrayAnsatz(batched_array, batched=True)
 
-    def __mul__(self, other: Scalar | Fock) -> Fock:
-        if isinstance(other, Fock):
+    def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
+        if isinstance(other, ArrayAnsatz):
             try:
                 diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
                 if diff < 0:
@@ -320,11 +320,11 @@ class Fock(Representation):
                     new_array = [
                         a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return Fock(array=new_array, batched=True)
+                return ArrayAnsatz(array=new_array, batched=True)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
-            ret = Fock(array=self.array * other, batched=True)
+            ret = ArrayAnsatz(array=self.array * other, batched=True)
             ret._original_abc_data = (
                 tuple(i * j for i, j in zip(self._original_abc_data, (1, 1, other)))
                 if self._original_abc_data is not None
@@ -332,11 +332,11 @@ class Fock(Representation):
             )
             return ret
 
-    def __neg__(self) -> Fock:
-        return Fock(array=-self.array, batched=True)
+    def __neg__(self) -> ArrayAnsatz:
+        return ArrayAnsatz(array=-self.array, batched=True)
 
-    def __truediv__(self, other: Scalar | Fock) -> Fock:
-        if isinstance(other, Fock):
+    def __truediv__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
+        if isinstance(other, ArrayAnsatz):
             try:
                 diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
                 if diff < 0:
@@ -347,11 +347,11 @@ class Fock(Representation):
                     new_array = [
                         a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return Fock(array=new_array, batched=True)
+                return ArrayAnsatz(array=new_array, batched=True)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            ret = Fock(array=self.array / other, batched=True)
+            ret = ArrayAnsatz(array=self.array / other, batched=True)
             ret._original_abc_data = (
                 tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
                 if self._original_abc_data is not None

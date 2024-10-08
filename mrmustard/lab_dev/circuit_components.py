@@ -39,12 +39,12 @@ from mrmustard.utils.typing import (
     Vector,
     Batch,
 )
-from mrmustard.physics.representations import Representation, Bargmann, Fock
+from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.multi_representations import MultiRepresentation
+from mrmustard.physics.representations import Representation
 
 __all__ = ["CircuitComponent"]
 
@@ -69,7 +69,7 @@ class CircuitComponent:
 
     def __init__(
         self,
-        representation: Bargmann | Fock | None = None,
+        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
         name: str | None = None,
     ) -> None:
@@ -105,12 +105,10 @@ class CircuitComponent:
                     + tuple(np.argsort(modes_in_ket) + offsets[2])
                 )
                 if representation is not None:
-                    self._multi_rep = MultiRepresentation(
-                        representation.reorder(tuple(perm)), wires
-                    )
+                    self._multi_rep = Representation(representation.reorder(tuple(perm)), wires)
 
         if not hasattr(self, "_multi_rep"):
-            self._multi_rep = MultiRepresentation(representation, wires)
+            self._multi_rep = Representation(representation, wires)
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -244,11 +242,11 @@ class CircuitComponent:
         return self._parameter_set
 
     @property
-    def representation(self) -> Representation | None:
+    def representation(self) -> Ansatz | None:
         r"""
         A representation of this circuit component.
         """
-        return self._multi_rep.representation
+        return self._multi_rep.ansatz
 
     @property
     def wires(self) -> Wires:
@@ -281,7 +279,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given Bargmann representation.
         """
-        repr = Bargmann(*triple)
+        repr = PolyExpAnsatz(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         return cls._from_attributes(repr, wires, name)
 
@@ -320,7 +318,7 @@ class CircuitComponent:
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent._from_attributes(Bargmann(*triple), wires)
+        QQQQ = CircuitComponent._from_attributes(PolyExpAnsatz(*triple), wires)
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(BBBB.representation, wires, name)
 
@@ -343,7 +341,7 @@ class CircuitComponent:
         BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
 
         object_to_convert = self
-        if isinstance(self.representation, Fock):
+        if isinstance(self.representation, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
         QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
@@ -375,7 +373,7 @@ class CircuitComponent:
             A circuit component with the given quadrature representation.
         """
 
-        if isinstance(self.representation, Fock):
+        if isinstance(self.representation, ArrayAnsatz):
             fock_arrays = self.representation.array
             # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
@@ -390,7 +388,7 @@ class CircuitComponent:
     @classmethod
     def _from_attributes(
         cls,
-        representation: Representation,
+        representation: Ansatz,
         wires: Wires,
         name: str | None = None,
     ) -> CircuitComponent:
@@ -424,7 +422,7 @@ class CircuitComponent:
             if tp.__name__ in types:
                 ret = tp()
                 ret._name = name
-                ret._multi_rep = MultiRepresentation(representation, wires)
+                ret._multi_rep = Representation(representation, wires)
                 return ret
         return CircuitComponent(representation, wires, name)
 
@@ -532,7 +530,7 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        if isinstance(self.representation, Bargmann):
+        if isinstance(self.representation, PolyExpAnsatz):
             return self
         else:
             mult_rep = self._multi_rep.to_bargmann()
@@ -540,7 +538,7 @@ class CircuitComponent:
                 ret = self._getitem_builtin(self.modes)
                 ret._multi_rep = mult_rep
             except TypeError:
-                ret = self._from_attributes(mult_rep.representation, mult_rep.wires, self.name)
+                ret = self._from_attributes(mult_rep.ansatz, mult_rep.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
             return ret
@@ -571,7 +569,7 @@ class CircuitComponent:
             ret = self._getitem_builtin(self.modes)
             ret._multi_rep = mult_rep
         except TypeError:
-            ret = self._from_attributes(mult_rep.representation, mult_rep.wires, self.name)
+            ret = self._from_attributes(mult_rep.ansatz, mult_rep.wires, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
@@ -612,7 +610,7 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_multi_rep"] = MultiRepresentation(
+        instance.__dict__["_multi_rep"] = Representation(
             self.representation, wires or Wires(*self.wires.args)
         )
         return instance
@@ -668,7 +666,7 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         result = self._multi_rep @ other._multi_rep
-        return CircuitComponent._from_attributes(result.representation, result.wires, None)
+        return CircuitComponent._from_attributes(result.ansatz, result.wires, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -783,7 +781,9 @@ class CircuitComponent:
 
     def _ipython_display_(self):
         # both reps might return None
-        rep_fn = mmwidgets.fock if isinstance(self.representation, Fock) else mmwidgets.bargmann
+        rep_fn = (
+            mmwidgets.fock if isinstance(self.representation, ArrayAnsatz) else mmwidgets.bargmann
+        )
         rep_widget = rep_fn(self.representation)
         wires_widget = mmwidgets.wires(self.wires)
         if not rep_widget:

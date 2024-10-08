@@ -14,7 +14,7 @@
 
 
 """
-This module contains the base representation class.
+This module contains the base ansatz class.
 """
 
 from __future__ import annotations
@@ -33,10 +33,10 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-__all__ = ["Representation"]
+__all__ = ["Ansatz"]
 
 
-class Representation(ABC):
+class Ansatz(ABC):
     r"""
     A base class for representations.
     """
@@ -55,7 +55,7 @@ class Representation(ABC):
 
     @property
     @abstractmethod
-    def conj(self) -> Representation:
+    def conj(self) -> Ansatz:
         r"""
         The conjugate of the representation.
         """
@@ -94,20 +94,20 @@ class Representation(ABC):
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> Representation:
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Ansatz:
         r"""
         Deserialize a Representation.
         """
 
     @classmethod
     @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
         r"""
         Returns a representation from a function and kwargs.
         """
 
     @abstractmethod
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
         Reorders the representation indices.
         """
@@ -119,7 +119,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Representation:
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Ansatz:
         r"""
         Implements the partial trace over the given index pairs.
 
@@ -139,7 +139,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __add__(self, other: Representation) -> Representation:
+    def __add__(self, other: Ansatz) -> Ansatz:
         r"""
         Adds this representation and another representation.
 
@@ -151,7 +151,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __and__(self, other: Representation) -> Representation:
+    def __and__(self, other: Ansatz) -> Ansatz:
         r"""
         Tensor product of this representation with another.
 
@@ -163,7 +163,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __call__(self, z: Batch[Vector]) -> Scalar | Representation:
+    def __call__(self, z: Batch[Vector]) -> Scalar | Ansatz:
         r"""
         Evaluates this representation at a given point in the domain.
 
@@ -175,19 +175,19 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __eq__(self, other: Representation) -> bool:
+    def __eq__(self, other: Ansatz) -> bool:
         r"""
         Whether this representation is equal to another.
         """
 
     @abstractmethod
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Ansatz:
         r"""
         Returns a copy of self with the given indices marked for contraction.
         """
 
     @abstractmethod
-    def __matmul__(self, other: Representation) -> Representation:
+    def __matmul__(self, other: Ansatz) -> Ansatz:
         r"""
         Implements the inner product of representations over the marked indices.
 
@@ -199,7 +199,7 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __mul__(self, other: Scalar | Representation) -> Representation:
+    def __mul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Multiplies this representation by a scalar or another representation.
 
@@ -214,18 +214,18 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __neg__(self) -> Representation:
+    def __neg__(self) -> Ansatz:
         r"""
         Negates the values in the representation.
         """
 
-    def __rmul__(self, other: Representation | Scalar) -> Representation:
+    def __rmul__(self, other: Ansatz | Scalar) -> Ansatz:
         r"""
         Multiplies this representation by another or by a scalar on the right.
         """
         return self.__mul__(other)
 
-    def __sub__(self, other: Representation) -> Representation:
+    def __sub__(self, other: Ansatz) -> Ansatz:
         r"""
         Subtracts other from this representation.
         """
@@ -235,7 +235,7 @@ class Representation(ABC):
             raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
-    def __truediv__(self, other: Scalar | Representation) -> Representation:
+    def __truediv__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Divides this representation by another representation.
 

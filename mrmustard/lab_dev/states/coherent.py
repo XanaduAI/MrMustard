@@ -20,8 +20,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.multi_representations import MultiRepresentation
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
@@ -83,6 +83,7 @@ class Coherent(Ket):
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y), self.wires
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y),
+            self.wires,
         )

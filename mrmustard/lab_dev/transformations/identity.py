@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Unitary
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 
 __all__ = ["Identity"]
@@ -51,5 +51,5 @@ class Identity(Unitary):
         self,
         modes: Sequence[int],
     ):
-        rep = Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes))
+        rep = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
         super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")

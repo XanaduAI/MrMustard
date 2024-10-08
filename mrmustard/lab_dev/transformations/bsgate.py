@@ -21,8 +21,8 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Unitary
-from ...physics.multi_representations import MultiRepresentation
-from ...physics.representations import Bargmann
+from ...physics.representations import Representation
+from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
 
@@ -105,8 +105,8 @@ class BSgate(Unitary):
         super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
         self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(
                 fn=triples.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
             ),
             self.wires,

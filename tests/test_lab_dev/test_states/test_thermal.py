@@ -18,7 +18,7 @@
 
 import pytest
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import thermal_state_Abc
 from mrmustard.lab_dev.states import Thermal
 
@@ -49,7 +49,7 @@ class TestThermal:
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
         rep = Thermal([0, 1], nbar).representation
-        exp = Bargmann(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        exp = PolyExpAnsatz(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
         assert rep == exp
 
     def test_representation_error(self):

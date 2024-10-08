@@ -20,8 +20,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.multi_representations import MultiRepresentation
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
@@ -69,7 +69,9 @@ class SqueezedVacuum(Ket):
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.squeezed_vacuum_state_Abc, r=self.r, phi=self.phi),
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(
+                fn=triples.squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
+            ),
             self.wires,
         )

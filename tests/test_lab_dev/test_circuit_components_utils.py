@@ -29,7 +29,7 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
     join_Abc_real,
 )
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
@@ -51,7 +51,7 @@ class TestTraceOut:
 
         assert tr.name == "Tr"
         assert tr.wires == Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
-        assert tr.representation == Bargmann(*identity_Abc(len(modes)))
+        assert tr.representation == PolyExpAnsatz(*identity_Abc(len(modes)))
 
     def test_trace_out_bargmann_states(self):
         state = Coherent([0, 1, 2], x=1)

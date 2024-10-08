@@ -20,7 +20,7 @@ import pytest
 import numpy as np
 from mrmustard import math
 from mrmustard.lab_dev import Dgate, SqueezedVacuum
-from mrmustard.physics.representations import Fock
+from mrmustard.physics.ansatz import ArrayAnsatz
 
 
 class TestDgate:
@@ -85,7 +85,7 @@ class TestDgate:
         assert gate3.y.value == 2
 
         gate_fock = gate3.to_fock()
-        assert isinstance(gate_fock.representation, Fock)
+        assert isinstance(gate_fock.representation, ArrayAnsatz)
         assert gate_fock.y.value == 2
 
     def test_representation_error(self):

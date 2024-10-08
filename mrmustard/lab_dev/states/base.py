@@ -55,7 +55,7 @@ from mrmustard.physics.bargmann_utils import (
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
@@ -63,7 +63,7 @@ from mrmustard.physics.bargmann_utils import (
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.multi_representations import MultiRepresentation
+from mrmustard.physics.representations import Representation
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -350,7 +350,7 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        if not isinstance(self.representation, Bargmann):
+        if not isinstance(self.representation, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
@@ -635,7 +635,7 @@ class State(CircuitComponent):
 
     def _ipython_display_(self):  # pragma: no cover
         is_ket = isinstance(self, Ket)
-        is_fock = isinstance(self.representation, Fock)
+        is_fock = isinstance(self.representation, ArrayAnsatz)
         display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
 
@@ -654,7 +654,7 @@ class DM(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Bargmann | Fock | None = None,
+        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         if representation and representation.num_vars != 2 * len(modes):
@@ -665,7 +665,7 @@ class DM(State):
             wires=[modes, (), modes, ()],
             name=name,
         )
-        self._multi_rep = MultiRepresentation(representation, self.wires)
+        self._multi_rep = Representation(representation, self.wires)
 
     @property
     def is_positive(self) -> bool:
@@ -729,7 +729,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return DM(modes, Bargmann(*triple), name)
+        return DM(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -739,7 +739,7 @@ class DM(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return DM(modes, Fock(array, batched), name)
+        return DM(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def from_phase_space(
@@ -767,7 +767,7 @@ class DM(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM(
             modes,
-            Bargmann.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
+            PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
 
@@ -797,7 +797,7 @@ class DM(State):
                 with the number of modes.
         """
         QtoB = BtoQ(modes, phi).inverse()
-        Q = DM(modes, Bargmann(*triple))
+        Q = DM(modes, PolyExpAnsatz(*triple))
         return DM(modes, (Q >> QtoB).representation, name)
 
     @classmethod
@@ -983,7 +983,7 @@ class Ket(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: Bargmann | Fock | None = None,
+        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         if representation and representation.num_vars != len(modes):
@@ -994,7 +994,7 @@ class Ket(State):
             wires=[(), (), modes, ()],
             name=name,
         )
-        self._multi_rep = MultiRepresentation(representation, self.wires)
+        self._multi_rep = Representation(representation, self.wires)
 
     @property
     def is_physical(self) -> bool:
@@ -1034,7 +1034,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return Ket(modes, Bargmann(*triple), name)
+        return Ket(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -1044,7 +1044,7 @@ class Ket(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return Ket(modes, Fock(array, batched), name)
+        return Ket(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def from_phase_space(
@@ -1065,7 +1065,7 @@ class Ket(State):
                 raise ValueError(msg)
         return Ket(
             modes,
-            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
 
@@ -1078,7 +1078,7 @@ class Ket(State):
         name: str | None = None,
     ) -> State:
         QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket(modes, Bargmann(*triple))
+        Q = Ket(modes, PolyExpAnsatz(*triple))
         return Ket(modes, (Q >> QtoB).representation, name)
 
     @classmethod

@@ -22,8 +22,8 @@ from typing import Sequence
 from mrmustard.utils.typing import RealMatrix
 
 from .base import Unitary
-from ...physics.multi_representations import MultiRepresentation
-from ...physics.representations import Bargmann
+from ...physics.representations import Representation
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
 
 __all__ = ["Ggate"]
@@ -58,8 +58,8 @@ class Ggate(Unitary):
         super().__init__(modes_out=modes, modes_in=modes, name="Ggate")
         S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
         self.parameter_set.add_parameter(S)
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
                 s=self.parameter_set.symplectic,
             ),

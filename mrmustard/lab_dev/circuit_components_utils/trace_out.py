@@ -23,7 +23,7 @@ from mrmustard import math
 from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
 
 __all__ = ["TraceOut"]
 
@@ -63,7 +63,7 @@ class TraceOut(CircuitComponent):
     ):
         super().__init__(
             wires=[(), modes, (), modes],
-            representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            representation=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )
 

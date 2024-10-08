@@ -50,13 +50,13 @@ from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
 
-from .base import Representation
+from .base import Ansatz
 
-__all__ = ["Bargmann"]
+__all__ = ["PolyExpAnsatz"]
 
 
 # pylint: disable=too-many-instance-attributes
-class Bargmann(Representation):
+class PolyExpAnsatz(Ansatz):
     r"""
     The Fock-Bargmann representation of a broad class of quantum states, transformations,
     measurements, channels, etc.
@@ -212,7 +212,7 @@ class Bargmann(Representation):
 
     @property
     def conj(self):
-        ret = Bargmann(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
         return ret
 
@@ -251,17 +251,17 @@ class Bargmann(Representation):
         return self.A, self.b, self.c
 
     @classmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> Bargmann:
+    def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatz:
         return cls(**data)
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Bargmann:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         ret = cls(None, None, None)
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
 
-    def decompose_ansatz(self) -> Bargmann:
+    def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
         This method decomposes a Bargmann representation. Given a representation of dimensions:
         A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
@@ -285,9 +285,9 @@ class Bargmann(Representation):
                 b_decomp.append(b_decomp_i)
                 c_decomp.append(c_decomp_i)
 
-            return Bargmann(A_decomp, b_decomp, c_decomp)
+            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
-            return Bargmann(self.A, self.b, self.c)
+            return PolyExpAnsatz(self.A, self.b, self.c)
 
     def plot(
         self,
@@ -348,9 +348,9 @@ class Bargmann(Representation):
         plt.show(block=False)
         return fig, ax
 
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
+    def reorder(self, order: tuple[int, ...] | list[int]) -> PolyExpAnsatz:
         A, b, c = reorder_abc(self.triple, order)
-        return Bargmann(A, b, c)
+        return PolyExpAnsatz(A, b, c)
 
     def simplify(self) -> None:
         r"""
@@ -401,16 +401,16 @@ class Bargmann(Representation):
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"A": self.A, "b": self.b, "c": self.c}
 
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Bargmann:
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> PolyExpAnsatz:
         A, b, c = [], [], []
         for Abc in zip(self.A, self.b, self.c):
             Aij, bij, cij = complex_gaussian_integral(Abc, idxs1, idxs2, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return Bargmann(A, b, c)
+        return PolyExpAnsatz(A, b, c)
 
-    def _call_all(self, z: Batch[Vector]) -> Bargmann:
+    def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
         Value of this representation at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
@@ -475,7 +475,7 @@ class Bargmann(Representation):
             )  # (b_arg)
         return val
 
-    def _call_none(self, z: Batch[Vector]) -> Bargmann:
+    def _call_none(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self._call_none([np.array([1.0, None]])``
@@ -506,7 +506,7 @@ class Bargmann(Representation):
                 "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
             )
         A, b, c = zip(*Abc)
-        return Bargmann(A=A, b=b, c=c)
+        return PolyExpAnsatz(A=A, b=b, c=c)
 
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
@@ -599,7 +599,7 @@ class Bargmann(Representation):
         b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
         return A_decomp, b_decomp, c_decomp
 
-    def _equal_no_array(self, other: Bargmann) -> bool:
+    def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
         other.simplify()
         return np.allclose(self.b, other.b, atol=1e-10) and np.allclose(self.A, other.A, atol=1e-10)
@@ -650,7 +650,7 @@ class Bargmann(Representation):
         self.b = math.gather(self.b, sorted_indices, axis=0)
         self.c = math.gather(self.c, sorted_indices, axis=0)
 
-    def __add__(self, other: Bargmann) -> Bargmann:
+    def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
         Adds two Bargmann representations together. This means concatenating them in the batch dimension.
         In the case where c is a polynomial of different shapes it will add padding zeros to make
@@ -689,11 +689,11 @@ class Bargmann(Representation):
                 a1_new = np.pad(other.c, padding_tuple1, "constant")
                 combined_arrays = math.concat([a0_new, a1_new], axis=0)
             # note output is not simplified
-            return Bargmann(combined_matrices, combined_vectors, combined_arrays)
+            return PolyExpAnsatz(combined_matrices, combined_vectors, combined_arrays)
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: Bargmann) -> Bargmann:
+    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
         Tensor product of this Bargmann with another Bargmann.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
@@ -778,9 +778,9 @@ class Bargmann(Representation):
         ]
         bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
         cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
-        return Bargmann(As, bs, cs)
+        return PolyExpAnsatz(As, bs, cs)
 
-    def __call__(self, z: Batch[Vector]) -> Scalar | Bargmann:
+    def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
         r"""
         Returns either the value of the representation or a new representation depending on the argument.
         If the argument contains None, returns a new representation.
@@ -798,21 +798,21 @@ class Bargmann(Representation):
         else:
             return self._call_all(z)
 
-    def __eq__(self, other: Bargmann) -> bool:
+    def __eq__(self, other: PolyExpAnsatz) -> bool:
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i >= self.num_vars:
                 raise IndexError(
                     f"Index {i} out of bounds for representation of dimension {self.num_vars}."
                 )
-        ret = Bargmann(self.A, self.b, self.c)
+        ret = PolyExpAnsatz(self.A, self.b, self.c)
         ret._contract_idxs = idx
         return ret
 
-    def __matmul__(self, other: Bargmann) -> Bargmann:
+    def __matmul__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
@@ -832,9 +832,9 @@ class Bargmann(Representation):
                     Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
 
         A, b, c = zip(*Abc)
-        return Bargmann(A, b, c)
+        return PolyExpAnsatz(A, b, c)
 
-    def __mul__(self, other: Scalar | Bargmann) -> Bargmann:
+    def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
@@ -868,7 +868,7 @@ class Bargmann(Representation):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        if isinstance(other, Bargmann):
+        if isinstance(other, PolyExpAnsatz):
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
 
@@ -891,17 +891,17 @@ class Bargmann(Representation):
             new_b = [mul_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
             new_c = [mul_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
 
-            return Bargmann(A=new_a, b=new_b, c=new_c)
+            return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
         else:
             try:
-                return Bargmann(self.A, self.b, self.c * other)
+                return PolyExpAnsatz(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __neg__(self) -> Bargmann:
-        return Bargmann(self.A, self.b, -self.c)
+    def __neg__(self) -> PolyExpAnsatz:
+        return PolyExpAnsatz(self.A, self.b, -self.c)
 
-    def __truediv__(self, other: Scalar | Bargmann) -> Bargmann:
+    def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
@@ -935,7 +935,7 @@ class Bargmann(Representation):
             c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
-        if isinstance(other, Bargmann):
+        if isinstance(other, PolyExpAnsatz):
             dim_beta1, _ = self.polynomial_shape
             dim_beta2, _ = other.polynomial_shape
             if dim_beta1 == 0 and dim_beta2 == 0:
@@ -958,11 +958,11 @@ class Bargmann(Representation):
                 new_b = [div_b(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
                 new_c = [div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
 
-                return Bargmann(A=new_a, b=new_b, c=new_c)
+                return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
             else:
                 raise NotImplementedError("Only implemented if both c are scalars")
         else:
             try:
-                return Bargmann(self.A, self.b, self.c / other)
+                return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e

@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 
 """
-This module contains the class for multi-representations.
+This module contains the class for representations.
 """
 
 from __future__ import annotations
@@ -29,11 +29,11 @@ from mrmustard.utils.typing import (
     Batch,
 )
 
-from .representations import Representation, Bargmann, Fock
+from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
 from .wires import Wires
 
-__all__ = ["MultiRepresentation"]
+__all__ = ["Representation"]
 
 
 class RepEnum(Enum):
@@ -48,11 +48,16 @@ class RepEnum(Enum):
     PHASESPACE = 4
 
     @classmethod
-    def from_representation(cls, value: Representation):
+    def from_ansatz(cls, value: Ansatz):
         r"""
-        Returns a ``RepEnum`` from a ``Representation``.
+        Returns a ``RepEnum`` from an ``Ansatz``.
         """
-        return cls[value.__class__.__name__.upper()]
+        if isinstance(value, PolyExpAnsatz):
+            return cls(1)
+        elif isinstance(value, ArrayAnsatz):
+            return cls(2)
+        else:
+            return cls(0)
 
     @classmethod
     def _missing_(cls, value):
@@ -62,44 +67,40 @@ class RepEnum(Enum):
         return self.name
 
 
-class MultiRepresentation:
-    # TODO: merge current Representation and Anstaz -> Ansatz
-    # TODO: rename to Representation
+class Representation:
     r"""
-    A class for multi-representations.
+    A class for representations.
 
-    A multi-representation handles the underlying representation, the wires of
-    said representation and keeps track of representation conversions.
+    A representation handles the underlying ansatz, wires and keeps track
+    of each wire's representation.
 
     Args:
-        representation: A representation for this multi-representation.
-        wires: The wires of this multi-representation.
+        ansatz: An ansatz for this representation.
+        wires: The wires of this representation.
         wire_reps: An optional dictionary for keeping track of each wire's representation.
     """
 
     def __init__(
         self,
-        representation: Representation | None,
+        ansatz: Ansatz | None,
         wires: Wires | None,
         wire_reps: dict | None = None,
     ) -> None:
-        self._representation = representation
+        self._ansatz = ansatz
         self._wires = wires
-        self._wire_reps = wire_reps or dict.fromkeys(
-            wires.modes, RepEnum.from_representation(representation)
-        )
+        self._wire_reps = wire_reps or dict.fromkeys(wires.modes, RepEnum.from_ansatz(ansatz))
 
     @property
-    def representation(self) -> Representation | None:
+    def ansatz(self) -> Ansatz | None:
         r"""
-        The underlying representation of this multi-representation.
+        The underlying ansatz of this representation.
         """
-        return self._representation
+        return self._ansatz
 
     @property
     def wires(self) -> Wires | None:
         r"""
-        The wires of this multi-representation.
+        The wires of this representation.
         """
         return self._wires
 
@@ -107,7 +108,7 @@ class MultiRepresentation:
         self, batched: bool = False
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
-        The Bargmann parametrization of this multi-representation, if available.
+        The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
         :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
 
@@ -117,8 +118,8 @@ class MultiRepresentation:
             batched: Whether to return the triple batched.
         """
         try:
-            A, b, c = self.representation.triple
-            if not batched and self.representation.batch_size == 1:
+            A, b, c = self.ansatz.triple
+            if not batched and self.ansatz.batch_size == 1:
                 return A[0], b[0], c[0]
             else:
                 return A, b, c
@@ -139,7 +140,7 @@ class MultiRepresentation:
         Returns:
             array: The Fock representation of this component.
         """
-        num_vars = self.representation.num_vars
+        num_vars = self.ansatz.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         try:
@@ -148,7 +149,7 @@ class MultiRepresentation:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
-            if self.representation.polynomial_shape[0] == 0:
+            if self.ansatz.polynomial_shape[0] == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             else:
                 arrays = [
@@ -165,46 +166,44 @@ class MultiRepresentation:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
-            arrays = self.representation.reduce(shape).array
+            arrays = self.ansatz.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
 
-    def to_bargmann(self) -> MultiRepresentation:
+    def to_bargmann(self) -> Representation:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
         """
-        if isinstance(self.representation, Bargmann):
+        if isinstance(self.ansatz, PolyExpAnsatz):
             return self
         else:
-            if self.representation._original_abc_data:
-                A, b, c = self.representation._original_abc_data
+            if self.ansatz._original_abc_data:
+                A, b, c = self.ansatz._original_abc_data
             else:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
-                c = self.representation.data
-            bargmann = Bargmann(A, b, c)
-            return MultiRepresentation(bargmann, self.wires)
+                c = self.ansatz.data
+            bargmann = PolyExpAnsatz(A, b, c)
+            return Representation(bargmann, self.wires)
 
-    def to_fock(self, shape: int | Sequence[int]) -> MultiRepresentation:
+    def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""
-        Returns a new multi-representation with  a ``Fock`` representation.
+        Returns a new representation with  an ``ArrayAnsatz``.
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = Fock(self.fock(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock(shape, batched=True), batched=True)
         try:
-            if self.representation.polynomial_shape[0] == 0:
-                fock._original_abc_data = self.representation.triple
+            if self.ansatz.polynomial_shape[0] == 0:
+                fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
-        return MultiRepresentation(fock, self.wires)
+        return Representation(fock, self.wires)
 
-    def _matmul_indices(
-        self, other: MultiRepresentation
-    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    def _matmul_indices(self, other: Representation) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
         Finds the indices of the wires being contracted when ``self @ other`` is called.
         """
@@ -219,24 +218,24 @@ class MultiRepresentation:
         return idx_z, idx_zconj
 
     def __eq__(self, other):
-        if isinstance(other, MultiRepresentation):
+        if isinstance(other, Representation):
             return (
-                self.representation == other.representation
+                self.ansatz == other.ansatz
                 and self.wires == other.wires
                 and self._wire_reps == other._wire_reps
             )
         return False
 
-    def __matmul__(self, other: MultiRepresentation):
+    def __matmul__(self, other: Representation):
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) is type(other.representation):
-            self_rep = self.representation
-            other_rep = other.representation
+        if type(self.ansatz) is type(other.ansatz):
+            self_rep = self.ansatz
+            other_rep = other.ansatz
         else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
+            self_rep = self.to_bargmann().ansatz
+            other_rep = other.to_bargmann().ansatz
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return MultiRepresentation(rep, wires_result)
+        return Representation(rep, wires_result)

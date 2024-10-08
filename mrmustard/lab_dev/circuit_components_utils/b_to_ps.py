@@ -23,7 +23,7 @@ from mrmustard.physics import triples
 from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
 
 __all__ = ["BtoPS"]
 
@@ -46,7 +46,7 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=Bargmann.from_function(
+            representation=PolyExpAnsatz.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
             name="BtoPS",

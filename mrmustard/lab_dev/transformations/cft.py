@@ -18,8 +18,8 @@ The class representing a complex fourier transform.
 
 from typing import Sequence
 from mrmustard.lab_dev.transformations.base import Map
-from mrmustard.physics.multi_representations import MultiRepresentation
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 
 __all__ = ["CFT"]
@@ -48,7 +48,9 @@ class CFT(Map):
             modes_in=modes,
             name="CFT",
         )
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.complex_fourier_transform_Abc, n_modes=len(modes)),
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(
+                fn=triples.complex_fourier_transform_Abc, n_modes=len(modes)
+            ),
             self.wires,
         )

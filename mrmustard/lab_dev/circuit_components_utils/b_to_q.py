@@ -26,8 +26,8 @@ from mrmustard.physics import triples
 from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
-from ...physics.representations import Bargmann
-from ...physics.multi_representations import RepEnum
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
 from ..circuit_components import CircuitComponent
 
 __all__ = ["BtoQ"]
@@ -49,7 +49,7 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float = 0.0,
     ):
-        repr = Bargmann.from_function(
+        repr = PolyExpAnsatz.from_function(
             fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
         )
         super().__init__(

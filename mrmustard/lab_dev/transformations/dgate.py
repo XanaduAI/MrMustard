@@ -24,8 +24,8 @@ from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
 
 from .base import Unitary
-from ...physics.multi_representations import MultiRepresentation
-from ...physics.representations import Bargmann, Fock
+from ...physics.representations import Representation
+from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
 
@@ -95,8 +95,9 @@ class Dgate(Unitary):
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.displacement_gate_Abc, x=self.x, y=self.y), self.wires
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(fn=triples.displacement_gate_Abc, x=self.x, y=self.y),
+            self.wires,
         )
 
     def fock(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
@@ -144,8 +145,8 @@ class Dgate(Unitary):
         return arrays
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = Fock(self.fock(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock(shape, batched=True), batched=True)
         fock._original_abc_data = self.representation.triple
         ret = self._getitem_builtin(self.modes)
-        ret._multi_rep = MultiRepresentation(fock, self.wires)
+        ret._multi_rep = Representation(fock, self.wires)
         return ret

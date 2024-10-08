@@ -29,7 +29,7 @@ from abc import abstractmethod
 
 from typing import Sequence
 from mrmustard import math, settings
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import ComplexMatrix
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
@@ -89,7 +89,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError(
                 "Only Transformations with the same number of input and output wires are supported."
             )
-        if not isinstance(self.representation, Bargmann):
+        if not isinstance(self.representation, PolyExpAnsatz):
             raise NotImplementedError("Only Bargmann representation is supported.")
         if self.representation.batch_size > 1:
             raise NotImplementedError("Batched transformations are not supported.")
@@ -97,12 +97,12 @@ class Transformation(CircuitComponent):
         # compute the inverse
         A, b, _ = self.dual.representation.conj.triple  # apply X(.)X
         almost_inverse = self._from_attributes(
-            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
+            PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
         almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.representation.c
         actual_inverse = self._from_attributes(
-            Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
+            PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
             self.wires,
             self.name + "_inv",
         )
@@ -121,7 +121,7 @@ class Operation(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: Bargmann | Fock | None = None,
+        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         super().__init__(
@@ -138,7 +138,7 @@ class Operation(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Operation(modes_out, modes_in, Bargmann(*triple), name)
+        return Operation(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_quadrature(
@@ -153,7 +153,7 @@ class Operation(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Operation(modes_out, modes_in, Bargmann(*triple))
+        QQ = Operation(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
         return Operation(modes_out, modes_in, BB.representation, name)
 
@@ -188,7 +188,7 @@ class Unitary(Operation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Unitary(modes_out, modes_in, Bargmann(*triple), name)
+        return Unitary(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_quadrature(
@@ -203,7 +203,7 @@ class Unitary(Operation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Unitary(modes_out, modes_in, Bargmann(*triple))
+        QQ = Unitary(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
         return Unitary(modes_out, modes_in, BB.representation, name)
 
@@ -277,7 +277,7 @@ class Map(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: Bargmann | Fock | None = None,
+        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         super().__init__(
@@ -294,7 +294,7 @@ class Map(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Map(modes_out, modes_in, Bargmann(*triple), name)
+        return Map(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_quadrature(
@@ -309,7 +309,7 @@ class Map(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Map(modes_out, modes_in, Bargmann(*triple))
+        QQ = Map(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
         return Map(modes_out, modes_in, BB.representation, name)
 
@@ -382,7 +382,7 @@ class Channel(Map):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Channel(modes_out, modes_in, Bargmann(*triple), name)
+        return Channel(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_quadrature(
@@ -397,7 +397,7 @@ class Channel(Map):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Channel(modes_out, modes_in, Bargmann(*triple))
+        QQ = Channel(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
         return Channel(modes_out, modes_in, BB.representation, name)
 

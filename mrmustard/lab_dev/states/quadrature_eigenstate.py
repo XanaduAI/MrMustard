@@ -22,8 +22,8 @@ from typing import Sequence
 
 import numpy as np
 
-from mrmustard.physics.multi_representations import MultiRepresentation
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket
 from ..utils import make_parameter, reshape_params
@@ -68,8 +68,10 @@ class QuadratureEigenstate(Ket):
         xs, phis = list(reshape_params(len(modes), x=x, phi=phi))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._multi_rep = MultiRepresentation(
-            Bargmann.from_function(fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi),
+        self._multi_rep = Representation(
+            PolyExpAnsatz.from_function(
+                fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
+            ),
             self.wires,
         )
         self.manual_shape = (50,)
