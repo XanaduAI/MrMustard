@@ -72,14 +72,14 @@ class PolyExpAnsatz(Ansatz):
 
     .. code-block ::
 
-        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.representations import PolyExpAnsatz
         >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
 
         >>> # bargmann representation of one-mode vacuum
-        >>> rep_vac = Bargmann(*vacuum_state_Abc(1))
+        >>> rep_vac = PolyExpAnsatz(*vacuum_state_Abc(1))
 
         >>> # bargmann representation of one-mode dgate with gamma=1+0j
-        >>> rep_dgate = Bargmann(*displacement_gate_Abc(1))
+        >>> rep_dgate = PolyExpAnsatz(*displacement_gate_Abc(1))
 
     The inner product is defined as the contraction of two Bargmann objects across marked indices.
     Indices are marked using ``__getitem__``. Once the indices are marked for contraction, they are

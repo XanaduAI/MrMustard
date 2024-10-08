@@ -526,16 +526,15 @@ class CircuitComponent:
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
-            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
-
             >>> assert d_bargmann.name == d.name
             >>> assert d_bargmann.wires == d.wires
-            >>> assert isinstance(d_bargmann.representation, Bargmann)
+            >>> assert isinstance(d_bargmann.ansatz, PolyExpAnsatz)
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self

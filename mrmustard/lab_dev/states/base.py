@@ -184,7 +184,7 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.base import Ket
 
@@ -193,7 +193,7 @@ class State(CircuitComponent):
 
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Bargmann(*triple)
+            >>> assert coh.ansatz == PolyExpAnsatz(*triple)
             >>> assert isinstance(coh, Ket)
 
         Args:
