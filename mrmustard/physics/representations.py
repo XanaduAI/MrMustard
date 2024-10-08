@@ -187,7 +187,7 @@ class Representation:
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""
-        Returns a new representation with  an ``ArrayAnsatz``.
+        Returns a new representation with an ``ArrayAnsatz``.
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as

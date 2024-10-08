@@ -645,7 +645,7 @@ class DM(State):
 
     Args:
         modes: The modes of this density matrix.
-        representation: The representation of this density matrix.
+        ansatz: The ansatz of this density matrix.
         name: The name of this density matrix.
     """
 
@@ -654,18 +654,18 @@ class DM(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
-        if representation and representation.num_vars != 2 * len(modes):
+        if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected a representation with {2*len(modes)} variables, found {representation.num_vars}."
+                f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
         super().__init__(
             wires=[modes, (), modes, ()],
             name=name,
         )
-        self._representation = Representation(representation, self.wires)
+        self._representation = Representation(ansatz, self.wires)
 
     @property
     def is_positive(self) -> bool:
@@ -942,10 +942,10 @@ class DM(State):
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
-        representation = self.ansatz.trace(idxz, idxz_conj)
+        ansatz = self.ansatz.trace(idxz, idxz_conj)
 
         return self.__class__._from_attributes(
-            representation, wires, self.name
+            ansatz, wires, self.name
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -974,7 +974,7 @@ class Ket(State):
 
     Arguments:
         modes: The modes of this ket.
-        representation: The representation of this ket.
+        ansatz: The ansatz of this ket.
         name: The name of this ket.
     """
 
@@ -983,18 +983,18 @@ class Ket(State):
     def __init__(
         self,
         modes: Sequence[int] = (),
-        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
-        if representation and representation.num_vars != len(modes):
+        if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {representation.num_vars}."
+                f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
             )
         super().__init__(
             wires=[(), (), modes, ()],
             name=name,
         )
-        self._representation = Representation(representation, self.wires)
+        self._representation = Representation(ansatz, self.wires)
 
     @property
     def is_physical(self) -> bool:

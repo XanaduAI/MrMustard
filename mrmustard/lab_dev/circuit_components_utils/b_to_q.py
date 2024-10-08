@@ -49,13 +49,13 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float = 0.0,
     ):
-        repr = PolyExpAnsatz.from_function(
+        ansatz = PolyExpAnsatz.from_function(
             fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
         )
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=repr,
+            ansatz=ansatz,
             name="BtoQ",
         )
         self._add_parameter(Constant(phi, "phi"))

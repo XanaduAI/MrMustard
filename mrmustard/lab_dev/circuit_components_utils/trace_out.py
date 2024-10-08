@@ -63,7 +63,7 @@ class TraceOut(CircuitComponent):
     ):
         super().__init__(
             wires=[(), modes, (), modes],
-            representation=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
             name="Tr",
         )
 
@@ -80,14 +80,14 @@ class TraceOut(CircuitComponent):
         idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
         idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
         if len(self.wires) == 0:
-            repr = other.ansatz
+            ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            repr = other.ansatz.conj[idx_z] @ other.ansatz[idx_z]
+            ansatz = other.ansatz.conj[idx_z] @ other.ansatz[idx_z]
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
-            repr = other.ansatz.trace(idx_z, idx_zconj)
+            ansatz = other.ansatz.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
-        cpt = other._from_attributes(repr, wires)  # pylint:disable=protected-access
+        cpt = other._from_attributes(ansatz, wires)  # pylint:disable=protected-access
         return math.sum(cpt.ansatz.scalar) if len(cpt.wires) == 0 else cpt

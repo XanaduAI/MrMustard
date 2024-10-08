@@ -60,8 +60,8 @@ class Vacuum(Ket):
         self,
         modes: Sequence[int],
     ) -> None:
-        rep = PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
-        super().__init__(modes=modes, representation=rep, name="Vac")
+        ansatz = PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
+        super().__init__(modes=modes, ansatz=ansatz, name="Vac")
 
         for i in range(len(modes)):
             self.manual_shape[i] = 1

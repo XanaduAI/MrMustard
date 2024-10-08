@@ -46,7 +46,7 @@ class BtoPS(Map):
         super().__init__(
             modes_out=modes,
             modes_in=modes,
-            representation=PolyExpAnsatz.from_function(
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
             name="BtoPS",

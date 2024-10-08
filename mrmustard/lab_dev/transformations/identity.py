@@ -51,5 +51,5 @@ class Identity(Unitary):
         self,
         modes: Sequence[int],
     ):
-        rep = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
-        super().__init__(modes_out=modes, modes_in=modes, representation=rep, name="Identity")
+        ansatz = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
+        super().__init__(modes_out=modes, modes_in=modes, ansatz=ansatz, name="Identity")

@@ -57,7 +57,7 @@ class CircuitComponent:
     and :class:`Representation` classes (and their subclasses) for more details.
 
     Args:
-        representation: A representation for this circuit component.
+        ansatz: An ansatz for this circuit component.
         wires: The wires of this component. Alternatively, can be
             a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
             where if any of the modes are out of order the representation
@@ -69,7 +69,7 @@ class CircuitComponent:
 
     def __init__(
         self,
-        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
         name: str | None = None,
     ) -> None:
@@ -104,13 +104,11 @@ class CircuitComponent:
                     + tuple(np.argsort(modes_out_ket) + offsets[1])
                     + tuple(np.argsort(modes_in_ket) + offsets[2])
                 )
-                if representation is not None:
-                    self._representation = Representation(
-                        representation.reorder(tuple(perm)), wires
-                    )
+                if ansatz is not None:
+                    self._representation = Representation(ansatz.reorder(tuple(perm)), wires)
 
         if not hasattr(self, "_representation"):
-            self._representation = Representation(representation, wires)
+            self._representation = Representation(ansatz, wires)
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -165,9 +163,9 @@ class CircuitComponent:
         """
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
+        ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
 
-        ret = CircuitComponent(rep, self.wires.adjoint, self.name)
+        ret = CircuitComponent(ansatz, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
@@ -184,9 +182,9 @@ class CircuitComponent:
         ik = self.wires.ket.input.indices
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
-        rep = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
+        ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
 
-        ret = CircuitComponent(rep, self.wires.dual, self.name)
+        ret = CircuitComponent(ansatz, self.wires.dual, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
@@ -288,9 +286,9 @@ class CircuitComponent:
         Returns:
             A circuit component with the given Bargmann representation.
         """
-        repr = PolyExpAnsatz(*triple)
+        ansatz = PolyExpAnsatz(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
-        return cls._from_attributes(repr, wires, name)
+        return cls._from_attributes(ansatz, wires, name)
 
     @classmethod
     def from_quadrature(
@@ -397,7 +395,7 @@ class CircuitComponent:
     @classmethod
     def _from_attributes(
         cls,
-        representation: Ansatz,
+        ansatz: Ansatz,
         wires: Wires,
         name: str | None = None,
     ) -> CircuitComponent:
@@ -431,9 +429,9 @@ class CircuitComponent:
             if tp.__name__ in types:
                 ret = tp()
                 ret._name = name
-                ret._representation = Representation(representation, wires)
+                ret._representation = Representation(ansatz, wires)
                 return ret
-        return CircuitComponent(representation, wires, name)
+        return CircuitComponent(ansatz, wires, name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -639,9 +637,9 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        rep = self.ansatz + other.ansatz
+        ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(ansatz, self.wires, name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -683,8 +681,8 @@ class CircuitComponent:
         return self._from_attributes(self.ansatz * other, self.wires, self.name)
 
     def __repr__(self) -> str:
-        repr = self.ansatz
-        repr_name = repr.__class__.__name__
+        ansatz = self.ansatz
+        repr_name = ansatz.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
         else:
@@ -777,9 +775,9 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot subtract components with different wires.")
-        rep = self.ansatz - other.ansatz
+        ansatz = self.ansatz - other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(rep, self.wires, name)
+        return self._from_attributes(ansatz, self.wires, name)
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""

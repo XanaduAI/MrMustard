@@ -121,11 +121,11 @@ class Operation(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         super().__init__(
-            representation=representation,
+            ansatz=ansatz,
             wires=[(), (), modes_out, modes_in],
             name=name,
         )
@@ -166,7 +166,7 @@ class Unitary(Operation):
     Arguments:
         modes_out: The output modes of this Unitary.
         modes_in: The input modes of this Unitary.
-        representation: The representation of this Unitary.
+        ansatz: The ansatz of this Unitary.
         name: The name of this Unitary.
     """
 
@@ -235,7 +235,7 @@ class Unitary(Operation):
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(
-            representation=unitary_dual.ansatz,
+            ansatz=unitary_dual.ansatz,
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
@@ -267,7 +267,7 @@ class Map(Transformation):
     Arguments:
         modes_out: The output modes of this Map.
         modes_in: The input modes of this Map.
-        representation: The representation of this Map.
+        ansatz: The ansatz of this Map.
         name: The name of this Map.
     """
 
@@ -277,11 +277,11 @@ class Map(Transformation):
         self,
         modes_out: tuple[int, ...] = (),
         modes_in: tuple[int, ...] = (),
-        representation: PolyExpAnsatz | ArrayAnsatz | None = None,
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
         super().__init__(
-            representation=representation,
+            ansatz=ansatz,
             wires=[modes_out, modes_in, modes_out, modes_in],
             name=name or self.__class__.__name__,
         )
@@ -321,7 +321,7 @@ class Channel(Map):
     Arguments:
         modes_out: The output modes of this Channel.
         modes_in: The input modes of this Channel.
-        representation: The representation of this Channel.
+        ansatz: The ansatz of this Channel.
         name: The name of this Channel
     """
 
