@@ -58,89 +58,35 @@ __all__ = ["PolyExpAnsatz"]
 
 class PolyExpAnsatz(Ansatz):
     r"""
-    The Fock-Bargmann representation of a broad class of quantum states, transformations,
-    measurements, channels, etc.
+    The ansatz of the Fock-Bargmann representation.
 
-    The ansatz available in this representation is a linear combination of exponentials
-    of bilinear forms with a polynomial part:
+    Represents the ansatz function:
 
-    .. math::
-        F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
+        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
 
-    This function allows for vector space operations on Bargmann objects including
-    linear combinations (``+``), outer product (``&``), and inner product (``@``).
+    with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
+    The dimension of ``z + y`` must be equal to the dimension of ``A`` and ``b``.
 
-    .. code-block ::
+        .. code-block::
 
-        >>> from mrmustard.physics.representations import PolyExpAnsatz
-        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
 
-        >>> # bargmann representation of one-mode vacuum
-        >>> rep_vac = PolyExpAnsatz(*vacuum_state_Abc(1))
 
-        >>> # bargmann representation of one-mode dgate with gamma=1+0j
-        >>> rep_dgate = PolyExpAnsatz(*displacement_gate_Abc(1))
+        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
+        >>> b = np.array([1.0, 1.0])
+        >>> c = np.array([[1.0,2.0,3.0]])
 
-    The inner product is defined as the contraction of two Bargmann objects across marked indices.
-    Indices are marked using ``__getitem__``. Once the indices are marked for contraction, they are
-    be used the next time the inner product (``@``) is called. For example:
+        >>> F = PolyExpAnsatz(A, b, c)
+        >>> z = np.array([[1.0],[2.0],[3.0]])
 
-    .. code-block ::
-
-        >>> import numpy as np
-
-        >>> # mark indices for contraction
-        >>> idx_vac = [0]
-        >>> idx_rep = [1]
-
-        >>> # bargmann representation of coh = vacuum >> dgate
-        >>> rep_coh = rep_vac[idx_vac] @ rep_dgate[idx_rep]
-        >>> assert np.allclose(rep_coh.A, [[0,],])
-        >>> assert np.allclose(rep_coh.b, [1,])
-        >>> assert np.allclose(rep_coh.c, 0.6065306597126334)
-
-    This can also be used to contract existing indices in a single Bargmann object, e.g.
-    to implement the partial trace.
-
-    .. code-block ::
-
-        >>> trace = (rep_coh @ rep_coh.conj).trace([0], [1])
-        >>> assert np.allclose(trace.A, 0)
-        >>> assert np.allclose(trace.b, 0)
-        >>> assert trace.c == 1
-
-    The ``A``, ``b``, and ``c`` parameters can be batched to represent superpositions.
-
-    .. code-block ::
-
-        >>> # bargmann representation of one-mode coherent state with gamma=1+0j
-        >>> A_plus = [[0,],]
-        >>> b_plus = [1,]
-        >>> c_plus = 0.6065306597126334
-
-        >>> # bargmann representation of one-mode coherent state with gamma=-1+0j
-        >>> A_minus = [[0,],]
-        >>> b_minus = [-1,]
-        >>> c_minus = 0.6065306597126334
-
-        >>> # bargmann representation of a superposition of coherent states
-        >>> A = [A_plus, A_minus]
-        >>> b = [b_plus, b_minus]
-        >>> c = [c_plus, c_minus]
-        >>> rep_coh_sup = Bargmann(A, b, c)
-
-    Note that the operations that change the shape of the ansatz (outer product and inner
-    product) do not automatically modify the ordering of the combined or leftover indices.
-    However, the ``reordering`` method allows reordering the representation after the products
-    have been carried out.
+        >>> # calculate the value of the function at the three different ``z``, since z is batched.
+        >>> val = F(z)
 
     Args:
         A: A batch of quadratic coefficient :math:`A_i`.
         b: A batch of linear coefficients :math:`b_i`.
         c: A batch of arrays :math:`c_i`.
-
-    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
-    correct batch shape.
     """
 
     def __init__(
