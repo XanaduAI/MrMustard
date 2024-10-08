@@ -42,7 +42,7 @@ class ArrayAnsatz(Ansatz):
 
     .. code-block::
 
-          >>> from mrmustard.physics.ansatze import ArrayAnsatz
+          >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
           >>> array = np.random.random((2, 4, 5))
           >>> ansatz = ArrayAnsatz(array)

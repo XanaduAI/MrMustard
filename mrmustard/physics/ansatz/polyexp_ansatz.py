@@ -70,7 +70,7 @@ class PolyExpAnsatz(Ansatz):
 
         .. code-block::
 
-        >>> from mrmustard.physics.ansatze import PolyExpAnsatz
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
