@@ -324,7 +324,7 @@ class State(CircuitComponent):
         Returns:
             The Fock distribution.
         """
-        fock_array = self.fock(cutoff)
+        fock_array = self.fock_array(cutoff)
         if isinstance(self, Ket):
             probs = (
                 math.astensor(

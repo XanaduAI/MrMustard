@@ -139,7 +139,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5, batched=True)
+        array_in = state_in.fock_array(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
@@ -522,7 +522,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state01 = Coherent([0, 1], 1).dm()
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock(5), "my_dm", True)
+            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
 
     def test_bargmann_Abc_to_phasespace_cov_means(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
@@ -596,7 +596,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5, batched=True)
+        array_in = state_in.fock_array(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 

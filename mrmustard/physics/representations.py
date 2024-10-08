@@ -125,7 +125,7 @@ class Representation:
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock(self, shape: int | Sequence[int], batched=False) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int], batched=False) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -172,7 +172,7 @@ class Representation:
 
     def to_bargmann(self) -> Representation:
         r"""
-        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        Converts this representation to a Bargmann representation.
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self
@@ -187,14 +187,14 @@ class Representation:
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""
-        Returns a new representation with an ``ArrayAnsatz``.
+        Converts this representation to a Fock representation.
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
         try:
             if self.ansatz.polynomial_shape[0] == 0:
                 fock._original_abc_data = self.ansatz.triple
