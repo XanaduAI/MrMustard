@@ -843,9 +843,9 @@ class DM(State):
                 shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
                 if self.ansatz.polynomial_shape[0] == 0:
-                    repr = self.ansatz
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
+                    ansatz = self.ansatz
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),
@@ -1140,9 +1140,9 @@ class Ket(State):
                 shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
                 if self.ansatz.polynomial_shape[0] == 0:
-                    repr = self.ansatz.conj & self.ansatz
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
+                    ansatz = self.ansatz.conj & self.ansatz
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),

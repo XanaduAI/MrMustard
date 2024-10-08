@@ -470,9 +470,9 @@ class Wires:
 
         .. code-block::
 
-            repr = repr1[idx1] @ repr2[idx2]  # not in standard order
+            ansatz = ansatz1[idx1] @ ansatz2[idx2]  # not in standard order
             wires, perm = wires1 @ wires2  # matmul the wires of each component
-            repr = repr.reorder(perm)  # now in standard order
+            ansatz = ansatz.reorder(perm)  # now in standard order
 
         Args:
             other: The wires of the other circuit component.

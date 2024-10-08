@@ -39,21 +39,23 @@ class GraphComponent:
     r"""
     A lightweight "CircuitComponent" without the actual representation.
     Basically a wrapper around Wires, so that it can emulate components in
-    a circuit. It exposes the repr, wires, shape, name and cost of obtaining
+    a circuit. It exposes the representation, wires, shape, name and cost of obtaining
     the component from previous contractions.
 
     Args:
-        repr: The name of the representation of the component.
+        representation: The name of the representation of the component.
         wires: The wires of the component.
         shape: The fock shape of the component.
         name: The name of the component.
         cost: The cost of obtaining this component.
     """
 
-    def __init__(self, repr: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
+    def __init__(
+        self, representation: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0
+    ):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
-        self.repr = repr
+        self.representation = representation
         self.wires = wires
         self.shape = list(shape)
         self.name = name
@@ -68,7 +70,7 @@ class GraphComponent:
             c: A CircuitComponent.
         """
         return GraphComponent(
-            repr=str(c.ansatz.__class__.__name__),
+            representation=str(c.ansatz.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
             name=c.__class__.__name__,
@@ -101,7 +103,7 @@ class GraphComponent:
         m = len(idxA)  # same as len(idxB)
         nA, nB = len(self.shape) - m, len(other.shape) - m
 
-        if self.repr == "Bargmann" and other.repr == "Bargmann":
+        if self.representation == "Bargmann" and other.representation == "Bargmann":
             cost = (  # +1s to include vector part)
                 m * m * m  # M inverse
                 + (m + 1) * m * nA  # left matmul
@@ -117,8 +119,8 @@ class GraphComponent:
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
-                + np.prod(self.shape) * (self.repr == "Bargmann")  # conversion
-                + np.prod(other.shape) * (other.repr == "Bargmann")  # conversion
+                + np.prod(self.shape) * (self.representation == "Bargmann")  # conversion
+                + np.prod(other.shape) * (other.representation == "Bargmann")  # conversion
             )
         return int(cost)
 
@@ -136,7 +138,7 @@ class GraphComponent:
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
         new_component = GraphComponent(
-            "Bargmann" if self.repr == other.repr == "Bargmann" else "Fock",
+            "Bargmann" if self.representation == other.representation == "Bargmann" else "Fock",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
@@ -390,7 +392,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
         graph.edges[edge]["cost"] = A.contraction_cost(B)
         if debug > 0:
             print(
-                f"cost of edge {edge}: {A.repr}|{A.shape} x {B.repr}|{B.shape} = {graph.edges[edge]['cost']}"
+                f"cost of edge {edge}: {A.representation}|{A.shape} x {B.representation}|{B.shape} = {graph.edges[edge]['cost']}"
             )
 
 
@@ -414,10 +416,10 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     r"""
     Reduces the first pair of nodes that match the pattern in the code.
     The first number and letter describe a node with that number of
-    edges and that repr (B for Bargmann, F for Fock), and the last letter
-    describes the repr of the second node.
+    edges and that representation (B for Bargmann, F for Fock), and the last letter
+    describes the representation of the second node.
     For example 1BB means we will contract the first occurrence of a node
-    that has one edge (a leaf) connected to a node of repr B with an arbitrary
+    that has one edge (a leaf) connected to a node of representation B with an arbitrary
     number of edges.
     We typically use codes like 1BB, 2BB, 1FF, 2FF by default because they are
     safe, and codes like 1BF, 1FB optionally as they are not always the best choice.
@@ -432,7 +434,7 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
             for edge in list(graph.out_edges(node)) + list(graph.in_edges(node)):
                 A = graph.nodes[edge[0]]["component"]
                 B = graph.nodes[edge[1]]["component"]
-                if A.repr[0] == tA and B.repr[0] == tB:
+                if A.representation[0] == tA and B.representation[0] == tB:
                     graph = contract(graph, edge)
                     return graph, edge
     return graph, False
