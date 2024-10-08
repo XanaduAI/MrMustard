@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-This module contains the Bargmann representation.
+This module contains the PolyExp ansatz.
 """
 
 # pylint: disable=too-many-instance-attributes
