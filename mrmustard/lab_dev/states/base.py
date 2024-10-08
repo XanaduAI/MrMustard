@@ -224,16 +224,16 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
+            >>> array = Coherent(modes, x=0.1).to_fock().ansatz.array
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array, batched=True)
+            >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:

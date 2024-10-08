@@ -133,21 +133,21 @@ class ArrayAnsatz(Ansatz):
         .. code-block::
 
             >>> from mrmustard import math
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
             >>> array1 = math.arange(27).reshape((3, 3, 3))
-            >>> fock1 = Fock(array1)
+            >>> fock1 = ArrayAnsatz(array1)
 
             >>> fock2 = fock1.reduce(3)
             >>> assert fock1 == fock2
 
             >>> fock3 = fock1.reduce(2)
             >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
-            >>> assert fock3 == Fock(array3)
+            >>> assert fock3 == ArrayAnsatz(array3)
 
             >>> fock4 = fock1.reduce((1, 3, 1))
             >>> array4 = [[[0], [3], [6]]]
-            >>> assert fock4 == Fock(array4)
+            >>> assert fock4 == ArrayAnsatz(array4)
 
         Args:
             shape: The shape of the array of the returned ``Fock``.

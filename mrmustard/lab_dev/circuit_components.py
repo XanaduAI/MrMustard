@@ -556,14 +556,14 @@ class CircuitComponent:
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
             >>> d = Dgate([1], x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
             >>> assert d_fock.wires == d.wires
-            >>> assert isinstance(d_fock.representation, Fock)
+            >>> assert isinstance(d_fock.representation, ArrayAnsatz)
 
         Args:
             shape: The shape of the returned representation. If ``shape``is given as
