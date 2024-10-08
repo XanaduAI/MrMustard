@@ -38,7 +38,7 @@ class TestVacuum:
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):
-        rep = Vacuum(range(n_modes)).representation
+        rep = Vacuum(range(n_modes)).ansatz
 
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))

@@ -75,7 +75,7 @@ class Number(Ket):
         for i, cutoff in enumerate(self.cutoffs.value):
             self.manual_shape[i] = int(cutoff) + 1
 
-        self._multi_rep = Representation(
+        self._representation = Representation(
             ArrayAnsatz.from_function(fock_state, n=self.n.value, cutoffs=self.cutoffs.value),
             self.wires,
         )

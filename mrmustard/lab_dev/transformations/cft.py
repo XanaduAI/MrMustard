@@ -48,7 +48,7 @@ class CFT(Map):
             modes_in=modes,
             name="CFT",
         )
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(
                 fn=triples.complex_fourier_transform_Abc, n_modes=len(modes)
             ),

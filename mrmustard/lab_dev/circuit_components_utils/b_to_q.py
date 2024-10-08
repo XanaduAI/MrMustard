@@ -94,5 +94,5 @@ class BtoQ(Operation):
             raise ValueError(msg)
 
         temp = dict.fromkeys(self.modes, RepEnum.QUADRATURE)
-        ret._multi_rep._wire_reps.update(temp)
+        ret._representation._wire_reps.update(temp)
         return self._rshift_return(ret)

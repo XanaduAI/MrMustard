@@ -40,7 +40,7 @@ class TestFockDamping:
         assert np.allclose(gate.damping.value, damping)
 
     def test_representation(self):
-        rep1 = FockDamping(modes=[0], damping=0.1).representation
+        rep1 = FockDamping(modes=[0], damping=0.1).ansatz
         e = math.exp(-0.1)
         assert math.allclose(
             rep1.A,
@@ -69,11 +69,11 @@ class TestFockDamping:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            FockDamping(modes=[0], damping=[0.1, 0.2]).representation
+            FockDamping(modes=[0], damping=[0.1, 0.2]).ansatz
 
     def test_identity(self):
-        rep1 = FockDamping(modes=[0, 1], damping=0.0).representation
-        rep2 = Identity(modes=[0, 1]).representation
+        rep1 = FockDamping(modes=[0, 1], damping=0.0).ansatz
+        rep2 = Identity(modes=[0, 1]).ansatz
 
         assert math.allclose(rep1.A, rep2.A)
         assert math.allclose(rep1.b, rep2.b)

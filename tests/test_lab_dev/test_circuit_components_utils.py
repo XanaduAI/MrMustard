@@ -51,7 +51,7 @@ class TestTraceOut:
 
         assert tr.name == "Tr"
         assert tr.wires == Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
-        assert tr.representation == PolyExpAnsatz(*identity_Abc(len(modes)))
+        assert tr.ansatz == PolyExpAnsatz(*identity_Abc(len(modes)))
 
     def test_trace_out_bargmann_states(self):
         state = Coherent([0, 1, 2], x=1)
@@ -99,13 +99,13 @@ class TestBtoPS:
         assert dsmap.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_representation(self):
-        rep1 = BtoPS(modes=[0], s=0).representation  # pylint: disable=protected-access
+        rep1 = BtoPS(modes=[0], s=0).ansatz  # pylint: disable=protected-access
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
         assert math.allclose(rep1.A[0], A_correct)
         assert math.allclose(rep1.b[0], b_correct)
         assert math.allclose(rep1.c[0], c_correct)
 
-        rep2 = BtoPS(modes=[5, 10], s=1).representation  # pylint: disable=protected-access
+        rep2 = BtoPS(modes=[5, 10], s=1).ansatz  # pylint: disable=protected-access
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
         assert math.allclose(rep2.A[0], A_correct)
         assert math.allclose(rep2.b[0], b_correct)
@@ -178,9 +178,9 @@ class TestBtoQ:
         modes = [0, 1]
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
-            BtoQ_CC1.representation.A[0],
-            BtoQ_CC1.representation.b[0],
-            BtoQ_CC1.representation.c[0],
+            BtoQ_CC1.ansatz.A[0],
+            BtoQ_CC1.ansatz.b[0],
+            BtoQ_CC1.ansatz.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
@@ -190,9 +190,9 @@ class TestBtoQ:
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
+            QtoBMap_CC2.ansatz.A[0],
+            QtoBMap_CC2.ansatz.b[0],
+            QtoBMap_CC2.ansatz.c[0],
         )
 
         new_A, new_b, new_c = join_Abc_real(
@@ -212,9 +212,9 @@ class TestBtoQ:
         modes = [0]
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = (
-            BtoQ_CC1.representation.A[0],
-            BtoQ_CC1.representation.b[0],
-            BtoQ_CC1.representation.c[0],
+            BtoQ_CC1.ansatz.A[0],
+            BtoQ_CC1.ansatz.b[0],
+            BtoQ_CC1.ansatz.c[0],
         )
         Ainter, binter, cinter = complex_gaussian_integral(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
@@ -226,9 +226,9 @@ class TestBtoQ:
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
+            QtoBMap_CC2.ansatz.A[0],
+            QtoBMap_CC2.ansatz.b[0],
+            QtoBMap_CC2.ansatz.c[0],
         )
 
         new_A, new_b, new_c = join_Abc_real(
@@ -261,6 +261,6 @@ class TestBtoQ:
         quad = np.random.random()
 
         state = Coherent([0], x, y)
-        wavefunction = (state >> BtoQ([0], axis_angle)).representation
+        wavefunction = (state >> BtoQ([0], axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))

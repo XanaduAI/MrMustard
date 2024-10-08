@@ -86,6 +86,6 @@ class FockDamping(Operation):
                 None,
             )
         )
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.fock_damping_Abc, beta=self.damping), self.wires
         )

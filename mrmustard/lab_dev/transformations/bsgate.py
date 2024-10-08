@@ -105,7 +105,7 @@ class BSgate(Unitary):
         super().__init__(modes_out=modes, modes_in=modes, name="BSgate")
         self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(
                 fn=triples.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
             ),

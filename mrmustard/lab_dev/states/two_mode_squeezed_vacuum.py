@@ -67,7 +67,7 @@ class TwoModeSqueezedVacuum(Ket):
         rs, phis = list(reshape_params(int(len(modes) / 2), r=r, phi=phi))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(
                 fn=triples.two_mode_squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
             ),

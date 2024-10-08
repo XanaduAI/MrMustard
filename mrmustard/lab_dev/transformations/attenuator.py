@@ -96,7 +96,7 @@ class Attenuator(Channel):
                 None,
             )
         )
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.attenuator_Abc, eta=self.transmissivity),
             self.wires,
         )

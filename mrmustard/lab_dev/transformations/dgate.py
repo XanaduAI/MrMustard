@@ -95,7 +95,7 @@ class Dgate(Unitary):
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.displacement_gate_Abc, x=self.x, y=self.y),
             self.wires,
         )
@@ -114,7 +114,7 @@ class Dgate(Unitary):
             array: The Fock representation of this component.
         """
         if isinstance(shape, int):
-            shape = (shape,) * self.representation.num_vars
+            shape = (shape,) * self.ansatz.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
         if len(shape) != len(auto_shape):
@@ -146,7 +146,7 @@ class Dgate(Unitary):
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
         fock = ArrayAnsatz(self.fock(shape, batched=True), batched=True)
-        fock._original_abc_data = self.representation.triple
+        fock._original_abc_data = self.ansatz.triple
         ret = self._getitem_builtin(self.modes)
-        ret._multi_rep = Representation(fock, self.wires)
+        ret._representation = Representation(fock, self.wires)
         return ret

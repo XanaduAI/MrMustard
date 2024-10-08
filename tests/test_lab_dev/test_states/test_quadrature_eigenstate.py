@@ -70,7 +70,7 @@ class TestQuadratureEigenstate:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            QuadratureEigenstate(modes=[0], x=[0.1, 0.2]).representation
+            QuadratureEigenstate(modes=[0], x=[0.1, 0.2]).ansatz
 
     def test_trainable_parameters(self):
         state1 = QuadratureEigenstate([0, 1], 1, 1)

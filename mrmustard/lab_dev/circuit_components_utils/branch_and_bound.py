@@ -68,7 +68,7 @@ class GraphComponent:
             c: A CircuitComponent.
         """
         return GraphComponent(
-            repr=str(c.representation.__class__.__name__),
+            repr=str(c.ansatz.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
             name=c.__class__.__name__,

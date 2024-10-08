@@ -62,6 +62,6 @@ class Thermal(DM):
         super().__init__(modes=modes, name="Thermal")
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar), self.wires
         )

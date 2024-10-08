@@ -89,18 +89,18 @@ class Transformation(CircuitComponent):
             raise NotImplementedError(
                 "Only Transformations with the same number of input and output wires are supported."
             )
-        if not isinstance(self.representation, PolyExpAnsatz):
+        if not isinstance(self.ansatz, PolyExpAnsatz):
             raise NotImplementedError("Only Bargmann representation is supported.")
-        if self.representation.batch_size > 1:
+        if self.ansatz.batch_size > 1:
             raise NotImplementedError("Batched transformations are not supported.")
 
         # compute the inverse
-        A, b, _ = self.dual.representation.conj.triple  # apply X(.)X
+        A, b, _ = self.dual.ansatz.conj.triple  # apply X(.)X
         almost_inverse = self._from_attributes(
             PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
         almost_identity = self @ almost_inverse
-        invert_this_c = almost_identity.representation.c
+        invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
             self.wires,
@@ -155,7 +155,7 @@ class Operation(Transformation):
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
         QQ = Operation(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Operation(modes_out, modes_in, BB.representation, name)
+        return Operation(modes_out, modes_in, BB.ansatz, name)
 
 
 class Unitary(Operation):
@@ -177,8 +177,8 @@ class Unitary(Operation):
         r"""
         Returns the symplectic matrix that corresponds to this unitary
         """
-        batch_size = self.representation.batch_size
-        return [au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
+        batch_size = self.ansatz.batch_size
+        return [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
 
     @classmethod
     def from_bargmann(
@@ -205,7 +205,7 @@ class Unitary(Operation):
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
         QQ = Unitary(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Unitary(modes_out, modes_in, BB.representation, name)
+        return Unitary(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def from_symplectic(cls, modes, S) -> Unitary:
@@ -235,7 +235,7 @@ class Unitary(Operation):
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(
-            representation=unitary_dual.representation,
+            representation=unitary_dual.ansatz,
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
@@ -254,9 +254,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary._from_attributes(ret.representation, ret.wires)
+            return Unitary._from_attributes(ret.ansatz, ret.wires)
         elif isinstance(other, Channel):
-            return Channel._from_attributes(ret.representation, ret.wires)
+            return Channel._from_attributes(ret.ansatz, ret.wires)
         return ret
 
 
@@ -311,7 +311,7 @@ class Map(Transformation):
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
         QQ = Map(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Map(modes_out, modes_in, BB.representation, name)
+        return Map(modes_out, modes_in, BB.ansatz, name)
 
 
 class Channel(Map):
@@ -332,12 +332,12 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
         """
-        batch_dim = self.representation.batch_size
+        batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.representation.A
+        A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[0, :m, m:]
 
@@ -353,7 +353,7 @@ class Channel(Map):
         r"""
         Whether this channel is trace preserving (TP).
         """
-        A = self.representation.A
+        A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[0, :m, m:]
         lambda_A = A[0, m:, m:]
@@ -372,7 +372,7 @@ class Channel(Map):
         r"""
         Returns the X and Y matrix corresponding to the channel.
         """
-        return XY_of_channel(self.representation.A[0])
+        return XY_of_channel(self.ansatz.A[0])
 
     @classmethod
     def from_bargmann(
@@ -399,7 +399,7 @@ class Channel(Map):
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
         QQ = Channel(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Channel(modes_out, modes_in, BB.representation, name)
+        return Channel(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
@@ -415,7 +415,7 @@ class Channel(Map):
         m = len(modes)
         U = Unitary.random(range(3 * m), max_r)
         u_psi = Vacuum(range(2 * m)) >> U
-        A = u_psi.representation
+        A = u_psi.ansatz
         kraus = A.conj[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
@@ -428,5 +428,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, (Channel, Unitary)):
-            return Channel._from_attributes(ret.representation, ret.wires)
+            return Channel._from_attributes(ret.ansatz, ret.wires)
         return ret

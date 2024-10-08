@@ -141,7 +141,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock(5, batched=True)
 
-        assert math.allclose(array_in, state_in_fock.representation.array)
+        assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
@@ -205,7 +205,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm = ket.dm()
 
         assert dm.name == ket.name
-        assert dm.representation == (ket @ ket.adjoint).representation
+        assert dm.ansatz == (ket @ ket.adjoint).ansatz
         assert dm.wires == (ket @ ket.adjoint).wires
 
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
@@ -268,7 +268,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), math.sum(res_k01.representation.c))
+        assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -280,7 +280,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.representation.c))
+        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
@@ -317,7 +317,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
         res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
-        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).representation.array
+        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -327,9 +327,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = (ket @ u0 @ ket.dual).to_fock(10).representation.array
-        res_u1 = (ket @ u1 @ ket.dual).to_fock(10).representation.array
-        res_u01 = (ket @ u01 @ ket.dual).to_fock(10).representation.array
+        res_u0 = (ket @ u0 @ ket.dual).to_fock(10).ansatz.array
+        res_u1 = (ket @ u1 @ ket.dual).to_fock(10).ansatz.array
+        res_u01 = (ket @ u01 @ ket.dual).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(u0), res_u0[0])
         assert math.allclose(ket.expectation(u1), res_u1[0])
@@ -356,11 +356,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.wires, unitary.name
+            unitary.ansatz, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.representation,
+            channel.ansatz,
             channel.wires,
             channel.name,
         )  # pylint: disable=protected-access
@@ -434,7 +434,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
         psi = Ket.random([1, 22], max_sq)
-        A = psi.representation.A[0]
+        A = psi.ansatz.A[0]
         assert np.isclose(psi.probability, 1)  # checks if the state is normalized
         assert np.allclose(A - np.transpose(A), np.zeros(2))  # checks if the A matrix is symmetric
 
@@ -598,7 +598,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock(5, batched=True)
 
-        assert math.allclose(array_in, state_in_fock.representation.array)
+        assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(modes, array_in, "my_dm", True)
         assert state_in_fock == state_out
@@ -732,7 +732,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
+        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
 
     def test_expectation_bargmann_dm(self):
         dm0 = Coherent([0], x=1, y=2).dm()
@@ -822,11 +822,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.wires, unitary.name
+            unitary.ansatz, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.representation, channel.wires, channel.name
+            channel.ansatz, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         dm = ket >> channel
@@ -846,7 +846,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_random(self, modes):
         m = len(modes)
         dm = DM.random(modes)
-        A = dm.representation.A[0]
+        A = dm.ansatz.A[0]
         Gamma = A[:m, m:]
         Lambda = A[m:, m:]
         Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda

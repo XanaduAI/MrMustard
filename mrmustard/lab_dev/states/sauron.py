@@ -43,7 +43,7 @@ class Sauron(Ket):
         super().__init__(name=f"Sauron-{n}", modes=modes)
         self._add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(
                 triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
             ),

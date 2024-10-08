@@ -63,6 +63,6 @@ class Rgate(Unitary):
         super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
         (phis,) = list(reshape_params(len(modes), phi=phi))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.phi), self.wires
         )

@@ -179,7 +179,7 @@ class TestCircuit:
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
         cc = CircuitComponent._from_attributes(
-            bs01.representation, bs01.wires, "my_cc"
+            bs01.ansatz, bs01.wires, "my_cc"
         )  # pylint: disable=protected-access
 
         assert repr(Circuit()) == ""

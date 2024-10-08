@@ -96,6 +96,6 @@ class Amplifier(Channel):
                 None,
             )
         )
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.gain), self.wires
         )

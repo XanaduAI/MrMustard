@@ -105,10 +105,12 @@ class CircuitComponent:
                     + tuple(np.argsort(modes_in_ket) + offsets[2])
                 )
                 if representation is not None:
-                    self._multi_rep = Representation(representation.reorder(tuple(perm)), wires)
+                    self._representation = Representation(
+                        representation.reorder(tuple(perm)), wires
+                    )
 
-        if not hasattr(self, "_multi_rep"):
-            self._multi_rep = Representation(representation, wires)
+        if not hasattr(self, "_representation"):
+            self._representation = Representation(representation, wires)
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -121,11 +123,11 @@ class CircuitComponent:
         serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
         params = signature(cls).parameters
         if "name" in params:  # assume abstract type, serialize the representation
-            rep_cls = type(self.representation)
+            rep_cls = type(self.ansatz)
             serializable["name"] = self.name
             serializable["wires"] = self.wires.sorted_args
             serializable["rep_class"] = f"{rep_cls.__module__}.{rep_cls.__qualname__}"
-            return serializable, self.representation.to_dict()
+            return serializable, self.ansatz.to_dict()
 
         # handle modes parameter
         if "modes" in params:
@@ -163,7 +165,7 @@ class CircuitComponent:
         """
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets + bras).conj if self.representation else None
+        rep = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
 
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
@@ -182,7 +184,7 @@ class CircuitComponent:
         ik = self.wires.ket.input.indices
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
-        rep = self.representation.reorder(ib + ob + ik + ok).conj if self.representation else None
+        rep = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name
@@ -205,7 +207,7 @@ class CircuitComponent:
         in the `.wires` attribute.
         """
         try:  # to read it from array ansatz
-            return list(self.representation.array.shape[1:])
+            return list(self.ansatz.array.shape[1:])
         except AttributeError:  # bargmann
             return [None] * len(self.wires)
 
@@ -242,18 +244,25 @@ class CircuitComponent:
         return self._parameter_set
 
     @property
-    def representation(self) -> Ansatz | None:
+    def ansatz(self) -> Ansatz | None:
         r"""
-        A representation of this circuit component.
+        The ansatz of this circuit component.
         """
-        return self._multi_rep.ansatz
+        return self._representation.ansatz
+
+    @property
+    def representation(self) -> Representation | None:
+        r"""
+        The representation of this circuit component.
+        """
+        return self._representation
 
     @property
     def wires(self) -> Wires:
         r"""
         The wires of this component.
         """
-        return self._multi_rep.wires
+        return self._representation.wires
 
     @classmethod
     def from_bargmann(
@@ -320,7 +329,7 @@ class CircuitComponent:
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
         QQQQ = CircuitComponent._from_attributes(PolyExpAnsatz(*triple), wires)
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
-        return cls._from_attributes(BBBB.representation, wires, name)
+        return cls._from_attributes(BBBB.ansatz, wires, name)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
@@ -341,7 +350,7 @@ class CircuitComponent:
         BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
 
         object_to_convert = self
-        if isinstance(self.representation, ArrayAnsatz):
+        if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
         QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
@@ -359,7 +368,7 @@ class CircuitComponent:
         Returns:
             A,b,c triple of the quadrature representation
         """
-        return self.to_quadrature(phi=phi).representation.data
+        return self.to_quadrature(phi=phi).ansatz.data
 
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
@@ -373,8 +382,8 @@ class CircuitComponent:
             A circuit component with the given quadrature representation.
         """
 
-        if isinstance(self.representation, ArrayAnsatz):
-            fock_arrays = self.representation.array
+        if isinstance(self.ansatz, ArrayAnsatz):
+            fock_arrays = self.ansatz.array
             # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.sum(
@@ -383,7 +392,7 @@ class CircuitComponent:
             return quad_basis
 
         QQQQ = self.to_quadrature(phi=phi)
-        return QQQQ.representation(quad)
+        return QQQQ.ansatz(quad)
 
     @classmethod
     def _from_attributes(
@@ -422,7 +431,7 @@ class CircuitComponent:
             if tp.__name__ in types:
                 ret = tp()
                 ret._name = name
-                ret._multi_rep = Representation(representation, wires)
+                ret._representation = Representation(representation, wires)
                 return ret
         return CircuitComponent(representation, wires, name)
 
@@ -454,7 +463,7 @@ class CircuitComponent:
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
-        return self._multi_rep.bargmann_triple(batched)
+        return self._representation.bargmann_triple(batched)
 
     def fock(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
         r"""
@@ -470,7 +479,7 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        return self._multi_rep.fock(shape or self.auto_shape(), batched)
+        return self._representation.fock(shape or self.auto_shape(), batched)
 
     def on(self, modes: Sequence[int]) -> CircuitComponent:
         r"""
@@ -530,15 +539,15 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        if isinstance(self.representation, PolyExpAnsatz):
+        if isinstance(self.ansatz, PolyExpAnsatz):
             return self
         else:
-            mult_rep = self._multi_rep.to_bargmann()
+            rep = self._representation.to_bargmann()
             try:
                 ret = self._getitem_builtin(self.modes)
-                ret._multi_rep = mult_rep
+                ret._representation = rep
             except TypeError:
-                ret = self._from_attributes(mult_rep.ansatz, mult_rep.wires, self.name)
+                ret = self._from_attributes(rep.ansatz, rep.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
             return ret
@@ -564,12 +573,12 @@ class CircuitComponent:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        mult_rep = self._multi_rep.to_fock(shape or self.auto_shape())
+        rep = self._representation.to_fock(shape or self.auto_shape())
         try:
             ret = self._getitem_builtin(self.modes)
-            ret._multi_rep = mult_rep
+            ret._representation = rep
         except TypeError:
-            ret = self._from_attributes(mult_rep.ansatz, mult_rep.wires, self.name)
+            ret = self._from_attributes(rep.ansatz, rep.wires, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
@@ -610,8 +619,8 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.__dict__["_multi_rep"] = Representation(
-            self.representation, wires or Wires(*self.wires.args)
+        instance.__dict__["_representation"] = Representation(
+            self.ansatz, wires or Wires(*self.wires.args)
         )
         return instance
 
@@ -621,7 +630,7 @@ class CircuitComponent:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
             return ret
-        scalar = ret.representation.scalar
+        scalar = ret.ansatz.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
@@ -630,7 +639,7 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        rep = self.representation + other.representation
+        rep = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
 
@@ -638,11 +647,11 @@ class CircuitComponent:
         r"""
         Whether this component is equal to another component.
 
-        Compares multi-representations, but not the other attributes
+        Compares representations, but not the other attributes
         (e.g. name and parameter set).
         """
         if isinstance(other, CircuitComponent):
-            return self._multi_rep == other._multi_rep
+            return self._representation == other._representation
         return False
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
@@ -664,17 +673,17 @@ class CircuitComponent:
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-        result = self._multi_rep @ other._multi_rep
+        result = self._representation @ other._representation
         return CircuitComponent._from_attributes(result.ansatz, result.wires, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.representation * other, self.wires, self.name)
+        return self._from_attributes(self.ansatz * other, self.wires, self.name)
 
     def __repr__(self) -> str:
-        repr = self.representation
+        repr = self.ansatz
         repr_name = repr.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
@@ -708,7 +717,7 @@ class CircuitComponent:
         not be called, and something else will be returned.
         """
         ret = self * other
-        return ret.representation.scalar
+        return ret.ansatz.scalar
 
     def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
         r"""
@@ -768,7 +777,7 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot subtract components with different wires.")
-        rep = self.representation - other.representation
+        rep = self.ansatz - other.ansatz
         name = self.name if self.name == other.name else ""
         return self._from_attributes(rep, self.wires, name)
 
@@ -776,14 +785,12 @@ class CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(self.representation / other, self.wires, self.name)
+        return self._from_attributes(self.ansatz / other, self.wires, self.name)
 
     def _ipython_display_(self):
         # both reps might return None
-        rep_fn = (
-            mmwidgets.fock if isinstance(self.representation, ArrayAnsatz) else mmwidgets.bargmann
-        )
-        rep_widget = rep_fn(self.representation)
+        rep_fn = mmwidgets.fock if isinstance(self.ansatz, ArrayAnsatz) else mmwidgets.bargmann
+        rep_widget = rep_fn(self.ansatz)
         wires_widget = mmwidgets.wires(self.wires)
         if not rep_widget:
             title_widget = widgets.HTML(f"<h1>{self.name or type(self).__name__}</h1>")

@@ -65,10 +65,10 @@ class TestSqueezedVacuum:
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_representation(self, modes, r, phi):
-        rep = SqueezedVacuum(modes, r, phi).representation
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).representation
+        rep = SqueezedVacuum(modes, r, phi).ansatz
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
         assert rep == exp
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            SqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+            SqueezedVacuum(modes=[0], r=[0.1, 0.2]).ansatz

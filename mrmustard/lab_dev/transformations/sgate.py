@@ -95,7 +95,7 @@ class Sgate(Unitary):
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(fn=triples.squeezing_gate_Abc, r=self.r, delta=self.phi),
             self.wires,
         )

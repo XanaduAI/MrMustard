@@ -48,10 +48,10 @@ class TestThermal:
 
     @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
     def test_representation(self, nbar):
-        rep = Thermal([0, 1], nbar).representation
+        rep = Thermal([0, 1], nbar).ansatz
         exp = PolyExpAnsatz(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
         assert rep == exp
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Thermal(modes=[0], nbar=[0.1, 0.2]).representation
+            Thermal(modes=[0], nbar=[0.1, 0.2]).ansatz

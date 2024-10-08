@@ -44,8 +44,8 @@ class TestOperation:
         b = np.array([0, 1, 5])
         c = 1
         operator = Operation.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
-        assert np.allclose(operator.representation.A[None, ...], A)
-        assert np.allclose(operator.representation.b[None, ...], b)
+        assert np.allclose(operator.ansatz.A[None, ...], A)
+        assert np.allclose(operator.ansatz.b[None, ...], b)
 
 
 class TestUnitary:
@@ -66,11 +66,11 @@ class TestUnitary:
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
         u_component = CircuitComponent._from_attributes(
-            unitary1.representation, unitary1.wires, unitary1.name
+            unitary1.ansatz, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.representation, channel.wires, channel.name
+            channel.ansatz, channel.wires, channel.name
         )  # pylint: disable=protected-access
 
         assert isinstance(unitary1 >> unitary2, Unitary)
@@ -81,7 +81,7 @@ class TestUnitary:
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary1.representation, unitary1.wires, unitary1.name
+            unitary1.ansatz, unitary1.wires, unitary1.name
         )  # pylint: disable=protected-access
         assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate, repr=PolyExpAnsatz)"
         assert repr(unitary1.to_fock(5)) == "Dgate(modes=[0, 1], name=Dgate, repr=ArrayAnsatz)"
@@ -96,8 +96,8 @@ class TestUnitary:
         b = np.array([0, 0])
         c = 1
         gate = Unitary.from_bargmann([2], [2], (A, b, c), "my_unitary")
-        assert np.allclose(gate.representation.A[None, ...], A)
-        assert np.allclose(gate.representation.b[None, ...], b)
+        assert np.allclose(gate.ansatz.A[None, ...], A)
+        assert np.allclose(gate.ansatz.b[None, ...], b)
 
     def test_init_from_symplectic(self):
         S = math.random_symplectic(2)
@@ -111,7 +111,7 @@ class TestUnitary:
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
         should_be_identity = gate >> gate_inv
-        assert should_be_identity.representation == Dgate([0], 0.0, 0.0).representation
+        assert should_be_identity.ansatz == Dgate([0], 0.0, 0.0).ansatz
 
     def test_random(self):
         modes = [3, 1, 20]
@@ -143,18 +143,18 @@ class TestChannel:
         b = np.array([0, 1, 2, 3])
         c = 1
         channel = Channel.from_bargmann([0], [0], (A, b, c), "my_channel")
-        assert np.allclose(channel.representation.A[None, ...], A)
-        assert np.allclose(channel.representation.b[None, ...], b)
+        assert np.allclose(channel.ansatz.A[None, ...], A)
+        assert np.allclose(channel.ansatz.b[None, ...], b)
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.wires, unitary.name
+            unitary.ansatz, unitary.wires, unitary.name
         )  # pylint: disable=protected-access
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.representation, channel1.wires, channel1.name
+            channel1.ansatz, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
         assert isinstance(channel1 >> unitary, Channel)
@@ -165,7 +165,7 @@ class TestChannel:
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.representation, channel1.wires, channel1.name
+            channel1.ansatz, channel1.wires, channel1.name
         )  # pylint: disable=protected-access
 
         assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att, repr=PolyExpAnsatz)"
@@ -174,7 +174,7 @@ class TestChannel:
     def test_inverse_channel(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)
         should_be_identity = gate >> gate.inverse()
-        assert should_be_identity.representation == Attenuator([0], 1.0).representation
+        assert should_be_identity.ansatz == Attenuator([0], 1.0).ansatz
 
     def test_random(self):
 
@@ -183,7 +183,7 @@ class TestChannel:
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
     def test_is_CP(self, modes):
-        u = Unitary.random(modes).representation
+        u = Unitary.random(modes).ansatz
         kraus = u @ u.conj
         assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
 
@@ -195,7 +195,7 @@ class TestChannel:
 
     def test_XY(self):
         U = Unitary.random([0, 1])
-        u = U.representation
+        u = U.ansatz
         unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj @ u).triple)
         X, Y = unitary_channel.XY
         assert np.allclose(X, U.symplectic) and np.allclose(Y, np.zeros(4))

@@ -58,7 +58,7 @@ class Ggate(Unitary):
         super().__init__(modes_out=modes, modes_in=modes, name="Ggate")
         S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
         self.parameter_set.add_parameter(S)
-        self._multi_rep = Representation(
+        self._representation = Representation(
             PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
                 s=self.parameter_set.symplectic,
