@@ -37,7 +37,7 @@ __all__ = ["Ansatz"]
 
 class Ansatz(ABC):
     r"""
-    A base class for representations.
+    A base class for ansatz.
     """
 
     def __init__(self) -> None:
@@ -49,21 +49,21 @@ class Ansatz(ABC):
     @abstractmethod
     def batch_size(self) -> int:
         r"""
-        The batch size of the representation.
+        The batch size of the ansatz.
         """
 
     @property
     @abstractmethod
     def conj(self) -> Ansatz:
         r"""
-        The conjugate of the representation.
+        The conjugate of the ansatz.
         """
 
     @property
     @abstractmethod
     def data(self) -> tuple | Tensor:
         r"""
-        The data of the representation.
+        The data of the ansatz.
         For now, it's the triple for Bargmann and the array for Fock.
         """
 
@@ -71,14 +71,14 @@ class Ansatz(ABC):
     @abstractmethod
     def num_vars(self) -> int:
         r"""
-        The number of variables in the representation.
+        The number of variables in the ansatz.
         """
 
     @property
     @abstractmethod
     def scalar(self) -> Scalar:
         r"""
-        The scalar part of the representation.
+        The scalar part of the ansatz.
         For now it's ``c`` for Bargmann and the array for Fock.
         """
 
@@ -102,13 +102,13 @@ class Ansatz(ABC):
     @abstractmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
         r"""
-        Returns a representation from a function and kwargs.
+        Returns an ansatz from a function and kwargs.
         """
 
     @abstractmethod
     def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
-        Reorders the representation indices.
+        Reorders the ansatz indices.
         """
 
     @abstractmethod
@@ -127,7 +127,7 @@ class Ansatz(ABC):
             idxs2: The second part.
 
         Returns:
-            The traced-over representation.
+            The traced-over ansatz.
         """
 
     @abstractmethod
@@ -140,31 +140,31 @@ class Ansatz(ABC):
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:
         r"""
-        Adds this representation and another representation.
+        Adds this ansatz and another ansatz.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The addition of this representation and other.
+            The addition of this ansatz and other.
         """
 
     @abstractmethod
     def __and__(self, other: Ansatz) -> Ansatz:
         r"""
-        Tensor product of this representation with another.
+        Tensor product of this ansatz with another.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The tensor product of this representation and other.
+            The tensor product of this ansatz and other.
         """
 
     @abstractmethod
     def __call__(self, z: Batch[Vector]) -> Scalar | Ansatz:
         r"""
-        Evaluates this representation at a given point in the domain.
+        Evaluates this ansatz at a given point in the domain.
 
         Args:
             z: point in C^n where the function is evaluated
@@ -176,7 +176,7 @@ class Ansatz(ABC):
     @abstractmethod
     def __eq__(self, other: Ansatz) -> bool:
         r"""
-        Whether this representation is equal to another.
+        Whether this ansatz is equal to another.
         """
 
     @abstractmethod
@@ -191,42 +191,42 @@ class Ansatz(ABC):
         Implements the inner product of representations over the marked indices.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The resulting representation.
+            The resulting ansatz.
         """
 
     @abstractmethod
     def __mul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Multiplies this representation by a scalar or another representation.
+        Multiplies this ansatz by a scalar or another ansatz.
 
         Args:
-            other: A scalar or another representation.
+            other: A scalar or another ansatz.
 
         Raises:
-            TypeError: If other is neither a scalar nor a representation.
+            TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            The product of this representation and other.
+            The product of this ansatz and other.
         """
 
     @abstractmethod
     def __neg__(self) -> Ansatz:
         r"""
-        Negates the values in the representation.
+        Negates the values in the ansatz.
         """
 
     def __rmul__(self, other: Ansatz | Scalar) -> Ansatz:
         r"""
-        Multiplies this representation by another or by a scalar on the right.
+        Multiplies this ansatz by another or by a scalar on the right.
         """
         return self.__mul__(other)
 
     def __sub__(self, other: Ansatz) -> Ansatz:
         r"""
-        Subtracts other from this representation.
+        Subtracts other from this ansatz.
         """
         try:
             return self.__add__(-other)
@@ -236,11 +236,11 @@ class Ansatz(ABC):
     @abstractmethod
     def __truediv__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Divides this representation by another representation.
+        Divides this ansatz by another ansatz.
 
         Args:
-            other: A scalar or another representation.
+            other: A scalar or another ansatz.
 
         Returns:
-            The division of this representation and other.
+            The division of this ansatz and other.
         """
