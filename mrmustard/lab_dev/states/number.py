@@ -36,9 +36,10 @@ class Number(Ket):
     .. code-block::
 
         >>> from mrmustard.lab_dev import Number
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
         >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert state.representation.__class__.__name__ == "Fock"
+        >>> assert isinstance(state.ansatz, ArrayAnsatz)
 
     Args:
         modes: The modes of the number state.
