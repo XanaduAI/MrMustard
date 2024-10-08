@@ -93,9 +93,6 @@ class BtoQ(Operation):
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
             raise ValueError(msg)
 
-        # update ret._multi_rep._wire_reps
         temp = dict.fromkeys(self.modes, RepEnum.QUADRATURE)
-        print("1", ret._multi_rep._wire_reps)
         ret._multi_rep._wire_reps.update(temp)
-        print("2", ret._multi_rep._wire_reps)
         return self._rshift_return(ret)

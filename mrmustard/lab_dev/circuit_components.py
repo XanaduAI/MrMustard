@@ -620,7 +620,6 @@ class CircuitComponent:
     ) -> CircuitComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
         if len(ret.wires) > 0:
-            print("ret", ret._multi_rep._wire_reps)
             return ret
         scalar = ret.representation.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
