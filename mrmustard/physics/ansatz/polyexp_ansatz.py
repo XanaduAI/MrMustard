@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """
 This module contains the Bargmann representation.
 """
+
+# pylint: disable=too-many-instance-attributes
 
 from __future__ import annotations
 
@@ -55,7 +56,6 @@ from .base import Ansatz
 __all__ = ["PolyExpAnsatz"]
 
 
-# pylint: disable=too-many-instance-attributes
 class PolyExpAnsatz(Ansatz):
     r"""
     The Fock-Bargmann representation of a broad class of quantum states, transformations,
