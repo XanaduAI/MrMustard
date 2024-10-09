@@ -747,7 +747,7 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        rep = self.representation + other.representation
+        rep = self.to_bargmann().representation + other.to_bargmann().representation # addition occurs in bargmann always
         name = self.name if self.name == other.name else ""
         # TODO: go back to bargmann on all modes
         return self._from_attributes(rep, self.wires, name)
@@ -827,21 +827,21 @@ class CircuitComponent:
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("Q", other.phi)
+                    self._index_representation[i] = ("Q", float(other.phi.value))
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("Q", other.phi)
+                    self._index_representation[i] = ("Q", float(other.phi.value))
 
         if isinstance(other, BtoPS):
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("PS", other.s)
+                    self._index_representation[i] = ("PS", float(other.s.value))
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("PS", other.s)
+                    self._index_representation[i] = ("PS", float(other.s.value))
 
     def _helper_update_input_wire_rep(self, other):
         r"""
@@ -854,21 +854,21 @@ class CircuitComponent:
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("Q", other.phi)
+                    self._index_representation[i] = ("Q", float(other.phi.value))
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("Q", other.phi)
+                    self._index_representation[i] = ("Q", float(other.phi.value))
 
         if isinstance(other, BtoPS):
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", other.s)
+                    self._index_representation[i] = ("PS", float(other.s.value))
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", other.s)
+                    self._index_representation[i] = ("PS", float(other.s.value))
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
