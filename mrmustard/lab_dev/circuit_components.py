@@ -622,47 +622,48 @@ class CircuitComponent:
             if not indices:
                 indices = self.wires.indices
 
+            ret = self
             for i in indices:
                 name, arg = self._index_representation[i]
                 if name == "Q":
                     self._index_representation[i] = ("B", None)
                     if i in self.wires.output.bra.indices:
-                        self = (
-                            self
+                        ret = (
+                            ret
                             @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).adjoint.inverse()
                         )
                     if i in self.wires.output.ket.indices:
-                        self = self @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).inverse()
+                        ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).inverse()
                     if i in self.wires.input.bra.indices:
-                        self = (
+                        ret = (
                             BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.adjoint.inverse()
-                            @ self
+                            @ ret
                         )
                     if i in self.wires.input.bra.indices:
-                        self = (
-                            BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ self
+                        ret = (
+                            BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
                         )
 
                 if name == "PS":
                     self._index_representation[i] = ("B", None)
                     if i in self.wires.output.bra.indices:
-                        self = (
-                            self
+                        ret = (
+                            ret
                             @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).adjoint.inverse()
                         )
                     if i in self.wires.output.ket.indices:
-                        self = self @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).inverse()
+                        ret = ret @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).inverse()
                     if i in self.wires.input.bra.indices:
-                        self = (
+                        ret = (
                             BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.adjoint.inverse()
-                            @ self
+                            @ ret
                         )
                     if i in self.wires.input.bra.indices:
-                        self = (
-                            BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ self
+                        ret = (
+                            BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
                         )
 
-            return self
+            return ret
         elif isinstance(self.representation, Fock):
             if self.representation.ansatz._original_abc_data:
                 A, b, c = self.representation.ansatz._original_abc_data
@@ -814,7 +815,8 @@ class CircuitComponent:
         result = CircuitComponent._from_attributes(rep, wires_result, None)
 
         result._helper_update_output_wire_rep(other)
-        result._helper_update_input_wire_rep(self)
+        pre_self = self
+        result._helper_update_input_wire_rep(pre_self)
 
         return result
 
@@ -845,32 +847,33 @@ class CircuitComponent:
                     i = self.wires.index_dicts[2][m]
                     self._index_representation[i] = ("PS", float(other.s.value))
 
-    def _helper_update_input_wire_rep(self, other):
+    def _helper_update_input_wire_rep(self, pre_self):
         r"""
         Updates the representations on the input wires, upon matmul by BtoQ or BtoPS
         """
 
         from .circuit_components_utils import BtoQ, BtoPS
 
-        if isinstance(other, BtoQ):
-            if other.wires.bra:
-                for m in other.modes:
+        if isinstance(pre_self, BtoQ):
+            if pre_self.wires.bra:
+                for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("Q", float(other.phi.value))
-            elif other.wires.ket:
-                for m in other.modes:
+                    self._index_representation[i] = ("Q", float(pre_self.phi.value))
+            elif pre_self.wires.ket:
+                for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("Q", float(other.phi.value))
+                    self._index_representation[i] = ("Q", float(pre_self.phi.value))
+                    print(self._index_representation[i])
 
-        if isinstance(other, BtoPS):
-            if other.wires.bra:
-                for m in other.modes:
+        if isinstance(pre_self, BtoPS):
+            if pre_self.wires.bra:
+                for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", float(other.s.value))
-            elif other.wires.ket:
-                for m in other.modes:
+                    self._index_representation[i] = ("PS", float(pre_self.s.value))
+            elif pre_self.wires.ket:
+                for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", float(other.s.value))
+                    self._index_representation[i] = ("PS", float(pre_self.s.value))
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
