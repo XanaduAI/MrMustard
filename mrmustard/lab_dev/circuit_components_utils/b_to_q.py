@@ -54,7 +54,7 @@ class BtoQ(Operation):
             representation=repr,
             name="BtoQ",
         )
-        
+
         self.phi = phi
 
     @property
