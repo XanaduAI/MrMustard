@@ -317,19 +317,19 @@ class TestTriples:
         A1_correct = np.array([[0, -0.5, -1, 0], [-0.5, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A1, A1_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b1, math.zeros(4))
-        assert math.allclose(c1, 1 / (2 * np.pi))
+        assert math.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.displacement_map_s_parametrized_Abc(s=1, n_modes=1)
         A2_correct = np.array([[0, 0, -1, 0], [0, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A2, A2_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b2, math.zeros(4))
-        assert math.allclose(c2, 1 / (2 * np.pi))
+        assert math.allclose(c2, 1.0)
 
         A3, b3, c3 = triples.displacement_map_s_parametrized_Abc(s=-1, n_modes=1)
         A3_correct = np.array([[0, -1, -1, 0], [-1, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A3, A3_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b3, math.zeros(4))
-        assert math.allclose(c3, 1 / (2 * np.pi))
+        assert math.allclose(c3, 1.0)
 
     @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])
     def test_attenuator_kraus_Abc(self, eta):
