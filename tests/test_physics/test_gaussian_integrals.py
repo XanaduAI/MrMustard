@@ -142,8 +142,8 @@ def test_join_Abc_nonbatched():
     assert np.allclose(c, 70)
 
 
-def test_join_Abc_batched():
-    """Tests the ``join_Abc`` method for batched inputs (and with polynomial c)."""
+def test_join_Abc_batched_zip():
+    """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
     A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
     b1 = np.array([[5, 6], [7, 8]])
     c1 = np.array([7, 8])
@@ -152,7 +152,7 @@ def test_join_Abc_batched():
     b2 = np.array([[12, 13], [14, 15]])
     c2 = np.array([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
 
     assert np.allclose(
         A,
@@ -167,6 +167,31 @@ def test_join_Abc_batched():
     assert np.allclose(c, np.array([70, 800]))
 
 
+def test_join_Abc_batched_kron():
+    """Tests the ``join_Abc`` method for batched inputs in kron mode (and with polynomial c)."""
+    A1 = np.array([[[1, 2], [3, 4]]])
+    b1 = np.array([[5, 6]])
+    c1 = np.array([7])
+
+    A2 = np.array([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
+    b2 = np.array([[12, 13], [14, 15]])
+    c2 = np.array([10, 100])
+
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="kron")
+
+    assert np.allclose(
+        A,
+        np.array(
+            [
+                [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
+                [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
+            ]
+        ),
+    )
+    assert np.allclose(b, np.array([[5, 6, 12, 13], [5, 6, 14, 15]]))
+    assert np.allclose(c, np.array([70, 700]))
+
+
 def test_reorder_abc():
     """Test that the reorder_abc function works correctly"""
     A = np.array([[1, 2], [2, 3]])
@@ -177,14 +202,15 @@ def test_reorder_abc():
     flipped = reorder_abc((A, b, c), (1, 0))
     assert all(np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c)))
 
-    A = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
-    b = np.array([4, 5, 6])
+    A = np.array([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
+    b = np.array([[4, 5, 6]])
     c = np.array([[1, 2, 3]])
     same = reorder_abc((A, b, c), (0, 1))
     assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
     assert all(
-        np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0, 2], :][:, [1, 0, 2]], b[[1, 0, 2]], c))
+        np.allclose(x, y)
+        for x, y in zip(flipped, (A[:, [1, 0, 2], :][:, :, [1, 0, 2]], b[:, [1, 0, 2]], c))
     )
 
 
@@ -219,7 +245,7 @@ def test_complex_gaussian_integral_2_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1])
+    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], mode="zip")
     assert np.allclose(res[0], A3)
     assert np.allclose(res[1], b3)
     assert np.allclose(res[2], c3)
@@ -239,7 +265,7 @@ def test_complex_gaussian_integral_1_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [4, 5])
     assert np.allclose(res[0], A3)
@@ -266,7 +292,7 @@ def test_complex_gaussian_integral_1_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
     assert np.allclose(res1[0], A3)
     assert np.allclose(res1[1], b3)

@@ -501,12 +501,13 @@ class Bargmann(Representation):
         if settings.UNSAFE_ZIP_BATCH:
             if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
-                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                    "Batch size of the two ansatze must match when `settings.UNSAFE_ZIP_BATCH=True`."
                 )
-            for (A1, b1, c1), (A2, b2, c2) in zip(
-                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-            ):
-                Abc.append(complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            # for (A1, b1, c1), (A2, b2, c2) in zip(
+            #     zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
+            # ):
+            #     Abc.append(complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            Abc = complex_gaussian_integral_2(self.triple, other.triple, idx_s, idx_o)
         else:
             for A1, b1, c1 in zip(self.A, self.b, self.c):
                 for A2, b2, c2 in zip(other.A, other.b, other.c):

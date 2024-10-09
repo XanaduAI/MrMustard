@@ -19,7 +19,7 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import Box, VBox, HBox, HTML
+from ipywidgets import VBox, HTML
 import pytest
 
 from mrmustard import math, settings
@@ -520,6 +520,7 @@ class TestCircuitComponent:
 
         cc = MyComponent(Bargmann(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
         with pytest.raises(
-            TypeError, match="MyComponent does not seem to have any wires construction method"
+            TypeError,
+            match="MyComponent does not seem to have any wires construction method",
         ):
             cc._serialize()

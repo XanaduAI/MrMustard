@@ -70,7 +70,7 @@ class CircuitComponent:
     def __init__(
         self,
         representation: Bargmann | Fock | None = None,
-        wires: Wires | Sequence[tuple[int]] | None = None,
+        wires: Wires | Sequence[tuple[int, ...]] | None = None,
         name: str | None = None,
     ) -> None:
         self._name = name
@@ -375,7 +375,8 @@ class CircuitComponent:
             # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.sum(
-                [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axes=[0]
+                [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays],
+                axes=[0],
             )
             return quad_basis
 
@@ -385,7 +386,7 @@ class CircuitComponent:
     @classmethod
     def _from_attributes(
         cls,
-        representation: Representation,
+        representation: Representation | None,
         wires: Wires,
         name: str | None = None,
     ) -> CircuitComponent:
@@ -486,6 +487,8 @@ class CircuitComponent:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             if self.representation.ansatz.polynomial_shape[0] == 0:
+                arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+            if self.representation.polynomial_shape[0] == 0:
                 arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
             else:
                 arrays = [
