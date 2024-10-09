@@ -824,26 +824,24 @@ class CircuitComponent:
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):
-            btoq_param = math.atleast_1d(other.phi.value)
             if other.wires.bra:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("Q", float(btoq_param[k]))
+                    self._index_representation[i] = ("Q", other.phi)
             elif other.wires.ket:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("Q", float(btoq_param[k]))
+                    self._index_representation[i] = ("Q", other.phi)
 
         if isinstance(other, BtoPS):
-            btops_param = math.atleast_1d(other.s.value)
             if other.wires.bra:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("PS", float(btops_param[k]))
+                    self._index_representation[i] = ("PS", other.s)
             elif other.wires.ket:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("PS", float(btops_param[k]))
+                    self._index_representation[i] = ("PS", other.s)
 
     def _helper_update_input_wire_rep(self, other):
         r"""
@@ -853,25 +851,24 @@ class CircuitComponent:
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):
-            btoq_param = math.atleast_1d(other.phi.value)
             if other.wires.bra:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("Q", float(btoq_param[k]))
+                    self._index_representation[i] = ("Q", other.phi)
             elif other.wires.ket:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("Q", float(btoq_param[k]))
+                    self._index_representation[i] = ("Q", other.phi)
 
         if isinstance(other, BtoPS):
             if other.wires.bra:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", other.s)
             elif other.wires.ket:
-                for k, m in enumerate(other.modes):
+                for m in other.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", float(other.s.value[k]))
+                    self._index_representation[i] = ("PS", other.s)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""

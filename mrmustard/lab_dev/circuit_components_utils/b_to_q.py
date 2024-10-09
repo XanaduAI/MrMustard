@@ -55,15 +55,14 @@ class BtoQ(Operation):
             name="BtoQ",
         )
         
-        phis = next(reshape_params(len(modes), phi=phi))
-        self._add_parameter(make_parameter(False, phis, "phi", (None, None)))
+        self.phi = phi
 
     @property
     def adjoint(self) -> BtoQ:
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets).conj()
 
-        ret = BtoQ(self.modes, self.phi.value)
+        ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
         ret._wires = self.wires.adjoint
         ret._name = self.name + "_adj"
@@ -75,7 +74,7 @@ class BtoQ(Operation):
         ik = self.wires.ket.input.indices
         rep = self.representation.reorder(ik + ok).conj()
 
-        ret = BtoQ(self.modes, self.phi.value)
+        ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
         ret._wires = self.wires.dual
         ret._name = self.name + "_dual"
@@ -83,7 +82,7 @@ class BtoQ(Operation):
 
     def inverse(self):
         inv = super().inverse()
-        ret = BtoQ(self.modes, self.phi.value)
+        ret = BtoQ(self.modes, self.phi)
         ret._representation = inv.representation
         ret._wires = inv.wires
         ret._name = inv.name
