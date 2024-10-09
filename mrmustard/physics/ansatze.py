@@ -417,8 +417,25 @@ class PolyExpBase(Ansatz):
         Adds two ansatze together. This means concatenating them in the batch dimension.
         In the case where c is a polynomial of different shapes it will add padding zeros to make
         the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
-        shape of the combined object will be (2,5,4,5).
+        shape of the combined object will be (2,5,4,5). It also pads A and b, to account for an eventual
+        different number of polynomial wires.
         """
+        (_, n, _) = self.mat.shape
+        (_, m, _) = other.mat.shape
+        self_num_poly, _ = self.polynomial_shape
+        other_num_poly, _ = other.polynomial_shape
+        if self_num_poly - other_num_poly != n - m:
+            raise ValueError("Inconsistent polynomial shapes.")
+        if n < m:
+            self.mat = math.pad(self.mat, ((0, 0), (0, m - n), (0, m - n)))
+            self.vec = math.pad(self.vec, ((0, 0), (0, m - n)))
+            for _ in range(m - n):
+                self.array = math.expand_dims(self.array, axis=-1)
+        elif n > m:
+            other.mat = math.pad(other.mat, ((0, 0), (0, n - m), (0, n - m)))
+            other.vec = math.pad(other.vec, ((0, 0), (0, n - m)))
+            for _ in range(n - m):
+                other.array = math.expand_dims(other.array, axis=-1)
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
 

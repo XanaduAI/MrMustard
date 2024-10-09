@@ -610,3 +610,34 @@ class TestPolyExpAnsatz:
             (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
         ).reshape(-1)
         assert np.allclose(val1, val2)
+
+    def test_add_different_poly_wires(self):
+        "tests that A and b are padded correctly"
+        A1 = np.random.random((1, 2, 2))
+        A2 = np.random.random((1, 3, 3))
+        b1 = np.random.random((1, 2))
+        b2 = np.random.random((1, 3))
+        c1 = np.random.random((1,))
+        c2 = np.random.random((1, 11))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz_sum = ansatz1 + ansatz2
+        assert ansatz_sum.mat.shape == (2, 3, 3)
+        assert ansatz_sum.vec.shape == (2, 3)
+        assert ansatz_sum.array.shape == (2, 11)
+        ansatz_sum = ansatz2 + ansatz1
+        assert ansatz_sum.mat.shape == (2, 3, 3)
+        assert ansatz_sum.vec.shape == (2, 3)
+        assert ansatz_sum.array.shape == (2, 11)
+
+    def test_inconsistent_poly_shapes(self):
+        A1 = np.random.random((1, 2, 2))
+        A2 = np.random.random((1, 3, 3))
+        b1 = np.random.random((1, 2))
+        b2 = np.random.random((1, 3))
+        c1 = np.random.random((1,))
+        c2 = np.random.random((1, 5, 11))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        with pytest.raises(ValueError):
+            ansatz1 + ansatz2  # pylint: disable=pointless-statement
