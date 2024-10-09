@@ -747,7 +747,9 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        rep = self.to_bargmann().representation + other.to_bargmann().representation # addition occurs in bargmann always
+        rep = (
+            self.to_bargmann().representation + other.to_bargmann().representation
+        )  # addition occurs in bargmann always
         name = self.name if self.name == other.name else ""
         # TODO: go back to bargmann on all modes
         return self._from_attributes(rep, self.wires, name)
