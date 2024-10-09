@@ -41,8 +41,7 @@ from mrmustard.utils.typing import (
 
 from mrmustard.physics.gaussian_integrals import (
     reorder_abc,
-    complex_gaussian_integral,
-    contract_two_Abc_poly,
+    complex_gaussian_integral_2,
 )
 
 from mrmustard import math, settings, widgets
@@ -814,20 +813,18 @@ class Representation(RepresentationBase):
 
         Abc = []
         if settings.UNSAFE_ZIP_BATCH:
-            if self.batch_size != other.batch_size:
+            if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
-                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                    "Batch size of the two ansatze must match when `settings.UNSAFE_ZIP_BATCH=True`."
                 )
-            for (A1, b1, c1), (A2, b2, c2) in zip(
-                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-            ):
-                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="zip"
+            )
         else:
-            for A1, b1, c1 in zip(self.A, self.b, self.c):
-                for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="kron"
+            )
 
-        A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
     def __mul__(self, other: Scalar | Bargmann) -> Bargmann:

@@ -503,19 +503,14 @@ class Bargmann(Representation):
                 raise ValueError(
                     "Batch size of the two ansatze must match when `settings.UNSAFE_ZIP_BATCH=True`."
                 )
-            # for (A1, b1, c1), (A2, b2, c2) in zip(
-            #     zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-            # ):
-            #     Abc.append(complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
-            Abc = complex_gaussian_integral_2(self.triple, other.triple, idx_s, idx_o)
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="zip"
+            )
         else:
-            for A1, b1, c1 in zip(self.A, self.b, self.c):
-                for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(
-                        complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), idx_s, idx_o)
-                    )
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="kron"
+            )
 
-        A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
     def to_dict(self) -> dict[str, ArrayLike]:

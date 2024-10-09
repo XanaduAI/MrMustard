@@ -19,7 +19,7 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import VBox, HTML
+from ipywidgets import Box, VBox, HBox, HTML
 import pytest
 
 from mrmustard import math, settings
@@ -470,7 +470,7 @@ class TestCircuitComponent:
         back = Channel.from_quadrature([0], [0], C.quadrature_triple())
         assert C == back
 
-    @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
+    @pytest.mark.parametrize("is_fock,widget_cls", [(False, VBox), (True, HBox)])
     @patch("mrmustard.lab_dev.circuit_components.display")
     def test_ipython_repr(self, mock_display, is_fock, widget_cls):
         """Test the IPython repr function."""
