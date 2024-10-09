@@ -436,12 +436,7 @@ class Bargmann(Representation):
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
-        A, b, c = [], [], []
-        for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
-            A.append(Aij)
-            b.append(bij)
-            c.append(cij)
+        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return Bargmann(A, b, c)
 
     def __call__(self, z: ComplexTensor) -> ComplexTensor:

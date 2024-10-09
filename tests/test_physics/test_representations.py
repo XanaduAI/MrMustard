@@ -162,7 +162,7 @@ class TestBargmannRepresentation:
     def test_trace(self):
         triple = Abc_triple(4)
         bargmann = Bargmann(*triple).trace([0], [2])
-        A, b, c = complex_gaussian_integral(triple, [0], [2])
+        A, b, c = complex_gaussian_integral_1(triple, [0], [2])
 
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
