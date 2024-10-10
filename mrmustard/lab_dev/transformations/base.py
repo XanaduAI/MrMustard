@@ -30,6 +30,7 @@ from abc import abstractmethod
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.representations import Representation
 from mrmustard.utils.typing import ComplexMatrix
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
@@ -125,9 +126,7 @@ class Operation(Transformation):
         name: str | None = None,
     ):
         super().__init__(
-            ansatz=ansatz,
-            wires=[(), (), modes_out, modes_in],
-            name=name,
+            Representation(ansatz=ansatz, wires=[(), (), modes_out, modes_in]), name=name
         )
 
     @classmethod
@@ -281,8 +280,7 @@ class Map(Transformation):
         name: str | None = None,
     ):
         super().__init__(
-            ansatz=ansatz,
-            wires=[modes_out, modes_in, modes_out, modes_in],
+            Representation(ansatz=ansatz, wires=[modes_out, modes_in, modes_out, modes_in]),
             name=name or self.__class__.__name__,
         )
 

@@ -56,11 +56,7 @@ class CircuitComponent:
     defined by their ``representation``. See :class:`Representation` for more details.
 
     Args:
-        ansatz: An ansatz for this circuit component.
-        wires: The wires of this component. Alternatively, can be
-            a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
-            where if any of the modes are out of order the ansatz
-            will be reordered.
+        represetation: The representation of this circuit component.
         name: The name of this component.
     """
 
@@ -68,13 +64,12 @@ class CircuitComponent:
 
     def __init__(
         self,
-        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
-        wires: Wires | Sequence[tuple[int]] | None = None,
+        representation: Representation | None = None,
         name: str | None = None,
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
-        self._representation = Representation(ansatz, wires)
+        self._representation = representation or Representation()
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -128,8 +123,7 @@ class CircuitComponent:
         The adjoint of this component obtained by conjugating the representation and swapping
         the ket and bra wires.
         """
-        rep = self.representation.adjoint
-        ret = CircuitComponent(rep.ansatz, rep.wires, self.name)
+        ret = CircuitComponent(self.representation.adjoint, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
@@ -141,8 +135,7 @@ class CircuitComponent:
         The dual of this component obtained by conjugating the representation and swapping
         the input and output wires.
         """
-        rep = self.representation.dual
-        ret = CircuitComponent(rep.ansatz, rep.wires, self.name)
+        ret = CircuitComponent(self.representation.dual, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
@@ -383,13 +376,14 @@ class CircuitComponent:
             A circuit component with the given attributes.
         """
         types = {"Ket", "DM", "Unitary", "Operation", "Channel", "Map"}
+        rep = Representation(ansatz, wires)
         for tp in cls.mro():
             if tp.__name__ in types:
                 ret = tp()
                 ret._name = name
-                ret._representation = Representation(ansatz, wires)
+                ret._representation = rep
                 return ret
-        return CircuitComponent(ansatz, wires, name)
+        return CircuitComponent(rep, name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""

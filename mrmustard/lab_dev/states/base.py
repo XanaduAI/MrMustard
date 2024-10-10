@@ -663,8 +663,7 @@ class DM(State):
                 f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
         super().__init__(
-            ansatz=ansatz,
-            wires=Wires(modes_out_bra=modes, modes_out_ket=modes),
+            Representation(ansatz=ansatz, wires=Wires(modes_out_bra=modes, modes_out_ket=modes)),
             name=name,
         )
 
@@ -996,11 +995,7 @@ class Ket(State):
             raise ValueError(
                 f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
             )
-        super().__init__(
-            ansatz=ansatz,
-            wires=Wires(modes_out_ket=modes),
-            name=name,
-        )
+        super().__init__(Representation(ansatz=ansatz, wires=Wires(modes_out_ket=modes)), name=name)
 
     @property
     def is_physical(self) -> bool:

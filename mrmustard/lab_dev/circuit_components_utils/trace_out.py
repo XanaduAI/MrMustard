@@ -24,6 +24,7 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import Representation
 
 __all__ = ["TraceOut"]
 
@@ -62,8 +63,10 @@ class TraceOut(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            wires=[(), modes, (), modes],
-            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            Representation(
+                PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+                [(), modes, (), modes],
+            ),
             name="Tr",
         )
 

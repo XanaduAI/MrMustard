@@ -89,8 +89,8 @@ class Representation:
 
     def __init__(
         self,
-        ansatz: Ansatz | None,
-        wires: Wires | Sequence[tuple[int]] | None,
+        ansatz: Ansatz | None = None,
+        wires: Wires | Sequence[tuple[int]] | None = None,
         wire_reps: dict | None = None,
     ) -> None:
         self._ansatz = ansatz

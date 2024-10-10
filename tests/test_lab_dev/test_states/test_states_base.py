@@ -41,6 +41,7 @@ from mrmustard.lab_dev.states import (
     Vacuum,
 )
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
+from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
 
@@ -344,7 +345,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
+        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -810,7 +811,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
+        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
