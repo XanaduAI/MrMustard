@@ -56,7 +56,7 @@ class CircuitComponent:
     defined by their ``representation``. See :class:`Representation` for more details.
 
     Args:
-        represetation: The representation of this circuit component.
+        representation: The representation of this circuit component.
         name: The name of this component.
     """
 
