@@ -53,14 +53,13 @@ class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
-    defined by their ``representation`` and ``wires`` attributes. See the :class:`Wires`
-    and :class:`Representation` classes (and their subclasses) for more details.
+    defined by their ``representation``. See :class:`Representation` for more details.
 
     Args:
         ansatz: An ansatz for this circuit component.
         wires: The wires of this component. Alternatively, can be
             a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
-            where if any of the modes are out of order the representation
+            where if any of the modes are out of order the ansatz
             will be reordered.
         name: The name of this component.
     """
@@ -75,40 +74,7 @@ class CircuitComponent:
     ) -> None:
         self._name = name
         self._parameter_set = ParameterSet()
-
-        if not isinstance(wires, Wires):
-            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = (
-                [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
-            )
-            wires = Wires(
-                set(modes_out_bra),
-                set(modes_in_bra),
-                set(modes_out_ket),
-                set(modes_in_ket),
-            )
-            # handle out-of-order modes
-            ob = tuple(sorted(modes_out_bra))
-            ib = tuple(sorted(modes_in_bra))
-            ok = tuple(sorted(modes_out_ket))
-            ik = tuple(sorted(modes_in_ket))
-            if (
-                ob != modes_out_bra
-                or ib != modes_in_bra
-                or ok != modes_out_ket
-                or ik != modes_in_ket
-            ):
-                offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
-                perm = (
-                    tuple(np.argsort(modes_out_bra))
-                    + tuple(np.argsort(modes_in_bra) + offsets[0])
-                    + tuple(np.argsort(modes_out_ket) + offsets[1])
-                    + tuple(np.argsort(modes_in_ket) + offsets[2])
-                )
-                if ansatz is not None:
-                    self._representation = Representation(ansatz.reorder(tuple(perm)), wires)
-
-        if not hasattr(self, "_representation"):
-            self._representation = Representation(ansatz, wires)
+        self._representation = Representation(ansatz, wires)
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
