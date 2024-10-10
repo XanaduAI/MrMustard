@@ -1265,4 +1265,5 @@ class Ket(State):
             elif result.wires.bra.modes == result.wires.ket.modes:
                 ret = DM(result.wires.modes, result.representation)
                 ret._index_representation = result._index_representation
-        return ret
+            return ret
+        return result
