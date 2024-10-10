@@ -255,12 +255,12 @@ class Representation:
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
         if type(self.ansatz) is type(other.ansatz):
-            self_rep = self.ansatz
-            other_rep = other.ansatz
+            self_ansatz = self.ansatz
+            other_ansatz = other.ansatz
         else:
-            self_rep = self.to_bargmann().ansatz
-            other_rep = other.to_bargmann().ansatz
+            self_ansatz = self.to_bargmann().ansatz
+            other_ansatz = other.to_bargmann().ansatz
 
-        rep = self_rep[idx_z] @ other_rep[idx_zconj]
+        rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return Representation(rep, wires_result)

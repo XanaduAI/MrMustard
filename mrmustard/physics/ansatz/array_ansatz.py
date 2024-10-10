@@ -64,7 +64,7 @@ class ArrayAnsatz(Ansatz):
     @property
     def array(self) -> Batch[Tensor]:
         r"""
-        The array of this representation.
+        The array of this ansatz.
         """
         self._generate_ansatz()
         if not self._backend_array:
@@ -98,8 +98,8 @@ class ArrayAnsatz(Ansatz):
     @property
     def scalar(self) -> Scalar:
         r"""
-        The scalar part of the representation.
-        I.e. the vacuum component of the Fock object, whatever it may be.
+        The scalar part of the ansatz.
+        I.e. the vacuum component of the Fock array, whatever it may be.
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
         return self.array[(slice(None),) + (0,) * self.num_vars]
@@ -107,12 +107,10 @@ class ArrayAnsatz(Ansatz):
     @property
     def triple(self) -> tuple:
         r"""
-        The data of the original Bargmann if it exists.
+        The data of the original PolyExpAnsatz if it exists.
         """
         if self._original_abc_data is None:
-            raise AttributeError(
-                "This Fock object does not have an original Bargmann representation."
-            )
+            raise AttributeError("This ArrayAnsatz does not have (A,b,c) data.")
         return self._original_abc_data
 
     @classmethod
@@ -128,7 +126,7 @@ class ArrayAnsatz(Ansatz):
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
-        Returns a new ``Fock`` with a sliced array.
+        Returns a new ``ArrayAnsatz`` with a sliced array.
 
         .. code-block::
 
@@ -150,7 +148,7 @@ class ArrayAnsatz(Ansatz):
             >>> assert fock4 == ArrayAnsatz(array4)
 
         Args:
-            shape: The shape of the array of the returned ``Fock``.
+            shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
         if shape == self.array.shape[1:]:
             return self
@@ -182,7 +180,7 @@ class ArrayAnsatz(Ansatz):
         Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
 
         Returns:
-            The collapsed Fock object.
+            The collapsed ArrayAnsatz object.
         """
         return ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
 
@@ -191,7 +189,7 @@ class ArrayAnsatz(Ansatz):
 
     def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> ArrayAnsatz:
         if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
-            raise ValueError("idxs must be of equal length and disjoint")
+            raise ValueError("The idxs must be of equal length and disjoint.")
         order = (
             [0]
             + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
@@ -235,7 +233,7 @@ class ArrayAnsatz(Ansatz):
         return ArrayAnsatz(array=new_array, batched=True)
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
-        raise AttributeError("Cannot call Fock.")
+        raise AttributeError("Cannot call this ArrayAnsatz.")
 
     def __eq__(self, other: Ansatz) -> bool:
         slices = (slice(0, None),) + tuple(

@@ -209,9 +209,9 @@ class PolyExpAnsatz(Ansatz):
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
-        This method decomposes a Bargmann representation. Given a representation of dimensions:
+        This method decomposes a PolyExp ansatz. Given an ansatz of dimension:
         A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
-        it can be rewritten as a representation of dimensions
+        it can be rewritten as an ansatz of dimension
         A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
         This decomposition is typically favourable if m>n, and will only run if that is the case.
         The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
@@ -300,11 +300,11 @@ class PolyExpAnsatz(Ansatz):
 
     def simplify(self) -> None:
         r"""
-        Simplifies the representation by combining together terms that have the same
+        Simplifies the ansatz by combining together terms that have the same
         exponential part, i.e. two terms along the batch are considered equal if their
         matrix and vector are equal. In this case only one is kept and the arrays are added.
 
-        Does not run if the representation has already been simplified, so it is safe to call.
+        Does not run if the ansatz has already been simplified, so it is safe to call.
         """
         if self._simplified:
             return
@@ -358,7 +358,7 @@ class PolyExpAnsatz(Ansatz):
 
     def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
-        Value of this representation at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
+        Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
         Note that the batch dimension of ``z`` and ``Abc`` can be different.
 
@@ -581,7 +581,7 @@ class PolyExpAnsatz(Ansatz):
         This method orders the batch dimension by the lexicographical order of the
         flattened arrays (A, b, c). This is a very cheap way to enforce
         an ordering of the batch dimension, which is useful for simplification and for
-        determining (in)equality between two Bargmann representations.
+        determining (in)equality between two PolyExp ansatz.
         """
         generators = [
             itertools.chain(
@@ -598,7 +598,7 @@ class PolyExpAnsatz(Ansatz):
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
-        Adds two Bargmann representations together. This means concatenating them in the batch dimension.
+        Adds two PolyExp ansatz together. This means concatenating them in the batch dimension.
         In the case where c is a polynomial of different shapes it will add padding zeros to make
         the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
         shape of the combined object will be (2,5,4,5).
@@ -641,17 +641,17 @@ class PolyExpAnsatz(Ansatz):
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
-        Tensor product of this Bargmann with another Bargmann.
+        Tensor product of this PolyExpAnsatz with another.
         Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,
         the batch size of the result is the product of the batch
-        size of this representation and the other one.
+        size of this ansatz and the other one.
 
         Args:
-            other: Another Barmann.
+            other: Another PolyExpAnsatz.
 
         Returns:
-            The tensor product of this Bargmann and other.
+            The tensor product of this PolyExpAnsatz and other.
         """
 
         def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
@@ -728,13 +728,13 @@ class PolyExpAnsatz(Ansatz):
 
     def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
         r"""
-        Returns either the value of the representation or a new representation depending on the argument.
-        If the argument contains None, returns a new representation.
-        If the argument only contains numbers, returns the value of the representation at that argument.
-        Note that the batch dimensions are handled differently in the two cases. See subfunctions for furhter information.
+        Returns either the value of the ansatz or a new ansatz depending on the argument.
+        If the argument contains None, returns a new ansatz.
+        If the argument only contains numbers, returns the value of the ansatz at that argument.
+        Note that the batch dimensions are handled differently in the two cases. See subfunctions for further information.
 
         Args:
-            z: point in C^n where the function is evaluated
+            z: point in C^n where the function is evaluated.
 
         Returns:
             The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
@@ -752,7 +752,7 @@ class PolyExpAnsatz(Ansatz):
         for i in idx:
             if i >= self.num_vars:
                 raise IndexError(
-                    f"Index {i} out of bounds for representation of dimension {self.num_vars}."
+                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
                 )
         ret = PolyExpAnsatz(self.A, self.b, self.c)
         ret._contract_idxs = idx

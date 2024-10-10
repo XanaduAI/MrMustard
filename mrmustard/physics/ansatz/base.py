@@ -64,7 +64,7 @@ class Ansatz(ABC):
     def data(self) -> tuple | Tensor:
         r"""
         The data of the ansatz.
-        For now, it's the triple for Bargmann and the array for Fock.
+        For now, it's the triple for PolyExpAnsatz and the array for ArrayAnsatz.
         """
 
     @property
@@ -79,7 +79,7 @@ class Ansatz(ABC):
     def scalar(self) -> Scalar:
         r"""
         The scalar part of the ansatz.
-        For now it's ``c`` for Bargmann and the array for Fock.
+        For now it's ``c`` for PolyExpAnsatz and the array for ArrayAnsatz.
         """
 
     @property
@@ -95,7 +95,7 @@ class Ansatz(ABC):
     @abstractmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> Ansatz:
         r"""
-        Deserialize a Representation.
+        Deserialize an Ansatz.
         """
 
     @classmethod
@@ -114,7 +114,7 @@ class Ansatz(ABC):
     @abstractmethod
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""
-        Serialize a Representation.
+        Serialize an Ansatz.
         """
 
     @abstractmethod
@@ -218,13 +218,13 @@ class Ansatz(ABC):
         Negates the values in the ansatz.
         """
 
-    def __rmul__(self, other: Ansatz | Scalar) -> Ansatz:
+    def __rmul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Multiplies this ansatz by another or by a scalar on the right.
         """
         return self.__mul__(other)
 
-    def __sub__(self, other: Ansatz) -> Ansatz:
+    def __sub__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Subtracts other from this ansatz.
         """
