@@ -863,7 +863,6 @@ class CircuitComponent:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
                     self._index_representation[i] = ("Q", float(pre_self.phi.value))
-                    print(self._index_representation[i])
 
         if isinstance(pre_self, BtoPS):
             if pre_self.wires.bra:
