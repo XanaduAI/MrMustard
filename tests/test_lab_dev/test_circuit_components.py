@@ -545,14 +545,24 @@ class TestCircuitComponent:
         r"""
         Tests the initialization and updating of index_representation dictionary
         """
-        
+
         # testing initialization
-        assert DM.random([0,1])._index_representation == {i:('B', None) for i in range(4)}
+        assert DM.random([0, 1])._index_representation == {i: ("B", None) for i in range(4)}
 
         # testing update under BtoQ
         phi = BtoQ([0]).dual @ Channel.random([0])
-        assert phi._index_representation == {0: ('B', None), 1: ('B', None), 2: ('B', None), 3: ('Q', 0.0)}
+        assert phi._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("Q", 0.0),
+        }
 
         # testing update under BtoPS
-        psi = Ket.random([0,10]) @ BtoPS([0], s=.2)
-        assert psi._index_representation == {0: ('PS', 0.2), 1: ('B', None), 2: ('B', None), 3: ('B', None)}
+        psi = Ket.random([0, 10]) @ BtoPS([0], s=0.2)
+        assert psi._index_representation == {
+            0: ("PS", 0.2),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("B", None),
+        }

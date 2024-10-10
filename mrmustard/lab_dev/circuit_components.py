@@ -119,10 +119,10 @@ class CircuitComponent:
         if not hasattr(self, "_index_representation_"):
             self._index_representation_ = {i: ("B", None) for i in self.wires.indices}
         return self._index_representation_
-    
+
     @_index_representation.setter
     def _index_representation(self, value):
-        
+
         # add some validation
         self._index_representation_ = value
 
@@ -646,16 +646,13 @@ class CircuitComponent:
                             @ ret
                         )
                     if i in self.wires.input.bra.indices:
-                        ret = (
-                            BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
-                        )
+                        ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
 
                 if name == "PS":
                     self._index_representation[i] = ("B", None)
                     if i in self.wires.output.bra.indices:
                         ret = (
-                            ret
-                            @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).adjoint.inverse()
+                            ret @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).adjoint.inverse()
                         )
                     if i in self.wires.output.ket.indices:
                         ret = ret @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).inverse()
@@ -665,9 +662,7 @@ class CircuitComponent:
                             @ ret
                         )
                     if i in self.wires.input.bra.indices:
-                        ret = (
-                            BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
-                        )
+                        ret = BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
 
             return ret
         elif isinstance(self.representation, Fock):
@@ -833,7 +828,7 @@ class CircuitComponent:
             i = result.wires.index_dicts[2][m]
             j = other.wires.index_dicts[2][m]
             result._index_representation[i] = other._index_representation[j]
-        
+
         for m in self.wires.input.bra.modes:
             i = result.wires.index_dicts[1][m]
             j = self.wires.index_dicts[1][m]
@@ -857,20 +852,17 @@ class CircuitComponent:
                 i = result.wires.index_dicts[3][m]
                 result._index_representation[i] = other._index_representation[j]
 
-
         for m in self.wires.output.bra.modes:
             j = self.wires.index_dicts[0][m]
             if j not in idx_1:
                 i = result.wires.index_dicts[0][m]
                 result._index_representation[i] = self._index_representation[j]
-                
+
         for m in self.wires.output.ket.modes:
             j = self.wires.index_dicts[2][m]
             if j not in idx_1:
                 i = result.wires.index_dicts[2][m]
                 result._index_representation[i] = self._index_representation[j]
-
-
 
         pre_self = self
         result._helper_update_output_wire_rep(pre_self, other)
@@ -878,13 +870,12 @@ class CircuitComponent:
 
         return result
 
-    def _helper_update_output_wire_rep(self, pre_self,  other):
+    def _helper_update_output_wire_rep(self, pre_self, other):
         r"""
         Updates the representations on the output wires, upon matmul by BtoQ or BtoPS
         """
 
         from .circuit_components_utils import BtoQ, BtoPS
-
 
         if isinstance(other, BtoQ):
             self._index_representation = pre_self._index_representation
@@ -894,14 +885,14 @@ class CircuitComponent:
                     if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
+                        self._index_representation[i] = ("B", None)  # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
                     if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
+                        self._index_representation[i] = ("B", None)  # takes care of BtoQ.inverse()
 
         if isinstance(other, BtoPS):
             if other.wires.bra:
@@ -910,7 +901,7 @@ class CircuitComponent:
                     if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("PS", float(other.s.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
+                        self._index_representation[i] = ("B", None)  # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
@@ -926,18 +917,19 @@ class CircuitComponent:
 
         from .circuit_components_utils import BtoQ, BtoPS
 
-        
-
         if isinstance(pre_self, BtoQ):
             if pre_self.wires.bra:
-                print('hi')
+                print("hi")
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
                     j = other.wires.index_dicts[1][m]
                     if other._index_representation[j][0] == "B":
                         self._index_representation[i] = ("Q", float(pre_self.phi.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse().dual.adjoint
+                        self._index_representation[i] = (
+                            "B",
+                            None,
+                        )  # takes care of BtoQ.inverse().dual.adjoint
             elif pre_self.wires.ket:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
@@ -945,7 +937,10 @@ class CircuitComponent:
                     if other._index_representation[j][0] == "B":
                         self._index_representation[i] = ("Q", float(pre_self.phi.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse().dual
+                        self._index_representation[i] = (
+                            "B",
+                            None,
+                        )  # takes care of BtoQ.inverse().dual
 
         if isinstance(pre_self, BtoPS):
             if pre_self.wires.bra:
@@ -955,8 +950,8 @@ class CircuitComponent:
                     if other._index_representation[j][0] == "B":
                         self._index_representation[i] = ("PS", float(pre_self.s.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoPS.inverse()
-            
+                        self._index_representation[i] = ("B", None)  # takes care of BtoPS.inverse()
+
             elif pre_self.wires.ket:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
@@ -964,7 +959,7 @@ class CircuitComponent:
                     if other._index_representation[j][0] == "B":
                         self._index_representation[i] = ("PS", float(pre_self.s.value))
                     else:
-                        self._index_representation[i] = ("B", None) # takes care of BtoPS.inverse()
+                        self._index_representation[i] = ("B", None)  # takes care of BtoPS.inverse()
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -1059,7 +1054,7 @@ class CircuitComponent:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
             raise ValueError(msg)
-        
+
         return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
