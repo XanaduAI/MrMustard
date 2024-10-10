@@ -119,6 +119,12 @@ class CircuitComponent:
         if not hasattr(self, "_index_representation_"):
             self._index_representation_ = {i: ("B", None) for i in self.wires.indices}
         return self._index_representation_
+    
+    @_index_representation.setter
+    def _index_representation(self, value):
+        
+        # add some validation
+        self._index_representation_ = value
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -814,13 +820,13 @@ class CircuitComponent:
         rep = rep.reorder(perm) if perm else rep
         result = CircuitComponent._from_attributes(rep, wires_result, None)
 
-        result._helper_update_output_wire_rep(other)
         pre_self = self
-        result._helper_update_input_wire_rep(pre_self)
+        result._helper_update_output_wire_rep(pre_self, other)
+        result._helper_update_input_wire_rep(pre_self, other)
 
         return result
 
-    def _helper_update_output_wire_rep(self, other):
+    def _helper_update_output_wire_rep(self, pre_self,  other):
         r"""
         Updates the representations on the output wires, upon matmul by BtoQ or BtoPS
         """
@@ -831,23 +837,39 @@ class CircuitComponent:
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("Q", float(other.phi.value))
+                    j = pre_self.wires.index_dicts[0][m]
+                    if pre_self._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("Q", float(other.phi.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("Q", float(other.phi.value))
+                    j = pre_self.wires.index_dicts[2][m]
+                    if pre_self._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("Q", float(other.phi.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
 
         if isinstance(other, BtoPS):
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    self._index_representation[i] = ("PS", float(other.s.value))
+                    j = pre_self.wires.index_dicts[0][m]
+                    if pre_self._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("PS", float(other.s.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    self._index_representation[i] = ("PS", float(other.s.value))
+                    j = pre_self.wires.index_dicts[2][m]
+                    if pre_self._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("PS", float(other.s.value))
+                    else:
+                        self._index_representation[i] = ("B", None)
 
-    def _helper_update_input_wire_rep(self, pre_self):
+    def _helper_update_input_wire_rep(self, pre_self, other):
         r"""
         Updates the representations on the input wires, upon matmul by BtoQ or BtoPS
         """
@@ -858,21 +880,38 @@ class CircuitComponent:
             if pre_self.wires.bra:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("Q", float(pre_self.phi.value))
+                    j = other.wires.index_dicts[1][m]
+                    if other._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("Q", float(pre_self.phi.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse().dual.adjoint
             elif pre_self.wires.ket:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("Q", float(pre_self.phi.value))
+                    j = other.wires.index_dicts[3][m]
+                    if other._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("Q", float(pre_self.phi.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse().dual
 
         if isinstance(pre_self, BtoPS):
             if pre_self.wires.bra:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
-                    self._index_representation[i] = ("PS", float(pre_self.s.value))
+                    j = other.wires.index_dicts[1][m]
+                    if other._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("PS", float(pre_self.s.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoPS.inverse()
+            
             elif pre_self.wires.ket:
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[3][m]
-                    self._index_representation[i] = ("PS", float(pre_self.s.value))
+                    j = other.wires.index_dicts[3][m]
+                    if other._index_representation[j][0] == "B":
+                        self._index_representation[i] = ("PS", float(pre_self.s.value))
+                    else:
+                        self._index_representation[i] = ("B", None) # takes care of BtoPS.inverse()
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""

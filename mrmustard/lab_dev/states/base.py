@@ -1259,7 +1259,10 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.wires.modes, result.representation)
+                ret = Ket(result.wires.modes, result.representation)
+                ret._index_representation = result._index_representation
+                return ret
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.representation)
-        return result
+                ret = DM(result.wires.modes, result.representation)
+                ret._index_representation = result._index_representation
+        return ret
