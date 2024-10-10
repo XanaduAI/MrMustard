@@ -810,8 +810,10 @@ class CircuitComponent:
                 and (not isinstance(other, BtoPS))
             ):
                 index_self, index_other = self.wires.contracted_indices(other.wires)
-                self_rep = self.to_bargmann(index_self).representation
-                other_rep = other.to_bargmann(index_other).representation
+                temp = self.to_bargmann(index_self)
+                self_rep = temp.representation
+                temp = other.to_bargmann(index_other)
+                other_rep = temp.representation
             else:
                 self_rep = self.representation
                 other_rep = other.representation
@@ -819,6 +821,56 @@ class CircuitComponent:
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         result = CircuitComponent._from_attributes(rep, wires_result, None)
+
+        # REMEMBER the representations:
+        # set the index_representation of uncontracted indices:
+        # (this will be overwritten if we have a change of representation e.g. other == BtoQ)
+        for m in other.wires.output.bra.modes:
+            i = result.wires.index_dicts[0][m]
+            j = other.wires.index_dicts[0][m]
+            result._index_representation[i] = other._index_representation[j]
+        for m in other.wires.output.ket.modes:
+            i = result.wires.index_dicts[2][m]
+            j = other.wires.index_dicts[2][m]
+            result._index_representation[i] = other._index_representation[j]
+        
+        for m in self.wires.input.bra.modes:
+            i = result.wires.index_dicts[1][m]
+            j = self.wires.index_dicts[1][m]
+            result._index_representation[i] = self._index_representation[j]
+        for m in self.wires.input.ket.modes:
+            i = result.wires.index_dicts[3][m]
+            j = self.wires.index_dicts[3][m]
+            result._index_representation[i] = self._index_representation[j]
+
+        # now we check for indices that might have been contracted:
+        idx_1, idx_2 = self.wires.contracted_indices(other.wires)
+
+        for m in other.wires.input.bra.modes:
+            j = other.wires.index_dicts[1][m]
+            if j not in idx_2:
+                i = result.wires.index_dicts[1][m]
+                result._index_representation[i] = other._index_representation[j]
+        for m in other.wires.input.ket.modes:
+            j = other.wires.index_dicts[3][m]
+            if j not in idx_2:
+                i = result.wires.index_dicts[3][m]
+                result._index_representation[i] = other._index_representation[j]
+
+
+        for m in self.wires.output.bra.modes:
+            j = self.wires.index_dicts[0][m]
+            if j not in idx_1:
+                i = result.wires.index_dicts[0][m]
+                result._index_representation[i] = self._index_representation[j]
+                
+        for m in self.wires.output.ket.modes:
+            j = self.wires.index_dicts[2][m]
+            if j not in idx_1:
+                i = result.wires.index_dicts[2][m]
+                result._index_representation[i] = self._index_representation[j]
+
+
 
         pre_self = self
         result._helper_update_output_wire_rep(pre_self, other)
@@ -833,20 +885,20 @@ class CircuitComponent:
 
         from .circuit_components_utils import BtoQ, BtoPS
 
+
         if isinstance(other, BtoQ):
+            self._index_representation = pre_self._index_representation
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    j = pre_self.wires.index_dicts[0][m]
-                    if pre_self._index_representation[j][0] == "B":
+                    if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
                     else:
                         self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    j = pre_self.wires.index_dicts[2][m]
-                    if pre_self._index_representation[j][0] == "B":
+                    if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
                     else:
                         self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
@@ -855,16 +907,14 @@ class CircuitComponent:
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
-                    j = pre_self.wires.index_dicts[0][m]
-                    if pre_self._index_representation[j][0] == "B":
+                    if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("PS", float(other.s.value))
                     else:
                         self._index_representation[i] = ("B", None) # takes care of BtoQ.inverse()
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    j = pre_self.wires.index_dicts[2][m]
-                    if pre_self._index_representation[j][0] == "B":
+                    if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("PS", float(other.s.value))
                     else:
                         self._index_representation[i] = ("B", None)
@@ -876,8 +926,11 @@ class CircuitComponent:
 
         from .circuit_components_utils import BtoQ, BtoPS
 
+        
+
         if isinstance(pre_self, BtoQ):
             if pre_self.wires.bra:
+                print('hi')
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
                     j = other.wires.index_dicts[1][m]
