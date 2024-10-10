@@ -32,11 +32,8 @@ __all__ = ["settings"]
 
 # pylint: disable=too-many-instance-attributes
 class Settings:
-    r"""A class containing various settings that are used by Mr Mustard throughout a session.
-
-    Some of these settings (such as those representing cutoff values) can be changed at any time,
-    while others (such as the value of the Planck constant) can only be changed before being
-    queried for the first time.
+    r"""
+    A class containing various settings that are used by Mr Mustard throughout a session.
 
     .. code-block::
 
@@ -66,17 +63,8 @@ class Settings:
         self._julia_initialized: bool = False
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
-        self.UNSAFE_ZIP_BATCH: bool = False
-        "Whether to operate element-wise within a batch of Ansatze. If True, the length of the batch dimension of two circuit components must be the same. Default is False."
-
-        self.STABLE_FOCK_CONVERSION: bool = False
-        "Whether to use the ``vanilla_stable`` function when computing Fock amplitudes (more stable, but slower). Default is False."
-
-        self.DEBUG: bool = False  # TODO: remove in MM 1.0
-        "Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is False."
-
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
-        "The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is 0.999."
+        r"""The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is ``0.99999``."""
 
         self.AUTOCUTOFF_MAX_CUTOFF: int = 100  # TODO: remove in MM 1.0
         r"""The maximum value for autocutoff. Default is ``100``."""
@@ -87,63 +75,60 @@ class Settings:
         self.AUTOSHAPE_MAX: int = 50
         r"""The max shape for the autoshape. Default is ``50``."""
 
-        self.DRAW_CIRCUIT_PARAMS: bool = True
-        "Whether or not to draw the parameters of a circuit."
-
-        self.CIRCUIT_DECIMALS: int = 3
-        "The number of decimal places to display when drawing a circuit."
-
-        self.DISCRETIZATION_METHOD: str = "clenshaw"
-        "The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster)."
-
-        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # TODO: remove in MM 1.0
-        "The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 3."
-
-        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3  # TODO: remove in MM 1.0
-        "The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is 1e-3."
-
-        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6  # TODO: remove in MM 1.0
-        "The relative tolerance used when comparing two transformations on Gaussian states. Default is 1e-6."
-
-        self.HOMODYNE_SQUEEZING: float = 10.0  # TODO: remove in MM 1.0
-        "The value of squeezing for homodyne measurements. Default is 10.0."
-
-        self.PROGRESSBAR: bool = True
-        "Whether or not to display the progress bar when performing training. Default is True."
-
-        self.PNR_INTERNAL_CUTOFF: int = 50  # TODO: remove in MM 1.0
-        "The cutoff used when computing the output of a PNR detection. Default is 50."
+        self.ATOL: float = 1e-8
+        r"""The absolute tolerance when comparing two values or arrays. Default is ``1e-8``."""
 
         self.BS_FOCK_METHOD: str = "vanilla"  # can be 'vanilla' or 'schwinger'
-        "The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."
+        r"""The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."""
 
-        self.ATOL: float = 1e-8
-        "The absolute tolerance when comparing two values or arrays. Default is 1e-8."
+        self.CIRCUIT_DECIMALS: int = 3
+        r"""The number of decimal places to display when drawing a circuit. Default is ``3``."""
+
+        self.DEBUG: bool = False  # TODO: remove in MM 1.0
+        r"""Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is ``False``."""
+
+        self.DISCRETIZATION_METHOD: str = "clenshaw"
+        r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
+
+        self.DRAW_CIRCUIT_PARAMS: bool = True
+        r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
+
+        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # TODO: remove in MM 1.0
+        r"""The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is ``3``."""
+
+        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3  # TODO: remove in MM 1.0
+        r"""The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is ``1e-3``."""
+
+        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6  # TODO: remove in MM 1.0
+        r"""The relative tolerance used when comparing two transformations on Gaussian states. Default is ``1e-6``."""
+
+        self.HOMODYNE_SQUEEZING: float = 10.0  # TODO: remove in MM 1.0
+        r"""The value of squeezing for homodyne measurements. Default is ``10.0``."""
+
+        self.PNR_INTERNAL_CUTOFF: int = 50  # TODO: remove in MM 1.0
+        r"""The cutoff used when computing the output of a PNR detection. Default is ``50``."""
+
+        self.PROGRESSBAR: bool = True
+        r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
+
+        self.STABLE_FOCK_CONVERSION: bool = False
+        r"""Whether to use the ``vanilla_stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
+
+        self.UNSAFE_ZIP_BATCH: bool = False
+        r"""Whether to operate element-wise within a batch of Ansatze. If ``True``, the length of the batch dimension of two circuit components must be the same. Default is ``False``."""
 
         self._original_values = {}
         self._frozen = True
 
-    def __setattr__(self, name, value):
-        """Once the class is initialized, do not allow the addition of new settings."""
-        if self._frozen and not hasattr(self, name):
-            raise AttributeError(f"unknown MrMustard setting: '{name}'")
-        return super().__setattr__(name, value)
+    @property
+    def CACHE_DIR(self) -> Path:
+        """The directory in which serialized MrMustard objects are saved."""
+        return self._cache_dir
 
-    def __call__(self, **kwargs):
-        "allows for setting multiple settings at once and saving the original values"
-        self._original_values = {k: getattr(self, k) for k in kwargs}
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-        return self
-
-    def __enter__(self):
-        "context manager enter method"
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        "context manager exit method that resets the settings to their original values"
-        for k, v in self._original_values.items():
-            setattr(self, k, v)
+    @CACHE_DIR.setter
+    def CACHE_DIR(self, path: str | Path):
+        self._cache_dir = Path(path)
+        self._cache_dir.mkdir(exist_ok=True, parents=True)
 
     @property
     def COMPLEX_WARNING(self):
@@ -160,9 +145,8 @@ class Settings:
 
     @property
     def HBAR(self):
-        r"""The value of the Planck constant. Default is ``1``.
-
-        Cannot be changed after its value is queried for the first time.
+        r"""
+        The value of the Planck constant. Default is ``1``.
         """
         return self._hbar
 
@@ -170,19 +154,6 @@ class Settings:
     def HBAR(self, value: float):
         warnings.warn("Changing HBAR can conflict with prior computations.")
         self._hbar = value
-
-    @property
-    def SEED(self) -> int:
-        r"""Returns the seed value if set, otherwise returns a random seed."""
-        if self._seed is None:
-            self._seed = np.random.randint(0, 2**31 - 1)
-            self.rng = np.random.default_rng(self._seed)
-        return self._seed
-
-    @SEED.setter
-    def SEED(self, value: int | None):
-        self._seed = value
-        self.rng = np.random.default_rng(self._seed)
 
     @property
     def PRECISION_BITS_HERMITE_POLY(self):
@@ -225,14 +196,35 @@ class Settings:
             self._julia_initialized = True
 
     @property
-    def CACHE_DIR(self) -> Path:
-        """The directory in which serialized MrMustard objects are saved."""
-        return self._cache_dir
+    def SEED(self) -> int:
+        r"""Returns the seed value if set, otherwise returns a random seed."""
+        if self._seed is None:
+            self._seed = np.random.randint(0, 2**31 - 1)
+            self.rng = np.random.default_rng(self._seed)
+        return self._seed
 
-    @CACHE_DIR.setter
-    def CACHE_DIR(self, path: str | Path):
-        self._cache_dir = Path(path)
-        self._cache_dir.mkdir(exist_ok=True, parents=True)
+    @SEED.setter
+    def SEED(self, value: int | None):
+        self._seed = value
+        self.rng = np.random.default_rng(self._seed)
+
+    def __call__(self, **kwargs):
+        r"""
+        Allows for setting multiple settings at once and saving the original values.
+        """
+        self._original_values = {k: getattr(self, k) for k in kwargs}
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        return self
+
+    def __enter__(self):
+        "context manager enter method"
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        "context manager exit method that resets the settings to their original values"
+        for k, v in self._original_values.items():
+            setattr(self, k, v)
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
@@ -254,6 +246,14 @@ class Settings:
 
         print(table)
         return ""
+
+    def __setattr__(self, name, value):
+        r"""
+        Once the class is initialized, do not allow the addition of new settings.
+        """
+        if self._frozen and not hasattr(self, name):
+            raise AttributeError(f"unknown MrMustard setting: '{name}'")
+        return super().__setattr__(name, value)
 
 
 settings = Settings()
