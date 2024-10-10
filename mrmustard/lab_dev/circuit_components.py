@@ -968,6 +968,7 @@ class CircuitComponent:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
             raise ValueError(msg)
+        
         return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:

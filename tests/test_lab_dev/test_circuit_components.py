@@ -555,4 +555,4 @@ class TestCircuitComponent:
 
         # testing update under BtoPS
         psi = Ket.random([0,10]) @ BtoPS([0], s=.2)
-        assert psi._index_representation == {0: ('PS', .2), 9: ('B', None)}
+        assert psi._index_representation == {0: ('PS', 0.2), 1: ('B', None), 2: ('B', None), 3: ('B', None)}
