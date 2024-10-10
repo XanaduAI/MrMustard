@@ -49,13 +49,16 @@ class RepEnum(Enum):
     PHASESPACE = 4
 
     @classmethod
-    def from_ansatz(cls, value: Ansatz):
+    def from_ansatz(cls, ansatz: Ansatz):
         r"""
         Returns a ``RepEnum`` from an ``Ansatz``.
+
+        Args:
+            ansatz: The ansatz.
         """
-        if isinstance(value, PolyExpAnsatz):
+        if isinstance(ansatz, PolyExpAnsatz):
             return cls(1)
-        elif isinstance(value, ArrayAnsatz):
+        elif isinstance(ansatz, ArrayAnsatz):
             return cls(2)
         else:
             return cls(0)
@@ -124,7 +127,7 @@ class Representation:
                     self._ansatz = ansatz.reorder(tuple(perm))
 
         self._wires = wires
-        self._wire_reps = wire_reps or dict.fromkeys(wires.modes, RepEnum.from_ansatz(ansatz))
+        self._wire_reps = wire_reps or dict.fromkeys(wires.indices, RepEnum.from_ansatz(ansatz))
 
     @property
     def adjoint(self) -> Representation:
@@ -136,7 +139,7 @@ class Representation:
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         wires = self.wires.adjoint
-        return Representation(ansatz, wires)
+        return Representation(ansatz, wires, self._wire_reps)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -157,7 +160,7 @@ class Representation:
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         wires = self.wires.dual
-        return Representation(ansatz, wires)
+        return Representation(ansatz, wires, self._wire_reps)
 
     @property
     def wires(self) -> Wires | None:

@@ -657,15 +657,16 @@ class DM(State):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
+        modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
                 f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
         super().__init__(
-            wires=[modes, (), modes, ()],
+            ansatz=ansatz,
+            wires=Wires(modes_out_bra=modes, modes_out_ket=modes),
             name=name,
         )
-        self._representation = Representation(ansatz, self.wires)
 
     @property
     def is_positive(self) -> bool:
@@ -697,8 +698,10 @@ class DM(State):
 
     @property
     def probability(self) -> float:
-        r"""Probability (trace) of this DM, using the batch dimension of the Ansatz
-        as a convex combination of states."""
+        r"""
+        Probability (trace) of this DM, using the batch dimension of the Ansatz
+        as a convex combination of states.
+        """
         return math.sum(self._probabilities)
 
     @property
@@ -707,7 +710,8 @@ class DM(State):
 
     @property
     def _probabilities(self) -> RealVector:
-        r"""Element-wise probabilities along the batch dimension of this DM.
+        r"""
+        Element-wise probabilities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
         idx_ket = self.wires.output.ket.indices
@@ -717,7 +721,8 @@ class DM(State):
 
     @property
     def _purities(self) -> RealVector:
-        r"""Element-wise purities along the batch dimension of this DM.
+        r"""
+        Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
         return self._L2_norms / self._probabilities
@@ -986,15 +991,16 @@ class Ket(State):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ):
+        modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
                 f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
             )
         super().__init__(
-            wires=[(), (), modes, ()],
+            ansatz=ansatz,
+            wires=Wires(modes_out_ket=modes),
             name=name,
         )
-        self._representation = Representation(ansatz, self.wires)
 
     @property
     def is_physical(self) -> bool:

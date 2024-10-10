@@ -112,7 +112,9 @@ class CircuitComponent:
 
     @classmethod
     def _deserialize(cls, data: dict) -> CircuitComponent:
-        """Deserialization when within a circuit."""
+        r"""
+        Deserialization when within a circuit.
+        """
         if "rep_class" in data:
             rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
             rep = locate(rep_class).from_dict(data)
