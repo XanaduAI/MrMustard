@@ -78,6 +78,9 @@ class Settings:
         self.ATOL: float = 1e-8
         r"""The absolute tolerance when comparing two values or arrays. Default is ``1e-8``."""
 
+        self.MAX_BATCH_SIZE: int = 1000
+        r"""The maximum batch size across all modes. Default is ``1000``."""
+
         self.BS_FOCK_METHOD: str = "vanilla"  # can be 'vanilla' or 'schwinger'
         r"""The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."""
 
