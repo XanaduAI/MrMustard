@@ -241,7 +241,7 @@ class TestArrayAnsatz:
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
         assert np.allclose(state_cov, new_state_cov)
         assert np.allclose(state_means, new_state_means)
-        assert np.allclose(1.0 / (2 * np.pi), new_state_coeff)
+        assert np.allclose(1.0, new_state_coeff)
 
         state_cov = np.array(
             [
