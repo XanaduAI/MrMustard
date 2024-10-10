@@ -90,11 +90,37 @@ class Representation:
         self._wire_reps = wire_reps or dict.fromkeys(wires.modes, RepEnum.from_ansatz(ansatz))
 
     @property
+    def adjoint(self) -> Representation:
+        r"""
+        The adjoint of this representation obtained by conjugating the ansatz and swapping
+        the ket and bra wires.
+        """
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
+        wires = self.wires.adjoint
+        return Representation(ansatz, wires)
+
+    @property
     def ansatz(self) -> Ansatz | None:
         r"""
         The underlying ansatz of this representation.
         """
         return self._ansatz
+
+    @property
+    def dual(self) -> Representation:
+        r"""
+        The dual of this representation obtained by conjugating the ansatz and swapping
+        the input and output wires.
+        """
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
+        wires = self.wires.dual
+        return Representation(ansatz, wires)
 
     @property
     def wires(self) -> Wires | None:

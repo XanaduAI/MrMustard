@@ -158,14 +158,10 @@ class CircuitComponent:
     def adjoint(self) -> CircuitComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
-        the ket and bra wires. The returned object is a view of the original component which
-        applies a conjugation and a swap of the wires, but does not copy the data in memory.
+        the ket and bra wires.
         """
-        bras = self.wires.bra.indices
-        kets = self.wires.ket.indices
-        ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
-
-        ret = CircuitComponent(ansatz, self.wires.adjoint, self.name)
+        rep = self.representation.adjoint
+        ret = CircuitComponent(rep.ansatz, rep.wires, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
@@ -175,16 +171,10 @@ class CircuitComponent:
     def dual(self) -> CircuitComponent:
         r"""
         The dual of this component obtained by conjugating the representation and swapping
-        the input and output wires. The returned object is a view of the original component which
-        applies a conjugation and a swap of the wires, but does not copy the data in memory.
+        the input and output wires.
         """
-        ok = self.wires.ket.output.indices
-        ik = self.wires.ket.input.indices
-        ib = self.wires.bra.input.indices
-        ob = self.wires.bra.output.indices
-        ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
-
-        ret = CircuitComponent(ansatz, self.wires.dual, self.name)
+        rep = self.representation.dual
+        ret = CircuitComponent(rep.ansatz, rep.wires, self.name)
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
