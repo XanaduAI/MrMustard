@@ -178,7 +178,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     return A, b, c
 
 
-def join_Abc(Abc1, Abc2, mode="kron"):
+def join_Abc(Abc1, Abc2, mode="kron"):  # pylint: disable=too-many-statements
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
     It support including a batch dimension, e.g. ``A1.shape = (batch, n1, n1)``,
@@ -452,7 +452,7 @@ def complex_gaussian_integral_2(Abc1, Abc2, idx1, idx2, measure=-1, mode: str = 
     Raises:
         ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
-    A1, b1, c1 = Abc1
+    A1, _, c1 = Abc1
     A_, b_, c_ = join_Abc(Abc1, Abc2, mode=mode)
     n1_plus_N1 = A1.shape[-1]
     N1 = len(math.atleast_1d(c1).shape[1:])
