@@ -50,5 +50,5 @@ class TestCFT:
         )  # scaling to take care of HBAR
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
-            2 / settings.HBAR * (np.real(Wigner(Z))), (np.real(wigner.T)), atol=1e-8
+            2 / (2*np.pi*settings.HBAR) * (np.real(Wigner(Z))), (np.real(wigner.T)), atol=1e-8
         )  # scaling to take care of HBAR
