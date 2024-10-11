@@ -138,7 +138,7 @@ class TestCircuitComponent:
         d2 = d1 >> BtoQ([1], 0.7)
         d2_dual = d2.adjoint
         d2_dual._index_representation
-        assert d2_dual == {0: ("Q", 0.7), 1: ("B", None), 2: ("B", None), 3: ("B", None)}
+        assert d2_dual._index_representation == {0: ("Q", 0.7), 1: ("B", None), 2: ("B", None), 3: ("B", None)}
 
         rho = DM.random([0]) @ BtoQ([0])
         assert rho.adjoint._index_representation == {0: ("Q", 0), 1: ("B", None)}
