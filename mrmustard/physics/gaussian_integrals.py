@@ -218,8 +218,6 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
     (batch2_b, nb2) = b2.shape
     (batch1_c, *poly_shape1) = c1.shape
     (batch2_c, *poly_shape2) = c2.shape
-    poly_shape1 = tuple(poly_shape1)
-    poly_shape2 = tuple(poly_shape2)
 
     if not batch1 == batch1_b == batch1_c:
         raise ValueError(f"Batch sizes of Abc1 must match: got ({batch1}, {batch1_b}, {batch1_c})")
@@ -257,12 +255,12 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
         b2 = np.tile(b2, (batch1, 1))
         c = math.reshape(
             math.einsum("ba,dc->bdac", c1, c2),
-            (batch1 * batch2,) + poly_shape1 + poly_shape2,
+            [batch1 * batch2] + poly_shape1 + poly_shape2,
         )
     elif mode == "zip":
         A1Z = np.concatenate([A1, np.zeros((batch1, nA1, nA2))], axis=-1)
         ZA2 = np.concatenate([np.zeros((batch1, nA2, nA1)), A2], axis=-1)
-        c = math.reshape(math.einsum("ba,bc->bac", c1, c2), (batch1,) + poly_shape1 + poly_shape2)
+        c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
 
     A = np.concatenate([A1Z, ZA2], axis=-2)
     A = np.concatenate(
