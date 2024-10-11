@@ -24,7 +24,6 @@ from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
 from ...physics.representations import Bargmann
-from ..utils import make_parameter, reshape_params
 
 __all__ = ["BtoQ"]
 
