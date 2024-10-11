@@ -85,7 +85,7 @@ def join_Abc_real(
     idx2: Sequence[int],
 ):
     r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together",
-    by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2
+    by considering their Bargmann function as having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2
     will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same,
     rather than a pair of conjugate variables for complex Gaussian integrals.
 
@@ -182,7 +182,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 def join_Abc(Abc1, Abc2, mode="kron"):  # pylint: disable=too-many-statements
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
-    It support including a batch dimension, e.g. ``A1.shape = (batch, n1, n1)``,
+    It supports including a batch dimension, e.g. ``A1.shape = (batch, n1, n1)``,
     ``b1.shape = (batch, n1)``, ``c1.shape = (batch, *d1)`` or no batch dimension:
     ``A1.shape = (n1, n1)``, ``b1.shape = (n1)``, ``c1.shape = (*d1)``.
     The number of non-batch dimensions in ``ci`` (i.e. ``len(di)``) corresponds to the number
