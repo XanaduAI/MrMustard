@@ -363,7 +363,7 @@ class TestCircuitComponent:
         psi._index_representation[0] = ("Q", 0)
         ch = Channel.random([0])
         ch._index_representation = {0: ('Q', 0), 1: ('Q', 1.5), 2: ('PS', .5), 3: ('B', None)}
-        assert (rho @ psi.dual @ ch)._index_representation == {0: ('Q', 0), 1: ('PS', .5), 2: ('B', None)}
+        assert (rho @ psi.dual @ ch)._index_representation == {0: ('Q', 0), 1: ('PS', 0.5), 2: ('Q', 0)}
 
     def test_matmul_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)
