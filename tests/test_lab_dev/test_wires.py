@@ -116,7 +116,7 @@ class TestWires:
         assert w.input.bra.ids_dicts == d
 
     def test_index_to_mode_dict(self):
-        w = Wires({0,1}, {1}, {2}, {0,4})
+        w = Wires({0, 1}, {1}, {2}, {0, 4})
         assert w.index_to_mode_dict == {0: 0, 1: 1, 2: 1, 3: 2, 4: 0, 5: 4}
 
     def test_adjoint(self):
