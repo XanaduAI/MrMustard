@@ -825,11 +825,13 @@ class CircuitComponent:
                 and (not isinstance(self, BtoPS))
                 and (not isinstance(other, BtoPS))
             ):
-                index_self, index_other = self.wires.contracted_indices(other.wires)
-                temp = self.to_bargmann(index_self)
-                self_rep = temp.representation
-                temp = other.to_bargmann(index_other)
-                other_rep = temp.representation
+                self_copy = copy.deepcopy(self)
+                other_copy = copy.deepcopy(other)
+                index_self, index_other = self_copy.wires.contracted_indices(other_copy.wires)
+                self_rep = self_copy.to_bargmann(
+                    index_self
+                ).representation  # this is where the copy is required (to not send the intial objects back to Bargmann)
+                other_rep = other_copy.to_bargmann(index_other).representation
             else:
                 self_rep = self.representation
                 other_rep = other.representation
@@ -868,6 +870,7 @@ class CircuitComponent:
                 i = result.wires.index_dicts[1][m]
                 result._index_representation[i] = other._index_representation[j]
         for m in other.wires.input.ket.modes:
+
             j = other.wires.index_dicts[3][m]
             if j not in idx_2:
                 i = result.wires.index_dicts[3][m]
@@ -939,7 +942,6 @@ class CircuitComponent:
 
         if isinstance(pre_self, BtoQ):
             if pre_self.wires.bra:
-                print("hi")
                 for m in pre_self.modes:
                     i = self.wires.index_dicts[1][m]
                     j = other.wires.index_dicts[1][m]

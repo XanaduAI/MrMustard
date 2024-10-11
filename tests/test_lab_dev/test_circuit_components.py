@@ -138,7 +138,12 @@ class TestCircuitComponent:
         d2 = d1 >> BtoQ([1], 0.7)
         d2_dual = d2.adjoint
         d2_dual._index_representation
-        assert d2_dual._index_representation == {0: ("Q", 0.7), 1: ("B", None), 2: ("B", None), 3: ("B", None)}
+        assert d2_dual._index_representation == {
+            0: ("Q", 0.7),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("B", None),
+        }
 
         rho = DM.random([0]) @ BtoQ([0])
         assert rho.adjoint._index_representation == {0: ("Q", 0), 1: ("B", None)}
@@ -338,6 +343,18 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+    def tets_matmul_respects_representations(self):
+        rho = Vacuum([0, 1]).dm()
+        psi = Vacuum([2])
+        psi._index_representation[0] = ("Q", 0)
+        assert (rho @ psi.dual)._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("B", None),
+            4: ("Q", 0.0),
+        }
 
     def test_matmul_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)
