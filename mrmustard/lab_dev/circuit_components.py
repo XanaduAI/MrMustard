@@ -207,14 +207,14 @@ class CircuitComponent:
             ret._add_parameter(param)
 
         # handling index representations:
-        for i,j in enumerate(ob):
+        for i, j in enumerate(ob):
             ret._index_representation[i] = self._index_representation[j]
-        for i,j in enumerate(ib):
-            ret._index_representation[i+len(ob)] = self._index_representation[j]
-        for i,j in enumerate(ok):
-            ret._index_representation[i+len(ob+ib)] = self._index_representation[j]
-        for i,j in enumerate(ik):
-            ret._index_representation[i+len(ob+ib+ok)] = self._index_representation[j]
+        for i, j in enumerate(ib):
+            ret._index_representation[i + len(ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ob + ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ob + ib + ok)] = self._index_representation[j]
         return ret
 
     @cached_property
@@ -876,7 +876,7 @@ class CircuitComponent:
                 i = result.wires.index_dicts[2][m]
                 result._index_representation[i] = self._index_representation[j]
 
-        pre_self = self # not needed
+        pre_self = self  # not needed
         result._helper_update_output_wire_rep(pre_self, other)
         result._helper_update_input_wire_rep(pre_self, other)
 
