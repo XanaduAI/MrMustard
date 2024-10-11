@@ -35,6 +35,8 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.lab_dev.states import Ket
+from mrmustard.lab_dev.states import Ket
+
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -163,6 +165,9 @@ class TestBtoPS:
         assert math.allclose(A1, A2)
         assert math.allclose(b1, b2)
         assert math.allclose(c1, c2)
+
+        psi = Ket.random([0])
+        assert math.allclose((psi >> BtoPS([0], 1)).representation([0, 0]), [1.0])
 
 
 class TestBtoQ:
