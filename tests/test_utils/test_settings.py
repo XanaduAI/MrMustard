@@ -40,7 +40,6 @@ class TestSettings:
         assert settings.EQ_TRANSFORMATION_CUTOFF == 3
         assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
-        assert settings.MAX_BATCH_SIZE == 1000
         assert settings.PNR_INTERNAL_CUTOFF == 50
         assert settings.HOMODYNE_SQUEEZING == 10.0
         assert settings.PRECISION_BITS_HERMITE_POLY == 128

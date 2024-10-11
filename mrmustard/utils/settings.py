@@ -105,9 +105,6 @@ class Settings:
         self.HOMODYNE_SQUEEZING: float = 10.0  # TODO: remove in MM 1.0
         r"""The value of squeezing for homodyne measurements. Default is ``10.0``."""
 
-        self.MAX_BATCH_SIZE: int = 1000
-        r"""The maximum batch size across all modes. Default is ``1000``."""
-
         self.PNR_INTERNAL_CUTOFF: int = 50  # TODO: remove in MM 1.0
         r"""The cutoff used when computing the output of a PNR detection. Default is ``50``."""
 
