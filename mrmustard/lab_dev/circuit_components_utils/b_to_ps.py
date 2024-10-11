@@ -54,6 +54,11 @@ class BtoPS(Map):
         )
 
         self._add_parameter(Constant(s, "s"))
+        d1 = {mode: ('PS', float(self.s.value)) for mode in range(len(modes))}
+        d2 = {mode + len(modes): ('B', None) for mode in range(len(modes))}
+        d3 = {mode + 2*len(modes): ('PS', float(self.s.value)) for mode in range(len(modes))}
+        d4 = {mode + 3*len(modes): ('B', None) for mode in range(len(modes))}
+        self._index_representation = {**d1, **d2, **d3, **d4}
 
     @property
     def adjoint(self) -> BtoPS:
@@ -65,6 +70,13 @@ class BtoPS(Map):
         ret._representation = rep
         ret._wires = self.wires.adjoint
         ret._name = self.name + "_adj"
+
+        # handling index representations:
+        for i, j in enumerate(kets):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(bras):
+            ret._index_representation[i + len(kets)] = self._index_representation[j]
+
         return ret
 
     @property
@@ -79,6 +91,17 @@ class BtoPS(Map):
         ret._representation = rep
         ret._wires = self.wires.dual
         ret._name = self.name + "_dual"
+
+        # handling index representations:
+        for i, j in enumerate(ib):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
+
         return ret
 
     def inverse(self):

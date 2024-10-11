@@ -55,6 +55,9 @@ class BtoQ(Operation):
         )
 
         self._add_parameter(Constant(phi, "phi"))
+        d1 = {mode: ('Q', float(self.phi.value)) for mode in range(len(modes))}
+        d2 = {mode+len(modes):  ('B', None) for mode in range(len(modes))}
+        self._index_representation = {**d1, **d2}
 
     @property
     def adjoint(self) -> BtoQ:
@@ -77,6 +80,13 @@ class BtoQ(Operation):
         ret._representation = rep
         ret._wires = self.wires.dual
         ret._name = self.name + "_dual"
+
+        # handling index representations:
+        for i, j in enumerate(ik):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ik)] = self._index_representation[j]
+
         return ret
 
     def inverse(self):
