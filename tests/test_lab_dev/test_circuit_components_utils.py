@@ -252,7 +252,6 @@ class TestBtoQ:
         c2 = (psi >> BtoQ([0])) >> (phi >> BtoQ([0])).dual
         assert math.allclose(c1, c2)
 
-
     def test_BtoQ_with_displacement(self):
         "tests the BtoQ transformation with coherent states"
 
