@@ -135,13 +135,13 @@ class TestCircuitComponent:
         assert d1_adj_adj.representation == d1.representation
 
         # index representation test:
-        d2 = d1 >> BtoQ([1], .7)
+        d2 = d1 >> BtoQ([1], 0.7)
         d2_dual = d2.adjoint
         d2_dual._index_representation
-        assert d2_dual == {0: ('Q', 0.7), 1: ('B', None), 2: ('B', None), 3: ('B', None)}
+        assert d2_dual == {0: ("Q", 0.7), 1: ("B", None), 2: ("B", None), 3: ("B", None)}
 
         rho = DM.random([0]) @ BtoQ([0])
-        assert rho.adjoint._index_representation == {0: ("Q",0), 1: ("B", None)}
+        assert rho.adjoint._index_representation == {0: ("Q", 0), 1: ("B", None)}
 
     def test_dual(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
@@ -163,9 +163,14 @@ class TestCircuitComponent:
         assert d1_dual_dual.representation == d1.representation
 
         # index representation test
-        d2 = d1 >> BtoQ([1], .7)
+        d2 = d1 >> BtoQ([1], 0.7)
         d2_dual = d2.dual
-        assert d2_dual._index_representation == {0: ('B', None), 1: ('B', None), 2: ('Q', 0.7), 3: ('B', None)} 
+        assert d2_dual._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("Q", 0.7),
+            3: ("B", None),
+        }
 
     def test_light_copy(self):
         d1 = CircuitComponent(
@@ -193,9 +198,9 @@ class TestCircuitComponent:
         assert d67._representation is d89._representation
 
         # index representation test
-        psi = Vacuum([0,1])
-        psi._index_representation[0] = ("Q", .1)
-        phi = psi.on([2,3])
+        psi = Vacuum([0, 1])
+        psi._index_representation[0] = ("Q", 0.1)
+        phi = psi.on([2, 3])
         assert phi._index_representation == psi._index_representation
 
     def test_on_error(self):
