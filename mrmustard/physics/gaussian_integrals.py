@@ -162,7 +162,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     A, b, c = Abc
     c = math.astensor(c)
     order = list(order)
-
+    if len(order) == 0:
+        return A, b, c
     batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
     dim_poly = len(c.shape) - int(batched)
     n = A.shape[-1] - dim_poly
@@ -203,8 +204,12 @@ def join_Abc(Abc1, Abc2, mode="kron"):  # pylint: disable=too-many-statements
 
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
+    A1 = math.astensor(A1, dtype=math.complex128)
+    A2 = math.astensor(A2, dtype=math.complex128)
+    b1 = math.astensor(b1, dtype=math.complex128)
+    b2 = math.astensor(b2, dtype=math.complex128)
+    c1 = math.astensor(c1, dtype=math.complex128)
+    c2 = math.astensor(c2, dtype=math.complex128)
 
     # 1. input validation
 
@@ -397,7 +402,6 @@ def complex_gaussian_integral_1(
     X = math.block([[Z, eye], [eye, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
-
     determinant = math.det(M)
     D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
