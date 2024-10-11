@@ -252,6 +252,12 @@ class TestCircuitComponent:
         d12 = d1 + d2
         assert d12.representation == d1.representation + d2.representation
 
+        # checking if addition takes care of representations
+        psi = Ket.random([0])
+        phi = Ket.random([0])
+
+        assert psi + (phi >> BtoQ([0])) == psi + phi
+
     def test_sub(self):
         s1 = DisplacedSqueezed([1], x=1.0, y=0.5, r=0.1)
         s2 = DisplacedSqueezed([1], x=0.5, y=0.2, r=0.2)
