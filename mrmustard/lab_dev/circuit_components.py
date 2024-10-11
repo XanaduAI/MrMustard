@@ -901,13 +901,10 @@ class CircuitComponent:
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
-                    print(pre_self._index_representation[0])
                     if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
-                        print(pre_self._index_representation[0])
                     else:
                         self._index_representation[i] = ("B", None)  # takes care of BtoQ.inverse()
-                        #print(pre_self._index_representation[0])
         if isinstance(other, BtoPS):
             if other.wires.bra:
                 for m in other.modes:
