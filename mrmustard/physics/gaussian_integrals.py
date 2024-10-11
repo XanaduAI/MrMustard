@@ -406,9 +406,9 @@ def complex_gaussian_integral_1(
     D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
     bR = math.gather(b, not_idx, axis=-1)
-    try:
+    det_M = math.det(M)
+    if np.all(math.abs(det_M) > 1e-12):
         inv_M = math.inv(M)
-        det_M = math.det(M)
         c_post = (
             c
             * math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
@@ -416,7 +416,7 @@ def complex_gaussian_integral_1(
         )
         A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
         b_post = bR - math.einsum("bij,bj->bi", D, math.solve(M, bM))
-    except math.LinAlgError:
+    else:
         A_post = R - math.einsum("bij,bjk,blk->bil", D, M * np.inf, D)
         b_post = bR - math.einsum("bij,bjk,bk->bi", D, M * np.inf, bM)
         c_post = math.real(c) * np.inf
