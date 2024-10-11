@@ -186,6 +186,13 @@ class CircuitComponent:
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
+
+        # handling index representations:
+        for i, j in enumerate(kets):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(bras):
+            ret._index_representation[i + len(kets)] = self._index_representation[j]
+
         return ret
 
     @property
@@ -207,14 +214,14 @@ class CircuitComponent:
             ret._add_parameter(param)
 
         # handling index representations:
-        for i, j in enumerate(ob):
-            ret._index_representation[i] = self._index_representation[j]
         for i, j in enumerate(ib):
-            ret._index_representation[i + len(ob)] = self._index_representation[j]
-        for i, j in enumerate(ok):
-            ret._index_representation[i + len(ob + ib)] = self._index_representation[j]
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
         for i, j in enumerate(ik):
-            ret._index_representation[i + len(ob + ib + ok)] = self._index_representation[j]
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
         return ret
 
     @cached_property
