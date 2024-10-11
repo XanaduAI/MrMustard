@@ -577,6 +577,8 @@ class CircuitComponent:
             modes_in_ket=set(modes) if ik else set(),
         )
 
+        ret._index_representation = copy.deepcopy(self._index_representation)
+
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
