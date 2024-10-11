@@ -34,7 +34,7 @@ from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.lab_dev.wires import Wires
-
+from mrmustard.lab_dev.states import Ket
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -240,6 +240,13 @@ class TestBtoQ:
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
+
+        psi = Ket.random([0])
+        phi = Ket.random([0])
+        c1 = psi >> phi.dual
+        c2 = (psi >> BtoQ([0])) >> (phi >> BtoQ([0])).dual
+        assert math.allclose(c1, c2)
+
 
     def test_BtoQ_with_displacement(self):
         "tests the BtoQ transformation with coherent states"
