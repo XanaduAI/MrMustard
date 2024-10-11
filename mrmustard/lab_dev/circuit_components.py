@@ -25,6 +25,7 @@ from typing import Any, Sequence
 import numbers
 from functools import cached_property
 
+import copy
 import numpy as np
 from numpy.typing import ArrayLike
 import ipywidgets as widgets
@@ -46,7 +47,6 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.triples import identity_Abc
 
-import copy
 
 __all__ = ["CircuitComponent"]
 
