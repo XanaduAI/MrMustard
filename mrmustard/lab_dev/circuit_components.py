@@ -46,6 +46,8 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.triples import identity_Abc
 
+import copy
+
 __all__ = ["CircuitComponent"]
 
 
@@ -203,6 +205,16 @@ class CircuitComponent:
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
+
+        # handling index representations:
+        for i,j in enumerate(ob):
+            ret._index_representation[i] = self._index_representation[j]
+        for i,j in enumerate(ib):
+            ret._index_representation[i+len(ob)] = self._index_representation[j]
+        for i,j in enumerate(ok):
+            ret._index_representation[i+len(ob+ib)] = self._index_representation[j]
+        for i,j in enumerate(ik):
+            ret._index_representation[i+len(ob+ib+ok)] = self._index_representation[j]
         return ret
 
     @cached_property
@@ -864,7 +876,7 @@ class CircuitComponent:
                 i = result.wires.index_dicts[2][m]
                 result._index_representation[i] = self._index_representation[j]
 
-        pre_self = self
+        pre_self = self # not needed
         result._helper_update_output_wire_rep(pre_self, other)
         result._helper_update_input_wire_rep(pre_self, other)
 
@@ -878,7 +890,7 @@ class CircuitComponent:
         from .circuit_components_utils import BtoQ, BtoPS
 
         if isinstance(other, BtoQ):
-            self._index_representation = pre_self._index_representation
+            self._index_representation = copy.deepcopy(pre_self._index_representation)
             if other.wires.bra:
                 for m in other.modes:
                     i = self.wires.index_dicts[0][m]
@@ -889,11 +901,13 @@ class CircuitComponent:
             elif other.wires.ket:
                 for m in other.modes:
                     i = self.wires.index_dicts[2][m]
+                    print(pre_self._index_representation[0])
                     if self._index_representation[i][0] == "B":
                         self._index_representation[i] = ("Q", float(other.phi.value))
+                        print(pre_self._index_representation[0])
                     else:
                         self._index_representation[i] = ("B", None)  # takes care of BtoQ.inverse()
-
+                        #print(pre_self._index_representation[0])
         if isinstance(other, BtoPS):
             if other.wires.bra:
                 for m in other.modes:
