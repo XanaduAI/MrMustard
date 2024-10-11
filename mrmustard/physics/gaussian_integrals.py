@@ -402,18 +402,19 @@ def complex_gaussian_integral_1(
     X = math.block([[Z, eye], [eye, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
     bM = math.gather(b, idx, axis=-1)
-    determinant = math.det(M)
-    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-    bR = math.gather(b, not_idx, axis=-1)
-    if np.all(math.abs(determinant)) > 1e-12:
+    try:
+        inv_M = math.inv(M)
         c_post = (
             c
             * math.sqrt(math.cast((-1) ** m / determinant, "complex128"))
             * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1]))
         )
-        A_post = R - math.einsum("bij,bjk,blk->bil", D, math.inv(M), D)
+        A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
         b_post = bR - math.einsum("bij,bj->bi", D, math.solve(M, bM))
+    except np.linalg.LinAlgError:
+        A_post = R - math.einsum("bij,bjk,blk->bil", D, M * np.inf, D)
+        b_post = bR - math.einsum("bij,bjk,bk->bi", D, M * np.inf, bM)
+        c_post = math.real(c) * np.inf
     else:
         A_post = R - math.einsum("bij,bjk,blk->bil", D, M * np.inf, D)
         b_post = bR - math.einsum("bij,bjk,bk->bi", D, M * np.inf, bM)
