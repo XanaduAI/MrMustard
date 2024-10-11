@@ -34,6 +34,7 @@ from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, DM
 from mrmustard.physics.wires import Wires
+from mrmustard.lab_dev.states import Ket
 
 
 # original settings
@@ -163,6 +164,9 @@ class TestBtoPS:
         assert math.allclose(A1, A2)
         assert math.allclose(b1, b2)
         assert math.allclose(c1, c2)
+
+        psi = Ket.random([0])
+        assert math.allclose((psi >> BtoPS([0], 1)).ansatz([0, 0]), [1.0])
 
 
 class TestBtoQ:
