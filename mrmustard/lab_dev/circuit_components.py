@@ -640,7 +640,7 @@ class CircuitComponent:
             if not indices:
                 indices = self.wires.indices
 
-            ret = self
+            ret = copy.deepcopy(self)
             for i in indices:
                 name, arg = self._index_representation[i]
                 if name == "Q":
@@ -657,7 +657,7 @@ class CircuitComponent:
                             BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.adjoint.inverse()
                             @ ret
                         )
-                    if i in self.wires.input.bra.indices:
+                    if i in self.wires.input.ket.indices:
                         ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
 
                 if name == "PS":
@@ -673,7 +673,7 @@ class CircuitComponent:
                             BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.adjoint.inverse()
                             @ ret
                         )
-                    if i in self.wires.input.bra.indices:
+                    if i in self.wires.input.ket.indices:
                         ret = BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
 
             return ret
