@@ -790,8 +790,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
 
-        rho = DM.random([0,1]) >> BtoPS([0],0) >> BtoQ([1])
-        assert rho._index_representation == {0: ('PS', 0), 1: ('Q', 0), 2: ('PS', 0), 3: ('Q', 0)}
+        rho = DM.random([0, 1]) >> BtoPS([0], 0) >> BtoQ([1])
+        assert rho._index_representation == {0: ("PS", 0), 1: ("Q", 0), 2: ("PS", 0), 3: ("Q", 0)}
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):
