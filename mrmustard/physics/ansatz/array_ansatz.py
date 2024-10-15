@@ -161,7 +161,7 @@ class ArrayAnsatz(Ansatz):
 
         if any(s > t for s, t in zip(shape, self.array.shape[1:])):
             warn(
-                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
+                "Warning: the fock array is being padded with zeros. If possible, slice the arrays this one will contract with instead."
             )
             padded = math.pad(
                 self.array,

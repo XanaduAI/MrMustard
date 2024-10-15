@@ -82,6 +82,25 @@ class TestPolyExpAnsatz:
         assert np.allclose(bargmann_add2.b[1], b2)
         assert np.allclose(bargmann_add2.c[1][:2, :2], c2[0])
 
+    def test_add_different_poly_wires(self):
+        "tests that A and b are padded correctly"
+        A1 = np.random.random((1, 2, 2))
+        A2 = np.random.random((1, 3, 3))
+        b1 = np.random.random((1, 2))
+        b2 = np.random.random((1, 3))
+        c1 = np.random.random((1,))
+        c2 = np.random.random((1, 11))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz_sum = ansatz1 + ansatz2
+        assert ansatz_sum.A.shape == (2, 3, 3)
+        assert ansatz_sum.b.shape == (2, 3)
+        assert ansatz_sum.c.shape == (2, 11)
+        ansatz_sum = ansatz2 + ansatz1
+        assert ansatz_sum.A.shape == (2, 3, 3)
+        assert ansatz_sum.b.shape == (2, 3)
+        assert ansatz_sum.c.shape == (2, 11)
+
     def test_add_error(self):
         bargmann = PolyExpAnsatz(*Abc_triple(3))
         fock = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
@@ -246,6 +265,62 @@ class TestPolyExpAnsatz:
         assert ansatz != ansatz2
         assert ansatz2 != ansatz
 
+    def test_inconsistent_poly_shapes(self):
+        A1 = np.random.random((1, 2, 2))
+        A2 = np.random.random((1, 3, 3))
+        b1 = np.random.random((1, 2))
+        b2 = np.random.random((1, 3))
+        c1 = np.random.random((1,))
+        c2 = np.random.random((1, 5, 11))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        with pytest.raises(ValueError):
+            ansatz1 + ansatz2  # pylint: disable=pointless-statement
+
+    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        rep = PolyExpAnsatz(*Abc_triple(2))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [box] = mock_display.call_args.args
+        assert isinstance(box, Box)
+        assert box.layout.max_width == "50%"
+
+        # data on left, eigvals on right
+        [data_vbox, eigs_vbox] = box.children
+        assert isinstance(data_vbox, VBox)
+        assert isinstance(eigs_vbox, VBox)
+
+        # data forms a stack: header, ansatz, triple data
+        [header, sub, table] = data_vbox.children
+        assert isinstance(header, HTML)
+        assert isinstance(sub, IntText)
+        assert isinstance(table, HTML)
+
+        # eigvals have a header and a unit circle plot
+        [eig_header, unit_circle] = eigs_vbox.children
+        assert isinstance(eig_header, HTML)
+        assert isinstance(unit_circle, FigureWidget)
+
+    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
+    def test_ipython_repr_batched(self, mock_display):
+        """Test the IPython repr function for a batched repr."""
+        A1, b1, c1 = Abc_triple(2)
+        A2, b2, c2 = Abc_triple(2)
+        rep = PolyExpAnsatz(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
+        rep._ipython_display_()  # pylint:disable=protected-access
+        [vbox] = mock_display.call_args.args
+        assert isinstance(vbox, VBox)
+
+        [slider, stack] = vbox.children
+        assert isinstance(slider, IntSlider)
+        assert slider.max == 1  # the batch size - 1
+        assert isinstance(stack, Stack)
+
+        # max_width is spot-check that this is bargmann widget
+        assert len(stack.children) == 2
+        assert all(box.layout.max_width == "50%" for box in stack.children)
+
     def test_matmul_barg_barg(self):
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
@@ -386,47 +461,3 @@ class TestPolyExpAnsatz:
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
         assert np.allclose(bargmann.c, c)
-
-    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
-    def test_ipython_repr(self, mock_display):
-        """Test the IPython repr function."""
-        rep = PolyExpAnsatz(*Abc_triple(2))
-        rep._ipython_display_()  # pylint:disable=protected-access
-        [box] = mock_display.call_args.args
-        assert isinstance(box, Box)
-        assert box.layout.max_width == "50%"
-
-        # data on left, eigvals on right
-        [data_vbox, eigs_vbox] = box.children
-        assert isinstance(data_vbox, VBox)
-        assert isinstance(eigs_vbox, VBox)
-
-        # data forms a stack: header, ansatz, triple data
-        [header, sub, table] = data_vbox.children
-        assert isinstance(header, HTML)
-        assert isinstance(sub, IntText)
-        assert isinstance(table, HTML)
-
-        # eigvals have a header and a unit circle plot
-        [eig_header, unit_circle] = eigs_vbox.children
-        assert isinstance(eig_header, HTML)
-        assert isinstance(unit_circle, FigureWidget)
-
-    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
-    def test_ipython_repr_batched(self, mock_display):
-        """Test the IPython repr function for a batched repr."""
-        A1, b1, c1 = Abc_triple(2)
-        A2, b2, c2 = Abc_triple(2)
-        rep = PolyExpAnsatz(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
-        rep._ipython_display_()  # pylint:disable=protected-access
-        [vbox] = mock_display.call_args.args
-        assert isinstance(vbox, VBox)
-
-        [slider, stack] = vbox.children
-        assert isinstance(slider, IntSlider)
-        assert slider.max == 1  # the batch size - 1
-        assert isinstance(stack, Stack)
-
-        # max_width is spot-check that this is bargmann widget
-        assert len(stack.children) == 2
-        assert all(box.layout.max_width == "50%" for box in stack.children)
