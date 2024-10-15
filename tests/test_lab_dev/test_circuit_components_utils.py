@@ -280,16 +280,16 @@ class TestBtoQ:
         "Tests whether BtoQ, and its adjopint/dual and their combinations have the right representation"
 
         btoq_1 = BtoQ([0])
-        assert btoq_1._index_representation == {0: ('Q', 0), 1:('B', None)}
+        assert btoq_1._index_representation == {0: ("Q", 0), 1: ("B", None)}
 
         btoq_dual = btoq_1.dual
-        assert btoq_dual._index_representation == {0: ('B', None), 1: ('Q', 0)}
+        assert btoq_dual._index_representation == {0: ("B", None), 1: ("Q", 0)}
 
         btoq_adjoint = btoq_1.adjoint
-        assert btoq_adjoint._index_representation == {0: ('Q', 0), 1: ('B', None)}
+        assert btoq_adjoint._index_representation == {0: ("Q", 0), 1: ("B", None)}
 
         btoq_dual_adj = btoq_1.dual.adjoint
-        assert btoq_dual_adj._index_representation == {0: ('B', None), 1: ('Q', 0)}
-        
+        assert btoq_dual_adj._index_representation == {0: ("B", None), 1: ("Q", 0)}
+
         btoq_adj_dual = btoq_1.adjoint.dual
-        assert btoq_adj_dual._index_representation == {0: ('B', None), 1: ('Q', 0)}
+        assert btoq_adj_dual._index_representation == {0: ("B", None), 1: ("Q", 0)}

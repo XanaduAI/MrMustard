@@ -621,7 +621,4 @@ class TestCircuitComponent:
 
         # testing update under BtoPS
         rho = DM.random([0]) @ BtoPS([0], s=0.2)
-        assert rho._index_representation == {
-            0: ("PS", 0.2),
-            1: ("PS", .2)
-        }
+        assert rho._index_representation == {0: ("PS", 0.2), 1: ("PS", 0.2)}

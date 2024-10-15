@@ -55,8 +55,8 @@ class BtoQ(Operation):
         )
 
         self._add_parameter(Constant(phi, "phi"))
-        d1 = {mode: ('Q', float(self.phi.value)) for mode in range(len(modes))}
-        d2 = {mode+len(modes):  ('B', None) for mode in range(len(modes))}
+        d1 = {mode: ("Q", float(self.phi.value)) for mode in range(len(modes))}
+        d2 = {mode + len(modes): ("B", None) for mode in range(len(modes))}
         self._index_representation = {**d1, **d2}
 
     @property
@@ -87,7 +87,6 @@ class BtoQ(Operation):
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
         rep = self.representation.reorder(ib + ob + ik + ok).conj()
-
 
         ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = rep

@@ -54,10 +54,10 @@ class BtoPS(Map):
         )
 
         self._add_parameter(Constant(s, "s"))
-        d1 = {mode: ('PS', float(self.s.value)) for mode in range(len(modes))}
-        d2 = {mode + len(modes): ('B', None) for mode in range(len(modes))}
-        d3 = {mode + 2*len(modes): ('PS', float(self.s.value)) for mode in range(len(modes))}
-        d4 = {mode + 3*len(modes): ('B', None) for mode in range(len(modes))}
+        d1 = {mode: ("PS", float(self.s.value)) for mode in range(len(modes))}
+        d2 = {mode + len(modes): ("B", None) for mode in range(len(modes))}
+        d3 = {mode + 2 * len(modes): ("PS", float(self.s.value)) for mode in range(len(modes))}
+        d4 = {mode + 3 * len(modes): ("B", None) for mode in range(len(modes))}
         self._index_representation = {**d1, **d2, **d3, **d4}
 
     @property
