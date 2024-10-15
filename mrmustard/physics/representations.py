@@ -33,9 +33,9 @@ from IPython.display import display
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
-    contract_two_Abc_poly,
     reorder_abc,
-    complex_gaussian_integral,
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
 )
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.utils.typing import (
@@ -436,12 +436,7 @@ class Bargmann(Representation):
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
-        A, b, c = [], [], []
-        for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
-            A.append(Aij)
-            b.append(bij)
-            c.append(cij)
+        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return Bargmann(A, b, c)
 
     def __call__(self, z: ComplexTensor) -> ComplexTensor:
@@ -497,22 +492,19 @@ class Bargmann(Representation):
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        Abc = []
         if settings.UNSAFE_ZIP_BATCH:
             if self.ansatz.batch_size != other.ansatz.batch_size:
                 raise ValueError(
                     f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
                 )
-            for (A1, b1, c1), (A2, b2, c2) in zip(
-                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-            ):
-                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="zip"
+            )
         else:
-            for A1, b1, c1 in zip(self.A, self.b, self.c):
-                for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="kron"
+            )
 
-        A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
     def to_dict(self) -> dict[str, ArrayLike]:
