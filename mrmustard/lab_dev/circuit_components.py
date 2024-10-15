@@ -644,12 +644,12 @@ class CircuitComponent:
         """
         from .circuit_components_utils import BtoQ, BtoPS
 
+        ret = copy.deepcopy(self)
         if isinstance(self.representation, Bargmann):  # TODO: better name for Bargmann class
             # check cc rep
             if not indices:
                 indices = self.wires.indices
 
-            ret = copy.deepcopy(self)
             for i in indices:
                 name, arg = self._index_representation[i]
                 if name == "Q":
@@ -684,8 +684,6 @@ class CircuitComponent:
                         )
                     if i in self.wires.input.ket.indices:
                         ret = BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
-
-            return ret
         elif isinstance(self.representation, Fock):
             if self.representation.ansatz._original_abc_data:
                 A, b, c = self.representation.ansatz._original_abc_data
@@ -700,7 +698,7 @@ class CircuitComponent:
                 ret = self._from_attributes(bargmann, self.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
-            return ret
+        return ret
 
     def _add_parameter(self, parameter: Constant | Variable):
         r"""
