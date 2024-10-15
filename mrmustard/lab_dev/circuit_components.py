@@ -802,8 +802,8 @@ class CircuitComponent:
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
         from .circuit_components_utils import BtoQ, BtoPS
-        
-        if (type(self.representation) == type(other.representation) == Fock) or (isinstance(self, BtoQ)) or (isinstance(self, BtoPS)):
+
+        if (type(self.representation) == type(other.representation) == Fock) or isinstance(self, (BtoQ,BtoPS)):
             return self.representation == other.representation and self.wires == other.wires
         else:
             self_rep = self.to_bargmann().representation
