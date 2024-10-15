@@ -104,7 +104,7 @@ class BtoPS(Map):
 
         return ret
 
-    def inverse(self):
+    def inverse(self) -> BtoPS:
         inv = super().inverse()
         ret = BtoPS(self.modes, float(self.s.value))
         ret._representation = inv.representation
