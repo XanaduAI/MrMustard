@@ -693,11 +693,13 @@ class CircuitComponent:
         r"""
         Helper function for change of representation in to_bargmann()
         """
+
         from .circuit_components_utils import BtoPS
 
         name = self._index_representation[i][0]
         ret = copy.deepcopy(self)
         if name == "PS":
+
             _, arg = self._index_representation[i]
             ret._index_representation[i] = ("B", None)
             m = self.wires.index_to_mode_dict[i]
@@ -709,6 +711,7 @@ class CircuitComponent:
                 friend_index = self.wires.index_dicts[2][m]
                 ret._index_representation[friend_index] = ("B", None)
                 ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
+
             if i in self.wires.input.bra.indices:
                 if m not in self.wires.input.ket.modes:
                     raise ValueError(
@@ -716,7 +719,7 @@ class CircuitComponent:
                     )
                 friend_index = self.wires.index_dicts[3][m]
                 ret._index_representation[friend_index] = ("B", None)
-                ret = BtoPS([m], s=arg).dual.adjoint.inverse() @ ret
+                ret = BtoPS([m], s=arg).dual.inverse() @ ret
 
         return ret
 

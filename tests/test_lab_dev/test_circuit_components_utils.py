@@ -169,6 +169,32 @@ class TestBtoPS:
         psi = Ket.random([0])
         assert math.allclose((psi >> BtoPS([0], 1)).representation([0, 0]), [1.0])
 
+    def test_Bto_S_index_representation(self):
+        r"""
+        Tests the assingments of the index_representration of a BtoPS and its variants
+        """
+        btops_1 = BtoPS([0], 0.1)
+        assert btops_1._index_representation == {
+            0: ("PS", 0.1),
+            1: ("B", None),
+            2: ("PS", 0.1),
+            3: ("B", None),
+        }
+
+        btops_dual = BtoPS([0], 0.1).dual
+        assert btops_dual._index_representation == {
+            0: ("B", None),
+            1: ("PS", 0.1),
+            2: ("B", None),
+            3: ("PS", 0.1),
+        }
+
+        btops_adjoint = btops_1.adjoint
+        assert btops_adjoint._index_representation == btops_1._index_representation
+
+        btops_inv = btops_1.inverse()
+        assert btops_inv._index_representation == btops_dual._index_representation
+
 
 class TestBtoQ:
     r"""
@@ -293,3 +319,9 @@ class TestBtoQ:
 
         btoq_adj_dual = btoq_1.adjoint.dual
         assert btoq_adj_dual._index_representation == {0: ("B", None), 1: ("Q", 0)}
+
+        btoq_inv = btoq_1.inverse()
+        assert btoq_inv._index_representation == btoq_dual._index_representation
+
+        btoq_adj_inv = btoq_1.adjoint.inverse()
+        assert btoq_adj_inv._index_representation == {0: ("B", None), 1: ("Q", 0)}
