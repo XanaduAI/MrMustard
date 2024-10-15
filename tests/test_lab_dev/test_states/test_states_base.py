@@ -39,6 +39,7 @@ from mrmustard.lab_dev.states import (
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.widgets import state as state_widget
+from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS
 
 # original settings
 autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)
@@ -788,6 +789,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         # measurements
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
+
+        rho = DM.random([0,1]) >> BtoPS([0],0) >> BtoQ([1])
+        assert rho._index_representation == {0: ('PS', 0), 1: ('Q', 0), 2: ('PS', 0), 3: ('Q', 0)}
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):
