@@ -668,7 +668,7 @@ class CircuitComponent:
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
         return ret
-
+ 
     def _apply_btoq_for_change_of_rep(self, i):
         from .circuit_components_utils import BtoQ
 
