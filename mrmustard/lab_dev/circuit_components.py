@@ -702,7 +702,7 @@ class CircuitComponent:
             ret._index_representation[i] = ("B", None)
             m = self.wires.index_to_mode_dict[i]
             if i in self.wires.output.bra.indices:
-                if m not in self.wires.output.ket:
+                if m not in self.wires.output.ket.modes:
                     raise ValueError(
                         f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the output bra."
                     )
@@ -710,7 +710,7 @@ class CircuitComponent:
                 ret._index_representation[friend_index] = ("B", None)
                 ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
             if i in self.wires.input.bra.indices:
-                if m not in self.wires.input.ket:
+                if m not in self.wires.input.ket.modes:
                     raise ValueError(
                         f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the input bra."
                     )
