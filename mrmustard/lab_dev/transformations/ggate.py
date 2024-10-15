@@ -55,10 +55,14 @@ class Ggate(Unitary):
         symplectic_trainable: bool = False,
     ):
         super().__init__(modes_out=modes, modes_in=modes, name="Ggate")
-        S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
-        self.parameter_set.add_parameter(S)
-
+        self._add_parameter(
+            make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
+        )
         self._representation = Bargmann.from_function(
             fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
             s=self.parameter_set.symplectic,
         )
+
+    @property
+    def symplectic(self):
+        return self.parameter_set.symplectic.value
