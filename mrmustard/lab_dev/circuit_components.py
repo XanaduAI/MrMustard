@@ -68,7 +68,7 @@ class CircuitComponent:
     """
 
     short_name = "CC"
-
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         representation: Bargmann | Fock | None = None,
