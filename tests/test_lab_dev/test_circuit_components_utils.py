@@ -118,11 +118,11 @@ class TestBtoPS:
         state_means = np.array([0.4, 0.6])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0], triple=(A, b, c))
-        state_bargmann_triple = (A, b, c)
+        state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple()
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -146,11 +146,11 @@ class TestBtoPS:
         state_means = np.array([0.28284271, 0.0, 0.42426407, 0.0])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
-        state_bargmann_triple = (A, b, c)
+        state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple()
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
@@ -175,17 +175,13 @@ class TestBtoQ:
     """
 
     def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
-        A0 = np.array([[0.5, 0.3], [0.3, 0.5]])
-        b0 = np.zeros(2)
+        A0 = np.array([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
+        b0 = np.zeros(2, dtype=np.complex128)
         c0 = 1.0 + 0j
 
         modes = [0, 1]
         BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = (
-            BtoQ_CC1.representation.A[0],
-            BtoQ_CC1.representation.b[0],
-            BtoQ_CC1.representation.c[0],
-        )
+        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
         Ainter, binter, cinter = complex_gaussian_integral_1(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
             idx_z=[0, 1],
@@ -193,14 +189,10 @@ class TestBtoQ:
             measure=-1,
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
-        )
+        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple(batched=False)
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0, 1], [2, 3]
+            (Ainter[0], binter[0], cinter[0]), (step2A, step2b, step2c), [0, 1], [2, 3]
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
@@ -215,11 +207,7 @@ class TestBtoQ:
 
         modes = [0]
         BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = (
-            BtoQ_CC1.representation.A[0],
-            BtoQ_CC1.representation.b[0],
-            BtoQ_CC1.representation.c[0],
-        )
+        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
         Ainter, binter, cinter = complex_gaussian_integral_1(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
             idx_z=[
@@ -229,14 +217,10 @@ class TestBtoQ:
             measure=-1,
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = (
-            QtoBMap_CC2.representation.A[0],
-            QtoBMap_CC2.representation.b[0],
-            QtoBMap_CC2.representation.c[0],
-        )
+        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple(batched=False)
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0], [1]
+            (Ainter[0], binter[0], cinter[0]), (step2A, step2b, step2c), [0], [1]
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])
