@@ -29,15 +29,26 @@ __all__ = ["wigner_discretized"]
 
 
 @njit
-def make_grid(q_vec, p_vec, hbar):  # pragma: no cover
+def make_grid(q_vec: np.ndarray, p_vec: np.ndarray, hbar: float):
     r"""Returns two coordinate matrices `Q` and `P` from coordinate vectors
     `q_vec` and `p_vec`, along with the grid over which Wigner functions can be
     discretized.
     """
-    Q = np.outer(q_vec, np.ones_like(p_vec))
-    P = np.outer(np.ones_like(q_vec), p_vec)
-    return Q, P, (Q + P * 1.0j) / np.sqrt(2 * hbar)
+    n_q = q_vec.size
+    n_p = p_vec.size
+    Q = np.empty((n_q, n_p), dtype=np.float64)
+    P = np.empty((n_q, n_p), dtype=np.float64)
+    sqrt_factor = 1.0 / np.sqrt(2.0 * hbar)
 
+    for i in range(n_q):
+        q = q_vec[i]
+        for j in range(n_p):
+            p = p_vec[j]
+            Q[i, j] = q
+            P[i, j] = p
+
+    grid = (Q + 1j * P) * sqrt_factor
+    return Q, P, grid
 
 @njit
 def _wig_laguerre_val(L, x, diag):  # pragma: no cover
@@ -144,31 +155,36 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
 
 @njit
 def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):  # pragma: no cover
+    """Optimized iterative computation of the Wigner function."""
     cutoff = len(rho)
     Q, P, grid = make_grid(q_vec, p_vec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
 
-    # W = rho(0,0)W(|0><0|)
-    Wmat[0, 0] = np.exp(-2.0 * np.abs(grid) ** 2) / np.pi
-    W = np.real(rho[0, 0]) * np.real(Wmat[0, 0])
+    # Precompute the exponential term to avoid recalculating it.
+    exp_grid = np.exp(-2.0 * np.abs(grid) ** 2) / np.pi
 
+    # Initialize Wmat and W with the |0><0| component.
+    Wmat[0, 0] = exp_grid
+    W = rho[0, 0].real * Wmat[0, 0].real
+
+    # Precompute square roots to avoid repetitive calculations.
+    sqrt_n = np.array([np.sqrt(n) for n in range(cutoff)], dtype=np.float64)
+
+    # Compute the first set of Wigner coefficients.
     for n in range(1, cutoff):
-        Wmat[0, n] = (2.0 * grid * Wmat[0, n - 1]) / np.sqrt(n)
-
-        # W += rho(0,n)W(|0><n|) + rho(n,0)W(|n><0|)
+        Wmat[0, n] = (2.0 * grid * Wmat[0, n - 1]) / sqrt_n[n]
         W += 2 * np.real(rho[0, n] * Wmat[0, n])
 
+    # Compute the remaining coefficients and accumulate the Wigner function.
     for m in range(1, cutoff):
-        Wmat[1, m] = (2 * np.conj(grid) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]) / np.sqrt(m)
-
-        # W = rho(m, m)W(|m><m|)
-        W += np.real(rho[m, m] * Wmat[1, m])
+        Wmat[1, m] = (2 * np.conj(grid) * Wmat[0, m] - sqrt_n[m] * Wmat[0, m - 1]) / sqrt_n[m]
+        W += rho[m, m].real * Wmat[1, m].real
 
         for n in range(m + 1, cutoff):
-            Wmat[1, n] = (2 * grid * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]) / np.sqrt(n)
-
-            # W += rho(m,n)W(|m><n|) + rho(n,m)W(|n><m|)
+            Wmat[1, n] = (2 * grid * Wmat[1, n - 1] - sqrt_n[m] * Wmat[0, n - 1]) / sqrt_n[n]
             W += 2 * np.real(rho[m, n] * Wmat[1, n])
+
+        # Swap the matrices to reuse memory without copying.
         Wmat[0] = Wmat[1]
 
     return W / hbar, Q, P
