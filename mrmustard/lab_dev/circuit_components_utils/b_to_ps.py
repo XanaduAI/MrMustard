@@ -115,12 +115,6 @@ class BtoPS(Map):
         ik = self.wires.ket.input.indices
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
-        rep = self.representation.reorder(ib + ob + ik + ok).conj()
-
-        ret = BtoPS(self.modes, float(self.s.value))
-        ret._representation = rep
-        ret._wires = self.wires.dual
-        ret._name = self.name + "_dual"
 
         # handling index representations:
         for i, j in enumerate(ib):
