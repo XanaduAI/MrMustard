@@ -50,6 +50,7 @@ def make_grid(q_vec: np.ndarray, p_vec: np.ndarray, hbar: float):
     grid = (Q + 1j * P) * sqrt_factor
     return Q, P, grid
 
+
 @njit
 def _wig_laguerre_val(L, x, diag):  # pragma: no cover
     """Returns the coefficient `c_L = sum_n rho_{n,L+n} Z_n^L` used
