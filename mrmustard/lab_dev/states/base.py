@@ -964,7 +964,9 @@ class DM(State):
 
         w = result.wires
         if not w.input and w.bra.modes == w.ket.modes:
-            return DM(w.modes, result.representation)
+            ret = DM(w.modes, result.representation)
+            ret._index_representation = result._index_representation
+            return ret
         return result
 
 

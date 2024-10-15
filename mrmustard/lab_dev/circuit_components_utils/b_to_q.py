@@ -105,10 +105,17 @@ class BtoQ(Operation):
 
         return ret
 
-    def inverse(self):
+    def inverse(self) -> BtoQ:
         inv = super().inverse()
         ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = inv.representation
         ret._wires = inv.wires
         ret._name = inv.name
+
+        m = self.n_modes
+        # changing representation:
+        for i in range(m):
+            ret._index_representation[i] = ("B", None)
+            ret._index_representation[i + m] = ("Q", float(self.phi.value))
+
         return ret

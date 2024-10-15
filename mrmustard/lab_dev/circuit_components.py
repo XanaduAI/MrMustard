@@ -669,7 +669,7 @@ class CircuitComponent:
                 del ret.manual_shape
         return ret
 
-    def _apply_btoq_for_change_of_rep(self, i):
+    def _apply_btoq_for_change_of_rep(self, i) -> CircuitComponent:
         from .circuit_components_utils import BtoQ
 
         r"""
@@ -678,7 +678,7 @@ class CircuitComponent:
         name, arg = self._index_representation[i]
         ret = copy.deepcopy(self)
         if name == "Q":
-            self._index_representation[i] = ("B", None)
+            ret._index_representation[i] = ("B", None)  # perhaps not needed -- can be removed
             if i in self.wires.output.bra.indices:
                 ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).adjoint.inverse()
             if i in self.wires.output.ket.indices:
@@ -689,24 +689,34 @@ class CircuitComponent:
                 ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
         return ret
 
-    def _apply_btops_for_change_of_rep(self, i):
+    def _apply_btops_for_change_of_rep(self, i) -> CircuitComponent:
         r"""
         Helper function for change of representation in to_bargmann()
         """
         from .circuit_components_utils import BtoPS
 
-        name, arg = self._index_representation[i]
+        name = self._index_representation[i][0]
         ret = copy.deepcopy(self)
         if name == "PS":
-            self._index_representation[i] = ("B", None)
+            _, arg = self._index_representation[i]
+            ret._index_representation[i] = ("B", None)
+            m = self.wires.index_to_mode_dict[i]
             if i in self.wires.output.bra.indices:
-                ret = ret @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).adjoint.inverse()
-            if i in self.wires.output.ket.indices:
-                ret = ret @ BtoPS([self.wires.index_to_mode_dict[i]], s=arg).inverse()
+                if m not in self.wires.output.ket:
+                    raise ValueError(
+                        f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the output bra."
+                    )
+                friend_index = self.wires.index_dicts[2][m]
+                ret._index_representation[friend_index] = ("B", None)
+                ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
             if i in self.wires.input.bra.indices:
-                ret = BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.adjoint.inverse() @ ret
-            if i in self.wires.input.ket.indices:
-                ret = BtoPS([self.wires.index_to_mode_dict[i]], s=arg).dual.inverse() @ ret
+                if m not in self.wires.input.ket:
+                    raise ValueError(
+                        f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the input bra."
+                    )
+                friend_index = self.wires.index_dicts[3][m]
+                ret._index_representation[friend_index] = ("B", None)
+                ret = BtoPS([m], s=arg).dual.adjoint.inverse() @ ret
 
         return ret
 
