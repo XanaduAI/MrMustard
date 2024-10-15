@@ -175,6 +175,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(btest2, b0)
         assert math.allclose(ctest2, c0)
 
+        psi = Ket.random([0])
+        assert psi.to_quadrature()._index_representation == {0: ('Q', 0)}
+
     def test_L2_norm(self):
         state = Coherent([0], x=1)
         assert state.L2_norm == 1
@@ -580,6 +583,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.allclose(Atest2, A0)
         assert np.allclose(btest2, b0)
         assert np.allclose(ctest2, c0)
+
+        rho = DM.random([0])
+        assert rho.to_quadrature()._index_representation == {0: ('Q', 0), 1: ('Q', 0)}
 
     def test_L2_norms(self):
         state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
