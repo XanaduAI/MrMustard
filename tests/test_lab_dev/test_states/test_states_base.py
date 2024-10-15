@@ -75,7 +75,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
-        state = Ket(modes, None, name)
+        state = Ket.from_modes(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -197,7 +197,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
-        state = Ket(modes, None, "my_ket")
+        state = Ket.from_modes(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
@@ -481,7 +481,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM(modes, None, name)
+        state = DM.from_modes(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)

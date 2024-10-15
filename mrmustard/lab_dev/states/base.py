@@ -252,6 +252,26 @@ class State(CircuitComponent):
 
     @classmethod
     @abstractmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        r"""
+        Initializes a state of type ``cls`` given modes and an ansatz.
+
+        Args:
+            modes: The modes of this state.
+            ansatz: The ansatz of this state.
+            name: The name of this state.
+
+        Returns:
+            A state.
+        """
+
+    @classmethod
+    @abstractmethod
     def from_phase_space(
         cls,
         modes: Sequence[int],
@@ -651,22 +671,6 @@ class DM(State):
 
     short_name = "DM"
 
-    def __init__(
-        self,
-        modes: Sequence[int] = (),
-        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
-        name: str | None = None,
-    ):
-        modes = set(modes)
-        if ansatz and ansatz.num_vars != 2 * len(modes):
-            raise ValueError(
-                f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
-            )
-        super().__init__(
-            Representation(ansatz=ansatz, wires=Wires(modes_out_bra=modes, modes_out_ket=modes)),
-            name=name,
-        )
-
     @property
     def is_positive(self) -> bool:
         r"""
@@ -733,7 +737,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return DM(modes, PolyExpAnsatz(*triple), name)
+        return DM.from_modes(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -743,7 +747,22 @@ class DM(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return DM(modes, ArrayAnsatz(array, batched), name)
+        return DM.from_modes(modes, ArrayAnsatz(array, batched), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        modes = set(modes)
+        if ansatz and ansatz.num_vars != 2 * len(modes):
+            raise ValueError(
+                f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
+            )
+        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+        return DM(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
@@ -769,7 +788,7 @@ class DM(State):
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM(
+        return coeff * DM.from_modes(
             modes,
             PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
@@ -801,8 +820,8 @@ class DM(State):
                 with the number of modes.
         """
         QtoB = BtoQ(modes, phi).inverse()
-        Q = DM(modes, PolyExpAnsatz(*triple))
-        return DM(modes, (Q >> QtoB).ansatz, name)
+        Q = DM.from_modes(modes, PolyExpAnsatz(*triple))
+        return DM.from_modes(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
@@ -968,7 +987,7 @@ class DM(State):
 
         w = result.wires
         if not w.input and w.bra.modes == w.ket.modes:
-            return DM(w.modes, result.ansatz)
+            return DM.from_modes(w.modes, result.ansatz)
         return result
 
 
@@ -983,19 +1002,6 @@ class Ket(State):
     """
 
     short_name = "Ket"
-
-    def __init__(
-        self,
-        modes: Sequence[int] = (),
-        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
-        name: str | None = None,
-    ):
-        modes = set(modes)
-        if ansatz and ansatz.num_vars != len(modes):
-            raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
-            )
-        super().__init__(Representation(ansatz=ansatz, wires=Wires(modes_out_ket=modes)), name=name)
 
     @property
     def is_physical(self) -> bool:
@@ -1035,7 +1041,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return Ket(modes, PolyExpAnsatz(*triple), name)
+        return Ket.from_modes(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -1045,7 +1051,22 @@ class Ket(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return Ket(modes, ArrayAnsatz(array, batched), name)
+        return Ket.from_modes(modes, ArrayAnsatz(array, batched), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        modes = set(modes)
+        if ansatz and ansatz.num_vars != len(modes):
+            raise ValueError(
+                f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
+            )
+        wires = Wires(modes_out_ket=modes)
+        return Ket(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
@@ -1064,7 +1085,7 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-        return Ket(
+        return Ket.from_modes(
             modes,
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
@@ -1079,8 +1100,8 @@ class Ket(State):
         name: str | None = None,
     ) -> State:
         QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket(modes, PolyExpAnsatz(*triple))
-        return Ket(modes, (Q >> QtoB).ansatz, name)
+        Q = Ket.from_modes(modes, PolyExpAnsatz(*triple))
+        return Ket.from_modes(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
@@ -1259,7 +1280,7 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.wires.modes, result.ansatz)
+                return Ket.from_modes(result.wires.modes, result.ansatz)
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.ansatz)
+                result = DM.from_modes(result.wires.modes, result.ansatz)
         return result

@@ -65,13 +65,15 @@ class SqueezedVacuum(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(modes=modes, name="SqueezedVacuum")
+        super().__init__(name="SqueezedVacuum")
+
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(
+
+        self._representation = self.from_modes(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
             ),
-            self.wires,
-        )
+        ).representation

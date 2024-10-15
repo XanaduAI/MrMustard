@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket
@@ -77,7 +76,8 @@ class DisplacedSqueezed(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(modes=modes, name="DisplacedSqueezed")
+        super().__init__(name="DisplacedSqueezed")
+
         params = reshape_params(len(modes), x=x, y=y, r=r, phi=phi)
         xs, ys, rs, phis = list(params)
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
@@ -85,13 +85,13 @@ class DisplacedSqueezed(Ket):
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(
+        self._representation = self.from_modes(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displaced_squeezed_vacuum_state_Abc,
                 x=self.x,
                 y=self.y,
                 r=self.r,
                 phi=self.phi,
             ),
-            self.wires,
-        )
+        ).representation

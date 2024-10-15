@@ -127,7 +127,9 @@ class Representation:
                     self._ansatz = ansatz.reorder(tuple(perm))
 
         self._wires = wires
-        self._wire_reps = wire_reps or dict.fromkeys(wires.indices, RepEnum.from_ansatz(ansatz))
+        self._wire_reps = wire_reps or dict.fromkeys(
+            wires.indices, (RepEnum.from_ansatz(ansatz), None)
+        )
 
     @property
     def adjoint(self) -> Representation:
