@@ -202,8 +202,8 @@ class PolyExpBase(Ansatz):
         have polynomials attached to them and what the degree(+1) of the polynomial is
         on each of the wires.
         """
-        dim_poly = len(self.array.shape) - 1
         shape_poly = self.array.shape[1:]
+        dim_poly = len(shape_poly)
         return dim_poly, shape_poly
 
     @property
@@ -417,38 +417,47 @@ class PolyExpBase(Ansatz):
         Adds two ansatze together. This means concatenating them in the batch dimension.
         In the case where c is a polynomial of different shapes it will add padding zeros to make
         the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
-        shape of the combined object will be (2,5,4,5).
+        shape of the combined object will be (2,5,4,5). It also pads A and b, to account for an eventual
+        different number of polynomial wires.
         """
-        combined_matrices = math.concat([self.mat, other.mat], axis=0)
-        combined_vectors = math.concat([self.vec, other.vec], axis=0)
+        (_, n1, _) = self.mat.shape
+        (_, n2, _) = other.mat.shape
+        self_num_poly, _ = self.polynomial_shape
+        other_num_poly, _ = other.polynomial_shape
+        if self_num_poly - other_num_poly != n1 - n2:
+            raise ValueError(
+                f"Inconsistent polynomial shapes: the A matrices have shape {(n1,n1)} and {(n2,n2)} (difference of {n1-n2}), "
+                f"but the polynomials have {self_num_poly} and {other_num_poly} variables (difference of {self_num_poly-other_num_poly})."
+            )
 
-        a0s = self.array.shape[1:]
-        a1s = other.array.shape[1:]
-        if a0s == a1s:
-            combined_arrays = math.concat([self.array, other.array], axis=0)
+        def pad_and_expand(mat, vec, array, target_size):
+            pad_size = target_size - mat.shape[-1]
+            padded_mat = math.pad(mat, ((0, 0), (0, pad_size), (0, pad_size)))
+            padded_vec = math.pad(vec, ((0, 0), (0, pad_size)))
+            padding_array = math.ones((1,) * pad_size, dtype=array.dtype)
+            expanded_array = math.outer(array, padding_array)
+            return padded_mat, padded_vec, expanded_array
+
+        def combine_arrays(array1, array2):
+            shape1 = array1.shape[1:]
+            shape2 = array2.shape[1:]
+            max_shape = tuple(map(max, zip(shape1, shape2)))
+            pad_widths1 = [(0, 0)] + [(0, t - s) for s, t in zip(shape1, max_shape)]
+            pad_widths2 = [(0, 0)] + [(0, t - s) for s, t in zip(shape2, max_shape)]
+            padded_array1 = math.pad(array1, pad_widths1, "constant")
+            padded_array2 = math.pad(array2, pad_widths2, "constant")
+            return math.concat([padded_array1, padded_array2], axis=0)
+
+        if n1 <= n2:
+            mat1, vec1, array1 = pad_and_expand(self.mat, self.vec, self.array, n2)
+            combined_matrices = math.concat([mat1, other.mat], axis=0)
+            combined_vectors = math.concat([vec1, other.vec], axis=0)
+            combined_arrays = combine_arrays(array1, other.array)
         else:
-            s_max = np.maximum(np.array(a0s), np.array(a1s))
-
-            padding_array0 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a0s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
-
-            padding_array1 = np.array(
-                (
-                    np.zeros(len(s_max) + 1),
-                    np.concatenate((np.array([0]), np.array((s_max - a1s)))),
-                ),
-                dtype=int,
-            ).T
-            padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
-            a0_new = np.pad(self.array, padding_tuple0, "constant")
-            a1_new = np.pad(other.array, padding_tuple1, "constant")
-            combined_arrays = math.concat([a0_new, a1_new], axis=0)
+            mat2, vec2, array2 = pad_and_expand(other.mat, other.vec, other.array, n1)
+            combined_matrices = math.concat([self.mat, mat2], axis=0)
+            combined_vectors = math.concat([self.vec, vec2], axis=0)
+            combined_arrays = combine_arrays(self.array, array2)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
@@ -1059,7 +1068,7 @@ class ArrayAnsatz(Ansatz):
 
         if any(s > t for s, t in zip(shape, self.array.shape[1:])):
             warn(
-                "Warning: the fock array is being padded with zeros. If possible slice the arrays this one will contract with instead."
+                "Warning: the fock array is being padded with zeros. If possible, slice the arrays this one will contract with instead."
             )
             padded = math.pad(
                 self.array,
