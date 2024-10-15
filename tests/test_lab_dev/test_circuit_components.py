@@ -382,7 +382,7 @@ class TestCircuitComponent:
         rho = DM.random([0, 1])
         sigma = DM.random([0])
 
-        sigma >> (BtoPS([0], 0).dual >> rho.dual) == sigma >> rho.dual
+        assert sigma >> (BtoPS([0], 0).dual >> rho.dual) == sigma >> rho.dual
 
     def test_matmul_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)
