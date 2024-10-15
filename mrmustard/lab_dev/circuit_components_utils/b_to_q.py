@@ -58,8 +58,9 @@ class BtoQ(Operation):
 
     @property
     def adjoint(self) -> BtoQ:
+        bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets).conj()
+        rep = self.representation.reorder(kets + bras).conj()
 
         ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
