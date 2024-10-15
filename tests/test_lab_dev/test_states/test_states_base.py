@@ -149,7 +149,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_to_from_phase_space(self, modes):
         cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
-        assert math.allclose(coeff[0], 1.0 / (2 * np.pi))
+        assert math.allclose(coeff[0], 1.0)
         assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
         assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(2 * settings.HBAR))
         n_modes = len(modes)
@@ -538,7 +538,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         ) = bargmann_Abc_to_phasespace_cov_means(A1, b1, c1)
         assert np.allclose(state_cov, new_state_cov)
         assert np.allclose(state_means, new_state_means)
-        assert np.allclose(1.0 / (2 * np.pi), new_state_coeff)
+        assert np.allclose(1.0, new_state_coeff)
 
         state_cov = np.array(
             [
@@ -570,8 +570,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(new_state_cov1, state_cov)
         assert math.allclose(new_state_means1, state_means)
         assert math.allclose(new_state_means22, state_means)
-        assert math.allclose(new_state_coeff1, 1 / (2 * np.pi) ** 2)
-        assert math.allclose(new_state_coeff22, 1 / (2 * np.pi) ** 2)
+        assert math.allclose(new_state_coeff1, 1)
+        assert math.allclose(new_state_coeff22, 1)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
@@ -606,7 +606,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
-        assert coeff == 1.0 / (2 * np.pi)
+        assert coeff == 1.0
         assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
         assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
 

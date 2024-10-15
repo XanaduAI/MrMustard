@@ -233,8 +233,8 @@ class Bargmann(Representation):
         have polynomials attached to them and what the degree(+1) of the polynomial is
         on each of the wires.
         """
-        dim_poly = len(self.c.shape) - 1
         shape_poly = self.c.shape[1:]
+        dim_poly = len(shape_poly)
         return dim_poly, shape_poly
 
     @property
@@ -655,43 +655,51 @@ class Bargmann(Representation):
         Adds two Bargmann representations together. This means concatenating them in the batch dimension.
         In the case where c is a polynomial of different shapes it will add padding zeros to make
         the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
-        shape of the combined object will be (2,5,4,5).
+        shape of the combined object will be (2,5,4,5). It also pads A and b, to account for an eventual
+        different number of polynomial wires.
         """
-        try:
-            combined_matrices = math.concat([self.A, other.A], axis=0)
-            combined_vectors = math.concat([self.b, other.b], axis=0)
+        if not isinstance(other, Bargmann):
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.")
+        (_, n1, _) = self.A.shape
+        (_, n2, _) = other.A.shape
+        self_num_poly, _ = self.polynomial_shape
+        other_num_poly, _ = other.polynomial_shape
+        if self_num_poly - other_num_poly != n1 - n2:
+            raise ValueError(
+                f"Inconsistent polynomial shapes: the A matrices have shape {(n1,n1)} and {(n2,n2)} (difference of {n1-n2}), "
+                f"but the polynomials have {self_num_poly} and {other_num_poly} variables (difference of {self_num_poly-other_num_poly})."
+            )
 
-            a0s = self.c.shape[1:]
-            a1s = other.c.shape[1:]
-            if a0s == a1s:
-                combined_arrays = math.concat([self.c, other.c], axis=0)
-            else:
-                s_max = np.maximum(np.array(a0s), np.array(a1s))
+        def pad_and_expand(mat, vec, array, target_size):
+            pad_size = target_size - mat.shape[-1]
+            padded_mat = math.pad(mat, ((0, 0), (0, pad_size), (0, pad_size)))
+            padded_vec = math.pad(vec, ((0, 0), (0, pad_size)))
+            padding_array = math.ones((1,) * pad_size, dtype=array.dtype)
+            expanded_array = math.outer(array, padding_array)
+            return padded_mat, padded_vec, expanded_array
 
-                padding_array0 = np.array(
-                    (
-                        np.zeros(len(s_max) + 1),
-                        np.concatenate((np.array([0]), np.array((s_max - a0s)))),
-                    ),
-                    dtype=int,
-                ).T
-                padding_tuple0 = tuple(tuple(padding_array0[i]) for i in range(len(s_max) + 1))
+        def combine_arrays(array1, array2):
+            shape1 = array1.shape[1:]
+            shape2 = array2.shape[1:]
+            max_shape = tuple(map(max, zip(shape1, shape2)))
+            pad_widths1 = [(0, 0)] + [(0, t - s) for s, t in zip(shape1, max_shape)]
+            pad_widths2 = [(0, 0)] + [(0, t - s) for s, t in zip(shape2, max_shape)]
+            padded_array1 = math.pad(array1, pad_widths1, "constant")
+            padded_array2 = math.pad(array2, pad_widths2, "constant")
+            return math.concat([padded_array1, padded_array2], axis=0)
 
-                padding_array1 = np.array(
-                    (
-                        np.zeros(len(s_max) + 1),
-                        np.concatenate((np.array([0]), np.array((s_max - a1s)))),
-                    ),
-                    dtype=int,
-                ).T
-                padding_tuple1 = tuple(tuple(padding_array1[i]) for i in range(len(s_max) + 1))
-                a0_new = np.pad(self.c, padding_tuple0, "constant")
-                a1_new = np.pad(other.c, padding_tuple1, "constant")
-                combined_arrays = math.concat([a0_new, a1_new], axis=0)
-            # note output is not simplified
-            return Bargmann(combined_matrices, combined_vectors, combined_arrays)
-        except Exception as e:
-            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+        if n1 <= n2:
+            mat1, vec1, array1 = pad_and_expand(self.A, self.b, self.c, n2)
+            combined_matrices = math.concat([mat1, other.A], axis=0)
+            combined_vectors = math.concat([vec1, other.b], axis=0)
+            combined_arrays = combine_arrays(array1, other.c)
+        else:
+            mat2, vec2, array2 = pad_and_expand(other.A, other.b, other.c, n1)
+            combined_matrices = math.concat([self.A, mat2], axis=0)
+            combined_vectors = math.concat([self.b, vec2], axis=0)
+            combined_arrays = combine_arrays(self.c, array2)
+        # note output is not simplified
+        return Bargmann(combined_matrices, combined_vectors, combined_arrays)
 
     def __and__(self, other: Bargmann) -> Bargmann:
         r"""
