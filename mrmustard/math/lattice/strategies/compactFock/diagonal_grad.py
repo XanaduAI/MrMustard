@@ -21,7 +21,7 @@ def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_va
     Args:
         i (int): the element of the multidim index that is increased
         G_in, G_in_dA, G_in_dB (array, array, array): all Fock amplitudes from the 'read' group in the recurrence relation and their derivatives w.r.t. A and B
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         K_l, K_i (vector, vector): SQRT[pivot], SQRT[pivot + 1]
         M (int): number of modes
         pivot_val, pivot_val_dA, pivot_val_dB (array, array, array): Fock amplitude at the position of the pivot and its derivatives w.r.t. A and B
@@ -63,7 +63,7 @@ def use_offDiag_pivot_grad(
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -201,7 +201,7 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -265,7 +265,7 @@ def fock_representation_diagonal_grad_NUMBA(
     Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
     https://doi.org/10.22331/q-2023-08-29-1097
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]

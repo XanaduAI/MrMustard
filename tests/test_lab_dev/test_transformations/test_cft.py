@@ -44,7 +44,7 @@ class TestCFT:
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).representation.ansatz
+        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).representation
         X, Y = np.meshgrid(
             vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
         )  # scaling to take care of HBAR

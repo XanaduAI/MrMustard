@@ -100,7 +100,7 @@ def use_offDiag_pivot(
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
-        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -202,7 +202,7 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
-        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -281,7 +281,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(
     Returns the density matrices in the upper, undetected mode of a circuit when all other modes are PNR detected
     according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]

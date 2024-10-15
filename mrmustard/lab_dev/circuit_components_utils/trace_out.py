@@ -83,7 +83,7 @@ class TraceOut(CircuitComponent):
             repr = other.representation
             wires = other.wires
         elif not ket or not bra:
-            repr = other.representation.conj()[idx_z] @ other.representation[idx_z]
+            repr = other.representation.conj[idx_z] @ other.representation[idx_z]
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             repr = other.representation.trace(idx_z, idx_zconj)

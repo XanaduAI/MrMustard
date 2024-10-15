@@ -31,7 +31,7 @@ from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.utils.typing import ComplexMatrix
-from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, XY_of_channel
+from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
 
 
@@ -91,11 +91,11 @@ class Transformation(CircuitComponent):
             )
         if not isinstance(self.representation, Bargmann):
             raise NotImplementedError("Only Bargmann representation is supported.")
-        if self.representation.ansatz.batch_size > 1:
+        if self.representation.batch_size > 1:
             raise NotImplementedError("Batched transformations are not supported.")
 
         # compute the inverse
-        A, b, _ = self.dual.representation.conj().triple  # apply X(.)X
+        A, b, _ = self.dual.representation.conj.triple  # apply X(.)X
         almost_inverse = self._from_attributes(
             Bargmann(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
         )
@@ -177,7 +177,7 @@ class Unitary(Operation):
         r"""
         Returns the symplectic matrix that corresponds to this unitary
         """
-        batch_size = self.representation.ansatz.batch_size
+        batch_size = self.representation.batch_size
         return [au2Symplectic(self.representation.A[batch, :, :]) for batch in range(batch_size)]
 
     @classmethod
@@ -332,7 +332,7 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
         """
-        batch_dim = self.representation.ansatz.batch_size
+        batch_dim = self.representation.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
@@ -416,7 +416,7 @@ class Channel(Map):
         U = Unitary.random(range(3 * m), max_r)
         u_psi = Vacuum(range(2 * m)) >> U
         A = u_psi.representation
-        kraus = A.conj()[range(2 * m)] @ A[range(2 * m)]
+        kraus = A.conj[range(2 * m)] @ A[range(2 * m)]
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

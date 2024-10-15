@@ -183,7 +183,7 @@ class TestChannel:
     @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
     def test_is_CP(self, modes):
         u = Unitary.random(modes).representation
-        kraus = u @ u.conj()
+        kraus = u @ u.conj
         assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
 
     def test_is_TP(self):
@@ -195,7 +195,7 @@ class TestChannel:
     def test_XY(self):
         U = Unitary.random([0, 1])
         u = U.representation
-        unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj() @ u).triple)
+        unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj @ u).triple)
         X, Y = unitary_channel.XY
         assert np.allclose(X, U.symplectic) and np.allclose(Y, np.zeros(4))
 
