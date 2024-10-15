@@ -919,7 +919,9 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.representation * other, self.wires, self.name)
+        ret = self._from_attributes(self.representation * other, self.wires, self.name)
+        ret._index_representation = self._index_representation
+        return ret
 
     def __repr__(self) -> str:
         repr = self.representation

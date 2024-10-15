@@ -395,6 +395,9 @@ class TestCircuitComponent:
         assert math.allclose(result2.representation.b, d0.representation.b)
         assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
 
+        psi = Ket.random([0]).to_quadrature() * 2
+        assert psi._index_representation == {0: ('Q', 0)}
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
