@@ -31,6 +31,7 @@ from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
@@ -57,6 +58,28 @@ class Transformation(CircuitComponent):
         Initialize a Transformation from the given Bargmann triple (A,b,c)
         which parametrizes the Bargmann function of the transformation as
         :math:`c * exp(0.5*z^T A z + b^T z)`.
+        """
+
+    @classmethod
+    @abstractmethod
+    def from_modes(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> Transformation:
+        r"""
+        Initializes a transformation of type ``cls`` given modes and an ansatz.
+
+        Args:
+            modes_out: The output modes of this transformation.
+            modes_in: The input modes of this transformation.
+            ansatz: The ansatz of this transformation.
+            name: The name of this transformation.
+
+        Returns:
+            A transformation.
         """
 
     @classmethod
@@ -118,17 +141,6 @@ class Operation(Transformation):
 
     short_name = "Op"
 
-    def __init__(
-        self,
-        modes_out: tuple[int, ...] = (),
-        modes_in: tuple[int, ...] = (),
-        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
-        name: str | None = None,
-    ):
-        super().__init__(
-            Representation(ansatz=ansatz, wires=[(), (), modes_out, modes_in]), name=name
-        )
-
     @classmethod
     def from_bargmann(
         cls,
@@ -137,7 +149,22 @@ class Operation(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Operation(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Operation.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> Transformation:
+        modes_out = set(modes_out)
+        modes_in = set(modes_in)
+        return Operation(
+            representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
+            name=name,
+        )
 
     @classmethod
     def from_quadrature(
@@ -152,9 +179,9 @@ class Operation(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Operation(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Operation.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Operation(modes_out, modes_in, BB.ansatz, name)
+        return Operation.from_modes(modes_out, modes_in, BB.ansatz, name)
 
 
 class Unitary(Operation):
@@ -187,7 +214,22 @@ class Unitary(Operation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Unitary(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Unitary.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> Transformation:
+        modes_out = set(modes_out)
+        modes_in = set(modes_in)
+        return Unitary(
+            representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
+            name=name,
+        )
 
     @classmethod
     def from_quadrature(
@@ -202,9 +244,9 @@ class Unitary(Operation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Unitary(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Unitary.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Unitary(modes_out, modes_in, BB.ansatz, name)
+        return Unitary.from_modes(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def from_symplectic(cls, modes, S) -> Unitary:
@@ -272,18 +314,6 @@ class Map(Transformation):
 
     short_name = "Map"
 
-    def __init__(
-        self,
-        modes_out: tuple[int, ...] = (),
-        modes_in: tuple[int, ...] = (),
-        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
-        name: str | None = None,
-    ):
-        super().__init__(
-            Representation(ansatz=ansatz, wires=[modes_out, modes_in, modes_out, modes_in]),
-            name=name or self.__class__.__name__,
-        )
-
     @classmethod
     def from_bargmann(
         cls,
@@ -292,7 +322,24 @@ class Map(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Map(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Map.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> Transformation:
+        modes_out = set(modes_out)
+        modes_in = set(modes_in)
+        return Map(
+            representation=Representation(
+                ansatz=ansatz, wires=Wires(modes_out, modes_in, modes_out, modes_in)
+            ),
+            name=name,
+        )
 
     @classmethod
     def from_quadrature(
@@ -307,9 +354,9 @@ class Map(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Map(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Map.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Map(modes_out, modes_in, BB.ansatz, name)
+        return Map.from_modes(modes_out, modes_in, BB.ansatz, name)
 
 
 class Channel(Map):
@@ -380,7 +427,24 @@ class Channel(Map):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Channel(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Channel.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> Transformation:
+        modes_out = set(modes_out)
+        modes_in = set(modes_in)
+        return Channel(
+            representation=Representation(
+                ansatz=ansatz, wires=Wires(modes_out, modes_in, modes_out, modes_in)
+            ),
+            name=name,
+        )
 
     @classmethod
     def from_quadrature(
@@ -395,9 +459,9 @@ class Channel(Map):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Channel(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Channel.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Channel(modes_out, modes_in, BB.ansatz, name)
+        return Channel.from_modes(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:

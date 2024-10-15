@@ -18,7 +18,6 @@ The class representing a complex fourier transform.
 
 from typing import Sequence
 from mrmustard.lab_dev.transformations.base import Map
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 
@@ -43,14 +42,11 @@ class CFT(Map):
         self,
         modes: Sequence[int],
     ):
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="CFT")
+        self._representation = self.from_modes(
             modes_in=modes,
-            name="CFT",
-        )
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.complex_fourier_transform_Abc, n_modes=len(modes)
             ),
-            self.wires,
-        )
+        ).representation

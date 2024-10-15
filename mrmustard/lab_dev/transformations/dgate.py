@@ -91,14 +91,17 @@ class Dgate(Unitary):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
-        super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
+        super().__init__(name="Dgate")
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(fn=triples.displacement_gate_Abc, x=self.x, y=self.y),
-            self.wires,
-        )
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+            ),
+        ).representation
 
     def fock_array(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
         r"""

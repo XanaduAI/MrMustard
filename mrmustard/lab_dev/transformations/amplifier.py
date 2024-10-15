@@ -21,7 +21,6 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Channel
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
@@ -85,7 +84,7 @@ class Amplifier(Channel):
         gain_trainable: bool = False,
         gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="Amp")
+        super().__init__(name="Amp")
         (gs,) = list(reshape_params(len(modes), gain=gain))
         self._add_parameter(
             make_parameter(
@@ -96,6 +95,8 @@ class Amplifier(Channel):
                 None,
             )
         )
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.gain), self.wires
-        )
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.gain),
+        ).representation

@@ -21,7 +21,6 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Unitary
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
@@ -85,12 +84,13 @@ class S2gate(Unitary):
         if len(modes) != 2:
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
-        super().__init__(modes_out=modes, modes_in=modes, name="S2gate")
+        super().__init__(name="S2gate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.twomode_squeezing_gate_Abc, r=self.r, phi=self.phi
             ),
-            self.wires,
-        )
+        ).representation

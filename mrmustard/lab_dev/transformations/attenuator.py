@@ -21,7 +21,6 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Channel
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
@@ -85,7 +84,7 @@ class Attenuator(Channel):
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="Att")
+        super().__init__(name="Att")
         (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
         self._add_parameter(
             make_parameter(
@@ -96,7 +95,8 @@ class Attenuator(Channel):
                 None,
             )
         )
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(fn=triples.attenuator_Abc, eta=self.transmissivity),
-            self.wires,
-        )
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.attenuator_Abc, eta=self.transmissivity),
+        ).representation

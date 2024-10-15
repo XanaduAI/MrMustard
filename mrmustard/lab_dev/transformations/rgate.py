@@ -21,7 +21,6 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Unitary
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
@@ -60,9 +59,11 @@ class Rgate(Unitary):
         phi_trainable: bool = False,
         phi_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="Rgate")
+        super().__init__(name="Rgate")
         (phis,) = list(reshape_params(len(modes), phi=phi))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._representation = Representation(
-            PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.phi), self.wires
-        )
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.phi),
+        ).representation

@@ -43,13 +43,13 @@ class BtoPS(Map):
         modes: Sequence[int],
         s: float,
     ):
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="BtoPS")
+        self._representation = self.from_modes(
             modes_in=modes,
+            modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
-            name="BtoPS",
-        )
+        ).representation
         self._add_parameter(Constant(s, "s"))
         self.s = s
