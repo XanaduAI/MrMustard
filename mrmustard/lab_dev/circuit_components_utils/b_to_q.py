@@ -61,20 +61,33 @@ class BtoQ(Operation):
 
     @property
     def adjoint(self) -> BtoQ:
+        bras = self.wires.bra.indices
         kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets).conj()
+        rep = self.representation.reorder(kets + bras).conj()
 
         ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = rep
         ret._wires = self.wires.adjoint
         ret._name = self.name + "_adj"
+
+        # handling index representations:
+        for i, j in enumerate(kets):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(bras):
+            ret._index_representation[i + len(kets)] = self._index_representation[j]
+
+        ret._index_representation = self._index_representation
+
         return ret
 
     @property
     def dual(self) -> BtoQ:
         ok = self.wires.ket.output.indices
         ik = self.wires.ket.input.indices
-        rep = self.representation.reorder(ik + ok).conj()
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj()
+
 
         ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = rep
@@ -82,10 +95,14 @@ class BtoQ(Operation):
         ret._name = self.name + "_dual"
 
         # handling index representations:
-        for i, j in enumerate(ik):
+        for i, j in enumerate(ib):
             ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
         for i, j in enumerate(ok):
-            ret._index_representation[i + len(ik)] = self._index_representation[j]
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
 
         return ret
 
