@@ -687,15 +687,13 @@ class PolyExpAnsatz(PolyExpBase):
         batch_abc = self.batch_size
         batch_arg = z.shape[0]
         Abc = []
-        if batch_abc == 1 and batch_arg > 1:
-            for i in range(batch_arg):
-                Abc.append(self._call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
-        elif batch_arg == 1 and batch_abc > 1:
-            for i in range(batch_abc):
-                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
-        elif batch_abc == batch_arg:
-            for i in range(batch_abc):
-                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+        max_batch = max(batch_abc, batch_arg)
+        for i in range(max_batch):
+            A_idx = i if batch_abc > 1 else 0
+            z_idx = i if batch_arg > 1 else 0
+            Abc.append(
+                self._call_none_single(self.A[A_idx], self.b[A_idx], self.c[A_idx], z[z_idx])
+            )
         else:
             raise ValueError(
                 "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
