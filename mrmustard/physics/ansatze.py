@@ -689,10 +689,12 @@ class PolyExpAnsatz(PolyExpBase):
         Abc = []
         max_batch = max(batch_abc, batch_arg)
         for i in range(max_batch):
-            A_idx = i if batch_abc > 1 else 0
-            z_idx = i if batch_arg > 1 else 0
+            abc_index = i if batch_abc > 1 else 0
+            arg_index = i if batch_arg > 1 else 0
             Abc.append(
-                self._call_none_single(self.A[A_idx], self.b[A_idx], self.c[A_idx], z[z_idx])
+                self._call_none_single(
+                    self.A[abc_index], self.b[abc_index], self.c[abc_index], z[arg_index]
+                )
             )
         else:
             raise ValueError(
