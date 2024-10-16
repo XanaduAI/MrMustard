@@ -128,7 +128,7 @@ class Sampler(ABC):
         meas_outcomes = list(product(self.meas_outcomes, repeat=len(state.modes)))
         samples = rng.choice(
             a=meas_outcomes,
-            p=self.probabilities(state),
+            p=probs,
             size=n_samples,
         )
         return samples, np.array([probs[meas_outcomes.index(tuple(sample))] for sample in samples])
@@ -167,7 +167,7 @@ class Sampler(ABC):
             atol: The absolute tolerance to validate with.
         """
         atol = atol or settings.ATOL
-        prob_sum = sum(probs)
+        prob_sum = math.sum(probs)
         if not math.allclose(prob_sum, 1, atol):
             raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
         return math.real(probs / prob_sum)
@@ -217,24 +217,30 @@ class HomodyneSampler(Sampler):
         )
         return self._validate_probs(probs, atol)
 
+    def sample_prob_dist(
+        self, state: State, n_samples: int = 1000, seed: int | None = None
+    ) -> np.ndarray:
+        r"""
+        Samples a state by computing the probability distribution.
+
+        Args:
+            state: The state to sample.
+            n_samples: The number of samples to generate.
+            seed: An optional seed for random sampling.
+
+        Returns:
+            A tuple of the generated samples and the probability
+            of obtaining the sample.
+        """
+        rng = np.random.default_rng(seed) if seed else settings.rng
+        probs = self.probabilities(state)
+        meas_outcomes = list(product(self.meas_outcomes, repeat=len(state.modes)))
+        samples = rng.choice(
+            a=meas_outcomes,
+            p=probs,
+            size=n_samples,
+        )
+        return samples
+
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
-        initial_mode = state.modes[0]
-        initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
-
-        if len(state.modes) == 1:
-            return initial_samples
-
-        unique_samples, counts = np.unique(initial_samples, return_counts=True)
-        ret = []
-        for unique_sample, counts in zip(unique_samples, counts):
-            quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
-            quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
-            reduced_rep = (state >> BtoQ([initial_mode], phi=self._phi)).representation(quad)
-            reduced_state = state.__class__.from_bargmann(state.modes[1:], reduced_rep.triple)
-            prob = probs[initial_samples.tolist().index(unique_sample)] / self._step
-            norm = math.sqrt(prob) if isinstance(state, Ket) else prob
-            normalized_reduced_state = reduced_state / norm
-            samples = self.sample(normalized_reduced_state, counts)
-            for sample in samples:
-                ret.append(np.append([unique_sample], sample))
-        return np.array(ret)
+        return self.sample_prob_dist(state, n_samples, seed)
