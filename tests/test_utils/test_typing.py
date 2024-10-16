@@ -14,7 +14,8 @@
 
 # pylint: disable=missing-function-docstring, missing-module-docstring
 
-from typing import get_origin, get_args
+from typing import get_args, get_origin
+
 import numpy as np
 
 from mrmustard.utils.typing import (

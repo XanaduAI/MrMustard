@@ -31,13 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import (
-    DisplacedSqueezed,
-    Fock,
-    Gaussian,
-    SqueezedVacuum,
-    Vacuum,
-)
+from mrmustard.lab.states import DisplacedSqueezed, Fock, Gaussian, SqueezedVacuum, Vacuum
 from mrmustard.math.parameters import Variable, update_euclidean
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy

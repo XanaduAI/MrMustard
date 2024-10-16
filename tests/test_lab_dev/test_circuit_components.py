@@ -19,27 +19,27 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import Box, VBox, HBox, HTML
 import pytest
+from ipywidgets import HTML, Box, HBox, VBox
 
 from mrmustard import math, settings
-from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics.triples import displacement_gate_Abc
-from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import (
-    Ket,
     DM,
-    Number,
-    Vacuum,
-    DisplacedSqueezed,
     Coherent,
+    DisplacedSqueezed,
+    Ket,
+    Number,
     SqueezedVacuum,
+    Vacuum,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
+from mrmustard.lab_dev.transformations import Attenuator, Channel, Dgate, Sgate, Unitary
 from mrmustard.lab_dev.wires import Wires
-from ..random import Abc_triple
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.triples import displacement_gate_Abc
 
+from ..random import Abc_triple
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF

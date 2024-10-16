@@ -20,22 +20,20 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics.triples import identity_Abc, displacement_map_s_parametrized_Abc
-from mrmustard.physics.representations import Bargmann
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
+from mrmustard.lab_dev.states import DM, Coherent, Ket
+from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import (
-    real_gaussian_integral,
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
     join_Abc,
     join_Abc_real,
+    real_gaussian_integral,
 )
-from mrmustard.lab_dev.circuit_components_utils import TraceOut, BtoPS, BtoQ
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Coherent, DM
-from mrmustard.lab_dev.wires import Wires
-from mrmustard.lab_dev.states import Ket
-
+from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.triples import displacement_map_s_parametrized_Abc, identity_Abc
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF

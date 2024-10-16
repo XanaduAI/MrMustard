@@ -17,13 +17,9 @@
 import numpy as np
 import pytest
 from hypothesis import given
-from thewalrus.fock_gradients import (
-    beamsplitter as tw_beamsplitter,
-    displacement as tw_displacement,
-    mzgate,
-    squeezing,
-    two_mode_squeezing,
-)
+from thewalrus.fock_gradients import beamsplitter as tw_beamsplitter
+from thewalrus.fock_gradients import displacement as tw_displacement
+from thewalrus.fock_gradients import mzgate, squeezing, two_mode_squeezing
 
 from mrmustard import math, settings
 from mrmustard.lab import (
@@ -33,14 +29,14 @@ from mrmustard.lab import (
     BSgate,
     Coherent,
     Dgate,
+    Gaussian,
     Interferometer,
     MZgate,
+    PhaseNoise,
     RealInterferometer,
     Rgate,
     S2gate,
     Sgate,
-    Gaussian,
-    PhaseNoise,
     Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
@@ -56,6 +52,7 @@ from tests.random import (
     single_mode_unitary_gate,
     two_mode_unitary_gate,
 )
+
 from ..conftest import skip_np
 
 

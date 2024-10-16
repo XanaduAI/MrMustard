@@ -21,17 +21,17 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.states import Vacuum
 from mrmustard.lab_dev.transformations import (
     Attenuator,
     Channel,
     Dgate,
-    Sgate,
     Identity,
-    Unitary,
     Operation,
+    Sgate,
+    Unitary,
 )
 from mrmustard.lab_dev.wires import Wires
-from mrmustard.lab_dev.states import Vacuum
 
 
 class TestOperation:

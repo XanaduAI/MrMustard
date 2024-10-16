@@ -77,6 +77,7 @@ pytest-cov ="3.0.0"
 hypothesis = "6.31.6"
 pylint = "^3.0"
 black = ">=22.1.0"
+isort = ">=5.13.0"
 
 [tool.poetry.group.doc]
 optional = true
@@ -92,7 +93,13 @@ sphinxcontrib-bibtex = "^2.5.0"
 mistune = "0.8.4"
 xanadu-sphinx-theme = "0.1.0"
 
+[tool.isort]
+py_version = 312
+profile = "black"
+line_length = 100
+
 [tool.black]
+target-version = ["py310", "py311", "py312"]
 line-length = 100
 
 [build-system]

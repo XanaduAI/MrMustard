@@ -2,17 +2,17 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
-from mrmustard.lab_dev import Unitary, Vacuum, Channel
+from mrmustard.lab_dev import Channel, Unitary, Vacuum
 from mrmustard.physics.bargmann import (
+    XY_of_channel,
+    au2Symplectic,
+    norm_ket,
+    symplectic2Au,
+    trace_dm,
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
-    norm_ket,
-    trace_dm,
-    au2Symplectic,
-    symplectic2Au,
-    XY_of_channel,
 )
 
 

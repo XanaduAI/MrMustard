@@ -15,18 +15,10 @@
 """This module contains tests for simulating quantum circuits with tensor networks."""
 
 import numpy as np
-
-from mrmustard.math.tensor_networks import connect, contract
-from mrmustard.lab.gates import (
-    BSgate,
-    CXgate,
-    CZgate,
-    Dgate,
-    MZgate,
-    Rgate,
-    Sgate,
-)
 import pytest
+
+from mrmustard.lab.gates import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
+from mrmustard.math.tensor_networks import connect, contract
 
 
 class TestTransformations:
