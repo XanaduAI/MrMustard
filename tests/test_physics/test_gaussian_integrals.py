@@ -297,3 +297,15 @@ def test_complex_gaussian_integral_1_batched():
     assert np.allclose(res1[0], A3)
     assert np.allclose(res1[1], b3)
     assert np.allclose(res1[2], c3)
+
+
+def test_gaussian_integral_poly_batched():
+    """Tests that the Gaussian integral works for batched inputs with polynomial c."""
+    # batch 4 and 2 polynomial wires
+    A = np.random.random((4, 4, 4))
+    b = np.random.random((4, 4))
+    c = np.random.random((4, 2, 2))
+    res = complex_gaussian_integral_1((A, b, c), [0], [1])  # pylint: disable=pointless-statement
+    assert res[0].shape == (4, 2, 2)
+    assert res[1].shape == (4, 2)
+    assert res[2].shape == (4, 2, 2)
