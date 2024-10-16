@@ -649,9 +649,8 @@ class CircuitComponent:
             if not indices:
                 indices = self.wires.indices
 
-            for i in indices:
-                ret = ret._apply_btoq_for_change_of_rep(i)
-                ret = ret._apply_btops_for_change_of_rep(i)
+            ret = ret._apply_btoq_for_change_of_rep(indices)
+            ret = ret._apply_btops_for_change_of_rep(indices)
 
         elif isinstance(self.representation, Fock):
             if self.representation.ansatz._original_abc_data:
@@ -667,60 +666,6 @@ class CircuitComponent:
                 ret = self._from_attributes(bargmann, self.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
-        return ret
-
-    def _apply_btoq_for_change_of_rep(self, i) -> CircuitComponent:
-        from .circuit_components_utils import BtoQ
-
-        r"""
-        Helper function for change of representation in to_bargmann()
-        """
-        name, arg = self._index_representation[i]
-        ret = copy.deepcopy(self)
-        if name == "Q":
-            ret._index_representation[i] = ("B", None)  # perhaps not needed -- can be removed
-            if i in self.wires.output.bra.indices:
-                ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).adjoint.inverse()
-            if i in self.wires.output.ket.indices:
-                ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).inverse()
-            if i in self.wires.input.bra.indices:
-                ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.adjoint.inverse() @ ret
-            if i in self.wires.input.ket.indices:
-                ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
-        return ret
-
-    def _apply_btops_for_change_of_rep(self, i) -> CircuitComponent:
-        r"""
-        Helper function for change of representation in to_bargmann()
-        """
-
-        from .circuit_components_utils import BtoPS
-
-        name = self._index_representation[i][0]
-        ret = copy.deepcopy(self)
-        if name == "PS":
-
-            _, arg = self._index_representation[i]
-            ret._index_representation[i] = ("B", None)
-            m = self.wires.index_to_mode_dict[i]
-            if i in self.wires.output.bra.indices:
-                if m not in self.wires.output.ket.modes:
-                    raise ValueError(
-                        f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the output bra."
-                    )
-                friend_index = self.wires.index_dicts[2][m]
-                ret._index_representation[friend_index] = ("B", None)
-                ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
-
-            if i in self.wires.input.bra.indices:
-                if m not in self.wires.input.ket.modes:
-                    raise ValueError(
-                        f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the input bra."
-                    )
-                friend_index = self.wires.index_dicts[3][m]
-                ret._index_representation[friend_index] = ("B", None)
-                ret = BtoPS([m], s=arg).dual.inverse() @ ret
-
         return ret
 
     def _add_parameter(self, parameter: Constant | Variable):
@@ -750,6 +695,72 @@ class CircuitComponent:
         items = [i for i, m in enumerate(self.modes) if m in modes]
         kwargs = self.parameter_set[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
+
+    def _apply_btops_for_change_of_rep(self, indices: Sequence[int]) -> CircuitComponent:
+        r"""
+        Helper function for change of representation in to_bargmann()
+
+            Args:
+                indices: the set of indices that we want to be represented in bargmann.
+
+            Output:
+                the cc object with Bargmann representation on the specified indices. The representations on the other wires remain intact.
+        """
+
+        from .circuit_components_utils import BtoPS
+
+        ret = copy.deepcopy(self)
+
+        for i in indices:
+            name, arg = self._index_representation[i]
+
+            if name == "PS":
+                ret._index_representation[i] = ("B", None)
+                m = self.wires.index_to_mode_dict[i]
+                if i in self.wires.output.bra.indices:
+                    if m not in self.wires.output.ket.modes:
+                        raise ValueError(
+                            f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the output bra."
+                        )
+                    friend_index = self.wires.index_dicts[2][m]
+                    ret._index_representation[friend_index] = ("B", None)
+                    ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
+
+                if i in self.wires.input.bra.indices:
+                    if m not in self.wires.input.ket.modes:
+                        raise ValueError(
+                            f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the input bra."
+                        )
+                    friend_index = self.wires.index_dicts[3][m]
+                    ret._index_representation[friend_index] = ("B", None)
+                    ret = BtoPS([m], s=arg).dual.inverse() @ ret
+
+        return ret
+
+    def _apply_btoq_for_change_of_rep(self, indices: Sequence[int]) -> CircuitComponent:
+        r"""
+        Helper function for change of representation in to_bargmann()
+        """
+
+        from .circuit_components_utils import BtoQ
+
+        ret = copy.deepcopy(self)
+        for i in indices:
+            name, arg = self._index_representation[i]
+            if name == "Q":
+                ret._index_representation[i] = ("B", None)  # perhaps not needed -- can be removed
+                if i in self.wires.output.bra.indices:
+                    ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).adjoint.inverse()
+                if i in self.wires.output.ket.indices:
+                    ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).inverse()
+                if i in self.wires.input.bra.indices:
+                    ret = (
+                        BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.adjoint.inverse()
+                        @ ret
+                    )
+                if i in self.wires.input.ket.indices:
+                    ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
+        return ret
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
