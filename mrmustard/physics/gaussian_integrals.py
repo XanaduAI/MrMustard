@@ -78,115 +78,16 @@ def real_gaussian_integral(
     return A_post, b_post, c_post
 
 
-def complex_gaussian_integral(
-    Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
-):
-    r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
-    The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
-
-    :math:`\int_{C^m} F(z) d\mu(z)`
-
-    where
-
-    :math:`F(z) = \textrm{exp}(-0.5 z^T A z + b^T z)`
-
-    Here, ``z`` is an ``n``-dim complex vector, ``A`` is an ``n x n`` complex matrix,
-    ``b`` is an ``n``-dim complex vector, ``c`` is a complex scalar, and :math:`d\mu(z)`
-    is a non-holomorphic complex measure over a subset of m pairs of z,z* variables. These
-    are specified by the indices ``idx_z`` and ``idx_zconj``. The ``measure`` parameter is
-    the exponent of the measure:
-
-    :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
-
-    Note that the indices must be a complex variable pairs with each other (idx_z, idx_zconj) to make this contraction meaningful.
-    Please make sure the corresponding complex variable with respect to your Abc triples.
-    For examples, if the indices of Abc denotes the variables ``(\alpha, \beta, \alpha^*, \beta^*, \gamma, \eta)``, the contraction only works
-    with the indices between ``(\alpha, \alpha^*)`` pairs and ``(\beta, \beta^*)`` pairs.
-
-    Arguments:
-        A,b,c: the ``(A,b,c)`` triple
-        idx_z: the tuple of indices of the z variables
-        idx_zconj: the tuple of indices of the z* variables
-        measure: the exponent of the measure (default is -1: Bargmann measure)
-
-    Returns:
-        The ``(A,b,c)`` triple of the result of the integral.
-
-    Raises:
-        ValueError: If ``idx_z`` and ``idx_zconj`` have different lengths.
-    """
-    A, b, c = Abc
-
-    if len(idx_z) != len(idx_zconj):
-        raise ValueError(
-            f"idx_z and idx_zconj must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
-        )
-    n = len(idx_z)
-    idx = tuple(idx_z) + tuple(idx_zconj)
-    if not idx:
-        return A, b, c
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
-
-    I = math.eye(n, dtype=A.dtype)
-    Z = math.zeros((n, n), dtype=A.dtype)
-    X = math.block([[Z, I], [I, Z]])
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
-    bM = math.gather(b, idx, axis=-1)
-
-    determinant = math.det(M)
-    if determinant != 0:
-        c_post = (
-            c
-            * math.sqrt((-1) ** n / determinant)
-            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-        )
-    else:
-        c_post = math.real(c) * np.inf
-
-    if math.asnumpy(not_idx).shape != (0,):
-        D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-        R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-        bR = math.gather(b, not_idx, axis=-1)
-        A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-        b_post = bR - math.matvec(D, math.solve(M, bM))
-    else:
-        A_post = math.zeros((0, 0), dtype=A.dtype)
-        b_post = math.zeros((0,), dtype=b.dtype)
-
-    return A_post, b_post, c_post
-
-
-def join_Abc(
-    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-):
-    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
-    matrices and concatenating the ``b`` vectors.
-
-    Arguments:
-        Abc1: the first ``(A,b,c)`` triple
-        Abc2: the second ``(A,b,c)`` triple
-
-    Returns:
-        The joined ``(A,b,c)`` triple
-    """
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
-    A12 = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
-    b12 = math.concat([math.cast(b1, "complex128"), math.cast(b2, "complex128")], axis=-1)
-    c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
-    return A12, b12, c12
-
-
 def join_Abc_real(
     Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
-    r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together", by considering their Bargmann function has having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2 will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same, rather than a pair of conjugate variables for complex Gaussian integrals.
+    r"""Direct sum of two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple, where indices corresponding to the same variable are "fused together",
+    by considering their Bargmann function as having the same variables. For example ``idx1=(0,1,2)`` and ``idx2=(1,2,3)`` means that indices 1 and 2
+    will be fused because they are present on both tuples. This is useful for computing real Gaussian integrals where the variable on either object is the same,
+    rather than a pair of conjugate variables for complex Gaussian integrals.
 
     Arguments:
         Abc1: the first ``(A,b,c)`` triple
@@ -259,216 +160,285 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
         The reordered ``(A,b,c)`` triple
     """
     A, b, c = Abc
-    dim_poly = len(c.shape) - 1
+    c = math.astensor(c)
+    order = list(order)
+    if len(order) == 0:
+        return A, b, c
+    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
+    dim_poly = len(c.shape) - int(batched)
+    n = A.shape[-1] - dim_poly
 
-    if order:
-        if dim_poly > 0:
-            if type(order) == list:
-                order.extend(np.arange(len(order), len(order) + dim_poly).tolist())
-            elif type(order) == tuple:
-                order = order + tuple(np.arange(len(order), len(order) + dim_poly))
-        A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
-        b = math.gather(b, order, axis=-1)
+    if len(order) != n:
+        raise ValueError(f"order must have length {n}, got {len(order)}")
+
+    if any(i >= n or n < 0 for i in order):
+        raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
+    order += list(range(len(order), len(order) + dim_poly))
+    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
+    b = math.gather(b, order, axis=-1)
     return A, b, c
 
 
-def contract_two_Abc(
-    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    idx1: Sequence[int],
-    idx2: Sequence[int],
-):
-    r"""
-    Returns the contraction of two ``(A,b,c)`` triples with given indices.
+def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
-    Note that the indices must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
-    the corresponding complex variable with respect to your Abc triples.
-    For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
-    ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
-
-    Arguments:
-        Abc1: the first ``(A,b,c)`` triple
-        Abc2: the second ``(A,b,c)`` triple
-        idx1: the indices of the first ``(A,b,c)`` triple to contract
-        idx2: the indices of the second ``(A,b,c)`` triple to contract
-
-    Returns:
-        The contracted ``(A,b,c)`` triple
-    """
-    Abc = join_Abc(Abc1, Abc2)
-    return complex_gaussian_integral(
-        Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
-    )
-
-
-def complex_gaussian_integral_2(
-    Abc1: tuple, Abc2: tuple, idx1: tuple[int, ...], idx2: tuple[int, ...], measure: float = -1
-):
-    r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
-    The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
-
-    :math:`\int_{C^m} F(z) d\mu(z)`
-
-    where
-
-    :math:`F(z) = \textrm{exp}(-0.5 z^T A z + b^T z)`
-
-    Here, ``z`` is an ``n``-dim complex vector, ``A`` is an ``n x n`` complex matrix,
-    ``b`` is an ``n``-dim complex vector, ``c`` is a complex scalar, and :math:`d\mu(z)`
-    is a non-holomorphic complex measure over a subset of m pairs of z,z* variables. These
-    are specified by the indices ``idx1`` and ``idx2``. The ``measure`` parameter is
-    the exponent of the measure:
-
-    :math: `dmu(z) = \textrm{exp}(m * |z|^2) \frac{d^{2n}z}{\pi^n} = \frac{1}{\pi^n}\textrm{exp}(m * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
-
-    Note that the indices must be a complex variable pairs with each other (idx1, idx2) to make this contraction meaningful.
-    Please make sure the corresponding complex variable with respect to your Abc triples.
-    For examples, if the indices of Abc denotes the variables ``(\alpha, \beta, \alpha^*, \beta^*, \gamma, \eta)``, the contraction only works
-    with the indices between ``(\alpha, \alpha^*)`` pairs and ``(\beta, \beta^*)`` pairs.
-
-    Arguments:
-        A1,b1,c1: the first ``(A,b,c)`` triple
-        A2,b2,c2: the second ``(A,b,c)`` triple
-        idx1: the tuple of indices of the z variables of the first abc
-        idx2: the tuple of indices of the z* variables of the second abc
-        measure: the exponent of the measure (default is -1: Bargmann measure)
-
-    Returns:
-        The ``(A,b,c)`` triple of the result of the integral.
-
-    Raises:
-        ValueError: If ``idx1`` and ``idx2`` have different lengths.
-    """
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
-    if len(idx1) != len(idx2):
-        raise ValueError(
-            f"idx1 and idx2 must have the same length, got {len(idx1)} and {len(idx2)}"
-        )
-    n = len(idx1)
-    idx = tuple(idx1) + tuple(idx2)
-    if not idx:
-        raise NotImplementedError
-
-    A = math.block_diag(math.cast(A1, "complex128"), math.cast(A2, "complex128"))
-    b = math.concat([b1, b2], axis=-1)
-    c = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
-
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
-
-    I = math.eye(n, dtype=A.dtype)
-    Z = math.zeros((n, n), dtype=A.dtype)
-    X = math.block([[Z, I], [I, Z]])
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
-    bM = math.gather(b, idx, axis=-1)
-
-    c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
-    )
-
-    if math.asnumpy(not_idx).shape != (0,):
-        D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-        R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-        bR = math.gather(b, not_idx, axis=-1)
-        A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-        b_post = bR - math.matvec(D, math.solve(M, bM))
-    else:
-        A_post = math.zeros((0, 0), dtype=A.dtype)
-        b_post = math.zeros((0,), dtype=b.dtype)
-
-    return A_post, b_post, c_post
-
-
-def join_Abc_poly(
-    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-):
-    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
-    matrices and concatenating the ``b`` vectors.
+    It supports a batch dimension, e.g. ``A1.shape = (batch, n1, n1)``,
+    ``b1.shape = (batch, n1)``, ``c1.shape = (batch, *d1)`` or no batch dimension:
+    ``A1.shape = (n1, n1)``, ``b1.shape = (n1)``, ``c1.shape = (*d1)``.
+    The number of non-batch dimensions in ``ci`` (i.e. ``len(di)``) corresponds to the number
+    of rows and columns of ``Ai`` and ``bi`` that are kept last. So for instance, if ``d1 = (4, 3)``
+    and ``d2=(7,)``, then the last 2 rows and columns of ``A1`` and ``b1`` and the last 1 row and
+    column of ``A2`` and ``b2`` are kept last in the joined ``A`` and ``b``.
+    The shape of ``c`` is the concatenation of the shapes of ``c1`` and ``c2`` (batch excluded).
+    If inputs are not batched, the output has a batch dimension of size 1 added to it.
 
     Arguments:
         Abc1: the first ``(A,b,c)`` triple
         Abc2: the second ``(A,b,c)`` triple
+        mode: how to treat the batch of the two ``(A,b,c)`` triples. Either ``kron`` for the Kronecker product or ``zip`` for parallel.
 
     Returns:
         The joined ``(A,b,c)`` triple
     """
+
+    # 0. unpack and prepare inputs
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
+    A1 = math.atleast_3d(A1, dtype=math.complex128)
+    A2 = math.atleast_3d(A2, dtype=math.complex128)
+    b1 = math.atleast_2d(b1, dtype=math.complex128)
+    b2 = math.atleast_2d(b2, dtype=math.complex128)
+    c1 = math.atleast_1d(c1, dtype=math.complex128)
+    c2 = math.atleast_1d(c2, dtype=math.complex128)
 
-    A1 = math.cast(A1, "complex128")
-    A2 = math.cast(A2, "complex128")
+    # 1. input validation
+    (batch1, nA1, mA1) = A1.shape
+    (batch2, nA2, mA2) = A2.shape
+    (batch1_b, nb1) = b1.shape
+    (batch2_b, nb2) = b2.shape
+    (batch1_c, *poly_shape1) = c1.shape
+    (batch2_c, *poly_shape2) = c2.shape
 
-    c1 = math.astensor(c1)
-    c2 = math.astensor(c2)
+    if not batch1 == batch1_b == batch1_c:
+        raise ValueError(f"Batch sizes of Abc1 must match: got ({batch1}, {batch1_b}, {batch1_c})")
+    if not batch2 == batch2_b == batch2_c:
+        raise ValueError(f"Batch sizes of Abc2 must match: got ({batch2}, {batch2_b}, {batch2_c})")
+    if mode == "zip" and batch1 != batch2:
+        raise ValueError(
+            f"All batch sizes must match when mode='zip': got ({batch1}, {batch1_b}, {batch1_c})"
+            f" and ({batch2}, {batch2_b}, {batch2_c})"
+        )
+    if not nA1 == mA1 == nb1:
+        raise ValueError("A1 must be square and b1 must be compatible with A1.")
 
-    dim_n1 = len(c1.shape)
-    dim_n2 = len(c2.shape)
+    if not nA2 == mA2 == nb2:
+        raise ValueError("A2 must be square and b2 must be compatible with A2.")
 
-    dim_m1 = A1.shape[-1] - dim_n1
-    dim_m2 = A2.shape[-1] - dim_n2
+    # 2. get shapes and sizes
 
-    A12 = math.block(
+    m1 = len(poly_shape1)
+    m2 = len(poly_shape2)
+    n1 = nA1 - m1
+    n2 = nA2 - m2
+
+    # 3. join triples
+
+    c1 = math.reshape(c1, (batch1, -1))
+    c2 = math.reshape(c2, (batch2, -1))
+
+    if mode == "kron":
+        A1 = np.repeat(A1, batch2, axis=0)
+        A2 = np.tile(A2, (batch1, 1, 1))
+        A1Z = np.concatenate([A1, np.zeros((batch1 * batch2, nA1, nA2))], axis=-1)
+        ZA2 = np.concatenate([np.zeros((batch1 * batch2, nA2, nA1)), A2], axis=-1)
+        b1 = np.repeat(b1, batch2, axis=0)
+        b2 = np.tile(b2, (batch1, 1))
+        c = math.reshape(
+            math.einsum("ba,dc->bdac", c1, c2),
+            [batch1 * batch2] + poly_shape1 + poly_shape2,
+        )
+    elif mode == "zip":
+        A1Z = np.concatenate([A1, np.zeros((batch1, nA1, nA2))], axis=-1)
+        ZA2 = np.concatenate([np.zeros((batch1, nA2, nA1)), A2], axis=-1)
+        c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
+
+    A = np.concatenate([A1Z, ZA2], axis=-2)
+    A = np.concatenate(
         [
-            [
-                A1[:dim_m1, :dim_m1],
-                math.zeros((dim_m1, dim_m2), dtype=A1.dtype),
-                A1[:dim_m1, dim_m1:],
-                math.zeros((dim_m1, dim_n2), dtype=A1.dtype),
-            ],
-            [
-                math.zeros((dim_m2, dim_m1), dtype=A1.dtype),
-                A2[:dim_m2:, :dim_m2],
-                math.zeros((dim_m2, dim_n1), dtype=A1.dtype),
-                A2[:dim_m2, dim_m2:],
-            ],
-            [
-                A1[dim_m1:, :dim_m1],
-                math.zeros((dim_n1, dim_m2), dtype=A1.dtype),
-                A1[dim_m1:, dim_m1:],
-                math.zeros((dim_n1, dim_n2), dtype=A1.dtype),
-            ],
-            [
-                math.zeros((dim_n2, dim_m1), dtype=A1.dtype),
-                A2[dim_m2:, :dim_m2],
-                math.zeros((dim_n2, dim_n1), dtype=A1.dtype),
-                A2[dim_m2:, dim_m2:],
-            ],
-        ]
+            A[:, :n1, :],
+            A[:, nA1 : nA1 + n2, :],
+            A[:, n1:nA1, :],
+            A[:, nA1 + n2 :, :],
+        ],
+        axis=-2,
     )
-    b12 = math.concat((b1[:dim_m1], b2[:dim_m2], b1[dim_m1:], b2[dim_m2:]), axis=-1)
-    c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
-    return A12, b12, c12
+    A = np.concatenate(
+        [
+            A[:, :, :n1],
+            A[:, :, nA1 : nA1 + n2],
+            A[:, :, n1:nA1],
+            A[:, :, nA1 + n2 :],
+        ],
+        axis=-1,
+    )
+    b = np.concatenate([b1, b2], axis=-1)
+    b = np.concatenate(
+        [
+            b[:, :n1],
+            b[:, nA1 : nA1 + n2],
+            b[:, n1:nA1],
+            b[:, nA1 + n2 :],
+        ],
+        axis=-1,
+    )
+
+    return A, b, c
 
 
-def contract_two_Abc_poly(
-    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    idx1: Sequence[int],
-    idx2: Sequence[int],
+def complex_gaussian_integral_1(
+    Abc: tuple,
+    idx_z: Sequence[int],
+    idx_zconj: Sequence[int],
+    measure: float = -1,
 ):
-    r"""
-    Returns the contraction of two ``(A,b,c)`` triples with given indices.
+    r"""Computes the complex Gaussian integral
 
-    Note that the indices must be a complex variable pairs with each other to make this contraction meaningful. Please make sure
-    the corresponding complex variable with respect to your Abc triples.
-    For examples, if the indices of Abc1 denotes the variables ``(\alpha, \beta)``, the indices of Abc2 denotes the variables
-    ``(\alpha^*,\gamma)``, the contraction only works with ``idx1 = [0], idx2 = [0]``.
+    :math:`\int_{C^m} F(z,\beta) d\mu(z)`,
+
+    over ``m`` pairs of conjugate variables :math:`z_i,z_j^*` whose positions :math:`i`` and :math:`j` are indicated by ``idx1`` and ``idx2``.
+    The function has the form
+
+    :math:`F(z,\beta) = \sum_k c_k\partial_\beta^k \exp(0.5 (z,\beta) A (z,\beta)^T + (z,\beta)b),\quad z\in\mathbb{C}^{n}, \beta\in\mathbb{C}^{N}`,
+
+    where ``k`` is a multi-index of the same dimension as ``\beta`` and the sum is over all multi-indices.
+    The ``Abc`` parameters can have an additional batch dimension and the batch size must be the same for all three.
+    Inputs are batched when ``A.shape=(batch,n,n)``, ``b.shape=(batch,n)`` and ``c.shape=(batch,d1,d2,...,dN)``.
+    The output is then the A,b,c parametrization of a function in the same form with parameters of shape
+    ``A.shape=(batch,n-2m,n-2m)``, ``b.shape=(batch,n-2m)``, ``c.shape=(batch,d1,d2,...,dN)``.
+
+    The integration measure is given by (``s`` here is the ``measure`` argument):
+    :math:`dmu(z) = \textrm{exp}(s * |z|^2) \frac{d^{2m}z}{\pi^m} = \frac{1}{\pi^m}\textrm{exp}(s * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
     Arguments:
-        Abc1: the first ``(A,b,c)`` triple
-        Abc2: the second ``(A,b,c)`` triple
-        idx1: the indices of the first ``(A,b,c)`` triple to contract
-        idx2: the indices of the second ``(A,b,c)`` triple to contract
+        A,b,c: the ``(A,b,c)`` triple that defines :math:`F(z,\beta)`
+        idx_z: the tuple of indices indicating which :math:`z` variables to integrate over
+        idx_zconj: the tuple of indices indicating which :math:`z^*` variables to integrate over
+        measure: the exponent of the measure (default is -1: Bargmann measure)
 
     Returns:
-        The contracted ``(A,b,c)`` triple
-    """
-    Abc = join_Abc_poly(Abc1, Abc2)
+        The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
 
-    dim_n1 = len(Abc1[2].shape)
-    return complex_gaussian_integral(
-        Abc, idx1, tuple(n + Abc1[0].shape[-1] - dim_n1 for n in idx2), measure=-1.0
-    )
+    Raises:
+        ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
+    """
+    if len(idx_z) != len(idx_zconj):
+        raise ValueError(
+            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
+        )
+    A, b, c = Abc
+    c = math.astensor(c)
+    # assuming c is batched accordingly
+    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
+    if not batched:
+        A = math.atleast_3d(A)
+        b = math.atleast_2d(b)
+        c = math.atleast_1d(c)
+    if not A.shape[0] == b.shape[0] == c.shape[0]:
+        raise ValueError(
+            f"Batch size mismatch: got {A.shape[0]} for A, {b.shape[0]} for b and {c.shape[0]} for c."
+        )
+
+    (_, n_plus_N, _) = A.shape
+    if b.shape[-1] != A.shape[-1]:
+        raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
+    N = len(c.shape[1:])  # number of beta variables
+    n = n_plus_N - N  # number of z variables
+    m = len(idx_z)  # number of pairs to integrate over
+    idx = tuple(idx_z) + tuple(idx_zconj)
+    if any(i >= n for i in idx):
+        raise ValueError(
+            f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}"
+        )
+
+    if len(idx) == 0:
+        if not batched:
+            return A[0], b[0], c[0]
+        return A, b, c
+
+    not_idx = tuple(i for i in range(n_plus_N) if i not in idx)
+    eye = math.eye(m, dtype=A.dtype)
+
+    eye = math.eye(m, dtype=A.dtype)
+    Z = math.zeros((m, m), dtype=A.dtype)
+    X = math.block([[Z, eye], [eye, Z]])
+    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
+    bM = math.gather(b, idx, axis=-1)
+
+    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
+    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
+    bR = math.gather(b, not_idx, axis=-1)
+    det_M = math.det(M)
+    if np.all(math.abs(det_M) > 1e-12):
+        inv_M = math.inv(M)
+        c_post = (
+            c
+            * math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
+            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1]))
+        )
+        A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
+        b_post = bR - math.einsum("bij,bj->bi", D, math.solve(M, bM))
+    else:
+        A_post = R - math.einsum("bij,bjk,blk->bil", D, M * np.inf, D)
+        b_post = bR - math.einsum("bij,bjk,bk->bi", D, M * np.inf, bM)
+        c_post = math.real(c) * np.inf
+    if not batched:
+        return A_post[0], b_post[0], c_post[0]
+    return A_post, b_post, c_post
+
+
+def complex_gaussian_integral_2(
+    Abc1: tuple,
+    Abc2: tuple,
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+    measure: float = -1,
+    mode: str = "kron",
+) -> tuple:
+    r"""Computes the complex Gaussian integral
+
+    :math:`\int_{C^m} F_1(z,\beta_1)F_2(z,\beta_2) d\mu(z)`,
+
+    over ``m`` pairs of conjugate variables :math:`z_i,z_j^*` whose positions :math:`i`` and :math:`j` are indicated by ``idx1`` and ``idx2``.
+    Each of the functions has the form
+
+    :math:`F(z,\beta) = \sum_k c_k\partial_\beta^k \exp(0.5 (z,\beta) A (z,\beta)^T + (z,\beta)b),\quad z\in\mathbb{C}^{n_i}, \beta\in\mathbb{C}^{N_i}`,
+
+    where ``k`` is a multi-index of the same dimension as ``\beta`` and the sum is over all multi-indices.
+    The ``Abc`` parameters can have an additional batch dimension and the batch size must be the same for all six.
+    Inputs are batched when ``A.shape=(batch,n,n)``, ``b.shape=(batch,n)`` and ``c.shape=(batch,d1,d2,...,dN)``.
+    The output is then the A,b,c parametrization of a function in the same form with parameters of shape
+    ``A.shape=(batch,n-2m,n-2m)``, ``b.shape=(batch,n-2m)``, ``c.shape=(batch,d1,d2,...,dN)``.
+
+    The integration measure is given by (``s`` here is the ``measure`` argument):
+    :math:`dmu(z) = \textrm{exp}(s * |z|^2) \frac{d^{2m}z}{\pi^m} = \frac{1}{\pi^m}\textrm{exp}(s * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
+
+    Arguments:
+        Abc1: the ``(A,b,c)`` triple that defines :math:`F_1(z,\beta)`
+        Abc2: the ``(A,b,c)`` triple that defines :math:`F_2(z,\beta)`
+        idx1: the tuple of indices of the :math:`z` variables of the first function to integrate over
+        idx2: the tuple of indices of the :math:`z^*` variables of the second function to integrate over
+        measure: the exponent of the measure (default is -1: Bargmann measure)
+        mode: how to treat the batch of the two ``(A,b,c)`` triples. Either ``kron`` for the Kronecker product or ``zip`` for parallel processing.
+
+    Returns:
+        The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
+
+    Raises:
+        ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
+    """
+    A1, _, c1 = Abc1
+    A_, b_, c_ = join_Abc(Abc1, Abc2, mode=mode)
+    n1_plus_N1 = A1.shape[-1]
+    N1 = len(math.atleast_1d(c1).shape[1:])
+    idx2 = tuple(i + n1_plus_N1 - N1 for i in idx2)  # have to skip the first n1 variables now
+    return complex_gaussian_integral_1((A_, b_, c_), idx1, idx2, measure)
