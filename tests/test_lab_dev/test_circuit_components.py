@@ -99,9 +99,9 @@ class TestCircuitComponent:
     def test_from_attributes(self, x, y):
         cc = Dgate([1, 8], x=x, y=y)
 
-        cc1 = Dgate._from_attributes(cc.ansatz, cc.wires, cc.name)
-        cc2 = Unitary._from_attributes(cc.ansatz, cc.wires, cc.name)
-        cc3 = CircuitComponent._from_attributes(cc.ansatz, cc.wires, cc.name)
+        cc1 = Dgate._from_attributes(cc.representation, cc.name)
+        cc2 = Unitary._from_attributes(cc.representation, cc.name)
+        cc3 = CircuitComponent._from_attributes(cc.representation, cc.name)
 
         assert cc1 == cc
         assert cc2 == cc
@@ -113,7 +113,7 @@ class TestCircuitComponent:
 
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
-        cc = CircuitComponent._from_attributes(c.ansatz, c.wires, c.name)
+        cc = CircuitComponent._from_attributes(c.representation, c.name)
         ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 

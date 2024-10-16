@@ -121,13 +121,16 @@ class Transformation(CircuitComponent):
         # compute the inverse
         A, b, _ = self.dual.ansatz.conj.triple  # apply X(.)X
         almost_inverse = self._from_attributes(
-            PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
+            Representation(
+                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
+            )
         )
         almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
-            PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
-            self.wires,
+            Representation(
+                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c), self.wires
+            ),
             self.name + "_inv",
         )
         return actual_inverse
@@ -276,8 +279,7 @@ class Unitary(Operation):
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
         return Unitary._from_attributes(
-            ansatz=unitary_dual.ansatz,
-            wires=unitary_dual.wires,
+            representation=unitary_dual.representation,
             name=unitary_dual.name,
         )
 
@@ -295,9 +297,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary._from_attributes(ret.ansatz, ret.wires)
+            return Unitary._from_attributes(ret.representation)
         elif isinstance(other, Channel):
-            return Channel._from_attributes(ret.ansatz, ret.wires)
+            return Channel._from_attributes(ret.representation)
         return ret
 
 
@@ -490,5 +492,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, (Channel, Unitary)):
-            return Channel._from_attributes(ret.ansatz, ret.wires)
+            return Channel._from_attributes(ret.representation)
         return ret

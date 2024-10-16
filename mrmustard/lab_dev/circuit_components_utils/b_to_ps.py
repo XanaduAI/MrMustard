@@ -52,4 +52,3 @@ class BtoPS(Map):
             ),
         ).representation
         self._add_parameter(Constant(s, "s"))
-        self.s = s

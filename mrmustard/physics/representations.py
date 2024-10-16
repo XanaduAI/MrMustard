@@ -39,7 +39,8 @@ __all__ = ["Representation"]
 
 class RepEnum(Enum):
     r"""
-    An enum to represent what representation a wire is in.
+    An enum to represent what representation a wire is in. Also keeps track
+    of representation conversions.
     """
 
     NONETYPE = 0
@@ -128,7 +129,7 @@ class Representation:
 
         self._wires = wires
         self._wire_reps = wire_reps or dict.fromkeys(
-            wires.indices, (RepEnum.from_ansatz(ansatz), None)
+            wires.ids, (RepEnum.from_ansatz(ansatz), None, tuple())
         )
 
     @property
@@ -141,7 +142,7 @@ class Representation:
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         wires = self.wires.adjoint
-        return Representation(ansatz, wires, self._wire_reps)
+        return Representation(ansatz, wires, None)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -162,7 +163,7 @@ class Representation:
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         wires = self.wires.dual
-        return Representation(ansatz, wires, self._wire_reps)
+        return Representation(ansatz, wires, None)
 
     @property
     def wires(self) -> Wires | None:
@@ -289,7 +290,7 @@ class Representation:
             return (
                 self.ansatz == other.ansatz
                 and self.wires == other.wires
-                and self._wire_reps == other._wire_reps
+                # and self._wire_reps == other._wire_reps
             )
         return False
 
@@ -305,4 +306,10 @@ class Representation:
 
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return Representation(rep, wires_result)
+        wire_reps = {}
+        for id in wires_result.ids:
+            try:
+                wire_reps[id] = self._wire_reps[id]
+            except KeyError:
+                wire_reps[id] = other._wire_reps[id]
+        return Representation(rep, wires_result, wire_reps)

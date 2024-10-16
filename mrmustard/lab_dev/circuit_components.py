@@ -113,7 +113,7 @@ class CircuitComponent:
         if "rep_class" in data:
             rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
             rep = locate(rep_class).from_dict(data)
-            return cls._from_attributes(rep, Wires(*map(set, wires)), name=name)
+            return cls._from_attributes(Representation(rep, Wires(*map(set, wires))), name=name)
 
         return cls(**data)
 
@@ -239,7 +239,7 @@ class CircuitComponent:
         """
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
-        return cls._from_attributes(ansatz, wires, name)
+        return cls._from_attributes(Representation(ansatz, wires), name)
 
     @classmethod
     def from_quadrature(
@@ -276,9 +276,9 @@ class CircuitComponent:
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent._from_attributes(PolyExpAnsatz(*triple), wires)
+        QQQQ = CircuitComponent._from_attributes(Representation(PolyExpAnsatz(*triple), wires))
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
-        return cls._from_attributes(BBBB.ansatz, wires, name)
+        return cls._from_attributes(Representation(BBBB.ansatz, wires), name)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
@@ -346,8 +346,7 @@ class CircuitComponent:
     @classmethod
     def _from_attributes(
         cls,
-        ansatz: Ansatz,
-        wires: Wires,
+        representation: Representation,
         name: str | None = None,
     ) -> CircuitComponent:
         r"""
@@ -376,14 +375,10 @@ class CircuitComponent:
             A circuit component with the given attributes.
         """
         types = {"Ket", "DM", "Unitary", "Operation", "Channel", "Map"}
-        rep = Representation(ansatz, wires)
         for tp in cls.mro():
             if tp.__name__ in types:
-                ret = tp()
-                ret._name = name
-                ret._representation = rep
-                return ret
-        return CircuitComponent(rep, name)
+                return tp(representation=representation, name=name)
+        return CircuitComponent(representation, name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -496,7 +491,7 @@ class CircuitComponent:
                 ret = self._getitem_builtin(self.modes)
                 ret._representation = rep
             except TypeError:
-                ret = self._from_attributes(rep.ansatz, rep.wires, self.name)
+                ret = self._from_attributes(rep, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
             return ret
@@ -527,7 +522,7 @@ class CircuitComponent:
             ret = self._getitem_builtin(self.modes)
             ret._representation = rep
         except TypeError:
-            ret = self._from_attributes(rep.ansatz, rep.wires, self.name)
+            ret = self._from_attributes(rep, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
@@ -590,7 +585,7 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(ansatz, self.wires, name)
+        return self._from_attributes(Representation(ansatz, self.wires), name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -623,13 +618,13 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         result = self._representation @ other._representation
-        return CircuitComponent._from_attributes(result.ansatz, result.wires, None)
+        return CircuitComponent._from_attributes(result, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.ansatz * other, self.wires, self.name)
+        return self._from_attributes(Representation(self.ansatz * other, self.wires), self.name)
 
     def __repr__(self) -> str:
         ansatz = self.ansatz
@@ -728,13 +723,13 @@ class CircuitComponent:
             raise ValueError("Cannot subtract components with different wires.")
         ansatz = self.ansatz - other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(ansatz, self.wires, name)
+        return self._from_attributes(Representation(ansatz, self.wires), name)
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(self.ansatz / other, self.wires, self.name)
+        return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
 
     def _ipython_display_(self):
         # both reps might return None

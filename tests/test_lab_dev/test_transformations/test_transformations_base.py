@@ -66,11 +66,11 @@ class TestUnitary:
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
         u_component = CircuitComponent._from_attributes(
-            unitary1.ansatz, unitary1.wires, unitary1.name
+            unitary1.representation, unitary1.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.ansatz, channel.wires, channel.name
+            channel.representation, channel.name
         )  # pylint: disable=protected-access
 
         assert isinstance(unitary1 >> unitary2, Unitary)
@@ -81,7 +81,7 @@ class TestUnitary:
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary1.ansatz, unitary1.wires, unitary1.name
+            unitary1.representation, unitary1.name
         )  # pylint: disable=protected-access
         assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate, repr=PolyExpAnsatz)"
         assert repr(unitary1.to_fock(5)) == "Dgate(modes=[0, 1], name=Dgate, repr=ArrayAnsatz)"
@@ -149,12 +149,12 @@ class TestChannel:
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.ansatz, unitary.wires, unitary.name
+            unitary.representation, unitary.name
         )  # pylint: disable=protected-access
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.ansatz, channel1.wires, channel1.name
+            channel1.representation, channel1.name
         )  # pylint: disable=protected-access
 
         assert isinstance(channel1 >> unitary, Channel)
@@ -165,7 +165,7 @@ class TestChannel:
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
         ch_component = CircuitComponent._from_attributes(
-            channel1.ansatz, channel1.wires, channel1.name
+            channel1.representation, channel1.name
         )  # pylint: disable=protected-access
 
         assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att, repr=PolyExpAnsatz)"

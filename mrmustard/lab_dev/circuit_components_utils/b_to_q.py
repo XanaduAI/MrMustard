@@ -24,6 +24,7 @@ from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
 from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
 
 __all__ = ["BtoQ"]
 
@@ -53,3 +54,5 @@ class BtoQ(Operation):
             ),
         ).representation
         self._add_parameter(Constant(phi, "phi"))
+        for i in self.wires.output.ids:
+            self.representation._wire_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value), tuple())

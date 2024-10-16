@@ -968,7 +968,7 @@ class DM(State):
         ansatz = self.ansatz.trace(idxz, idxz_conj)
 
         return self.__class__._from_attributes(
-            ansatz, wires, self.name
+            Representation(ansatz, wires), self.name
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -985,9 +985,8 @@ class DM(State):
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
-        w = result.wires
-        if not w.input and w.bra.modes == w.ket.modes:
-            return DM.from_modes(w.modes, result.ansatz)
+        if not result.wires.input and result.wires.bra.modes == result.wires.ket.modes:
+            return DM(result.representation)
         return result
 
 
@@ -1186,7 +1185,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(dm.ansatz, dm.wires, self.name)
+        ret = DM._from_attributes(dm.representation, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
@@ -1280,7 +1279,8 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket.from_modes(result.wires.modes, result.ansatz)
+                print("result", result.representation._wire_reps)
+                return Ket(result.representation)
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM.from_modes(result.wires.modes, result.ansatz)
+                return DM(result.representation)
         return result

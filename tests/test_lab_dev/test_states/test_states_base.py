@@ -357,12 +357,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.ansatz, unitary.wires, unitary.name
+            unitary.representation, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.ansatz,
-            channel.wires,
+            channel.representation,
             channel.name,
         )  # pylint: disable=protected-access
 
@@ -823,11 +822,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
         u_component = CircuitComponent._from_attributes(
-            unitary.ansatz, unitary.wires, unitary.name
+            unitary.representation, unitary.name
         )  # pylint: disable=protected-access
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
-            channel.ansatz, channel.wires, channel.name
+            channel.representation, channel.name
         )  # pylint: disable=protected-access
 
         dm = ket >> channel
