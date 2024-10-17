@@ -19,6 +19,7 @@ The classes representing states in quantum circuits.
 from .base import State
 from .ket import Ket
 from .dm import DM
+
 from .coherent import Coherent
 from .displaced_squeezed import DisplacedSqueezed
 from .number import Number
