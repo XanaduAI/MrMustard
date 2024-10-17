@@ -1316,8 +1316,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     @property
     def euclidean_opt(self):
         r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
