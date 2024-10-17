@@ -34,22 +34,17 @@ class GRN(Channel):
     """
 
     short_name = "GRN"
+
     def __init__(
         self,
         modes: Sequence[int],
         Y: RealMatrix,
-        Y_train: bool = False,):
+        Y_train: bool = False,
+    ):
 
         super().__init__(modes_out=modes, modes_in=modes, name="GRN")
-        self._add_parameter(
-            make_parameter(
-                Y_train,
-                value= Y,
-                name="Y",
-                bounds = (None, None)
-            )
-        )
+        self._add_parameter(make_parameter(Y_train, value=Y, name="Y", bounds=(None, None)))
 
         self._representation = Bargmann.from_function(
-            fn=triples.gaussian_random_noise_Abc, Y = self.Y.value
+            fn=triples.gaussian_random_noise_Abc, Y=self.Y.value
         )
