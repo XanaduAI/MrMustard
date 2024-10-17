@@ -269,9 +269,9 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(
+        ret = DM._from_attributes(  # pylint: disable=protected-access
             dm.representation, dm.wires, self.name
-        )  # pylint: disable=protected-access
+        )
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
