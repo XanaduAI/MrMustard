@@ -16,6 +16,7 @@
 The class representing an operation that changes Bargmann into phase space.
 """
 # pylint: disable=protected-access
+# pylint: disable=protected-access
 
 from __future__ import annotations
 from typing import Sequence
@@ -126,4 +127,38 @@ class BtoPS(Map):
         for i, j in enumerate(ok):
             ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
 
+        return ret
+
+    @property
+    def adjoint(self) -> BtoPS:
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        rep = self.representation.reorder(kets + bras).conj()
+
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = rep
+        ret._wires = self.wires.adjoint
+        ret._name = self.name + "_adj"
+        return ret
+
+    @property
+    def dual(self) -> BtoPS:
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj()
+
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = rep
+        ret._wires = self.wires.dual
+        ret._name = self.name + "_dual"
+        return ret
+
+    def inverse(self) -> BtoPS:
+        inv = super().inverse()
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = inv.representation
+        ret._wires = inv.wires
+        ret._name = inv.name
         return ret
