@@ -321,6 +321,18 @@ class Representation:
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
 
-        # TODO: update wire reps
-
-        return Representation(rep, wires_result)
+        wire_reps = {}
+        for id in wires_result.ids:
+            if id in self.wires.ids:
+                temp_rep = self
+            else:
+                temp_rep = other
+            for t in (0, 1, 2, 3, 4, 5):
+                try:
+                    idx = temp_rep.wires.ids_index_dicts[t][id]
+                    n_idx = wires_result.ids_index_dicts[t][id]
+                    wire_reps[n_idx] = temp_rep._wire_reps[idx]
+                    break
+                except KeyError:
+                    continue
+        return Representation(rep, wires_result, wire_reps)

@@ -308,6 +308,23 @@ class Wires:
             for t, lst in enumerate(self.sorted_args)
         ]
 
+    @property
+    def ids_index_dicts(self) -> list[dict[int, int]]:
+        r"""
+        A list of dictionary mapping ids to indices, one for each of the subsets
+        (``output.bra``, ``input.bra``, ``output.ket``, ``input.ket``,
+        ``output.classical``, and ``input.classical``).
+
+        If subsets are taken, ``ids_index_dicts`` refers to the parent object rather than to the
+        child.
+        """
+        if self.original:
+            return self.original.ids_index_dicts
+        return [
+            {v: self.index_dicts[t][k] for k, v in self.ids_dicts[t].items()}
+            for t in (0, 1, 2, 3, 4, 5)
+        ]
+
     @cached_property
     def indices(self) -> tuple[int, ...]:
         r"""
