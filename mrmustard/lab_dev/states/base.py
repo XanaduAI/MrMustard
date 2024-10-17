@@ -1279,7 +1279,6 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                print("result", result.representation._wire_reps)
                 return Ket(result.representation)
             elif result.wires.bra.modes == result.wires.ket.modes:
                 return DM(result.representation)
