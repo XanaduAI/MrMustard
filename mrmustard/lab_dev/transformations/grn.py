@@ -18,8 +18,8 @@ The class representing a noisy attenuator channel.
 
 from __future__ import annotations
 
-from mrmustard.utils.typing import RealMatrix
 from typing import Sequence
+from mrmustard.utils.typing import RealMatrix
 from .base import Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
