@@ -39,18 +39,16 @@ from mrmustard import math, settings
 from mrmustard.physics.fock import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
-    Batch,
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
     RealVector,
 )
-from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.utils import shape_check
+from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.ansatze import (
     bargmann_Abc_to_phasespace_cov_means,
 )
-from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
+from mrmustard.lab_dev.circuit_components_utils import BtoPS
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 
 __all__ = ["State"]

@@ -15,10 +15,10 @@
 from __future__ import annotations
 from typing import Sequence
 
-import numpy as np
 from itertools import product
-from IPython.display import display
 import warnings
+import numpy as np
+from IPython.display import display
 from mrmustard import math, settings, widgets
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
 from mrmustard.lab_dev.circuit_components import CircuitComponent

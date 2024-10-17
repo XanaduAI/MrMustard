@@ -15,9 +15,9 @@
 from __future__ import annotations
 
 from typing import Sequence
-import numpy as np
-import warnings
 from itertools import product
+import warnings
+import numpy as np
 from IPython.display import display
 from mrmustard import math, settings, widgets
 from mrmustard.physics.gaussian import purity
