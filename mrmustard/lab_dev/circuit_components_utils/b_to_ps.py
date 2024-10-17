@@ -81,7 +81,7 @@ class BtoPS(Map):
         ret._name = self.name + "_dual"
         return ret
 
-    def inverse(self):
+    def inverse(self) -> BtoPS:
         inv = super().inverse()
         ret = BtoPS(self.modes, self.s)
         ret._representation = inv.representation

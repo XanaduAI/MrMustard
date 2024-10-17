@@ -72,7 +72,9 @@ class BtoQ(Operation):
     def dual(self) -> BtoQ:
         ok = self.wires.ket.output.indices
         ik = self.wires.ket.input.indices
-        rep = self.representation.reorder(ik + ok).conj()
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj()
 
         ret = BtoQ(self.modes, self.phi)
         ret._representation = rep
@@ -80,7 +82,7 @@ class BtoQ(Operation):
         ret._name = self.name + "_dual"
         return ret
 
-    def inverse(self):
+    def inverse(self) -> BtoQ:
         inv = super().inverse()
         ret = BtoQ(self.modes, self.phi)
         ret._representation = inv.representation
