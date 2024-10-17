@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module contains the defintion of the ket class ``Ket``.
+"""
+
 from __future__ import annotations
 
 from typing import Sequence
@@ -21,7 +25,14 @@ import numpy as np
 from IPython.display import display
 from mrmustard import math, settings, widgets
 from mrmustard.physics.gaussian import purity
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector, Scalar
+from mrmustard.utils.typing import (
+    ComplexMatrix,
+    ComplexVector,
+    ComplexTensor,
+    RealVector,
+    Scalar,
+    Batch,
+)
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states.base import State, _validate_operator, OperatorType
 from mrmustard.physics.bargmann import wigner_to_bargmann_psi
@@ -258,7 +269,9 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret = DM._from_attributes(
+            dm.representation, dm.wires, self.name
+        )  # pylint: disable=protected-access
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 

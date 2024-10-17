@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module contains the defintion of the density matrix class ``DM``.
+"""
+
 from __future__ import annotations
 from typing import Sequence
 
@@ -76,7 +80,9 @@ class DM(State):
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
 
-        if not math.allclose(gamma_A, math.conj(gamma_A.T), atol=settings.ATOL):  # checks if gamma_A is Hermitian
+        if not math.allclose(
+            gamma_A, math.conj(gamma_A.T), atol=settings.ATOL
+        ):  # checks if gamma_A is Hermitian
             return False
 
         return all(math.real(math.eigvals(gamma_A)) >= 0)
@@ -192,10 +198,6 @@ class DM(State):
         QtoB = BtoQ(modes, phi).inverse()
         Q = DM(modes, Bargmann(*triple))
         return DM(modes, (Q >> QtoB).representation, name)
-
-    def dm(self) -> DM:
-        "Returns the DM of this state"
-        return self
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
