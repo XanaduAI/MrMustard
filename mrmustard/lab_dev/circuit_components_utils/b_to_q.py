@@ -55,4 +55,4 @@ class BtoQ(Operation):
         ).representation
         self._add_parameter(Constant(phi, "phi"))
         for i in self.wires.output.indices:
-            self.representation._wire_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value), tuple())
+            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value), tuple())

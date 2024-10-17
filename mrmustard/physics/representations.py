@@ -79,20 +79,23 @@ class Representation:
     A representation handles the underlying ansatz, wires and keeps track
     of each wire's representation.
 
+    The dictionary to keep track of representations maps the indices of the wires
+    to a tuple of the form ``(RepEnum, parameter, (coupled_indices, ...))``.
+
     Args:
         ansatz: An ansatz for this representation.
         wires: The wires of this representation. Alternatively, can be
             a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
             sequence where if any of the modes are out of order the ansatz
             will be reordered.
-        wire_reps: An optional dictionary for keeping track of each wire's representation.
+        idx_reps: An optional dictionary for keeping track of each wire's representation.
     """
 
     def __init__(
         self,
         ansatz: Ansatz | None = None,
         wires: Wires | Sequence[tuple[int]] | None = None,
-        wire_reps: dict | None = None,
+        idx_reps: dict | None = None,
     ) -> None:
         self._ansatz = ansatz
 
@@ -128,7 +131,7 @@ class Representation:
                     self._ansatz = ansatz.reorder(tuple(perm))
 
         self._wires = wires
-        self._wire_reps = wire_reps or dict.fromkeys(
+        self._idx_reps = idx_reps or dict.fromkeys(
             wires.indices, (RepEnum.from_ansatz(ansatz), None, tuple())
         )
 
@@ -142,12 +145,12 @@ class Representation:
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         wires = self.wires.adjoint
-        wire_reps = {}
+        idx_reps = {}
         for i, j in enumerate(kets):
-            wire_reps[i] = self._wire_reps[j]
+            idx_reps[i] = self._idx_reps[j]
         for i, j in enumerate(bras):
-            wire_reps[i + len(kets)] = self._wire_reps[j]
-        return Representation(ansatz, wires, wire_reps)
+            idx_reps[i + len(kets)] = self._idx_reps[j]
+        return Representation(ansatz, wires, idx_reps)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -168,16 +171,16 @@ class Representation:
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         wires = self.wires.dual
-        wire_reps = {}
+        idx_reps = {}
         for i, j in enumerate(ib):
-            wire_reps[i] = self._wire_reps[j]
+            idx_reps[i] = self._idx_reps[j]
         for i, j in enumerate(ob):
-            wire_reps[i + len(ib)] = self._wire_reps[j]
+            idx_reps[i + len(ib)] = self._idx_reps[j]
         for i, j in enumerate(ik):
-            wire_reps[i + len(ib + ob)] = self._wire_reps[j]
+            idx_reps[i + len(ib + ob)] = self._idx_reps[j]
         for i, j in enumerate(ok):
-            wire_reps[i + len(ib + ob + ik)] = self._wire_reps[j]
-        return Representation(ansatz, wires, wire_reps)
+            idx_reps[i + len(ib + ob + ik)] = self._idx_reps[j]
+        return Representation(ansatz, wires, idx_reps)
 
     @property
     def wires(self) -> Wires | None:
@@ -304,13 +307,14 @@ class Representation:
             return (
                 self.ansatz == other.ansatz
                 and self.wires == other.wires
-                and self._wire_reps == other._wire_reps
+                and self._idx_reps == other._idx_reps
             )
         return False
 
     def __matmul__(self, other: Representation):
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
+
         if type(self.ansatz) is type(other.ansatz):
             self_ansatz = self.ansatz
             other_ansatz = other.ansatz
@@ -321,7 +325,7 @@ class Representation:
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
 
-        wire_reps = {}
+        idx_reps = {}
         for id in wires_result.ids:
             if id in self.wires.ids:
                 temp_rep = self
@@ -331,8 +335,8 @@ class Representation:
                 try:
                     idx = temp_rep.wires.ids_index_dicts[t][id]
                     n_idx = wires_result.ids_index_dicts[t][id]
-                    wire_reps[n_idx] = temp_rep._wire_reps[idx]
+                    idx_reps[n_idx] = temp_rep._idx_reps[idx]
                     break
                 except KeyError:
                     continue
-        return Representation(rep, wires_result, wire_reps)
+        return Representation(rep, wires_result, idx_reps)
