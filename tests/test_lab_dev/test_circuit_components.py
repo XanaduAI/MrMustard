@@ -23,6 +23,7 @@ import pytest
 from ipywidgets import HTML, Box, HBox, VBox
 
 from mrmustard import math, settings
+from mrmustard.lab_dev import Circuit
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import (
     DM,
@@ -38,6 +39,7 @@ from mrmustard.lab_dev.wires import Wires
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.representations import Bargmann, Fock
 from mrmustard.physics.triples import displacement_gate_Abc
+from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
@@ -531,3 +533,23 @@ class TestCircuitComponent:
             TypeError, match="MyComponent does not seem to have any wires construction method"
         ):
             cc._serialize()
+
+    def test_hermite_renormalized_with_custom_shape(self):
+        """Test hermite_renormalized with a custom non-zero shape"""
+
+        S = SqueezedVacuum([0], r=1.0, phi=0, r_trainable=True, phi_trainable=True)
+
+        # made up, means nothing
+        def cost():
+            ket = S.fock(shape=[3])
+            return -math.real(ket[2])
+
+        circuit = Circuit([S])
+
+        opt = Optimizer()
+
+        if math.backend_name == "tensorflow":
+            assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
+        else:
+            with pytest.raises(NotImplementedError, match="not implemented for backend ``numpy``"):
+                opt.minimize(cost, by_optimizing=[circuit], max_steps=5)
