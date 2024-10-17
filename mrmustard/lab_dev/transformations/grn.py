@@ -25,7 +25,7 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter
 
-__all__ = ["Attenuator"]
+__all__ = ["GRN"]
 
 
 class GRN(Channel):
