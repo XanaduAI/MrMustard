@@ -25,7 +25,7 @@ from mrmustard.physics.ansatze import (
     ArrayAnsatz,
     bargmann_Abc_to_phasespace_cov_means,
 )
-from mrmustard.lab_dev.states.base import DM
+from mrmustard.lab_dev.states.dm import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.lab_dev.circuit_components_utils import BtoPS
 from ..random import Abc_triple
