@@ -129,7 +129,7 @@ class Representation:
 
         self._wires = wires
         self._wire_reps = wire_reps or dict.fromkeys(
-            wires.ids, (RepEnum.from_ansatz(ansatz), None, tuple())
+            wires.indices, (RepEnum.from_ansatz(ansatz), None, tuple())
         )
 
     @property
@@ -142,7 +142,12 @@ class Representation:
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         wires = self.wires.adjoint
-        return Representation(ansatz, wires, None)
+        wire_reps = {}
+        for i, j in enumerate(kets):
+            wire_reps[i] = self._wire_reps[j]
+        for i, j in enumerate(bras):
+            wire_reps[i + len(kets)] = self._wire_reps[j]
+        return Representation(ansatz, wires, wire_reps)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -163,7 +168,16 @@ class Representation:
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         wires = self.wires.dual
-        return Representation(ansatz, wires, None)
+        wire_reps = {}
+        for i, j in enumerate(ib):
+            wire_reps[i] = self._wire_reps[j]
+        for i, j in enumerate(ob):
+            wire_reps[i + len(ib)] = self._wire_reps[j]
+        for i, j in enumerate(ik):
+            wire_reps[i + len(ib + ob)] = self._wire_reps[j]
+        for i, j in enumerate(ok):
+            wire_reps[i + len(ib + ob + ik)] = self._wire_reps[j]
+        return Representation(ansatz, wires, wire_reps)
 
     @property
     def wires(self) -> Wires | None:
@@ -290,7 +304,7 @@ class Representation:
             return (
                 self.ansatz == other.ansatz
                 and self.wires == other.wires
-                # and self._wire_reps == other._wire_reps
+                and self._wire_reps == other._wire_reps
             )
         return False
 
@@ -306,10 +320,7 @@ class Representation:
 
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        wire_reps = {}
-        for id in wires_result.ids:
-            try:
-                wire_reps[id] = self._wire_reps[id]
-            except KeyError:
-                wire_reps[id] = other._wire_reps[id]
-        return Representation(rep, wires_result, wire_reps)
+
+        # TODO: update wire reps
+
+        return Representation(rep, wires_result)

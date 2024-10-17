@@ -24,6 +24,7 @@ from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
 
 __all__ = ["BtoPS"]
 
@@ -52,3 +53,5 @@ class BtoPS(Map):
             ),
         ).representation
         self._add_parameter(Constant(s, "s"))
+        for i in self.wires.output.indices:
+            self.representation._wire_reps[i] = (RepEnum.PHASESPACE, float(self.s.value), tuple())
