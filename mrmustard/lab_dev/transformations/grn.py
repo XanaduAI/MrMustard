@@ -23,7 +23,7 @@ from mrmustard.utils.typing import RealMatrix
 from .base import Channel
 from ...physics.representations import Bargmann
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Attenuator"]
 
