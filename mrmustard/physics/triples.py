@@ -22,7 +22,7 @@ from typing import Generator, Iterable, Union
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 
 
@@ -604,6 +604,23 @@ def fock_damping_Abc(
 
     return A, b, c
 
+
+def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
+    m = Y.shape[-1]//2
+    xi = math.eye(2*m) + Y/settings.HBAR
+    xi_inv = math.inv(xi)
+    temp = math.block([[math.eye(2*m) - xi_inv, xi_inv],
+                       [xi_inv, math.eye(2*m) - xi_inv]])
+    R = 1/np.sqrt(2) * math.block([[math.eye(m), 1j * math.eye(m), math.zeros((m,2*m))],
+                                   [math.zeros((m,2*m)), math.eye(m), -1j * math.eye(m)],
+                                   [math.eye(m), -1j * math.eye(m), math.zeros((m,2*m))],
+                                   [math.zeros((m,2*m)), math.eye(m), 1j * math.eye(m)]])
+    
+    A = math.Xmat(2*m) @ R @ temp @ math.conj(R).T
+    b = math.zeros(2*m)
+    c = 1/math.sqrt(math.det(xi))
+
+    return A,b,c
 
 def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
