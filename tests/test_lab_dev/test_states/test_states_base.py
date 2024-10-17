@@ -39,6 +39,7 @@ from mrmustard.lab_dev.states import (
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.widgets import state as state_widget
+from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS
 
 # original settings
 autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)
@@ -173,6 +174,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(Atest2, A0)
         assert math.allclose(btest2, b0)
         assert math.allclose(ctest2, c0)
+
+        psi = Ket.random([0])
+        assert psi.to_quadrature()._index_representation == {0: ("Q", 0)}
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
@@ -580,6 +584,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.allclose(btest2, b0)
         assert np.allclose(ctest2, c0)
 
+        rho = DM.random([0])
+        assert rho.to_quadrature()._index_representation == {0: ("Q", 0), 1: ("Q", 0)}
+
     def test_L2_norms(self):
         state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
         assert len(state._L2_norms) == 2
@@ -788,6 +795,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         # measurements
         assert isinstance(dm >> Coherent([0], 1).dual, DM)
         assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
+
+        rho = DM.random([0, 1]) >> BtoPS([0], 0) >> BtoQ([1])
+        assert rho._index_representation == {0: ("PS", 0), 1: ("Q", 0), 2: ("PS", 0), 3: ("Q", 0)}
 
     @pytest.mark.parametrize("modes", [[5], [1, 2]])
     def test_random(self, modes):

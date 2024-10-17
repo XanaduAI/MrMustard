@@ -43,6 +43,7 @@ from mrmustard.lab_dev import (
     Channel,
     Wires,
 )
+from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS
 from ..random import Abc_triple
 
 
@@ -138,6 +139,20 @@ class TestCircuitComponent:
         assert d1_adj_adj.parameter_set == d1.parameter_set
         assert d1_adj_adj.representation == d1.representation
 
+        # index representation test:
+        d2 = d1 >> BtoQ([1], 0.7)
+        d2_dual = d2.adjoint
+        d2_dual._index_representation
+        assert d2_dual._index_representation == {
+            0: ("Q", 0.7),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("B", None),
+        }
+
+        rho = DM.random([0]) @ BtoQ([0])
+        assert rho.adjoint._index_representation == {0: ("Q", 0), 1: ("B", None)}
+
     def test_dual(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_dual = d1.dual
@@ -156,6 +171,16 @@ class TestCircuitComponent:
         assert d1_dual_dual.parameter_set == d1.parameter_set
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
+
+        # index representation test
+        d2 = d1 >> BtoQ([1], 0.7)
+        d2_dual = d2.dual
+        assert d2_dual._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("Q", 0.7),
+            3: ("B", None),
+        }
 
     def test_light_copy(self):
         d1 = CircuitComponent(
@@ -181,6 +206,12 @@ class TestCircuitComponent:
         assert math.allclose(d89.r.value, d67.r.value)
         assert bool(d67.parameter_set) is True
         assert d67._representation is d89._representation
+
+        # index representation test
+        psi = Vacuum([0, 1])
+        psi._index_representation[0] = ("Q", 0.1)
+        phi = psi.on([2, 3])
+        assert phi._index_representation == psi._index_representation
 
     def test_on_error(self):
         with pytest.raises(ValueError):
@@ -225,6 +256,12 @@ class TestCircuitComponent:
 
         d12 = d1 + d2
         assert d12.representation == d1.representation + d2.representation
+
+        # checking if addition takes care of representations
+        psi = Ket.random([0])
+        phi = Ket.random([0])
+
+        assert psi + (phi >> BtoQ([0])) == psi + phi
 
     def test_sub(self):
         s1 = DisplacedSqueezed([1], x=1.0, y=0.5, r=0.1)
@@ -318,6 +355,40 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
+    def tets_matmul_respects_representations(self):
+        rho = Vacuum([0, 1]).dm()
+        psi = Vacuum([2])
+        psi._index_representation[0] = ("Q", 0)
+        assert (rho @ psi.dual)._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("B", None),
+            4: ("Q", 0.0),
+        }
+
+        # the following example has no physical meaning and is just
+        # meant to check the logic of matmul in handling representations
+        rho = Vacuum([0]).dm()
+        psi = Vacuum([2])
+        psi._index_representation[0] = ("Q", 0)
+        ch = Channel.random([0])
+        ch._index_representation = {0: ("Q", 0), 1: ("Q", 1.5), 2: ("PS", 0.5), 3: ("B", None)}
+        assert (rho @ psi.dual @ ch)._index_representation == {
+            0: ("Q", 0),
+            1: ("PS", 0.5),
+            2: ("Q", 0),
+        }
+
+        rho = DM.random([0, 1])
+        sigma = DM.random([0])
+        assert rho >> BtoPS([0], 0) >> sigma.dual == rho >> sigma.dual
+
+        rho = DM.random([0, 1])
+        sigma = DM.random([0])
+
+        assert sigma >> (BtoPS([0], 0).dual >> rho.dual) == sigma >> rho.dual
+
     def test_matmul_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)
         result = d0 @ 0.8
@@ -328,6 +399,9 @@ class TestCircuitComponent:
         assert math.allclose(result2.representation.A, d0.representation.A)
         assert math.allclose(result2.representation.b, d0.representation.b)
         assert math.allclose(result2.representation.c, 0.8 * d0.representation.c)
+
+        psi = Ket.random([0]).to_quadrature() * 2
+        assert psi._index_representation == {0: ("Q", 0)}
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum([0, 1, 2])
@@ -400,6 +474,13 @@ class TestCircuitComponent:
         assert np.allclose(r1, r3)
 
         settings.AUTOSHAPE_MAX = 50
+
+    def test_rshift_mixed_representation(self):
+        psi = Ket.random([0])
+        phi = Ket.random([0, 1])
+        r1 = psi @ phi.dual
+        r2 = (psi @ BtoQ([0])) @ phi.dual
+        assert r1 == r2
 
     def test_rshift_error(self):
         vac012 = Vacuum([0, 1, 2])
@@ -561,3 +642,25 @@ class TestCircuitComponent:
             TypeError, match="MyComponent does not seem to have any wires construction method"
         ):
             cc._serialize()
+
+    ## tests regarding multirepresentation:
+    def test_index_representation(self):
+        r"""
+        Tests the initialization and updating of index_representation dictionary
+        """
+
+        # testing initialization
+        assert DM.random([0, 1])._index_representation == {i: ("B", None) for i in range(4)}
+
+        # testing update under BtoQ
+        phi = BtoQ([0]).dual @ Channel.random([0])
+        assert phi._index_representation == {
+            0: ("B", None),
+            1: ("B", None),
+            2: ("B", None),
+            3: ("Q", 0.0),
+        }
+
+        # testing update under BtoPS
+        rho = DM.random([0]) @ BtoPS([0], s=0.2)
+        assert rho._index_representation == {0: ("PS", 0.2), 1: ("PS", 0.2)}
