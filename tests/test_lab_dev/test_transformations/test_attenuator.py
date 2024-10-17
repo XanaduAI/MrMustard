@@ -43,7 +43,7 @@ class TestAttenuator:
             Attenuator(modes=[0, 1], transmissivity=[0.2, 0.3, 0.4])
 
     def test_representation(self):
-        rep1 = Attenuator(modes=[0], transmissivity=0.1).representation
+        rep1 = Attenuator(modes=[0], transmissivity=0.1).ansatz
         e = 0.31622777
         assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
         assert math.allclose(rep1.b, np.zeros((1, 4)))
@@ -63,4 +63,4 @@ class TestAttenuator:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Attenuator(modes=[0], transmissivity=[0.1, 0.2]).representation
+            Attenuator(modes=[0], transmissivity=[0.1, 0.2]).ansatz

@@ -17,5 +17,5 @@ The classes for representations in circuit components.
 """
 
 from .base import *
-from .bargmann import *
-from .fock import *
+from .polyexp_ansatz import *
+from .array_ansatz import *

@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """
-This module contains the base representation class.
+This module contains the base ansatz class.
 """
 
 from __future__ import annotations
@@ -33,12 +32,12 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-__all__ = ["Representation"]
+__all__ = ["Ansatz"]
 
 
-class Representation(ABC):
+class Ansatz(ABC):
     r"""
-    A base class for representations.
+    A base class for ansatz.
     """
 
     def __init__(self) -> None:
@@ -50,37 +49,37 @@ class Representation(ABC):
     @abstractmethod
     def batch_size(self) -> int:
         r"""
-        The batch size of the representation.
+        The batch size of the ansatz.
         """
 
     @property
     @abstractmethod
-    def conj(self) -> Representation:
+    def conj(self) -> Ansatz:
         r"""
-        The conjugate of the representation.
+        The conjugate of the ansatz.
         """
 
     @property
     @abstractmethod
     def data(self) -> tuple | Tensor:
         r"""
-        The data of the representation.
-        For now, it's the triple for Bargmann and the array for Fock.
+        The data of the ansatz.
+        For now, it's the triple for PolyExpAnsatz and the array for ArrayAnsatz.
         """
 
     @property
     @abstractmethod
     def num_vars(self) -> int:
         r"""
-        The number of variables in the representation.
+        The number of variables in the ansatz.
         """
 
     @property
     @abstractmethod
     def scalar(self) -> Scalar:
         r"""
-        The scalar part of the representation.
-        For now it's ``c`` for Bargmann and the array for Fock.
+        The scalar part of the ansatz.
+        For now it's ``c`` for PolyExpAnsatz and the array for ArrayAnsatz.
         """
 
     @property
@@ -94,32 +93,32 @@ class Representation(ABC):
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> Representation:
+    def from_dict(cls, data: dict[str, ArrayLike]) -> Ansatz:
         r"""
-        Deserialize a Representation.
+        Deserialize an Ansatz.
         """
 
     @classmethod
     @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Representation:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
         r"""
-        Returns a representation from a function and kwargs.
+        Returns an ansatz from a function and kwargs.
         """
 
     @abstractmethod
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Representation:
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
-        Reorders the representation indices.
+        Reorders the ansatz indices.
         """
 
     @abstractmethod
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""
-        Serialize a Representation.
+        Serialize an Ansatz.
         """
 
     @abstractmethod
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Representation:
+    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Ansatz:
         r"""
         Implements the partial trace over the given index pairs.
 
@@ -128,7 +127,7 @@ class Representation(ABC):
             idxs2: The second part.
 
         Returns:
-            The traced-over representation.
+            The traced-over ansatz.
         """
 
     @abstractmethod
@@ -139,33 +138,33 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __add__(self, other: Representation) -> Representation:
+    def __add__(self, other: Ansatz) -> Ansatz:
         r"""
-        Adds this representation and another representation.
+        Adds this ansatz and another ansatz.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The addition of this representation and other.
+            The addition of this ansatz and other.
         """
 
     @abstractmethod
-    def __and__(self, other: Representation) -> Representation:
+    def __and__(self, other: Ansatz) -> Ansatz:
         r"""
-        Tensor product of this representation with another.
+        Tensor product of this ansatz with another.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The tensor product of this representation and other.
+            The tensor product of this ansatz and other.
         """
 
     @abstractmethod
-    def __call__(self, z: Batch[Vector]) -> Scalar | Representation:
+    def __call__(self, z: Batch[Vector]) -> Scalar | Ansatz:
         r"""
-        Evaluates this representation at a given point in the domain.
+        Evaluates this ansatz at a given point in the domain.
 
         Args:
             z: point in C^n where the function is evaluated
@@ -175,59 +174,59 @@ class Representation(ABC):
         """
 
     @abstractmethod
-    def __eq__(self, other: Representation) -> bool:
+    def __eq__(self, other: Ansatz) -> bool:
         r"""
-        Whether this representation is equal to another.
+        Whether this ansatz is equal to another.
         """
 
     @abstractmethod
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Representation:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Ansatz:
         r"""
         Returns a copy of self with the given indices marked for contraction.
         """
 
     @abstractmethod
-    def __matmul__(self, other: Representation) -> Representation:
+    def __matmul__(self, other: Ansatz) -> Ansatz:
         r"""
         Implements the inner product of representations over the marked indices.
 
         Args:
-            other: Another representation.
+            other: Another ansatz.
 
         Returns:
-            The resulting representation.
+            The resulting ansatz.
         """
 
     @abstractmethod
-    def __mul__(self, other: Scalar | Representation) -> Representation:
+    def __mul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Multiplies this representation by a scalar or another representation.
+        Multiplies this ansatz by a scalar or another ansatz.
 
         Args:
-            other: A scalar or another representation.
+            other: A scalar or another ansatz.
 
         Raises:
-            TypeError: If other is neither a scalar nor a representation.
+            TypeError: If other is neither a scalar nor an ansatz.
 
         Returns:
-            The product of this representation and other.
+            The product of this ansatz and other.
         """
 
     @abstractmethod
-    def __neg__(self) -> Representation:
+    def __neg__(self) -> Ansatz:
         r"""
-        Negates the values in the representation.
+        Negates the values in the ansatz.
         """
 
-    def __rmul__(self, other: Representation | Scalar) -> Representation:
+    def __rmul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Multiplies this representation by another or by a scalar on the right.
+        Multiplies this ansatz by another or by a scalar on the right.
         """
         return self.__mul__(other)
 
-    def __sub__(self, other: Representation) -> Representation:
+    def __sub__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Subtracts other from this representation.
+        Subtracts other from this ansatz.
         """
         try:
             return self.__add__(-other)
@@ -235,13 +234,13 @@ class Representation(ABC):
             raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
-    def __truediv__(self, other: Scalar | Representation) -> Representation:
+    def __truediv__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
-        Divides this representation by another representation.
+        Divides this ansatz by another ansatz.
 
         Args:
-            other: A scalar or another representation.
+            other: A scalar or another ansatz.
 
         Returns:
-            The division of this representation and other.
+            The division of this ansatz and other.
         """

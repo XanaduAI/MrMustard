@@ -23,7 +23,8 @@ from mrmustard.physics import triples
 from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
 
 __all__ = ["BtoPS"]
 
@@ -43,13 +44,14 @@ class BtoPS(Map):
         modes: Sequence[int],
         s: float,
     ):
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="BtoPS")
+        self._representation = self.from_modes(
             modes_in=modes,
-            representation=Bargmann.from_function(
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
             ),
-            name="BtoPS",
-        )
+        ).representation
         self._add_parameter(Constant(s, "s"))
-        self.s = s
+        for i in self.wires.output.indices:
+            self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.s.value), tuple())

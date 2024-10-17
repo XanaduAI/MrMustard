@@ -55,14 +55,15 @@ from mrmustard.physics.bargmann_utils import (
 )
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Bargmann, Fock
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.lab_dev.utils import shape_check
 from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
+from mrmustard.physics.representations import Representation
 
 __all__ = ["State", "DM", "Ket"]
 
@@ -183,7 +184,7 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.base import Ket
 
@@ -192,7 +193,7 @@ class State(CircuitComponent):
 
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Bargmann(*triple)
+            >>> assert coh.ansatz == PolyExpAnsatz(*triple)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -223,16 +224,16 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
+            >>> array = Coherent(modes, x=0.1).to_fock().ansatz.array
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array, batched=True)
+            >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -247,6 +248,26 @@ class State(CircuitComponent):
         Raises:
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
+        """
+
+    @classmethod
+    @abstractmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        r"""
+        Initializes a state of type ``cls`` given modes and an ansatz.
+
+        Args:
+            modes: The modes of this state.
+            ansatz: The ansatz of this state.
+            name: The name of this state.
+
+        Returns:
+            A state.
         """
 
     @classmethod
@@ -323,7 +344,7 @@ class State(CircuitComponent):
         Returns:
             The Fock distribution.
         """
-        fock_array = self.fock(cutoff)
+        fock_array = self.fock_array(cutoff)
         if isinstance(self, Ket):
             probs = (
                 math.astensor(
@@ -349,7 +370,7 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        if not isinstance(self.representation, Bargmann):
+        if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
@@ -425,7 +446,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state if isinstance(state, DM) else state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -541,7 +562,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state if isinstance(state, DM) else state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
@@ -615,7 +636,7 @@ class State(CircuitComponent):
             raise ValueError("DM visualization not available for multi-mode states.")
         state = self.to_fock(cutoff)
         state = state if isinstance(state, DM) else state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
@@ -634,7 +655,7 @@ class State(CircuitComponent):
 
     def _ipython_display_(self):  # pragma: no cover
         is_ket = isinstance(self, Ket)
-        is_fock = isinstance(self.representation, Fock)
+        is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=is_ket, is_fock=is_fock))
 
 
@@ -644,40 +665,23 @@ class DM(State):
 
     Args:
         modes: The modes of this density matrix.
-        representation: The representation of this density matrix.
+        ansatz: The ansatz of this density matrix.
         name: The name of this density matrix.
     """
 
     short_name = "DM"
-
-    def __init__(
-        self,
-        modes: Sequence[int] = (),
-        representation: Bargmann | Fock | None = None,
-        name: str | None = None,
-    ):
-        if representation and representation.num_vars != 2 * len(modes):
-            raise ValueError(
-                f"Expected a representation with {2*len(modes)} variables, found {representation.num_vars}."
-            )
-        super().__init__(
-            wires=[modes, (), modes, ()],
-            name=name,
-        )
-        if representation is not None:
-            self._representation = representation
 
     @property
     def is_positive(self) -> bool:
         r"""
         Whether this DM is a positive operator.
         """
-        batch_dim = self.representation.batch_size
+        batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.representation.A[0]
+        A = self.ansatz.A[0]
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
 
@@ -697,8 +701,10 @@ class DM(State):
 
     @property
     def probability(self) -> float:
-        r"""Probability (trace) of this DM, using the batch dimension of the Ansatz
-        as a convex combination of states."""
+        r"""
+        Probability (trace) of this DM, using the batch dimension of the Ansatz
+        as a convex combination of states.
+        """
         return math.sum(self._probabilities)
 
     @property
@@ -707,17 +713,19 @@ class DM(State):
 
     @property
     def _probabilities(self) -> RealVector:
-        r"""Element-wise probabilities along the batch dimension of this DM.
+        r"""
+        Element-wise probabilities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
-        rep = self.representation.trace(idx_ket, idx_bra)
+        rep = self.ansatz.trace(idx_ket, idx_bra)
         return math.real(math.sum(rep.scalar))
 
     @property
     def _purities(self) -> RealVector:
-        r"""Element-wise purities along the batch dimension of this DM.
+        r"""
+        Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
         return self._L2_norms / self._probabilities
@@ -729,7 +737,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return DM(modes, Bargmann(*triple), name)
+        return DM.from_modes(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -739,7 +747,22 @@ class DM(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return DM(modes, Fock(array, batched), name)
+        return DM.from_modes(modes, ArrayAnsatz(array, batched), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        modes = set(modes)
+        if ansatz and ansatz.num_vars != 2 * len(modes):
+            raise ValueError(
+                f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
+            )
+        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+        return DM(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
@@ -765,9 +788,9 @@ class DM(State):
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM(
+        return coeff * DM.from_modes(
             modes,
-            Bargmann.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
+            PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
 
@@ -797,8 +820,8 @@ class DM(State):
                 with the number of modes.
         """
         QtoB = BtoQ(modes, phi).inverse()
-        Q = DM(modes, Bargmann(*triple))
-        return DM(modes, (Q >> QtoB).representation, name)
+        Q = DM.from_modes(modes, PolyExpAnsatz(*triple))
+        return DM.from_modes(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
@@ -838,14 +861,14 @@ class DM(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.representation.batch_size == 1:
+        if self.ansatz.batch_size == 1:
             try:  # fock
-                shape = self._representation.array.shape[1:]
+                shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.polynomial_shape[0] == 0:
-                    repr = self.representation
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
+                if self.ansatz.polynomial_shape[0] == 0:
+                    ansatz = self.ansatz
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),
@@ -942,10 +965,10 @@ class DM(State):
 
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
-        representation = self.representation.trace(idxz, idxz_conj)
+        ansatz = self.ansatz.trace(idxz, idxz_conj)
 
         return self.__class__._from_attributes(
-            representation, wires, self.name
+            Representation(ansatz, wires), self.name
         )  # pylint: disable=protected-access
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -962,9 +985,8 @@ class DM(State):
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
-        w = result.wires
-        if not w.input and w.bra.modes == w.ket.modes:
-            return DM(w.modes, result.representation)
+        if not result.wires.input and result.wires.bra.modes == result.wires.ket.modes:
+            return DM(result.representation)
         return result
 
 
@@ -974,41 +996,24 @@ class Ket(State):
 
     Arguments:
         modes: The modes of this ket.
-        representation: The representation of this ket.
+        ansatz: The ansatz of this ket.
         name: The name of this ket.
     """
 
     short_name = "Ket"
-
-    def __init__(
-        self,
-        modes: Sequence[int] = (),
-        representation: Bargmann | Fock | None = None,
-        name: str | None = None,
-    ):
-        if representation and representation.num_vars != len(modes):
-            raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {representation.num_vars}."
-            )
-        super().__init__(
-            wires=[(), (), modes, ()],
-            name=name,
-        )
-        if representation is not None:
-            self._representation = representation
 
     @property
     def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
         """
-        batch_dim = self.representation.batch_size
+        batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
 
-        A = self.representation.A[0]
+        A = self.ansatz.A[0]
 
         return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
@@ -1035,7 +1040,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return Ket(modes, Bargmann(*triple), name)
+        return Ket.from_modes(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -1045,7 +1050,22 @@ class Ket(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return Ket(modes, Fock(array, batched), name)
+        return Ket.from_modes(modes, ArrayAnsatz(array, batched), name)
+
+    @classmethod
+    def from_modes(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        modes = set(modes)
+        if ansatz and ansatz.num_vars != len(modes):
+            raise ValueError(
+                f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
+            )
+        wires = Wires(modes_out_ket=modes)
+        return Ket(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
@@ -1064,9 +1084,9 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-        return Ket(
+        return Ket.from_modes(
             modes,
-            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
 
@@ -1079,8 +1099,8 @@ class Ket(State):
         name: str | None = None,
     ) -> State:
         QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket(modes, Bargmann(*triple))
-        return Ket(modes, (Q >> QtoB).representation, name)
+        Q = Ket.from_modes(modes, PolyExpAnsatz(*triple))
+        return Ket.from_modes(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
@@ -1136,14 +1156,14 @@ class Ket(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.representation.batch_size == 1:
+        if self.ansatz.batch_size == 1:
             try:  # fock
-                shape = self._representation.array.shape[1:]
+                shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.polynomial_shape[0] == 0:
-                    repr = self.representation.conj & self.representation
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
+                if self.ansatz.polynomial_shape[0] == 0:
+                    ansatz = self.ansatz.conj & self.ansatz
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),
@@ -1165,7 +1185,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(dm.representation, dm.wires, self.name)
+        ret = DM._from_attributes(dm.representation, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
@@ -1259,7 +1279,7 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.wires.modes, result.representation)
+                return Ket(result.representation)
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.representation)
+                return DM(result.representation)
         return result

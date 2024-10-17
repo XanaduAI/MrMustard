@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains tests for ``Bargmann`` objects."""
+"""This module contains tests for ``PolyExpAnsatz`` objects."""
 
 # pylint: disable = too-many-public-methods, missing-function-docstring
 
@@ -28,15 +28,15 @@ from mrmustard.physics.gaussian_integrals import (
     contract_two_Abc,
     complex_gaussian_integral,
 )
-from mrmustard.physics.representations.bargmann import Bargmann
-from mrmustard.physics.representations.fock import Fock
+from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
+from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 
 from ...random import Abc_triple
 
 
-class TestBargmannRepresentation:
+class TestPolyExpAnsatz:
     r"""
-    Tests the Bargmann Representation.
+    Tests the polyexp ansatz.
     """
 
     Abc_n1 = Abc_triple(1)
@@ -46,7 +46,7 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init_non_batched(self, triple):
         A, b, c = triple
-        bargmann = Bargmann(*triple)
+        bargmann = PolyExpAnsatz(*triple)
 
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
@@ -57,8 +57,8 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = Bargmann(*triple1)
-        bargmann2 = Bargmann(*triple2)
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_add = bargmann1 + bargmann2
 
         assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
@@ -70,8 +70,8 @@ class TestBargmannRepresentation:
         A2, b2, _ = Abc_triple(5)
         c2 = np.random.random(size=(1, 2, 2))
 
-        bargmann3 = Bargmann(A1, b1, c1)
-        bargmann4 = Bargmann(A2, b2, c2)
+        bargmann3 = PolyExpAnsatz(A1, b1, c1)
+        bargmann4 = PolyExpAnsatz(A2, b2, c2)
 
         bargmann_add2 = bargmann3 + bargmann4
 
@@ -90,8 +90,8 @@ class TestBargmannRepresentation:
         b2 = np.random.random((1, 3))
         c1 = np.random.random((1,))
         c2 = np.random.random((1, 11))
-        ansatz1 = Bargmann(A1, b1, c1)
-        ansatz2 = Bargmann(A2, b2, c2)
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz_sum = ansatz1 + ansatz2
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
@@ -102,8 +102,8 @@ class TestBargmannRepresentation:
         assert ansatz_sum.c.shape == (2, 11)
 
     def test_add_error(self):
-        bargmann = Bargmann(*Abc_triple(3))
-        fock = Fock(np.random.random((1, 4, 4, 4)), batched=True)
+        bargmann = PolyExpAnsatz(*Abc_triple(3))
+        fock = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
 
         with pytest.raises(TypeError, match="Cannot add"):
             bargmann + fock  # pylint: disable=pointless-statement
@@ -113,7 +113,7 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann = Bargmann(*triple1) & Bargmann(*triple2)
+        bargmann = PolyExpAnsatz(*triple1) & PolyExpAnsatz(*triple2)
 
         assert bargmann.A.shape == (1, 2 * n, 2 * n)
         assert bargmann.b.shape == (1, 2 * n)
@@ -121,13 +121,13 @@ class TestBargmannRepresentation:
 
     def test_call(self):
         A, b, c = Abc_triple(5)
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
         A, b, _ = Abc_triple(4)
         c = np.random.random(size=(1, 3, 3, 3))
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
         with pytest.raises(
             Exception, match="The sum of the dimension of the argument and polynomial"
@@ -138,7 +138,7 @@ class TestBargmannRepresentation:
         b = np.zeros(2)
         c = c = np.zeros(10, dtype=complex).reshape(1, -1)
         c[0, -1] = 1
-        obj1 = Bargmann(A, b, c)
+        obj1 = PolyExpAnsatz(A, b, c)
 
         nine_factorial = np.prod(np.arange(1, 9))
         assert np.allclose(obj1(np.array([[0.1]])), 0.1**9 / np.sqrt(nine_factorial))
@@ -151,7 +151,7 @@ class TestBargmannRepresentation:
         batch = 3
         c = np.random.random(size=(batch, 5, 5, 5)) / 1000
 
-        obj = Bargmann([A1, A2, A3], [b1, b2, b3], c)
+        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
         z0 = np.array([[None, 2, None, 5]])
         z1 = np.array([[1, 2, 4, 5]])
         z2 = np.array([[1, 4]])
@@ -160,13 +160,17 @@ class TestBargmannRepresentation:
         val2 = obj_none(z2)
         assert np.allclose(val1, val2)
 
-        obj1 = Bargmann(A1, b1, c[0].reshape(1, 5, 5, 5))
+        obj1 = PolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
         z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
         z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
         z2 = np.array([[1, 4], [2, 4]])
         obj1_none = obj1(z0)
-        obj1_none0 = Bargmann(obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5))
-        obj1_none1 = Bargmann(obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5))
+        obj1_none0 = PolyExpAnsatz(
+            obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
+        )
+        obj1_none1 = PolyExpAnsatz(
+            obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5)
+        )
         val1 = obj1(z1)
         val2 = np.array(
             (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
@@ -176,7 +180,7 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_conj(self, triple):
         A, b, c = triple
-        bargmann = Bargmann(*triple).conj
+        bargmann = PolyExpAnsatz(*triple).conj
 
         assert np.allclose(bargmann.A, math.conj(A))
         assert np.allclose(bargmann.b, math.conj(b))
@@ -185,7 +189,7 @@ class TestBargmannRepresentation:
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
         c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
@@ -193,7 +197,7 @@ class TestBargmannRepresentation:
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
         c2 = np.random.uniform(-10, 10, size=(1, 4))
-        ansatz2 = Bargmann(A, b, c2)
+        ansatz2 = PolyExpAnsatz(A, b, c2)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
         assert np.allclose(decomp_ansatz2.A, ansatz2.A)
 
@@ -205,7 +209,7 @@ class TestBargmannRepresentation:
         c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
         A2, b2, _ = Abc_triple(4)
         c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = Bargmann([A1, A2], [b1, b2], [c1, c2])
+        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(3, 1))
@@ -218,7 +222,7 @@ class TestBargmannRepresentation:
         c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
         A2, b2, _ = Abc_triple(5)
         c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = Bargmann([A1, A2], [b1, b2], [c1, c2])
+        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(3, 2))
@@ -232,8 +236,8 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = Bargmann(*triple1)
-        bargmann2 = Bargmann(*triple2)
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_div = bargmann1 / bargmann2
 
         assert np.allclose(bargmann_div.A, bargmann1.A - bargmann2.A)
@@ -243,7 +247,7 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_div_with_scalar(self, scalar, triple):
-        bargmann1 = Bargmann(*triple)
+        bargmann1 = PolyExpAnsatz(*triple)
         bargmann_div = bargmann1 / scalar
 
         assert np.allclose(bargmann1.A, bargmann_div.A)
@@ -253,8 +257,8 @@ class TestBargmannRepresentation:
     def test_eq(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = Bargmann(A, b, c)
-        ansatz2 = Bargmann(2 * A, 2 * b, 2 * c)
+        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
 
         assert ansatz == ansatz  # pylint: disable= comparison-with-itself
         assert ansatz2 == ansatz2  # pylint: disable= comparison-with-itself
@@ -268,15 +272,15 @@ class TestBargmannRepresentation:
         b2 = np.random.random((1, 3))
         c1 = np.random.random((1,))
         c2 = np.random.random((1, 5, 11))
-        ansatz1 = Bargmann(A1, b1, c1)
-        ansatz2 = Bargmann(A2, b2, c2)
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         with pytest.raises(ValueError):
             ansatz1 + ansatz2  # pylint: disable=pointless-statement
 
-    @patch("mrmustard.physics.representations.bargmann.display")
+    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
-        rep = Bargmann(*Abc_triple(2))
+        rep = PolyExpAnsatz(*Abc_triple(2))
         rep._ipython_display_()  # pylint:disable=protected-access
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
@@ -298,12 +302,12 @@ class TestBargmannRepresentation:
         assert isinstance(eig_header, HTML)
         assert isinstance(unit_circle, FigureWidget)
 
-    @patch("mrmustard.physics.representations.bargmann.display")
+    @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
     def test_ipython_repr_batched(self, mock_display):
         """Test the IPython repr function for a batched repr."""
         A1, b1, c1 = Abc_triple(2)
         A2, b2, c2 = Abc_triple(2)
-        rep = Bargmann(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
+        rep = PolyExpAnsatz(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
         rep._ipython_display_()  # pylint:disable=protected-access
         [vbox] = mock_display.call_args.args
         assert isinstance(vbox, VBox)
@@ -321,7 +325,7 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
-        res1 = Bargmann(*triple1) @ Bargmann(*triple2)
+        res1 = PolyExpAnsatz(*triple1) @ PolyExpAnsatz(*triple2)
         exp1 = contract_two_Abc(triple1, triple2, [], [])
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
@@ -332,8 +336,8 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = Bargmann(*triple1)
-        bargmann2 = Bargmann(*triple2)
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_mul = bargmann1 * bargmann2
 
         assert np.allclose(bargmann_mul.A, bargmann1.A + bargmann2.A)
@@ -343,7 +347,7 @@ class TestBargmannRepresentation:
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_mul_with_scalar(self, scalar, triple):
-        bargmann1 = Bargmann(*triple)
+        bargmann1 = PolyExpAnsatz(*triple)
         bargmann_mul = bargmann1 * scalar
 
         assert np.allclose(bargmann1.A, bargmann_mul.A)
@@ -351,7 +355,7 @@ class TestBargmannRepresentation:
         assert np.allclose(bargmann1.c * scalar, bargmann_mul.c)
 
     def test_order_batch(self):
-        ansatz = Bargmann(
+        ansatz = PolyExpAnsatz(
             A=[np.array([[0]]), np.array([[1]])],
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
@@ -368,7 +372,7 @@ class TestBargmannRepresentation:
     def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         poly_dim, poly_shape = ansatz.polynomial_shape
         assert np.allclose(poly_dim, 1)
@@ -376,11 +380,11 @@ class TestBargmannRepresentation:
 
         A1, b1, _ = Abc_triple(4)
         c1 = np.array([[1, 2, 3]])
-        ansatz1 = Bargmann(A1, b1, c1)
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
 
         A2, b2, _ = Abc_triple(4)
         c2 = np.array([[1, 2, 3]])
-        ansatz2 = Bargmann(A2, b2, c2)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
 
         ansatz3 = ansatz1 * ansatz2
 
@@ -390,7 +394,7 @@ class TestBargmannRepresentation:
 
     def test_reorder(self):
         triple = Abc_triple(3)
-        bargmann = Bargmann(*triple).reorder((0, 2, 1))
+        bargmann = PolyExpAnsatz(*triple).reorder((0, 2, 1))
 
         assert np.allclose(bargmann.A[0], triple[0][[0, 2, 1], :][:, [0, 2, 1]])
         assert np.allclose(bargmann.b[0], triple[1][[0, 2, 1]])
@@ -398,7 +402,7 @@ class TestBargmannRepresentation:
     def test_simplify(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         ansatz = ansatz + ansatz
 
@@ -415,7 +419,7 @@ class TestBargmannRepresentation:
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)
 
-        ansatz = Bargmann(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         ansatz = ansatz + ansatz
 
@@ -441,8 +445,8 @@ class TestBargmannRepresentation:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = Bargmann(*triple1)
-        bargmann2 = Bargmann(*triple2)
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_add = bargmann1 - bargmann2
 
         assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
@@ -451,7 +455,7 @@ class TestBargmannRepresentation:
 
     def test_trace(self):
         triple = Abc_triple(4)
-        bargmann = Bargmann(*triple).trace([0], [2])
+        bargmann = PolyExpAnsatz(*triple).trace([0], [2])
         A, b, c = complex_gaussian_integral(triple, [0], [2])
 
         assert np.allclose(bargmann.A, A)

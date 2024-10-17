@@ -80,7 +80,7 @@ class Wires:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev.wires import Wires
+        >>> from mrmustard.physics.wires import Wires
 
         >>> modes_out_bra={0, 1}
         >>> modes_in_bra={1, 2}
@@ -308,6 +308,23 @@ class Wires:
             for t, lst in enumerate(self.sorted_args)
         ]
 
+    @property
+    def ids_index_dicts(self) -> list[dict[int, int]]:
+        r"""
+        A list of dictionary mapping ids to indices, one for each of the subsets
+        (``output.bra``, ``input.bra``, ``output.ket``, ``input.ket``,
+        ``output.classical``, and ``input.classical``).
+
+        If subsets are taken, ``ids_index_dicts`` refers to the parent object rather than to the
+        child.
+        """
+        if self.original:
+            return self.original.ids_index_dicts
+        return [
+            {v: self.index_dicts[t][k] for k, v in self.ids_dicts[t].items()}
+            for t in (0, 1, 2, 3, 4, 5)
+        ]
+
     @cached_property
     def indices(self) -> tuple[int, ...]:
         r"""
@@ -470,9 +487,9 @@ class Wires:
 
         .. code-block::
 
-            repr = repr1[idx1] @ repr2[idx2]  # not in standard order
+            ansatz = ansatz1[idx1] @ ansatz2[idx2]  # not in standard order
             wires, perm = wires1 @ wires2  # matmul the wires of each component
-            repr = repr.reorder(perm)  # now in standard order
+            ansatz = ansatz.reorder(perm)  # now in standard order
 
         Args:
             other: The wires of the other circuit component.

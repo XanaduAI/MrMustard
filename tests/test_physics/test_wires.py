@@ -21,7 +21,7 @@ from unittest.mock import patch
 from ipywidgets import HTML
 import pytest
 
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 
 
 class TestWires:
@@ -213,7 +213,7 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
 
-    @patch("mrmustard.lab_dev.wires.display")
+    @patch("mrmustard.physics.wires.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
         wires = Wires({0}, {}, {3}, {3, 4})

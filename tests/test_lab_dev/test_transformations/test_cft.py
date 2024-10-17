@@ -40,11 +40,11 @@ class TestCFT:
 
         state = Ket.random([0]) >> Dgate([0], x=1.0, y=0.1)
 
-        dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
+        dm = math.sum(state.to_fock(100).dm().ansatz.array, axes=[0])
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).representation
+        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).ansatz
         X, Y = np.meshgrid(
             vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
         )  # scaling to take care of HBAR

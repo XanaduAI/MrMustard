@@ -39,5 +39,5 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest --doctest-modules mrmustard/math/parameter_set.py
-          python -m pytest --doctest-modules mrmustard/physics/representations
+          python -m pytest --doctest-modules mrmustard/physics/ansatz
           python -m pytest --doctest-modules mrmustard/lab_dev

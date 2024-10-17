@@ -19,7 +19,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics import triples
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
 # pylint: disable = missing-function-docstring
@@ -333,6 +333,6 @@ class TestTriples:
 
     @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])
     def test_attenuator_kraus_Abc(self, eta):
-        B = Bargmann(*triples.attenuator_kraus_Abc(eta))
-        Att = Bargmann(*triples.attenuator_Abc(eta))
+        B = PolyExpAnsatz(*triples.attenuator_kraus_Abc(eta))
+        Att = PolyExpAnsatz(*triples.attenuator_Abc(eta))
         assert B[2] @ B[2] == Att

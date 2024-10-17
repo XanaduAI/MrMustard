@@ -24,7 +24,8 @@ from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
 
 from .base import Unitary
-from ...physics.representations import Bargmann
+from ...physics.representations import Representation
+from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
 
@@ -90,17 +91,20 @@ class Dgate(Unitary):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
-        super().__init__(modes_out=modes, modes_in=modes, name="Dgate")
+        super().__init__(name="Dgate")
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
+        self._representation = self.from_modes(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+            ),
+        ).representation
 
-        self._representation = Bargmann.from_function(
-            fn=triples.displacement_gate_Abc, x=self.x, y=self.y
-        )
-
-    def fock(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
-        r""", shape: Optional[int | Sequence[int]] = None, batched=False) -> CircuitComponent:
+    def fock_array(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
+        r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
@@ -113,7 +117,7 @@ class Dgate(Unitary):
             array: The Fock representation of this component.
         """
         if isinstance(shape, int):
-            shape = (shape,) * self.representation.num_vars
+            shape = (shape,) * self.ansatz.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
         if len(shape) != len(auto_shape):
@@ -142,3 +146,10 @@ class Dgate(Unitary):
             array = fock_utils.displacement(x[0], y[0], shape=shape)
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
+
+    def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
+        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock._original_abc_data = self.ansatz.triple
+        ret = self._getitem_builtin(self.modes)
+        ret._representation = Representation(fock, self.wires)
+        return ret

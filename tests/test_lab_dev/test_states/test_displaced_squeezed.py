@@ -63,10 +63,10 @@ class TestDisplacedSqueezed:
 
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_representation(self, modes, x, y, r, phi):
-        rep = DisplacedSqueezed(modes, x, y, r, phi).representation
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).representation
+        rep = DisplacedSqueezed(modes, x, y, r, phi).ansatz
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).ansatz
         assert rep == exp
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            DisplacedSqueezed(modes=[0], x=[0.1, 0.2]).representation
+            DisplacedSqueezed(modes=[0], x=[0.1, 0.2]).ansatz

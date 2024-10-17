@@ -23,7 +23,8 @@ from mrmustard.physics import triples
 from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
 
 __all__ = ["BtoQ"]
 
@@ -44,13 +45,14 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float = 0.0,
     ):
-        repr = Bargmann.from_function(
-            fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
-        )
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="BtoQ")
+        self._representation = self.from_modes(
             modes_in=modes,
-            representation=repr,
-            name="BtoQ",
-        )
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
+            ),
+        ).representation
         self._add_parameter(Constant(phi, "phi"))
+        for i in self.wires.output.indices:
+            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value), tuple())
