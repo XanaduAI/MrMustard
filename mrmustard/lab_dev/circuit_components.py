@@ -111,22 +111,7 @@ class CircuitComponent:
                 )
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
-
-    @property
-    def _index_representation(self):
-        r"""
-        A hidden property that keeps track of representations for each index. If it does not exist already,
-        we initialize to Bargmann (B) on all indices.
-        """
-        if not hasattr(self, "_index_representation_"):
-            self._index_representation_ = {i: ("B", None) for i in self.wires.indices}
-        return self._index_representation_
-
-    @_index_representation.setter
-    def _index_representation(self, value):
-
-        # add some validation
-        self._index_representation_ = value
+        self._index_representation = {i: ("B", None) for i in self.wires.indices}
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -458,6 +443,7 @@ class CircuitComponent:
                 ret._name = name
                 ret._representation = representation
                 ret._wires = wires
+                ret._index_representation = {i: ("B", None) for i in wires.indices}
                 return ret
         return CircuitComponent(representation, wires, name)
 
