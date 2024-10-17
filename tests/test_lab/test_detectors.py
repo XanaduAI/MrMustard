@@ -40,7 +40,6 @@ from tests.random import none_or_
 
 from ..conftest import skip_np
 
-
 hbar = settings.HBAR
 
 

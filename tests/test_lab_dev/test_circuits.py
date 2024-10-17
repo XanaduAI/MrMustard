@@ -18,18 +18,13 @@
 
 import pytest
 
+import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
+from mrmustard import settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
-from mrmustard.lab_dev.transformations import (
-    BSgate,
-    Sgate,
-    Dgate,
-    Attenuator,
-)
-from mrmustard import settings
+from mrmustard.lab_dev.states import Coherent, Number, SqueezedVacuum, Vacuum
+from mrmustard.lab_dev.transformations import Attenuator, BSgate, Dgate, Sgate
 from mrmustard.utils.serialize import load
-import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
 
 
 class TestCircuit:

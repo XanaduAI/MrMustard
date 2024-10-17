@@ -25,8 +25,8 @@ from mrmustard.math.parameters import (
     Variable,
     update_euclidean,
     update_orthogonal,
-    update_unitary,
     update_symplectic,
+    update_unitary,
 )
 
 

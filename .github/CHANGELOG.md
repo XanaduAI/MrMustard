@@ -9,6 +9,9 @@
 * Added the `serialize` module to save MrMustard objects to file.
   [(#451)](https://github.com/XanaduAI/MrMustard/pull/451)
 
+* Added `isort` to run before black upon `make format` to sort Python imports.
+  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
+
 ### Breaking changes
 
 ### Improvements
@@ -28,6 +31,9 @@
 * Loosen the upper-bound on `thewalrus` and upgrade it.
   [(#454)](https://github.com/XanaduAI/MrMustard/pull/454)
 
+* Update referenced TensorFlow version to `v2.17.0`
+  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
@@ -40,6 +46,9 @@
 * Fix object visualizations in VS Code Notebooks by using the built-in display tools.
   [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
 
+* Fixes the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
+  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
+
 ### Documentation
 
 ### Tests
@@ -51,6 +60,7 @@
 [Austin Lund](https://github.com/aplund)
 [Kasper Nielsen](https://github.com/kaspernielsen96)
 [Matthew Silverman](https://github.com/timmysilv)
+[Ali Asadi](https://github.com/maliasadi)
 
 
 ---

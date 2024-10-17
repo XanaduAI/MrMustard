@@ -18,8 +18,8 @@
 
 from unittest.mock import patch
 
-from ipywidgets import HTML
 import pytest
+from ipywidgets import HTML
 
 from mrmustard.lab_dev.wires import Wires
 

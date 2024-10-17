@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
-from mrmustard.lab_dev.states import Vacuum, TwoModeSqueezedVacuum
 
 
 class TestS2gate:

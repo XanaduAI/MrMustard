@@ -14,8 +14,9 @@
 
 """tests for the Sauron state class"""
 
-from mrmustard.lab_dev.states import Sauron, Number
 import numpy as np
+
+from mrmustard.lab_dev.states import Number, Sauron
 
 
 class TestSauron:
