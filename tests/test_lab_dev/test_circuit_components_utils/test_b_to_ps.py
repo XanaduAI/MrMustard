@@ -22,7 +22,8 @@ import pytest
 from mrmustard import math
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import contract_two_Abc
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+
 from mrmustard.lab_dev import DM, BtoPS, Identity, Ket
 
 
@@ -89,15 +90,15 @@ class TestBtoPS:
         state_means = np.array([0.4, 0.6])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0], triple=(A, b, c))
-        state_bargmann_triple = (A, b, c)
+        state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple()
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
-        A2, b2, c2 = contract_two_Abc(
+        A2, b2, c2 = complex_gaussian_integral_2(
             state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1], idx2=[1, 3]
         )
 
@@ -117,15 +118,15 @@ class TestBtoPS:
         state_means = np.array([0.28284271, 0.0, 0.42426407, 0.0])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
-        state_bargmann_triple = (A, b, c)
+        state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
         state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
-        A1, b1, c1 = state_after.bargmann_triple()
+        A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
-        A2, b2, c2 = contract_two_Abc(
+        A2, b2, c2 = complex_gaussian_integral_2(
             state_bargmann_triple,
             Ds_bargmann_triple,
             idx1=[0, 1, 2, 3],

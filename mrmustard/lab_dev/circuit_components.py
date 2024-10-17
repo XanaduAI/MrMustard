@@ -821,9 +821,9 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self @ other
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
+            ret = (self.adjoint @ self) @ other
         elif other_needs_bra or other_needs_ket:
-            ret = (self @ other) @ other.adjoint
+            ret = self @ (other @ other.adjoint)
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
