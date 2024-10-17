@@ -207,7 +207,7 @@ class Ket(State):
         S = math.conj(math.transpose(transformation)) @ S @ transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
-        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()

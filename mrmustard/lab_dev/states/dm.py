@@ -262,7 +262,7 @@ class DM(State):
         S = math.conj(math.transpose(transformation)) @ S @ transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
-        A = S_2 @ math.conj(math.inv(S_1))
+        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
         A, b, c = complex_gaussian_integral_2(
             (math.conj(A), math.conj(b), complex(1)),
