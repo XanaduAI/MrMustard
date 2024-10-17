@@ -76,9 +76,7 @@ class DM(State):
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
 
-        if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
-        ):  # checks if gamma_A is Hermitian
+        if not math.allclose(gamma_A, math.conj(gamma_A.T), atol=settings.ATOL):  # checks if gamma_A is Hermitian
             return False
 
         return all(math.real(math.eigvals(gamma_A)) >= 0)
