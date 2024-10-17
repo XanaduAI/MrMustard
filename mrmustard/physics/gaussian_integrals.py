@@ -380,10 +380,10 @@ def complex_gaussian_integral_1(
     det_M = math.det(M)
     if np.all(math.abs(det_M) > 1e-12):
         inv_M = math.inv(M)
-        c_post = (
-            c
-            * math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
-            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1]))
+        c_post = c * math.reshape(
+            math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
+            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1])),
+            c.shape[:1] + (1,) * (len(c.shape) - 1),
         )
         A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
         b_post = bR - math.einsum("bij,bj->bi", D, math.solve(M, bM))

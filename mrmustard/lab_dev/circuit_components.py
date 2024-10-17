@@ -488,11 +488,13 @@ class CircuitComponent:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             if self.representation.ansatz.polynomial_shape[0] == 0:
-                arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+                arrays = [
+                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
+                ]
             else:
                 arrays = [
                     math.sum(
-                        math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
+                        math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
                         axes=math.arange(
                             num_vars, num_vars + len(c.shape), dtype=math.int32
                         ).tolist(),
@@ -821,9 +823,9 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self @ other
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
+            ret = (self.adjoint @ self) @ other
         elif other_needs_bra or other_needs_ket:
-            ret = (self @ other) @ other.adjoint
+            ret = self @ (other @ other.adjoint)
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."

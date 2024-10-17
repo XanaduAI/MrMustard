@@ -484,10 +484,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
-            conj_results = (self.conj(dLdA), self.conj(dLdB), self.conj(dLdC))
-            # If `shape` is a scalar, the `custom_gradient` function will expect
-            # to return 4 gradients instead of 3, including `None` for `shape`.
-            return conj_results + (None,) if len(shape) == 1 else conj_results
+            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 

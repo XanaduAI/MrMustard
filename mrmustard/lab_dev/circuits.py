@@ -300,7 +300,7 @@ class Circuit:
 
     def __eq__(self, other: Circuit) -> bool:
         if not isinstance(other, Circuit):
-            return false
+            return False
         return self.components == other.components
 
     def __getitem__(self, idx: int) -> CircuitComponent:

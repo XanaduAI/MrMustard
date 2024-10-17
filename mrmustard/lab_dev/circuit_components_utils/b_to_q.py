@@ -15,7 +15,7 @@
 """
 The class representing an operation that changes Bargmann into quadrature.
 """
-
+# pylint: disable=protected-access
 from __future__ import annotations
 from typing import Sequence
 
@@ -54,3 +54,38 @@ class BtoQ(Operation):
             name="BtoQ",
         )
         self._add_parameter(Constant(phi, "phi"))
+        self.phi = phi
+
+    @property
+    def adjoint(self) -> BtoQ:
+        bras = self.wires.bra.indices
+        kets = self.wires.ket.indices
+        rep = self.representation.reorder(kets + bras).conj()
+
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = rep
+        ret._wires = self.wires.adjoint
+        ret._name = self.name + "_adj"
+        return ret
+
+    @property
+    def dual(self) -> BtoQ:
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        rep = self.representation.reorder(ib + ob + ik + ok).conj()
+
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = rep
+        ret._wires = self.wires.dual
+        ret._name = self.name + "_dual"
+        return ret
+
+    def inverse(self) -> BtoQ:
+        inv = super().inverse()
+        ret = BtoQ(self.modes, self.phi)
+        ret._representation = inv.representation
+        ret._wires = inv.wires
+        ret._name = inv.name
+        return ret
