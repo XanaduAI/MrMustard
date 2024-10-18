@@ -19,13 +19,18 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev.transformations.grn import GRN
+from mrmustard.lab_dev.transformations import GRN
 
 
 class TestGRN:
     r"""
     Tests for the ``Attenuator`` class.
     """
+
+    def test_init(self):
+        "Tests the GRN initialization."
+        grn = GRN([0])
+
     def test_grn(self):
         a = np.random.random((4,4))
         Y = a @ a.T
