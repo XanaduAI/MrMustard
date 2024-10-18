@@ -42,6 +42,12 @@ class GRN(Channel):
         Y_train: bool = False,
     ):
 
+        if Y.shape[-1] // 2 != len(modes):
+            raise ValueError(
+                f"The number of modes does not match the dimension of the "
+                f"Y matrix: {Y.shape[-1] // 2} =/= {len(modes)}."
+            )
+
         super().__init__(modes_out=modes, modes_in=modes, name="GRN")
         self._add_parameter(make_parameter(Y_train, value=Y, name="Y", bounds=(None, None)))
 

@@ -19,6 +19,7 @@
 import numpy as np
 
 from mrmustard import math
+from mrmustard.lab_dev.states import DM
 from mrmustard.lab_dev.transformations import GRN
 
 
@@ -33,7 +34,7 @@ class TestGRN:
         a = np.random.random((2, 2))
         grn = GRN([0], a @ a.T)
         assert grn.name == "GRN"
-        assert grn.modes == [0, 1]
+        assert grn.modes == [0]
 
     def test_grn(self):
         "Tests if the A matrix of GRN is computed correctly."
@@ -45,3 +46,4 @@ class TestGRN:
 
         assert math.allclose(Y_ans, Y)
         assert phi.is_physical
+        assert math.allclose((DM.random([0, 1]) >> phi).probability, 1.0)
