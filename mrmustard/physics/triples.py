@@ -616,7 +616,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
         The ``(A, b, c)`` triple of the Gaussian random noise channel.
     """
     m = Y.shape[-1] // 2
-    xi = math.eye(2 * m) + Y / settings.HBAR
+    xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
     xi_inv = math.inv(xi)
     temp = math.block([[math.eye(2 * m) - xi_inv, xi_inv], [xi_inv, math.eye(2 * m) - xi_inv]])
     R = (
@@ -624,10 +624,10 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
         / np.sqrt(2)
         * math.block(
             [
-                [math.eye(m), 1j * math.eye(m), math.zeros((m, 2 * m))],
-                [math.zeros((m, 2 * m)), math.eye(m), -1j * math.eye(m)],
-                [math.eye(m), -1j * math.eye(m), math.zeros((m, 2 * m))],
-                [math.zeros((m, 2 * m)), math.eye(m), 1j * math.eye(m)],
+                [math.eye(m, dtype = math.complex128), 1j * math.eye(m, dtype = math.complex128), math.zeros((m, 2 * m), dtype = math.complex128)],
+                [math.zeros((m, 2 * m), dtype = math.complex128), math.eye(m, dtype = math.complex128), -1j * math.eye(m, dtype = math.complex128)],
+                [math.eye(m, dtype = math.complex128), -1j * math.eye(m, dtype = math.complex128), math.zeros((m, 2 * m), dtype = math.complex128)],
+                [math.zeros((m, 2 * m), dtype = math.complex128), math.eye(m, dtype = math.complex128), 1j * math.eye(m, dtype = math.complex128)],
             ]
         )
     )
