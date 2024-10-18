@@ -627,7 +627,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
     )
 
     A = math.Xmat(2 * m) @ R @ temp @ math.conj(R).T
-    b = math.zeros(2 * m)
+    b = math.zeros(4 * m)
     c = 1 / math.sqrt(math.det(xi))
 
     return A, b, c

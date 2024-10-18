@@ -29,13 +29,19 @@ class TestGRN:
 
     def test_init(self):
         "Tests the GRN initialization."
-        grn = GRN([0])
+
+        a = np.random.random((2, 2))
+        grn = GRN([0], a @ a.T)
+        assert grn.name == "GRN"
+        assert grn.modes == [0, 1]
 
     def test_grn(self):
-        a = np.random.random((4,4))
+        "Tests if the A matrix of GRN is computed correctly."
+        a = np.random.random((4, 4))
         Y = a @ a.T
-        phi = GRN([0,1], Y)
+        phi = GRN([0, 1], Y)
 
         _, Y_ans = phi.XY
 
         assert math.allclose(Y_ans, Y)
+        assert phi.is_physical
