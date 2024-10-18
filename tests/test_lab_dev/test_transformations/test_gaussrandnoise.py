@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the ``GRN`` class."""
+"""Tests for the ``GaussRandNoise`` class."""
 
 # pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
 
@@ -20,27 +20,27 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab_dev.states import DM
-from mrmustard.lab_dev.transformations import GRN
+from mrmustard.lab_dev.transformations import GaussRandNoise
 
 
 class TestGRN:
     r"""
-    Tests for the ``Attenuator`` class.
+    Tests for the ``GaussRandNoise`` class.
     """
 
     def test_init(self):
-        "Tests the GRN initialization."
+        "Tests the GaussRandNoise initialization."
 
         a = np.random.random((2, 2))
-        grn = GRN([0], a @ a.T)
+        grn = GaussRandNoise([0], a @ a.T)
         assert grn.name == "GRN"
         assert grn.modes == [0]
 
     def test_grn(self):
-        "Tests if the A matrix of GRN is computed correctly."
+        "Tests if the A matrix of GaussRandNoise is computed correctly."
         a = np.random.random((4, 4))
         Y = a @ a.T
-        phi = GRN([0, 1], Y)
+        phi = GaussRandNoise([0, 1], Y)
 
         _, Y_ans = phi.XY
 

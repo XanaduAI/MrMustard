@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-The class representing a noisy attenuator channel.
+The class representing a Gaussian random noise channel.
 """
 
 from __future__ import annotations
@@ -25,14 +25,13 @@ from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter
 
-__all__ = ["GRN"]
+__all__ = ["GaussRandNoise"]
 
 
-class GRN(Channel):
+class GaussRandNoise(Channel):
     r"""
     The Gaussian random noise channel.
 
-    Y_train determines whether or not the Y matrix is trainable.
     The number of modes must match half of the size of the Y matrix.
     .. code-block ::
 
@@ -51,6 +50,10 @@ class GRN(Channel):
     ..details::
         The Bargmann representation of the channel is computed via the formulas provided in the paper:
         https://arxiv.org/pdf/2209.06069
+
+        The channel maps an inout covariance matrix ``cov`` as
+        ..math::
+                cov \mapsto cov + Y.
     """
 
     short_name = "GRN"
@@ -59,17 +62,17 @@ class GRN(Channel):
         self,
         modes: Sequence[int],
         Y: RealMatrix,
-        Y_train: bool = False,
+        Y_trainable: bool = False,
     ):
 
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
-                f"The number of modes does not match the dimension of the "
-                f"Y matrix: {Y.shape[-1] // 2} =/= {len(modes)}."
+                f"The number of modes {len(modes)} does not match the dimension of the "
+                f"Y matrix {Y.shape[-1] // 2}."
             )
 
         super().__init__(modes_out=modes, modes_in=modes, name="GRN")
-        self._add_parameter(make_parameter(Y_train, value=Y, name="Y", bounds=(None, None)))
+        self._add_parameter(make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)))
 
         self._representation = Bargmann.from_function(
             fn=triples.gaussian_random_noise_Abc, Y=self.Y.value

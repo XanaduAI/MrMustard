@@ -24,7 +24,7 @@ from .cft import *
 from .dgate import *
 from .fockdamping import *
 from .ggate import *
-from .grn import *
+from .gaussrandnoise import *
 from .identity import *
 from .rgate import *
 from .s2gate import *
