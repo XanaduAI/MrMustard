@@ -36,7 +36,7 @@ class GaussRandNoise(Channel):
     .. code-block ::
 
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import GRN
+        >>> from mrmustard.lab_dev import GaussRandNoise
 
         >>> channel = GRN(modes=[1, 2], Y = .2 * np.eye(4))
         >>> assert channel.modes == [1, 2]
