@@ -342,7 +342,7 @@ class TestTriples:
         A, b, c = triples.gaussian_random_noise_Abc(np.eye(2))
         A_by_hand = np.array(
             [
-                [0.0, 0.5, 0.5 , 0.0],
+                [0.0, 0.5, 0.5, 0.0],
                 [0.5, 0.0, 0.0, 0.5],
                 [0.5, 0.0, 0.0, 0.5],
                 [0.0, 0.5, 0.5, 0.0],
