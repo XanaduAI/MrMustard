@@ -38,7 +38,7 @@ class GaussRandNoise(Channel):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import GaussRandNoise
 
-        >>> channel = GRN(modes=[1, 2], Y = .2 * np.eye(4))
+        >>> channel = GaussRandNoise(modes=[1, 2], Y = .2 * np.eye(4))
         >>> assert channel.modes == [1, 2]
         >>> assert np.allclose(channel.Y.value, .2 * np.eye(4))
 
