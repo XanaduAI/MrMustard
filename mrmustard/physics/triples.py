@@ -624,10 +624,26 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
         / math.sqrt(complex(2))
         * math.block(
             [
-                [math.eye(m, dtype = math.complex128), 1j * math.eye(m, dtype = math.complex128), math.zeros((m, 2 * m), dtype = math.complex128)],
-                [math.zeros((m, 2 * m), dtype = math.complex128), math.eye(m, dtype = math.complex128), -1j * math.eye(m, dtype = math.complex128)],
-                [math.eye(m, dtype = math.complex128), -1j * math.eye(m, dtype = math.complex128), math.zeros((m, 2 * m), dtype = math.complex128)],
-                [math.zeros((m, 2 * m), dtype = math.complex128), math.eye(m, dtype = math.complex128), 1j * math.eye(m, dtype = math.complex128)],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
             ]
         )
     )
