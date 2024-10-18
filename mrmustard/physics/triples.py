@@ -607,7 +607,13 @@ def fock_damping_Abc(
 
 def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
     r"""
-    The (A, b, c) for the gaussian random noise channel.
+    The triple (A, b, c) for the gaussian random noise channel.
+
+    Args:
+        Y: the Y matrix of the Gaussian random noise channel.
+
+    Returns:
+        The ``(A, b, c)`` triple of the Gaussian random noise channel.
     """
     m = Y.shape[-1] // 2
     xi = math.eye(2 * m) + Y / settings.HBAR
