@@ -20,11 +20,12 @@ from .amplifier import *
 from .attenuator import *
 from .base import *
 from .bsgate import *
+from .cft import *
 from .dgate import *
 from .fockdamping import *
 from .ggate import *
+from .gaussrandnoise import *
 from .identity import *
 from .rgate import *
 from .s2gate import *
 from .sgate import *
-from .cft import *

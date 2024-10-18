@@ -22,7 +22,7 @@ from typing import Generator, Iterable, Union
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar
+from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 
 
@@ -601,6 +601,58 @@ def fock_damping_Abc(
     A = math.block([[O_n, B_n], [B_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
     c = 1.0 + 0j
+
+    return A, b, c
+
+
+def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The triple (A, b, c) for the gaussian random noise channel.
+
+    Args:
+        Y: the Y matrix of the Gaussian random noise channel.
+
+    Returns:
+        The ``(A, b, c)`` triple of the Gaussian random noise channel.
+    """
+    m = Y.shape[-1] // 2
+    xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
+    xi_inv = math.inv(xi)
+    xi_inv_in_blocks = math.block(
+        [[math.eye(2 * m) - xi_inv, xi_inv], [xi_inv, math.eye(2 * m) - xi_inv]]
+    )
+    R = (
+        1
+        / math.sqrt(complex(2))
+        * math.block(
+            [
+                [
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
+            ]
+        )
+    )
+
+    A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
+    b = math.zeros(4 * m)
+    c = 1 / math.sqrt(math.det(xi))
 
     return A, b, c
 
