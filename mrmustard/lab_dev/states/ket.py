@@ -178,28 +178,6 @@ class Ket(State):
             ** 2
         )
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the State.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        quad = math.astensor(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
-
-        return math.abs(self.quadrature(quad, phi)) ** 2
-
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
         r"""
@@ -222,6 +200,28 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
+
+    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the State.
+
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            The quadrature distribution.
+        """
+        quad = math.astensor(quad)
+        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
+            raise ValueError(
+                "The dimensionality of quad should be 1, or match the number of modes."
+            )
+
+        if len(quad.shape) == 1:
+            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
+
+        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True

@@ -199,6 +199,43 @@ class DM(State):
         Q = DM(modes, Bargmann(*triple))
         return DM(modes, (Q >> QtoB).representation, name)
 
+    @classmethod
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
+        r"""
+        Samples a random density matrix. The final state has zero displacement.
+
+        Args:
+        modes: the modes where the state is defined over
+        m: is the number modes to be considered for tracing out from a random pure state (Ket)
+        if not specified, m is considered to be len(modes)
+        """
+        if m is None:
+            m = len(modes)
+
+        max_idx = max(modes)
+
+        ancilla = list(range(max_idx + 1, max_idx + m + 1))
+        full_modes = list(modes) + ancilla
+
+        m = len(full_modes)
+        S = math.random_symplectic(m, max_r)
+        I = math.eye(m, dtype=math.complex128)
+        transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
+        S = math.conj(math.transpose(transformation)) @ S @ transformation
+        S_1 = S[:m, :m]
+        S_2 = S[:m, m:]
+        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
+        b = math.zeros(m, dtype=A.dtype)
+        A, b, c = complex_gaussian_integral_2(
+            (math.conj(A), math.conj(b), complex(1)),
+            (A, b, complex(1)),
+            range(len(modes)),
+            range(len(modes)),
+        )
+        rho = cls.from_bargmann(list(modes), (A, b, c))
+        rho = rho.normalize()
+        return rho
+
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
         Returns the Fock distribution of the state up to some cutoff.
@@ -236,43 +273,6 @@ class DM(State):
 
         quad = math.tile(quad, (1, 2))
         return self.quadrature(quad, phi)
-
-    @classmethod
-    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
-        r"""
-        Samples a random density matrix. The final state has zero displacement.
-
-        Args:
-        modes: the modes where the state is defined over
-        m: is the number modes to be considered for tracing out from a random pure state (Ket)
-        if not specified, m is considered to be len(modes)
-        """
-        if m is None:
-            m = len(modes)
-
-        max_idx = max(modes)
-
-        ancilla = list(range(max_idx + 1, max_idx + m + 1))
-        full_modes = list(modes) + ancilla
-
-        m = len(full_modes)
-        S = math.random_symplectic(m, max_r)
-        I = math.eye(m, dtype=math.complex128)
-        transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
-        S = math.conj(math.transpose(transformation)) @ S @ transformation
-        S_1 = S[:m, :m]
-        S_2 = S[:m, m:]
-        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
-        b = math.zeros(m, dtype=A.dtype)
-        A, b, c = complex_gaussian_integral_2(
-            (math.conj(A), math.conj(b), complex(1)),
-            (A, b, complex(1)),
-            range(len(modes)),
-            range(len(modes)),
-        )
-        rho = cls.from_bargmann(list(modes), (A, b, c))
-        rho = rho.normalize()
-        return rho
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
