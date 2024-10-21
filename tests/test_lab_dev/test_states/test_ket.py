@@ -7,6 +7,7 @@ from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
