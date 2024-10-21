@@ -10,6 +10,8 @@ from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.lab_dev.wires import Wires
 
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+
 
 def coherent_state_quad(q, x, y, phi=0):
     """From https://en.wikipedia.org/wiki/Coherent_state#The_wavefunction_of_a_coherent_state"""

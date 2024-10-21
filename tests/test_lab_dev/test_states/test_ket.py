@@ -13,8 +13,9 @@ from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum, DisplacedSqueezed
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
-
 from mrmustard.widgets import state as state_widget
+
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 
 def coherent_state_quad(q, x, y, phi=0):
