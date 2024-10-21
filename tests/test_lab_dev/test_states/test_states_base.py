@@ -39,6 +39,3 @@ from mrmustard.lab_dev.states import (
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.widgets import state as state_widget
-
-# original settings
-autocutoff_max0 = int(settings.AUTOCUTOFF_MAX_CUTOFF)

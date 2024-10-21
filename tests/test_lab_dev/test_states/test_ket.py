@@ -2,6 +2,9 @@ from itertools import product
 import numpy as np
 import pytest
 
+from ipywidgets import Box, HBox, VBox, HTML
+from plotly.graph_objs import FigureWidget
+
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
@@ -10,6 +13,8 @@ from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum, DisplacedSqueezed
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
+
+from mrmustard.widgets import state as state_widget
 
 
 def coherent_state_quad(q, x, y, phi=0):
@@ -298,8 +303,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(u0), res_u0[0])
         assert math.allclose(ket.expectation(u1), res_u1[0])
         assert math.allclose(ket.expectation(u01), res_u01[0])
-
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
 
     def test_expectation_error(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
