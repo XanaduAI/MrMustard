@@ -1,3 +1,21 @@
+# Copyright 2023 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests for the density matrix."""
+
+# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+
 from itertools import product
 import numpy as np
 import pytest
@@ -9,8 +27,6 @@ from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.lab_dev.wires import Wires
-
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 
 def coherent_state_quad(q, x, y, phi=0):
