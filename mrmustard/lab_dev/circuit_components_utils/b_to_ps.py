@@ -15,16 +15,17 @@
 """
 The class representing an operation that changes Bargmann into phase space.
 """
+# pylint: disable=protected-access
 
 from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
-from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.representations import RepEnum
+from ..utils import make_parameter
 
 __all__ = ["BtoPS"]
 
@@ -45,13 +46,21 @@ class BtoPS(Map):
         s: float,
     ):
         super().__init__(name="BtoPS")
+        self._add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_modes(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
+                fn=triples.displacement_map_s_parametrized_Abc, s=self.s, n_modes=len(modes)
             ),
         ).representation
-        self._add_parameter(Constant(s, "s"))
+        for i in self.wires.input.indices:
+            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None, tuple())
         for i in self.wires.output.indices:
             self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.s.value), tuple())
+
+    def inverse(self):
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = super().inverse().representation
+        ret._representation._wires = ret.representation.wires.dual
+        return ret

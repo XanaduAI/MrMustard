@@ -327,10 +327,10 @@ class Representation:
 
         idx_reps = {}
         for id in wires_result.ids:
-            if id in self.wires.ids:
-                temp_rep = self
-            else:
+            if id in other.wires.ids:
                 temp_rep = other
+            else:
+                temp_rep = self
             for t in (0, 1, 2, 3, 4, 5):
                 try:
                     idx = temp_rep.wires.ids_index_dicts[t][id]
