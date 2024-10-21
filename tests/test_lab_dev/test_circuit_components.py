@@ -26,8 +26,8 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import (
+from mrmustard.lab_dev import (
+    CircuitComponent,
     Ket,
     DM,
     Number,
@@ -35,9 +35,14 @@ from mrmustard.lab_dev.states import (
     DisplacedSqueezed,
     Coherent,
     SqueezedVacuum,
+    BSgate,
+    Dgate,
+    Attenuator,
+    Unitary,
+    Sgate,
+    Channel,
+    Wires,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
-from mrmustard.lab_dev.wires import Wires
 from ..random import Abc_triple
 
 
@@ -404,12 +409,6 @@ class TestCircuitComponent:
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0
 
-    def test_rshift_ketbra_with_ket(self):
-        a1 = Attenuator([1], transmissivity=0.8)
-        n1 = Number([1, 2], n=1).dual
-
-        assert a1 >> n1 == a1 @ n1 @ n1.adjoint
-
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -427,6 +426,37 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+    def test_rshift_ketbra_with_ket(self):
+        a1 = Attenuator([1], transmissivity=0.8)
+        n1 = Number([1, 2], n=1).dual
+
+        assert a1 >> n1 == a1 @ (n1 @ n1.adjoint)
+
+    def test_rshift_perm_order(self):
+        rng = np.random.default_rng(seed=2334255467567)
+        r = [rng.random(), -rng.random()]
+        theta = rng.random() * 2 * np.pi
+        pnr_cutoff = rng.integers(1, 25)
+        out_loss = rng.random()
+        pnr_loss = rng.random()
+
+        outcome = rng.integers(0, pnr_cutoff)
+
+        mm_state = (
+            SqueezedVacuum([0, 1], r)
+            >> BSgate([0, 1], theta)
+            >> Attenuator([0, 1], [1 - out_loss, 1 - pnr_loss])
+            >> Number([1], outcome).dual
+        )
+
+        mm_state_dm = (
+            SqueezedVacuum([0, 1], r)
+            >> BSgate([0, 1], theta)
+            >> Attenuator([0, 1], [1 - out_loss, 1 - pnr_loss])
+            >> Number([1], outcome).dm().dual
+        )
+        assert mm_state.representation == mm_state_dm.representation
 
     def test_rshift_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)

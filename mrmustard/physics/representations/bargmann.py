@@ -41,8 +41,8 @@ from mrmustard.utils.typing import (
 
 from mrmustard.physics.gaussian_integrals import (
     reorder_abc,
-    complex_gaussian_integral,
-    contract_two_Abc_poly,
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
 )
 
 from mrmustard import math, settings, widgets
@@ -401,13 +401,8 @@ class Bargmann(Representation):
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"A": self.A, "b": self.b, "c": self.c}
 
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Bargmann:
-        A, b, c = [], [], []
-        for Abc in zip(self.A, self.b, self.c):
-            Aij, bij, cij = complex_gaussian_integral(Abc, idxs1, idxs2, measure=-1.0)
-            A.append(Aij)
-            b.append(bij)
-            c.append(cij)
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return Bargmann(A, b, c)
 
     def _call_all(self, z: Batch[Vector]) -> Bargmann:
@@ -821,25 +816,45 @@ class Bargmann(Representation):
         return ret
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
+        r"""
+        Implements the inner product in Bargmann representation.
+
+        ..code-block::
+
+        >>> from mrmustard.physics.representations import Bargmann
+        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+        >>> rep1 = Bargmann(*vacuum_state_Abc(1))
+        >>> rep2 = Bargmann(*displacement_gate_Abc(1))
+        >>> rep3 = rep1[0] @ rep2[1]
+        >>> assert np.allclose(rep3.A, [[0,],])
+        >>> assert np.allclose(rep3.b, [1,])
+
+         Args:
+             other: Another Bargmann representation.
+
+         Returns:
+            Bargmann: the resulting Bargmann representation.
+
+        """
+        if not isinstance(other, Bargmann):
+            raise NotImplementedError("Only matmul Bargmann with Bargmann")
+
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        Abc = []
         if settings.UNSAFE_ZIP_BATCH:
             if self.batch_size != other.batch_size:
                 raise ValueError(
-                    f"Batch size of the two ansatze must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
                 )
-            for (A1, b1, c1), (A2, b2, c2) in zip(
-                zip(self.A, self.b, self.c), zip(other.A, other.b, other.c)
-            ):
-                Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="zip"
+            )
         else:
-            for A1, b1, c1 in zip(self.A, self.b, self.c):
-                for A2, b2, c2 in zip(other.A, other.b, other.c):
-                    Abc.append(contract_two_Abc_poly((A1, b1, c1), (A2, b2, c2), idx_s, idx_o))
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx_s, idx_o, mode="kron"
+            )
 
-        A, b, c = zip(*Abc)
         return Bargmann(A, b, c)
 
     def __mul__(self, other: Scalar | Bargmann) -> Bargmann:
