@@ -17,7 +17,7 @@ The class representing a Gaussian random noise channel.
 """
 
 from __future__ import annotations
-
+from mrmustard import math, settings
 from typing import Sequence
 from mrmustard.utils.typing import RealMatrix
 from .base import Channel
@@ -70,6 +70,9 @@ class GaussRandNoise(Channel):
                 f"The number of modes {len(modes)} does not match the dimension of the "
                 f"Y matrix {Y.shape[-1] // 2}."
             )
+        
+        if (math.eigvals(Y) >= -settings.ATOL).min() == 0:
+            raise ValueError(f"The input Y matrix has negative eigen-values.")
 
         super().__init__(modes_out=modes, modes_in=modes, name="GRN")
         self._add_parameter(make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)))
