@@ -84,7 +84,7 @@ class ArrayAnsatz(Ansatz):
     @property
     def conj(self):
         ret = ArrayAnsatz(math.conj(self.array), batched=True)
-        ret._contract_idxs = self._contract_idxs  # pylint: disable=protected-access
+        ret._contract_idxs = self._contract_idxs
         return ret
 
     @property

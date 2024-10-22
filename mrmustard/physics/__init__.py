@@ -23,7 +23,6 @@ optimization routine.
 from mrmustard.physics import fock_utils, gaussian
 
 
-# pylint: disable=protected-access
 def fidelity(A, B) -> float:
     r"""Calculates the fidelity between two quantum states.
 

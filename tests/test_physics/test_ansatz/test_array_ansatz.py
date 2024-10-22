@@ -224,7 +224,7 @@ class TestArrayAnsatz:
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
         rep = ArrayAnsatz(np.random.random(shape), batched=True)
-        rep._ipython_display_()  # pylint:disable=protected-access
+        rep._ipython_display_()
         [hbox] = mock_display.call_args.args
         assert isinstance(hbox, HBox)
 
@@ -247,12 +247,12 @@ class TestArrayAnsatz:
     def test_ipython_repr_expects_batch_1(self, mock_display):
         """Test the IPython repr function does nothing with real batch."""
         rep = ArrayAnsatz(np.random.random((2, 8)), batched=True)
-        rep._ipython_display_()  # pylint:disable=protected-access
+        rep._ipython_display_()
         mock_display.assert_not_called()
 
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
         """Test the IPython repr function does nothing with 4+ dims."""
         rep = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
-        rep._ipython_display_()  # pylint:disable=protected-access
+        rep._ipython_display_()
         mock_display.assert_not_called()

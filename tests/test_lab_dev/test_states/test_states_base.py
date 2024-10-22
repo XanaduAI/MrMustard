@@ -14,7 +14,7 @@
 
 """Tests for the base state subpackage."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
 import numpy as np
@@ -356,14 +356,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.name
-        )  # pylint: disable=protected-access
+        u_component = CircuitComponent._from_attributes(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
         ch_component = CircuitComponent._from_attributes(
             channel.representation,
             channel.name,
-        )  # pylint: disable=protected-access
+        )
 
         # gates
         assert isinstance(ket >> unitary, Ket)
@@ -529,7 +527,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.2, 0.3])
         state = DM.from_bargmann([0], wigner_to_bargmann_rho(state_cov, state_means))
-        state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0], s=0)
         A1, b1, c1 = state_after.bargmann_triple()
         (
             new_state_cov,
@@ -552,7 +550,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
         state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
 
-        state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0, 1], s=0)
         A1, b1, c1 = state_after.bargmann_triple()
         (
             new_state_cov1,
@@ -821,13 +819,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.name
-        )  # pylint: disable=protected-access
+        u_component = CircuitComponent._from_attributes(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent._from_attributes(
-            channel.representation, channel.name
-        )  # pylint: disable=protected-access
+        ch_component = CircuitComponent._from_attributes(channel.representation, channel.name)
 
         dm = ket >> channel
 

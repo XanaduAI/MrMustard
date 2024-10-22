@@ -281,7 +281,7 @@ class TestPolyExpAnsatz:
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
         rep = PolyExpAnsatz(*Abc_triple(2))
-        rep._ipython_display_()  # pylint:disable=protected-access
+        rep._ipython_display_()
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
         assert box.layout.max_width == "50%"
@@ -308,7 +308,7 @@ class TestPolyExpAnsatz:
         A1, b1, c1 = Abc_triple(2)
         A2, b2, c2 = Abc_triple(2)
         rep = PolyExpAnsatz(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
-        rep._ipython_display_()  # pylint:disable=protected-access
+        rep._ipython_display_()
         [vbox] = mock_display.call_args.args
         assert isinstance(vbox, VBox)
 
@@ -360,7 +360,7 @@ class TestPolyExpAnsatz:
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
         )
-        ansatz._order_batch()  # pylint: disable=protected-access
+        ansatz._order_batch()
 
         assert np.allclose(ansatz.A[0], np.array([[1]]))
         assert np.allclose(ansatz.b[0], np.array([0]))

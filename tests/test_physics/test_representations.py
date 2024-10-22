@@ -16,14 +16,11 @@
 
 # pylint: disable=missing-function-docstring
 
-from unittest.mock import patch
-
-from ipywidgets import HTML
 import pytest
 
 from mrmustard.physics.representations import Representation, RepEnum
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from ..random import Abc_triple
 

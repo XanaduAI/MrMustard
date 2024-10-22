@@ -78,32 +78,26 @@ class TestHomodyneSampler:
     def test_init(self):
         sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
         assert sampler.povms is None
-        assert sampler._phi == 0.5  # pylint: disable=protected-access
+        assert sampler._phi == 0.5
         assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
 
     def test_povm_error(self):
         sampler = HomodyneSampler()
         with pytest.raises(ValueError, match="no POVMs"):
-            sampler._get_povm(0, 0)  # pylint: disable=protected-access
+            sampler._get_povm(0, 0)
 
     def test_probabilties(self):
         sampler = HomodyneSampler()
 
         state = Coherent([0], x=[0.1])
 
-        exp_probs = (
-            state.quadrature_distribution(sampler.meas_outcomes)
-            * sampler._step  # pylint: disable=protected-access
-        )
+        exp_probs = state.quadrature_distribution(sampler.meas_outcomes) * sampler._step
         assert math.allclose(sampler.probabilities(state), exp_probs)
 
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
         exp_probs = (
-            state.quadrature_distribution(
-                sampler2.meas_outcomes, sampler2._phi  # pylint: disable=protected-access
-            )
-            * sampler2._step  # pylint: disable=protected-access
+            state.quadrature_distribution(sampler2.meas_outcomes, sampler2._phi) * sampler2._step
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 

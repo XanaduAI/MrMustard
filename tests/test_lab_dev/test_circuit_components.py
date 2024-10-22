@@ -14,7 +14,7 @@
 
 """Tests for circuit components."""
 
-# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
+# pylint: disable=fixme, missing-function-docstring, pointless-statement
 
 from unittest.mock import patch
 
@@ -522,7 +522,7 @@ class TestCircuitComponent:
         dgate = Dgate([1], x=0.1, y=0.1)
         if is_fock:
             dgate = dgate.to_fock()
-        dgate._ipython_display_()  # pylint:disable=protected-access
+        dgate._ipython_display_()
         [box] = mock_display.call_args.args
         assert isinstance(box, Box)
         [wires_widget, rep_widget] = box.children
@@ -533,7 +533,7 @@ class TestCircuitComponent:
     def test_ipython_repr_invalid_obj(self, mock_display):
         """Test the IPython repr function."""
         dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
-        dgate._ipython_display_()  # pylint:disable=protected-access
+        dgate._ipython_display_()
         [box] = mock_display.call_args.args
         assert isinstance(box, VBox)
         [title_widget, wires_widget] = box.children

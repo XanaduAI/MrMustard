@@ -207,7 +207,7 @@ class Wires:
         New ``Wires`` object with only bra wires.
         """
         ret = Wires(modes_out_bra=self.args[0], modes_in_bra=self.args[1])
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property
@@ -216,7 +216,7 @@ class Wires:
         New ``Wires`` object with only classical wires.
         """
         ret = Wires(classical_out=self.args[4], classical_in=self.args[5])
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property
@@ -230,7 +230,7 @@ class Wires:
             modes_out_ket=self.args[2],
             modes_in_ket=self.args[3],
         )
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property
@@ -348,7 +348,7 @@ class Wires:
         New ``Wires`` object without output wires.
         """
         ret = Wires(set(), self.args[1], set(), self.args[3], set(), self.args[5])
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property
@@ -357,7 +357,7 @@ class Wires:
         New ``Wires`` object with only ket wires.
         """
         ret = Wires(modes_out_ket=self.args[2], modes_in_ket=self.args[3])
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property
@@ -380,7 +380,7 @@ class Wires:
         New ``Wires`` object with only output wires.
         """
         ret = Wires(self.args[0], set(), self.args[2], set(), self.args[4], set())
-        ret._original = self.original or self  # pylint: disable=protected-access
+        ret._original = self.original or self
         return ret
 
     @cached_property

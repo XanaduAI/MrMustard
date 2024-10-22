@@ -14,7 +14,7 @@
 
 """Tests for the ``TwoModeSqueezedVacuum`` class."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import pytest
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access, inconsistent-return-statements
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
 
 """
 This module contains the base classes for the available quantum states.
@@ -967,9 +967,7 @@ class DM(State):
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         ansatz = self.ansatz.trace(idxz, idxz_conj)
 
-        return self.__class__._from_attributes(
-            Representation(ansatz, wires), self.name
-        )  # pylint: disable=protected-access
+        return self.__class__._from_attributes(Representation(ansatz, wires), self.name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

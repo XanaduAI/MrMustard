@@ -130,7 +130,6 @@ def bargmann(rep, batch_idx=None):
     )
     # Replace config to hide the Plotly mode bar
     # See: https://github.com/plotly/plotly.py/issues/1074#issuecomment-1471486307
-    # pylint:disable=protected-access
     eigvals_w._config = eigvals_w._config | {"displayModeBar": False}
     eigvals_w.add_shape(
         type="circle",

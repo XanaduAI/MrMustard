@@ -14,7 +14,7 @@
 
 """Tests for BtoPS."""
 
-# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
+# pylint: disable=fixme, missing-function-docstring, pointless-statement
 
 import numpy as np
 import pytest
@@ -90,7 +90,7 @@ class TestBtoPS:
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoPS(modes=[0], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0], s=0)
         A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction
@@ -118,7 +118,7 @@ class TestBtoPS:
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoPS(modes=[0, 1], s=0)  # pylint: disable=protected-access
+        state_after = state >> BtoPS(modes=[0, 1], s=0)
         A1, b1, c1 = state_after.bargmann_triple(batched=True)
 
         # get new triple by contraction

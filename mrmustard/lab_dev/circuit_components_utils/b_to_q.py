@@ -15,7 +15,6 @@
 """
 The class representing an operation that changes Bargmann into quadrature.
 """
-# pylint: disable=protected-access
 from __future__ import annotations
 from typing import Sequence
 
