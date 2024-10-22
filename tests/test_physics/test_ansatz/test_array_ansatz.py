@@ -198,7 +198,7 @@ class TestArrayAnsatz:
     def test_trace(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
         fock1 = ArrayAnsatz(array1, batched=True)
-        fock2 = fock1.trace(idxs1=[0, 3], idxs2=[1, 6])
+        fock2 = fock1.trace([0, 3], [1, 6])
         assert fock2.array.shape == (2, 1, 4, 1, 3)
         assert np.allclose(fock2.array, np.einsum("bccefghfj -> beghj", array1))
 
