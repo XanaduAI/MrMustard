@@ -118,13 +118,13 @@ class Ansatz(ABC):
         """
 
     @abstractmethod
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> Ansatz:
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Ansatz:
         r"""
         Implements the partial trace over the given index pairs.
 
         Args:
-            idxs1: The first part of the pairs of indices to trace over.
-            idxs2: The second part.
+            idx_z: The first part of the pairs of indices to trace over.
+            idx_zconj: The second part.
 
         Returns:
             The traced-over ansatz.

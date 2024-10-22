@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket

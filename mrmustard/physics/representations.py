@@ -246,11 +246,11 @@ class Representation:
                     )
                     for A, b, c in zip(As, bs, cs)
                 ]
-        except AttributeError:
+        except AttributeError as e:
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
+                ) from e
             arrays = self.ansatz.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array

@@ -22,7 +22,6 @@ from typing import Sequence
 
 import numpy as np
 
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .base import Ket

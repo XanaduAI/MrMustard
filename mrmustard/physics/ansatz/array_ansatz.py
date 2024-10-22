@@ -187,18 +187,18 @@ class ArrayAnsatz(Ansatz):
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
 
-    def trace(self, idxs1: tuple[int, ...], idxs2: tuple[int, ...]) -> ArrayAnsatz:
-        if len(idxs1) != len(idxs2) or not set(idxs1).isdisjoint(idxs2):
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> ArrayAnsatz:
+        if len(idx_z) != len(idx_zconj) or not set(idx_z).isdisjoint(idx_zconj):
             raise ValueError("The idxs must be of equal length and disjoint.")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idxs1 + idxs2]
-            + [i + 1 for i in idxs1]
-            + [i + 1 for i in idxs2]
+            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idx_z + idx_zconj]
+            + [i + 1 for i in idx_z]
+            + [i + 1 for i in idx_zconj]
         )
         new_array = math.transpose(self.array, order)
-        n = np.prod(new_array.shape[-len(idxs2) :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idxs1)] + (n, n))
+        n = np.prod(new_array.shape[-len(idx_zconj) :])
+        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz([trace] if trace.shape == () else trace, batched=True)
 
