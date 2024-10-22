@@ -914,7 +914,9 @@ class CircuitComponent:
                 i = result.wires.index_dicts[2][m]
                 result._index_representation[i] = self._index_representation[j][:2]
 
-        if ((isinstance(self, BtoQ) or isinstance(self, BtoPS) )and (isinstance(other, BtoQ) or isinstance(other,BtoPS))):
+        if (isinstance(self, BtoQ) or isinstance(self, BtoPS)) and (
+            isinstance(other, BtoQ) or isinstance(other, BtoPS)
+        ):
             for i in result.wires.indices:
                 result._index_representation[i] = result._index_representation[i] + (None,)
 
