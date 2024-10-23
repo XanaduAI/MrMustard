@@ -30,7 +30,6 @@ from mrmustard.lab_dev import (
     Unitary,
     Operation,
     Vacuum,
-    BtoQ,
 )
 from mrmustard.physics.wires import Wires
 

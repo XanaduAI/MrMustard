@@ -106,11 +106,11 @@ class TestRepresentation:
         d_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
         assert d_barg == d_gate_rep
-        assert all([k[0] == RepEnum.BARGMANN for k in d_barg._idx_reps.values()])
+        assert all((k[0] == RepEnum.BARGMANN for k in d_barg._idx_reps.values()))
 
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
-        assert all([k[0] == RepEnum.FOCK for k in d_fock._idx_reps.values()])
+        assert all((k[0] == RepEnum.FOCK for k in d_fock._idx_reps.values()))
