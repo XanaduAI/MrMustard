@@ -368,14 +368,16 @@ class State(CircuitComponent):
         Returns:
             The quadrature distribution.
         """
-        quad = math.astensor(quad)
+        quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
             raise ValueError(
                 "The dimensionality of quad should be 1, or match the number of modes."
             )
 
         if len(quad.shape) == 1:
-            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
+            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
+                -1, len(self.modes)
+            )
 
         if isinstance(self, Ket):
             return math.abs(self.quadrature(quad, phi)) ** 2
