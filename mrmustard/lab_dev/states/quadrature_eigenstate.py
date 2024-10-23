@@ -24,7 +24,7 @@ import numpy as np
 
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics import triples
-from .base import Ket
+from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["QuadratureEigenstate"]

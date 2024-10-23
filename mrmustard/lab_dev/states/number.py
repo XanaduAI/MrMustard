@@ -22,7 +22,7 @@ from typing import Sequence
 
 from mrmustard.physics.representations import Fock
 from mrmustard.physics.fock import fock_state
-from .base import Ket
+from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Number"]
