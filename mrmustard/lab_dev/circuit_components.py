@@ -25,6 +25,7 @@ from typing import Any, Sequence
 import numbers
 from functools import cached_property
 
+import copy
 import numpy as np
 from numpy.typing import ArrayLike
 import ipywidgets as widgets
@@ -45,6 +46,7 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.lab_dev.wires import Wires
 from mrmustard.physics.triples import identity_Abc
+
 
 __all__ = ["CircuitComponent"]
 
@@ -109,6 +111,7 @@ class CircuitComponent:
                 )
                 if self._representation:
                     self._representation = self._representation.reorder(tuple(perm))
+        self._index_representation = {i: ("B", None) for i in self.wires.indices}
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -168,6 +171,13 @@ class CircuitComponent:
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
+
+        # handling index representations:
+        for i, j in enumerate(kets):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(bras):
+            ret._index_representation[i + len(kets)] = self._index_representation[j]
+
         return ret
 
     @property
@@ -187,6 +197,16 @@ class CircuitComponent:
         ret.short_name = self.short_name
         for param in self.parameter_set.all_parameters.values():
             ret._add_parameter(param)
+
+        # handling index representations:
+        for i, j in enumerate(ib):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
         return ret
 
     @cached_property
@@ -423,6 +443,7 @@ class CircuitComponent:
                 ret._name = name
                 ret._representation = representation
                 ret._wires = wires
+                ret._index_representation = {i: ("B", None) for i in wires.indices}
                 return ret
         return CircuitComponent(representation, wires, name)
 
@@ -549,6 +570,8 @@ class CircuitComponent:
             modes_in_ket=set(modes) if ik else set(),
         )
 
+        ret._index_representation = copy.deepcopy(self._index_representation)
+
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
@@ -587,9 +610,10 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def to_bargmann(self) -> CircuitComponent:
+    def to_bargmann(self, indices: Sequence[int] | None = None) -> CircuitComponent:
         r"""
-        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation on the specified "indices."
+        If "indices" are not specified, all indices are transformed into bargmann.
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
@@ -604,9 +628,17 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.representation, Bargmann)
         """
-        if isinstance(self.representation, Bargmann):
-            return self
-        else:
+
+        ret = copy.deepcopy(self)
+        if isinstance(self.representation, Bargmann):  # TODO: better name for Bargmann class
+            # check cc rep
+            if not indices:
+                indices = self.wires.indices
+
+            ret = ret._apply_btoq_for_change_of_rep(indices)
+            ret = ret._apply_btops_for_change_of_rep(indices)
+
+        elif isinstance(self.representation, Fock):
             if self.representation.ansatz._original_abc_data:
                 A, b, c = self.representation.ansatz._original_abc_data
             else:
@@ -620,7 +652,7 @@ class CircuitComponent:
                 ret = self._from_attributes(bargmann, self.wires, self.name)
             if "manual_shape" in ret.__dict__:
                 del ret.manual_shape
-            return ret
+        return ret
 
     def _add_parameter(self, parameter: Constant | Variable):
         r"""
@@ -649,6 +681,76 @@ class CircuitComponent:
         items = [i for i, m in enumerate(self.modes) if m in modes]
         kwargs = self.parameter_set[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
+
+    def _apply_btops_for_change_of_rep(self, indices: Sequence[int]) -> CircuitComponent:
+        r"""
+        Helper function for change of representation in to_bargmann()
+
+            Args:
+                indices: the set of indices that we want to be represented in bargmann.
+
+            Output:
+                the cc object with Bargmann representation on the specified indices. The representations on the other wires remain intact.
+        """
+
+        from .circuit_components_utils import BtoPS
+
+        ret = copy.deepcopy(self)
+
+        for i in indices:
+            if len(self._index_representation[i]) > 2:
+                continue
+            name, arg = self._index_representation[i]
+
+            if name == "PS":
+                ret._index_representation[i] = ("B", None)
+                m = self.wires.index_to_mode_dict[i]
+                if i in self.wires.output.bra.indices:
+                    if m not in self.wires.output.ket.modes:
+                        raise ValueError(
+                            f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the output bra."
+                        )
+                    friend_index = self.wires.index_dicts[2][m]
+                    ret._index_representation[friend_index] = ("B", None)
+                    ret = ret @ BtoPS([m], s=arg).adjoint.inverse()
+
+                if i in self.wires.input.bra.indices:
+                    if m not in self.wires.input.ket.modes:
+                        raise ValueError(
+                            f"The object does not have a consistent representation. Mode {m} with PS representation has appeared only on the input bra."
+                        )
+                    friend_index = self.wires.index_dicts[3][m]
+                    ret._index_representation[friend_index] = ("B", None)
+                    ret = BtoPS([m], s=arg).dual.inverse() @ ret
+
+        return ret
+
+    def _apply_btoq_for_change_of_rep(self, indices: Sequence[int]) -> CircuitComponent:
+        r"""
+        Helper function for change of representation in to_bargmann()
+        """
+
+        from .circuit_components_utils import BtoQ
+
+        ret = copy.deepcopy(self)
+        for i in indices:
+            if len(self._index_representation[i]) > 2:
+                continue
+            name, arg = self._index_representation[i]
+            if name == "Q":
+                ret._index_representation[i] = ("B", None)  # perhaps not needed -- can be removed
+                if i in self.wires.output.bra.indices:
+                    ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).adjoint.inverse()
+                if i in self.wires.output.ket.indices:
+                    ret = ret @ BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).inverse()
+                if i in self.wires.input.bra.indices:
+                    ret = (
+                        BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.adjoint.inverse()
+                        @ ret
+                    )
+                if i in self.wires.input.ket.indices:
+                    ret = BtoQ([self.wires.index_to_mode_dict[i]], phi=arg).dual.inverse() @ ret
+        return ret
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
@@ -690,8 +792,11 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        rep = self.representation + other.representation
+        rep = (
+            self.to_bargmann().representation + other.to_bargmann().representation
+        )  # addition occurs in bargmann always
         name = self.name if self.name == other.name else ""
+        # TODO: go back to bargmann on all modes
         return self._from_attributes(rep, self.wires, name)
 
     def __eq__(self, other) -> bool:
@@ -700,7 +805,16 @@ class CircuitComponent:
 
         Compares representations and wires, but not the other attributes (e.g. name and parameter set).
         """
-        return self.representation == other.representation and self.wires == other.wires
+        from .circuit_components_utils import BtoQ, BtoPS
+
+        if (type(self.representation) == type(other.representation) == Fock) or isinstance(
+            self, (BtoQ, BtoPS)
+        ):
+            return self.representation == other.representation and self.wires == other.wires
+        else:
+            self_rep = self.to_bargmann().representation
+            other_rep = other.to_bargmann().representation
+            return self_rep == other_rep and self.wires == other.wires
 
     def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
@@ -719,27 +833,100 @@ class CircuitComponent:
             >>> att = Attenuator([0], 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
+        from .circuit_components_utils import BtoQ, BtoPS
+
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) is type(other.representation):
+
+        if type(self.representation) is type(other.representation) is Fock:
             self_rep = self.representation
             other_rep = other.representation
         else:
-            self_rep = self.to_bargmann().representation
-            other_rep = other.to_bargmann().representation
+            if (
+                (not isinstance(self, BtoQ))
+                and (not isinstance(other, BtoQ))
+                and (not isinstance(self, BtoPS))
+                and (not isinstance(other, BtoPS))
+            ):
+                self_copy = copy.deepcopy(self)
+                other_copy = copy.deepcopy(other)
+                index_self, index_other = self_copy.wires.contracted_indices(other_copy.wires)
+                self_rep = self_copy.to_bargmann(
+                    index_self
+                ).representation  # this is where the copy is required (to not send the intial objects back to Bargmann)
+                other_rep = other_copy.to_bargmann(index_other).representation
+            else:
+                self_rep = self.representation
+                other_rep = other.representation
 
         rep = self_rep[idx_z] @ other_rep[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        return CircuitComponent._from_attributes(rep, wires_result, None)
+        result = CircuitComponent._from_attributes(rep, wires_result, None)
+
+        # REMEMBER the representations:
+        # set the index_representation of uncontracted indices:
+        # (this will be overwritten if we have a change of representation e.g. other == BtoQ)
+        for m in other.wires.output.bra.modes:
+            i = result.wires.index_dicts[0][m]
+            j = other.wires.index_dicts[0][m]
+            result._index_representation[i] = other._index_representation[j][:2]
+        for m in other.wires.output.ket.modes:
+            i = result.wires.index_dicts[2][m]
+            j = other.wires.index_dicts[2][m]
+            result._index_representation[i] = other._index_representation[j][:2]
+
+        for m in self.wires.input.bra.modes:
+            i = result.wires.index_dicts[1][m]
+            j = self.wires.index_dicts[1][m]
+            result._index_representation[i] = self._index_representation[j][:2]
+        for m in self.wires.input.ket.modes:
+            i = result.wires.index_dicts[3][m]
+            j = self.wires.index_dicts[3][m]
+            result._index_representation[i] = self._index_representation[j][:2]
+
+        # now we check for indices that might have been contracted:
+        idx_1, idx_2 = self.wires.contracted_indices(other.wires)
+
+        for m in other.wires.input.bra.modes:
+            j = other.wires.index_dicts[1][m]
+            if j not in idx_2:
+                i = result.wires.index_dicts[1][m]
+                result._index_representation[i] = other._index_representation[j][:2]
+        for m in other.wires.input.ket.modes:
+
+            j = other.wires.index_dicts[3][m]
+            if j not in idx_2:
+                i = result.wires.index_dicts[3][m]
+                result._index_representation[i] = other._index_representation[j][:2]
+
+        for m in self.wires.output.bra.modes:
+            j = self.wires.index_dicts[0][m]
+            if j not in idx_1:
+                i = result.wires.index_dicts[0][m]
+                result._index_representation[i] = self._index_representation[j][:2]
+
+        for m in self.wires.output.ket.modes:
+            j = self.wires.index_dicts[2][m]
+            if j not in idx_1:
+                i = result.wires.index_dicts[2][m]
+                result._index_representation[i] = self._index_representation[j][:2]
+
+        if isinstance(self, (BtoQ, BtoPS)) and isinstance(other, (BtoQ, BtoPS)):
+            for i in result.wires.indices:
+                result._index_representation[i] = result._index_representation[i] + (None,)
+
+        return result
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.representation * other, self.wires, self.name)
+        ret = self._from_attributes(self.representation * other, self.wires, self.name)
+        ret._index_representation = self._index_representation
+        return ret
 
     def __repr__(self) -> str:
         repr = self.representation
@@ -828,6 +1015,7 @@ class CircuitComponent:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
             raise ValueError(msg)
+
         return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:

@@ -49,7 +49,7 @@ class TestBtoPS:
         kets = btops.wires.ket.indices
         assert adjoint_btops.representation == btops.representation.reorder(kets + bras).conj()
         assert adjoint_btops.wires == btops.wires.adjoint
-        assert adjoint_btops.s == btops.s
+        assert adjoint_btops.s.value == btops.s.value
         assert isinstance(adjoint_btops, BtoPS)
 
     def test_dual(self):
@@ -62,7 +62,7 @@ class TestBtoPS:
         ob = btops.wires.bra.output.indices
         assert dual_btops.representation == btops.representation.reorder(ib + ob + ik + ok).conj()
         assert dual_btops.wires == btops.wires.dual
-        assert dual_btops.s == btops.s
+        assert dual_btops.s.value == btops.s.value
         assert isinstance(dual_btops, BtoPS)
 
     def test_inverse(self):

@@ -16,6 +16,7 @@
 The class representing an operation that changes Bargmann into quadrature.
 """
 # pylint: disable=protected-access
+# pylint: disable=protected-access
 from __future__ import annotations
 from typing import Sequence
 
@@ -53,8 +54,11 @@ class BtoQ(Operation):
             representation=repr,
             name="BtoQ",
         )
+
         self._add_parameter(Constant(phi, "phi"))
-        self.phi = phi
+        d1 = {mode: ("Q", float(self.phi.value)) for mode in range(len(modes))}
+        d2 = {mode + len(modes): ("B", None) for mode in range(len(modes))}
+        self._index_representation = {**d1, **d2}
 
     @property
     def adjoint(self) -> BtoQ:
@@ -62,10 +66,19 @@ class BtoQ(Operation):
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets + bras).conj()
 
-        ret = BtoQ(self.modes, self.phi)
+        ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = rep
         ret._wires = self.wires.adjoint
         ret._name = self.name + "_adj"
+
+        # handling index representations:
+        for i, j in enumerate(kets):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(bras):
+            ret._index_representation[i + len(kets)] = self._index_representation[j]
+
+        ret._index_representation = self._index_representation
+
         return ret
 
     @property
@@ -76,16 +89,43 @@ class BtoQ(Operation):
         ob = self.wires.bra.output.indices
         rep = self.representation.reorder(ib + ob + ik + ok).conj()
 
-        ret = BtoQ(self.modes, self.phi)
+        ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = rep
         ret._wires = self.wires.dual
         ret._name = self.name + "_dual"
+
+        # handling index representations:
+        for i, j in enumerate(ib):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
+
         return ret
 
     def inverse(self) -> BtoQ:
         inv = super().inverse()
-        ret = BtoQ(self.modes, self.phi)
+        ret = BtoQ(self.modes, float(self.phi.value))
         ret._representation = inv.representation
         ret._wires = inv.wires
         ret._name = inv.name
+
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+
+        # handling index representations:
+        for i, j in enumerate(ib):
+            ret._index_representation[i] = self._index_representation[j]
+        for i, j in enumerate(ob):
+            ret._index_representation[i + len(ib)] = self._index_representation[j]
+        for i, j in enumerate(ik):
+            ret._index_representation[i + len(ib + ob)] = self._index_representation[j]
+        for i, j in enumerate(ok):
+            ret._index_representation[i + len(ib + ob + ik)] = self._index_representation[j]
+
         return ret

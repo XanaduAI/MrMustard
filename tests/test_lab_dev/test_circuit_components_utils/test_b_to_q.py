@@ -40,7 +40,7 @@ class TestBtoQ:
         kets = btoq.wires.ket.indices
         assert adjoint_btoq.representation == btoq.representation.reorder(kets).conj()
         assert adjoint_btoq.wires == btoq.wires.adjoint
-        assert adjoint_btoq.phi == btoq.phi
+        assert adjoint_btoq.phi.value == btoq.phi.value
         assert isinstance(adjoint_btoq, BtoQ)
 
     def test_dual(self):
@@ -51,7 +51,7 @@ class TestBtoQ:
         ik = dual_btoq.wires.ket.input.indices
         assert dual_btoq.representation == btoq.representation.reorder(ik + ok).conj()
         assert dual_btoq.wires == btoq.wires.dual
-        assert dual_btoq.phi == btoq.phi
+        assert dual_btoq.phi.value == btoq.phi.value
         assert isinstance(dual_btoq, BtoQ)
 
     def test_inverse(self):
