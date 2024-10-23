@@ -483,18 +483,15 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.ansatz, PolyExpAnsatz)
         """
-        if isinstance(self.ansatz, PolyExpAnsatz):
-            return self
-        else:
-            rep = self._representation.to_bargmann()
-            try:
-                ret = self._getitem_builtin(self.modes)
-                ret._representation = rep
-            except TypeError:
-                ret = self._from_attributes(rep, self.name)
-            if "manual_shape" in ret.__dict__:
-                del ret.manual_shape
-            return ret
+        rep = self._representation.to_bargmann()
+        try:
+            ret = self._getitem_builtin(self.modes)
+            ret._representation = rep
+        except TypeError:
+            ret = self._from_attributes(rep, self.name)
+        if "manual_shape" in ret.__dict__:
+            del ret.manual_shape
+        return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
