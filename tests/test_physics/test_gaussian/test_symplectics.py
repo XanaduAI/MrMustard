@@ -15,13 +15,7 @@
 import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
-from thewalrus.symplectic import (
-    beam_splitter,
-    expand,
-    rotation,
-    squeezing,
-    two_mode_squeezing,
-)
+from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
 from mrmustard import math, settings
 from mrmustard.lab import (

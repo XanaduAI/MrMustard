@@ -1,7 +1,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab import Attenuator, Coherent, Gaussian, Vacuum, Dgate
+from mrmustard.lab import Attenuator, Coherent, Dgate, Gaussian, Vacuum
 from mrmustard.lab.abstract.state import mikkel_plot
 
 

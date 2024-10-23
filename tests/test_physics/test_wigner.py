@@ -19,12 +19,7 @@ import pytest
 from scipy.special import assoc_laguerre
 
 from mrmustard import settings
-from mrmustard.lab import (
-    Coherent,
-    Fock,
-    SqueezedVacuum,
-    State,
-)
+from mrmustard.lab import Coherent, Fock, SqueezedVacuum, State
 from mrmustard.physics.wigner import wigner_discretized
 
 # original settings

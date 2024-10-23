@@ -15,14 +15,7 @@
 
 from hypothesis import given
 
-from mrmustard.lab import (
-    Attenuator,
-    BSgate,
-    Dgate,
-    Ggate,
-    Rgate,
-    Sgate,
-)
+from mrmustard.lab import Attenuator, BSgate, Dgate, Ggate, Rgate, Sgate
 from tests.random import angle, medium_float, n_mode_pure_state, r
 
 

@@ -19,13 +19,13 @@
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.lab_dev import BtoQ, Coherent, Identity
 from mrmustard.physics.gaussian_integrals import (
-    real_gaussian_integral,
     complex_gaussian_integral_1,
     join_Abc,
     join_Abc_real,
+    real_gaussian_integral,
 )
-from mrmustard.lab_dev import Coherent, BtoQ, Identity
 
 
 class TestBtoQ:

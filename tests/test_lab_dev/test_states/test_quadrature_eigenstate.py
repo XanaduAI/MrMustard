@@ -19,8 +19,8 @@
 import numpy as np
 import pytest
 
-from mrmustard.lab_dev.states import QuadratureEigenstate, Coherent
 from mrmustard import settings
+from mrmustard.lab_dev.states import Coherent, QuadratureEigenstate
 
 
 class TestQuadratureEigenstate:

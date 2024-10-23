@@ -15,14 +15,15 @@
 """Tests for real and comple gaussian integral functions and related helper functions."""
 
 import numpy as np
+
 from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.gaussian_integrals import (
-    real_gaussian_integral,
-    complex_gaussian_integral_2,
     complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
     join_Abc,
     join_Abc_real,
+    real_gaussian_integral,
     reorder_abc,
 )
 

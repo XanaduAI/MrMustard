@@ -18,9 +18,9 @@
 
 import pytest
 
+from mrmustard.lab_dev.states import Thermal
 from mrmustard.physics.representations import Bargmann
 from mrmustard.physics.triples import thermal_state_Abc
-from mrmustard.lab_dev.states import Thermal
 
 
 class TestThermal:
