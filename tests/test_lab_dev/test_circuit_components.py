@@ -118,7 +118,7 @@ class TestCircuitComponent:
 
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
-        cc = CircuitComponent._from_attributes(c.representation, c.name)
+        cc = CircuitComponent(c.representation, c.name)
         ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 

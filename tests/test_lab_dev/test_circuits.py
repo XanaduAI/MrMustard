@@ -178,7 +178,7 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
-        cc = CircuitComponent._from_attributes(bs01.representation, "my_cc")
+        cc = CircuitComponent(bs01.representation, "my_cc")
 
         assert repr(Circuit()) == ""
 

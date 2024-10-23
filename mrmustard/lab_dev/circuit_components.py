@@ -276,7 +276,7 @@ class CircuitComponent:
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent._from_attributes(Representation(PolyExpAnsatz(*triple), wires))
+        QQQQ = CircuitComponent(Representation(PolyExpAnsatz(*triple), wires))
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(Representation(BBBB.ansatz, wires), name)
 
@@ -615,7 +615,7 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         result = self._representation @ other._representation
-        return CircuitComponent._from_attributes(result, None)
+        return CircuitComponent(result, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""

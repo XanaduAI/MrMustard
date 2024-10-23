@@ -278,7 +278,7 @@ class Unitary(Operation):
 
     def inverse(self) -> Unitary:
         unitary_dual = self.dual
-        return Unitary._from_attributes(
+        return Unitary(
             representation=unitary_dual.representation,
             name=unitary_dual.name,
         )
@@ -297,9 +297,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary._from_attributes(ret.representation)
+            return Unitary(ret.representation)
         elif isinstance(other, Channel):
-            return Channel._from_attributes(ret.representation)
+            return Channel(ret.representation)
         return ret
 
 
@@ -492,5 +492,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, (Channel, Unitary)):
-            return Channel._from_attributes(ret.representation)
+            return Channel(ret.representation)
         return ret
