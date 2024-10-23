@@ -41,6 +41,8 @@ from mrmustard.lab_dev import (
     Unitary,
     Sgate,
     Channel,
+    Operation,
+    Map,
 )
 from mrmustard.physics.wires import Wires
 from mrmustard.physics.representations import Representation
@@ -499,21 +501,31 @@ class TestCircuitComponent:
         back = Ket.from_quadrature([0], ket.quadrature_triple())
         assert ket == back
 
+    def test_quadrature_channel(self):
+        C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        back = Channel.from_quadrature([0], [0], C.quadrature_triple())
+        assert C == back
+
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
         dm = SqueezedVacuum([0], 0.4, 0.5) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
         back = DM.from_quadrature([0], dm.quadrature_triple())
         assert dm == back
 
+    def test_quadrature_map(self):
+        C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
+        back = Map.from_quadrature([0], [0], C.quadrature_triple())
+        assert C == back
+
+    def test_quadrature_operation(self):
+        U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
+        back = Operation.from_quadrature([0], [0], U.quadrature_triple())
+        assert U == back
+
     def test_quadrature_unitary(self):
         U = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2)
         back = Unitary.from_quadrature([0], [0], U.quadrature_triple())
         assert U == back
-
-    def test_quadrature_channel(self):
-        C = Sgate([0], 0.5, 0.4) >> Dgate([0], 0.3, 0.2) >> Attenuator([0], 0.9)
-        back = Channel.from_quadrature([0], [0], C.quadrature_triple())
-        assert C == back
 
     @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
     @patch("mrmustard.lab_dev.circuit_components.display")

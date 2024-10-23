@@ -115,6 +115,21 @@ class TestWires:
         assert w.input.ids_dicts == d
         assert w.input.bra.ids_dicts == d
 
+    def test_ids_index_dicts(self):
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
+        d = [
+            {w.id: 0, w.id + 1: 1, w.id + 2: 2},
+            {w.id + 3: 3, w.id + 4: 4, w.id + 5: 5},
+            {w.id + 6: 6, w.id + 7: 7},
+            {w.id + 8: 8},
+            {w.id + 9: 9},
+            {w.id + 10: 10},
+        ]
+
+        assert w.ids_index_dicts == d
+        assert w.input.ids_index_dicts == d
+        assert w.input.bra.ids_index_dicts == d
+
     def test_adjoint(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         w_adj = w.adjoint

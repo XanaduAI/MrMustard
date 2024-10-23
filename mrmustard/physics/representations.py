@@ -64,10 +64,6 @@ class RepEnum(Enum):
         else:
             return cls(0)
 
-    @classmethod
-    def _missing_(cls, value):
-        return cls.NONETYPE
-
     def __repr__(self) -> str:
         return self.name
 
