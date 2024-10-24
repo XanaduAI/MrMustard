@@ -52,11 +52,6 @@ __all__ = ["Ket"]
 class Ket(State):
     r"""
     Base class for all Hilbert space vectors.
-
-    Arguments:
-        modes: The modes of this ket.
-        ansatz: The ansatz of this ket.
-        name: The name of this ket.
     """
 
     short_name = "Ket"

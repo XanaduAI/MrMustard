@@ -44,11 +44,6 @@ __all__ = ["DM"]
 class DM(State):
     r"""
     Base class for density matrices.
-
-    Args:
-        modes: The modes of this density matrix.
-        ansatz: The ansatz of this density matrix.
-        name: The name of this density matrix.
     """
 
     short_name = "DM"

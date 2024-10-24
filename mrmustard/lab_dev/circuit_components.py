@@ -350,16 +350,12 @@ class CircuitComponent:
         name: str | None = None,
     ) -> CircuitComponent:
         r"""
-        Initializes a circuit component from a ``Representation``, a set of ``Wires``, a name.
-        It differs from the __init__ in that it takes a set of wires directly.
-        Note there are deliberately no checks to ensure types and wires are compatible
-        in the standard way (e.g. one could pass a representation for a single mode ket
-        and wires for a two-mode one).
-
-        The return type is the closest parent among the types ``Ket``, ``DM``, ``Unitary``,
-        ``Operation``, ``Channel``, and ``Map``. This is to ensure the right properties
-        are used when calling methods on the returned object, e.g. when adding two
-        coherent states we don't get a generic ``CircuitComponent`` but a ``Ket``:
+        Initializes a circuit component from a ``Representation`` and a name.
+        It differs from the __init__ in that the return type is the closest parent
+        among the types ``Ket``, ``DM``, ``Unitary``, ``Operation``, ``Channel``,
+        and ``Map``. This is to ensure the right properties are used when calling
+        methods on the returned object, e.g. when adding two coherent states we
+        don't get a generic ``CircuitComponent`` but a ``Ket``:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
@@ -368,7 +364,6 @@ class CircuitComponent:
 
         Args:
             representation: A representation for this circuit component.
-            wires: The wires of this component.
             name: The name for this component (optional).
 
         Returns:

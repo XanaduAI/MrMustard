@@ -190,13 +190,6 @@ class Operation(Transformation):
 class Unitary(Operation):
     r"""
     Base class for all unitary transformations.
-    Note the default initializer is in the parent class ``Operation``.
-
-    Arguments:
-        modes_out: The output modes of this Unitary.
-        modes_in: The input modes of this Unitary.
-        ansatz: The ansatz of this Unitary.
-        name: The name of this Unitary.
     """
 
     short_name = "U"
@@ -306,12 +299,6 @@ class Unitary(Operation):
 class Map(Transformation):
     r"""
     A CircuitComponent more general than Channels, which are CPTP Maps.
-
-    Arguments:
-        modes_out: The output modes of this Map.
-        modes_in: The input modes of this Map.
-        ansatz: The ansatz of this Map.
-        name: The name of this Map.
     """
 
     short_name = "Map"
@@ -364,12 +351,6 @@ class Map(Transformation):
 class Channel(Map):
     r"""
     Base class for all CPTP channels.
-
-    Arguments:
-        modes_out: The output modes of this Channel.
-        modes_in: The input modes of this Channel.
-        ansatz: The ansatz of this Channel.
-        name: The name of this Channel
     """
 
     short_name = "Ch"
