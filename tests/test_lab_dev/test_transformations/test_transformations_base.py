@@ -29,6 +29,7 @@ from mrmustard.lab_dev import (
     Identity,
     Unitary,
     Operation,
+    Map,
     Vacuum,
 )
 from mrmustard.physics.wires import Wires
@@ -111,6 +112,20 @@ class TestUnitary:
         modes = [3, 1, 20]
         u = Unitary.random(modes)
         assert (u >> u.dual) == Identity(modes)
+
+
+class TestMap:
+    r"""
+    Tests the Map class.
+    """
+
+    def test_init_from_bargmann(self):
+        A = np.arange(16).reshape(4, 4)
+        b = np.array([0, 1, 2, 3])
+        c = 1
+        map = Map.from_bargmann([0], [0], (A, b, c), "my_map")
+        assert np.allclose(map.ansatz.A[None, ...], A)
+        assert np.allclose(map.ansatz.b[None, ...], b)
 
 
 class TestChannel:

@@ -195,6 +195,11 @@ class TestArrayAnsatz:
         assert fock_collapsed.array.shape == (1, 5, 7, 8)
         assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
 
+    def test_to_from_dict(self):
+        array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
+        fock1 = ArrayAnsatz(array1, batched=True)
+        assert ArrayAnsatz.from_dict(fock1.to_dict()) == fock1
+
     def test_trace(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
         fock1 = ArrayAnsatz(array1, batched=True)

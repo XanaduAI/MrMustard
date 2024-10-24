@@ -191,6 +191,11 @@ class TestCircuitComponent:
         with pytest.raises(ValueError):
             Vacuum([1, 2]).on([3])
 
+    def test_to_bargmann_unitary(self):
+        d = Dgate([1], x=0.1, y=0.1)
+        fock = Unitary(d.representation.to_fock(shape=(4, 6)))
+        assert fock.to_bargmann() == d
+
     def test_to_fock_ket(self):
         vac = Vacuum([1, 2])
         vac_fock = vac.to_fock(shape=[1, 2])
