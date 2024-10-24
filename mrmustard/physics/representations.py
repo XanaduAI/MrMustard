@@ -76,7 +76,7 @@ class Representation:
     of each wire's representation.
 
     The dictionary to keep track of representations maps the indices of the wires
-    to a tuple of the form ``(RepEnum, parameter, (coupled_indices, ...))``.
+    to a tuple of the form ``(RepEnum, parameter)``.
 
     Args:
         ansatz: An ansatz for this representation.
@@ -130,7 +130,7 @@ class Representation:
 
         self._wires = wires
         self._idx_reps = idx_reps or dict.fromkeys(
-            wires.indices, (RepEnum.from_ansatz(ansatz), None, tuple())
+            wires.indices, (RepEnum.from_ansatz(ansatz), None)
         )
 
     @property

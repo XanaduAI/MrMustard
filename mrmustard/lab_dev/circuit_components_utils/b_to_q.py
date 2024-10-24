@@ -54,9 +54,9 @@ class BtoQ(Operation):
             ),
         ).representation
         for i in self.wires.input.indices:
-            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None, tuple())
+            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
         for i in self.wires.output.indices:
-            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value), tuple())
+            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value))
 
     def inverse(self):
         ret = BtoQ(self.modes, self.phi)

@@ -49,9 +49,9 @@ class TestRepresentation:
         wires = Wires((), (), set([0]), set([0]))
         idx_reps = {}
         for i in wires.input.indices:
-            idx_reps[i] = (RepEnum.BARGMANN, None, tuple())
+            idx_reps[i] = (RepEnum.BARGMANN, None)
         for i in wires.output.indices:
-            idx_reps[i] = (RepEnum.QUADRATURE, float(0.2), tuple())
+            idx_reps[i] = (RepEnum.QUADRATURE, float(0.2))
         return Representation(ansatz, wires, idx_reps)
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -66,39 +66,37 @@ class TestRepresentation:
         rep = Representation(ansatz, wires)
         assert rep.ansatz == ansatz
         assert rep.wires == wires
-        assert rep._idx_reps == dict.fromkeys(
-            wires.indices, (RepEnum.from_ansatz(ansatz), None, tuple())
-        )
+        assert rep._idx_reps == dict.fromkeys(wires.indices, (RepEnum.from_ansatz(ansatz), None))
 
     @pytest.mark.parametrize("triple", [Abc_n2])
     def test_adjoint_idx_reps(self, triple):
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(modes_out_bra=set([0]), modes_out_ket=set([0]))
-        idx_reps = {0: (RepEnum.BARGMANN, None, tuple()), 1: (RepEnum.QUADRATURE, 0.1, tuple())}
+        idx_reps = {0: (RepEnum.BARGMANN, None), 1: (RepEnum.QUADRATURE, 0.1)}
         rep = Representation(ansatz, wires, idx_reps)
         adj_rep = rep.adjoint
         assert adj_rep._idx_reps == {
-            1: (RepEnum.BARGMANN, None, tuple()),
-            0: (RepEnum.QUADRATURE, 0.1, tuple()),
+            1: (RepEnum.BARGMANN, None),
+            0: (RepEnum.QUADRATURE, 0.1),
         }
 
     @pytest.mark.parametrize("triple", [Abc_n2])
     def test_dual_idx_reps(self, triple):
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(modes_out_bra=set([0]), modes_in_bra=set([0]))
-        idx_reps = {0: (RepEnum.BARGMANN, None, tuple()), 1: (RepEnum.QUADRATURE, 0.1, tuple())}
+        idx_reps = {0: (RepEnum.BARGMANN, None), 1: (RepEnum.QUADRATURE, 0.1)}
         rep = Representation(ansatz, wires, idx_reps)
         adj_rep = rep.dual
         assert adj_rep._idx_reps == {
-            1: (RepEnum.BARGMANN, None, tuple()),
-            0: (RepEnum.QUADRATURE, 0.1, tuple()),
+            1: (RepEnum.BARGMANN, None),
+            0: (RepEnum.QUADRATURE, 0.1),
         }
 
     def test_matmul_btoq(self, d_gate_rep, btoq_rep):
         q_dgate = d_gate_rep @ btoq_rep
         assert q_dgate._idx_reps == {
-            0: (RepEnum.QUADRATURE, 0.2, ()),
-            1: (RepEnum.BARGMANN, None, ()),
+            0: (RepEnum.QUADRATURE, 0.2),
+            1: (RepEnum.BARGMANN, None),
         }
 
     def test_to_bargmann(self, d_gate_rep):

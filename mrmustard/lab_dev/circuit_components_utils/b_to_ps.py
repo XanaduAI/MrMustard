@@ -54,9 +54,9 @@ class BtoPS(Map):
             ),
         ).representation
         for i in self.wires.input.indices:
-            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None, tuple())
+            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
         for i in self.wires.output.indices:
-            self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.s.value), tuple())
+            self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.s.value))
 
     def inverse(self):
         ret = BtoPS(self.modes, self.s)
