@@ -299,7 +299,7 @@ class Representation:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
-    def _get_idx_reps(self, wires_result: Wires, other: Representation):
+    def _matmul_idx_reps(self, wires_result: Wires, other: Representation):
         r"""
         Returns the new representation mappings when contracting ``self`` and ``other``.
 
@@ -345,5 +345,5 @@ class Representation:
 
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        idx_reps = self._get_idx_reps(wires_result, other)
+        idx_reps = self._matmul_idx_reps(wires_result, other)
         return Representation(rep, wires_result, idx_reps)
