@@ -14,7 +14,7 @@
 
 """Tests for the ``Sgate`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
@@ -47,7 +47,7 @@ class TestSgate:
             Sgate(modes=[0, 1], r=1, phi=[2, 3, 4])
 
     def test_representation(self):
-        rep1 = Sgate(modes=[0], r=0.1, phi=0.2).representation
+        rep1 = Sgate(modes=[0], r=0.1, phi=0.2).ansatz
         assert math.allclose(
             rep1.A,
             [
@@ -60,7 +60,7 @@ class TestSgate:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [0.9975072676192522])
 
-        rep2 = Sgate(modes=[0, 1], r=[0.1, 0.3], phi=0.2).representation
+        rep2 = Sgate(modes=[0, 1], r=[0.1, 0.3], phi=0.2).ansatz
         assert math.allclose(
             rep2.A,
             [
@@ -75,7 +75,7 @@ class TestSgate:
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [0.9756354961606032])
 
-        rep3 = Sgate(modes=[1], r=0.1).representation
+        rep3 = Sgate(modes=[1], r=0.1).ansatz
         assert math.allclose(
             rep3.A,
             [
@@ -104,4 +104,4 @@ class TestSgate:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Sgate(modes=[0], r=[0.1, 0.2]).representation
+            Sgate(modes=[0], r=[0.1, 0.2]).ansatz

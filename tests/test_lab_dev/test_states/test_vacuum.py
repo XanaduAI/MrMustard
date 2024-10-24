@@ -14,7 +14,7 @@
 
 """Tests for the ``Vacuum`` class."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import numpy as np
 import pytest
@@ -38,7 +38,7 @@ class TestVacuum:
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_representation(self, n_modes):
-        rep = Vacuum(range(n_modes)).representation
+        rep = Vacuum(range(n_modes)).ansatz
 
         assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
         assert math.allclose(rep.b, np.zeros((1, n_modes)))

@@ -21,7 +21,7 @@ import pytest
 from mrmustard.lab import Gaussian, Dgate
 from mrmustard import lab_dev as mmld
 from mrmustard import settings, math
-from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,
@@ -122,14 +122,14 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
 
 def test_bs_schwinger():
     "test that the schwinger method to apply a BS works correctly"
-    G = mmld.Ket.random([0, 1]).fock([20, 20])
+    G = mmld.Ket.random([0, 1]).fock_array([20, 20])
     G = math.asnumpy(G)
     BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
     manual = np.einsum("ab, cdab", G, BS)
     G = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
     assert np.allclose(manual, G)
 
-    Gg = mmld.Unitary.random([0, 1]).fock([20, 20, 20, 20])
+    Gg = mmld.Unitary.random([0, 1]).fock_array([20, 20, 20, 20])
     Gg = math.asnumpy(Gg)
     BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
     manual = np.einsum("cdab, abef", BS, Gg)
@@ -157,10 +157,10 @@ def test_vanilla_stable():
     "tests the vanilla stable against other known stable methods"
     settings.STABLE_FOCK_CONVERSION = True
     assert np.allclose(
-        mmld.Dgate([0], x=4.0, y=4.0).fock([1000, 1000]),
+        mmld.Dgate([0], x=4.0, y=4.0).fock_array([1000, 1000]),
         displacement((1000, 1000), 4.0 + 4.0j),
     )
-    sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock([1000, 1000])
+    sgate = mmld.Sgate([0], r=4.0, phi=2.0).fock_array([1000, 1000])
     assert np.max(np.abs(sgate)) < 1
     settings.STABLE_FOCK_CONVERSION = False
 

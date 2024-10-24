@@ -26,7 +26,7 @@ from mrmustard import math
 from ..conftest import skip_np
 
 
-# pylint: disable=protected-access, too-many-public-methods
+# pylint: disable=too-many-public-methods
 class TestBackendManager:
     r"""
     Tests the BackendManager.
