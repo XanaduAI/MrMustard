@@ -23,8 +23,14 @@ from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display
+
 from mrmustard import math, settings, widgets
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexVector,
@@ -33,18 +39,12 @@ from mrmustard.utils.typing import (
     Scalar,
     Batch,
 )
-from mrmustard.lab_dev.states.base import _validate_operator, OperatorType
-from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
-from mrmustard.lab_dev.utils import shape_check
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
-from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.wires import Wires
-from mrmustard.physics.representations import Representation
 
-from .base import State
+from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoQ, TraceOut
+from ..utils import shape_check
 
 __all__ = ["Ket"]
 

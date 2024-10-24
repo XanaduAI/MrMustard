@@ -23,19 +23,20 @@ from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display
-from mrmustard import math, settings, widgets
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states.base import State, _validate_operator, OperatorType
-from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from mrmustard.lab_dev.circuit_components_utils import BtoQ, TraceOut
-from mrmustard.lab_dev.utils import shape_check
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 
+from mrmustard import math, settings, widgets
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
-from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
+
+from .base import State, _validate_operator, OperatorType
+from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoQ, TraceOut
+from ..utils import shape_check
 
 __all__ = ["DM"]
 

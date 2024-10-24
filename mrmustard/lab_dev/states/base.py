@@ -36,6 +36,10 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from mrmustard import math, settings
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.bargmann_utils import (
+    bargmann_Abc_to_phasespace_cov_means,
+)
 from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
@@ -44,11 +48,9 @@ from mrmustard.utils.typing import (
     ComplexVector,
     RealVector,
 )
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from mrmustard.physics.bargmann_utils import (
-    bargmann_Abc_to_phasespace_cov_means,
-)
-from mrmustard.lab_dev import CircuitComponent, BtoPS
+
+from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoPS
 
 __all__ = ["State"]
 
