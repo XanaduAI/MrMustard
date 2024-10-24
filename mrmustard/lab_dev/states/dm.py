@@ -399,7 +399,7 @@ class DM(State):
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         ansatz = self.ansatz.trace(idxz, idxz_conj)
 
-        return self._from_attributes(Representation(ansatz, wires), self.name)
+        return DM(Representation(ansatz, wires), self.name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

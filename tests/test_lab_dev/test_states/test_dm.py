@@ -14,7 +14,7 @@
 
 """Tests for the density matrix."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
 import numpy as np
@@ -346,13 +346,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.name
-        )  # pylint: disable=protected-access
+        u_component = CircuitComponent(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent._from_attributes(
-            channel.representation, channel.name
-        )  # pylint: disable=protected-access
+        ch_component = CircuitComponent(channel.representation, channel.name)
 
         dm = ket >> channel
 
