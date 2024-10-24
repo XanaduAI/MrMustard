@@ -22,7 +22,7 @@ from typing import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .base import DM
+from .dm import DM
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Thermal"]
