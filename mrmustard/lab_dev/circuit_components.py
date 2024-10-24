@@ -561,12 +561,12 @@ class CircuitComponent:
         return instance
 
     def _rshift_return(
-        self, ret: CircuitComponent | np.ndarray | complex
+        self, result: CircuitComponent | np.ndarray | complex
     ) -> CircuitComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
-        if len(ret.wires) > 0:
-            return ret
-        scalar = ret.ansatz.scalar
+        if len(result.wires) > 0:
+            return result
+        scalar = result.ansatz.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:

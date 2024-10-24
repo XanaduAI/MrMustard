@@ -95,10 +95,12 @@ class Representation:
     ) -> None:
         self._ansatz = ansatz
 
-        if not isinstance(wires, Wires):
-            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = (
-                [tuple(elem) for elem in wires] if wires else [(), (), (), ()]
-            )
+        if wires is None:
+            wires = Wires(set(), set(), set(), set())
+        elif not isinstance(wires, Wires):
+            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = [
+                tuple(elem) for elem in wires
+            ]
             wires = Wires(
                 set(modes_out_bra),
                 set(modes_in_bra),
@@ -298,6 +300,30 @@ class Representation:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
+    def _get_idx_reps(self, wires_result: Wires, other: Representation):
+        r"""
+        Returns the new representation mappings when contracting ``self`` and ``other``.
+
+        Args:
+            wires_result: The resulting wires after contraction.
+            other: The representation contracting with.
+        """
+        idx_reps = {}
+        for id in wires_result.ids:
+            if id in other.wires.ids:
+                temp_rep = other
+            else:
+                temp_rep = self
+            for t in (0, 1, 2, 3, 4, 5):
+                try:
+                    idx = temp_rep.wires.ids_index_dicts[t][id]
+                    n_idx = wires_result.ids_index_dicts[t][id]
+                    idx_reps[n_idx] = temp_rep._idx_reps[idx]
+                    break
+                except KeyError:
+                    continue
+        return idx_reps
+
     def __eq__(self, other):
         if isinstance(other, Representation):
             return (
@@ -320,19 +346,5 @@ class Representation:
 
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-
-        idx_reps = {}
-        for id in wires_result.ids:
-            if id in other.wires.ids:
-                temp_rep = other
-            else:
-                temp_rep = self
-            for t in (0, 1, 2, 3, 4, 5):
-                try:
-                    idx = temp_rep.wires.ids_index_dicts[t][id]
-                    n_idx = wires_result.ids_index_dicts[t][id]
-                    idx_reps[n_idx] = temp_rep._idx_reps[idx]
-                    break
-                except KeyError:
-                    continue
+        idx_reps = self._get_idx_reps(wires_result, other)
         return Representation(rep, wires_result, idx_reps)

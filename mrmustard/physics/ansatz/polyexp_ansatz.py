@@ -202,10 +202,10 @@ class PolyExpAnsatz(Ansatz):
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
-        ret = cls(None, None, None)
-        ret._fn = fn
-        ret._kwargs = kwargs
-        return ret
+        ansatz = cls(None, None, None)
+        ansatz._fn = fn
+        ansatz._kwargs = kwargs
+        return ansatz
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -432,16 +432,21 @@ class PolyExpAnsatz(Ansatz):
 
         batch_abc = self.batch_size
         batch_arg = z.shape[0]
-        Abc = []
         if batch_abc == 1 and batch_arg > 1:
-            for i in range(batch_arg):
-                Abc.append(self._call_none_single(self.A[0], self.b[0], self.c[0], z[i]))
+            Abc = [
+                self._call_none_single(self.A[0], self.b[0], self.c[0], z[i])
+                for i in range(batch_arg)
+            ]
         elif batch_arg == 1 and batch_abc > 1:
-            for i in range(batch_abc):
-                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[0]))
+            Abc = [
+                self._call_none_single(self.A[i], self.b[i], self.c[i], z[0])
+                for i in range(batch_abc)
+            ]
         elif batch_abc == batch_arg:
-            for i in range(batch_abc):
-                Abc.append(self._call_none_single(self.A[i], self.b[i], self.c[i], z[i]))
+            Abc = [
+                self._call_none_single(self.A[i], self.b[i], self.c[i], z[i])
+                for i in range(batch_abc)
+            ]
         else:
             raise ValueError(
                 "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
