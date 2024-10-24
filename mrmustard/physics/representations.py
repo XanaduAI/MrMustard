@@ -39,8 +39,7 @@ __all__ = ["Representation"]
 
 class RepEnum(Enum):
     r"""
-    An enum to represent what representation a wire is in. Also keeps track
-    of representation conversions.
+    An enum to represent what representation a wire is in.
     """
 
     NONETYPE = 0
