@@ -23,7 +23,6 @@ from .base import Channel
 from .attenuator import Attenuator
 from ...physics.representations import Fock
 from ..utils import make_parameter
-from mrmustard.physics.fock import phase_noise
 
 __all__ = ["PhaseNoise"]
 
