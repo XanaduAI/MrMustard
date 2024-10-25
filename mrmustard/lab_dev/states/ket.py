@@ -359,6 +359,10 @@ class Ket(State):
         with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
+        from ..transformations.phasenoise import PhaseNoise
+
+        if isinstance(other, PhaseNoise):
+            return self.dm() >> other
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
