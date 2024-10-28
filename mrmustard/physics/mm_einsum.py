@@ -41,13 +41,30 @@ def new_indices_and_flops(
 ) -> tuple[frozenset[int], int]:
     """Calculate the cost of contracting two tensors with mixed CV and Fock indices.
 
+    This function computes both the surviving indices and the computational cost (in FLOPS)
+    of contracting two tensors that contain a mixture of continuous-variable (CV) and
+    Fock-space indices.
+
     Args:
-        idx1: Set of indices for the first tensor
-        idx2: Set of indices for the second tensor
-        fock_size_dict: Dict mapping fock index labels to their sizes.
+        idx1: Set of indices for the first tensor. CV indices are integers not present
+            in fock_size_dict.
+        idx2: Set of indices for the second tensor. CV indices are integers not present
+            in fock_size_dict.
+        fock_size_dict: Dict mapping Fock index labels to their dimensions. Any index
+            not in this dict is treated as a CV index.
 
     Returns:
-        Tuple of (set of surviving indices, total contraction cost)
+        tuple[frozenset[int], int]: A tuple containing:
+            - frozenset of indices that survive the contraction
+            - total computational cost in FLOPS (including CV operations,
+              Fock contractions, and potential decompositions)
+
+    Example:
+        >>> idx1 = frozenset({0, 1})  # 0 is CV, 1 is Fock
+        >>> idx2 = frozenset({1, 2})  # 2 is Fock
+        >>> fock_size_dict = {1: 2, 2: 3}
+        >>> new_indices_and_flops(idx1, idx2, fock_size_dict)
+        (frozenset({0, 2}), 9)  # Example values
     """
 
     # Calculate index sets for contraction
@@ -128,7 +145,7 @@ def optimal(
         info: If True, prints cache size diagnostics
 
     Returns:
-        list[tuple[int, int]]: The optimal contraction path as a sequence of pairs.
+        tuple[tuple[int, int], ...]: The optimal contraction path as a sequence of pairs.
             Each pair (i, j) indicates that tensors at positions i and j should be
             contracted together. The resulting tensor is placed at position len(inputs).
 
@@ -136,14 +153,14 @@ def optimal(
         >>> inputs = [frozenset({0, 1}), frozenset({1, 2}), frozenset({2, 3})]
         >>> fock_size_dict = {1: 2, 2: 2}  # indices 0 and 3 are CV indices
         >>> optimal(inputs, fock_size_dict)
-        [(0, 1), (2, 3)]
+        ((0, 1), (2, 3))
 
     Reference:
         Based on the optimal path finder in opt_einsum:
         https://github.com/dgasmith/opt_einsum/blob/master/opt_einsum/paths.py
     """
     best_flops: int = float("inf")
-    best_path: list[tuple[int, int]] = []
+    best_path: tuple[tuple[int, int], ...] = ()
     result_cache: dict[tuple[frozenset[int], frozenset[int]], tuple[frozenset[int], int]] = {}
 
     def _optimal_iterate(path, remaining, inputs, flops):
