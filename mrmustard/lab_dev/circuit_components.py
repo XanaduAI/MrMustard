@@ -82,10 +82,10 @@ class CircuitComponent:
         serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
         params = signature(cls).parameters
         if "name" in params:  # assume abstract type, serialize the representation
-            rep_cls = type(self.ansatz)
+            ansatz_cls = type(self.ansatz)
             serializable["name"] = self.name
             serializable["wires"] = self.wires.sorted_args
-            serializable["rep_class"] = f"{rep_cls.__module__}.{rep_cls.__qualname__}"
+            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
             return serializable, self.ansatz.to_dict()
 
         # handle modes parameter
@@ -110,10 +110,10 @@ class CircuitComponent:
         r"""
         Deserialization when within a circuit.
         """
-        if "rep_class" in data:
-            rep_class, wires, name = map(data.pop, ["rep_class", "wires", "name"])
-            rep = locate(rep_class).from_dict(data)
-            return cls._from_attributes(Representation(rep, Wires(*map(set, wires))), name=name)
+        if "ansatz_cls" in data:
+            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
+            ansatz = locate(ansatz_cls).from_dict(data)
+            return cls._from_attributes(Representation(ansatz, Wires(*map(set, wires))), name=name)
 
         return cls(**data)
 
