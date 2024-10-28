@@ -404,7 +404,12 @@ class Channel(Map):
 
     @classmethod
     def from_XY(
-        cls, modes_out: Sequence[int], modes_in: Sequence[int], X: RealMatrix, Y: RealMatrix, d: Vector | None = None
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        X: RealMatrix,
+        Y: RealMatrix,
+        d: Vector | None = None,
     ) -> Channel:
         r"""
         Initialize a Channel from its XY representation.
@@ -413,14 +418,14 @@ class Channel(Map):
             X: The X matrix of the channel.
             Y: The Y matrix of the channel.
             d:  The d vector of the channel.
-        
+
         .. details::
             Each Gaussian channel transforms a state with covarince matrix :math:`\Sigma` and mean :math:`\mu`
             into a state with covariance matrix :math:`X \Sigma X^T + Y` and vector of means :math:`X\mu + d`.
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-        
+
         if X.shape != (2 * len(modes_out), 2 * len(modes_in)):
             raise ValueError(
                 f"The dimension of X matrix ({X.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
