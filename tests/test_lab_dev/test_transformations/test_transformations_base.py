@@ -206,6 +206,6 @@ class TestChannel:
     def test_from_XY(self, nmodes):
         X = np.random.random((2 * nmodes, 2 * nmodes))
         Y = np.random.random((2 * nmodes, 2 * nmodes))
-        x, y = Channel.from_XY(range(nmodes), X, Y).XY
+        x, y = Channel.from_XY(range(nmodes), range(nmodes), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)

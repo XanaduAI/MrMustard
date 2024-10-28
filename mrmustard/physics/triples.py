@@ -791,8 +791,7 @@ def XY_to_channel_Abc(X: RealMatrix, Y: RealMatrix, d: Vector | None = None) -> 
 
     m = Y.shape[-1] // 2
     # considering no displacement if d is None
-    if not d:
-        d = math.zeros(2 * m)
+    d = d if d else math.zeros(2 * m)
 
     if X.shape != Y.shape:
         raise ValueError(
