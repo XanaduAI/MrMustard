@@ -30,8 +30,9 @@ from abc import abstractmethod
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.utils.typing import ComplexMatrix
+from mrmustard.utils.typing import ComplexMatrix, RealMatrix, Vector
 from mrmustard.physics.bargmann import au2Symplectic, symplectic2Au, XY_of_channel
+from mrmustard.physics.triples import XY_to_channel_Abc
 from ..circuit_components import CircuitComponent
 
 
@@ -400,6 +401,20 @@ class Channel(Map):
         QQ = Channel(modes_out, modes_in, Bargmann(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
         return Channel(modes_out, modes_in, BB.representation, name)
+    
+    @classmethod
+    def from_XY(cls, modes: Sequence[int], X: RealMatrix, Y: RealMatrix, d: Vector | None = None) -> Channel:
+        r"""
+        Outputs a channel based on its XY representation.
+        Args:
+            modes: The modes the channel is defined on
+            X: The X matrix of the channel.
+            Y: The Y matrix of the channel.
+        """
+        if (X.shape != (2*len(modes), 2*len(modes))):
+            raise ValueError(f"The dimension of X matrix ({X.shape}) and number of modes ({len(modes)}) don't match.")
+
+        return Channel.from_bargmann(modes, modes, XY_to_channel_Abc(X,Y,d))
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:

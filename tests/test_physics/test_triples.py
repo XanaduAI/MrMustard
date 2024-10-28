@@ -17,10 +17,10 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import triples
 from mrmustard.physics.representations import Bargmann
-
+from mrmustard.physics.triples import XY_to_channel_Abc
 
 # pylint: disable = missing-function-docstring
 class TestTriples:
@@ -354,3 +354,20 @@ class TestTriples:
         assert math.allclose(A, A_by_hand)
         assert math.allclose(b, b_by_hand)
         assert math.allclose(c, c_by_hand)
+
+    def test_XY_to_channel_Abc(self):
+
+        # Creating an attenuator object and testing its Abc triple
+        eta = np.random.random()
+        X = math.sqrt(eta) * math.eye(2)
+        Y = settings.HBAR/2 * (1-eta) * math.eye(2)
+
+        A, b, c = XY_to_channel_Abc(X, Y)
+
+        A_by_hand = math.block([[0, math.sqrt(eta), 0, 0],
+                                [math.sqrt(eta), 0, 0, 1-eta],
+                                 [0, 0, 0, math.sqrt(eta)],
+                                 [0, 1-eta, math.sqrt(eta), 0]])
+        assert math.allclose(A, A_by_hand)
+        assert math.allclose(b, math.zeros((4,1)))
+        assert math.allclose(c, 1.0)

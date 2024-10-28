@@ -22,7 +22,7 @@ from typing import Generator, Iterable, Union
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
+from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix, ComplexMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 
 
@@ -777,4 +777,63 @@ def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
     )
     b = _vacuum_B_vector(3)
     c = 1.0 + 0j
+    return A, b, c
+
+def XY_to_channel_Abc(X:RealMatrix, Y: RealMatrix, d: Vector | None = None) -> ComplexMatrix:
+    r"""
+    The method to compute the A matrix of a channel based on its X, Y, and d.
+    Args:
+        X: The X matrix of the channel
+        Y: The Y matrix of the channel
+        d: The d (displacement) vector of the channel -- if None, we consider it as 0
+    """
+    
+    m = Y.shape[-1] // 2
+    # considering no displacement if d is None
+    if not d:
+        d = math.zeros(2*m)
+
+    if (X.shape != Y.shape):
+        raise ValueError("The dimension of X and Y matrices are not the same."
+                         f"X.shape = {X.shape}, Y.shape = {Y.shape}")
+    
+    xi = 1/2 * math.eye(2 * m, dtype=math.complex128) + 1/2 * X@X.T + Y / settings.HBAR
+    xi_inv = math.inv(xi)
+    xi_inv_in_blocks = math.block(
+        [[math.eye(2 * m) - xi_inv, xi_inv @ X], [X.T@xi_inv, math.eye(2 * m) - X.T@xi_inv@X]]
+    )
+    R = (
+        1
+        / math.sqrt(complex(2))
+        * math.block(
+            [
+                [
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
+            ]
+        )
+    )
+
+    A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
+    temp = math.block([[(xi_inv @ d).reshape(2*m,1)],[(-X.T@xi_inv@d).reshape((2*m,1))]])
+    b = 1/math.sqrt(settings.HBAR) * math.conj(R) @ temp
+    c = math.exp(-0.5/settings.HBAR * math.einsum('i,ij,j',d , xi_inv , d))/math.sqrt(math.det(xi))
+
     return A, b, c
