@@ -204,9 +204,8 @@ class TestChannel:
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
-        X = np.random.random((2*nmodes,2*nmodes))
-        Y = np.random.random((2*nmodes, 2*nmodes))
+        X = np.random.random((2 * nmodes, 2 * nmodes))
+        Y = np.random.random((2 * nmodes, 2 * nmodes))
         x, y = Channel.from_XY(range(nmodes), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)
-
