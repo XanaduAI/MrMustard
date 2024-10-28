@@ -336,3 +336,21 @@ class TestTriples:
         B = Bargmann(*triples.attenuator_kraus_Abc(eta))
         Att = Bargmann(*triples.attenuator_Abc(eta))
         assert B[2] @ B[2] == Att
+
+    def test_gaussian_random_noise_Abc(self):
+
+        A, b, c = triples.gaussian_random_noise_Abc(np.eye(2))
+        A_by_hand = np.array(
+            [
+                [0.0, 0.5, 0.5, 0.0],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.0, 0.5, 0.5, 0.0],
+            ]
+        )
+        b_by_hand = np.zeros(4)
+        c_by_hand = 0.5
+
+        assert math.allclose(A, A_by_hand)
+        assert math.allclose(b, b_by_hand)
+        assert math.allclose(c, c_by_hand)
