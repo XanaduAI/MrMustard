@@ -360,19 +360,19 @@ class TestTriples:
 
         # Creating an attenuator object and testing its Abc triple
         eta = np.random.random()
-        X = math.sqrt(eta) * math.eye(2)
-        Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)
+        X = np.sqrt(eta) * np.eye(2)
+        Y = settings.HBAR / 2 * (1 - eta) * np.eye(2)
 
         A, b, c = XY_to_channel_Abc(X, Y)
 
-        A_by_hand = math.block(
+        A_by_hand = np.block(
             [
-                [0, math.sqrt(eta), 0, 0],
-                [math.sqrt(eta), 0, 0, 1 - eta],
-                [0, 0, 0, math.sqrt(eta)],
-                [0, 1 - eta, math.sqrt(eta), 0],
+                [0, np.sqrt(eta), 0, 0],
+                [np.sqrt(eta), 0, 0, 1 - eta],
+                [0, 0, 0, np.sqrt(eta)],
+                [0, 1 - eta, np.sqrt(eta), 0],
             ]
         )
-        assert math.allclose(A, A_by_hand)
-        assert math.allclose(b, math.zeros((4, 1)))
-        assert math.allclose(c, 1.0)
+        assert np.allclose(A, A_by_hand)
+        assert np.allclose(b, np.zeros((4, 1)))
+        assert np.isclose(c, 1.0)
