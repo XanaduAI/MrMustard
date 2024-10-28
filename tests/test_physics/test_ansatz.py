@@ -27,6 +27,7 @@ from mrmustard.physics.ansatze import (
     PolyExpAnsatz,
     bargmann_Abc_to_phasespace_cov_means,
 )
+from mrmustard.lab_dev.states.dm import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 
 from ..random import Abc_triple

@@ -17,21 +17,27 @@
 # pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
-
 import numpy as np
-import pytest
-from ipywidgets import HTML, Box, HBox, VBox
+from ipywidgets import Box, HBox, VBox, HTML
 from plotly.graph_objs import FigureWidget
+import pytest
 
 from mrmustard import math, settings
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
+from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import DM, Coherent, DisplacedSqueezed, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import (
+    Coherent,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    Vacuum,
+)
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.lab_dev.wires import Wires
-from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
-from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.widgets import state as state_widget
 
 # original settings
