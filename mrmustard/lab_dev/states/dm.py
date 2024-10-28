@@ -410,7 +410,6 @@ class DM(State):
         from ..transformations.phasenoise import PhaseNoise
 
         if isinstance(other, PhaseNoise):
-            print("hi")
             array = self.to_fock().representation.array[0]
             cutoff = array.shape[-1]
             for i in range(cutoff):

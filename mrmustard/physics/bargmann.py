@@ -20,7 +20,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix
+from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 
 def cayley(X, c):
@@ -251,3 +251,4 @@ def XY_of_channel(A: ComplexMatrix):
             "Invalid input for the A matrix of channel, caused imaginary X and/or Y matrices."
         )
     return math.real(X), math.real(Y)
+ 

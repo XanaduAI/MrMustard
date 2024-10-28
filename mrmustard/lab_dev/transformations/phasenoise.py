@@ -44,7 +44,7 @@ class PhaseNoise(Channel):
     """
 
     short_name = "P~"
-
+    # randomized : bool
     def __init__(
         self,
         modes: Sequence[int],
@@ -56,3 +56,10 @@ class PhaseNoise(Channel):
         self._add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
+
+    def __custom_rrshift__(self, other):
+        r"""
+        Custom rrshift
+        """
+        # check if Ket or DM: do the specific matmul
+        # raise exception if not
