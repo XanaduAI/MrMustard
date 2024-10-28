@@ -21,7 +21,6 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components_utils import BtoPS
-from mrmustard.lab_dev.states.base import DM
 from mrmustard.physics.ansatze import (
     ArrayAnsatz,
     PolyExpAnsatz,
