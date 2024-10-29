@@ -46,7 +46,7 @@
 * Fix object visualizations in VS Code Notebooks by using the built-in display tools.
   [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
 
-* Fixes the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
+* Fix the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
   [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
 
 ### Documentation
