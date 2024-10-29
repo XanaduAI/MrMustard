@@ -20,17 +20,17 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev import (
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.states import Vacuum
+from mrmustard.lab_dev.transformations import (
     Attenuator,
-    CircuitComponent,
     Channel,
     Dgate,
-    Sgate,
     Identity,
-    Unitary,
-    Operation,
     Map,
-    Vacuum,
+    Operation,
+    Sgate,
+    Unitary,
 )
 from mrmustard.physics.wires import Wires
 
@@ -180,7 +180,6 @@ class TestChannel:
         assert should_be_identity.ansatz == Attenuator([0], 1.0).ansatz
 
     def test_random(self):
-
         modes = [2, 6, 1]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
 

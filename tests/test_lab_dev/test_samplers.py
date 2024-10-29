@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.samplers import PNRSampler, HomodyneSampler
 from mrmustard.lab_dev import Coherent, Number, Vacuum
+from mrmustard.lab_dev.samplers import HomodyneSampler, PNRSampler
 
 
 class TestPNRSampler:

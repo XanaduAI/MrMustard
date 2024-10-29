@@ -15,25 +15,23 @@
 """Tests for the lattice module"""
 
 import importlib
+
 import numpy as np
 import pytest
 
-from mrmustard.lab import Gaussian, Dgate
 from mrmustard import lab_dev as mmld
-from mrmustard import settings, math
-from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
+from mrmustard import math, settings
+from mrmustard.lab import Dgate, Gaussian
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,
     beamsplitter,
     sector_idx,
     sector_u,
 )
+from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
-from mrmustard.math.lattice.strategies.vanilla import (
-    vanilla_stable,
-    vanilla_stable_batch,
-)
+from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_stable_batch
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 

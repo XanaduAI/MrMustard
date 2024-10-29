@@ -16,8 +16,9 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import pytest
 import numpy as np
+import pytest
+
 from mrmustard import math
 from mrmustard.lab_dev import Dgate, SqueezedVacuum
 from mrmustard.physics.ansatz import ArrayAnsatz

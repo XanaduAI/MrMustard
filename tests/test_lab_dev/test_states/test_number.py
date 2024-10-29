@@ -19,8 +19,8 @@
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.fock_utils import fock_state
 from mrmustard.lab_dev.states import Coherent, Number
+from mrmustard.physics.fock_utils import fock_state
 
 
 class TestNumber:

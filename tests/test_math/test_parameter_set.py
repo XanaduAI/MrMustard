@@ -17,6 +17,7 @@ Unit tests for the :class:`ParameterSet`.
 """
 
 import numpy as np
+
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 

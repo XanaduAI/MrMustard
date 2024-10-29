@@ -15,8 +15,9 @@
 """Tests for the ``CFT`` class."""
 
 import numpy as np
+
 from mrmustard import math, settings
-from mrmustard.lab_dev import BtoPS, Ket, Dgate
+from mrmustard.lab_dev import BtoPS, Dgate, Ket
 from mrmustard.lab_dev.transformations.cft import CFT
 from mrmustard.physics.wigner import wigner_discretized
 
