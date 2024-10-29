@@ -383,9 +383,6 @@ class State:  # pylint: disable=too-many-public-methods
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        # import pdb
-
-        # pdb.set_trace()
         if isinstance(other, State):
             return self._project_onto_state(other)
         try:
