@@ -597,7 +597,7 @@ class TestCircuitComponent:
 
         # made up, means nothing
         def cost():
-            ket = S.fock(shape=[3])
+            ket = S.fock_array(shape=[3])
             return -math.real(ket[2])
 
         circuit = Circuit([S])
