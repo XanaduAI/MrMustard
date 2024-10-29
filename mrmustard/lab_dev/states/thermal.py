@@ -61,7 +61,7 @@ class Thermal(DM):
         super().__init__(name="Thermal")
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar),
         ).representation

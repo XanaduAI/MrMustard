@@ -87,7 +87,7 @@ class S2gate(Unitary):
         super().__init__(name="S2gate")
         self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(

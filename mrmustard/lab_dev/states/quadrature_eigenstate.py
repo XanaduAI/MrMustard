@@ -70,7 +70,7 @@ class QuadratureEigenstate(Ket):
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
         self.manual_shape = (50,)
 
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi

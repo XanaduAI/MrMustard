@@ -114,7 +114,7 @@ class DM(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return DM.from_modes(modes, PolyExpAnsatz(*triple), name)
+        return DM.from_ansatz(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -124,10 +124,10 @@ class DM(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return DM.from_modes(modes, ArrayAnsatz(array, batched), name)
+        return DM.from_ansatz(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
@@ -136,7 +136,7 @@ class DM(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected a representation with {2*len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
         return DM(Representation(ansatz, wires), name)
@@ -165,7 +165,7 @@ class DM(State):
         cov = math.astensor(cov)
         means = math.astensor(means)
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM.from_modes(
+        return coeff * DM.from_ansatz(
             modes,
             PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
@@ -197,8 +197,8 @@ class DM(State):
                 with the number of modes.
         """
         QtoB = BtoQ(modes, phi).inverse()
-        Q = DM.from_modes(modes, PolyExpAnsatz(*triple))
-        return DM.from_modes(modes, (Q >> QtoB).ansatz, name)
+        Q = DM.from_ansatz(modes, PolyExpAnsatz(*triple))
+        return DM.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:

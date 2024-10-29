@@ -52,7 +52,7 @@ class Identity(Unitary):
         modes: Sequence[int],
     ):
         super().__init__(name="Identity")
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),

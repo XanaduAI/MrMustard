@@ -56,7 +56,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM.from_modes(modes, None, name)
+        state = DM.from_ansatz(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)

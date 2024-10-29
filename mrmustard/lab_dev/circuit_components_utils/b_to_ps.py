@@ -46,7 +46,7 @@ class BtoPS(Map):
     ):
         super().__init__(name="BtoPS")
         self._add_parameter(make_parameter(False, s, "s", (None, None)))
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(

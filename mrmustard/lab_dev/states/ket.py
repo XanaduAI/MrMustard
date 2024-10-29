@@ -94,7 +94,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return Ket.from_modes(modes, PolyExpAnsatz(*triple), name)
+        return Ket.from_ansatz(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -104,10 +104,10 @@ class Ket(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return Ket.from_modes(modes, ArrayAnsatz(array, batched), name)
+        return Ket.from_ansatz(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
@@ -116,7 +116,7 @@ class Ket(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
             )
         wires = Wires(modes_out_ket=modes)
         return Ket(Representation(ansatz, wires), name)
@@ -138,7 +138,7 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-        return Ket.from_modes(
+        return Ket.from_ansatz(
             modes,
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
@@ -153,8 +153,8 @@ class Ket(State):
         name: str | None = None,
     ) -> State:
         QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket.from_modes(modes, PolyExpAnsatz(*triple))
-        return Ket.from_modes(modes, (Q >> QtoB).ansatz, name)
+        Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
+        return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
@@ -188,7 +188,7 @@ class Ket(State):
         S = math.conj(math.transpose(transformation)) @ S @ transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
-        A = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()

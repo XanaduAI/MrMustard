@@ -61,7 +61,7 @@ class Vacuum(Ket):
         modes: Sequence[int],
     ) -> None:
         super().__init__(name="Vac")
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
         ).representation

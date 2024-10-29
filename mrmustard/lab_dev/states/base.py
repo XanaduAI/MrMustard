@@ -239,7 +239,7 @@ class State(CircuitComponent):
 
     @classmethod
     @abstractmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,

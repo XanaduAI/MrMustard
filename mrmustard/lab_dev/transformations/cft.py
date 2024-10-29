@@ -43,7 +43,7 @@ class CFT(Map):
         modes: Sequence[int],
     ):
         super().__init__(name="CFT")
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(

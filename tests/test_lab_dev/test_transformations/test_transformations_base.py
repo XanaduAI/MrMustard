@@ -57,7 +57,7 @@ class TestUnitary:
     @pytest.mark.parametrize("name", [None, "my_unitary"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Unitary.from_modes(modes, modes, name=name)
+        gate = Unitary.from_ansatz(modes, modes, name=name)
 
         assert gate.name[:1] == (name or "U")[:1]
         assert list(gate.modes) == sorted(modes)
@@ -136,7 +136,7 @@ class TestChannel:
     @pytest.mark.parametrize("name", [None, "my_channel"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        gate = Channel.from_modes(modes, modes, name=name)
+        gate = Channel.from_ansatz(modes, modes, name=name)
 
         assert gate.name[:2] == (name or "Ch")[:2]
         assert list(gate.modes) == sorted(modes)

@@ -85,7 +85,7 @@ class DisplacedSqueezed(Ket):
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displaced_squeezed_vacuum_state_Abc,

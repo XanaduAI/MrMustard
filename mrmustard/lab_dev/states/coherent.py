@@ -83,7 +83,7 @@ class Coherent(Ket):
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y),
         ).representation

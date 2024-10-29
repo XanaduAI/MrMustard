@@ -46,7 +46,7 @@ class BtoQ(Operation):
     ):
         super().__init__(name="BtoQ")
         self._add_parameter(make_parameter(False, phi, "phi", (None, None)))
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(

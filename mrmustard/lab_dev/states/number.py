@@ -72,7 +72,7 @@ class Number(Ket):
         ns, cs = list(reshape_params(len(modes), n=n, cutoffs=n if cutoffs is None else cutoffs))
         self._add_parameter(make_parameter(False, ns, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
-        self._representation = self.from_modes(
+        self._representation = self.from_ansatz(
             modes=modes,
             ansatz=ArrayAnsatz.from_function(
                 fock_state, n=self.n.value, cutoffs=self.cutoffs.value

@@ -62,7 +62,7 @@ class Transformation(CircuitComponent):
 
     @classmethod
     @abstractmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
@@ -152,10 +152,10 @@ class Operation(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Operation.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Operation.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
@@ -182,9 +182,9 @@ class Operation(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Operation.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Operation.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Operation.from_modes(modes_out, modes_in, BB.ansatz, name)
+        return Operation.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
 
 class Unitary(Operation):
@@ -210,10 +210,10 @@ class Unitary(Operation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Unitary.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Unitary.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
@@ -240,9 +240,9 @@ class Unitary(Operation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Unitary.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Unitary.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Unitary.from_modes(modes_out, modes_in, BB.ansatz, name)
+        return Unitary.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def from_symplectic(cls, modes, S) -> Unitary:
@@ -311,10 +311,10 @@ class Map(Transformation):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Map.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Map.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
@@ -343,9 +343,9 @@ class Map(Transformation):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Map.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Map.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Map.from_modes(modes_out, modes_in, BB.ansatz, name)
+        return Map.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
 
 class Channel(Map):
@@ -410,10 +410,10 @@ class Channel(Map):
         triple: tuple,
         name: str | None = None,
     ) -> Transformation:
-        return Channel.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+        return Channel.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
 
     @classmethod
-    def from_modes(
+    def from_ansatz(
         cls,
         modes_out: Sequence[int],
         modes_in: Sequence[int],
@@ -442,9 +442,9 @@ class Channel(Map):
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Channel.from_modes(modes_out, modes_in, PolyExpAnsatz(*triple))
+        QQ = Channel.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
         BB = QtoB_in >> QQ >> QtoB_out
-        return Channel.from_modes(modes_out, modes_in, BB.ansatz, name)
+        return Channel.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:

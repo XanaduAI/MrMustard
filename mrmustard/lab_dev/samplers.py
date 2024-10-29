@@ -229,8 +229,8 @@ class HomodyneSampler(Sampler):
         for unique_sample, counts in zip(unique_samples, counts):
             quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
             quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
-            reduced_rep = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(quad)
-            reduced_state = state.__class__.from_bargmann(state.modes[1:], reduced_rep.triple)
+            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(quad)
+            reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[initial_samples.tolist().index(unique_sample)] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             normalized_reduced_state = reduced_state / norm
