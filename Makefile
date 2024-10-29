@@ -1,6 +1,6 @@
 PYTHON3 := $(shell which python3 2>/dev/null)
 TESTRUNNER := -m pytest tests -p no:warnings
-COVERAGE := --cov=mrmustard --cov-report=html:coverage_html_report --cov-append
+COVERAGE := --cov=mrmustard --cov-report=html --cov-append
 
 .PHONY: help
 help:

@@ -23,8 +23,8 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
-    contract_two_Abc,
-    complex_gaussian_integral,
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
 )
 from mrmustard.physics.representations import Bargmann, Fock
 from ..random import Abc_triple
@@ -162,7 +162,7 @@ class TestBargmannRepresentation:
     def test_trace(self):
         triple = Abc_triple(4)
         bargmann = Bargmann(*triple).trace([0], [2])
-        A, b, c = complex_gaussian_integral(triple, [0], [2])
+        A, b, c = complex_gaussian_integral_1(triple, [0], [2])
 
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
@@ -187,7 +187,7 @@ class TestBargmannRepresentation:
         triple2 = Abc_triple(3)
 
         res1 = Bargmann(*triple1) @ Bargmann(*triple2)
-        exp1 = contract_two_Abc(triple1, triple2, [], [])
+        exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])

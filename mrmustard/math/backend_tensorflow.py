@@ -94,7 +94,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def astensor(self, array: np.ndarray | tf.Tensor, dtype=None) -> tf.Tensor:
         dtype = dtype or np.array(array).dtype.name
-        return tf.convert_to_tensor(array, dtype)
+        return tf.cast(tf.convert_to_tensor(array, dtype_hint=dtype), dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
@@ -205,6 +205,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
+        indices = tf.convert_to_tensor(indices, dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:

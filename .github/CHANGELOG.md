@@ -28,6 +28,9 @@
 * Loosen the upper-bound on `thewalrus` and upgrade it.
   [(#454)](https://github.com/XanaduAI/MrMustard/pull/454)
 
+* Update major version of `rich` dependency to version 13.
+  [(#512)](https://github.com/XanaduAI/MrMustard/pull/512)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)

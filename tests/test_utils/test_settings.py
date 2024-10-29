@@ -65,7 +65,7 @@ class TestSettings:
         settings.PRECISION_BITS_HERMITE_POLY = p0
 
         assert settings.HBAR == 1.0
-        with pytest.raises(ValueError, match="Cannot change"):
+        with pytest.warns(UserWarning, match="Changing HBAR can conflict with prior computations"):
             settings.HBAR = 3
 
         with pytest.raises(ValueError, match="precision_bits_hermite_poly"):
@@ -108,18 +108,18 @@ class TestSettings:
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1
 
+    def test_cannot_add_new_settings(self):
+        """Test that new settings are rejected (eg. typos)."""
+        settings = Settings()
+        with pytest.raises(AttributeError, match="unknown MrMustard setting: 'HBARR'"):
+            settings.HBARR = 1.0
+
     def test_context_manager(self):
         """Test that the context manager works correctly."""
         settings = Settings()
 
-        with settings(AUTOSHAPE_PROBABILITY=0.1):
+        with settings(AUTOSHAPE_PROBABILITY=0.1, HBAR=5.0):
             assert settings.AUTOSHAPE_PROBABILITY == 0.1
+            assert settings.HBAR == 5.0
         assert settings.AUTOSHAPE_PROBABILITY == 0.99999
-
-    def test_context_manager_disallowed(self):
-        """Test that the context manager disallows changing some settings."""
-        settings = Settings()
-
-        with pytest.raises(ValueError, match="Cannot change"):
-            with settings(HBAR=0.5):
-                pass
+        assert settings.HBAR == 1.0

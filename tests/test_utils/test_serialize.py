@@ -208,5 +208,5 @@ class TestSerialize:
 
         loaded = load(path)
         assert loaded == circ
-        assert all(type(a) == type(b) for a, b in zip(circ.components, loaded.components))
+        assert all(type(a) is type(b) for a, b in zip(circ.components, loaded.components))
         assert list(path.parent.glob("*")) == [path]

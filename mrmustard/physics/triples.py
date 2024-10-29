@@ -22,8 +22,8 @@ from typing import Generator, Iterable, Union
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar
-from mrmustard.physics.gaussian_integrals import contract_two_Abc
+from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 
 
 #  ~~~~~~~~~
@@ -239,12 +239,10 @@ def sauron_state_Abc(n: int, epsilon: float):
     As = np.zeros([n + 1, 1, 1], dtype="complex128")
 
     # normalization
-    prob = 0
-    for A1, b1, c1 in zip(As, bs, cs):
-        for A2, b2, c2 in zip(As, bs, cs):
-            prob += contract_two_Abc(
-                (np.conj(A1), np.conj(b1), np.conj(c1)), (A2, b2, c2), [0], [0]
-            )[2]
+    probs = complex_gaussian_integral_2(
+        (np.conj(As), np.conj(bs), np.conj(cs)), (As, bs, cs), [0], [0]
+    )[2]
+    prob = np.sum(probs)
     cs /= np.sqrt(prob)
 
     return As, bs, cs
@@ -607,6 +605,58 @@ def fock_damping_Abc(
     return A, b, c
 
 
+def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The triple (A, b, c) for the gaussian random noise channel.
+
+    Args:
+        Y: the Y matrix of the Gaussian random noise channel.
+
+    Returns:
+        The ``(A, b, c)`` triple of the Gaussian random noise channel.
+    """
+    m = Y.shape[-1] // 2
+    xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
+    xi_inv = math.inv(xi)
+    xi_inv_in_blocks = math.block(
+        [[math.eye(2 * m) - xi_inv, xi_inv], [xi_inv, math.eye(2 * m) - xi_inv]]
+    )
+    R = (
+        1
+        / math.sqrt(complex(2))
+        * math.block(
+            [
+                [
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    math.eye(m, dtype=math.complex128),
+                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                ],
+                [
+                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
+            ]
+        )
+    )
+
+    A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
+    b = math.zeros(4 * m)
+    c = 1 / math.sqrt(math.det(xi))
+
+    return A, b, c
+
+
 def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
@@ -677,7 +727,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
 
     A = math.astensor(math.asnumpy(A)[order_list, :][:, order_list])
     b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0 / (2 * np.pi) ** n_modes + 0.0j
+    c = 1.0
     return math.astensor(A), b, c
 
 

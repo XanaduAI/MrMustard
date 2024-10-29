@@ -164,9 +164,10 @@ class CircuitComponent:
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
         rep = self.representation.reorder(kets + bras).conj() if self.representation else None
-
         ret = CircuitComponent(rep, self.wires.adjoint, self.name)
         ret.short_name = self.short_name
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @property
@@ -184,7 +185,8 @@ class CircuitComponent:
 
         ret = CircuitComponent(rep, self.wires.dual, self.name)
         ret.short_name = self.short_name
-
+        for param in self.parameter_set.all_parameters.values():
+            ret._add_parameter(param)
         return ret
 
     @cached_property
@@ -373,10 +375,7 @@ class CircuitComponent:
         if isinstance(self.representation, Fock):
             fock_arrays = self.representation.array
             # Find where all the bras and kets are so they can be conjugated appropriately
-            conjugates = [
-                False if i in self.wires.ket.indices else True
-                for i in range(len(self.wires.indices))
-            ]
+            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.sum(
                 [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axes=[0]
             )
@@ -500,12 +499,12 @@ class CircuitComponent:
                     )
                     for A, b, c in zip(As, bs, cs)
                 ]
-        except AttributeError:
+        except AttributeError as e:
             shape = shape or self.auto_shape()
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
+                ) from e
             arrays = self.representation.reduce(shape).array
         array = math.sum(arrays, axes=[0])
         arrays = math.expand_dims(array, 0) if batched else array
@@ -575,7 +574,8 @@ class CircuitComponent:
         """
         fock = Fock(self.fock(shape, batched=True), batched=True)
         try:
-            fock.ansatz._original_abc_data = self.representation.triple
+            if self.representation.ansatz.polynomial_shape[0] == 0:
+                fock.ansatz._original_abc_data = self.representation.triple
         except AttributeError:
             fock.ansatz._original_abc_data = None
         try:
@@ -633,10 +633,6 @@ class CircuitComponent:
             ValueError: If the the given parameter is incompatible with the number
                 of modes (e.g. for parallel gates).
         """
-        if parameter.value.shape != ():
-            length = sum(parameter.value.shape)
-            if length != 1 and length != len(self.modes):
-                raise ValueError(f"Length of ``{parameter.name}`` must be 1 or {len(self.modes)}.")
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
@@ -728,7 +724,7 @@ class CircuitComponent:
 
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        if type(self.representation) == type(other.representation):
+        if type(self.representation) is type(other.representation):
             self_rep = self.representation
             other_rep = other.representation
         else:
@@ -825,9 +821,9 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self @ other
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
+            ret = (self.adjoint @ self) @ other
         elif other_needs_bra or other_needs_ket:
-            ret = (self @ other) @ other.adjoint
+            ret = self @ (other @ other.adjoint)
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."

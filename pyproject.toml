@@ -31,7 +31,7 @@ numpy = "^1.23.5"
 scipy = "^1.8.0"
 numba = "^0.59"
 thewalrus = ">=0.19.0,<1.0"
-rich = "^10.15.1"
+rich = "^13.9.0"
 matplotlib = "^3.5.0"
 ray = { version = "^2.5.0", extras = ["tune"], optional = true }
 scikit-optimize = { version = "^0.9.0", optional = true }
@@ -96,6 +96,59 @@ xanadu-sphinx-theme = "0.1.0"
 
 [tool.black]
 line-length = 100
+
+[tool.coverage.run]
+source = ["mrmustard"]
+
+[tool.coverage.report]
+omit = ["mrmustard/lab/*", "mrmustard/training/*"]
+
+# Regexes for lines to exclude from consideration
+exclude_lines =[
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "def __eq__",
+    "if self\\.debug",
+
+    # print statements
+    "def __str__",
+    "def __format__",
+    "def _print_list",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "raise NotApplicableError",
+    "raise Exception",
+    "raise ValueError",
+    "raise ZeroDivisionError",
+    "raise TypeError",
+    "raise RuntimeError",
+    "raise IndexError",
+    "raise FileNotFoundError",
+    "raise NotADirectoryError",
+    "raise MergeFailure",
+    "return __version__",
+    "if len(lst) != self._num_modes:",
+    "elif max(lst) >= self._trunc:",
+    "except NotImplementedError as err",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "pass",
+    "if __name__ == .__main__.:",
+]
+
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore::DeprecationWarning"
 
 [build-system]
 requires = ["poetry-core"]

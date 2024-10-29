@@ -26,8 +26,8 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import (
+from mrmustard.lab_dev import (
+    CircuitComponent,
     Ket,
     DM,
     Number,
@@ -35,9 +35,14 @@ from mrmustard.lab_dev.states import (
     DisplacedSqueezed,
     Coherent,
     SqueezedVacuum,
+    BSgate,
+    Dgate,
+    Attenuator,
+    Unitary,
+    Sgate,
+    Channel,
+    Wires,
 )
-from mrmustard.lab_dev.transformations import Dgate, Attenuator, Unitary, Sgate, Channel
-from mrmustard.lab_dev.wires import Wires
 from ..random import Abc_triple
 
 
@@ -121,6 +126,7 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
+        assert d1_adj.parameter_set == d1.parameter_set
         assert (
             d1_adj.representation == d1.representation.conj()
         )  # this holds for the Dgate but not in general
@@ -128,6 +134,8 @@ class TestCircuitComponent:
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
         assert d1_adj_adj.wires == d1.wires
+        assert d1_adj_adj.parameter_set == d1_adj.parameter_set
+        assert d1_adj_adj.parameter_set == d1.parameter_set
         assert d1_adj_adj.representation == d1.representation
 
     def test_dual(self):
@@ -138,11 +146,14 @@ class TestCircuitComponent:
         assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
+        assert d1_dual.parameter_set == d1.parameter_set
         assert (vac >> d1 >> d1_dual).representation == vac.representation
         assert (vac >> d1_dual >> d1).representation == vac.representation
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
+        assert d1_dual_dual.parameter_set == d1_dual.parameter_set
+        assert d1_dual_dual.parameter_set == d1.parameter_set
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.representation == d1.representation
 
@@ -196,15 +207,17 @@ class TestCircuitComponent:
         d = Dgate([1], x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
+        assert d_fock.representation.ansatz._original_abc_data == d.representation.triple
         assert d_barg == d
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
         barg = Bargmann(A, b, c)
-        cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
+        fock_cc = CircuitComponent(barg, wires=[(), (), (0, 1), ()]).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
-        assert np.allclose(cc.representation.data, np.einsum("ijk,k", poly, c[0]))
+        assert fock_cc.representation.ansatz._original_abc_data is None
+        assert np.allclose(fock_cc.representation.data, np.einsum("ijk,k", poly, c[0]))
 
     def test_add(self):
         d1 = Dgate([1], x=0.1, y=0.1)
@@ -396,12 +409,6 @@ class TestCircuitComponent:
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0
 
-    def test_rshift_ketbra_with_ket(self):
-        a1 = Attenuator([1], transmissivity=0.8)
-        n1 = Number([1, 2], n=1).dual
-
-        assert a1 >> n1 == a1 @ n1 @ n1.adjoint
-
     def test_rshift_is_associative(self):
         vac012 = Vacuum([0, 1, 2])
         d0 = Dgate([0], x=0.1, y=0.1)
@@ -419,6 +426,37 @@ class TestCircuitComponent:
         assert result1 == result2
         assert result1 == result3
         assert result1 == result4
+
+    def test_rshift_ketbra_with_ket(self):
+        a1 = Attenuator([1], transmissivity=0.8)
+        n1 = Number([1, 2], n=1).dual
+
+        assert a1 >> n1 == a1 @ (n1 @ n1.adjoint)
+
+    def test_rshift_perm_order(self):
+        rng = np.random.default_rng(seed=2334255467567)
+        r = [rng.random(), -rng.random()]
+        theta = rng.random() * 2 * np.pi
+        pnr_cutoff = rng.integers(1, 25)
+        out_loss = rng.random()
+        pnr_loss = rng.random()
+
+        outcome = rng.integers(0, pnr_cutoff)
+
+        mm_state = (
+            SqueezedVacuum([0, 1], r)
+            >> BSgate([0, 1], theta)
+            >> Attenuator([0, 1], [1 - out_loss, 1 - pnr_loss])
+            >> Number([1], outcome).dual
+        )
+
+        mm_state_dm = (
+            SqueezedVacuum([0, 1], r)
+            >> BSgate([0, 1], theta)
+            >> Attenuator([0, 1], [1 - out_loss, 1 - pnr_loss])
+            >> Number([1], outcome).dm().dual
+        )
+        assert mm_state.representation == mm_state_dm.representation
 
     def test_rshift_scalar(self):
         d0 = Dgate([0], x=0.1, y=0.1)
