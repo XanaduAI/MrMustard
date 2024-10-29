@@ -26,13 +26,9 @@ from plotly.graph_objs import FigureWidget
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics.bargmann_utils import (
-    bargmann_Abc_to_phasespace_cov_means,
-    wigner_to_bargmann_rho,
-)
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
-from mrmustard.lab_dev.circuit_components_utils import BtoPS, TraceOut
+from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,
