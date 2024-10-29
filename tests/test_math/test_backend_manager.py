@@ -17,11 +17,11 @@ Unit tests for the :class:`BackendManager`.
 """
 from unittest.mock import MagicMock, patch
 
+import math
 import numpy as np
 import pytest
 import tensorflow as tf
 
-import math
 from mrmustard import math
 
 from ..conftest import skip_np
