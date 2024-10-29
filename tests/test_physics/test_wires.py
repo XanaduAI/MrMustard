@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from ipywidgets import HTML
 
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
 
 
 class TestWires:
@@ -115,6 +115,21 @@ class TestWires:
         assert w.input.ids_dicts == d
         assert w.input.bra.ids_dicts == d
 
+    def test_ids_index_dicts(self):
+        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
+        d = [
+            {w.id: 0, w.id + 1: 1, w.id + 2: 2},
+            {w.id + 3: 3, w.id + 4: 4, w.id + 5: 5},
+            {w.id + 6: 6, w.id + 7: 7},
+            {w.id + 8: 8},
+            {w.id + 9: 9},
+            {w.id + 10: 10},
+        ]
+
+        assert w.ids_index_dicts == d
+        assert w.input.ids_index_dicts == d
+        assert w.input.bra.ids_index_dicts == d
+
     def test_adjoint(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
         w_adj = w.adjoint
@@ -153,15 +168,15 @@ class TestWires:
 
         w0 = Wires({0}, {0})
         assert w[0] == w0
-        assert w._mode_cache == {(0,): w0}  # pylint: disable=protected-access
+        assert w._mode_cache == {(0,): w0}
 
         w1 = Wires({1})
         assert w[1] == w1
-        assert w._mode_cache == {(0,): w0, (1,): w1}  # pylint: disable=protected-access
+        assert w._mode_cache == {(0,): w0, (1,): w1}
 
         w2 = Wires(set(), {2})
         assert w[2] == w2
-        assert w._mode_cache == {  # pylint: disable=protected-access
+        assert w._mode_cache == {
             (0,): w0,
             (1,): w1,
             (2,): w2,
@@ -213,10 +228,10 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
 
-    @patch("mrmustard.lab_dev.wires.display")
+    @patch("mrmustard.physics.wires.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
         wires = Wires({0}, {}, {3}, {3, 4})
-        wires._ipython_display_()  # pylint:disable=protected-access
+        wires._ipython_display_()
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)

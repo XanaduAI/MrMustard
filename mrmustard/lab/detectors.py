@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from mrmustard import settings
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import fock_utils, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from mrmustard import math
@@ -407,7 +407,7 @@ class Homodyne(Generaldyne):
         reduced_state = other.get_modes(self.modes)
 
         # build pdf and sample homodyne outcome
-        x_outcome, probability = fock.sample_homodyne(
+        x_outcome, probability = fock_utils.sample_homodyne(
             state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
             quadrature_angle=self.quadrature_angle,
         )
@@ -427,7 +427,7 @@ class Homodyne(Generaldyne):
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
-        out_fock = fock.contract_states(
+        out_fock = fock_utils.contract_states(
             stateA=(other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)),
             stateB=self.state.ket(self_cutoffs),
             a_is_dm=other.is_mixed,

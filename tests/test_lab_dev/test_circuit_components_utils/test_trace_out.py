@@ -14,18 +14,19 @@
 
 """Tests for trace out."""
 
-# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
+# pylint: disable=fixme, missing-function-docstring, pointless-statement
 
 import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import Coherent
-from mrmustard.lab_dev.wires import Wires
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import identity_Abc
+from mrmustard.physics.wires import Wires
 
 
 class TestTraceOut:
@@ -39,7 +40,7 @@ class TestTraceOut:
 
         assert tr.name == "Tr"
         assert tr.wires == Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
-        assert tr.representation == Bargmann(*identity_Abc(len(modes)))
+        assert tr.ansatz == PolyExpAnsatz(*identity_Abc(len(modes)))
 
     def test_trace_out_bargmann_states(self):
         state = Coherent([0, 1, 2], x=1)

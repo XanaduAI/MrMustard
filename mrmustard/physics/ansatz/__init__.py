@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,9 @@
 # limitations under the License.
 
 r"""
-The lab module in development.
+The classes for Ansatze in circuit components.
 """
 
-from .circuit_components import *
-from .circuit_components_utils import *
-from .circuits import *
-from .states import *
-from .transformations import *
+from .base import *
+from .polyexp_ansatz import *
+from .array_ansatz import *

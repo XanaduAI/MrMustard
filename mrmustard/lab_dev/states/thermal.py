@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .dm import DM
 from ..utils import make_parameter, reshape_params
@@ -58,8 +58,10 @@ class Thermal(DM):
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
-        super().__init__(modes=modes, name="Thermal")
+        super().__init__(name="Thermal")
         (nbars,) = list(reshape_params(len(modes), nbar=nbar))
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
-
-        self._representation = Bargmann.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar)
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar),
+        ).representation

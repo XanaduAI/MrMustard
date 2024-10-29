@@ -14,7 +14,7 @@
 
 """Tests for the ``Identity`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
@@ -45,7 +45,7 @@ class TestIdentity:
             Identity()
 
     def test_representation(self):
-        rep1 = Identity(modes=[0]).representation
+        rep1 = Identity(modes=[0]).ansatz
         assert math.allclose(
             rep1.A,
             [
@@ -58,7 +58,7 @@ class TestIdentity:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0 + 0.0j])
 
-        rep2 = Identity(modes=[0, 1]).representation
+        rep2 = Identity(modes=[0, 1]).ansatz
         assert math.allclose(
             rep2.A,
             [

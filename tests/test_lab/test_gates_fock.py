@@ -41,7 +41,7 @@ from mrmustard.lab import (
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
 from mrmustard.math.lattice import strategies
-from mrmustard.physics import fock
+from mrmustard.physics import fock_utils
 from tests.random import (
     angle,
     array_of_,
@@ -160,7 +160,7 @@ def test_fock_representation_displacement(cutoffs, x, y):
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
     X, _, d = dgate.XYd(allow_none=False)
-    expected_Ud = fock.wigner_to_fock_U(X, d, cutoffs)
+    expected_Ud = fock_utils.wigner_to_fock_U(X, d, cutoffs)
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -185,7 +185,7 @@ def test_squeezer_grad_against_finite_differences():
     dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
     dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
     _, (gradr, gradphi) = math.value_and_gradients(
-        lambda: fock.squeezer(r, phi, shape=cutoffs), [r, phi]
+        lambda: fock_utils.squeezer(r, phi, shape=cutoffs), [r, phi]
     )
     assert np.allclose(gradr, 2 * np.real(np.sum(dUdr)))
     assert np.allclose(gradphi, 2 * np.real(np.sum(dUdphi)))
@@ -198,14 +198,16 @@ def test_displacement_grad():
     y = math.new_variable(0.1, None, "y")
     alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
-    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
-        2 * delta
-    )
-    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (
-        2 * delta
-    )
+    dUdx = (
+        fock_utils.displacement(x + delta, y, cutoffs)
+        - fock_utils.displacement(x - delta, y, cutoffs)
+    ) / (2 * delta)
+    dUdy = (
+        fock_utils.displacement(x, y + delta, cutoffs)
+        - fock_utils.displacement(x, y - delta, cutoffs)
+    ) / (2 * delta)
 
-    D = fock.displacement(x, y, shape=cutoffs)
+    D = fock_utils.displacement(x, y, shape=cutoffs)
     dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
     assert np.allclose(dD_da + dD_dac, dUdx)
     assert np.allclose(1j * (dD_da - dD_dac), dUdy)
@@ -294,7 +296,7 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
     d = np.zeros(len(cutoffs) * 2)
-    expected_R = fock.wigner_to_fock_U(rgate.X_matrix, d, tuple(cutoffs + cutoffs))
+    expected_R = fock_utils.wigner_to_fock_U(rgate.X_matrix, d, tuple(cutoffs + cutoffs))
     assert np.allclose(R, expected_R, atol=1e-5)
 
 
@@ -355,7 +357,6 @@ def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     assert np.allclose(U_vanilla, U_schwinger, atol=1e-6)
 
 
-# pylint: disable=protected-access
 @given(phase_stdev=medium_float.filter(lambda x: x > 0))
 def test_phasenoise_creates_dm(phase_stdev):
     """test that the phase noise gate is correctly applied"""

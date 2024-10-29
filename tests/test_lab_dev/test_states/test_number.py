@@ -14,13 +14,13 @@
 
 """Tests for the ``Number`` class."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.states import Coherent, Number
-from mrmustard.physics.fock import fock_state
+from mrmustard.physics.fock_utils import fock_state
 
 
 class TestNumber:
@@ -50,13 +50,13 @@ class TestNumber:
     @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
     @pytest.mark.parametrize("cutoffs", [None, [4, 5], [5, 5]])
     def test_representation(self, n, cutoffs):
-        rep1 = Number([0, 1], n, cutoffs).representation.array
+        rep1 = Number([0, 1], n, cutoffs).ansatz.array
         exp1 = fock_state((n,) * 2 if isinstance(n, int) else n, cutoffs)
         assert math.allclose(rep1, math.asnumpy(exp1).reshape(1, *exp1.shape))
 
-        rep2 = Number([0, 1], n, cutoffs).to_fock().representation.array
+        rep2 = Number([0, 1], n, cutoffs).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(modes=[0], x=[0.1, 0.2]).representation
+            Coherent(modes=[0], x=[0.1, 0.2]).ansatz
