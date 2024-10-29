@@ -328,8 +328,10 @@ class DM(State):
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
         Returns the Fock distribution of the state up to some cutoff.
+
         Args:
             cutoff: The photon cutoff.
+
         Returns:
             The Fock distribution.
         """
@@ -347,6 +349,7 @@ class DM(State):
     def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature distribution of the State.
+
         Args:
             quad: the discretized quadrature axis over which the distribution is computed.
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
@@ -354,13 +357,17 @@ class DM(State):
         Returns:
             The quadrature distribution.
         """
-        quad = math.astensor(quad)
+        quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
             raise ValueError(
                 "The dimensionality of quad should be 1, or match the number of modes."
             )
+
         if len(quad.shape) == 1:
-            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
+            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
+                -1, len(self.modes)
+            )
+
         quad = math.tile(quad, (1, 2))
         return self.quadrature(quad, phi)
 
