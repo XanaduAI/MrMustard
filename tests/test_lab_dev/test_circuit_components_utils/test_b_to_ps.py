@@ -20,11 +20,10 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
+from mrmustard.lab_dev import DM, BtoPS, Identity, Ket
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
-
-from mrmustard.lab_dev import DM, BtoPS, Identity, Ket
+from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 
 
 class TestBtoPS:

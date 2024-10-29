@@ -17,9 +17,9 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import Box, HBox, VBox, HTML, IntText, Stack, IntSlider, Tab
-from plotly.graph_objs import FigureWidget
 import pytest
+from ipywidgets import HTML, Box, HBox, IntSlider, IntText, Stack, Tab, VBox
+from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
 from mrmustard.physics.gaussian_integrals import (
@@ -27,6 +27,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_2,
 )
 from mrmustard.physics.representations import Bargmann, Fock
+
 from ..random import Abc_triple
 
 # original settings

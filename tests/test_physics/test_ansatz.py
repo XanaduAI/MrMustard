@@ -20,14 +20,15 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components_utils import BtoPS
 from mrmustard.physics.ansatze import (
-    PolyExpAnsatz,
     ArrayAnsatz,
+    PolyExpAnsatz,
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.lab_dev.states.dm import DM
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
-from mrmustard.lab_dev.circuit_components_utils import BtoPS
+
 from ..random import Abc_triple
 
 

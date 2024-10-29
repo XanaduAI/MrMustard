@@ -19,10 +19,7 @@ import tensorflow as tf
 
 from mrmustard import math, settings
 from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.gates import (
-    BSgate,
-    S2gate,
-)
+from mrmustard.lab.gates import BSgate, S2gate
 from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 

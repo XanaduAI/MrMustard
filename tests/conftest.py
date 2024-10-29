@@ -14,10 +14,12 @@
 
 import os
 from pathlib import Path
+
 import pytest
+from hypothesis import Verbosity
+from hypothesis import settings as hyp_settings
 
 from mrmustard import math
-from hypothesis import Verbosity, settings as hyp_settings
 
 print("pytest.conf -----------------------")
 

@@ -488,11 +488,13 @@ class CircuitComponent:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             if self.representation.ansatz.polynomial_shape[0] == 0:
-                arrays = [math.hermite_renormalized(A, b, c, shape) for A, b, c in zip(As, bs, cs)]
+                arrays = [
+                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
+                ]
             else:
                 arrays = [
                     math.sum(
-                        math.hermite_renormalized(A, b, 1, shape + c.shape) * c,
+                        math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
                         axes=math.arange(
                             num_vars, num_vars + len(c.shape), dtype=math.int32
                         ).tolist(),
