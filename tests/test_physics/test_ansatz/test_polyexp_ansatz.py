@@ -19,17 +19,17 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import Box, VBox, HTML, IntText, Stack, IntSlider
-from plotly.graph_objs import FigureWidget
 import pytest
+from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
+from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
+from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
 )
-from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
-from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 
 from ...random import Abc_triple
 
