@@ -23,7 +23,7 @@ from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import update_symplectic
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import fock_utils, gaussian
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
@@ -453,7 +453,7 @@ class Fock(State):
         cutoffs: Sequence[int] | None = None,
         normalize: bool = False,
     ):
-        super().__init__(ket=fock.fock_state(n), cutoffs=cutoffs)
+        super().__init__(ket=fock_utils.fock_state(n), cutoffs=cutoffs)
 
         self._n = [n] if isinstance(n, int) else n
         self._modes = modes
@@ -486,5 +486,5 @@ class Fock(State):
             else other.dm(cutoffs)[tuple(getitem) * 2]
         )
         if self._normalize:
-            return fock.normalize(output, is_dm=other.is_mixed)
+            return fock_utils.normalize(output, is_dm=other.is_mixed)
         return output

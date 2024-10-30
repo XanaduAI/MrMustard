@@ -47,15 +47,13 @@ https://github.com/pallets/flask/blob/master/tests/test_logging.py
 
 # pylint: disable=no-self-use
 
-import sys
 import logging
+import sys
+
 import pytest
+
 from mrmustard.training import optimizer
-from mrmustard.utils.logger import (
-    logging_handler_defined,
-    default_handler,
-    create_logger,
-)
+from mrmustard.utils.logger import create_logger, default_handler, logging_handler_defined
 
 modules_contain_logging = [optimizer]
 

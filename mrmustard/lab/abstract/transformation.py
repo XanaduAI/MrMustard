@@ -27,7 +27,7 @@ from mrmustard import math, settings
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.math.tensor_networks import Tensor
-from mrmustard.physics import bargmann, fock, gaussian
+from mrmustard.physics import bargmann_utils, fock_utils, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
@@ -172,9 +172,9 @@ class Transformation(Tensor):
     def bargmann(self, numpy=False):
         X, Y, d = self.XYd(allow_none=False)
         if self.is_unitary:
-            A, B, C = bargmann.wigner_to_bargmann_U(X, d)
+            A, B, C = bargmann_utils.wigner_to_bargmann_U(X, d)
         else:
-            A, B, C = bargmann.wigner_to_bargmann_Choi(X, Y, d)
+            A, B, C = bargmann_utils.wigner_to_bargmann_Choi(X, Y, d)
         if numpy:
             return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
@@ -208,11 +208,11 @@ class Transformation(Tensor):
             U = self.U(shape[: self.num_modes])
             Udual = self.U(shape[self.num_modes :])
             if dual:
-                return fock.U_to_choi(U=Udual, Udual=U)
-            return fock.U_to_choi(U=U, Udual=Udual)
+                return fock_utils.U_to_choi(U=Udual, Udual=U)
+            return fock_utils.U_to_choi(U=U, Udual=Udual)
 
         X, Y, d = self.XYd(allow_none=False)
-        choi = fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
+        choi = fock_utils.wigner_to_fock_Choi(X, Y, d, shape=shape)
         if dual:
             n = len(shape) // 4
             N0 = list(range(0, n))
@@ -382,8 +382,10 @@ class Unitary(Transformation):
         op_idx = [state.modes.index(m) for m in self.modes]
         U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
         if state.is_hilbert_vector:
-            return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
-        return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
+            return State(
+                ket=fock_utils.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes
+            )
+        return State(dm=fock_utils.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
 
     def U(
         self,
@@ -411,7 +413,7 @@ class Unitary(Transformation):
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
         shape = shape or tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
-        return fock.wigner_to_fock_U(X, d, shape=shape)
+        return fock_utils.wigner_to_fock_U(X, d, shape=shape)
 
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
@@ -453,8 +455,10 @@ class Channel(Transformation):
         op_idx = [state.modes.index(m) for m in self.modes]
         choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx], dual=dual)
         if state.is_hilbert_vector:
-            return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
-        return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+            return State(
+                dm=fock_utils.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
+            )
+        return State(dm=fock_utils.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     def value(self, shape: tuple[int]):
         return self.choi(shape=shape)

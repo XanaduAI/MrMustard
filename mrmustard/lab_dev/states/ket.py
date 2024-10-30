@@ -23,8 +23,14 @@ from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display
+
 from mrmustard import math, settings, widgets
+from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexVector,
@@ -33,14 +39,12 @@ from mrmustard.utils.typing import (
     Scalar,
     Batch,
 )
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states.base import State, _validate_operator, OperatorType
-from mrmustard.physics.bargmann import wigner_to_bargmann_psi
-from mrmustard.lab_dev.states.dm import DM
-from mrmustard.physics.representations import Bargmann, Fock
-from mrmustard.lab_dev.circuit_components_utils import BtoQ, TraceOut
-from mrmustard.lab_dev.utils import shape_check
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+
+from .base import State, _validate_operator, OperatorType
+from .dm import DM
+from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoQ, TraceOut
+from ..utils import shape_check
 
 __all__ = ["Ket"]
 
@@ -48,44 +52,22 @@ __all__ = ["Ket"]
 class Ket(State):
     r"""
     Base class for all Hilbert space vectors.
-
-    Arguments:
-        modes: The modes of this ket.
-        representation: The representation of this ket.
-        name: The name of this ket.
     """
 
     short_name = "Ket"
-
-    def __init__(
-        self,
-        modes: Sequence[int] = (),
-        representation: Bargmann | Fock | None = None,
-        name: str | None = None,
-    ):
-        if representation and representation.ansatz.num_vars != len(modes):
-            raise ValueError(
-                f"Expected a representation with {len(modes)} variables, found {representation.ansatz.num_vars}."
-            )
-        super().__init__(
-            wires=[(), (), modes, ()],
-            name=name,
-        )
-        if representation is not None:
-            self._representation = representation
 
     @property
     def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
         """
-        batch_dim = self.representation.ansatz.batch_size
+        batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
 
-        A = self.representation.A[0]
+        A = self.ansatz.A[0]
 
         return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
@@ -112,7 +94,7 @@ class Ket(State):
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
-        return Ket(modes, Bargmann(*triple), name)
+        return Ket.from_ansatz(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
     def from_fock(
@@ -122,7 +104,22 @@ class Ket(State):
         name: str | None = None,
         batched: bool = False,
     ) -> State:
-        return Ket(modes, Fock(array, batched), name)
+        return Ket.from_ansatz(modes, ArrayAnsatz(array, batched), name)
+
+    @classmethod
+    def from_ansatz(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        modes = set(modes)
+        if ansatz and ansatz.num_vars != len(modes):
+            raise ValueError(
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
+            )
+        wires = Wires(modes_out_ket=modes)
+        return Ket(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
@@ -141,9 +138,9 @@ class Ket(State):
             if p < 1.0 - atol_purity:
                 msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
                 raise ValueError(msg)
-        return Ket(
+        return Ket.from_ansatz(
             modes,
-            coeff * Bargmann.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
+            coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
 
@@ -156,27 +153,8 @@ class Ket(State):
         name: str | None = None,
     ) -> State:
         QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket(modes, Bargmann(*triple))
-        return Ket(modes, (Q >> QtoB).representation, name)
-
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
-
-        Args:
-            cutoff: The photon cutoff.
-
-        Returns:
-            The Fock distribution.
-        """
-        fock_array = self.fock(cutoff)
-
-        return (
-            math.astensor(
-                [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
-            )
-            ** 2
-        )
+        Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
+        return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
@@ -191,8 +169,22 @@ class Ket(State):
 
         m = len(modes)
         S = math.random_symplectic(m, max_r)
-        I = math.eye(m, dtype=math.complex128)
-        transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
+        transformation = (
+            1
+            / np.sqrt(2)
+            * math.block(
+                [
+                    [
+                        math.eye(m, dtype=math.complex128),
+                        math.eye(m, dtype=math.complex128),
+                    ],
+                    [
+                        -1j * math.eye(m, dtype=math.complex128),
+                        1j * math.eye(m, dtype=math.complex128),
+                    ],
+                ]
+            )
+        )
         S = math.conj(math.transpose(transformation)) @ S @ transformation
         S_1 = S[:m, :m]
         S_2 = S[:m, m:]
@@ -200,28 +192,6 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
         return psi.normalize()
-
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the State.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        quad = math.astensor(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(list(product(quad, repeat=len(self.modes))))
-
-        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
@@ -240,14 +210,14 @@ class Ket(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.representation.ansatz.batch_size == 1:
+        if self.ansatz.batch_size == 1:
             try:  # fock
-                shape = self._representation.array.shape[1:]
+                shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.representation.ansatz.polynomial_shape[0] == 0:
-                    repr = self.representation.conj() & self.representation
-                    A, b, c = repr.A[0], repr.b[0], repr.c[0]
-                    repr = repr / self.probability
+                if self.ansatz.polynomial_shape[0] == 0:
+                    ansatz = self.ansatz.conj & self.ansatz
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),
@@ -269,9 +239,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         dm = self @ self.adjoint
-        ret = DM._from_attributes(  # pylint: disable=protected-access
-            dm.representation, dm.wires, self.name
-        )
+        ret = DM(dm.representation, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
@@ -318,11 +286,55 @@ class Ket(State):
 
         return result
 
+    def fock_distribution(self, cutoff: int) -> ComplexTensor:
+        r"""
+        Returns the Fock distribution of the state up to some cutoff.
+        Args:
+            cutoff: The photon cutoff.
+        Returns:
+            The Fock distribution.
+        """
+        fock_array = self.fock_array(cutoff)
+        return (
+            math.astensor(
+                [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+            )
+            ** 2
+        )
+
     def normalize(self) -> Ket:
         r"""
         Returns a rescaled version of the state such that its probability is 1
         """
         return self / math.sqrt(self.probability)
+
+    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the Ket.
+
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            The quadrature distribution.
+        """
+        quad = np.array(quad)
+        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
+            raise ValueError(
+                "The dimensionality of quad should be 1, or match the number of modes."
+            )
+
+        if len(quad.shape) == 1:
+            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
+                -1, len(self.modes)
+            )
+
+        return math.abs(self.quadrature(quad, phi)) ** 2
+
+    def _ipython_display_(self):  # pragma: no cover
+        is_fock = isinstance(self.ansatz, ArrayAnsatz)
+        display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
     def __getitem__(self, modes: int | Sequence[int]) -> State:
         r"""
@@ -365,11 +377,7 @@ class Ket(State):
 
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.wires.modes, result.representation)
+                return Ket(result.representation)
             elif result.wires.bra.modes == result.wires.ket.modes:
-                result = DM(result.wires.modes, result.representation)
+                return DM(result.representation)
         return result
-
-    def _ipython_display_(self):  # pragma: no cover
-        is_fock = isinstance(self.representation, Fock)
-        display(widgets.state(self, is_ket=True, is_fock=is_fock))

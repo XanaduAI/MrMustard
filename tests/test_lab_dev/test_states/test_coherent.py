@@ -14,7 +14,7 @@
 
 """Tests for the Coherent class."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import numpy as np
 import pytest
@@ -61,24 +61,24 @@ class TestCoherent:
         assert state3.y.value == 2
 
     def test_representation(self):
-        rep1 = Coherent(modes=[0], x=0.1, y=0.2).representation
+        rep1 = Coherent(modes=[0], x=0.1, y=0.2).ansatz
         assert math.allclose(rep1.A, np.zeros((1, 1, 1)))
         assert math.allclose(rep1.b, [[0.1 + 0.2j]])
         assert math.allclose(rep1.c, [0.97530991])
 
-        rep2 = Coherent(modes=[0, 1], x=0.1, y=[0.2, 0.3]).representation
+        rep2 = Coherent(modes=[0, 1], x=0.1, y=[0.2, 0.3]).ansatz
         assert math.allclose(rep2.A, np.zeros((1, 2, 2)))
         assert math.allclose(rep2.b, [[0.1 + 0.2j, 0.1 + 0.3j]])
         assert math.allclose(rep2.c, [0.9277434863])
 
-        rep3 = Coherent(modes=[1], x=0.1).representation
+        rep3 = Coherent(modes=[1], x=0.1).ansatz
         assert math.allclose(rep3.A, np.zeros((1, 1, 1)))
         assert math.allclose(rep3.b, [[0.1]])
         assert math.allclose(rep3.c, [0.9950124791926823])
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Coherent(modes=[0], x=[0.1, 0.2]).representation
+            Coherent(modes=[0], x=[0.1, 0.2]).ansatz
 
     def test_linear_combinations(self):
         state1 = Coherent([0], x=1, y=2)
@@ -86,11 +86,11 @@ class TestCoherent:
         state3 = Coherent([0], x=3, y=4)
 
         lc = state1 + state2 - state3
-        assert lc.representation.ansatz.batch_size == 3
+        assert lc.ansatz.batch_size == 3
 
-        assert (lc @ lc.dual).representation.ansatz.batch_size == 9
+        assert (lc @ lc.dual).ansatz.batch_size == 9
         settings.UNSAFE_ZIP_BATCH = True
-        assert (lc @ lc.dual).representation.ansatz.batch_size == 3  # not 9
+        assert (lc @ lc.dual).ansatz.batch_size == 3  # not 9
         settings.UNSAFE_ZIP_BATCH = False
 
     def test_vacuum_shape(self):

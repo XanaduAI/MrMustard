@@ -20,8 +20,9 @@ from __future__ import annotations
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.utils.typing import RealMatrix
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from .base import Channel
-from ...physics.representations import Bargmann
 from ...physics import triples
 from ..utils import make_parameter
 
@@ -64,7 +65,6 @@ class GaussRandNoise(Channel):
         Y: RealMatrix,
         Y_trainable: bool = False,
     ):
-
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
@@ -74,9 +74,10 @@ class GaussRandNoise(Channel):
         if (math.real(math.eigvals(Y)) >= -settings.ATOL).min() == 0:
             raise ValueError("The input Y matrix has negative eigen-values.")
 
-        super().__init__(modes_out=modes, modes_in=modes, name="GRN")
+        super().__init__(name="GRN")
         self._add_parameter(make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)))
-
-        self._representation = Bargmann.from_function(
-            fn=triples.gaussian_random_noise_Abc, Y=self.Y.value
-        )
+        self._representation = self.from_ansatz(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.gaussian_random_noise_Abc, Y=self.Y),
+        ).representation

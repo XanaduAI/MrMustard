@@ -1,18 +1,34 @@
+# Copyright 2021 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests for the bargmann_utils.py file."""
+
 import numpy as np
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
-from mrmustard.lab_dev import Unitary, Vacuum, Channel
-from mrmustard.physics.bargmann import (
+from mrmustard.lab_dev import Channel, Unitary, Vacuum
+from mrmustard.physics.bargmann_utils import (
+    XY_of_channel,
+    au2Symplectic,
+    norm_ket,
+    symplectic2Au,
+    trace_dm,
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
-    norm_ket,
-    trace_dm,
-    au2Symplectic,
-    symplectic2Au,
-    XY_of_channel,
 )
 
 
@@ -153,7 +169,7 @@ def test_XY_of_channel():
     Tests the function X_of_channel.
     """
 
-    X, Y = XY_of_channel(Channel.random([0]).representation.A[0])
+    X, Y = XY_of_channel(Channel.random([0]).ansatz.A[0])
     omega = np.array([[0, 1j], [-1j, 0]])
     channel_check = X @ omega @ X.T / 2 - omega / 2 + Y
     assert np.all([mu > 0 for mu in np.linalg.eigvals(channel_check)])

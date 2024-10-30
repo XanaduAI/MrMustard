@@ -15,10 +15,9 @@
 """This module contains tests for the tensors.py module."""
 
 import numpy as np
-
-from mrmustard.math.tensor_networks import Wire, Tensor, connect
-
 import pytest
+
+from mrmustard.math.tensor_networks import Tensor, Wire, connect
 
 # ~~~~~~~
 # Helpers

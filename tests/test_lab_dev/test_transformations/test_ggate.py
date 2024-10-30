@@ -16,8 +16,8 @@
 Test for the Ggate class.
 """
 
-from mrmustard.lab_dev import Ggate, Identity
 from mrmustard import math
+from mrmustard.lab_dev import Ggate, Identity
 
 
 class TestGgate:

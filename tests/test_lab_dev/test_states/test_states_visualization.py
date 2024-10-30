@@ -14,12 +14,12 @@
 
 """Tests for the state visualization."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import json
 from pathlib import Path
-import pytest
 
+import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent

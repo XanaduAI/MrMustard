@@ -15,15 +15,15 @@
 """
 The class representing an operation that changes Bargmann into quadrature.
 """
-# pylint: disable=protected-access
 from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
-from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Operation
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
+from ..utils import make_parameter
 
 __all__ = ["BtoQ"]
 
@@ -44,48 +44,22 @@ class BtoQ(Operation):
         modes: Sequence[int],
         phi: float = 0.0,
     ):
-        repr = Bargmann.from_function(
-            fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=phi
-        )
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="BtoQ")
+        self._add_parameter(make_parameter(False, phi, "phi", (None, None)))
+        self._representation = self.from_ansatz(
             modes_in=modes,
-            representation=repr,
-            name="BtoQ",
-        )
-        self._add_parameter(Constant(phi, "phi"))
-        self.phi = phi
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.phi
+            ),
+        ).representation
+        for i in self.wires.input.indices:
+            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
+        for i in self.wires.output.indices:
+            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value))
 
-    @property
-    def adjoint(self) -> BtoQ:
-        bras = self.wires.bra.indices
-        kets = self.wires.ket.indices
-        rep = self.representation.reorder(kets + bras).conj()
-
+    def inverse(self):
         ret = BtoQ(self.modes, self.phi)
-        ret._representation = rep
-        ret._wires = self.wires.adjoint
-        ret._name = self.name + "_adj"
-        return ret
-
-    @property
-    def dual(self) -> BtoQ:
-        ok = self.wires.ket.output.indices
-        ik = self.wires.ket.input.indices
-        ib = self.wires.bra.input.indices
-        ob = self.wires.bra.output.indices
-        rep = self.representation.reorder(ib + ob + ik + ok).conj()
-
-        ret = BtoQ(self.modes, self.phi)
-        ret._representation = rep
-        ret._wires = self.wires.dual
-        ret._name = self.name + "_dual"
-        return ret
-
-    def inverse(self) -> BtoQ:
-        inv = super().inverse()
-        ret = BtoQ(self.modes, self.phi)
-        ret._representation = inv.representation
-        ret._wires = inv.wires
-        ret._name = inv.name
+        ret._representation = super().inverse().representation
+        ret._representation._wires = ret.representation.wires.dual
         return ret

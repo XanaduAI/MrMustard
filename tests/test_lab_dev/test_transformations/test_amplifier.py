@@ -14,14 +14,14 @@
 
 """Tests for the ``Amplifier`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.transformations import Attenuator, Amplifier
 from mrmustard.lab_dev.states import Coherent
+from mrmustard.lab_dev.transformations import Amplifier, Attenuator
 
 
 class TestAmplifier:
@@ -44,7 +44,7 @@ class TestAmplifier:
             Amplifier(modes=[0, 1], gain=[1.2, 1.3, 1.4])
 
     def test_representation(self):
-        rep1 = Amplifier(modes=[0], gain=1.1).representation
+        rep1 = Amplifier(modes=[0], gain=1.1).ansatz
         g1 = 0.95346258
         g2 = 0.09090909
         assert math.allclose(
@@ -65,7 +65,7 @@ class TestAmplifier:
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Amplifier(modes=[0], gain=[1.1, 1.2]).representation
+            Amplifier(modes=[0], gain=[1.1, 1.2]).ansatz
 
     def test_operation(self):
         amp_channel = Amplifier(modes=[0], gain=1.5)
@@ -73,7 +73,7 @@ class TestAmplifier:
         operation = amp_channel >> att_channel
 
         assert math.allclose(
-            operation.representation.A,
+            operation.ansatz.A,
             [
                 [
                     [0.0 + 0.0j, 0.75903339 + 0.0j, 0.25925926 + 0.0j, 0.0 + 0.0j],
@@ -83,8 +83,8 @@ class TestAmplifier:
                 ]
             ],
         )
-        assert math.allclose(operation.representation.b, np.zeros((1, 4)))
-        assert math.allclose(operation.representation.c, [0.74074074 + 0.0j])
+        assert math.allclose(operation.ansatz.b, np.zeros((1, 4)))
+        assert math.allclose(operation.ansatz.c, [0.74074074 + 0.0j])
 
     def test_circuit_identity(self):
         amp_channel = Amplifier(modes=[0], gain=2)
@@ -92,12 +92,12 @@ class TestAmplifier:
         input_state = Coherent(modes=[0], x=0.5, y=0.7)
 
         assert math.allclose(
-            (input_state >> amp_channel).representation.A,
-            (input_state >> att_channel.dual).representation.A,
+            (input_state >> amp_channel).ansatz.A,
+            (input_state >> att_channel.dual).ansatz.A,
         )
         assert math.allclose(
-            (input_state >> amp_channel).representation.b,
-            (input_state >> att_channel.dual).representation.b,
+            (input_state >> amp_channel).ansatz.b,
+            (input_state >> att_channel.dual).ansatz.b,
         )
 
     @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
