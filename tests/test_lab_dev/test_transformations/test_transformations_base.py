@@ -204,3 +204,11 @@ class TestChannel:
 
         X, Y = Attenuator([0], 0.2).XY
         assert np.allclose(X, np.sqrt(0.2) * np.eye(2)) and np.allclose(Y, 0.4 * np.eye(2))
+
+    @pytest.mark.parametrize("nmodes", [1, 2, 3])
+    def test_from_XY(self, nmodes):
+        X = np.random.random((2 * nmodes, 2 * nmodes))
+        Y = np.random.random((2 * nmodes, 2 * nmodes))
+        x, y = Channel.from_XY(range(nmodes), range(nmodes), X, Y).XY
+        assert math.allclose(x, X)
+        assert math.allclose(y, Y)
