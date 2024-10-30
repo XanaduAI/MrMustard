@@ -8,7 +8,7 @@ function calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, piv
     Args:
         i (int): the element of the multidim index that is increased
         G_in, G_in_dA, G_in_dB (array, array, array): all Fock amplitudes from the 'read' group in the recurrence relation and their derivatives w.r.t. A and B
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         K_l, K_i (vector, vector): SQRT[pivot], SQRT[pivot + 1]
         M (int): number of modes
         pivot_val, pivot_val_dA, pivot_val_dB (array, array, array): Fock amplitude at the position of the pivot and its derivatives w.r.t. A and B

@@ -14,7 +14,7 @@
 
 """Tests for the ``TwoModeSqueezedVacuum`` class."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import pytest
 
@@ -61,10 +61,10 @@ class TestTwoModeSqueezedVacuum:
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_representation(self, modes, r, phi):
-        rep = TwoModeSqueezedVacuum(modes, r, phi).representation
-        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).representation
+        rep = TwoModeSqueezedVacuum(modes, r, phi).ansatz
+        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).ansatz
         assert rep == exp
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).representation
+            TwoModeSqueezedVacuum(modes=[0], r=[0.1, 0.2]).ansatz

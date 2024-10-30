@@ -16,9 +16,10 @@
 Tests for the Settings class.
 """
 
+import pytest
+
 from mrmustard import math
 from mrmustard.utils.settings import Settings
-import pytest
 
 from ..conftest import skip_np
 

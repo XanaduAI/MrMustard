@@ -14,22 +14,17 @@
 
 """Tests for the ``Circuit`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import pytest
 
+import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
+from mrmustard import settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
-from mrmustard.lab_dev.transformations import (
-    BSgate,
-    Sgate,
-    Dgate,
-    Attenuator,
-)
-from mrmustard import settings
+from mrmustard.lab_dev.states import Coherent, Number, SqueezedVacuum, Vacuum
+from mrmustard.lab_dev.transformations import Attenuator, BSgate, Dgate, Sgate
 from mrmustard.utils.serialize import load
-import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
 
 
 class TestCircuit:
@@ -178,9 +173,7 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
-        cc = CircuitComponent._from_attributes(
-            bs01.representation, bs01.wires, "my_cc"
-        )  # pylint: disable=protected-access
+        cc = CircuitComponent(bs01.representation, "my_cc")
 
         assert repr(Circuit()) == ""
 

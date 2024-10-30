@@ -14,7 +14,7 @@
 
 """Tests for the density matrix."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
 import numpy as np
@@ -26,7 +26,8 @@ from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.wires import Wires
+from mrmustard.physics.representations import Representation
 
 
 def coherent_state_quad(q, x, y, phi=0):
@@ -55,7 +56,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
     def test_init(self, name, modes):
-        state = DM(modes, None, name)
+        state = DM.from_ansatz(modes, None, name)
 
         assert state.name in ("DM0", "DM01", "DM2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -97,7 +98,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state01 = Coherent([0, 1], 1).dm()
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock(5), "my_dm", True)
+            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
@@ -122,9 +123,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5, batched=True)
+        array_in = state_in.fock_array(5, batched=True)
 
-        assert math.allclose(array_in, state_in_fock.representation.array)
+        assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(modes, array_in, "my_dm", True)
         assert state_in_fock == state_out
@@ -258,7 +259,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.representation.c[0])
+        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
 
     def test_expectation_bargmann_dm(self):
         dm0 = Coherent([0], x=1, y=2).dm()
@@ -334,7 +335,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
+        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -345,13 +346,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.wires, unitary.name
-        )  # pylint: disable=protected-access
+        u_component = CircuitComponent(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent._from_attributes(
-            channel.representation, channel.wires, channel.name
-        )  # pylint: disable=protected-access
+        ch_component = CircuitComponent(channel.representation, channel.name)
 
         dm = ket >> channel
 
@@ -370,7 +367,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_random(self, modes):
         m = len(modes)
         dm = DM.random(modes)
-        A = dm.representation.A[0]
+        A = dm.ansatz.A[0]
         Gamma = A[:m, m:]
         Lambda = A[m:, m:]
         Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda

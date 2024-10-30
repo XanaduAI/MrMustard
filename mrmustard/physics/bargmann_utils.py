@@ -20,7 +20,52 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix, RealMatrix
+from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
+
+
+def bargmann_Abc_to_phasespace_cov_means(
+    A: Matrix, b: Vector, c: Scalar, batched: bool = False
+) -> tuple[Matrix, Vector, Scalar]:
+    r"""
+    Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
+
+    The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
+    :math:
+        \Chi_G(r) = \exp\left( -\frac{1}{2}r^T \Omega^T cov \Omega r + i r^T\Omega^T mean \right),
+    and the Wigner function of a Gaussian state:
+    :math:
+        W_G(r) = \frac{1}{\sqrt{\Det(cov)}} \exp\left( -\frac{1}{2}(r - mean)^T cov^{-1} (r-mean) \right).
+
+    The internal expression of our Gaussian state :math:`\rho` is in Bargmann representation, one can write the characteristic function of a Gaussian state in Bargmann representation as
+    :math:
+        \Chi_G(\alpha) = \Tr(\rho D) = c \exp\left( -\frac{1}{2}\alpha^T A \alpha + \alpha^T b \right).
+
+    This function is to go from the Abc triple in characteristic phase space into the covariance and mean vector for Gaussian state.
+
+    Args:
+        A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+
+    Returns:
+        The covariance matrix, mean vector and coefficient of the state in phase space.
+    """
+    # batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) == 1
+    A = math.atleast_3d(A)
+    b = math.atleast_2d(b)
+    c = math.atleast_1d(c)
+    num_modes = A.shape[-1] // 2
+    Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
+    W = math.transpose(math.conj(math.rotmat(num_modes)))
+    coeff = c
+    cov = [
+        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
+    ]
+    mean = [
+        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
+        for bvec in b
+    ]
+    if batched:
+        return math.astensor(cov), math.astensor(mean), coeff
+    return cov[0], mean[0], coeff[0]
 
 
 def cayley(X, c):
@@ -251,4 +296,3 @@ def XY_of_channel(A: ComplexMatrix):
             "Invalid input for the A matrix of channel, caused imaginary X and/or Y matrices."
         )
     return math.real(X), math.real(Y)
- 

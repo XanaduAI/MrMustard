@@ -28,7 +28,7 @@ from matplotlib import cm
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.physics import bargmann, fock, gaussian
+from mrmustard.physics import bargmann_utils, fock_utils, gaussian
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -157,7 +157,7 @@ class State:  # pylint: disable=too-many-public-methods
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov)
             else:
-                self._purity = fock.purity(self._dm)
+                self._purity = fock_utils.purity(self._dm)
         return self._purity
 
     @property
@@ -187,7 +187,7 @@ class State:  # pylint: disable=too-many-public-methods
             return math.sqrt(math.diag_part(self.number_cov))
 
         return math.sqrt(
-            fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
+            fock_utils.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
         )
 
     @property
@@ -195,7 +195,7 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the Hilbert space dimension of each mode."""
         if self._cutoffs is None:
             if self._ket is None and self._dm is None:
-                self._cutoffs = fock.autocutoffs(
+                self._cutoffs = fock_utils.autocutoffs(
                     self.cov, self.means, settings.AUTOSHAPE_PROBABILITY
                 )
             else:
@@ -223,7 +223,7 @@ class State:  # pylint: disable=too-many-public-methods
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
-            _fock = fock.wigner_to_fock_state(
+            _fock = fock_utils.wigner_to_fock_state(
                 self.cov,
                 self.means,
                 shape=self.shape,
@@ -243,7 +243,7 @@ class State:  # pylint: disable=too-many-public-methods
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means)
 
-        return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
+        return fock_utils.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
     @property
     def number_cov(self) -> RealMatrix:
@@ -258,7 +258,7 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, not self.is_hilbert_vector)
+        return fock_utils.norm(self.fock, not self.is_hilbert_vector)
 
     @property
     def probability(self) -> float:
@@ -296,7 +296,7 @@ class State:  # pylint: disable=too-many-public-methods
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
         if self.is_gaussian:
-            self._ket = fock.wigner_to_fock_state(
+            self._ket = fock_utils.wigner_to_fock_state(
                 self.cov,
                 self.means,
                 shape=cutoffs,
@@ -308,12 +308,12 @@ class State:  # pylint: disable=too-many-public-methods
             if self._ket is None:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
-                    self._ket = fock.dm_to_ket(self._dm)
+                    self._ket = fock_utils.dm_to_ket(self._dm)
             current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._ket, paddings, mode="constant")
+                    padded = fock_utils.math.pad(self._ket, paddings, mode="constant")
                 else:
                     padded = self._ket
                 return padded[tuple(slice(s) for s in cutoffs)]
@@ -336,16 +336,16 @@ class State:  # pylint: disable=too-many-public-methods
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
             if ket is not None:
-                return fock.ket_to_dm(ket)
+                return fock_utils.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.wigner_to_fock_state(
+                self._dm = fock_utils.wigner_to_fock_state(
                     self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
+                    padded = fock_utils.math.pad(self._dm, paddings + paddings, mode="constant")
                 else:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
@@ -366,10 +366,10 @@ class State:  # pylint: disable=too-many-public-methods
         if self._fock_probabilities is None:
             if self.is_mixed:
                 dm = self.dm(cutoffs=cutoffs)
-                self._fock_probabilities = fock.dm_to_probs(dm)
+                self._fock_probabilities = fock_utils.dm_to_probs(dm)
             else:
                 ket = self.ket(cutoffs=cutoffs)
-                self._fock_probabilities = fock.ket_to_probs(ket)
+                self._fock_probabilities = fock_utils.ket_to_probs(ket)
         return self._fock_probabilities
 
     def primal(self, other: State | Transformation) -> State:
@@ -383,9 +383,6 @@ class State:  # pylint: disable=too-many-public-methods
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        # import pdb
-
-        # pdb.set_trace()
         if isinstance(other, State):
             return self._project_onto_state(other)
         try:
@@ -430,9 +427,9 @@ class State:  # pylint: disable=too-many-public-methods
 
         # return the probability (norm) of the state when there are no modes left
         return (
-            fock.math.abs(out_fock) ** 2
+            fock_utils.math.abs(out_fock) ** 2
             if other.is_pure and self.is_pure
-            else fock.math.abs(out_fock)
+            else fock_utils.math.abs(out_fock)
         )
 
     def _contract_with_other(self, other):
@@ -444,7 +441,7 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-            out_fock = fock.contract_states(
+            out_fock = fock_utils.contract_states(
                 stateA=(other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)),
                 stateB=(self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs)),
                 a_is_dm=other.is_mixed,
@@ -499,7 +496,7 @@ class State:  # pylint: disable=too-many-public-methods
             if self.is_mixed or other.is_mixed:
                 self_fock = self.dm()
                 other_fock = other.dm()
-                dm = fock.math.tensordot(self_fock, other_fock, [[], []])
+                dm = fock_utils.math.tensordot(self_fock, other_fock, [[], []])
                 # e.g. self has shape [1,3,1,3] and other has shape [2,2]
                 # we want self & other to have shape [1,3,2,1,3,2]
                 # before transposing shape is [1,3,1,3]+[2,2]
@@ -519,7 +516,7 @@ class State:  # pylint: disable=too-many-public-methods
             self_fock = self.ket()
             other_fock = other.ket()
             return State(
-                ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
+                ket=fock_utils.math.tensordot(self_fock, other_fock, [[], []]),
                 modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
             )
         cov = gaussian.join_covs([self.cov, other.cov])
@@ -551,9 +548,9 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if self.is_gaussian:
             if self.is_pure:
-                A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
+                A, B, C = bargmann_utils.wigner_to_bargmann_psi(self.cov, self.means)
             else:
-                A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
+                A, B, C = bargmann_utils.wigner_to_bargmann_rho(self.cov, self.means)
         else:
             return None
         if numpy:
@@ -582,7 +579,7 @@ class State:  # pylint: disable=too-many-public-methods
             means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
+        fock_partitioned = fock_utils.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
@@ -736,8 +733,8 @@ def mikkel_plot(
     if plot_args["ytick_labels"] is None:
         plot_args["ytick_labels"] = plot_args["yticks"]
 
-    q, ProbX = fock.quadrature_distribution(rho)
-    p, ProbP = fock.quadrature_distribution(rho, np.pi / 2)
+    q, ProbX = fock_utils.quadrature_distribution(rho)
+    p, ProbP = fock_utils.quadrature_distribution(rho, np.pi / 2)
 
     xvec = np.linspace(*xbounds, plot_args["resolution"])
     pvec = np.linspace(*ybounds, plot_args["resolution"])

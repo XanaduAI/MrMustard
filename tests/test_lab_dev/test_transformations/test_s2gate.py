@@ -14,14 +14,14 @@
 
 """Tests for the ``S2gate`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
-from mrmustard.lab_dev.states import Vacuum, TwoModeSqueezedVacuum
 
 
 class TestS2gate:
@@ -46,7 +46,7 @@ class TestS2gate:
             S2gate([1, 2, 3])
 
     def test_representation(self):
-        rep1 = S2gate([0, 1], 0.1, 0.2).representation
+        rep1 = S2gate([0, 1], 0.1, 0.2).ansatz
         tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
         sechr = 1 / np.cosh(0.1)
 
@@ -77,8 +77,8 @@ class TestS2gate:
         assert gate3.phi.value == 2
 
     def test_operation(self):
-        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).representation
-        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).representation
+        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).ansatz
+        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).ansatz
 
         assert math.allclose(rep1.A, rep2.A)
         assert math.allclose(rep1.b, rep2.b)
