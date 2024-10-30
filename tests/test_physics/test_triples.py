@@ -362,7 +362,7 @@ class TestTriples:
         X = np.sqrt(eta) * np.eye(2)
         Y = settings.HBAR / 2 * (1 - eta) * np.eye(2)
 
-        A, b, c = XY_to_channel_Abc(X, Y)
+        A, b, c = triples.XY_to_channel_Abc(X, Y)
 
         A_by_hand = np.block(
             [
