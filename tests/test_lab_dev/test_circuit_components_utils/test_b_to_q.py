@@ -14,18 +14,18 @@
 
 """Tests for BtoQ."""
 
-# pylint: disable=fixme, missing-function-docstring, protected-access, pointless-statement
+# pylint: disable=fixme, missing-function-docstring, pointless-statement
 
 import numpy as np
 
 from mrmustard import math, settings
+from mrmustard.lab_dev import BtoQ, Coherent, Identity
 from mrmustard.physics.gaussian_integrals import (
-    real_gaussian_integral,
     complex_gaussian_integral_1,
     join_Abc,
     join_Abc_real,
+    real_gaussian_integral,
 )
-from mrmustard.lab_dev import Coherent, BtoQ, Identity
 
 
 class TestBtoQ:
@@ -38,10 +38,9 @@ class TestBtoQ:
         adjoint_btoq = btoq.adjoint
 
         kets = btoq.wires.ket.indices
-        assert adjoint_btoq.representation == btoq.representation.reorder(kets).conj()
+        assert adjoint_btoq.ansatz == btoq.ansatz.reorder(kets).conj
         assert adjoint_btoq.wires == btoq.wires.adjoint
         assert adjoint_btoq.phi == btoq.phi
-        assert isinstance(adjoint_btoq, BtoQ)
 
     def test_dual(self):
         btoq = BtoQ([0], 0.5)
@@ -49,16 +48,14 @@ class TestBtoQ:
 
         ok = dual_btoq.wires.ket.output.indices
         ik = dual_btoq.wires.ket.input.indices
-        assert dual_btoq.representation == btoq.representation.reorder(ik + ok).conj()
+        assert dual_btoq.ansatz == btoq.ansatz.reorder(ik + ok).conj
         assert dual_btoq.wires == btoq.wires.dual
         assert dual_btoq.phi == btoq.phi
-        assert isinstance(dual_btoq, BtoQ)
 
     def test_inverse(self):
         btoq = BtoQ([0], 0.5)
         inv_btoq = btoq.inverse()
         assert (btoq >> inv_btoq) == Identity([0])
-        assert isinstance(inv_btoq, BtoQ)
 
     def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
         A0 = np.array([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
@@ -135,6 +132,6 @@ class TestBtoQ:
         quad = np.random.random()
 
         state = Coherent([0], x, y)
-        wavefunction = (state >> BtoQ([0], axis_angle)).representation.ansatz
+        wavefunction = (state >> BtoQ([0], axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))

@@ -14,13 +14,14 @@
 
 """Tests for the ``Dgate`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
-import pytest
 import numpy as np
+import pytest
+
 from mrmustard import math
 from mrmustard.lab_dev import Dgate, SqueezedVacuum
-from mrmustard.physics.representations import Fock
+from mrmustard.physics.ansatz import ArrayAnsatz
 
 
 class TestDgate:
@@ -52,20 +53,20 @@ class TestDgate:
         # displacement gate in fock representation for large displacement
         dgate = Dgate([0], x=10.0).to_fock(150)
         assert (state.to_fock() >> dgate).probability < 1
-        assert np.all(math.abs(dgate.fock(150)) < 1)
+        assert np.all(math.abs(dgate.fock_array(150)) < 1)
 
     def test_representation(self):
-        rep1 = Dgate(modes=[0], x=0.1, y=0.1).representation
+        rep1 = Dgate(modes=[0], x=0.1, y=0.1).ansatz
         assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
         assert math.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
         assert math.allclose(rep1.c, [0.990049833749168])
 
-        rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).representation
+        rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).ansatz
         assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
         assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
         assert math.allclose(rep2.c, [0.9656054162575665])
 
-        rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).representation
+        rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).ansatz
         assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
         assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
         assert math.allclose(rep3.c, [0.9753099120283327])
@@ -85,9 +86,9 @@ class TestDgate:
         assert gate3.y.value == 2
 
         gate_fock = gate3.to_fock()
-        assert isinstance(gate_fock.representation, Fock)
+        assert isinstance(gate_fock.ansatz, ArrayAnsatz)
         assert gate_fock.y.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Dgate(modes=[0], x=[0.1, 0.2]).representation
+            Dgate(modes=[0], x=[0.1, 0.2]).ansatz

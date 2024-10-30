@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from .base import Operation
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter, reshape_params
 
@@ -74,7 +74,7 @@ class FockDamping(Operation):
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="FockDamping")
+        super().__init__(name="FockDamping")
         (betas,) = list(reshape_params(len(modes), damping=damping))
         self._add_parameter(
             make_parameter(
@@ -85,6 +85,8 @@ class FockDamping(Operation):
                 None,
             )
         )
-        self._representation = Bargmann.from_function(
-            fn=triples.fock_damping_Abc, beta=self.damping
-        )
+        self._representation = self.from_ansatz(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.fock_damping_Abc, beta=self.damping),
+        ).representation

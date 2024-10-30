@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal, protected-access, inconsistent-return-statements
+# pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
 
 """
 This module contains the base classes for the available quantum states.
@@ -36,7 +36,11 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from mrmustard import math, settings
-from mrmustard.physics.fock import quadrature_distribution
+from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.bargmann_utils import (
+    bargmann_Abc_to_phasespace_cov_means,
+)
+from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -44,12 +48,9 @@ from mrmustard.utils.typing import (
     ComplexVector,
     RealVector,
 )
-from mrmustard.physics.representations import Bargmann
-from mrmustard.physics.ansatze import (
-    bargmann_Abc_to_phasespace_cov_means,
-)
-from mrmustard.lab_dev.circuit_components_utils import BtoPS
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+
+from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoPS
 
 __all__ = ["State"]
 
@@ -170,7 +171,7 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Bargmann
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.ket import Ket
 
@@ -179,7 +180,7 @@ class State(CircuitComponent):
 
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Bargmann(*triple)
+            >>> assert coh.ansatz == PolyExpAnsatz(*triple)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -210,16 +211,16 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard.physics.representations import Fock
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().representation.array
+            >>> array = Coherent(modes, x=0.1).to_fock().ansatz.array
             >>> coh = Ket.from_fock(modes, array, batched=True)
 
             >>> assert coh.modes == modes
-            >>> assert coh.representation == Fock(array, batched=True)
+            >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
         Args:
@@ -234,6 +235,26 @@ class State(CircuitComponent):
         Raises:
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
+        """
+
+    @classmethod
+    @abstractmethod
+    def from_ansatz(
+        cls,
+        modes: Sequence[int],
+        ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
+        name: str | None = None,
+    ) -> State:
+        r"""
+        Initializes a state of type ``cls`` given modes and an ansatz.
+
+        Args:
+            modes: The modes of this state.
+            ansatz: The ansatz of this state.
+            name: The name of this state.
+
+        Returns:
+            A state.
         """
 
     @classmethod
@@ -312,7 +333,7 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        if not isinstance(self.representation, Bargmann):
+        if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
@@ -362,7 +383,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -478,7 +499,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
@@ -552,7 +573,7 @@ class State(CircuitComponent):
             raise ValueError("DM visualization not available for multi-mode states.")
         state = self.to_fock(cutoff)
         state = state.dm()
-        dm = math.sum(state.representation.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axes=[0])
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
@@ -77,11 +77,13 @@ class Coherent(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(modes=modes, name="Coherent")
+        super().__init__(name="Coherent")
+
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
 
-        self._representation = Bargmann.from_function(
-            fn=triples.coherent_state_Abc, x=self.x, y=self.y
-        )
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y),
+        ).representation

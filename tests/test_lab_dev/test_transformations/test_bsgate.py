@@ -14,7 +14,7 @@
 
 """Tests for the ``BSgate`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import numpy as np
 import pytest
@@ -45,7 +45,7 @@ class TestBSgate:
             BSgate([1, 2, 3])
 
     def test_representation(self):
-        rep1 = BSgate([0, 1], 0.1, 0.2).representation
+        rep1 = BSgate([0, 1], 0.1, 0.2).ansatz
         A_exp = [
             [
                 [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
@@ -58,7 +58,7 @@ class TestBSgate:
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1])
 
-        rep2 = BSgate([0, 1], 0.1).representation
+        rep2 = BSgate([0, 1], 0.1).ansatz
         A_exp = [
             [
                 [0, 0, 9.95004165e-01, -9.98334166e-02],

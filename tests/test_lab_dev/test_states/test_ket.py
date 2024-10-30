@@ -14,7 +14,7 @@
 
 """Tests for the ket."""
 
-# pylint: disable=protected-access, unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
 import numpy as np
@@ -26,12 +26,20 @@ from plotly.graph_objs import FigureWidget
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.math.parameters import Constant, Variable
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.physics.gaussian import vacuum_cov, vacuum_means, squeezed_vacuum_cov
 from mrmustard.physics.triples import coherent_state_Abc
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum, DisplacedSqueezed
+from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.states import (
+    Coherent,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    Vacuum,
+)
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
-from mrmustard.lab_dev.wires import Wires
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
 
 
@@ -61,7 +69,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("name", [None, "my_ket"])
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_init(self, name, modes):
-        state = Ket(modes, None, name)
+        state = Ket.from_ansatz(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
         assert list(state.modes) == sorted(modes)
@@ -126,9 +134,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock(5, batched=True)
+        array_in = state_in.fock_array(5, batched=True)
 
-        assert math.allclose(array_in, state_in_fock.representation.array)
+        assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
@@ -183,7 +191,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
     def test_purity(self, modes):
-        state = Ket(modes, None, "my_ket")
+        state = Ket.from_ansatz(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
@@ -192,7 +200,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm = ket.dm()
 
         assert dm.name == ket.name
-        assert dm.representation == (ket @ ket.adjoint).representation
+        assert dm.ansatz == (ket @ ket.adjoint).ansatz
         assert dm.wires == (ket @ ket.adjoint).wires
 
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
@@ -255,7 +263,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), math.sum(res_k01.representation.c))
+        assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
 
         dm0 = Coherent([0], x=1, y=2).dm()
         dm1 = Coherent([1], x=1, y=3).dm()
@@ -267,7 +275,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.representation.c))
+        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
 
         u0 = Dgate([1], x=0.1)
         u1 = Dgate([0], x=0.2)
@@ -304,7 +312,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
         res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
-        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).representation.array
+        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -314,9 +322,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = (ket @ u0 @ ket.dual).to_fock(10).representation.array
-        res_u1 = (ket @ u1 @ ket.dual).to_fock(10).representation.array
-        res_u01 = (ket @ u01 @ ket.dual).to_fock(10).representation.array
+        res_u0 = (ket @ u0 @ ket.dual).to_fock(10).ansatz.array
+        res_u1 = (ket @ u1 @ ket.dual).to_fock(10).ansatz.array
+        res_u01 = (ket @ u01 @ ket.dual).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(u0), res_u0[0])
         assert math.allclose(ket.expectation(u1), res_u1[0])
@@ -329,7 +337,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(wires=[(), (), (1,), (0,)])
+        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -340,15 +348,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent._from_attributes(
-            unitary.representation, unitary.wires, unitary.name
-        )  # pylint: disable=protected-access
+        u_component = CircuitComponent(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent._from_attributes(
+        ch_component = CircuitComponent(
             channel.representation,
-            channel.wires,
             channel.name,
-        )  # pylint: disable=protected-access
+        )
 
         # gates
         assert isinstance(ket >> unitary, Ket)
@@ -419,7 +424,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
         psi = Ket.random([1, 22], max_sq)
-        A = psi.representation.A[0]
+        A = psi.ansatz.A[0]
         assert np.isclose(psi.probability, 1)  # checks if the state is normalized
         assert np.allclose(A - np.transpose(A), np.zeros(2))  # checks if the A matrix is symmetric
 
