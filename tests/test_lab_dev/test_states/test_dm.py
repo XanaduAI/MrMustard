@@ -17,17 +17,18 @@
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 from itertools import product
+
 import numpy as np
 import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.physics.gaussian import vacuum_cov
-from mrmustard.lab_dev.states import Coherent, DM, Ket, Number, Vacuum
+from mrmustard.lab_dev.states import DM, Coherent, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 
 
 def coherent_state_quad(q, x, y, phi=0):

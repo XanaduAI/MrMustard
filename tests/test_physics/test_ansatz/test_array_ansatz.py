@@ -19,9 +19,9 @@
 from unittest.mock import patch
 
 import numpy as np
-from ipywidgets import HBox, VBox, HTML, Tab
-from plotly.graph_objs import FigureWidget
 import pytest
+from ipywidgets import HTML, HBox, Tab, VBox
+from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
