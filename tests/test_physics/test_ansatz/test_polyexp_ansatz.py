@@ -374,9 +374,8 @@ class TestPolyExpAnsatz:
         c = np.array([[1, 2, 3]])
         ansatz = PolyExpAnsatz(A, b, c)
 
-        poly_dim, poly_shape = ansatz.polynomial_shape
-        assert np.allclose(poly_dim, 1)
-        assert np.allclose(poly_shape, (3,))
+        assert np.allclose(ansatz.num_DV_vars, 1)
+        assert np.allclose(ansatz.polynomial_shape, (3,))
 
         A1, b1, _ = Abc_triple(4)
         c1 = np.array([[1, 2, 3]])
@@ -388,9 +387,8 @@ class TestPolyExpAnsatz:
 
         ansatz3 = ansatz1 * ansatz2
 
-        poly_dim, poly_shape = ansatz3.polynomial_shape
-        assert np.allclose(poly_dim, 2)
-        assert np.allclose(poly_shape, (3, 3))
+        assert np.allclose(ansatz3.num_DV_vars, 2)
+        assert np.allclose(ansatz3.polynomial_shape, (3, 3))
 
     def test_reorder(self):
         triple = Abc_triple(3)
