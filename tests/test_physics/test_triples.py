@@ -17,7 +17,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
@@ -354,3 +354,24 @@ class TestTriples:
         assert math.allclose(A, A_by_hand)
         assert math.allclose(b, b_by_hand)
         assert math.allclose(c, c_by_hand)
+
+    def test_XY_to_channel_Abc(self):
+
+        # Creating an attenuator object and testing its Abc triple
+        eta = np.random.random()
+        X = np.sqrt(eta) * np.eye(2)
+        Y = settings.HBAR / 2 * (1 - eta) * np.eye(2)
+
+        A, b, c = triples.XY_to_channel_Abc(X, Y)
+
+        A_by_hand = np.block(
+            [
+                [0, np.sqrt(eta), 0, 0],
+                [np.sqrt(eta), 0, 0, 1 - eta],
+                [0, 0, 0, np.sqrt(eta)],
+                [0, 1 - eta, np.sqrt(eta), 0],
+            ]
+        )
+        assert np.allclose(A, A_by_hand)
+        assert np.allclose(b, np.zeros((4, 1)))
+        assert np.isclose(c, 1.0)
