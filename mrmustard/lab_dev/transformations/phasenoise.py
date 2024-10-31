@@ -52,7 +52,7 @@ class PhaseNoise(Channel):
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        super().__init__(modes_out=modes, modes_in=modes, name="PhN")
+        super().__init__(name="PhN")
         self._add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
