@@ -15,8 +15,9 @@
 """Tests for the ``CFT`` class."""
 
 import numpy as np
+
 from mrmustard import math, settings
-from mrmustard.lab_dev import BtoPS, Ket, Dgate
+from mrmustard.lab_dev import BtoPS, Dgate, Ket
 from mrmustard.lab_dev.transformations.cft import CFT
 from mrmustard.physics.wigner import wigner_discretized
 
@@ -40,15 +41,15 @@ class TestCFT:
 
         state = Ket.random([0]) >> Dgate([0], x=1.0, y=0.1)
 
-        dm = math.sum(state.to_fock(100).dm().representation.array, axes=[0])
+        dm = math.sum(state.to_fock(100).dm().ansatz.array, axes=[0])
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).representation.ansatz
+        Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).ansatz
         X, Y = np.meshgrid(
             vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
         )  # scaling to take care of HBAR
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
-            2 / settings.HBAR * (np.real(Wigner(Z))), (np.real(wigner.T)), atol=1e-8
+            2 / (2 * np.pi * settings.HBAR) * (np.real(Wigner(Z))), (np.real(wigner.T)), atol=1e-8
         )  # scaling to take care of HBAR

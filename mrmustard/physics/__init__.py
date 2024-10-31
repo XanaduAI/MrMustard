@@ -20,10 +20,9 @@ All the functions are automatically differentiated and can be used in conjunctio
 optimization routine.
 """
 
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import fock_utils, gaussian
 
 
-# pylint: disable=protected-access
 def fidelity(A, B) -> float:
     r"""Calculates the fidelity between two quantum states.
 
@@ -36,7 +35,7 @@ def fidelity(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.fidelity(A.means, A.cov, B.means, B.cov)
-    return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
+    return fock_utils.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
 def normalize(A):
@@ -53,9 +52,9 @@ def normalize(A):
         return A
 
     if A.is_mixed:
-        return A.__class__(dm=fock.normalize(A.dm(), is_dm=True))
+        return A.__class__(dm=fock_utils.normalize(A.dm(), is_dm=True))
 
-    return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
+    return A.__class__(ket=fock_utils.normalize(A.ket(), is_dm=False))
 
 
 def norm(A) -> float:
@@ -72,7 +71,7 @@ def norm(A) -> float:
     """
     if A.is_gaussian:
         return A._norm
-    return fock.norm(A.fock, is_dm=A.is_mixed)
+    return fock_utils.norm(A.fock, is_dm=A.is_mixed)
 
 
 def overlap(A, B) -> float:
@@ -102,7 +101,7 @@ def von_neumann_entropy(A) -> float:
     """
     if A.is_gaussian:
         return gaussian.von_neumann_entropy(A.cov)
-    return fock.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
+    return fock_utils.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
 
 
 def relative_entropy(A, B) -> float:
@@ -130,4 +129,4 @@ def trace_distance(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.trace_distance(A.means, A.cov, B.means, B.cov)
-    return fock.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
+    return fock_utils.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)

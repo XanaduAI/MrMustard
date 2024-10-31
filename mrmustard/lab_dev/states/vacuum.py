@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .base import Ket
+from .ket import Ket
 
 __all__ = ["Vacuum"]
 
@@ -60,8 +60,11 @@ class Vacuum(Ket):
         self,
         modes: Sequence[int],
     ) -> None:
-        rep = Bargmann.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
-        super().__init__(modes=modes, representation=rep, name="Vac")
+        super().__init__(name="Vac")
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
+        ).representation
 
         for i in range(len(modes)):
             self.manual_shape[i] = 1

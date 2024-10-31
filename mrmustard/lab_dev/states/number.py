@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Fock
-from mrmustard.physics.fock import fock_state
-from .base import Ket
+from mrmustard.physics.ansatz import ArrayAnsatz
+from mrmustard.physics.fock_utils import fock_state
+from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Number"]
@@ -35,9 +35,10 @@ class Number(Ket):
     .. code-block::
 
         >>> from mrmustard.lab_dev import Number
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
         >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert state.representation.__class__.__name__ == "Fock"
+        >>> assert isinstance(state.ansatz, ArrayAnsatz)
 
     Args:
         modes: The modes of the number state.
@@ -66,13 +67,17 @@ class Number(Ket):
         n: int | Sequence[int],
         cutoffs: int | Sequence[int] | None = None,
     ) -> None:
-        super().__init__(modes=modes, name="N")
+        super().__init__(name="N")
+
         ns, cs = list(reshape_params(len(modes), n=n, cutoffs=n if cutoffs is None else cutoffs))
         self._add_parameter(make_parameter(False, ns, "n", (None, None), dtype="int64"))
         self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=ArrayAnsatz.from_function(
+                fock_state, n=self.n.value, cutoffs=self.cutoffs.value
+            ),
+        ).representation
         self.short_name = [str(int(n)) for n in self.n.value]
         for i, cutoff in enumerate(self.cutoffs.value):
             self.manual_shape[i] = int(cutoff) + 1
-        self._representation = Fock.from_function(
-            fock_state, n=self.n.value, cutoffs=self.cutoffs.value
-        )

@@ -22,11 +22,7 @@ from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
 from mrmustard import math
-from mrmustard.math.parameters import (
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
-)
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
 from ..conftest import skip_np
 

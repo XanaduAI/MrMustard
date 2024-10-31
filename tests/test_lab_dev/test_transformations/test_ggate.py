@@ -16,8 +16,8 @@
 Test for the Ggate class.
 """
 
-from mrmustard.lab_dev import Ggate, Identity
 from mrmustard import math
+from mrmustard.lab_dev import Ggate, Identity
 
 
 class TestGgate:
@@ -30,6 +30,7 @@ class TestGgate:
         Eye = Ggate(modes=[0], symplectic=math.eye(2))
         assert isinstance(Eye, Ggate)
         assert Eye.name == "Ggate"
+        assert math.allclose(Eye.symplectic, math.eye(2))
 
     def test_ggate_is_unitary_1mode(self):
         """Test that the Ggate applied to its dual is the identity."""

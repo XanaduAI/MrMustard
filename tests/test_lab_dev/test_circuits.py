@@ -14,22 +14,17 @@
 
 """Tests for the ``Circuit`` class."""
 
-# pylint: disable=protected-access, missing-function-docstring, expression-not-assigned
+# pylint: disable=missing-function-docstring, expression-not-assigned
 
 import pytest
 
+import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
+from mrmustard import settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import Vacuum, Number, Coherent, SqueezedVacuum
-from mrmustard.lab_dev.transformations import (
-    BSgate,
-    Sgate,
-    Dgate,
-    Attenuator,
-)
-from mrmustard import settings
+from mrmustard.lab_dev.states import Coherent, Number, SqueezedVacuum, Vacuum
+from mrmustard.lab_dev.transformations import Attenuator, BSgate, Dgate, Sgate
 from mrmustard.utils.serialize import load
-import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
 
 
 class TestCircuit:
@@ -178,9 +173,7 @@ class TestCircuit:
         bs12 = BSgate([1, 2])
         n12 = Number([0, 1], n=3)
         n2 = Number([2], n=3)
-        cc = CircuitComponent._from_attributes(
-            bs01.representation, bs01.wires, "my_cc"
-        )  # pylint: disable=protected-access
+        cc = CircuitComponent(bs01.representation, "my_cc")
 
         assert repr(Circuit()) == ""
 
@@ -193,9 +186,9 @@ class TestCircuit:
 
         circ2 = Circuit([vac012, s01, bs01, bs12, cc, n12.dual])
         r2 = ""
-        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)="
-        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)="
-        r2 += "\nmode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)──────────"
+        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)=(3,3)"
+        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)=(3,3)"
+        r2 += "\nmode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)───────────────"
         assert repr(circ2) == r2 + "\n\n"
 
         circ3 = Circuit([bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01])
@@ -213,9 +206,9 @@ class TestCircuit:
 
         circ4 = Circuit([vac01, s01, vac2, bs01, bs12, n2.dual, cc, n12.dual])
         r4 = ""
-        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC────|3)="
-        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC────|3)="
-        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=      "
+        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC─────────|3)=(3,3)"
+        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC─────────|3)=(3,3)"
+        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=(3,3)           "
         assert repr(circ4) == r4 + "\n\n"
 
         circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual

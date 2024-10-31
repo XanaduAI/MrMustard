@@ -15,18 +15,18 @@
 """
 Unit tests for the :class:`BackendManager`.
 """
-import math
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
 from mrmustard import math
+
 from ..conftest import skip_np
 
 
-# pylint: disable=protected-access, too-many-public-methods
+# pylint: disable=too-many-public-methods
 class TestBackendManager:
     r"""
     Tests the BackendManager.

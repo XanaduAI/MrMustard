@@ -1,6 +1,14 @@
 PYTHON3 := $(shell which python3 2>/dev/null)
 TESTRUNNER := -m pytest tests -p no:warnings
-COVERAGE := --cov=mrmustard --cov-report=html:coverage_html_report --cov-append
+COVERAGE := --cov=mrmustard --cov-report=html --cov-append
+
+ifdef check
+    CHECK := --check --diff
+    ICHECK := --check
+else
+    CHECK :=
+    ICHECK :=
+endif
 
 .PHONY: help
 help:
@@ -10,7 +18,7 @@ help:
 	@echo "  dist               to package the source distribution"
 	@echo "  clean              to delete all temporary, cache, and build files"
 	@echo "  clean-docs         to delete all built documentation"
-	@echo "  format             to run black formatting"
+	@echo "  format [check=1]   to run isort and black formatting; use with 'check=1' to check instead of modify"
 	@echo "  test               to run the test suite for entire codebase"
 	@echo "  coverage           to generate a coverage report for entire codebase"
 
@@ -59,7 +67,8 @@ clean-docs:
 
 .PHONY : format
 format:
-	black -l 100 mrmustard/ tests/
+	isort --py 312 --profile black -l 100 -p mrmustard/ tests/ $(ICHECK)
+	black -t py310 -t py311 -t py312 -l 100 mrmustard/ tests/ $(CHECK)
 
 .PHONY : lint
 lint:

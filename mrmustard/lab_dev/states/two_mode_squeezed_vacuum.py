@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .base import Ket
+from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["TwoModeSqueezedVacuum"]
@@ -62,11 +62,13 @@ class TwoModeSqueezedVacuum(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(modes=modes, name="TwoModeSqueezedVacuum")
+        super().__init__(name="TwoModeSqueezedVacuum")
         rs, phis = list(reshape_params(int(len(modes) / 2), r=r, phi=phi))
         self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-
-        self._representation = Bargmann.from_function(
-            fn=triples.two_mode_squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
-        )
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.two_mode_squeezed_vacuum_state_Abc, r=self.r, phi=self.phi
+            ),
+        ).representation

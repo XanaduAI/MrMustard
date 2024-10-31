@@ -35,8 +35,6 @@ from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
 hbar0 = settings.HBAR
 
-# pylint: disable=protected-access
-
 
 @st.composite
 def xy_arrays(draw):
@@ -298,7 +296,7 @@ def test_padding_ket():
     "Test that padding a ket works correctly."
     state = State(ket=SqueezedVacuum(r=1.0).ket(cutoffs=[20]))
     assert len(state.ket(cutoffs=[10])) == 10
-    assert len(state._ket) == 20  # pylint: disable=protected-access
+    assert len(state._ket) == 20
 
 
 def test_padding_dm():
@@ -308,18 +306,18 @@ def test_padding_dm():
     assert tuple(int(c) for c in state._dm.shape) == (
         20,
         20,
-    )  # pylint: disable=protected-access
+    )
 
 
 def test_state_repr_small_prob():
     "test that small probabilities are displayed correctly"
     state = State(ket=np.array([0.0001, 0.0001]))
-    table = state._repr_markdown_()  # pylint: disable=protected-access
+    table = state._repr_markdown_()
     assert "2.000e-06 %" in table
 
 
 def test_state_repr_big_prob():
     "test that big probabilities are displayed correctly"
     state = State(ket=np.array([0.5, 0.5]))
-    table = state._repr_markdown_()  # pylint: disable=protected-access
+    table = state._repr_markdown_()
     assert "50.000%" in table

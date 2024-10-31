@@ -22,9 +22,9 @@ from typing import Sequence
 
 import numpy as np
 
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .base import Ket
+from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["QuadratureEigenstate"]
@@ -63,15 +63,19 @@ class QuadratureEigenstate(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(modes=modes, name="QuadratureEigenstate")
+        super().__init__(name="QuadratureEigenstate")
+
         xs, phis = list(reshape_params(len(modes), x=x, phi=phi))
         self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
         self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
-        self._representation = Bargmann.from_function(
-            fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
-        )
-
         self.manual_shape = (50,)
+
+        self._representation = self.from_ansatz(
+            modes=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
+            ),
+        ).representation
 
     @property
     def L2_norm(self):

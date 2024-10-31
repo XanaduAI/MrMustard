@@ -20,10 +20,11 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics import triples
-from mrmustard.math.parameters import Constant
 
 from ..transformations.base import Map
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import RepEnum
+from ..utils import make_parameter
 
 __all__ = ["BtoPS"]
 
@@ -43,13 +44,22 @@ class BtoPS(Map):
         modes: Sequence[int],
         s: float,
     ):
-        super().__init__(
-            modes_out=modes,
+        super().__init__(name="BtoPS")
+        self._add_parameter(make_parameter(False, s, "s", (None, None)))
+        self._representation = self.from_ansatz(
             modes_in=modes,
-            representation=Bargmann.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc, s=s, n_modes=len(modes)
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.displacement_map_s_parametrized_Abc, s=self.s, n_modes=len(modes)
             ),
-            name="BtoPS",
-        )
-        self._add_parameter(Constant(s, "s"))
-        self.s = s
+        ).representation
+        for i in self.wires.input.indices:
+            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
+        for i in self.wires.output.indices:
+            self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.s.value))
+
+    def inverse(self):
+        ret = BtoPS(self.modes, self.s)
+        ret._representation = super().inverse().representation
+        ret._representation._wires = ret.representation.wires.dual
+        return ret

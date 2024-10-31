@@ -14,39 +14,38 @@
 
 """Test the MrMustard serialization library."""
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
-from mrmustard import math, settings, __version__
-from mrmustard.utils.serialize import save, load
-
+from mrmustard import __version__, math, settings
+from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
 from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.circuit_components_utils import BtoQ, BtoPS, TraceOut
 from mrmustard.lab_dev.states import (
-    Thermal,
     Coherent,
     DisplacedSqueezed,
     Number,
     QuadratureEigenstate,
     SqueezedVacuum,
+    Thermal,
     TwoModeSqueezedVacuum,
     Vacuum,
 )
 from mrmustard.lab_dev.transformations import (
+    Amplifier,
+    Attenuator,
     BSgate,
     Dgate,
+    FockDamping,
     Identity,
     Rgate,
     S2gate,
     Sgate,
-    FockDamping,
-    Amplifier,
-    Attenuator,
 )
+from mrmustard.utils.serialize import load, save
 
 from ..conftest import skip_np
 
@@ -208,5 +207,5 @@ class TestSerialize:
 
         loaded = load(path)
         assert loaded == circ
-        assert all(type(a) == type(b) for a, b in zip(circ.components, loaded.components))
+        assert all(type(a) is type(b) for a, b in zip(circ.components, loaded.components))
         assert list(path.parent.glob("*")) == [path]

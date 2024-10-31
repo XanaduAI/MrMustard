@@ -23,7 +23,8 @@ from mrmustard import math
 from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
-from ...physics.representations import Bargmann
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.representations import Representation
 
 __all__ = ["TraceOut"]
 
@@ -62,8 +63,10 @@ class TraceOut(CircuitComponent):
         modes: Sequence[int],
     ):
         super().__init__(
-            wires=[(), modes, (), modes],
-            representation=Bargmann.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            Representation(
+                PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+                [(), modes, (), modes],
+            ),
             name="Tr",
         )
 
@@ -80,14 +83,14 @@ class TraceOut(CircuitComponent):
         idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
         idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
         if len(self.wires) == 0:
-            repr = other.representation
+            ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            repr = other.representation.conj()[idx_z] @ other.representation[idx_z]
+            ansatz = other.ansatz.conj[idx_z] @ other.ansatz[idx_z]
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
-            repr = other.representation.trace(idx_z, idx_zconj)
+            ansatz = other.ansatz.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
-        cpt = other._from_attributes(repr, wires)  # pylint:disable=protected-access
-        return math.sum(cpt.representation.scalar) if len(cpt.wires) == 0 else cpt
+        cpt = other._from_attributes(Representation(ansatz, wires))
+        return math.sum(cpt.ansatz.scalar) if len(cpt.wires) == 0 else cpt

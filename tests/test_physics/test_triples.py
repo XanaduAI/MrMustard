@@ -17,9 +17,9 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import triples
-from mrmustard.physics.representations import Bargmann
+from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
 # pylint: disable = missing-function-docstring
@@ -317,22 +317,61 @@ class TestTriples:
         A1_correct = np.array([[0, -0.5, -1, 0], [-0.5, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A1, A1_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b1, math.zeros(4))
-        assert math.allclose(c1, 1 / (2 * np.pi))
+        assert math.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.displacement_map_s_parametrized_Abc(s=1, n_modes=1)
         A2_correct = np.array([[0, 0, -1, 0], [0, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A2, A2_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b2, math.zeros(4))
-        assert math.allclose(c2, 1 / (2 * np.pi))
+        assert math.allclose(c2, 1.0)
 
         A3, b3, c3 = triples.displacement_map_s_parametrized_Abc(s=-1, n_modes=1)
         A3_correct = np.array([[0, -1, -1, 0], [-1, 0, 0, 1], [-1, 0, 0, 1], [0, 1, 1, 0]])
         assert math.allclose(A3, A3_correct[[0, 3, 1, 2], :][:, [0, 3, 1, 2]])
         assert math.allclose(b3, math.zeros(4))
-        assert math.allclose(c3, 1 / (2 * np.pi))
+        assert math.allclose(c3, 1.0)
 
     @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])
     def test_attenuator_kraus_Abc(self, eta):
-        B = Bargmann(*triples.attenuator_kraus_Abc(eta))
-        Att = Bargmann(*triples.attenuator_Abc(eta))
+        B = PolyExpAnsatz(*triples.attenuator_kraus_Abc(eta))
+        Att = PolyExpAnsatz(*triples.attenuator_Abc(eta))
         assert B[2] @ B[2] == Att
+
+    def test_gaussian_random_noise_Abc(self):
+
+        A, b, c = triples.gaussian_random_noise_Abc(np.eye(2))
+        A_by_hand = np.array(
+            [
+                [0.0, 0.5, 0.5, 0.0],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.0, 0.5, 0.5, 0.0],
+            ]
+        )
+        b_by_hand = np.zeros(4)
+        c_by_hand = 0.5
+
+        assert math.allclose(A, A_by_hand)
+        assert math.allclose(b, b_by_hand)
+        assert math.allclose(c, c_by_hand)
+
+    def test_XY_to_channel_Abc(self):
+
+        # Creating an attenuator object and testing its Abc triple
+        eta = np.random.random()
+        X = np.sqrt(eta) * np.eye(2)
+        Y = settings.HBAR / 2 * (1 - eta) * np.eye(2)
+
+        A, b, c = triples.XY_to_channel_Abc(X, Y)
+
+        A_by_hand = np.block(
+            [
+                [0, np.sqrt(eta), 0, 0],
+                [np.sqrt(eta), 0, 0, 1 - eta],
+                [0, 0, 0, np.sqrt(eta)],
+                [0, 1 - eta, np.sqrt(eta), 0],
+            ]
+        )
+        assert np.allclose(A, A_by_hand)
+        assert np.allclose(b, np.zeros((4, 1)))
+        assert np.isclose(c, 1.0)
