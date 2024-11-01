@@ -19,8 +19,10 @@ The class representing a Phase noise channel.
 from __future__ import annotations
 from typing import Sequence
 from mrmustard import math
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from .base import Channel
-from ..states import Ket, DM
 from ..utils import make_parameter
 import numpy as np
 
@@ -65,10 +67,10 @@ class PhaseNoise(Channel):
         r"""
         Custom rrshift
         """
-        if isinstance(other, Ket):
-            other = other.dm()
-        if isinstance(other, DM):
-            array = math.asnumpy(other.fock_array())
+        dm_op = getattr(other, "dm", None)
+        if callable(dm_op):
+            dm_state = other.dm()
+            array = math.asnumpy(dm_state.fock_array())
             for mode in self.modes:
                 for count, _ in enumerate(np.nditer(array)):
                     idx = np.zeros(len(array.shape))
@@ -82,6 +84,8 @@ class PhaseNoise(Channel):
                         * (idx[mode] - idx[other.n_modes + mode]) ** 2
                         * self.phase_stdev.value**2
                     )
-            return DM.from_fock(other.modes, array, self.name)
+            return CircuitComponent(
+                Representation(ArrayAnsatz(array, False), dm_state.wires), self.name
+            )
         else:
             raise ValueError("The PhaseNoise object can only be applied to a DM or a Ket.")

@@ -31,6 +31,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
+from ..circuit_components_utils import BtoQ, TraceOut
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexVector,
@@ -151,7 +152,6 @@ class Ket(State):
         phi: float = 0.0,
         name: str | None = None,
     ) -> State:
-        from ..circuit_components_utils import BtoQ
 
         QtoB = BtoQ(modes, phi).inverse()
         Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
@@ -264,8 +264,6 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-
-        from ..circuit_components_utils import TraceOut
 
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
