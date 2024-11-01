@@ -1527,8 +1527,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     def poisson(self, max_k: int, rate: Tensor) -> Tensor:
         """Poisson distribution up to ``max_k``."""
-        k = self.arange(max_k)
-        rate = self.cast(rate, k.dtype)
+        k = self.arange(max_k, dtype=rate.dtype)
         return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
 
     def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):

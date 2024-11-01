@@ -23,6 +23,7 @@ from typing import Sequence
 
 import numpy as np
 import scipy as sp
+from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
@@ -135,6 +136,59 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def conj(self, array: np.ndarray) -> np.ndarray:
         return np.conj(array)
+
+    def convolution(
+        self,
+        array: np.ndarray,  # shape: [width, in_channels]
+        filters: np.ndarray,  # shape: [kernel_width, in_channels, out_channels]
+        padding: str = "VALID",
+        data_format: str | None = None,
+    ) -> np.ndarray:  # returns: [width, out_channels]
+        """Performs 2D convolution operation similar to tf.nn.convolution using numpy.
+
+        Args:
+            array: Input array of shape (batch, height, width, channels)
+            filters: Filter kernel of shape (kernel_height, kernel_width, in_channels, out_channels)
+            padding: String indicating the padding type ('VALID' or 'SAME')
+            data_format: Unused, kept for API compatibility
+
+        Returns:
+            np.ndarray: Result of the convolution operation with shape (batch, new_height, new_width, out_channels)
+        """
+        # Extract shapes
+        batch, in_height, in_width, in_channels = array.shape
+        kernel_h, kernel_w, _, out_channels = filters.shape
+
+        # Reshape filter to 2D for convolution
+        filter_2d = filters[:, :, 0, 0]
+
+        # For SAME padding, calculate padding sizes
+        if padding == "SAME":
+            pad_h = (kernel_h - 1) // 2
+            pad_w = (kernel_w - 1) // 2
+            array = np.pad(
+                array[:, :, :, 0], ((0, 0), (pad_h, pad_h), (pad_w, pad_w)), mode="constant"
+            )
+        else:
+            array = array[:, :, :, 0]
+
+        # Calculate output dimensions
+        out_height = array.shape[1] - kernel_h + 1
+        out_width = array.shape[2] - kernel_w + 1
+
+        # Initialize output array
+        output = np.zeros((batch, out_height, out_width, out_channels))
+
+        # Perform convolution for each batch
+        for b in range(batch):
+            # Convolve using scipy's convolve2d which is more efficient than np.convolve for 2D
+            output[b, :, :, 0] = scipy_convolve2d(
+                array[b],
+                np.flip(np.flip(filter_2d, 0), 1),  # Flip kernel for proper convolution
+                mode="valid",
+            )
+
+        return output
 
     def cos(self, array: np.ndarray) -> np.ndarray:
         return np.cos(array)
