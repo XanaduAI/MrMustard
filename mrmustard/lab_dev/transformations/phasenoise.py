@@ -83,3 +83,5 @@ class PhaseNoise(Channel):
                         * self.phase_stdev.value**2
                     )
             return DM.from_fock(other.modes, array, self.name)
+        else:
+            raise ValueError("The PhaseNoise object can only be applied to a DM or a Ket.")
