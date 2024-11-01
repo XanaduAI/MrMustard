@@ -391,67 +391,99 @@ class PolyExpAnsatz(Ansatz):
         return PolyExpAnsatz(A, b, c)
 
     def _call_all(self: PolyExpAnsatz, z) -> PolyExpAnsatz:
-        r"""
-        Value of this ansatz at a point ``z``. If ``z`` is batched, it returns the value of the function at each of the points in the batch.
-        If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
-        Note that the batch dimension of ``z`` and ``Abc`` can be different.
+        """Evaluates the ansatz at point z.
 
         Args:
-            z: point in C^n where the function is evaluated, possibly batched.
+            z: Point in C^n where the function is evaluated, possibly batched.
 
         Returns:
             The value of the function, possibly batched.
         """
         n = self.num_CV_vars
-
-        z = math.atleast_2d(z)  # shape (b_arg, n)
+        z = math.atleast_2d(z)
         if z.shape[-1] != n:
             raise ValueError(f"The last dimension of `z` must equal {n}, got {z.shape[-1]}.")
-        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
-        A_part = math.sum(
-            self.A[..., :n, :n] * zz, axes=[-1, -2]
-        )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
-        b_part = math.sum(
-            self.b[..., :n] * z[..., None, :], axes=[-1]
-        )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
+        exp_sum = self._compute_exponential_part(z, n)
 
-        exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
-        if self.num_derived_vars == 0:  # note: c.shape = (b_abc, *DV)
-            val = math.sum(exp_sum * self.c[None, ...], axes=[1])  # (b_arg, *DV)
-        else:
-            b_poly = math.astensor(
-                math.einsum(
-                    "ijk,hk",
-                    math.cast(self.A[..., n:, :n], "complex128"),  # (b_abc, m, n)
-                    math.cast(z, "complex128"),
+        if self.num_derived_vars == 0:
+            return math.sum(exp_sum * self.c[None, ...], axes=[1])
+
+        poly = self._compute_polynomial_part(z, n)
+        return self._combine_exp_and_poly(exp_sum, poly)
+
+    def _compute_exponential_part(self, z: Batch[Vector], n: int) -> Batch[Scalar]:
+        """Computes the exponential part of the ansatz evaluation.
+        Needed in ``_call_all``.
+
+        Args:
+            z: Input vector
+            n: Number of CV variables
+
+        Returns:
+            Exponential sum term
+        """
+        # Compute quadratic term
+        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]
+        A_part = math.sum(self.A[..., :n, :n] * zz, axes=[-1, -2])
+
+        # Compute linear term
+        b_part = math.sum(self.b[..., :n] * z[..., None, :], axes=[-1])
+
+        return math.exp(1 / 2 * A_part + b_part)
+
+    def _compute_polynomial_part(self, z: Batch[Vector], n: int) -> Batch[Scalar]:
+        """Computes the polynomial part of the ansatz evaluation.
+        Needed in ``_call_all``.
+
+        Args:
+            z: Input vector
+            n: Number of CV variables
+
+        Returns:
+            Polynomial term
+        """
+        # Compute b_poly
+        b_poly = math.astensor(
+            math.einsum(
+                "ijk,hk", math.cast(self.A[..., n:, :n], "complex128"), math.cast(z, "complex128")
+            )
+            + self.b[..., n:]
+        )
+        b_poly = math.moveaxis(b_poly, 0, 1)
+
+        # Compute A_poly and evaluate Hermite polynomials
+        A_poly = self.A[..., n:, n:]
+        poly = math.astensor(
+            [
+                math.hermite_renormalized_batch(
+                    A_poly[i], b_poly[i], complex(1), self.derived_variables_shape
                 )
-                + self.b[..., n:]
-            )  # (b_arg, b_abc, m)
-            b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
-            A_poly = self.A[..., n:, n:]  # (b_abc, m, m)
-            poly = math.astensor(
-                [
-                    math.hermite_renormalized_batch(  # TODO: vectorize also with respect to the batch
-                        A_poly[i], b_poly[i], complex(1), self.derived_variables_shape
-                    )
-                    for i in range(self.batch_size)
-                ]
-            )  # (b_abc,b_arg,*poly)
-            poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,*poly)
-            str_exp = "AB"
-            str_beta = "".join(chr(ord("C") + i) for i in range(self.num_derived_vars))
-            str_poly = "".join(chr(ord("a") + i) for i in range(self.num_CV_vars))
-            str_DV = "".join(
-                chr(ord("C") + self.num_derived_vars + i) for i in range(self.num_DV_vars)
-            )
-            val = math.einsum(
-                str_exp + ",B" + str_beta + str_DV + ",AB" + str_poly + "->A" + str_DV,
-                exp_sum,  # (b_arg, b_abc)
-                self.c,  # (b_abc,*beta,*DV)
-                poly,  # (b_arg,b_abc,*poly)
-            )
-        return val  # (b_arg,*DV)
+                for i in range(self.batch_size)
+            ]
+        )
+
+        return math.moveaxis(poly, 0, 1)
+
+    def _combine_exp_and_poly(self, exp_sum: Batch[Scalar], poly: Batch[Scalar]) -> Batch[Scalar]:
+        """Combines exponential and polynomial parts using einsum.
+        Needed in ``_call_all``.
+
+        Args:
+            exp_sum: Exponential sum term
+            poly: Polynomial term
+
+        Returns:
+            Final evaluation
+        """
+        # Generate einsum strings
+        str_exp = "AB"
+        str_beta = "".join(chr(ord("C") + i) for i in range(self.num_derived_vars))
+        str_DV = "".join(chr(ord("C") + self.num_derived_vars + i) for i in range(self.num_DV_vars))
+
+        einsum_str = f"{str_exp},B{str_beta}{str_DV},AB{str_beta}->A{str_DV}"
+
+        return np.einsum(einsum_str, exp_sum, self.c, poly, optimize=True)
 
     def _call_none(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
