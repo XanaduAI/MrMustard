@@ -413,17 +413,6 @@ class DM(State):
         Returns a ``DM`` when the wires of the resulting components are compatible with
         those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
         """
-        from ..transformations.phasenoise import PhaseNoise
-
-        if isinstance(other, PhaseNoise):
-            array = self.to_fock().representation.array[0]
-            cutoff = array.shape[-1]
-            for i in range(cutoff):
-                for j in range(cutoff):
-                    array[i, j] = array[i, j] * math.exp(
-                        -0.5 * (i - j) ** 2 * other.phase_stdev.value**2
-                    )
-            return DM.from_fock(self.modes, array, self.name)
 
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):

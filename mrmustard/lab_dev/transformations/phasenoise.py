@@ -20,9 +20,9 @@ from __future__ import annotations
 from typing import Sequence
 from mrmustard import math, settings
 from .base import Channel
-from .attenuator import Attenuator
-from ...physics.representations import Fock
+from ..states import Ket, DM
 from ..utils import make_parameter
+import numpy as np
 
 __all__ = ["PhaseNoise"]
 
@@ -44,6 +44,7 @@ class PhaseNoise(Channel):
     """
 
     short_name = "P~"
+
     # randomized : bool
     def __init__(
         self,
@@ -56,10 +57,29 @@ class PhaseNoise(Channel):
         self._add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
+        self._representation = self.from_ansatz(
+            modes_in=modes, modes_out=modes, ansatz=None
+        ).representation
 
     def __custom_rrshift__(self, other):
         r"""
         Custom rrshift
         """
-        # check if Ket or DM: do the specific matmul
-        # raise exception if not
+        if isinstance(other, Ket):
+            other = other.dm()
+        if isinstance(other, DM):
+            array = other.fock_array()
+            for mode in self.modes:
+                for count, _ in enumerate(np.nditer(array)):
+                    idx = math.zeros(len(array.shape))
+                    temp = count
+                    for l in range(len(idx)):
+                        idx[-1 - l] = temp % array.shape[-1 - l]
+                        temp = temp // array.shape[-1 - l]
+                    array_index = tuple(idx.astype(int))
+                    array[array_index] *= math.exp(
+                        -0.5
+                        * (idx[mode] - idx[other.n_modes + mode]) ** 2
+                        * self.phase_stdev.value**2
+                    )
+            return DM.from_fock(other.modes, array, self.name)
