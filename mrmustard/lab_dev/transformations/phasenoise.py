@@ -34,20 +34,18 @@ class PhaseNoise(Channel):
     The Phase noise channel.
 
     This class represents the application of a random phase. The distributiuon of the phase
-    is assumed to be a Gaussian with mean zero, and standard deviation `sigma`.
+    is assumed to be a Gaussian with mean zero, and standard deviation `phase_stdev`.
 
     Args:
         modes: The modes the channel is applied to
-        sigma: the standard deviation of the random Gaussian noise (could be provided as a list, if the channel acts on more than one mode)
+        phase_stdev: The standard deviation of the random Gaussian noise.```
 
     ..details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
-
     """
 
     short_name = "P~"
 
-    # randomized : bool
     def __init__(
         self,
         modes: Sequence[int],
@@ -55,7 +53,7 @@ class PhaseNoise(Channel):
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        super().__init__(name="PhN")
+        super().__init__(name="PhaseNoise")
         self._add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
@@ -63,29 +61,32 @@ class PhaseNoise(Channel):
             modes_in=modes, modes_out=modes, ansatz=None
         ).representation
 
-    def __custom_rrshift__(self, other):
+    def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
-        Custom rrshift
+        Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.
+
+        Args:
+            other: the component other than the PhaseNoise object that is present in the contraction
+
+        Output:
+            the result of the contraction.
         """
-        dm_op = getattr(other, "dm", None)
-        if callable(dm_op):
-            dm_state = other.dm()
-            array = math.asnumpy(dm_state.fock_array())
-            for mode in self.modes:
-                for count, _ in enumerate(np.nditer(array)):
-                    idx = np.zeros(len(array.shape))
-                    temp = count
-                    for l in range(len(idx)):
-                        idx[-1 - l] = temp % array.shape[-1 - l]
-                        temp = temp // array.shape[-1 - l]
-                    array_index = tuple(idx.astype(int))
-                    array[array_index] *= np.exp(
-                        -0.5
-                        * (idx[mode] - idx[other.n_modes + mode]) ** 2
-                        * self.phase_stdev.value**2
-                    )
-            return CircuitComponent(
-                Representation(ArrayAnsatz(array, False), dm_state.wires), self.name
-            )
-        else:
-            raise ValueError("The PhaseNoise object can only be applied to a DM or a Ket.")
+        if (len(other.wires.bra) == 0) or (len(other.wires.ket) == 0):
+            other_corrected = other @ other.adjoint
+        array = math.asnumpy(other_corrected.fock_array())
+        for mode in self.modes:
+            for count, _ in enumerate(np.nditer(array)):
+                idx = np.zeros(len(array.shape))
+                temp = count
+                for l in range(len(idx)):
+                    idx[-1 - l] = temp % array.shape[-1 - l]
+                    temp = temp // array.shape[-1 - l]
+                array_index = tuple(idx.astype(int))
+                array[array_index] *= np.exp(
+                    -0.5
+                    * (idx[mode] - idx[other_corrected.n_modes + mode]) ** 2
+                    * self.phase_stdev.value**2
+                )
+        return CircuitComponent(
+            Representation(ArrayAnsatz(array, False), other_corrected.wires), self.name
+        )
