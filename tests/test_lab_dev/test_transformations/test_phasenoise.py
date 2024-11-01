@@ -16,9 +16,8 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-from mrmustard.lab_dev.states import Ket, DM
-from mrmustard.lab_dev.transformations import Dgate
-from mrmustard.lab_dev.transformations import PhaseNoise
+from mrmustard.lab_dev.states import DM, Ket
+from mrmustard.lab_dev.transformations import Dgate, PhaseNoise
 
 
 class TestPhaseNoise:
