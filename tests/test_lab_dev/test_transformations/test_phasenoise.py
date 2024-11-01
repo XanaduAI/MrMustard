@@ -28,7 +28,7 @@ class TestPhaseNoise:
     def test_init(self):
         "Tests the PhaseNoise initialization."
         ch = PhaseNoise([0, 1], 0.2)
-        assert ch.name == "PhN"
+        assert ch.name == "PhaseNoise"
         assert ch.phase_stdev.value == 0.2
         assert ch.modes == [0, 1]
         assert ch.ansatz == None
