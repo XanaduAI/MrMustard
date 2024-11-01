@@ -479,13 +479,6 @@ class Channel(Map):
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
 
     @classmethod
-    def from_fock(cls, modes_out, modes_in, array, name: str | None = None) -> Channel:
-        r"""
-        Initializing a channel from its Fock representation.
-        """
-        return Channel(modes_out, modes_in, Fock(array), name)
-
-    @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
         r"""
         A random channel without displacement.
