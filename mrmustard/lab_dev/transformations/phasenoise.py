@@ -18,7 +18,7 @@ The class representing a Phase noise channel.
 
 from __future__ import annotations
 from typing import Sequence
-from mrmustard import math, settings
+from mrmustard import math
 from .base import Channel
 from ..states import Ket, DM
 from ..utils import make_parameter
