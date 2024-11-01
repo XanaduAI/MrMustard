@@ -71,9 +71,10 @@ class PhaseNoise(Channel):
         Output:
             the result of the contraction.
         """
+
         if (len(other.wires.bra) == 0) or (len(other.wires.ket) == 0):
-            other_corrected = other @ other.adjoint
-        array = math.asnumpy(other_corrected.fock_array())
+            return (other @ other.adjoint) >> self
+        array = math.asnumpy(other.fock_array())
         for mode in self.modes:
             for count, _ in enumerate(np.nditer(array)):
                 idx = np.zeros(len(array.shape))
@@ -83,10 +84,6 @@ class PhaseNoise(Channel):
                     temp = temp // array.shape[-1 - l]
                 array_index = tuple(idx.astype(int))
                 array[array_index] *= np.exp(
-                    -0.5
-                    * (idx[mode] - idx[other_corrected.n_modes + mode]) ** 2
-                    * self.phase_stdev.value**2
+                    -0.5 * (idx[mode] - idx[other.n_modes + mode]) ** 2 * self.phase_stdev.value**2
                 )
-        return CircuitComponent(
-            Representation(ArrayAnsatz(array, False), other_corrected.wires), self.name
-        )
+        return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)
