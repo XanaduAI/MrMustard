@@ -41,6 +41,7 @@ from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.physics.fock_utils import quadrature_distribution
+from ..circuit_components_utils import BtoPS
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -333,7 +334,6 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-        from ..circuit_components_utils import BtoPS
 
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
