@@ -390,7 +390,7 @@ class PolyExpAnsatz(Ansatz):
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return PolyExpAnsatz(A, b, c)
 
-    def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
+    def _call_all(self: PolyExpAnsatz, z) -> PolyExpAnsatz:
         r"""
         Value of this ansatz at a point ``z``. If ``z`` is batched, it returns the value of the function at each of the points in the batch.
         If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
@@ -439,25 +439,19 @@ class PolyExpAnsatz(Ansatz):
                 ]
             )  # (b_abc,b_arg,*poly)
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,*poly)
-            # val = math.sum(
-            #     exp_sum
-            #     * math.sum(
-            #         poly * self.c[None,...],  # note: c[None,...].shape = (1,b_abc,*beta,*DV)
-            #         axes=list(range(2, 2 + self.num_derived_vars)),
-            #     ),
-            #     axes=[1],
-            # )  # (b_arg)
-            # with einsum:
-            str_exp = "ab"
-            str_beta = "".join(chr(ord("c") + i) for i in range(self.num_derived_vars))
-            str_poly = "".join(chr(ord("A") + i) for i in range(self.num_CV_vars))
-            val = math.einsum(
-                str_exp + ",b" + str_beta + ",ab" + str_poly + "->a" + str_poly,
-                exp_sum,
-                self.c,
-                poly,
+            str_exp = "AB"
+            str_beta = "".join(chr(ord("C") + i) for i in range(self.num_derived_vars))
+            str_poly = "".join(chr(ord("a") + i) for i in range(self.num_CV_vars))
+            str_DV = "".join(
+                chr(ord("C") + self.num_derived_vars + i) for i in range(self.num_DV_vars)
             )
-        return val
+            val = math.einsum(
+                str_exp + ",B" + str_beta + str_DV + ",AB" + str_poly + "->A" + str_DV,
+                exp_sum,  # (b_arg, b_abc)
+                self.c,  # (b_abc,*beta,*DV)
+                poly,  # (b_arg,b_abc,*poly)
+            )
+        return val  # (b_arg,*DV)
 
     def _call_none(self, z: Batch[Vector]) -> PolyExpAnsatz:
         r"""
