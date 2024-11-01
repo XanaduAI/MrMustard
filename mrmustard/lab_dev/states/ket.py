@@ -43,7 +43,6 @@ from mrmustard.utils.typing import (
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoQ, TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -152,6 +151,8 @@ class Ket(State):
         phi: float = 0.0,
         name: str | None = None,
     ) -> State:
+        from ..circuit_components_utils import BtoQ
+
         QtoB = BtoQ(modes, phi).inverse()
         Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
         return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
@@ -263,6 +264,9 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
+
+        from ..circuit_components_utils import TraceOut
+
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
