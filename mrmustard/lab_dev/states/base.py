@@ -41,8 +41,8 @@ from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.physics.fock_utils import quadrature_distribution
-from ..circuit_components_utils import BtoPS
 from mrmustard.physics.wigner import wigner_discretized
+from ..circuit_components_utils import BtoPS
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
