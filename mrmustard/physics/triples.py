@@ -835,7 +835,7 @@ def XY_to_channel_Abc(X: RealMatrix, Y: RealMatrix, d: Vector | None = None) -> 
 
     A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
     temp = math.block([[(xi_inv @ d).reshape(2 * m, 1)], [(-X.T @ xi_inv @ d).reshape((2 * m, 1))]])
-    b = 1 / math.sqrt(settings.HBAR) * math.conj(R) @ temp
+    b = 1 / math.sqrt(complex(settings.HBAR)) * math.conj(R) @ temp
     c = math.exp(-0.5 / settings.HBAR * d @ xi_inv @ d) / math.sqrt(math.det(xi))
 
     return A, b, c

@@ -72,8 +72,8 @@ class PhaseNoise(Channel):
             the result of the contraction.
         """
 
-        if (len(other.wires.bra) == 0) or (len(other.wires.ket) == 0):
-            return (other @ other.adjoint) >> self
+        if not other.wires.bra or not other.wires.ket:
+            other = other @ other.adjoint
         array = math.asnumpy(other.fock_array())
         mode_indices = np.indices(array.shape)
         for mode in self.modes:

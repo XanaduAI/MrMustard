@@ -20,8 +20,9 @@ import numpy as np
 import pytest
 
 from mrmustard import math
+from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number
-from mrmustard.lab_dev.transformations import Dgate, PhaseNoise
+from mrmustard.lab_dev.transformations import Dgate, PhaseNoise, FockDamping
 
 
 class TestPhaseNoise:
@@ -66,3 +67,9 @@ class TestPhaseNoise:
         psi = Number([0], 0) + Number([0], 1)
         phi = psi >> PhaseNoise([0], sigma)
         assert phi.fock_array(2)[0, 1] == math.exp(-(complex(sigma) ** 2) / 2)
+
+    def test_check_adding_adjoint(self):
+        r"""
+        Tests if the PhaseNoise custum rrshift correcly adds the adjoint.
+        """
+        assert isinstance(FockDamping([0], 0.5) >> PhaseNoise([0], 0.2), CircuitComponent)
