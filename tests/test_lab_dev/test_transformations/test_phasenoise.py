@@ -39,15 +39,15 @@ class TestPhaseNoise:
 
     def test_application(self):
         "Tests application of PhaseNoise on Ket and DM"
-        psi = Ket.random([0, 1]) >> Dgate([0], 0.5, 0.5) >> PhaseNoise([0], 0.2)
-        assert isinstance(psi, DM)
-        assert psi.purity < 1
+        psi_1 = Ket.random([0, 1]) >> Dgate([0], 0.5, 0.5) >> PhaseNoise([0], 0.2)
+        assert isinstance(psi_1, DM)
+        assert psi_1.purity < 1
 
-        psi = Coherent([0], 2)
-        phi = psi >> PhaseNoise([0], 10)
+        psi_2 = Coherent([0], 2)
+        phi = psi_2 >> PhaseNoise([0], 10)
         after_noise_array = phi.fock_array(10)
         assert math.allclose(
-            np.diag(after_noise_array), np.diag(psi.dm().fock_array(10))
+            np.diag(after_noise_array), np.diag(psi_2.dm().fock_array(10))
         )  # the diagonal entries must remain unchanged
         mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
         assert math.allclose(
@@ -59,7 +59,10 @@ class TestPhaseNoise:
         assert rho.purity < 1
 
     @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])
-    def exact_numerical_test(self, sigma):
+    def test_numeric(self, sigma):
+        r"""
+        A numeric example
+        """
         psi = Number([0], 0) + Number([0], 1)
         phi = psi >> PhaseNoise([0], sigma)
         assert phi.fock_array(2)[0, 1] == math.exp(-(sigma**2) / 2)
