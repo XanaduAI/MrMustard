@@ -75,15 +75,12 @@ class PhaseNoise(Channel):
         if (len(other.wires.bra) == 0) or (len(other.wires.ket) == 0):
             return (other @ other.adjoint) >> self
         array = math.asnumpy(other.fock_array())
+        mode_indices = np.indices(array.shape)
         for mode in self.modes:
-            for count, _ in enumerate(np.nditer(array)):
-                idx = np.zeros(len(array.shape))
-                temp = count
-                for l in range(len(idx)):
-                    idx[-1 - l] = temp % array.shape[-1 - l]
-                    temp = temp // array.shape[-1 - l]
-                array_index = tuple(idx.astype(int))
-                array[array_index] *= np.exp(
-                    -0.5 * (idx[mode] - idx[other.n_modes + mode]) ** 2 * self.phase_stdev.value**2
-                )
+            phase_factors = np.exp(
+                -0.5
+                * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
+                * self.phase_stdev.value**2
+            )
+            array *= phase_factors
         return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)

@@ -16,8 +16,10 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-from mrmustard.lab_dev.states import DM, Ket
+from mrmustard import math
+from mrmustard.lab_dev.states import DM, Ket, Coherent, Number
 from mrmustard.lab_dev.transformations import Dgate, PhaseNoise
+import pytest
 
 
 class TestPhaseNoise:
@@ -39,6 +41,23 @@ class TestPhaseNoise:
         assert isinstance(psi, DM)
         assert psi.purity < 1
 
+        psi = Coherent([0], 2)
+        phi = psi >> PhaseNoise([0], 2 * math.pi)
+        after_noise_array = phi.fock_array(10)
+        assert math.allclose(
+            math.diag(after_noise_array), math.diag(psi.dm().fock_array(10))
+        )  # the diagonal entries must remain unchanged
+        mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
+        assert math.allclose(
+            after_noise_array[mask], math.zeros_like(after_noise_array[mask])
+        )  # the off-diagonal entries must vanish
+
         rho = DM.random([0, 1]) >> Dgate([0], 0.5, 0.5) >> PhaseNoise([0], 0.2)
         assert isinstance(rho, DM)
         assert rho.purity < 1
+
+    @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])
+    def exact_numerical_test(self, sigma):
+        psi = Number([0], 0) + Number([0], 1)
+        phi = psi >> PhaseNoise([0], sigma)
+        assert phi.fock_array(2)[0, 1] == math.exp(-(sigma**2) / 2)
