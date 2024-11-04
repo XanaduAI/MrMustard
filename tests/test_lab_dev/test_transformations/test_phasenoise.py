@@ -43,7 +43,7 @@ class TestPhaseNoise:
         assert psi.purity < 1
 
         psi = Coherent([0], 2)
-        phi = psi >> PhaseNoise([0], 2 * math.pi)
+        phi = psi >> PhaseNoise([0], 10)
         after_noise_array = phi.fock_array(10)
         assert math.allclose(
             math.diag(after_noise_array), math.diag(psi.dm().fock_array(10))

@@ -171,7 +171,7 @@ class TestChannel:
         channel1 = Attenuator([0, 1], 0.9)
         ch_component = CircuitComponent(channel1.representation, channel1.name)
 
-        assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att, repr=PolyExpAnsatz)"
+        assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att~, repr=PolyExpAnsatz)"
         assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att, repr=PolyExpAnsatz)"
 
     def test_inverse_channel(self):
