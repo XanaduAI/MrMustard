@@ -21,6 +21,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number
 from mrmustard.lab_dev.transformations import Dgate, PhaseNoise
+import numpy as np
 
 
 class TestPhaseNoise:
@@ -46,7 +47,7 @@ class TestPhaseNoise:
         phi = psi >> PhaseNoise([0], 10)
         after_noise_array = phi.fock_array(10)
         assert math.allclose(
-            math.diag(after_noise_array), math.diag(psi.dm().fock_array(10))
+            np.diag(after_noise_array), np.diag(psi.dm().fock_array(10))
         )  # the diagonal entries must remain unchanged
         mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
         assert math.allclose(
