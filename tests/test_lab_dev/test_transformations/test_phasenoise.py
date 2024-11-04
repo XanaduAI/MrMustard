@@ -16,12 +16,12 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
+import numpy as np
 import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number
 from mrmustard.lab_dev.transformations import Dgate, PhaseNoise
-import numpy as np
 
 
 class TestPhaseNoise:
