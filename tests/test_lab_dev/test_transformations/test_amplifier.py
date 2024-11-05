@@ -36,7 +36,7 @@ class TestAmplifier:
     def test_init(self, modes, gain):
         gate = Amplifier(modes, gain)
 
-        assert gate.name == "Amp"
+        assert gate.name == "Amp~"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
