@@ -22,7 +22,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number
-from mrmustard.lab_dev.transformations import Dgate, PhaseNoise, FockDamping
+from mrmustard.lab_dev.transformations import Dgate, FockDamping, PhaseNoise
 
 
 class TestPhaseNoise:
@@ -36,7 +36,7 @@ class TestPhaseNoise:
         assert ch.name == "PhaseNoise"
         assert ch.phase_stdev.value == 0.2
         assert ch.modes == [0, 1]
-        assert ch.ansatz == None
+        assert ch.ansatz is None
 
     def test_application(self):
         "Tests application of PhaseNoise on Ket and DM"

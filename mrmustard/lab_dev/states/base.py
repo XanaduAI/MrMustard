@@ -42,7 +42,6 @@ from mrmustard.physics.bargmann_utils import (
 )
 from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from ..circuit_components_utils import BtoPS
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -51,6 +50,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoPS
 
 
 __all__ = ["State"]

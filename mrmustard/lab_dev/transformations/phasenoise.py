@@ -18,13 +18,13 @@ The class representing a Phase noise channel.
 
 from __future__ import annotations
 from typing import Sequence
-from mrmustard import math
-from mrmustard.physics.representations import Representation
-from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
-from mrmustard.lab_dev.circuit_components import CircuitComponent
 from .base import Channel
 from ..utils import make_parameter
 import numpy as np
+from mrmustard import math
+from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.physics.representations import Representation
 
 __all__ = ["PhaseNoise"]
 
@@ -38,7 +38,7 @@ class PhaseNoise(Channel):
 
     Args:
         modes: The modes the channel is applied to
-        phase_stdev: The standard deviation of the random Gaussian noise.```
+        phase_stdev: The standard deviation of the random phase noise.
 
     ..details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
