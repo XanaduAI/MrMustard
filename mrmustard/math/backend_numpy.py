@@ -142,7 +142,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         array: np.ndarray,  # shape: [width, in_channels]
         filters: np.ndarray,  # shape: [kernel_width, in_channels, out_channels]
         padding: str = "VALID",
-        data_format: str | None = None,
+        data_format: str | None = None,  # pylint: disable=unused-argument
     ) -> np.ndarray:  # returns: [width, out_channels]
         """Performs 2D convolution operation similar to tf.nn.convolution using numpy.
 
@@ -156,7 +156,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             np.ndarray: Result of the convolution operation with shape (batch, new_height, new_width, out_channels)
         """
         # Extract shapes
-        batch, in_height, in_width, in_channels = array.shape
+        batch, _, _, _ = array.shape
         kernel_h, kernel_w, _, out_channels = filters.shape
 
         # Reshape filter to 2D for convolution
