@@ -31,7 +31,6 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
-from ..circuit_components_utils import BtoQ, TraceOut
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexVector,
@@ -44,6 +43,7 @@ from mrmustard.utils.typing import (
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoQ, TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
