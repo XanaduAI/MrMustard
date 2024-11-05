@@ -98,8 +98,8 @@ class Optimizer:
     def _minimize(self, cost_fn, by_optimizing, max_steps, callbacks):
         # finding out which parameters are trainable from the ops
         trainable_params = self._get_trainable_params(by_optimizing)
-        bar = ProgressBar(max_steps)
         if settings.PROGRESSBAR:
+            bar = ProgressBar(max_steps)
             with bar:
                 self._optimization_loop(cost_fn, trainable_params, max_steps, callbacks, bar)
         else:
