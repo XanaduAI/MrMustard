@@ -36,6 +36,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoQ, TraceOut
+
 from ..utils import shape_check
 
 __all__ = ["DM"]
@@ -196,6 +197,7 @@ class DM(State):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
+
         QtoB = BtoQ(modes, phi).inverse()
         Q = DM.from_ansatz(modes, PolyExpAnsatz(*triple))
         return DM.from_ansatz(modes, (Q >> QtoB).ansatz, name)
@@ -302,6 +304,7 @@ class DM(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
+
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -413,6 +416,7 @@ class DM(State):
         Returns a ``DM`` when the wires of the resulting components are compatible with
         those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
         """
+
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here

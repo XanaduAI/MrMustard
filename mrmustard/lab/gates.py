@@ -933,7 +933,7 @@ class Amplifier(Channel):
     """
 
     is_gaussian = True
-    short_name = "Amp"
+    short_name = "Amp~"
     parallelizable = True
 
     def __init__(
