@@ -18,13 +18,13 @@ The class representing a Phase noise channel.
 
 from __future__ import annotations
 from typing import Sequence
-from .base import Channel
-from ..utils import make_parameter
-import numpy as np
-from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.representations import Representation
+from mrmustard import math
+import numpy as np
+from .base import Channel
+from ..utils import make_parameter
 
 __all__ = ["PhaseNoise"]
 
