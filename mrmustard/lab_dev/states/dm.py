@@ -32,9 +32,9 @@ from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
-from ..circuit_components_utils import BtoQ, TraceOut
 
 from .base import State, _validate_operator, OperatorType
+from ..circuit_components_utils import BtoQ, TraceOut
 from ..circuit_components import CircuitComponent
 
 from ..utils import shape_check
