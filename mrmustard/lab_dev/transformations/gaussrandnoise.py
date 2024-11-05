@@ -74,7 +74,7 @@ class GaussRandNoise(Channel):
         if (math.real(math.eigvals(Y)) >= -settings.ATOL).min() == 0:
             raise ValueError("The input Y matrix has negative eigen-values.")
 
-        super().__init__(name="GRN")
+        super().__init__(name="GRN~")
         self._add_parameter(make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)))
         self._representation = self.from_ansatz(
             modes_in=modes,

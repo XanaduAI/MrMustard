@@ -33,7 +33,7 @@ class TestGRN:
 
         a = np.random.random((2, 2))
         grn = GaussRandNoise([0], a @ a.T)
-        assert grn.name == "GRN"
+        assert grn.name == "GRN~"
         assert grn.modes == [0]
 
     def test_grn(self):

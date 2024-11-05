@@ -35,7 +35,7 @@ class TestAttenuator:
     def test_init(self, modes, transmissivity):
         gate = Attenuator(modes, transmissivity)
 
-        assert gate.name == "Att"
+        assert gate.name == "Att~"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
