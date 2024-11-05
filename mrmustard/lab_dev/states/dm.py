@@ -34,8 +34,8 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
 
 from .base import State, _validate_operator, OperatorType
-from ..circuit_components_utils import BtoQ, TraceOut
 from ..circuit_components import CircuitComponent
+from ..circuit_components_utils import BtoQ, TraceOut
 
 from ..utils import shape_check
 
