@@ -21,11 +21,16 @@ from .attenuator import *
 from .base import *
 from .bsgate import *
 from .cft import *
+from .cxgate import *
+from .czgate import *
 from .dgate import *
 from .fockdamping import *
 from .ggate import *
 from .gaussrandnoise import *
 from .identity import *
+from .interferometer import *
+from .mzgate import *
+from .pgate import *
 from .phasenoise import *
 from .rgate import *
 from .s2gate import *
