@@ -55,7 +55,7 @@ class RealInterferometer(Unitary):
             orthogonal = math.random_orthogonal(num_modes)
 
         super().__init__(name="RealInterferometer")
-        self.parameter_set.add_parameter(
+        self._add_parameter(
             make_parameter(
                 orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
             )

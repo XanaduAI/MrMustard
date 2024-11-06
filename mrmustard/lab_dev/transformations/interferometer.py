@@ -56,7 +56,7 @@ class Interferometer(Unitary):
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(name="Interferometer")
-        self.parameter_set.add_parameter(
+        self._add_parameter(
             make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
         )
         symplectic = math.block(
