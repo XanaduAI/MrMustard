@@ -27,7 +27,7 @@ from mrmustard.utils.typing import RealMatrix
 from .base import Unitary
 from ..utils import make_parameter
 
-__all__ = ["Interferometer"]
+__all__ = ["RealInterferometer"]
 
 
 class RealInterferometer(Unitary):
