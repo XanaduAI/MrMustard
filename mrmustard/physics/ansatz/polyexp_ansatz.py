@@ -32,7 +32,6 @@ import matplotlib.pyplot as plt
 from IPython.display import display
 
 from mrmustard.utils.typing import (
-    Batch,
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
@@ -52,6 +51,7 @@ from mrmustard.math.parameters import Variable
 from mrmustard.utils.argsort import argsort_gen
 
 from .base import Ansatz
+from ..batches import Batch
 
 __all__ = ["PolyExpAnsatz"]
 
@@ -91,15 +91,15 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: Batch[ComplexMatrix],
-        b: Batch[ComplexVector],
-        c: Batch[ComplexTensor] = 1.0,
+        A: ComplexMatrix | Batch[ComplexMatrix],
+        b: ComplexVector | Batch[ComplexVector],
+        c: ComplexTensor | Batch[ComplexTensor] = 1.0,
         name: str = "",
     ):
         super().__init__()
-        self._A = A
-        self._b = b
-        self._c = c
+        self._A = A if isinstance(A, Batch) else Batch(A)
+        self._b = b if isinstance(b, Batch) else Batch(b)
+        self._c = c if isinstance(c, Batch) else Batch(c)
         self._backends = [False, False, False]
         self._simplified = False
         self.name = name
