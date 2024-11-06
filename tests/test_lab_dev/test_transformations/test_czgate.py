@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the ``CXgate`` class."""
+"""Tests for the ``CZgate`` class."""
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
@@ -22,33 +22,34 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.states import Coherent, Vacuum
-from mrmustard.lab_dev.transformations import CXgate
+from mrmustard.lab_dev.transformations import CZgate
 
 
-class TestCXgate:
+class TestCZgate:
     r"""
-    Tests for the ``CXgate`` class.
+    Tests for the ``CZgate`` class.
     """
 
     def test_init(self):
-        "Tests the CXgate initialization."
-        cx = CXgate([0, 1], 0.3)
-        assert cx.modes == [0, 1]
-        assert cx.name == "CXgate"
-        assert cx.s.value == 0.3
+        "Tests the CZgate initialization."
+        cz = CZgate([0, 1], 0.3)
+        assert cz.modes == [0, 1]
+        assert cz.name == "CZgate"
+        assert cz.s.value == 0.3
 
         with pytest.raises(
             ValueError,
             match=re.escape(
-                "The number of modes for a CXgate must be 2 (your input has 3 many modes)."
+                "The number of modes for a CZgate must be 2 (your input has 3 many modes)."
             ),
         ):
-            CXgate([0, 1, 2], 0.2)
+            CZgate([0, 1, 2], 0.2)
 
     @pytest.mark.parametrize("s", [0.1, 0.2, 1.5])
     def test_application(self, s):
-        "Tests the application of CXgate"
-        psi = Coherent([0], 1) >> Vacuum([1]) >> CXgate([0, 1], s)
+        "Tests the application of CZgate"
+        psi = Coherent([0], 0, 1) >> Coherent([1], 1, 0) >> CZgate([0, 1], 1)
         _, d, _ = psi.phase_space(s=0)
-        d_by_hand = math.astensor([math.sqrt(complex(2)), s * math.sqrt(complex(2)), 0, 0])
+        psi = Coherent([0], 0, 1) >> Coherent([1], 1, 0) >> CZgate([0, 1], 1)
+        d_by_hand = math.astensor([0, math.sqrt(complex(2)), (1 + s) * math.sqrt(complex(2)), 0])
         assert math.allclose(d[0], d_by_hand)
