@@ -20,6 +20,7 @@ from .base import State
 from .ket import Ket
 from .dm import DM
 
+from .bargmanneigenstate import BargmannEigenstate
 from .coherent import Coherent
 from .displaced_squeezed import DisplacedSqueezed
 from .number import Number

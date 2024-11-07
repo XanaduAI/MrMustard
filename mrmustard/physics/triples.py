@@ -94,6 +94,18 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
+def bargmann_eigenstate_Abc(x: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The Abc triple of a Bargmann eigenstate.
+    """
+    x = list(_reshape(x=x))
+    nmodes = len(x)
+    A = _vacuum_A_matrix(nmodes)
+    b = x
+    c = 1
+    return A, b, c
+
+
 def coherent_state_Abc(
     x: Union[float, Iterable[float]], y: Union[float, Iterable[float]] = 0
 ) -> Union[Matrix, Vector, Scalar]:
