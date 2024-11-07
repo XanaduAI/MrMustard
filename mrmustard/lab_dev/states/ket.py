@@ -152,6 +152,7 @@ class Ket(State):
         phi: float = 0.0,
         name: str | None = None,
     ) -> State:
+
         QtoB = BtoQ(modes, phi).inverse()
         Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
         return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
@@ -263,6 +264,7 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
+
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -371,6 +373,7 @@ class Ket(State):
         with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
+
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
