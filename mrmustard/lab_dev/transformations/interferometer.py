@@ -55,6 +55,10 @@ class Interferometer(Unitary):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if num_modes is None:
             num_modes = len(modes)
+        if unitary is not None and unitary.shape[-1] != num_modes:
+            raise ValueError(
+                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
+            )
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(name="Interferometer")

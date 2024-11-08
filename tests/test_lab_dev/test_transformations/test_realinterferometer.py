@@ -12,32 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the ``Interferometer`` class."""
+"""Tests for the ``RealInterferometer`` class."""
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
 
 from mrmustard import math
-from mrmustard.lab_dev.transformations import Identity, Interferometer
+from mrmustard.lab_dev.transformations import Identity, RealInterferometer
 
 
-class TestInterferometer:
+class TestRealInterferometer:
     r"""
     Tests the Interferometer gate (Interferometer)
     """
 
     def test_init(self):
         "Tests initialization of an Interferometer object"
-        u_int = Interferometer([0, 1, 2])
+        u_int = RealInterferometer([0, 1, 2])
         assert u_int.modes == [0, 1, 2]
-        assert u_int.name == "Interferometer"
+        assert u_int.name == "RealInterferometer"
         assert u_int.symplectic[0].shape == (6, 6)
 
-        unitary = math.random_unitary(2)
-        u_int = Interferometer([0, 1], unitary=unitary)
+        orth = math.random_orthogonal(2)
+        u_int = RealInterferometer([0, 1], orthogonal=orth)
         assert u_int.symplectic[0].shape == (4, 4)
+        assert math.allclose(u_int.symplectic[0][:2, 2:], math.zeros((2, 2)))
 
     def test_application(self):
-        "Tests the correctness of the application of an Interferometer gate"
-        u_int = Interferometer([0, 1])
+        "Tests the correctness of the application of a RealInterferometer gate"
+        u_int = RealInterferometer([0, 1])
         assert u_int >> u_int.dual == Identity([0, 1])

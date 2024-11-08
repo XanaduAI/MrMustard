@@ -32,6 +32,7 @@ from .interferometer import *
 from .mzgate import *
 from .pgate import *
 from .phasenoise import *
+from .realinterferometer import *
 from .rgate import *
 from .s2gate import *
 from .sgate import *
