@@ -65,12 +65,12 @@ class MZgate(Unitary):
         self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
         self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
 
-        ca = math.cos(phi_a)
-        sa = math.sin(phi_a)
-        cb = math.cos(phi_b)
-        sb = math.sin(phi_b)
-        cp = math.cos(phi_a + phi_b)
-        sp = math.sin(phi_a + phi_b)
+        ca = math.cos(complex(phi_a))
+        sa = math.sin(complex(phi_a))
+        cb = math.cos(complex(phi_b))
+        sb = math.sin(complex(phi_b))
+        cp = math.cos(complex(phi_a + phi_b))
+        sp = math.sin(complex(phi_a + phi_b))
 
         if internal:
             symplectic = 0.5 * math.astensor(
