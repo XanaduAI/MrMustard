@@ -54,7 +54,7 @@ class Pgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        shearing: float | Sequence[float] | None = 0.0,
+        shearing: float | Sequence[float] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):

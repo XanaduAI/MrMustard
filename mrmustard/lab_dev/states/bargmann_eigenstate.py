@@ -30,9 +30,22 @@ __all__ = ["BargmannEigenstate"]
 
 class BargmannEigenstate(Ket):
     r"""
-    Multimode Bargmann eigenstate. These are basically re-scaled coherent states i.e.,
-    .. math::
-        A = 0 , b = alpha, c = 1
+    The `N`-mode Bargmann eigenstate.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import BargmannEigenstate
+
+        >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
+        >>> assert state.modes == [1, 2]
+    Args:
+        modes: A list of modes.
+        alpha: The displacement of the state (i.e., the eigen-value).
+
+    .. details::
+        Its ``(A,b,c)`` triple is given by
+        .. math::
+            A = 0 , b = alpha, c = 1.
     """
 
     short_name = "Be"
@@ -49,7 +62,5 @@ class BargmannEigenstate(Ket):
         self._add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_eigenstate_Abc, x=self.alpha.value
-            ),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.bargmann_eigenstate_Abc, x=self.alpha),
         ).representation

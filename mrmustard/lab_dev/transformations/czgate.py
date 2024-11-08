@@ -55,7 +55,7 @@ class CZgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        s: float | None = 0.0,
+        s: float = 0.0,
         s_trainable: bool = False,
         s_bounds: tuple[float | None, float | None] = (None, None),
     ):
