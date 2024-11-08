@@ -23,7 +23,7 @@ from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["BargmannEigenstate"]
 
