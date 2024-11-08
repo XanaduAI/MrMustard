@@ -56,7 +56,7 @@ class RealInterferometer(Unitary):
             num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(
-                f"The size of the unitary must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}"
+                f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}"
             )
 
         if orthogonal is None:

@@ -46,9 +46,7 @@ class BargmannEigenstate(Ket):
     ):
         super().__init__(name="BargmannEigenstate")
 
-        alphas = list(reshape_params(len(modes), alphas=alpha))
-        self._add_parameter(make_parameter(alpha_trainable, alphas, "alpha", alpha_bounds))
-        print(self.alpha.value)
+        self._add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(

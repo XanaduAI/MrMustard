@@ -99,7 +99,7 @@ def bargmann_eigenstate_Abc(x: Union[float, Iterable[float]]) -> Union[Matrix, V
     The Abc triple of a Bargmann eigenstate.
     """
     x = list(_reshape(x=x))
-    nmodes = len(x)
+    nmodes = len(x[0])
     A = _vacuum_A_matrix(nmodes)
     b = x
     c = 1
