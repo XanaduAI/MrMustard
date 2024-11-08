@@ -50,5 +50,5 @@ class TestMZgate:
         rho = Coherent([0], 1) >> Vacuum([1]) >> MZgate([0, 1], phi_a, phi_a, internal=True)
         assert (
             rho[1].ansatz
-            == Coherent([1], x=-np.sin(complex(phi_a)), y=np.cos(complex(phi_a))).dm().ansatz
+            == Coherent([1], x=-math.sin(complex(phi_a)), y=math.cos(complex(phi_a))).dm().ansatz
         )
