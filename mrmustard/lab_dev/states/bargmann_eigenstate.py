@@ -38,6 +38,7 @@ class BargmannEigenstate(Ket):
 
         >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
         >>> assert state.modes == [1, 2]
+
     Args:
         modes: A list of modes.
         alpha: The displacement of the state (i.e., the eigen-value).
