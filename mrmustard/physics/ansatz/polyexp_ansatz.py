@@ -91,16 +91,15 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: ComplexMatrix | Batch[ComplexMatrix],
-        b: ComplexVector | Batch[ComplexVector],
-        c: ComplexTensor | Batch[ComplexTensor] = 1.0,
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
+        c: Batch[ComplexTensor],
         name: str = "",
     ):
         super().__init__()
-        self._A = A if isinstance(A, Batch) else Batch(A)
-        self._b = b if isinstance(b, Batch) else Batch(b)
-        self._c = c if isinstance(c, Batch) else Batch(c)
-        self._backends = [False, False, False]
+        self._A = A
+        self._b = b
+        self._c = c
         self._simplified = False
         self.name = name
 
@@ -110,15 +109,11 @@ class PolyExpAnsatz(Ansatz):
         The batch of quadratic coefficient :math:`A_i`.
         """
         self._generate_ansatz()
-        if not self._backends[0]:
-            self._A = math.atleast_3d(self._A)
-            self._backends[0] = True
         return self._A
 
     @A.setter
     def A(self, value):
-        self._A = value
-        self._backends[0] = False
+        self._A = value if isinstance(value, Batch) else Batch([value])
 
     @property
     def b(self) -> Batch[ComplexVector]:
@@ -126,15 +121,11 @@ class PolyExpAnsatz(Ansatz):
         The batch of linear coefficients :math:`b_i`
         """
         self._generate_ansatz()
-        if not self._backends[1]:
-            self._b = math.atleast_2d(self._b)
-            self._backends[1] = True
         return self._b
 
     @b.setter
     def b(self, value):
-        self._b = value
-        self._backends[1] = False
+        self._b = value if isinstance(value, Batch) else Batch([value])
 
     @property
     def batch_size(self):
@@ -146,15 +137,11 @@ class PolyExpAnsatz(Ansatz):
         The batch of arrays :math:`c_i`.
         """
         self._generate_ansatz()
-        if not self._backends[2]:
-            self._c = math.atleast_1d(self._c)
-            self._backends[2] = True
         return self._c
 
     @c.setter
     def c(self, value):
-        self._c = value
-        self._backends[2] = False
+        self._c = value if isinstance(value, Batch) else Batch([value])
 
     @property
     def conj(self):
@@ -179,7 +166,7 @@ class PolyExpAnsatz(Ansatz):
         have polynomials attached to them and what the degree(+1) of the polynomial is
         on each of the wires.
         """
-        shape_poly = self.c.shape[1:]
+        shape_poly = self.c.core_shape
         dim_poly = len(shape_poly)
         return dim_poly, shape_poly
 
@@ -600,8 +587,8 @@ class PolyExpAnsatz(Ansatz):
         """
         if not isinstance(other, PolyExpAnsatz):
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.")
-        (_, n1, _) = self.A.shape
-        (_, n2, _) = other.A.shape
+        (n1, _) = self.A.core_shape
+        (n2, _) = other.A.core_shape
         self_num_poly, _ = self.polynomial_shape
         other_num_poly, _ = other.polynomial_shape
         if self_num_poly - other_num_poly != n1 - n2:
@@ -610,36 +597,11 @@ class PolyExpAnsatz(Ansatz):
                 f"but the polynomials have {self_num_poly} and {other_num_poly} variables (difference of {self_num_poly-other_num_poly})."
             )
 
-        def pad_and_expand(mat, vec, array, target_size):
-            pad_size = target_size - mat.shape[-1]
-            padded_mat = math.pad(mat, ((0, 0), (0, pad_size), (0, pad_size)))
-            padded_vec = math.pad(vec, ((0, 0), (0, pad_size)))
-            padding_array = math.ones((1,) * pad_size, dtype=array.dtype)
-            expanded_array = math.outer(array, padding_array)
-            return padded_mat, padded_vec, expanded_array
+        new_A = self.A.concat(other.A)
+        new_b = self.b.concat(other.b)
+        new_c = self.c.concat(other.c)
 
-        def combine_arrays(array1, array2):
-            shape1 = array1.shape[1:]
-            shape2 = array2.shape[1:]
-            max_shape = tuple(map(max, zip(shape1, shape2)))
-            pad_widths1 = [(0, 0)] + [(0, t - s) for s, t in zip(shape1, max_shape)]
-            pad_widths2 = [(0, 0)] + [(0, t - s) for s, t in zip(shape2, max_shape)]
-            padded_array1 = math.pad(array1, pad_widths1, "constant")
-            padded_array2 = math.pad(array2, pad_widths2, "constant")
-            return math.concat([padded_array1, padded_array2], axis=0)
-
-        if n1 <= n2:
-            mat1, vec1, array1 = pad_and_expand(self.A, self.b, self.c, n2)
-            combined_matrices = math.concat([mat1, other.A], axis=0)
-            combined_vectors = math.concat([vec1, other.b], axis=0)
-            combined_arrays = combine_arrays(array1, other.c)
-        else:
-            mat2, vec2, array2 = pad_and_expand(other.A, other.b, other.c, n1)
-            combined_matrices = math.concat([self.A, mat2], axis=0)
-            combined_vectors = math.concat([self.b, vec2], axis=0)
-            combined_arrays = combine_arrays(self.c, array2)
-        # note output is not simplified
-        return PolyExpAnsatz(combined_matrices, combined_vectors, combined_arrays)
+        return PolyExpAnsatz(new_A, new_b, new_c)
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
