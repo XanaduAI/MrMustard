@@ -64,10 +64,10 @@ class PolyExpAnsatz(Ansatz):
 
         :math:`F_j(z) = \sum_i [\sum_k c^{(i)}_{jk} \partial_y^k \textrm{exp}((z,y)^T A^{(i)} (z,y) / 2 + (z,y)^T b^{(i)})|_{y=0}]`
 
-    with ``j`` and ``k`` being multi-indices. The ``j`` index represents the output shape of the array of polynomials of derivatives,
+    with ``j`` and ``k`` are multi-indices. The ``j`` index represents the output shape of the array of polynomials of derivatives,
     while the ``k`` index is contracted with the vectors of derivatives to form the polynomial of derivatives.
     The matrices :math:`A_i` and vectors :math:`b_i` are the parameters of the exponential terms in the ansatz,
-    with :math:`z` and :math:`y` being vectors of continuous complex variables.
+    with :math:`z` and :math:`y` vectors of continuous complex variables.
     :math:`c^{(i)}_{jk}` are the coefficients of the polynomial of derivatives and :math:`y` is the vector of continuous
     complex variables that are derived by the polynomial of derivatives.
 
@@ -80,7 +80,7 @@ class PolyExpAnsatz(Ansatz):
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([[1.0, 2.0, 3.0]])
 
-        >>> F = PolyExpAnsatz(A, b, c)
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
         >>> z = np.array([[1.0],[2.0],[3.0]])
 
         >>> # calculate the value of the function at the three different ``z``, since z is batched.
@@ -109,7 +109,7 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self.name = name
         self._fn = None
-        self._kwargs = {}
+        self._fn_kwargs = {}
 
     def _generate_ansatz(self):
         r"""
@@ -119,10 +119,10 @@ class PolyExpAnsatz(Ansatz):
             self._A is None
             or self._b is None
             or self._c is None
-            or Variable in {type(param) for param in self._kwargs.values()}
+            or Variable in {type(param) for param in self._fn_kwargs.values()}
         ):
             params = {}
-            for name, param in self._kwargs.items():
+            for name, param in self._fn_kwargs.items():
                 try:
                     params[name] = param.value
                 except AttributeError:
@@ -170,20 +170,24 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        ret = PolyExpAnsatz(
+            math.conj(self.A), math.conj(self.b), math.conj(self.c), self.num_derived_vars
+        )
         ret._contract_idxs = self._contract_idxs
         return ret
 
     @property
     def data(
         self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        return self.triple
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor], int]:
+        """Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
+        return self.triple, self.num_derived_vars
 
     @property
     def num_CV_vars(self) -> int:
         r"""
         The number of continuous variables that remain after the polynomial of derivatives is applied.
+        This is the number of continuous variables of the Ansatz function itself.
         """
         return self.A.shape[-1] - self.num_derived_vars
 
@@ -191,20 +195,22 @@ class PolyExpAnsatz(Ansatz):
     def num_DV_vars(self) -> int:
         r"""
         The number of discrete variables after the polynomial of derivatives is applied.
+        This is the number of axes of the array of values that we get when we evaluate the ansatz at a point.
         """
         return len(self.shape_DV_vars)
 
     @property
     def num_vars(self):
         r"""
-        The total number of variables of this ansatz.
+        The total number of variables of this ansatz before the polynomial of derivatives is applied.
         """
-        return self.num_CV_vars + self.num_DV_vars
+        return self.num_CV_vars + self.num_derived_vars
 
     @property
     def shape_DV_vars(self) -> tuple[int, ...]:
         r"""
         The shape of the discrete variables.
+        This is the shape of the array of values that we get when we evaluate the ansatz at a point.
         """
         return self.c.shape[self.num_derived_vars + 1 :]
 
@@ -219,6 +225,7 @@ class PolyExpAnsatz(Ansatz):
     def triple(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        """Returns the triple of parameters of the exponential part of the ansatz."""
         return self.A, self.b, self.c
 
     @classmethod
@@ -228,39 +235,58 @@ class PolyExpAnsatz(Ansatz):
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
+        """Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
+        the function is not called until the A,b,c attributes are accessed (even internally)."""
         ansatz = cls(None, None, None, None)
         ansatz._fn = fn
-        ansatz._kwargs = kwargs
+        ansatz._fn_kwargs = kwargs
         return ansatz
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
         This method decomposes a PolyExp ansatz to make it more efficient to evaluate.
         An ansatz with ``n`` CV variables and ``m`` derived variables has parameters with the following shapes:
-        ``A=(batch;n+m,n+m)``, ``b=(batch;n+m)``, ``c = (batch;k_1,k_2,...,k_m;j_1,...,j_d)``.
-        This can be rewritten as an ansatz of dimension
-        ``A=(batch;2n,2n)``, ``b=(batch;2n)``, ``c = (batch;l_1,l_2,...,l_n;j_1,...,j_d)``, with ``l_i = sum_j k_j``.
+        ``A=(batch;n+m,n+m)``, ``b=(batch;n+m)``, ``c = (batch;k_1,k_2,...,k_m;j_1,...,j_d)``, where ``d`` is the number of
+        discrete variables, i.e. axes of the array of values that we get when we evaluate the ansatz at a point.
+        This can be rewritten as an ansatz of dimension ``A=(batch;2n,2n)``, ``b=(batch;2n)``,
+        ``c = (batch;l_1,l_2,...,l_n;j_1,...,j_d)``, with ``l_i = sum_j k_j``.
         This means that the number of continuous variables remains ``n``, the number of derived variables decreases from
-        ``m`` to ``n``, and the number of discrete variables remains ``d``.
+        ``m`` to ``n``, and the number of discrete variables remains ``d``. The price we pay is that the order of the
+        derivatives is larger (the order of each derivative is the sum of all the orders of the initial derivatives).
         This decomposition is typically favourable if ``m > n`` and the sum of the elements in ``c.shape[1:]`` is not too large.
-        This method will actually decompose the ansatz if ``m > n`` and return the original ansatz otherwise.
+        This method will actually decompose the ansatz only if ``m > n`` and return the original ansatz otherwise.
         """
-        batch_size = self.batch_size
-        if self.num_derived_vars > self.num_CV_vars:
-            A_decomp = []
-            b_decomp = []
-            c_decomp = []
-            for i in range(batch_size):
-                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
-                    self.A[i], self.b[i], self.c[i]
-                )
-                A_decomp.append(A_decomp_i)
-                b_decomp.append(b_decomp_i)
-                c_decomp.append(c_decomp_i)
-
-            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp, self.num_CV_vars)
-        else:
+        if self.num_derived_vars < self.num_CV_vars:
             return self
+        A_dec = []
+        b_dec = []
+        c_dec = []
+        for Ai, bi, ci in zip(self.A, self.b, self.c):
+            A_dec_i, b_dec_i, c_dec_i = self._decompose_single(Ai, bi, ci)
+            A_dec.append(A_dec_i)
+            b_dec.append(b_dec_i)
+            c_dec.append(c_dec_i)
+        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
+
+    def _decompose_single(self, Ai, bi, ci):
+        r"""
+        Decomposes a single batch element of the ansatz.
+        """
+        n = self.num_CV_vars
+        m = self.num_derived_vars
+        A_core = math.block(
+            [[math.zeros((n, n), dtype=Ai.dtype), Ai[:n, m:]], [Ai[m:, :n], Ai[m:, m:]]]
+        )
+        b_core = math.concat((math.zeros((n,), dtype=bi.dtype), bi[m:]), axis=-1)
+        poly_shape = (math.sum(self.shape_derived_vars),) * n + self.shape_derived_vars
+        poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
+        c_prime = math.sum(poly_core * ci, axes=[i for i in range(n, n + m)])
+        block = Ai[:n, :n]
+        A_decomp = math.block(
+            [[block, math.eye_like(block)], [math.eye_like(block), math.zeros_like(block)]]
+        )
+        b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
+        return A_decomp, b_decomp, c_prime
 
     def plot(
         self,
@@ -561,49 +587,6 @@ class PolyExpAnsatz(Ansatz):
         exp_sum = math.exp(1 / 2 * A_part + b_part)
         new_c = ci * exp_sum
         return new_A, new_b, new_c
-
-    def _decompose_ansatz_single(self, Ai, bi, ci):
-        dim_beta = self.num_DV_vars
-        dim_alpha = self.num_CV_vars
-        A_bar = math.block(
-            [
-                [
-                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
-                    Ai[:dim_alpha, dim_alpha:],
-                ],
-                [
-                    Ai[dim_alpha:, :dim_alpha],
-                    Ai[dim_alpha:, dim_alpha:],
-                ],
-            ]
-        )
-        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype), bi[dim_alpha:]), axis=0)
-        poly_bar = math.hermite_renormalized(
-            A_bar,
-            b_bar,
-            complex(1),
-            (math.sum(self.polynomial_shape),) * dim_alpha + self.polynomial_shape,
-        )
-        c_decomp = math.sum(
-            poly_bar * ci,
-            axes=math.arange(
-                len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
-            ).tolist(),
-        )
-        A_decomp = math.block(
-            [
-                [
-                    Ai[:dim_alpha, :dim_alpha],
-                    math.eye(dim_alpha, dtype=Ai.dtype),
-                ],
-                [
-                    math.eye((dim_alpha), dtype=Ai.dtype),
-                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
-                ],
-            ]
-        )
-        b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
-        return A_decomp, b_decomp, c_decomp
 
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
