@@ -82,14 +82,15 @@ class MZgate(Unitary):
                 ]
             )
 
-        symplectic = 0.5 * math.astensor(
-            [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
-        )
+        else:
+            symplectic = 0.5 * math.astensor(
+                [
+                    [cp - ca, -sb, sa - sp, -1 - cb],
+                    [-sa - sp, 1 - cb, -ca - cp, sb],
+                    [sp - sa, 1 + cb, cp - ca, -sb],
+                    [cp + ca, -sb, -sa - sp, 1 - cb],
+                ]
+            )
 
         self._representation = self.from_ansatz(
             modes_in=modes,

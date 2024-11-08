@@ -19,7 +19,8 @@
 import numpy as np
 import pytest
 
-from mrmustard.lab_dev.states import Vacuum, Coherent
+from mrmustard import math
+from mrmustard.lab_dev.states import Coherent, Vacuum
 from mrmustard.lab_dev.transformations import MZgate
 
 
@@ -34,6 +35,7 @@ class TestMZgate:
         assert mz.modes == [0, 1]
         assert mz.phi_a.value == 0.1
         assert mz.phi_b.value == 0.2
+        assert mz.name == "MZgate"
 
         mz = MZgate([1, 2])
         assert mz.phi_a.value == 0
@@ -42,5 +44,11 @@ class TestMZgate:
     @pytest.mark.parametrize("phi_a", [0, np.random.random(), np.pi / 2])
     def test_application(self, phi_a):
         "Tests the correctness of the application of an MZgate."
-        rho = Vacuum([0]) >> Coherent([1], 1) >> MZgate([0, 1], phi_a, 0, internal=0)
-        assert rho[0].ansatz == Coherent([1], x=0, y=1).dm().ansatz
+        rho = Vacuum([0]) >> Coherent([1], 1) >> MZgate([0, 1], phi_a, 0)
+        assert rho[0] == Coherent([0], x=0, y=1).dm()
+
+        rho = Coherent([0], 1) >> Vacuum([1]) >> MZgate([0, 1], phi_a, phi_a, internal=True)
+        assert (
+            rho[1].ansatz
+            == Coherent([1], x=-np.sin(complex(phi_a)), y=np.cos(complex(phi_a))).dm().ansatz
+        )
