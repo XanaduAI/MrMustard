@@ -40,63 +40,94 @@ class Batch:
     The class responsible for keeping track of and handling batch dimensions.
 
     Args:
+        items: The list of items in the batch.
+        batch_shape: The shape of the batch dims.
+        batch_labels: The labels for the batch dims.
     """
 
     def __init__(
         self,
         items: list[ComplexMatrix | ComplexVector | ComplexTensor],
-        shape: tuple[int, ...] | None = None,
-        batch_label: list[str] | None = None,
+        batch_shape: tuple[int, ...] | None = None,
+        batch_labels: list[str] | None = None,
     ):
         self._items = items
-        self._batch_shape = shape if shape else (len(self._items),)
-        self._batch_label = (
-            batch_label
-            if batch_label
+        self._batch_shape = batch_shape if batch_shape else (len(self._items),)
+        self._batch_labels = (
+            batch_labels
+            if batch_labels
             else [random.choice(string.ascii_letters) for _ in self._batch_shape]
-        )
+        )  # might have to rethink a better way of generating random labels
 
         core_shapes = [item.shape for item in self._items if isinstance(item, Iterable)]
         self._core_shape = max(core_shapes) if core_shapes else tuple()
 
     @property
-    def batch_label(self):
-        r""" """
-        return self._batch_label
+    def batch_labels(self) -> list[str]:
+        r"""
+        The batch labels.
+        """
+        return self._batch_labels
 
     @property
-    def batch_shape(self):
-        r""" """
+    def batch_shape(self) -> tuple[int, ...]:
+        r"""
+        The batch shape.
+        """
         return self._batch_shape
 
     @property
-    def core_shape(self):
-        r""" """
+    def core_shape(self) -> tuple[int, ...]:
+        r"""
+        The core shape.
+        """
         return self._core_shape
 
     @property
-    def shape(self):
-        r""" """
+    def shape(self) -> tuple[int, ...]:
+        r"""
+        The overall shape (batch_shape + core_shape).
+        """
         return self.batch_shape + self.core_shape
 
     def concat(self, other: Batch) -> Batch:
-        r""" """
+        r"""
+        Concatenate this Batch with another.
+
+        Args:
+            other: The other batch to concatenate with.
+        """
         items = self._items + other._items
         batch_shape, batch_label = self._new_batch(other)
         return Batch(items, batch_shape, batch_label)
 
     def _new_batch(self, other: Batch) -> tuple[tuple[int, ...], list[str]]:
-        r""" """
+        r"""
+        Helper method to compute the new batch shape and labels given
+        the concatenation of two batches.
+
+        Args:
+            other: The other Batch.
+        """
         temp = {}
-        for shape, label in zip(self.batch_shape, self.batch_label):
+        for shape, label in zip(self.batch_shape, self.batch_labels):
             temp[label] = shape
-        for shape, label in zip(other.batch_shape, other.batch_label):
+        for shape, label in zip(other.batch_shape, other.batch_labels):
             temp[label] = temp.get(label, 0) + shape
         shape = tuple(temp.values())
         labels = list(temp.keys())
         return shape, labels
 
-    def _pad(self, item):
+    def _pad(
+        self, item: ComplexMatrix | ComplexVector | ComplexTensor
+    ) -> ComplexMatrix | ComplexVector | ComplexTensor:
+        r"""
+        Helper method to pad the given item such that it's shape
+        matches that of the core shape.
+
+        Args:
+            item: The item to pad.
+        """
         if item.shape < self.core_shape:
             if not item.shape:
                 item = math.atleast_1d(item)
