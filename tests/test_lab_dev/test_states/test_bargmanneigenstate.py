@@ -29,11 +29,11 @@ class TestBargmannEigenstate:
 
     def test_init(self):
         "Tests the initialization."
-        be = BargmannEigenstate([0, 1], [0.1j, 0.2])
+        be = BargmannEigenstate([0, 1], [0.1, 0.2])
         assert be.name == "BargmannEigenstate"
-        assert math.allclose(be.alpha.value, [0.1j, 0.2])
+        assert math.allclose(be.alpha.value, [0.1, 0.2])
         assert be.modes == [0, 1]
-        assert math.allclose(be.ansatz.b[0], [0.1j, 0.2])
+        assert math.allclose(be.ansatz.b[0], [0.1, 0.2])
         assert math.allclose(be.ansatz.A[0], math.zeros((2, 2)))
         assert be.ansatz.c[0] == 1.0
 
