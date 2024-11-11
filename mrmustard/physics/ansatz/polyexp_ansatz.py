@@ -91,15 +91,29 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: Batch[ComplexMatrix],
-        b: Batch[ComplexVector],
-        c: Batch[ComplexTensor],
+        A: ComplexMatrix | Batch[ComplexMatrix],
+        b: ComplexVector | Batch[ComplexVector],
+        c: ComplexTensor | Batch[ComplexTensor],
+        batch_label: str | None = None,
         name: str = "",
     ):
         super().__init__()
-        self._A = A
-        self._b = b
-        self._c = c
+        batch_labels = [batch_label] if batch_label else None
+        self._A = (
+            Batch([A], batch_labels=batch_labels)
+            if A is not None and not isinstance(A, Batch)
+            else A
+        )
+        self._b = (
+            Batch([b], batch_labels=batch_labels)
+            if b is not None and not isinstance(b, Batch)
+            else b
+        )
+        self._c = (
+            Batch([c], batch_labels=batch_labels)
+            if c is not None and not isinstance(c, Batch)
+            else c
+        )
         self._simplified = False
         self.name = name
 
@@ -112,7 +126,7 @@ class PolyExpAnsatz(Ansatz):
         return self._A
 
     @A.setter
-    def A(self, value):
+    def A(self, value: ComplexMatrix | Batch[ComplexMatrix]):
         self._A = value if isinstance(value, Batch) else Batch([value])
 
     @property
@@ -124,7 +138,7 @@ class PolyExpAnsatz(Ansatz):
         return self._b
 
     @b.setter
-    def b(self, value):
+    def b(self, value: ComplexVector | Batch[ComplexVector]):
         self._b = value if isinstance(value, Batch) else Batch([value])
 
     @property
@@ -140,7 +154,7 @@ class PolyExpAnsatz(Ansatz):
         return self._c
 
     @c.setter
-    def c(self, value):
+    def c(self, value: ComplexTensor | Batch[ComplexTensor]):
         self._c = value if isinstance(value, Batch) else Batch([value])
 
     @property
@@ -526,11 +540,6 @@ class PolyExpAnsatz(Ansatz):
         b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
         return A_decomp, b_decomp, c_decomp
 
-    def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
-        self.simplify()
-        other.simplify()
-        return np.allclose(self.b, other.b, atol=1e-10) and np.allclose(self.A, other.A, atol=1e-10)
-
     def _generate_ansatz(self):
         r"""
         This method computes and sets the (A, b, c) given a function
@@ -709,7 +718,11 @@ class PolyExpAnsatz(Ansatz):
             return self._call_all(z)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
-        return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
+        if not isinstance(other, PolyExpAnsatz):
+            return False
+        self.simplify()
+        other.simplify()
+        return self.A == other.A and self.b == other.b and self.c == other.c
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx

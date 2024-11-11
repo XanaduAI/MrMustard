@@ -26,6 +26,7 @@ from plotly.graph_objs import FigureWidget
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
+from mrmustard.physics.batches import Batch
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
@@ -46,41 +47,41 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init_non_batched(self, triple):
         A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple)
+        bargmann = PolyExpAnsatz(*triple, batch_label="a")
 
-        assert np.allclose(bargmann.A, A)
-        assert np.allclose(bargmann.b, b)
-        assert np.allclose(bargmann.c, c)
+        assert bargmann.A == Batch([A], batch_labels=["a"])
+        assert bargmann.b == Batch([b], batch_labels=["a"])
+        assert bargmann.c == Batch([c], batch_labels=["a"])
 
-    @pytest.mark.parametrize("n", [1, 2, 3])
+    @pytest.mark.parametrize("n", [1, 2, 32])
     def test_add(self, n):
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = PolyExpAnsatz(*triple1)
-        bargmann2 = PolyExpAnsatz(*triple2)
+        bargmann1 = PolyExpAnsatz(*triple1, batch_label="a")
+        bargmann2 = PolyExpAnsatz(*triple2, batch_label="a")
         bargmann_add = bargmann1 + bargmann2
 
-        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
-        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
-        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
+        assert bargmann_add.A == bargmann1.A.concat(bargmann2.A)
+        assert bargmann_add.b == bargmann1.b.concat(bargmann2.b)
+        assert bargmann_add.c == bargmann1.c.concat(bargmann2.c)
 
         A1, b1, _ = Abc_triple(5)
-        c1 = np.random.random(size=(1, 3, 3))
+        c1 = np.random.random(size=(3, 3))
         A2, b2, _ = Abc_triple(5)
-        c2 = np.random.random(size=(1, 2, 2))
+        c2 = np.random.random(size=(2, 2))
 
-        bargmann3 = PolyExpAnsatz(A1, b1, c1)
-        bargmann4 = PolyExpAnsatz(A2, b2, c2)
+        bargmann3 = PolyExpAnsatz(A1, b1, c1, batch_label="b")
+        bargmann4 = PolyExpAnsatz(A2, b2, c2, batch_label="b")
 
         bargmann_add2 = bargmann3 + bargmann4
 
-        assert np.allclose(bargmann_add2.A[0], A1)
-        assert np.allclose(bargmann_add2.b[0], b1)
-        assert np.allclose(bargmann_add2.c[0], c1[0])
-        assert np.allclose(bargmann_add2.A[1], A2)
-        assert np.allclose(bargmann_add2.b[1], b2)
-        assert np.allclose(bargmann_add2.c[1][:2, :2], c2[0])
+        assert np.allclose(bargmann_add2.A.data[0], A1)
+        assert np.allclose(bargmann_add2.b.data[0], b1)
+        assert np.allclose(bargmann_add2.c.data[0], c1)
+        assert np.allclose(bargmann_add2.A.data[1], A2)
+        assert np.allclose(bargmann_add2.b.data[1], b2)
+        assert np.allclose(bargmann_add2.c.data[1][:2, :2], c2)
 
     def test_add_different_poly_wires(self):
         "tests that A and b are padded correctly"

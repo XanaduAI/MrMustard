@@ -20,12 +20,12 @@ This module contains the Batch class.
 
 from __future__ import annotations
 from typing import Iterable
+from functools import cached_property
 
 import string
 import random
 
 from mrmustard import math
-
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -41,13 +41,13 @@ class Batch:
 
     Args:
         items: The list of items in the batch.
-        batch_shape: The shape of the batch dims.
-        batch_labels: The labels for the batch dims.
+        batch_shape: The (optional) shape of the batch dims. Defaults to a single batch dim.
+        batch_labels: The (optional) labels for the batch dims. Defaults to random characters.
     """
 
     def __init__(
         self,
-        items: list[ComplexMatrix | ComplexVector | ComplexTensor],
+        items: list[ComplexMatrix] | list[ComplexVector] | list[ComplexTensor],
         batch_shape: tuple[int, ...] | None = None,
         batch_labels: list[str] | None = None,
     ):
@@ -89,6 +89,13 @@ class Batch:
         The overall shape (batch_shape + core_shape).
         """
         return self.batch_shape + self.core_shape
+
+    @cached_property
+    def data(self) -> ComplexMatrix | ComplexVector | ComplexTensor:  # TODO: placeholder name
+        r"""
+        Returns ...
+        """
+        return math.astensor(list(self)).reshape(self.shape)
 
     def concat(self, other: Batch) -> Batch:
         r"""
@@ -137,6 +144,15 @@ class Batch:
             return padded_mat
         else:
             return item
+
+    def __eq__(self, other):
+        if isinstance(other, Batch):
+            return (
+                self._items == other._items
+                and self._batch_shape == other._batch_shape
+                and self._batch_labels == other._batch_labels
+            )
+        return False
 
     def __iter__(self):
         for item in self._items:
