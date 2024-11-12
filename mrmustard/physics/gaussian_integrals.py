@@ -148,7 +148,7 @@ def join_Abc_real(
     return A12, b12, c12
 
 
-def reorder_abc(Abc: tuple, order: Sequence[int]):
+def reorder_Abc(Abc: tuple, order: Sequence[int]):
     r"""
     Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
 
@@ -247,23 +247,23 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
     c2 = math.reshape(c2, (batch2, -1))
 
     if mode == "kron":
-        A1 = np.repeat(A1, batch2, axis=0)
-        A2 = np.tile(A2, (batch1, 1, 1))
-        A1Z = np.concatenate([A1, np.zeros((batch1 * batch2, nA1, nA2))], axis=-1)
-        ZA2 = np.concatenate([np.zeros((batch1 * batch2, nA2, nA1)), A2], axis=-1)
-        b1 = np.repeat(b1, batch2, axis=0)
-        b2 = np.tile(b2, (batch1, 1))
+        A1 = math.repeat(A1, batch2, axis=0)
+        A2 = math.tile(A2, (batch1, 1, 1))
+        A1Z = math.concat([A1, math.zeros((batch1 * batch2, nA1, nA2))], axis=-1)
+        ZA2 = math.concat([math.zeros((batch1 * batch2, nA2, nA1)), A2], axis=-1)
+        b1 = math.repeat(b1, batch2, axis=0)
+        b2 = math.tile(b2, (batch1, 1))
         c = math.reshape(
             math.einsum("ba,dc->bdac", c1, c2),
             [batch1 * batch2] + poly_shape1 + poly_shape2,
         )
     elif mode == "zip":
-        A1Z = np.concatenate([A1, np.zeros((batch1, nA1, nA2))], axis=-1)
-        ZA2 = np.concatenate([np.zeros((batch1, nA2, nA1)), A2], axis=-1)
+        A1Z = math.concat([A1, math.zeros((batch1, nA1, nA2))], axis=-1)
+        ZA2 = math.concat([math.zeros((batch1, nA2, nA1)), A2], axis=-1)
         c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
 
-    A = np.concatenate([A1Z, ZA2], axis=-2)
-    A = np.concatenate(
+    A = math.concat([A1Z, ZA2], axis=-2)
+    A = math.concat(
         [
             A[:, :n1, :],
             A[:, nA1 : nA1 + n2, :],
@@ -272,7 +272,7 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
         ],
         axis=-2,
     )
-    A = np.concatenate(
+    A = math.concat(
         [
             A[:, :, :n1],
             A[:, :, nA1 : nA1 + n2],
@@ -281,8 +281,8 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
         ],
         axis=-1,
     )
-    b = np.concatenate([b1, b2], axis=-1)
-    b = np.concatenate(
+    b = math.concat([b1, b2], axis=-1)
+    b = math.concat(
         [
             b[:, :n1],
             b[:, nA1 : nA1 + n2],
