@@ -627,11 +627,86 @@ class PolyExpAnsatz(Ansatz):
             The tensor product of this PolyExpAnsatz and other.
         """
 
-        new_A = self.A & other.A
-        new_b = self.b & other.b
-        new_c = self.c & other.c
+        # TODO: find a general solution such that this can be done batched
+        def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
+            A3 = math.block(
+                [
+                    [
+                        A1[:dim_alpha1, :dim_alpha1],
+                        math.zeros((dim_alpha1, dim_alpha2), dtype=math.complex128),
+                        A1[:dim_alpha1, dim_alpha1:],
+                        math.zeros((dim_alpha1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        math.zeros((dim_alpha2, dim_alpha1), dtype=math.complex128),
+                        A2[:dim_alpha2:, :dim_alpha2],
+                        math.zeros((dim_alpha2, dim_beta1), dtype=math.complex128),
+                        A2[:dim_alpha2, dim_alpha2:],
+                    ],
+                    [
+                        A1[dim_alpha1:, :dim_alpha1],
+                        math.zeros((dim_beta1, dim_alpha2), dtype=math.complex128),
+                        A1[dim_alpha1:, dim_alpha1:],
+                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
+                    ],
+                    [
+                        math.zeros((dim_beta2, dim_alpha1), dtype=math.complex128),
+                        A2[dim_alpha2:, :dim_alpha2],
+                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
+                        A2[dim_alpha2:, dim_alpha2:],
+                    ],
+                ]
+            )
+            return A3
 
-        return PolyExpAnsatz(new_A, new_b, new_c)
+        def andb(b1, b2, dim_alpha1, dim_alpha2):
+            b3 = math.reshape(
+                math.block(
+                    [
+                        [
+                            b1[:dim_alpha1],
+                            b2[:dim_alpha2],
+                            b1[dim_alpha1:],
+                            b2[dim_alpha2:],
+                        ]
+                    ]
+                ),
+                -1,
+            )
+            return b3
+
+        def andc(c1, c2):
+            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+            return c3
+
+        dim_beta1, _ = self.polynomial_shape
+        dim_beta2, _ = other.polynomial_shape
+
+        dim_alpha1 = self.A.shape[-1] - dim_beta1
+        dim_alpha2 = other.A.shape[-1] - dim_beta2
+
+        As = [
+            andA(
+                math.cast(A1, "complex128"),
+                math.cast(A2, "complex128"),
+                dim_alpha1,
+                dim_alpha2,
+                dim_beta1,
+                dim_beta2,
+            )
+            for A1, A2 in itertools.product(self.A._items, other.A._items)
+        ]
+        bs = [
+            andb(b1, b2, dim_alpha1, dim_alpha2)
+            for b1, b2 in itertools.product(self.b._items, other.b._items)
+        ]
+        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c._items, other.c._items)]
+
+        A_batch = Batch(As, *self.A._new_batch(other.A, "and"))
+        b_batch = Batch(bs, *self.b._new_batch(other.b, "and"))
+        c_batch = Batch(cs, *self.c._new_batch(other.c, "and"))
+
+        return PolyExpAnsatz(A_batch, b_batch, c_batch)
 
     def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
         r"""

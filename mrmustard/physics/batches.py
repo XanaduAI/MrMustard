@@ -21,6 +21,7 @@ This module contains the Batch class.
 from __future__ import annotations
 from typing import Iterable
 from functools import cached_property
+from itertools import product
 
 import string
 import random
@@ -105,10 +106,10 @@ class Batch:
             other: The other batch to concatenate with.
         """
         items = self._items + other._items
-        batch_shape, batch_label = self._new_batch(other)
+        batch_shape, batch_label = self._new_batch(other, "add")
         return Batch(items, batch_shape, batch_label)
 
-    def _new_batch(self, other: Batch) -> tuple[tuple[int, ...], list[str]]:
+    def _new_batch(self, other: Batch, mode: str) -> tuple[tuple[int, ...], list[str]]:
         r"""
         Helper method to compute the new batch shape and labels given
         the concatenation of two batches.
@@ -120,7 +121,10 @@ class Batch:
         for shape, label in zip(self.batch_shape, self.batch_labels):
             temp[label] = shape
         for shape, label in zip(other.batch_shape, other.batch_labels):
-            temp[label] = temp.get(label, 0) + shape
+            if mode == "add":
+                temp[label] = temp.get(label, 0) + shape
+            elif mode == "and":
+                temp[label] = temp.get(label, 1) * shape
         shape = tuple(temp.values())
         labels = list(temp.keys())
         return shape, labels
@@ -145,8 +149,15 @@ class Batch:
         else:
             return item
 
+    def _tensor_prod(self, item1, item2):
+        return item1
+
     def __and__(self, other: Batch):
-        return self
+        new_items = [
+            self._tensor_prod(item1, item2) for item1, item2 in product(self._items, other._items)
+        ]
+        batch_shape, batch_labels = self._new_batch(other, "and")
+        return Batch(items=new_items, batch_shape=batch_shape, batch_labels=batch_labels)
 
     def __eq__(self, other):
         if isinstance(other, Batch):
@@ -158,6 +169,9 @@ class Batch:
                 and self._batch_labels == other._batch_labels
             )
         return False
+
+    def __getitem__(self, idxs):  # into Batch
+        return self
 
     def __iter__(self):
         for item in self._items:

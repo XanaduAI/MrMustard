@@ -114,7 +114,9 @@ class TestPolyExpAnsatz:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann = PolyExpAnsatz(*triple1) & PolyExpAnsatz(*triple2)
+        bargmann = PolyExpAnsatz(*triple1, batch_label="a") & PolyExpAnsatz(
+            *triple2, batch_label="a"
+        )
 
         assert bargmann.A.shape == (1, 2 * n, 2 * n)
         assert bargmann.b.shape == (1, 2 * n)
