@@ -145,10 +145,15 @@ class Batch:
         else:
             return item
 
+    def __and__(self, other: Batch):
+        return self
+
     def __eq__(self, other):
         if isinstance(other, Batch):
             return (
-                self._items == other._items
+                self._items
+                == other._items  # TODO: this will probably need to iterate through items
+                # and call math.allclose
                 and self._batch_shape == other._batch_shape
                 and self._batch_labels == other._batch_labels
             )

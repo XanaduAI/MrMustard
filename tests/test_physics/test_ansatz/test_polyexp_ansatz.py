@@ -85,14 +85,14 @@ class TestPolyExpAnsatz:
 
     def test_add_different_poly_wires(self):
         "tests that A and b are padded correctly"
-        A1 = np.random.random((1, 2, 2))
-        A2 = np.random.random((1, 3, 3))
-        b1 = np.random.random((1, 2))
-        b2 = np.random.random((1, 3))
-        c1 = np.random.random((1,))
-        c2 = np.random.random((1, 11))
-        ansatz1 = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        A1 = np.random.random((2, 2))
+        A2 = np.random.random((3, 3))
+        b1 = np.random.random((2,))
+        b2 = np.random.random((3,))
+        c1 = np.random.random()
+        c2 = np.random.random((11,))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1, batch_label="a")
+        ansatz2 = PolyExpAnsatz(A2, b2, c2, batch_label="a")
         ansatz_sum = ansatz1 + ansatz2
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
