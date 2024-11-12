@@ -210,7 +210,7 @@ class PolyExpAnsatz(Ansatz):
     @property
     def shape_DV_vars(self) -> tuple[int, ...]:
         r"""
-        The shape of the discrete variables.
+        The shape of the discrete variables. Encoded in ``c`` as the trailing axes after the derived variables.
         This is the shape of the array of values that we get when we evaluate the ansatz at a point.
         """
         return self.c.shape[self.num_derived_vars + 1 :]
@@ -219,6 +219,7 @@ class PolyExpAnsatz(Ansatz):
     def shape_derived_vars(self) -> tuple[int, ...]:
         r"""
         The shape of the derived variables (i.e. the polynomial of derivatives).
+        Encoded in ``c`` as the axes between the batch size (first axis) and the discrete variables.
         """
         return self.c.shape[1 : self.num_derived_vars + 1]
 
@@ -267,7 +268,7 @@ class PolyExpAnsatz(Ansatz):
             A_dec.append(A_dec_i)
             b_dec.append(b_dec_i)
             c_dec.append(c_dec_i)
-        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
+        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_derived_vars)
 
     def _decompose_single(self, Ai, bi, ci):
         r"""
@@ -719,11 +720,10 @@ class PolyExpAnsatz(Ansatz):
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
-                )
+        if max(idx) >= self.num_vars:
+            raise IndexError(
+                f"Index(es) {[i for i in idx if i >= self.num_vars]} out of bounds for ansatz of dimension {self.num_vars}."
+            )
         ret = PolyExpAnsatz(self.A, self.b, self.c, self.num_CV_vars)
         ret._contract_idxs = idx
         return ret
@@ -750,156 +750,81 @@ class PolyExpAnsatz(Ansatz):
 
         """
         if not isinstance(other, PolyExpAnsatz):
-            raise NotImplementedError(
-                f"Cannot matmul PolyExpAnsatz and {other.__class__.__name__}."
-            )
+            raise NotImplementedError(f"Cannot matmul PolyExpAnsatz and {other.__class__}.")
 
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        if settings.UNSAFE_ZIP_BATCH:
-            if self.batch_size != other.batch_size:
-                raise ValueError(
-                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                )
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="zip"
-            )
-        else:
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="kron"
-            )
+        A, b, c = complex_gaussian_integral_2(
+            self.triple,
+            other.triple,
+            idx_s,
+            idx_o,
+            mode="zip" if settings.UNSAFE_ZIP_BATCH else "kron",
+        )
 
         return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
-        def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
-                        A1[:dim_alpha, dim_alpha:],
-                        A2[:dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        A1[dim_alpha:, :dim_alpha],
-                        A1[dim_alpha:, dim_alpha:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        A2[dim_alpha:, :dim_alpha],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
-            return A3
-
-        def mul_b(b1, b2, dim_alpha):
-            b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
-                -1,
-            )
-            return b3
-
-        def mul_c(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        if isinstance(other, PolyExpAnsatz):
-            dim_beta1 = self.num_DV_vars
-            dim_beta2 = other.num_DV_vars
-
-            dim_alpha1 = self.A.shape[-1] - dim_beta1
-            dim_alpha2 = other.A.shape[-1] - dim_beta2
-            if dim_alpha1 != dim_alpha2:
-                raise TypeError("The dimensionality of the two ansatze must be the same.")
-            dim_alpha = dim_alpha1
-
-            new_a = [
-                mul_A(
-                    math.cast(A1, "complex128"),
-                    math.cast(A2, "complex128"),
-                    dim_alpha,
-                    dim_beta1,
-                    dim_beta2,
-                )
-                for A1, A2 in itertools.product(self.A, other.A)
-            ]
-            new_b = [mul_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-            new_c = [mul_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
-
-            return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
-        else:
+        if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c * other)
             except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
+
+        if self.num_CV_vars != other.num_CV_vars:
+            raise TypeError(
+                "The number of CV variables of the two ansatze must be the same. "
+                f"Got {self.num_CV_vars} and {other.num_CV_vars}."
+            )
+        if self.shape_DV_vars != other.shape_DV_vars:  # TODO: pad if not the same?
+            raise TypeError(
+                "The shape of the discrete variables of the two ansatze must be the same. "
+                f"Got {self.shape_DV_vars} and {other.shape_DV_vars}."
+            )
+        # outer product along batch via tile and repeat to get all pairs
+        A1 = math.tile(self.A, (other.A.shape[0], 1, 1))
+        b1 = math.tile(self.b, (other.b.shape[0], 1))
+        A2 = math.repeat(other.A, self.A.shape[0], axis=0)
+        b2 = math.repeat(other.b, self.b.shape[0], axis=0)
+
+        batch_size = self.batch_size * other.batch_size
+        n = self.num_vars  # alpha
+        m1 = self.num_derived_vars  # beta1
+        m2 = other.num_derived_vars  # beta2
+        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
+        newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
+        newA[:, :n, :n] = A1[:, :n, :n] + A2[:, :n, :n]
+        newA[:, :n, n:m1] = A1[:, :n, -m1:]
+        newA[:, n:m1, :n] = A1[:, -m1:, :n]
+        newA[:, :n, -m2:] = A2[:, :n, -m2:]
+        newA[:, -m2:, :n] = A2[:, -m2:, :n]
+        newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
+        newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
+        newb[:, :n] = b1[:, :n] + b2[:, :n]
+        newb[:, n:m1] = b1[:, -m1:]
+        newb[:, -m2:] = b2[:, -m2:]
+        self_c = math.reshape(
+            self.c,
+            (self.batch_size, math.prod(self.shape_derived_vars), math.prod(self.shape_DV_vars)),
+        )
+        other_c = math.reshape(
+            other.c,
+            (other.batch_size, math.prod(other.shape_derived_vars), math.prod(other.shape_DV_vars)),
+        )
+        newc = math.einsum("ijk,lmk->iljmk", self_c, other_c)
+        newc = math.reshape(
+            newc,
+            (batch_size,) + self.shape_derived_vars + other.shape_derived_vars + self.shape_DV_vars,
+        )
+
+        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c)
+        return PolyExpAnsatz(self.A, self.b, -self.c, self.num_derived_vars)
 
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
-        def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
-                        A1[:dim_alpha, dim_alpha:],
-                        A2[:dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        A1[dim_alpha:, :dim_alpha],
-                        A1[dim_alpha:, dim_alpha:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        A2[dim_alpha:, :dim_alpha],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
-            return A3
-
-        def div_b(b1, b2, dim_alpha):
-            b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
-                -1,
-            )
-            return b3
-
-        def div_c(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        if isinstance(other, PolyExpAnsatz):
-            dim_beta1 = self.num_DV_vars
-            dim_beta2 = other.num_DV_vars
-            if dim_beta1 == 0 and dim_beta2 == 0:
-                dim_alpha1 = self.A.shape[-1] - dim_beta1
-                dim_alpha2 = other.A.shape[-1] - dim_beta2
-                if dim_alpha1 != dim_alpha2:
-                    raise TypeError("The dimensionality of the two ansatze must be the same.")
-                dim_alpha = dim_alpha1
-
-                new_a = [
-                    div_A(
-                        math.cast(A1, "complex128"),
-                        -math.cast(A2, "complex128"),
-                        dim_alpha,
-                        dim_beta1,
-                        dim_beta2,
-                    )
-                    for A1, A2 in itertools.product(self.A, other.A)
-                ]
-                new_b = [div_b(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-                new_c = [div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
-
-                return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
-            else:
-                raise NotImplementedError("Only implemented if both c are scalars")
-        else:
+        if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
