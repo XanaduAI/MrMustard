@@ -21,7 +21,6 @@ This module contains the Batch class.
 from __future__ import annotations
 from typing import Iterable
 from functools import cached_property
-from itertools import product
 
 import string
 import random
@@ -123,7 +122,7 @@ class Batch:
         for shape, label in zip(other.batch_shape, other.batch_labels):
             if mode == "add":
                 temp[label] = temp.get(label, 0) + shape
-            elif mode == "and":
+            elif mode == "prod":
                 temp[label] = temp.get(label, 1) * shape
         shape = tuple(temp.values())
         labels = list(temp.keys())
@@ -149,29 +148,26 @@ class Batch:
         else:
             return item
 
-    def _tensor_prod(self, item1, item2):
-        return item1
-
-    def __and__(self, other: Batch):
-        new_items = [
-            self._tensor_prod(item1, item2) for item1, item2 in product(self._items, other._items)
-        ]
-        batch_shape, batch_labels = self._new_batch(other, "and")
-        return Batch(items=new_items, batch_shape=batch_shape, batch_labels=batch_labels)
-
     def __eq__(self, other):
         if isinstance(other, Batch):
             return (
-                self._items
-                == other._items  # TODO: this will probably need to iterate through items
-                # and call math.allclose
+                math.allclose(self.data, other.data)
                 and self._batch_shape == other._batch_shape
                 and self._batch_labels == other._batch_labels
             )
         return False
 
-    def __getitem__(self, idxs):  # into Batch
-        return self
+    def __getitem__(self, idxs: tuple[int, ...] | slice):  # into Batch
+
+        # validate indices
+        if len(idxs) > len(self.batch_shape):
+            raise IndexError
+
+        # collect items
+
+        # new batch_shape & batch labels
+
+        return Batch(self._items, self._batch_shape, self._batch_labels)
 
     def __iter__(self):
         for item in self._items:

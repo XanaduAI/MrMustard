@@ -87,8 +87,8 @@ def Abc_triple(n: int):
     )
 
     # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (1,)
+    c = np.random.uniform(min_magnitude, max_magnitude) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude
     )
 
     return A, b, c

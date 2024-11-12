@@ -676,7 +676,7 @@ class PolyExpAnsatz(Ansatz):
             return b3
 
         def andc(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+            c3 = math.outer(c1, c2)
             return c3
 
         dim_beta1, _ = self.polynomial_shape
