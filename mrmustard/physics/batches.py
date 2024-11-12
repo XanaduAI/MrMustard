@@ -138,7 +138,7 @@ class Batch:
         Args:
             item: The item to pad.
         """
-        if item.shape < self.core_shape:
+        if isinstance(item, Iterable) and item.shape < self.core_shape:
             if not item.shape:
                 item = math.atleast_1d(item)
             pad_size = self.core_shape[-1] - item.shape[-1]

@@ -702,9 +702,9 @@ class PolyExpAnsatz(Ansatz):
         ]
         cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c._items, other.c._items)]
 
-        A_batch = Batch(As, *self.A._new_batch(other.A, "and"))
-        b_batch = Batch(bs, *self.b._new_batch(other.b, "and"))
-        c_batch = Batch(cs, *self.c._new_batch(other.c, "and"))
+        A_batch = Batch(As, *self.A._new_batch(other.A, "prod"))
+        b_batch = Batch(bs, *self.b._new_batch(other.b, "prod"))
+        c_batch = Batch(cs, *self.c._new_batch(other.c, "prod"))
 
         return PolyExpAnsatz(A_batch, b_batch, c_batch)
 
