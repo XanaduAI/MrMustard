@@ -20,7 +20,7 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 import itertools
 
 import numpy as np
@@ -350,13 +350,18 @@ class PolyExpAnsatz(Ansatz):
         plt.show(block=False)
         return fig, ax
 
-    def reorder(self, order: tuple[int, ...] | list[int]) -> PolyExpAnsatz:
+    def reorder(self, order_CV: Sequence[int], order_DV: Sequence[int]) -> PolyExpAnsatz:
         r"""
         Reorders the CV and DV indices of an (A,b,c) triple.
+        The length of ``order_CV`` must be the number of CV variables, and the length of ``order_DV`` must be the number of DV variables.
         """
-        A, b, c = reorder_Abc(
-            self.triple, order
-        )  # TODO: update reorder_Abc method in gaussian_integrals
+        if len(order_CV) != self.num_CV_vars:
+            raise ValueError(f"order_CV must have length {self.num_CV_vars}, got {len(order_CV)}")
+        if len(order_DV) != self.num_DV_vars:
+            raise ValueError(f"order_DV must have length {self.num_DV_vars}, got {len(order_DV)}")
+        A = math.gather(math.gather(self.A, order_CV, axis=-1), order_CV, axis=-2)
+        b = math.gather(self.b, order_CV, axis=-1)
+        c = math.transpose(self.c, [d + 1 for d in order_DV])  # +1 because of batch
         return PolyExpAnsatz(A, b, c, self.num_derived_vars)
 
     def simplify(self, sort_batch: bool = True) -> None:

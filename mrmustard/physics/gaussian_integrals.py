@@ -148,37 +148,6 @@ def join_Abc_real(
     return A12, b12, c12
 
 
-def reorder_Abc(Abc: tuple, order: Sequence[int]):
-    r"""
-    Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
-
-    Arguments:
-        Abc: the ``(A,b,c)`` triple
-        order: the new order of the indices
-
-    Returns:
-        The reordered ``(A,b,c)`` triple
-    """
-    A, b, c = Abc
-    c = math.astensor(c)
-    order = list(order)
-    if len(order) == 0:
-        return A, b, c
-    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
-    dim_poly = len(c.shape) - int(batched)
-    n = A.shape[-1] - dim_poly
-
-    if len(order) != n:
-        raise ValueError(f"order must have length {n}, got {len(order)}")
-
-    if any(i >= n or n < 0 for i in order):
-        raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
-    order += list(range(len(order), len(order) + dim_poly))
-    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
-    b = math.gather(b, order, axis=-1)
-    return A, b, c
-
-
 def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
