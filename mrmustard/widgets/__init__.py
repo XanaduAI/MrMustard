@@ -177,7 +177,7 @@ def wires(obj):
 
     def mode_to_str(m):
         max_modes = 3
-        result = ", ".join(list(map(str, m.modes))[:max_modes])
+        result = ", ".join(list(map(str, sorted(m.modes)))[:max_modes])
         return (result + ", ...") if len(m) > max_modes else result
 
     mode_div = """
@@ -202,7 +202,7 @@ def wires(obj):
         label = labels[i]
 
         title_row = f'<td rowspan="{len(mode)}">{label}</td>'
-        table_data = [f"<td>{m}</td><td>{mode[m].indices[0]}</td>" for m in mode.modes]
+        table_data = [f"<td>{m}</td><td>{mode[m].indices[0]}</td>" for m in sorted(mode.modes)]
         wire_tables.append(title_row + "</tr><tr>".join(table_data))
 
     index_table = f"""
