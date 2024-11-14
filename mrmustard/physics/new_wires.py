@@ -230,62 +230,22 @@ class Wires:
         self.classical_wires = set()
 
         for i, m in enumerate(sorted(modes_out_bra)):
-            self.quantum_wires.add(
-                QuantumWire(
-                    mode=m,
-                    is_out=True,
-                    is_ket=False,
-                    index=i,
-                )
-            )
+            self.quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=False, index=i))
         n = len(modes_out_bra)
         for i, m in enumerate(sorted(modes_in_bra)):
-            self.quantum_wires.add(
-                QuantumWire(
-                    mode=m,
-                    is_out=False,
-                    is_ket=False,
-                    index=n + i,
-                )
-            )
+            self.quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=False, index=n + i))
         n += len(modes_in_bra)
         for i, m in enumerate(sorted(modes_out_ket)):
-            self.quantum_wires.add(
-                QuantumWire(
-                    mode=m,
-                    is_out=True,
-                    is_ket=True,
-                    index=n + i,
-                )
-            )
+            self.quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=True, index=n + i))
         n += len(modes_out_ket)
         for i, m in enumerate(sorted(modes_in_ket)):
-            self.quantum_wires.add(
-                QuantumWire(
-                    mode=m,
-                    is_out=False,
-                    is_ket=True,
-                    index=n + i,
-                )
-            )
+            self.quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=True, index=n + i))
         n += len(modes_in_ket)
         for i, m in enumerate(sorted(classical_out)):
-            self.classical_wires.add(
-                ClassicalWire(
-                    mode=m,
-                    is_out=True,
-                    index=n + i,
-                )
-            )
+            self.classical_wires.add(ClassicalWire(mode=m, is_out=True, index=n + i))
         n += len(classical_out)
         for i, m in enumerate(sorted(classical_in)):
-            self.classical_wires.add(
-                ClassicalWire(
-                    mode=m,
-                    is_out=False,
-                    index=n + i,
-                )
-            )
+            self.classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
 
     def copy(self) -> Wires:
         return deepcopy(self)
