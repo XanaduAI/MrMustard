@@ -20,14 +20,14 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from mrmustard.utils.typing import RealMatrix, Vector
+from mrmustard.utils.typing import RealMatrix
 from .ket import Ket
 from .dm import DM
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Gket", "Gdm"]
 
