@@ -31,10 +31,7 @@ class TestWires:
 
     def test_init(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
-        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10}, set())
-
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10}, FOCK={1})
-        assert w.wire(mode=1, is_ket=False, is_out=True).repr == Repr.FOCK
+        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
 
     def test_indices(self):
         w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
@@ -137,7 +134,6 @@ class TestWires:
             {4, 8, 12},
             {16, 19},
             {18},
-            set(),
         )
         assert CV_perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
 
