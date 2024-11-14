@@ -23,6 +23,7 @@ from .dm import DM
 from .bargmann_eigenstate import BargmannEigenstate
 from .coherent import Coherent
 from .displaced_squeezed import DisplacedSqueezed
+from .gstate import Gket, Gdm
 from .number import Number
 from .quadrature_eigenstate import QuadratureEigenstate
 from .squeezed_vacuum import SqueezedVacuum

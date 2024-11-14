@@ -24,6 +24,7 @@ import numpy as np
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix, ComplexMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from .bargmann_utils import symplectic2Au
 
 
 #  ~~~~~~~~~
@@ -230,6 +231,78 @@ def two_mode_squeezed_vacuum_state_Abc(
     c = math.prod(1 / math.cosh(r))
 
     return A, b, c
+
+
+def gket_state_Abc(symplectic: RealMatrix):
+    r"""
+    The A,b,c parameters of a Gaussian Ket (Gket) state. This is simply a Gaussian acted on the vacuum.
+
+    Args:
+        symplectic: the symplectic representation of the Gaussian
+
+    Returns:
+        The ``(A,b,c)`` triple of the Gket state.
+    """
+
+    m = symplectic.shape[-1] // 2  # num of modes
+
+    transformation = (
+        1
+        / math.sqrt(complex(2))
+        * math.block(
+            [
+                [
+                    math.eye(m, dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    -1j * math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
+            ]
+        )
+    )
+
+    S = math.conj(math.transpose(transformation)) @ symplectic @ transformation
+    S_1 = S[:m, :m]
+    S_2 = S[:m, m:]
+    A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
+    b = math.zeros(m, dtype=A.dtype)
+    c = (math.det(A @ math.conj(A) - math.eye_like(A))) ** 0.25
+    return A, b, c
+
+
+def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
+    r"""
+    The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
+
+    Args:
+        betas: the list of betas corresponding to the temperatures of the initial thermal state
+        symplectic: the symplectic matrix of the Gaussian
+
+    Returns:
+        The ``(A,b,c)`` triple of the resulting Gaussian DM state.
+    """
+    betas = math.astensor(betas)
+    m = len(betas)
+    Au = symplectic2Au(symplectic)
+
+    Au00 = Au[:m, :m]
+    Au01 = Au[:m, m:]
+    Au11 = Au[m:, m:]
+
+    D = math.diag(betas)
+
+    # a few auxilarry matrices that help us with computation (consistant naming with Gaussian integrations)
+    M_prime = math.block([[math.conj(Au00), -math.inv(D)], [-math.inv(D), Au00]])
+    D_prime = math.block([[math.conj(Au01), math.zeros((m, m))], [math.zeros((m, m)), Au01]])
+    A_prime = math.block([[math.conj(Au11), math.zeros((m, m))], [math.zeros((m, m)), Au11]])
+
+    A_new = A_prime - D_prime @ math.inv(M_prime) @ D_prime
+    b = math.zeros(2 * m, dtype=A_new.dtype)
+    c = complex(1)  # TODO: update with proper c s.t. tr(rho)=1
+
+    return A_new, b, c
 
 
 def sauron_state_Abc(n: int, epsilon: float):
