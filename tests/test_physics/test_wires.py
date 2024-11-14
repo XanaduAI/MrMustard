@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from ipywidgets import HTML
 
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.new_wires import Wires
 
 
 class TestWires:
@@ -31,42 +31,7 @@ class TestWires:
 
     def test_init(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
-        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
-
-    def test_ids(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
-        assert w.ids == [w.id + i for i in range(9)]
-
-    def test_ids_with_subsets(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9, 10}, {11})
-
-        assert w.input.ids == [w.ids[3], w.ids[4], w.ids[5], w.ids[8], w.ids[11]]
-        assert w.output.ids == [
-            w.ids[0],
-            w.ids[1],
-            w.ids[2],
-            w.ids[6],
-            w.ids[7],
-            w.ids[9],
-            w.ids[10],
-        ]
-        assert w.bra.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[3], w.ids[4], w.ids[5]]
-        assert w.ket.ids == [w.ids[6], w.ids[7], w.ids[8]]
-        assert w.quantum.ids == [
-            w.ids[0],
-            w.ids[1],
-            w.ids[2],
-            w.ids[3],
-            w.ids[4],
-            w.ids[5],
-            w.ids[6],
-            w.ids[7],
-            w.ids[8],
-        ]
-        assert w.classical.ids == [w.ids[9], w.ids[10], w.ids[11]]
-
-        assert w.output.bra.ids == [w.ids[0], w.ids[1], w.ids[2]]
-        assert w.input.bra.ids == [w.ids[3], w.ids[4], w.ids[5]]
+        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10}, set())
 
     def test_indices(self):
         w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
@@ -91,44 +56,6 @@ class TestWires:
         assert w.input.bra.modes == {1}
         assert w.output.ket.modes == {2}
         assert w.input.ket.modes == {3}
-
-    def test_index_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [{0: 0, 1: 1, 2: 2}, {6: 3, 7: 4, 8: 5}, {3: 6, 4: 7}, {4: 8}, {5: 9}, {9: 10}]
-
-        assert w.index_dicts == d
-        assert w.input.index_dicts == d
-        assert w.input.bra.index_dicts == d
-
-    def test_ids_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [
-            {0: w.id, 1: w.id + 1, 2: w.id + 2},
-            {6: w.id + 3, 7: w.id + 4, 8: w.id + 5},
-            {3: w.id + 6, 4: w.id + 7},
-            {4: w.id + 8},
-            {5: w.id + 9},
-            {9: w.id + 10},
-        ]
-
-        assert w.ids_dicts == d
-        assert w.input.ids_dicts == d
-        assert w.input.bra.ids_dicts == d
-
-    def test_ids_index_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [
-            {w.id: 0, w.id + 1: 1, w.id + 2: 2},
-            {w.id + 3: 3, w.id + 4: 4, w.id + 5: 5},
-            {w.id + 6: 6, w.id + 7: 7},
-            {w.id + 8: 8},
-            {w.id + 9: 9},
-            {w.id + 10: 10},
-        ]
-
-        assert w.ids_index_dicts == d
-        assert w.input.ids_index_dicts == d
-        assert w.input.bra.ids_index_dicts == d
 
     def test_adjoint(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
@@ -168,19 +95,12 @@ class TestWires:
 
         w0 = Wires({0}, {0})
         assert w[0] == w0
-        assert w._mode_cache == {(0,): w0}
 
         w1 = Wires({1})
         assert w[1] == w1
-        assert w._mode_cache == {(0,): w0, (1,): w1}
 
         w2 = Wires(set(), {2})
         assert w[2] == w2
-        assert w._mode_cache == {
-            (0,): w0,
-            (1,): w1,
-            (2,): w2,
-        }
 
         assert w[0].indices == (0, 2)
         assert w[1].indices == (1,)
@@ -206,7 +126,7 @@ class TestWires:
         # contracts 17,17 on classical
         u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8}, {16, 17}, {18})
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12}, {19}, {17})
-        new_wires, perm = u @ v
+        new_wires, CV_perm, DV_perm = u @ v
         assert new_wires.args == (
             {0, 5, 9, 14},
             {2, 6, 10, 15},
@@ -214,8 +134,9 @@ class TestWires:
             {4, 8, 12},
             {16, 19},
             {18},
+            set(),
         )
-        assert perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
+        assert CV_perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
 
     def test_matmul_keeps_ids(self):
         U = Wires(set(), set(), {0}, {0})
