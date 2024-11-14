@@ -11,8 +11,16 @@ from mrmustard import widgets
 
 __all__ = ["Wires"]
 
+"""
+This module provides wire functionality for applications in MrMustard.
+It defines the core classes for representing quantum and classical wires, and their
+relationships in quantum optical circuits.
+"""
+
 
 class Repr(Enum):
+    """Enumeration of possible representations for quantum states and operations."""
+
     UNSPECIFIED = auto()
     BARGMANN = auto()
     FOCK = auto()
@@ -22,6 +30,8 @@ class Repr(Enum):
 
 
 class WiresType(Enum):
+    """Enumeration of possible wire types in quantum circuits."""
+
     DM_LIKE = auto()  # only output ket and bra on same modes
     KET_LIKE = auto()  # only output ket
     UNITARY_LIKE = auto()  # such that can map ket to ket
@@ -33,6 +43,18 @@ class WiresType(Enum):
 
 @dataclass(slots=True)
 class QuantumWire:
+    """
+    Represents a quantum wire in a circuit.
+
+    Args:
+        mode: The mode number this wire represents
+        is_out: Whether this is an output wire
+        is_ket: Whether this wire is on the ket side
+        index: The index of this wire in the circuit
+        repr: The representation of this wire
+        id: Unique identifier for this wire
+    """
+
     mode: int
     is_out: bool
     is_ket: bool
@@ -42,6 +64,7 @@ class QuantumWire:
 
     @property
     def is_dv(self) -> bool:
+        """Returns True if this wire uses discrete-variable representation."""
         return self.repr == Repr.FOCK
 
     def __hash__(self) -> int:
@@ -58,6 +81,17 @@ class QuantumWire:
 
 @dataclass(slots=True)
 class ClassicalWire:
+    """
+    Represents a classical wire in a circuit.
+
+    Args:
+        mode: The mode number this wire represents
+        is_out: Whether this is an output wire
+        index: The index of this wire in the circuit
+        repr: The representation of this wire
+        id: Unique identifier for this wire
+    """
+
     mode: int
     is_out: bool
     index: int
@@ -66,6 +100,7 @@ class ClassicalWire:
 
     @property
     def is_dv(self) -> bool:
+        """Returns True if this wire uses discrete-variable representation."""
         return self.repr == Repr.FOCK
 
     def __hash__(self) -> int:
@@ -78,7 +113,7 @@ class ClassicalWire:
         return self.mode == other.mode and self.is_out == other.is_out
 
 
-class Wires:
+class Wires:  # pylint: disable=too-many-public-methods
     r"""
     A class with wire functionality for tensor network applications.
 
@@ -248,6 +283,7 @@ class Wires:
             self.classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
 
     def copy(self) -> Wires:
+        """Returns a deep copy of this Wires object."""
         return deepcopy(self)
 
     ###### TRANSFORMATIONS ######
@@ -347,6 +383,7 @@ class Wires:
 
     @cached_property
     def id(self) -> int:
+        """Returns a unique identifier for this Wires object."""
         return randint(0, 2**32 - 1)
 
     @cached_property
