@@ -129,7 +129,7 @@ class TestWires:
         # contracts 17,17 on classical
         u = Wires({1, 5}, {2, 6, 15}, {3, 7, 13}, {4, 8}, {16, 17}, {18})
         v = Wires({0, 9, 14}, {1, 10}, {2, 11}, {13, 3, 12}, {19}, {17})
-        new_wires, CV_perm, DV_perm = u @ v
+        new_wires, CV_perm, _ = u @ v
         assert new_wires.args == (
             {0, 5, 9, 14},
             {2, 6, 10, 15},
