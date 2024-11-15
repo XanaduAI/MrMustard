@@ -49,10 +49,12 @@ class DM(State):
 
     short_name = "DM"
 
-    @property
-    def is_positive(self) -> bool:
+    def is_positive(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether this DM is a positive operator.
+
+        Arg:
+            atol: The tolerance we allow for positivity conditions.
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -64,18 +66,20 @@ class DM(State):
         gamma_A = A[:m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > atol
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return all(math.real(math.eigvals(gamma_A)) >= -atol)
 
-    @property
-    def is_physical(self) -> bool:
+    def is_physical(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether this DM is a physical density operator.
+
+        Arg:
+            atol: the tolerance we allow for physicality conditions.
         """
-        return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
+        return self.is_positive(atol) and math.allclose(self.probability, 1, atol)
 
     @property
     def probability(self) -> float:

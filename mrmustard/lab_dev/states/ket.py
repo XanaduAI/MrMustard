@@ -56,11 +56,14 @@ class Ket(State):
 
     short_name = "Ket"
 
-    @property
-    def is_physical(self) -> bool:
+    def is_physical(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether the ket object is a physical one.
+
+        Arg:
+            atol: The tolerance we allow for physicality conditions. The default value is settings.ATOL.
         """
+
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
             raise ValueError(
@@ -69,9 +72,7 @@ class Ket(State):
 
         A = self.ansatz.A[0]
 
-        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
-            self.probability, 1, settings.ATOL
-        )
+        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(self.probability, 1, atol)
 
     @property
     def probability(self) -> float:

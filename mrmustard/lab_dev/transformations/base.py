@@ -356,10 +356,12 @@ class Channel(Map):
 
     short_name = "Ch"
 
-    @property
-    def is_CP(self) -> bool:
+    def is_CP(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether this channel is completely positive (CP).
+
+        Arg:
+            atol: The tolerance we allow for CP conditions (default value is settings.ATOL)
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -371,30 +373,34 @@ class Channel(Map):
         gamma_A = A[0, :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > atol
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
+        return all(math.real(math.eigvals(gamma_A)) > -atol)
 
-    @property
-    def is_TP(self) -> bool:
+    def is_TP(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether this channel is trace preserving (TP).
+
+        Arg:
+            atol: The tolerance we allow for TP condition (default value is settings.ATOL)
         """
         A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[0, :m, m:]
         lambda_A = A[0, m:, m:]
         temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
-        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
+        return math.real(math.norm(temp_A - math.eye(m))) < atol
 
-    @property
-    def is_physical(self) -> bool:
+    def is_physical(self, atol: float = settings.ATOL) -> bool:
         r"""
         Whether this channel is physical (i.e. CPTP).
+
+        Arg:
+            atol: The tolerance we allow for CPTP conditions (default value is settings.ATOL)
         """
-        return self.is_CP and self.is_TP
+        return self.is_CP(atol) and self.is_TP(atol)
 
     @property
     def XY(self) -> tuple[ComplexMatrix, ComplexMatrix]:
