@@ -48,52 +48,14 @@ class Representation:
 
     Args:
         ansatz: An ansatz for this representation.
-        wires: The wires of this representation. Alternatively, can be
-            a ``(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)``
-            sequence where if any of the modes are out of order the ansatz
-            will be reordered.
-        idx_reps: An optional dictionary for keeping track of each wire's representation.
+        wires: The wires of this representation.
     """
 
-    def __init__(
-        self, ansatz: Ansatz | None = None, wires: Wires | Sequence[tuple[int]] | None = None
-    ) -> None:
+    def __init__(self, ansatz: Ansatz | None = None, wires: Wires | None = None) -> None:
         self._ansatz = ansatz
-
-        if wires is None:
-            wires = Wires(set(), set(), set(), set())
-        elif not isinstance(wires, Wires):
-            modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket = [
-                tuple(elem) for elem in wires
-            ]
-            wires = Wires(
-                set(modes_out_bra),
-                set(modes_in_bra),
-                set(modes_out_ket),
-                set(modes_in_ket),
-            )
-            # handle out-of-order modes
-            ob = tuple(sorted(modes_out_bra))
-            ib = tuple(sorted(modes_in_bra))
-            ok = tuple(sorted(modes_out_ket))
-            ik = tuple(sorted(modes_in_ket))
-            if (
-                ob != modes_out_bra
-                or ib != modes_in_bra
-                or ok != modes_out_ket
-                or ik != modes_in_ket
-            ):
-                offsets = [len(ob), len(ob) + len(ib), len(ob) + len(ib) + len(ok)]
-                perm = (
-                    tuple(np.argsort(modes_out_bra))
-                    + tuple(np.argsort(modes_in_bra) + offsets[0])
-                    + tuple(np.argsort(modes_out_ket) + offsets[1])
-                    + tuple(np.argsort(modes_in_ket) + offsets[2])
-                )
-                if ansatz is not None:
-                    self._ansatz = ansatz.reorder(tuple(perm))
-
-        self._wires = wires
+        self._wires = wires or Wires(set(), set(), set(), set())
+        if (perm := self.wires.perm()) and self.ansatz is not None:
+            self._ansatz = self.ansatz.reorder(perm)
 
     @property
     def adjoint(self) -> Representation:
@@ -265,7 +227,6 @@ class Representation:
         else:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
-
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
         return Representation(rep, wires_result)

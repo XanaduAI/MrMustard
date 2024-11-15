@@ -66,7 +66,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(Representation(ansatz, [(), (), (1, 8), (1, 8)]), name=name)
+        cc = CircuitComponent(Representation(ansatz, Wires((), (), (1, 8), (1, 8))), name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -77,7 +77,7 @@ class TestCircuitComponent:
     def test_missing_name(self):
         cc = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), [(), (), (1, 8), (1, 8)]
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires((), (), (1, 8), (1, 8))
             )
         )
         cc._name = None
@@ -94,13 +94,13 @@ class TestCircuitComponent:
         a1 = PolyExpAnsatz(*displacement_gate_Abc(x=[0.1, 0.2]))
         a2 = PolyExpAnsatz(*displacement_gate_Abc(x=[0.2, 0.1]))
 
-        cc1 = CircuitComponent(Representation(a1, wires=[(), (), m1, m1]))
-        cc2 = CircuitComponent(Representation(a2, wires=[(), (), m2, m2]))
+        cc1 = CircuitComponent(Representation(a1, Wires((), (), m1, m1)))
+        cc2 = CircuitComponent(Representation(a2, Wires((), (), m2, m2)))
         assert cc1 == cc2
 
         a3 = (cc1.adjoint @ cc1).ansatz
-        cc3 = CircuitComponent(Representation(a3, wires=[m2, m2, m2, m1]))
-        cc4 = CircuitComponent(Representation(a3, wires=[m2, m2, m2, m2]))
+        cc3 = CircuitComponent(Representation(a3, Wires(m2, m2, m2, m1)))
+        cc4 = CircuitComponent(Representation(a3, Wires(m2, m2, m2, m2)))
         assert cc3.ansatz == cc4.ansatz.reorder([0, 1, 2, 3, 4, 5, 7, 6])
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -165,7 +165,7 @@ class TestCircuitComponent:
     def test_light_copy(self):
         d1 = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), wires=[(), (), (1,), (1,)]
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires((), (), (1,), (1,))
             )
         )
         d1_cp = d1._light_copy()
@@ -226,7 +226,7 @@ class TestCircuitComponent:
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
         polyexp = PolyExpAnsatz(A, b, c)
-        fock_cc = CircuitComponent(Representation(polyexp, wires=[(), (), (0, 1), ()])).to_fock(
+        fock_cc = CircuitComponent(Representation(polyexp, Wires((), (), (0, 1), ()))).to_fock(
             shape=(10, 10)
         )
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
@@ -563,7 +563,7 @@ class TestCircuitComponent:
         """Test the default serializer."""
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
-        cc = CircuitComponent(Representation(ansatz, wires=[(), (), (1, 8), (1, 8)]), name=name)
+        cc = CircuitComponent(Representation(ansatz, Wires((), (), (1, 8), (1, 8))), name=name)
         kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",
@@ -581,7 +581,7 @@ class TestCircuitComponent:
 
             def __init__(self, ansatz, custom_modes):
                 super().__init__(
-                    Representation(ansatz, wires=[custom_modes] * 4), name="my_component"
+                    Representation(ansatz, Wires(*(custom_modes * 4))), name="my_component"
                 )
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
