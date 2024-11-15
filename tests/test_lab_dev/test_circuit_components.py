@@ -567,7 +567,7 @@ class TestCircuitComponent:
         kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",
-            "wires": cc.wires.sorted_args,
+            "wires": cc.wires.args,
             "ansatz_cls": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
             "name": name,
         }
