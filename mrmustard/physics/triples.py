@@ -286,23 +286,14 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     betas = math.astensor(betas)
     m = len(betas)
     Au = symplectic2Au(symplectic)
-
-    Au00 = Au[:m, :m]
-    Au01 = Au[:m, m:]
-    Au11 = Au[m:, m:]
-
+    A_udagger_u = math.block([[math.conj(Au), math.zeros((m, m))], [math.zeros((m, m)), Au]])
     D = math.diag(betas)
-
-    # a few auxilarry matrices that help us with computation (consistant naming with Gaussian integrations)
-    M_prime = math.block([[math.conj(Au00), -math.inv(D)], [-math.inv(D), Au00]])
-    D_prime = math.block([[math.conj(Au01), math.zeros((m, m))], [math.zeros((m, m)), Au01]])
-    A_prime = math.block([[math.conj(Au11), math.zeros((m, m))], [math.zeros((m, m)), Au11]])
-
-    A_new = A_prime - D_prime @ math.inv(M_prime) @ D_prime
-    b = math.zeros(2 * m, dtype=A_new.dtype)
-    c = complex(1)  # TODO: update with proper c s.t. tr(rho)=1
-
-    return A_new, b, c
+    A_fd = math.block([[math.zeros((m, m)), D], [D, math.zeros((m, m))]])
+    t_fd = (A_fd, math.zeros(2 * m, dtype=A_fd.dtype), 1.0)
+    t_u = (A_udagger_u, math.zeros(4 * m), 1.0)
+    return complex_gaussian_integral_2(
+        t_fd, t_u, range(m), list(range(m + 1, 2 * m)) + list(range(3 * m, 4 * m))
+    )
 
 
 def sauron_state_Abc(n: int, epsilon: float):
