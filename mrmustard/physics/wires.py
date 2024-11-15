@@ -1,8 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Sequence
+from dataclasses import dataclass, field, replace
+from typing import Sequence, Any
 from random import randint
-from copy import deepcopy
 from enum import Enum, auto
 from IPython.display import display
 from functools import lru_cache, cached_property
@@ -18,7 +17,15 @@ relationships in quantum optical circuits.
 """
 
 
-class Repr(Enum):
+class LegibleEnum(Enum):
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return self.name
+
+
+class ReprEnum(LegibleEnum):
     """Enumeration of possible representations for quantum states and operations."""
 
     UNSPECIFIED = auto()
@@ -29,7 +36,7 @@ class Repr(Enum):
     CHARACTERISTIC = auto()
 
 
-class WiresType(Enum):
+class WiresType(LegibleEnum):
     """Enumeration of possible wire types in quantum circuits."""
 
     DM_LIKE = auto()  # only output ket and bra on same modes
@@ -59,23 +66,38 @@ class QuantumWire:
     is_out: bool
     is_ket: bool
     index: int
-    repr: Repr = Repr.UNSPECIFIED
-    id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
+    repr: ReprEnum = ReprEnum.BARGMANN
+    repr_params: Any = None
+    id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
 
     @property
     def is_dv(self) -> bool:
         """Returns True if this wire uses discrete-variable representation."""
-        return self.repr == Repr.FOCK
+        return self.repr == ReprEnum.FOCK
 
     def __hash__(self) -> int:
-        return hash((self.mode, self.is_out, self.is_ket))
+        return hash((self.mode, self.is_out, self.is_ket, self.repr))
 
     def __repr__(self) -> str:
         return f"QuantumWire(mode={self.mode}, out={self.is_out}, ket={self.is_ket}, repr={self.repr}, index={self.index})"
 
     def __eq__(self, other: QuantumWire) -> bool:
         return (
-            self.mode == other.mode and self.is_out == other.is_out and self.is_ket == other.is_ket
+            self.mode == other.mode
+            and self.is_out == other.is_out
+            and self.is_ket == other.is_ket
+            and self.repr == other.repr
+        )
+
+    def copy(self) -> QuantumWire:
+        return QuantumWire(
+            mode=self.mode,
+            is_out=self.is_out,
+            is_ket=self.is_ket,
+            index=self.index,
+            repr=self.repr,
+            repr_params=self.repr_params,
+            id=self.id,
         )
 
 
@@ -95,22 +117,33 @@ class ClassicalWire:
     mode: int
     is_out: bool
     index: int
-    repr: Repr = Repr.UNSPECIFIED
+    repr: ReprEnum = ReprEnum.UNSPECIFIED
+    repr_params: Any = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
 
     @property
     def is_dv(self) -> bool:
         """Returns True if this wire uses discrete-variable representation."""
-        return self.repr == Repr.FOCK
+        return self.repr == ReprEnum.FOCK
 
     def __hash__(self) -> int:
-        return hash((self.mode, self.is_out, self.is_dv))
+        return hash((self.mode, self.is_out, self.repr))
 
     def __repr__(self) -> str:
         return f"ClassicalWire(mode={self.mode}, out={self.is_out}, repr={self.repr}, index={self.index})"
 
     def __eq__(self, other: ClassicalWire) -> bool:
-        return self.mode == other.mode and self.is_out == other.is_out
+        return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
+
+    def copy(self) -> ClassicalWire:
+        return ClassicalWire(
+            mode=self.mode,
+            is_out=self.is_out,
+            index=self.index,
+            repr=self.repr,
+            repr_params=self.repr_params,
+            id=self.id,
+        )
 
 
 class Wires:  # pylint: disable=too-many-public-methods
@@ -284,30 +317,30 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     def copy(self) -> Wires:
         """Returns a deep copy of this Wires object."""
-        return deepcopy(self)
+        w = Wires()
+        w.quantum_wires = {q.copy() for q in self.quantum_wires}
+        w.classical_wires = {c.copy() for c in self.classical_wires}
+        return w
 
     ###### TRANSFORMATIONS ######
 
-    @property
+    @cached_property
     def adjoint(self) -> Wires:
         r"""
         New ``Wires`` object with the adjoint quantum wires (ket becomes bra and vice versa).
         """
         w = self.copy()
-        for q in w.quantum_wires:
-            q.is_ket = not q.is_ket
+        w.quantum_wires = {replace(q, is_ket=not q.is_ket) for q in w.quantum_wires}
         return w
 
-    @property
+    @cached_property
     def dual(self) -> Wires:
         r"""
         New ``Wires`` object with dual quantum and classical wires (input becomes output and vice versa).
         """
         w = self.copy()
-        for q in w.quantum_wires:
-            q.is_out = not q.is_out
-        for c in w.classical_wires:
-            c.is_out = not c.is_out
+        w.quantum_wires = {replace(q, is_out=not q.is_out) for q in w.quantum_wires}
+        w.classical_wires = {replace(c, is_out=not c.is_out) for c in w.classical_wires}
         return w
 
     ###### SUBSETS ######
@@ -386,35 +419,35 @@ class Wires:  # pylint: disable=too-many-public-methods
         """Returns a unique identifier for this Wires object."""
         return randint(0, 2**32 - 1)
 
-    @cached_property
+    @property
     def modes(self) -> set[int]:
         r"""
         The modes spanned by the wires.
         """
         return {q.mode for q in self.quantum_wires} | {c.mode for c in self.classical_wires}
 
-    @cached_property
+    @property
     def ids(self) -> tuple[int, ...]:
         r"""
         The ids of the wires in standard order.
         """
         return tuple(w.id for w in self.sorted_wires)
 
-    @cached_property
+    @property
     def indices(self) -> tuple[int, ...]:
         r"""
         The indices of the wires in standard order.
         """
         return tuple(w.index for w in self.sorted_wires)
 
-    @cached_property
+    @property
     def DV_indices(self) -> tuple[int, ...]:
         r"""
         The indices of the DV wires (both quantum and classical) in standard order.
         """
         return tuple(q.index for q in self.DV_wires)
 
-    @cached_property
+    @property
     def CV_indices(self) -> tuple[int, ...]:
         r"""
         The indices of the CV wires (both quantum and classical) in standard order.
@@ -435,7 +468,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         """
         return tuple(w for w in self.sorted_wires.copy() if not w.is_dv)
 
-    @cached_property
+    @property
     def args(self) -> tuple[set[int], ...]:
         r"""
         The arguments to pass to ``Wires`` to create the same object with fresh wires.
@@ -486,11 +519,11 @@ class Wires:  # pylint: disable=too-many-public-methods
             return classical[0]
         raise ValueError(f"No wire with mode {mode}, is_out {is_out}, and is_ket {is_ket}.")
 
-    def reindex(self) -> None:
+    def _reindex(self) -> None:
         r"""
         Updates the indices of the wires according to the standard order.
         """
-        for i, w in enumerate(self.sorted_wires):
+        for i, w in enumerate(self.wires):
             w.index = i
 
     def __add__(self, other: Wires) -> Wires:
@@ -505,7 +538,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         w = Wires()
         w.quantum_wires = self.quantum_wires | other.quantum_wires
         w.classical_wires = self.classical_wires | other.classical_wires
-        w.reindex()
+        w._reindex()
         return w
 
     def __sub__(self, other: Wires) -> Wires:
@@ -516,7 +549,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         w = Wires()
         w.quantum_wires = {q for q in self.quantum_wires.copy() if q.mode not in other.modes}
         w.classical_wires = {c for c in self.classical_wires.copy() if c.mode not in other.modes}
-        w.reindex()
+        w._reindex()
         return w
 
     def __bool__(self) -> bool:
@@ -591,18 +624,20 @@ class Wires:  # pylint: disable=too-many-public-methods
         w = Wires()
         w.quantum_wires = (bra_out + bra_in + ket_out + ket_in).wires
         w.classical_wires = (cl_out + cl_in).wires
-        w.reindex()
+        w._reindex()
 
         # get the permutations
         CV_ids = [w.id for w in w.CV_wires if w.id in self.ids] + [
             w.id for w in w.CV_wires if w.id in other.ids
         ]
-        DV_ids = [w.id for w in w.DV_wires if w.id in self.ids] + [
-            w.id for w in w.DV_wires if w.id in other.ids
-        ]
         CV_perm = [CV_ids.index(w.id) for w in w.CV_wires]
-        DV_perm = [DV_ids.index(w.id) for w in w.DV_wires]
-        return w, CV_perm, DV_perm
+
+        # NOTE: this is for when BtoF is in
+        # DV_ids = [w.id for w in w.DV_wires if w.id in self.ids] + [
+        #     w.id for w in w.DV_wires if w.id in other.ids
+        # ]
+        # DV_perm = [DV_ids.index(w.id) for w in w.DV_wires]
+        return w, CV_perm
 
     def _ipython_display_(self):
         display(widgets.wires(self))
