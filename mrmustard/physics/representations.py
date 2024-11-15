@@ -18,7 +18,6 @@ This module contains the class for representations.
 
 from __future__ import annotations
 from typing import Sequence
-from enum import Enum
 
 import numpy as np
 
@@ -32,39 +31,9 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .wires import Wires
+from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
-
-
-class RepEnum(Enum):
-    r"""
-    An enum to represent what representation a wire is in.
-    """
-
-    NONETYPE = 0
-    BARGMANN = 1
-    FOCK = 2
-    QUADRATURE = 3
-    PHASESPACE = 4
-
-    @classmethod
-    def from_ansatz(cls, ansatz: Ansatz):
-        r"""
-        Returns a ``RepEnum`` from an ``Ansatz``.
-
-        Args:
-            ansatz: The ansatz.
-        """
-        if isinstance(ansatz, PolyExpAnsatz):
-            return cls(1)
-        elif isinstance(ansatz, ArrayAnsatz):
-            return cls(2)
-        else:
-            return cls(0)
-
-    def __repr__(self) -> str:
-        return self.name
 
 
 class Representation:
@@ -87,10 +56,7 @@ class Representation:
     """
 
     def __init__(
-        self,
-        ansatz: Ansatz | None = None,
-        wires: Wires | Sequence[tuple[int]] | None = None,
-        idx_reps: dict | None = None,
+        self, ansatz: Ansatz | None = None, wires: Wires | Sequence[tuple[int]] | None = None
     ) -> None:
         self._ansatz = ansatz
 
@@ -128,9 +94,6 @@ class Representation:
                     self._ansatz = ansatz.reorder(tuple(perm))
 
         self._wires = wires
-        self._idx_reps = idx_reps or dict.fromkeys(
-            wires.indices, (RepEnum.from_ansatz(ansatz), None)
-        )
 
     @property
     def adjoint(self) -> Representation:
@@ -142,12 +105,7 @@ class Representation:
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         wires = self.wires.adjoint
-        idx_reps = {}
-        for i, j in enumerate(kets):
-            idx_reps[i] = self._idx_reps[j]
-        for i, j in enumerate(bras):
-            idx_reps[i + len(kets)] = self._idx_reps[j]
-        return Representation(ansatz, wires, idx_reps)
+        return Representation(ansatz, wires)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -168,16 +126,7 @@ class Representation:
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         wires = self.wires.dual
-        idx_reps = {}
-        for i, j in enumerate(ib):
-            idx_reps[i] = self._idx_reps[j]
-        for i, j in enumerate(ob):
-            idx_reps[i + len(ib)] = self._idx_reps[j]
-        for i, j in enumerate(ik):
-            idx_reps[i + len(ib + ob)] = self._idx_reps[j]
-        for i, j in enumerate(ok):
-            idx_reps[i + len(ib + ob + ik)] = self._idx_reps[j]
-        return Representation(ansatz, wires, idx_reps)
+        return Representation(ansatz, wires)
 
     @property
     def wires(self) -> Wires | None:
@@ -301,37 +250,9 @@ class Representation:
         idx_zconj += other.wires.ket.input[ket_modes].indices
         return idx_z, idx_zconj
 
-    def _matmul_idx_reps(self, wires_result: Wires, other: Representation):
-        r"""
-        Returns the new representation mappings when contracting ``self`` and ``other``.
-
-        Args:
-            wires_result: The resulting wires after contraction.
-            other: The representation contracting with.
-        """
-        idx_reps = {}
-        for id in wires_result.ids:
-            if id in other.wires.ids:
-                temp_rep = other
-            else:
-                temp_rep = self
-            for t in (0, 1, 2, 3, 4, 5):
-                try:
-                    idx = temp_rep.wires.ids_index_dicts[t][id]
-                    n_idx = wires_result.ids_index_dicts[t][id]
-                    idx_reps[n_idx] = temp_rep._idx_reps[idx]
-                    break
-                except KeyError:
-                    continue
-        return idx_reps
-
     def __eq__(self, other):
         if isinstance(other, Representation):
-            return (
-                self.ansatz == other.ansatz
-                and self.wires == other.wires
-                and self._idx_reps == other._idx_reps
-            )
+            return self.ansatz == other.ansatz and self.wires == other.wires
         return False
 
     def __matmul__(self, other: Representation):
@@ -347,5 +268,4 @@ class Representation:
 
         rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
         rep = rep.reorder(perm) if perm else rep
-        idx_reps = self._matmul_idx_reps(wires_result, other)
-        return Representation(rep, wires_result, idx_reps)
+        return Representation(rep, wires_result)

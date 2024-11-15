@@ -58,56 +58,33 @@ class TestRepresentation:
         empty_rep = Representation()
         assert empty_rep.ansatz is None
         assert empty_rep.wires == Wires()
-        assert empty_rep._idx_reps == {}
 
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(set([0, 1]))
         rep = Representation(ansatz, wires)
         assert rep.ansatz == ansatz
         assert rep.wires == wires
-        assert rep._idx_reps == dict.fromkeys(wires.indices, (RepEnum.from_ansatz(ansatz), None))
-
-    @pytest.mark.parametrize("triple", [Abc_n2])
-    def test_adjoint_idx_reps(self, triple):
-        ansatz = PolyExpAnsatz(*triple)
-        wires = Wires(modes_out_bra=set([0]), modes_out_ket=set([0]))
-        idx_reps = {0: (RepEnum.BARGMANN, None), 1: (RepEnum.QUADRATURE, 0.1)}
-        rep = Representation(ansatz, wires, idx_reps)
-        adj_rep = rep.adjoint
-        assert adj_rep._idx_reps == {
-            1: (RepEnum.BARGMANN, None),
-            0: (RepEnum.QUADRATURE, 0.1),
-        }
-
-    @pytest.mark.parametrize("triple", [Abc_n2])
-    def test_dual_idx_reps(self, triple):
-        ansatz = PolyExpAnsatz(*triple)
-        wires = Wires(modes_out_bra=set([0]), modes_in_bra=set([0]))
-        idx_reps = {0: (RepEnum.BARGMANN, None), 1: (RepEnum.QUADRATURE, 0.1)}
-        rep = Representation(ansatz, wires, idx_reps)
-        adj_rep = rep.dual
-        assert adj_rep._idx_reps == {
-            1: (RepEnum.BARGMANN, None),
-            0: (RepEnum.QUADRATURE, 0.1),
-        }
 
     def test_matmul_btoq(self, d_gate_rep, btoq_rep):
         q_dgate = d_gate_rep @ btoq_rep
-        assert q_dgate._idx_reps == {
-            0: (RepEnum.QUADRATURE, 0.2),
-            1: (RepEnum.BARGMANN, None),
-        }
+        for w in q_dgate.wires.input.wires:
+            assert w.repr == RepEnum.BARGMANN
+        for w in q_dgate.wires.output.wires:
+            assert w.repr == RepEnum.QUADRATURE
+            assert w.param == [0.2]
 
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
         assert d_barg == d_gate_rep
-        assert all((k[0] == RepEnum.BARGMANN for k in d_barg._idx_reps.values()))
+        for w in d_barg.wires.wires:
+            assert w.repr == RepEnum.BARGMANN
 
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
-        assert all((k[0] == RepEnum.FOCK for k in d_fock._idx_reps.values()))
+        for w in d_fock.wires.wires:
+            assert w.repr == RepEnum.FOCK
