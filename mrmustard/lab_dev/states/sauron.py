@@ -53,4 +53,4 @@ class Sauron(Ket):
 
         for w in self.representation.wires.input.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params = [float(self.n.value[w.mode]), float(self.epsilon.value)]
+            w.repr_params = [float(self.n.value[w.index]), float(self.epsilon.value[w.index])]

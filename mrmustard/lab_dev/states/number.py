@@ -83,6 +83,6 @@ class Number(Ket):
         for i, cutoff in enumerate(self.cutoffs.value):
             self.manual_shape[i] = int(cutoff) + 1
 
-        for w in self.representation.wires.input.wires:
+        for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params = [int(self.n.value[w.mode])]
+            w.repr_params = [int(self.n.value[w.index])]

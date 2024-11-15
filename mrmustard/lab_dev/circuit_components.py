@@ -84,7 +84,7 @@ class CircuitComponent:
         if "name" in params:  # assume abstract type, serialize the representation
             ansatz_cls = type(self.ansatz)
             serializable["name"] = self.name
-            serializable["wires"] = self.wires.sorted_args
+            serializable["wires"] = self.wires.args
             serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
             return serializable, self.ansatz.to_dict()
 
@@ -698,9 +698,9 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self @ other
         elif self_needs_bra or self_needs_ket:
-            ret = (self.adjoint @ self) @ other
+            ret = self.adjoint @ (self @ other)
         elif other_needs_bra or other_needs_ket:
-            ret = self @ (other @ other.adjoint)
+            ret = (self @ other) @ other.adjoint
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."

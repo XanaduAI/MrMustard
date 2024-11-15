@@ -80,7 +80,7 @@ class QuadratureEigenstate(Ket):
 
         for w in self.representation.wires.input.wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params = [float(self.x.value[w.mode]), float(self.phi.value[w.mode])]
+            w.repr_params = [float(self.x.value[w.index]), float(self.phi.value[w.index])]
 
     @property
     def L2_norm(self):
