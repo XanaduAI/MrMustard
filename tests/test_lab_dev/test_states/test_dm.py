@@ -380,18 +380,18 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [[9, 2], [0, 1, 2, 3, 4]])
     def test_is_positive(self, modes):
-        assert (Ket.random(modes) >> Attenuator(modes)).is_positive
+        assert (Ket.random(modes) >> Attenuator(modes)).is_positive()
         A = np.zeros([2 * len(modes), 2 * len(modes)])
         A[0, -1] = 1.0
         rho = DM.from_bargmann(
             modes, [A, [complex(0)] * 2 * len(modes), [complex(1)]]
         )  # this test fails at the hermitian check
-        assert not rho.is_positive
+        assert not rho.is_positive()
 
     @pytest.mark.parametrize("modes", [range(10), [0, 1]])
     def test_is_physical(self, modes):
         rho = DM.random(modes)
-        assert rho.is_physical
+        assert rho.is_physical()
         rho = 2 * rho
-        assert not rho.is_physical
-        assert Ket.random(modes).dm().is_physical
+        assert not rho.is_physical()
+        assert Ket.random(modes).dm().is_physical()

@@ -187,13 +187,13 @@ class TestChannel:
     def test_is_CP(self, modes):
         u = Unitary.random(modes).ansatz
         kraus = u @ u.conj
-        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
+        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP()
 
     def test_is_TP(self):
-        assert Attenuator([0, 1], 0.5).is_CP
+        assert Attenuator([0, 1], 0.5).is_TP()
 
     def test_is_physical(self):
-        assert Channel.random(range(5)).is_physical
+        assert Channel.random(range(5)).is_physical()
 
     def test_XY(self):
         U = Unitary.random([0, 1])

@@ -447,4 +447,4 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(wires, HTML)
 
     def test_is_physical(self):
-        assert Ket.random([0, 1]).is_physical
+        assert Ket.random([0, 1]).is_physical()
