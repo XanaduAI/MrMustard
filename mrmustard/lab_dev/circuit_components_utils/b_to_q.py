@@ -22,7 +22,7 @@ from mrmustard.physics import triples
 
 from ..transformations.base import Operation
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics.representations import RepEnum
+from ...physics.wires import ReprEnum
 from ..utils import make_parameter
 
 __all__ = ["BtoQ"]
@@ -53,10 +53,12 @@ class BtoQ(Operation):
                 fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.phi
             ),
         ).representation
-        for i in self.wires.input.indices:
-            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
-        for i in self.wires.output.indices:
-            self.representation._idx_reps[i] = (RepEnum.QUADRATURE, float(self.phi.value))
+        for w in self.representation.wires.input.wires:
+            w.repr = ReprEnum.BARGMANN
+            w.repr_params = None
+        for w in self.representation.wires.output.wires:
+            w.repr = ReprEnum.QUADRATURE
+            w.repr_params = float(self.phi.value)
 
     def inverse(self):
         ret = BtoQ(self.modes, self.phi)
