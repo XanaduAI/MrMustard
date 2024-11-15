@@ -18,7 +18,7 @@ from typing import Sequence
 from mrmustard.lab_dev.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-
+from mrmustard.physics.wires import ReprEnum
 from ..utils import make_parameter
 
 
@@ -50,3 +50,7 @@ class Sauron(Ket):
                 triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
             ),
         ).representation
+
+        for w in self.representation.wires.input.wires:
+            w.repr = ReprEnum.FOCK
+            w.repr_params = [float(self.n.value[w.mode]), float(self.epsilon.value)]

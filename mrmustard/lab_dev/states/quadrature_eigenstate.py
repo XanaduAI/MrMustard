@@ -24,6 +24,7 @@ import numpy as np
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.wires import ReprEnum
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
@@ -76,6 +77,10 @@ class QuadratureEigenstate(Ket):
                 fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
             ),
         ).representation
+
+        for w in self.representation.wires.input.wires:
+            w.repr = ReprEnum.QUADRATURE
+            w.repr_params = [float(self.x.value[w.mode]), float(self.phi.value[w.mode])]
 
     @property
     def L2_norm(self):
