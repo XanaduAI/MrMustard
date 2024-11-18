@@ -460,14 +460,14 @@ class Wires:  # pylint: disable=too-many-public-methods
         r"""
         The ids of the wires in standard order.
         """
-        return tuple(w.id for w in self.sorted_wires)
+        return tuple(w.id for w in self.wires)
 
     @cached_property
     def indices(self) -> tuple[int, ...]:
         r"""
         The indices of the wires in standard order.
         """
-        return tuple(w.index for w in self.sorted_wires)
+        return tuple(w.index for w in self.wires)
 
     @cached_property
     def DV_indices(self) -> tuple[int, ...]:
@@ -488,14 +488,14 @@ class Wires:  # pylint: disable=too-many-public-methods
         r"""
         The DV wires in standard order.
         """
-        return tuple(w for w in self.sorted_wires if w.is_dv)
+        return tuple(w for w in self.wires if w.is_dv)
 
     @cached_property
     def CV_wires(self) -> tuple[QuantumWire | ClassicalWire, ...]:
         r"""
         The CV wires in standard order.
         """
-        return tuple(w for w in self.sorted_wires if not w.is_dv)
+        return tuple(w for w in self.wires if not w.is_dv)
 
     @cached_property
     def args(self) -> tuple[set[int], ...]:
@@ -512,18 +512,11 @@ class Wires:  # pylint: disable=too-many-public-methods
         )
 
     @cached_property
-    def wires(self) -> set[QuantumWire | ClassicalWire]:
-        r"""
-        A set of all wires.
-        """
-        return {*self.quantum_wires, *self.classical_wires}
-
-    @cached_property
-    def sorted_wires(self) -> list[QuantumWire | ClassicalWire]:
+    def wires(self) -> list[QuantumWire | ClassicalWire]:
         r"""
         A list of all wires in standard order.
         """
-        return sorted(self.wires, key=lambda s: s._order())
+        return sorted({*self.quantum_wires, *self.classical_wires}, key=lambda s: s._order())
 
     ###### METHODS ######
 
@@ -554,7 +547,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         r"""
         Updates the indices of the wires according to the standard order.
         """
-        for i, w in enumerate(self.sorted_wires):
+        for i, w in enumerate(self.wires):
             w.index = i
 
     def __add__(self, other: Wires) -> Wires:
@@ -573,7 +566,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return w
 
     def __iter__(self) -> Iterator[QuantumWire | ClassicalWire]:
-        return iter(self.sorted_wires)
+        return iter(self.wires)
 
     def __sub__(self, other: Wires) -> Wires:
         r"""
@@ -656,18 +649,18 @@ class Wires:  # pylint: disable=too-many-public-methods
         # get the wires
         new_wires = Wires()
         new_wires.quantum_wires = {
-            q.copy() for q in bra_out.wires | bra_in.wires | ket_out.wires | ket_in.wires
+            q.copy() for q in bra_out.wires + bra_in.wires + ket_out.wires + ket_in.wires
         }
-        new_wires.classical_wires = {c.copy() for c in cl_out.wires | cl_in.wires}
+        new_wires.classical_wires = {c.copy() for c in cl_out.wires + cl_in.wires}
         new_wires._reindex()
 
         # get the permutations
-        CV_combined = [w for w in self.CV_wires if w.id in new_wires.ids] + [
-            w for w in other.CV_wires if w.id in new_wires.ids
+        combined = [w for w in self.wires if w.id in new_wires.ids] + [
+            w for w in other.wires if w.id in new_wires.ids
         ]
-        CV_perm = [CV_combined.index(w) for w in new_wires.CV_wires]
+        perm = [combined.index(w) for w in new_wires.wires]
 
-        return new_wires, CV_perm
+        return new_wires, perm
 
     def _ipython_display_(self):
         display(widgets.wires(self))

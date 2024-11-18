@@ -581,7 +581,7 @@ class TestCircuitComponent:
 
             def __init__(self, ansatz, custom_modes):
                 super().__init__(
-                    Representation(ansatz, Wires(*(custom_modes * 4))), name="my_component"
+                    Representation(ansatz, Wires(*([custom_modes] * 4))), name="my_component"
                 )
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
