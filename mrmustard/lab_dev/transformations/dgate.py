@@ -19,6 +19,7 @@ The class representing a displacement gate.
 from __future__ import annotations
 
 from typing import Sequence
+from ...physics.triples import triples_utils
 from mrmustard.utils.typing import ComplexTensor
 
 from mrmustard import math
@@ -26,7 +27,7 @@ from mrmustard import math
 from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples, fock_utils
+from ...physics import fock_utils
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Dgate"]
@@ -99,7 +100,7 @@ class Dgate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+                fn=triples_utils.displacement_gate_Abc, x=self.x, y=self.y
             ),
         ).representation
 

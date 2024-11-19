@@ -22,7 +22,7 @@ from typing import Sequence
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics.triples import triples_utils
 
 __all__ = ["Identity"]
 
@@ -55,5 +55,5 @@ class Identity(Unitary):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            ansatz=PolyExpAnsatz.from_function(fn=triples_utils.identity_Abc, n_modes=len(modes)),
         ).representation

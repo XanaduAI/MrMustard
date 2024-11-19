@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
@@ -88,7 +88,7 @@ class DisplacedSqueezed(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displaced_squeezed_vacuum_state_Abc,
+                fn=triples_utils.displaced_squeezed_vacuum_state_Abc,
                 x=self.x,
                 y=self.y,
                 r=self.r,

@@ -18,7 +18,7 @@ The class representing an operation that changes Bargmann into quadrature.
 from __future__ import annotations
 from typing import Sequence
 
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 
 from ..transformations.base import Operation
 from ...physics.ansatz import PolyExpAnsatz
@@ -50,7 +50,7 @@ class BtoQ(Operation):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.phi
+                fn=triples_utils.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.phi
             ),
         ).representation
         for i in self.wires.input.indices:

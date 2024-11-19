@@ -22,26 +22,26 @@ from mrmustard import math
 
 from .base import Coefficient
 
-__all__ = ["c"]
+__all__ = ["cCoeff"]
 
 
-class c(Coefficient):
+class cCoeff(Coefficient):
     r""" """
 
-    def __and__(self, other: c) -> c:
+    def __and__(self, other: cCoeff) -> cCoeff:
         r""" """
         return self * other
 
-    def __mul__(self, other: c) -> c:
+    def __mul__(self, other: cCoeff) -> cCoeff:
         r""" """
         c1 = self.data
         c2 = other.data
         c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-        return c(c3)
+        return cCoeff(c3)
 
-    def __truediv__(self, other: c) -> c:
+    def __truediv__(self, other: cCoeff) -> cCoeff:
         r""" """
         c1 = self.data
         c2 = 1 / other.data
         c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-        return c(c3)
+        return cCoeff(c3)

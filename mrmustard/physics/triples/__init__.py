@@ -16,7 +16,7 @@ r"""
 The classes for
 """
 
-from .A import *
-from .b import *
+from .A_coeff import *
+from .b_coeff import *
 from .base import *
-from .c import *
+from .c_coeff import *

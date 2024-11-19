@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
@@ -85,5 +85,7 @@ class Coherent(Ket):
 
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.coherent_state_Abc, x=self.x, y=self.y),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples_utils.coherent_state_Abc, x=self.x, y=self.y
+            ),
         ).representation

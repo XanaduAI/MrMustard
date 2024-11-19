@@ -22,7 +22,7 @@ from typing import Sequence
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics.triples import triples_utils
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Sgate"]
@@ -98,6 +98,6 @@ class Sgate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezing_gate_Abc, r=self.r, delta=self.phi
+                fn=triples_utils.squeezing_gate_Abc, r=self.r, delta=self.phi
             ),
         ).representation

@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 from .dm import DM
 from ..utils import make_parameter, reshape_params
 
@@ -63,5 +63,5 @@ class Thermal(DM):
         self._add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.thermal_state_Abc, nbar=self.nbar),
+            ansatz=PolyExpAnsatz.from_function(fn=triples_utils.thermal_state_Abc, nbar=self.nbar),
         ).representation

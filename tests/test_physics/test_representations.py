@@ -21,7 +21,10 @@ import pytest
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.representations import RepEnum, Representation
-from mrmustard.physics.triples import bargmann_to_quadrature_Abc, displacement_gate_Abc
+from mrmustard.physics.triples.triples_utils import (
+    bargmann_to_quadrature_Abc,
+    displacement_gate_Abc,
+)
 from mrmustard.physics.wires import Wires
 
 from ..random import Abc_triple

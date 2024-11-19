@@ -23,7 +23,7 @@ from typing import Sequence
 import numpy as np
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
 
@@ -73,7 +73,7 @@ class QuadratureEigenstate(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
+                fn=triples_utils.quadrature_eigenstates_Abc, x=self.x, phi=self.phi
             ),
         ).representation
 

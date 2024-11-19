@@ -17,7 +17,7 @@ r"""The Sauron state is an approximation of the `n`-th Fock states using a ring 
 from typing import Sequence
 from mrmustard.lab_dev.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 
 from ..utils import make_parameter
 
@@ -47,6 +47,6 @@ class Sauron(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
+                triples_utils.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
             ),
         ).representation

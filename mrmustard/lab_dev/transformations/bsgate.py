@@ -22,7 +22,7 @@ from typing import Sequence
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics.triples import triples_utils
 from ..utils import make_parameter
 
 __all__ = ["BSgate"]
@@ -108,6 +108,6 @@ class BSgate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
+                fn=triples_utils.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
             ),
         ).representation

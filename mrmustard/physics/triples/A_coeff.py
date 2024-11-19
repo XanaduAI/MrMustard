@@ -22,13 +22,13 @@ from mrmustard import math
 
 from .base import Coefficient
 
-__all__ = ["A"]
+__all__ = ["ACoeff"]
 
 
-class A(Coefficient):
+class ACoeff(Coefficient):
     r""" """
 
-    def __and__(self, other: A) -> A:
+    def __and__(self, other: ACoeff) -> ACoeff:
         r""" """
         dim_beta1 = self.num_derived_vars
         dim_beta2 = other.num_derived_vars
@@ -65,9 +65,9 @@ class A(Coefficient):
             ]
         )
         num_derived_vars = dim_beta1 * dim_beta2
-        return A(A3, num_derived_vars)
+        return ACoeff(A3, num_derived_vars)
 
-    def __mul__(self, other: A) -> A:
+    def __mul__(self, other: ACoeff) -> ACoeff:
         r""" """
         dim_beta1 = self.num_derived_vars
         dim_beta2 = other.num_derived_vars
@@ -100,9 +100,9 @@ class A(Coefficient):
             ]
         )
         num_derived_vars = dim_beta1 * dim_beta2
-        return A(A3, num_derived_vars)
+        return ACoeff(A3, num_derived_vars)
 
-    def __truediv__(self, other: A) -> A:
+    def __truediv__(self, other: ACoeff) -> ACoeff:
         r""" """
         dim_beta1 = self.num_derived_vars
         dim_beta2 = other.num_derived_vars
@@ -134,6 +134,6 @@ class A(Coefficient):
                     ],
                 ]
             )
-            return A(A3, 0)
+            return ACoeff(A3, 0)
         else:
             raise NotImplementedError("Only implemented for ``num_derived_vars == 0``.")

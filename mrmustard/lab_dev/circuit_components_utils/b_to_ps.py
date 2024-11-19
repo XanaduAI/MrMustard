@@ -19,7 +19,7 @@ The class representing an operation that changes Bargmann into phase space.
 from __future__ import annotations
 from typing import Sequence
 
-from mrmustard.physics import triples
+from mrmustard.physics.triples import triples_utils
 
 from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
@@ -50,7 +50,7 @@ class BtoPS(Map):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc, s=self.s, n_modes=len(modes)
+                fn=triples_utils.displacement_map_s_parametrized_Abc, s=self.s, n_modes=len(modes)
             ),
         ).representation
         for i in self.wires.input.indices:

@@ -22,7 +22,7 @@ from typing import Sequence
 
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics.triples import triples_utils
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Amplifier"]
@@ -98,5 +98,5 @@ class Amplifier(Channel):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.gain),
+            ansatz=PolyExpAnsatz.from_function(fn=triples_utils.amplifier_Abc, g=self.gain),
         ).representation

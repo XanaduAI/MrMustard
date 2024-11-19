@@ -22,13 +22,13 @@ from mrmustard import math
 
 from .base import Coefficient
 
-__all__ = ["b"]
+__all__ = ["bCoeff"]
 
 
-class b(Coefficient):
+class bCoeff(Coefficient):
     r""" """
 
-    def __and__(self, other: b) -> b:
+    def __and__(self, other: bCoeff) -> bCoeff:
         r""" """
         dim_beta1, _ = self.num_derived_vars
         dim_beta2, _ = other.num_derived_vars
@@ -52,9 +52,9 @@ class b(Coefficient):
             -1,
         )
         num_derived_vars = dim_beta1 * dim_beta2
-        return b(b3, num_derived_vars)
+        return bCoeff(b3, num_derived_vars)
 
-    def __mul__(self, other: b) -> b:
+    def __mul__(self, other: bCoeff) -> bCoeff:
         r""" """
         dim_beta1 = self.num_derived_vars
         dim_beta2 = other.num_derived_vars
@@ -72,9 +72,9 @@ class b(Coefficient):
             -1,
         )
         num_derived_vars = dim_beta1 * dim_beta2
-        return b(b3, num_derived_vars)
+        return bCoeff(b3, num_derived_vars)
 
-    def __truediv__(self, other: b) -> b:
+    def __truediv__(self, other: bCoeff) -> bCoeff:
         r""" """
         dim_beta1 = self.num_derived_vars
         dim_beta2 = other.num_derived_vars
@@ -91,6 +91,6 @@ class b(Coefficient):
                 math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
                 -1,
             )
-            return b(b3, 0)
+            return bCoeff(b3, 0)
         else:
             raise NotImplementedError("Only implemented for ``num_derived_vars == 0``.")

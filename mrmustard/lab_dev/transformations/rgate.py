@@ -22,7 +22,7 @@ from typing import Sequence
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics.triples import triples_utils
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["Rgate"]
@@ -65,5 +65,5 @@ class Rgate(Unitary):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.phi),
+            ansatz=PolyExpAnsatz.from_function(fn=triples_utils.rotation_gate_Abc, theta=self.phi),
         ).representation

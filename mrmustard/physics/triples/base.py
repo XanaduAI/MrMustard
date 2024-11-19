@@ -38,7 +38,7 @@ class Coefficient(ABC):
     def __init__(
         self,
         data: ComplexVector | ComplexMatrix | ComplexTensor,
-        num_derived_vars: int | None = None,
+        num_derived_vars: int = 0,
     ) -> None:
         self._data = data
         self._num_derived_vars = num_derived_vars
@@ -49,7 +49,7 @@ class Coefficient(ABC):
         return self._data
 
     @property
-    def num_derived_vars(self) -> int | None:
+    def num_derived_vars(self) -> int:
         r""" """
         return self._num_derived_vars
 
