@@ -536,6 +536,17 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     ###### METHODS ######
 
+    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+        r"""
+        Returns the modes that overlap between the two ``Wires`` objects.
+
+        Args:
+            other: Another ``Wires`` object.
+        """
+        ovlp_ket = self.output.ket.modes & other.input.ket.modes
+        ovlp_bra = self.output.bra.modes & other.input.bra.modes
+        return ovlp_bra, ovlp_ket
+
     def perm(self) -> tuple[int, ...] | None:
         r"""
         The permutation that standardizes the wires with respect to how they were initialized.
@@ -661,7 +672,6 @@ class Wires:  # pylint: disable=too-many-public-methods
             w for w in other.wires if w.id in new_wires.ids
         ]
         perm = [combined.index(w) for w in new_wires.wires]
-        print(perm)
 
         return new_wires, perm
 
