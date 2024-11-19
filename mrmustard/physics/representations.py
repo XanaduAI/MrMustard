@@ -218,7 +218,6 @@ class Representation:
     def __matmul__(self, other: Representation):
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
-        print(idx_z, idx_zconj)
 
         if type(self.ansatz) is type(other.ansatz):
             self_ansatz = self.ansatz
