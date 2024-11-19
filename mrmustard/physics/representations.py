@@ -19,8 +19,6 @@ This module contains the class for representations.
 from __future__ import annotations
 from typing import Sequence
 
-import numpy as np
-
 from mrmustard import math
 from mrmustard.utils.typing import (
     ComplexTensor,
@@ -44,7 +42,7 @@ class Representation:
     of each wire's representation.
 
     The dictionary to keep track of representations maps the indices of the wires
-    to a tuple of the form ``(RepEnum, parameter)``.
+    to a tuple of the form ``(ReprEnum, parameter)``.
 
     Args:
         ansatz: An ansatz for this representation.
@@ -220,6 +218,7 @@ class Representation:
     def __matmul__(self, other: Representation):
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self._matmul_indices(other)
+        print(idx_z, idx_zconj)
 
         if type(self.ansatz) is type(other.ansatz):
             self_ansatz = self.ansatz

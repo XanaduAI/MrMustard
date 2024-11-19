@@ -20,9 +20,9 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.representations import RepEnum, Representation
+from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import bargmann_to_quadrature_Abc, displacement_gate_Abc
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, ReprEnum
 
 from ..random import Abc_triple
 
@@ -46,12 +46,10 @@ class TestRepresentation:
     def btoq_rep(self):
         ansatz = PolyExpAnsatz.from_function(fn=bargmann_to_quadrature_Abc, n_modes=1, phi=0.2)
         wires = Wires((), (), set([0]), set([0]))
-        idx_reps = {}
-        for i in wires.input.indices:
-            idx_reps[i] = (RepEnum.BARGMANN, None)
-        for i in wires.output.indices:
-            idx_reps[i] = (RepEnum.QUADRATURE, float(0.2))
-        return Representation(ansatz, wires, idx_reps)
+        for w in wires.output:
+            w.repr = ReprEnum.QUADRATURE
+            w.param = [0.2]
+        return Representation(ansatz, wires)
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init(self, triple):
@@ -68,9 +66,9 @@ class TestRepresentation:
     def test_matmul_btoq(self, d_gate_rep, btoq_rep):
         q_dgate = d_gate_rep @ btoq_rep
         for w in q_dgate.wires.input.wires:
-            assert w.repr == RepEnum.BARGMANN
+            assert w.repr == ReprEnum.BARGMANN
         for w in q_dgate.wires.output.wires:
-            assert w.repr == RepEnum.QUADRATURE
+            assert w.repr == ReprEnum.QUADRATURE
             assert w.param == [0.2]
 
     def test_to_bargmann(self, d_gate_rep):
@@ -79,7 +77,7 @@ class TestRepresentation:
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
         assert d_barg == d_gate_rep
         for w in d_barg.wires.wires:
-            assert w.repr == RepEnum.BARGMANN
+            assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
@@ -87,4 +85,4 @@ class TestRepresentation:
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
         )
         for w in d_fock.wires.wires:
-            assert w.repr == RepEnum.FOCK
+            assert w.repr == ReprEnum.FOCK
