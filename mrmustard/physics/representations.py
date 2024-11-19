@@ -196,19 +196,19 @@ class Representation:
             fock._original_abc_data = None
         return Representation(fock, self.wires)
 
-    def _matmul_indices(self, other: Representation) -> tuple[tuple[int, ...], tuple[int, ...]]:
-        r"""
-        Finds the indices of the wires being contracted when ``self @ other`` is called.
-        """
-        # find the indices of the wires being contracted on the bra side
-        bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
-        idx_z = self.wires.bra.output[bra_modes].indices
-        idx_zconj = other.wires.bra.input[bra_modes].indices
-        # find the indices of the wires being contracted on the ket side
-        ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
-        idx_z += self.wires.ket.output[ket_modes].indices
-        idx_zconj += other.wires.ket.input[ket_modes].indices
-        return idx_z, idx_zconj
+    # def _matmul_indices(self, other: Representation) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    #     r"""
+    #     Finds the indices of the wires being contracted when ``self @ other`` is called.
+    #     """
+    #     # find the indices of the wires being contracted on the bra side
+    #     bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
+    #     idx_z = self.wires.bra.output[bra_modes].indices
+    #     idx_zconj = other.wires.bra.input[bra_modes].indices
+    #     # find the indices of the wires being contracted on the ket side
+    #     ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
+    #     idx_z += self.wires.ket.output[ket_modes].indices
+    #     idx_zconj += other.wires.ket.input[ket_modes].indices
+    #     return idx_z, idx_zconj
 
     def __eq__(self, other):
         if isinstance(other, Representation):
@@ -217,7 +217,7 @@ class Representation:
 
     def __matmul__(self, other: Representation):
         wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self._matmul_indices(other)
+        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
 
         if type(self.ansatz) is type(other.ansatz):
             self_ansatz = self.ansatz

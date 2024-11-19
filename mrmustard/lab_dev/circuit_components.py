@@ -84,7 +84,7 @@ class CircuitComponent:
         if "name" in params:  # assume abstract type, serialize the representation
             ansatz_cls = type(self.ansatz)
             serializable["name"] = self.name
-            serializable["wires"] = self.wires.args
+            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
             serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
             return serializable, self.ansatz.to_dict()
 

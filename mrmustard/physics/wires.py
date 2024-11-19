@@ -547,6 +547,18 @@ class Wires:  # pylint: disable=too-many-public-methods
         ovlp_bra = self.output.bra.modes & other.input.bra.modes
         return ovlp_bra, ovlp_ket
 
+    def contracted_indices(self, other: Wires) -> tuple[tuple[int, ...], tuple[int, ...]]:
+        r"""
+        Returns the indices being contracted between self and other when calling matmul.
+
+        Args:
+            other: another Wires object
+        """
+        ovlp_bra, ovlp_ket = self.overlap(other)
+        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
+        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
+        return idxA, idxB
+
     def perm(self) -> tuple[int, ...] | None:
         r"""
         The permutation that standardizes the wires with respect to how they were initialized.
