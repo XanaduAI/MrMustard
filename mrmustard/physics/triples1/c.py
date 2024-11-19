@@ -17,44 +17,31 @@ This module contains
 """
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
 
-__all__ = ["TempName"]
+from mrmustard import math
+
+from .base import Coefficient
+
+__all__ = ["c"]
 
 
-class TempName(ABC):
-    r"""
-    A base class
-    """
+class c(Coefficient):
+    r""" """
 
-    def __init__(self, array) -> None:
-        self._array = array
-
-    @property
-    def array(self):
+    def __and__(self, other: c) -> c:
         r""" """
-        return self._array
+        return self * other
 
-    @abstractmethod
-    def __and__(self, other):
+    def __mul__(self, other: c) -> c:
         r""" """
+        c1 = self.data
+        c2 = other.data
+        c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+        return c(c3)
 
-    @abstractmethod
-    def __eq__(self, other):
+    def __truediv__(self, other: c) -> c:
         r""" """
-
-    @abstractmethod
-    def __getitem__(self, idx):
-        r""" """
-
-    @abstractmethod
-    def __mul__(self, other):
-        r""" """
-
-    @abstractmethod
-    def __neg__(self):
-        r""" """
-
-    @abstractmethod
-    def __truediv__(self, other):
-        r""" """
+        c1 = self.data
+        c2 = 1 / other.data
+        c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
+        return c(c3)
