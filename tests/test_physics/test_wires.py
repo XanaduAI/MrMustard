@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from ipywidgets import HTML
 
-from mrmustard.physics.wires import Repr, Wires
+from mrmustard.physics.wires import ReprEnum, Wires
 
 
 class TestWires:
