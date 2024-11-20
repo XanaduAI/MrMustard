@@ -165,9 +165,9 @@ class Batch:
         idxs = (idxs,) if isinstance(idxs, int) else idxs
 
         if len(idxs) > len(self.batch_shape):
-            raise IndexError
+            raise IndexError("Too many indices for Batch.")
         if not all((idx < shape for shape, idx in zip(self.batch_shape, idxs))):
-            raise IndexError
+            raise IndexError("Indices are out of bounds.")
 
         items = [self._items[idxs[0]]]
         temp = 0
