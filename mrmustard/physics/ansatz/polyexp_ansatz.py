@@ -159,7 +159,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        ret = PolyExpAnsatz(self.A.conjugate(), self.b.conjugate(), self.c.conjugate())
         ret._contract_idxs = self._contract_idxs
         return ret
 
@@ -314,7 +314,7 @@ class PolyExpAnsatz(Ansatz):
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if np.allclose(self.A[i], self.A[j]) and np.allclose(self.b[i], self.b[j]):
+                if self.A[i] == self.A[j] and self.b[i] == self.b[j]:
                     self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)

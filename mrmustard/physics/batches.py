@@ -148,6 +148,9 @@ class Batch:
         else:
             return item
 
+    def __array__(self):
+        return self.data
+
     def __eq__(self, other):
         if isinstance(other, Batch):
             return (
@@ -157,18 +160,28 @@ class Batch:
             )
         return False
 
-    def __getitem__(self, idxs: tuple[int, ...] | slice):  # into Batch
+    def __getitem__(self, idxs: int | tuple[int, ...]):
+        # TODO: update to work with slices
+        idxs = (idxs,) if isinstance(idxs, int) else idxs
 
-        # validate indices
         if len(idxs) > len(self.batch_shape):
             raise IndexError
+        if not all((idx < shape for shape, idx in zip(self.batch_shape, idxs))):
+            raise IndexError
 
-        # collect items
+        items = [self._items[idxs[0]]]
+        temp = 0
+        for i, idx in enumerate(idxs[1:]):
+            temp += self.batch_shape[i]
+            items.append(self._items[temp + idx])
 
-        # new batch_shape & batch labels
-
-        return Batch(self._items, self._batch_shape, self._batch_labels)
+        return Batch(items, (1,) * len(idxs), self._batch_labels[: len(idxs)])
 
     def __iter__(self):
         for item in self._items:
             yield self._pad(item)
+
+    def conjugate(self):
+        return Batch(
+            [math.conj(item) for item in self._items], self._batch_shape, self._batch_labels
+        )

@@ -183,11 +183,11 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_conj(self, triple):
         A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple).conj
+        bargmann = PolyExpAnsatz(*triple, batch_label="a").conj
 
-        assert np.allclose(bargmann.A, math.conj(A))
-        assert np.allclose(bargmann.b, math.conj(b))
-        assert np.allclose(bargmann.c, math.conj(c))
+        assert bargmann.A == Batch([math.conj(A)], batch_labels=["a"])
+        assert bargmann.b == Batch([math.conj(b)], batch_labels=["a"])
+        assert bargmann.c == Batch([math.conj(c)], batch_labels=["a"])
 
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
