@@ -29,7 +29,7 @@ class TestAmplifier:
     Tests for the ``Amplifier`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     gain = [[1.1], 1.1, [1.1, 1.2]]
 
     @pytest.mark.parametrize("modes,gain", zip(modes, gain))

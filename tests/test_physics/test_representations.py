@@ -22,7 +22,7 @@ from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import bargmann_to_quadrature_Abc, displacement_gate_Abc
-from mrmustard.physics.wires import Wires, ReprEnum
+from mrmustard.physics.wires import ReprEnum, Wires
 
 from ..random import Abc_triple
 
@@ -39,16 +39,16 @@ class TestRepresentation:
     @pytest.fixture
     def d_gate_rep(self):
         ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=0.1, y=0.1)
-        wires = Wires((), (), set([0]), set([0]))
+        wires = Wires(set(), set(), {0}, {0})
         return Representation(ansatz, wires)
 
     @pytest.fixture
     def btoq_rep(self):
         ansatz = PolyExpAnsatz.from_function(fn=bargmann_to_quadrature_Abc, n_modes=1, phi=0.2)
-        wires = Wires((), (), set([0]), set([0]))
+        wires = Wires(set(), set(), {0}, {0})
         for w in wires.output:
             w.repr = ReprEnum.QUADRATURE
-            w.param = [0.2]
+            w.repr_params = [0.2]
         return Representation(ansatz, wires)
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -58,7 +58,7 @@ class TestRepresentation:
         assert empty_rep.wires == Wires()
 
         ansatz = PolyExpAnsatz(*triple)
-        wires = Wires(set([0, 1]))
+        wires = Wires({0, 1})
         rep = Representation(ansatz, wires)
         assert rep.ansatz == ansatz
         assert rep.wires == wires
@@ -69,7 +69,7 @@ class TestRepresentation:
             assert w.repr == ReprEnum.BARGMANN
         for w in q_dgate.wires.output.wires:
             assert w.repr == ReprEnum.QUADRATURE
-            assert w.param == [0.2]
+            assert w.repr_params == [0.2]
 
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))

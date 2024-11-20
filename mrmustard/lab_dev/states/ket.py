@@ -113,12 +113,16 @@ class Ket(State):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
+        if not isinstance(modes, set) and sorted(modes) != list(modes):
+            raise ValueError(f"Modes must be sorted. Got {modes}")
         modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
                 f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
             )
         wires = Wires(modes_out_ket=modes)
+        if isinstance(ansatz, ArrayAnsatz):
+            wires = wires.to_fock(ansatz.array.shape)
         return Ket(Representation(ansatz, wires), name)
 
     @classmethod

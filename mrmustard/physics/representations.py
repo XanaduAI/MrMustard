@@ -18,7 +18,7 @@ This module contains the class for representations.
 
 from __future__ import annotations
 from typing import Sequence
-
+from dataclasses import replace
 from mrmustard import math
 from mrmustard.utils.typing import (
     ComplexTensor,
@@ -52,8 +52,6 @@ class Representation:
     def __init__(self, ansatz: Ansatz | None = None, wires: Wires | None = None) -> None:
         self._ansatz = ansatz
         self._wires = wires or Wires(set(), set(), set(), set())
-        if (perm := self.wires.perm()) and self.ansatz is not None:
-            self._ansatz = self.ansatz.reorder(perm)
 
     @property
     def adjoint(self) -> Representation:
@@ -64,8 +62,7 @@ class Representation:
         bras = self.wires.bra.indices
         kets = self.wires.ket.indices
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
-        wires = self.wires.adjoint
-        return Representation(ansatz, wires)
+        return Representation(ansatz, self.wires.adjoint)
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -85,8 +82,7 @@ class Representation:
         ib = self.wires.bra.input.indices
         ob = self.wires.bra.output.indices
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
-        wires = self.wires.dual
-        return Representation(ansatz, wires)
+        return Representation(ansatz, self.wires.dual)
 
     @property
     def wires(self) -> Wires | None:
@@ -177,7 +173,7 @@ class Representation:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.ansatz.data
             bargmann = PolyExpAnsatz(A, b, c)
-            return Representation(bargmann, self.wires)
+            return Representation(bargmann, self.wires.to_bargmann())
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""
@@ -194,21 +190,7 @@ class Representation:
                 fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
-        return Representation(fock, self.wires)
-
-    # def _matmul_indices(self, other: Representation) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    #     r"""
-    #     Finds the indices of the wires being contracted when ``self @ other`` is called.
-    #     """
-    #     # find the indices of the wires being contracted on the bra side
-    #     bra_modes = tuple(self.wires.bra.output.modes & other.wires.bra.input.modes)
-    #     idx_z = self.wires.bra.output[bra_modes].indices
-    #     idx_zconj = other.wires.bra.input[bra_modes].indices
-    #     # find the indices of the wires being contracted on the ket side
-    #     ket_modes = tuple(self.wires.ket.output.modes & other.wires.ket.input.modes)
-    #     idx_z += self.wires.ket.output[ket_modes].indices
-    #     idx_zconj += other.wires.ket.input[ket_modes].indices
-    #     return idx_z, idx_zconj
+        return Representation(fock, self.wires.to_fock(shape))
 
     def __eq__(self, other):
         if isinstance(other, Representation):

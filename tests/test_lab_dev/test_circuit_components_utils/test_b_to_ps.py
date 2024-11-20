@@ -31,7 +31,7 @@ class TestBtoPS:
     Tests for the ``BtoPS`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     s = [0, -1, 1]
 
     @pytest.mark.parametrize("modes,s", zip(modes, s))

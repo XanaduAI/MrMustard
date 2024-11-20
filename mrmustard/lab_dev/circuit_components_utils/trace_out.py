@@ -66,7 +66,7 @@ class TraceOut(CircuitComponent):
         super().__init__(
             Representation(
                 PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
-                Wires(set(), tuple(modes), set(), tuple(modes)),
+                Wires(set(), set(modes), set(), set(modes)),
             ),
             name="Tr",
         )
