@@ -19,6 +19,7 @@ The class representing a generic gaussian gate.
 from __future__ import annotations
 
 from typing import Sequence
+from mrmustard import math
 from mrmustard.utils.typing import RealMatrix
 
 from .base import Unitary
@@ -51,10 +52,12 @@ class Ggate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        symplectic: RealMatrix,
+        symplectic: RealMatrix | None = None,
         symplectic_trainable: bool = False,
     ):
         super().__init__(name="Ggate")
+        if symplectic is None:
+            symplectic = math.random_symplectic(len(modes))
         S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
         self.parameter_set.add_parameter(S)
         self._representation = self.from_ansatz(

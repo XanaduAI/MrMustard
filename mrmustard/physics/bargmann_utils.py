@@ -228,6 +228,7 @@ def symplectic2Au(S):
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     R = math.rotmat(m)
+    print(S.shape)
     S = R @ S @ math.dagger(R)
     # identifying blocks of S
     S_1 = S[:m, :m]

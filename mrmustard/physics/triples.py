@@ -283,16 +283,18 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     Returns:
         The ``(A,b,c)`` triple of the resulting Gaussian DM state.
     """
-    betas = math.astensor(betas)
+    betas = math.atleast_1d(betas)  # makes it work
     m = len(betas)
     Au = symplectic2Au(symplectic)
-    A_udagger_u = math.block([[math.conj(Au), math.zeros((m, m))], [math.zeros((m, m)), Au]])
+    A_udagger_u = math.block(
+        [[math.conj(Au), math.zeros((2 * m, 2 * m))], [math.zeros((2 * m, 2 * m)), Au]]
+    )
     D = math.diag(betas)
     A_fd = math.block([[math.zeros((m, m)), D], [D, math.zeros((m, m))]])
-    t_fd = (A_fd, math.zeros(2 * m, dtype=A_fd.dtype), 1.0)
-    t_u = (A_udagger_u, math.zeros(4 * m), 1.0)
+    t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(1.0))
+    t_u = (math.atleast_3d(A_udagger_u), math.zeros((1, 4 * m)), math.atleast_1d(1.0))
     return complex_gaussian_integral_2(
-        t_fd, t_u, range(m), list(range(m + 1, 2 * m)) + list(range(3 * m, 4 * m))
+        t_fd, t_u, range(2 * m), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
     )
 
 

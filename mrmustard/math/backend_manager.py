@@ -1357,8 +1357,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
-            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            W = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            V = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
             V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
