@@ -1,11 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field, replace
-from typing import Sequence, Any, Iterable, Iterator
+from typing import Any, Iterable, Iterator
 from random import randint
 from enum import Enum, auto
 from IPython.display import display
 from functools import cached_property
-import numpy as np
 from mrmustard import widgets
 
 __all__ = ["Wires"]
@@ -89,7 +88,7 @@ class QuantumWire:
             and self.repr == other.repr
         )
 
-    def copy(self) -> QuantumWire:
+    def copy(self, new_id: bool = False) -> QuantumWire:
         return QuantumWire(
             mode=self.mode,
             is_out=self.is_out,
@@ -97,7 +96,7 @@ class QuantumWire:
             index=self.index,
             repr=self.repr,
             repr_params=self.repr_params,
-            id=self.id,
+            id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
     def _order(self) -> int:
@@ -142,14 +141,14 @@ class ClassicalWire:
     def __eq__(self, other: ClassicalWire) -> bool:
         return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
 
-    def copy(self) -> ClassicalWire:
+    def copy(self, new_id: bool = False) -> ClassicalWire:
         return ClassicalWire(
             mode=self.mode,
             is_out=self.is_out,
             index=self.index,
             repr=self.repr,
             repr_params=self.repr_params,
-            id=self.id,
+            id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
     def _order(self) -> int:
@@ -301,24 +300,37 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
-        modes_out_bra: set[int] | Sequence[int] = set(),
-        modes_in_bra: set[int] | Sequence[int] = set(),
-        modes_out_ket: set[int] | Sequence[int] = set(),
-        modes_in_ket: set[int] | Sequence[int] = set(),
-        classical_out: set[int] | Sequence[int] = set(),
-        classical_in: set[int] | Sequence[int] = set(),
+        modes_out_bra: set[int] | None = None,
+        modes_in_bra: set[int] | None = None,
+        modes_out_ket: set[int] | None = None,
+        modes_in_ket: set[int] | None = None,
+        classical_out: set[int] | None = None,
+        classical_in: set[int] | None = None,
     ):
+        if any(
+            not (isinstance(g, set) or g is None)
+            for g in (
+                modes_out_bra,
+                modes_in_bra,
+                modes_out_ket,
+                modes_in_ket,
+                classical_out,
+                classical_in,
+            )
+        ):
+            raise ValueError(
+                f"All arguments must be sets or None. got {type(modes_out_bra)}, {type(modes_in_bra)}, {type(modes_out_ket)}, {type(modes_in_ket)}, {type(classical_out)}, {type(classical_in)}"
+            )
+
+        modes_out_bra = modes_out_bra or set()
+        modes_in_bra = modes_in_bra or set()
+        modes_out_ket = modes_out_ket or set()
+        modes_in_ket = modes_in_ket or set()
+        classical_out = classical_out or set()
+        classical_in = classical_in or set()
+
         self.quantum_wires = set()
         self.classical_wires = set()
-
-        # store the permutation to reorder wires if they are given out of order
-        self._initial_perm = []
-        groups = [modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket]
-        if any(not isinstance(group, set) for group in groups):
-            for group in groups:
-                self._initial_perm.extend(tuple(np.argsort(group) + len(self._initial_perm)))
-
-        # go ahead and add the wires in standard order
         for i, m in enumerate(sorted(modes_out_bra)):
             self.quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=False, index=i))
         n = len(modes_out_bra)
@@ -337,13 +349,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         for i, m in enumerate(sorted(classical_in)):
             self.classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
 
-    def copy(self) -> Wires:
-        """Returns a deep copy of this Wires object."""
-        w = Wires()
-        w.quantum_wires = {q.copy() for q in self.quantum_wires}
-        w.classical_wires = {c.copy() for c in self.classical_wires}
-        return w
-
     @classmethod
     def from_wires(
         cls,
@@ -359,6 +364,13 @@ class Wires:  # pylint: disable=too-many-public-methods
         w.quantum_wires = set(quantum) if not copy else {q.copy() for q in quantum}
         w.classical_wires = set(classical) if not copy else {c.copy() for c in classical}
         return w
+
+    def copy(self, new_ids: bool = False) -> Wires:
+        """Returns a deep copy of this Wires object."""
+        return Wires.from_wires(
+            quantum={q.copy(new_ids) for q in self.quantum_wires},
+            classical={c.copy(new_ids) for c in self.classical_wires},
+        )
 
     ###### NEW WIRES ######
 
@@ -390,9 +402,41 @@ class Wires:  # pylint: disable=too-many-public-methods
             classical_in=self.output.classical.modes,
         )
 
+    def to_fock(self, shape: tuple[int, ...]) -> Wires:
+        r"""
+        Returns a new Wires object with the quantum wires in Fock representation.
+        """
+        return Wires.from_wires(
+            quantum={
+                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.quantum_wires
+            },
+            classical={
+                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.classical_wires
+            },
+        )
+
+    def to_bargmann(self) -> Wires:
+        r"""
+        Returns a new Wires object with the quantum wires in Bargmann representation.
+        """
+        return Wires.from_wires(
+            quantum={replace(w, repr=ReprEnum.BARGMANN) for w in self.quantum_wires},
+            classical={replace(w, repr=ReprEnum.BARGMANN) for w in self.classical_wires},
+        )
+
+    def to_quadrature(
+        self,
+    ) -> Wires:
+        r"""
+        Returns a new Wires object with the quantum wires in quadrature representation.
+        """
+        return Wires.from_wires(
+            quantum={replace(w, repr=ReprEnum.QUADRATURE) for w in self.quantum_wires},
+            classical={replace(w, repr=ReprEnum.QUADRATURE) for w in self.classical_wires},
+        )
+
     ###### SUBSETS OF WIRES ######
 
-    # @lru_cache
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"""
         Returns a new Wires object with references to the quantum and classical wires with the given modes.
@@ -514,7 +558,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return tuple(w for w in self.wires if not w.is_dv)
 
     @property
-    def args(self) -> tuple[set[int], ...]:
+    def args(self) -> tuple[tuple[int, ...], ...]:
         r"""
         The arguments to pass to ``Wires`` to create the same object with fresh wires.
         """
@@ -538,7 +582,7 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
         r"""
-        Returns the modes that overlap between the two ``Wires`` objects.
+        Returns the modes that overlap between self and other.
 
         Args:
             other: Another ``Wires`` object.
@@ -558,15 +602,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
         idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
         return idxA, idxB
-
-    def perm(self) -> tuple[int, ...] | None:
-        r"""
-        The permutation that standardizes the wires with respect to how they were initialized.
-        None if already in standard order.
-        """
-        return (
-            tuple(self._initial_perm) if sorted(self._initial_perm) != self._initial_perm else None
-        )
 
     def _reindex(self) -> None:
         r"""
@@ -675,16 +710,14 @@ class Wires:  # pylint: disable=too-many-public-methods
         new_wires = Wires.from_wires(
             quantum=bra_out.wires + bra_in.wires + ket_out.wires + ket_in.wires,
             classical=cl_out.wires + cl_in.wires,
-            copy=True,
+            copy=True,  # because we will call _reindex()
         )
         new_wires._reindex()
 
-        # get the permutations
         combined = [w for w in self.wires if w.id in new_wires.ids] + [
             w for w in other.wires if w.id in new_wires.ids
-        ]
+        ]  # NOTE: assumes self and other have different ids
         perm = [combined.index(w) for w in new_wires.wires]
-
         return new_wires, perm
 
     def _ipython_display_(self):

@@ -28,7 +28,7 @@ class TestNumber:
     Tests for the ``Number`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     n = [[3], 4, [5, 6]]
     cutoffs = [None, 5, [6, 7]]
 

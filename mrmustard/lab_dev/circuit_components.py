@@ -113,7 +113,9 @@ class CircuitComponent:
         if "ansatz_cls" in data:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(Representation(ansatz, Wires(*map(set, wires))), name=name)
+            return cls._from_attributes(
+                Representation(ansatz, Wires(*tuple(set(m) for m in wires))), name=name
+            )
 
         return cls(**data)
 

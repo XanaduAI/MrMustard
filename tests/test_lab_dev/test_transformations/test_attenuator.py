@@ -28,7 +28,7 @@ class TestAttenuator:
     Tests for the ``Attenuator`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     transmissivity = [[0.1], 0.1, [0.1, 0.2]]
 
     @pytest.mark.parametrize("modes,transmissivity", zip(modes, transmissivity))

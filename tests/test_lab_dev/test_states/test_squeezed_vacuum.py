@@ -27,7 +27,7 @@ class TestSqueezedVacuum:
     Tests for the ``SqueezedVacuum`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     r = [[1], 1, [1, 2]]
     phi = [[3], [3, 4], [3, 4]]
 
