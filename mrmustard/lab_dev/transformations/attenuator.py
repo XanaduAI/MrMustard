@@ -75,7 +75,7 @@ class Attenuator(Channel):
             c &= 1\:.
     """
 
-    short_name = "Att"
+    short_name = "Att~"
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class Attenuator(Channel):
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
-        super().__init__(name="Att")
+        super().__init__(name="Att~")
         (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
         self._add_parameter(
             make_parameter(
