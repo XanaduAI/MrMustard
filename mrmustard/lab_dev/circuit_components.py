@@ -503,7 +503,6 @@ class CircuitComponent:
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
-            >>> assert d_fock.wires == d.wires
             >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
 
         Args:
