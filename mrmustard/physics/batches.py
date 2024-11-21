@@ -160,26 +160,52 @@ class Batch:
             )
         return False
 
-    def __getitem__(self, idxs: int | tuple[int, ...]):
-        # TODO: update to work with slices
-        idxs = (idxs,) if isinstance(idxs, int) else idxs
+    def __getitem__(self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]) -> Batch:
+        idxs = (idxs,) if isinstance(idxs, (int, slice)) else idxs
 
         if len(idxs) > len(self.batch_shape):
             raise IndexError("Too many indices for Batch.")
-        if not all((idx < shape for shape, idx in zip(self.batch_shape, idxs))):
+
+        idxs = tuple(
+            (
+                idx if isinstance(idx, int) else slice(idx.start or 0, idx.stop or shape, idx.step)
+                for shape, idx in zip(self.batch_shape, idxs)
+            )
+        )
+
+        if not all(
+            (
+                idx.stop < shape + 1 if isinstance(idx, slice) else idx < shape
+                for shape, idx in zip(self.batch_shape, idxs)
+            )
+        ):
             raise IndexError("Indices are out of bounds.")
 
-        items = [self._items[idxs[0]]]
-        temp = 0
-        for i, idx in enumerate(idxs[1:]):
-            temp += self.batch_shape[i]
-            items.append(self._items[temp + idx])
+        items = self._items[idxs[0]]
+        items = [items] if not isinstance(items, list) else items
+        offset = self.batch_shape[0]
+        new_batch_shape = [len(items)]
 
-        return Batch(items, (1,) * len(idxs), self._batch_labels[: len(idxs)])
+        for shape, idx in zip(self.batch_shape[1:], idxs[1:]):
+            if isinstance(idx, slice):
+                slices = (idx.start + offset, idx.stop + offset, idx.step)
+                temp_idx = slice(*slices)
+            else:
+                temp_idx = idx + offset
+            offset += shape
+            temp_items = self._items[temp_idx]
+            temp_items = [temp_items] if not isinstance(temp_items, list) else temp_items
+            new_batch_shape.append(len(temp_items))
+            items.append(*temp_items)
+
+        return Batch(items, tuple(new_batch_shape), self._batch_labels[: len(idxs)])
 
     def __iter__(self):
         for item in self._items:
             yield self._pad(item)
+
+    def __len__(self):
+        return len(self.batch_shape)
 
     def conjugate(self):
         return Batch(

@@ -417,7 +417,7 @@ class TestPolyExpAnsatz:
         ansatz.simplify()
         assert len(ansatz.A) == 1
         assert len(ansatz.b) == 1
-        assert ansatz.c == 2 * c
+        assert np.allclose(ansatz.c, 2 * c)
 
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)

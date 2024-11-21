@@ -309,19 +309,30 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._simplified:
             return
+
+        if len(self.A.batch_shape) > 1:
+            raise NotImplementedError("Not implemented for multi-dimensional batches.")
+
         indices_to_check = set(range(self.batch_size))
         removed = []
+
+        temp_c = self.c.data
+
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
                 if self.A[i] == self.A[j] and self.b[i] == self.b[j]:
-                    self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
+                    temp_c = math.update_add_tensor(temp_c, [[i]], [temp_c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
+
         to_keep = [i for i in range(self.batch_size) if i not in removed]
-        self.A = math.gather(self.A, to_keep, axis=0)
-        self.b = math.gather(self.b, to_keep, axis=0)
-        self.c = math.gather(self.c, to_keep, axis=0)
+
+        self.A = self.A[tuple(to_keep)]
+        self.b = self.b[tuple(to_keep)]
+        self.c = Batch([item for item in temp_c], self.c.batch_shape, self.c.batch_labels)[
+            tuple(to_keep)
+        ]
         self._simplified = True
 
     def simplify_v2(self) -> None:
