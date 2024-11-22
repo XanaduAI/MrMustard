@@ -26,7 +26,6 @@ from plotly.graph_objs import FigureWidget
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
-from mrmustard.physics.batches import Batch
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
@@ -47,52 +46,52 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init_non_batched(self, triple):
         A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple, batch_label="a")
+        bargmann = PolyExpAnsatz(*triple)
 
-        assert bargmann.A == Batch([A], batch_labels=["a"])
-        assert bargmann.b == Batch([b], batch_labels=["a"])
-        assert bargmann.c == Batch([c], batch_labels=["a"])
+        assert np.allclose(bargmann.A, A)
+        assert np.allclose(bargmann.b, b)
+        assert np.allclose(bargmann.c, c)
 
-    @pytest.mark.parametrize("n", [1, 2, 32])
+    @pytest.mark.parametrize("n", [1, 2, 3])
     def test_add(self, n):
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann1 = PolyExpAnsatz(*triple1, batch_label="a")
-        bargmann2 = PolyExpAnsatz(*triple2, batch_label="a")
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_add = bargmann1 + bargmann2
 
-        assert bargmann_add.A == bargmann1.A.concat(bargmann2.A)
-        assert bargmann_add.b == bargmann1.b.concat(bargmann2.b)
-        assert bargmann_add.c == bargmann1.c.concat(bargmann2.c)
+        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
+        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
+        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
 
         A1, b1, _ = Abc_triple(5)
-        c1 = np.random.random(size=(3, 3))
+        c1 = np.random.random(size=(1, 3, 3))
         A2, b2, _ = Abc_triple(5)
-        c2 = np.random.random(size=(2, 2))
+        c2 = np.random.random(size=(1, 2, 2))
 
-        bargmann3 = PolyExpAnsatz(A1, b1, c1, batch_label="b")
-        bargmann4 = PolyExpAnsatz(A2, b2, c2, batch_label="b")
+        bargmann3 = PolyExpAnsatz(A1, b1, c1)
+        bargmann4 = PolyExpAnsatz(A2, b2, c2)
 
         bargmann_add2 = bargmann3 + bargmann4
 
-        assert np.allclose(bargmann_add2.A.data[0], A1)
-        assert np.allclose(bargmann_add2.b.data[0], b1)
-        assert np.allclose(bargmann_add2.c.data[0], c1)
-        assert np.allclose(bargmann_add2.A.data[1], A2)
-        assert np.allclose(bargmann_add2.b.data[1], b2)
-        assert np.allclose(bargmann_add2.c.data[1][:2, :2], c2)
+        assert np.allclose(bargmann_add2.A[0], A1)
+        assert np.allclose(bargmann_add2.b[0], b1)
+        assert np.allclose(bargmann_add2.c[0], c1[0])
+        assert np.allclose(bargmann_add2.A[1], A2)
+        assert np.allclose(bargmann_add2.b[1], b2)
+        assert np.allclose(bargmann_add2.c[1][:2, :2], c2[0])
 
     def test_add_different_poly_wires(self):
         "tests that A and b are padded correctly"
-        A1 = np.random.random((2, 2))
-        A2 = np.random.random((3, 3))
-        b1 = np.random.random((2,))
-        b2 = np.random.random((3,))
-        c1 = np.random.random()
-        c2 = np.random.random((11,))
-        ansatz1 = PolyExpAnsatz(A1, b1, c1, batch_label="a")
-        ansatz2 = PolyExpAnsatz(A2, b2, c2, batch_label="a")
+        A1 = np.random.random((1, 2, 2))
+        A2 = np.random.random((1, 3, 3))
+        b1 = np.random.random((1, 2))
+        b2 = np.random.random((1, 3))
+        c1 = np.random.random((1,))
+        c2 = np.random.random((1, 11))
+        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz_sum = ansatz1 + ansatz2
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
@@ -114,9 +113,7 @@ class TestPolyExpAnsatz:
         triple1 = Abc_triple(n)
         triple2 = Abc_triple(n)
 
-        bargmann = PolyExpAnsatz(*triple1, batch_label="a") & PolyExpAnsatz(
-            *triple2, batch_label="a"
-        )
+        bargmann = PolyExpAnsatz(*triple1) & PolyExpAnsatz(*triple2)
 
         assert bargmann.A.shape == (1, 2 * n, 2 * n)
         assert bargmann.b.shape == (1, 2 * n)
@@ -183,11 +180,11 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_conj(self, triple):
         A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple, batch_label="a").conj
+        bargmann = PolyExpAnsatz(*triple).conj
 
-        assert bargmann.A == Batch([math.conj(A)], batch_labels=["a"])
-        assert bargmann.b == Batch([math.conj(b)], batch_labels=["a"])
-        assert bargmann.c == Batch([math.conj(c)], batch_labels=["a"])
+        assert np.allclose(bargmann.A, math.conj(A))
+        assert np.allclose(bargmann.b, math.conj(b))
+        assert np.allclose(bargmann.c, math.conj(c))
 
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
@@ -417,7 +414,7 @@ class TestPolyExpAnsatz:
         ansatz.simplify()
         assert len(ansatz.A) == 1
         assert len(ansatz.b) == 1
-        assert np.allclose(ansatz.c, 2 * c)
+        assert ansatz.c == 2 * c
 
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)

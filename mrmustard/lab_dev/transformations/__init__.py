@@ -26,6 +26,7 @@ from .fockdamping import *
 from .ggate import *
 from .gaussrandnoise import *
 from .identity import *
+from .phasenoise import *
 from .rgate import *
 from .s2gate import *
 from .sgate import *

@@ -91,26 +91,25 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: ComplexMatrix | Batch[ComplexMatrix],
-        b: ComplexVector | Batch[ComplexVector],
-        c: ComplexTensor | Batch[ComplexTensor],
-        batch_label: str | None = None,
+        A: ComplexMatrix | Batch[ComplexMatrix] | None,
+        b: ComplexVector | Batch[ComplexVector] | None,
+        c: ComplexTensor | Batch[ComplexTensor] | None,
+        batch_labels: list[str] | None = None,
         name: str = "",
     ):
         super().__init__()
-        batch_labels = [batch_label] if batch_label else None
         self._A = (
-            Batch([A], batch_labels=batch_labels)
+            Batch(math.atleast_3d(A), batch_labels=batch_labels)
             if A is not None and not isinstance(A, Batch)
             else A
         )
         self._b = (
-            Batch([b], batch_labels=batch_labels)
+            Batch(math.atleast_2d(b), batch_labels=batch_labels)
             if b is not None and not isinstance(b, Batch)
             else b
         )
         self._c = (
-            Batch([c], batch_labels=batch_labels)
+            Batch(math.atleast_1d(c), batch_labels=batch_labels)
             if c is not None and not isinstance(c, Batch)
             else c
         )
@@ -127,7 +126,7 @@ class PolyExpAnsatz(Ansatz):
 
     @A.setter
     def A(self, value: ComplexMatrix | Batch[ComplexMatrix]):
-        self._A = value if isinstance(value, Batch) else Batch([value])
+        self._A = value if isinstance(value, Batch) else Batch(math.atleast_3d(value))
 
     @property
     def b(self) -> Batch[ComplexVector]:
@@ -139,11 +138,11 @@ class PolyExpAnsatz(Ansatz):
 
     @b.setter
     def b(self, value: ComplexVector | Batch[ComplexVector]):
-        self._b = value if isinstance(value, Batch) else Batch([value])
+        self._b = value if isinstance(value, Batch) else Batch(math.atleast_2d(value))
 
     @property
     def batch_size(self):
-        return self.c.shape[0]
+        return sum(self.c.batch_shape)
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -155,11 +154,11 @@ class PolyExpAnsatz(Ansatz):
 
     @c.setter
     def c(self, value: ComplexTensor | Batch[ComplexTensor]):
-        self._c = value if isinstance(value, Batch) else Batch([value])
+        self._c = value if isinstance(value, Batch) else Batch(math.atleast_1d(value))
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(self.A.conjugate(), self.b.conjugate(), self.c.conjugate())
+        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         ret._contract_idxs = self._contract_idxs
         return ret
 
@@ -309,30 +308,19 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._simplified:
             return
-
-        if len(self.A.batch_shape) > 1:
-            raise NotImplementedError("Not implemented for multi-dimensional batches.")
-
         indices_to_check = set(range(self.batch_size))
         removed = []
-
-        temp_c = self.c.data
-
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if self.A[i] == self.A[j] and self.b[i] == self.b[j]:
-                    temp_c = math.update_add_tensor(temp_c, [[i]], [temp_c[j]])
+                if np.allclose(self.A[i], self.A[j]) and np.allclose(self.b[i], self.b[j]):
+                    self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
-
         to_keep = [i for i in range(self.batch_size) if i not in removed]
-
-        self.A = self.A[tuple(to_keep)]
-        self.b = self.b[tuple(to_keep)]
-        self.c = Batch([item for item in temp_c], self.c.batch_shape, self.c.batch_labels)[
-            tuple(to_keep)
-        ]
+        self.A = math.gather(self.A, to_keep, axis=0)
+        self.b = math.gather(self.b, to_keep, axis=0)
+        self.c = math.gather(self.c, to_keep, axis=0)
         self._simplified = True
 
     def simplify_v2(self) -> None:
@@ -551,6 +539,11 @@ class PolyExpAnsatz(Ansatz):
         b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
         return A_decomp, b_decomp, c_decomp
 
+    def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
+        self.simplify()
+        other.simplify()
+        return np.allclose(self.b, other.b, atol=1e-10) and np.allclose(self.A, other.A, atol=1e-10)
+
     def _generate_ansatz(self):
         r"""
         This method computes and sets the (A, b, c) given a function
@@ -617,11 +610,37 @@ class PolyExpAnsatz(Ansatz):
                 f"but the polynomials have {self_num_poly} and {other_num_poly} variables (difference of {self_num_poly-other_num_poly})."
             )
 
-        new_A = self.A.concat(other.A)
-        new_b = self.b.concat(other.b)
-        new_c = self.c.concat(other.c)
+        def pad_and_expand(mat, vec, array, target_size):
+            pad_size = target_size - mat.shape[-1]
+            padded_mat = math.pad(mat, ((0, 0), (0, pad_size), (0, pad_size)))
+            padded_vec = math.pad(vec, ((0, 0), (0, pad_size)))
+            padding_array = math.ones((1,) * pad_size, dtype=array.dtype)
+            expanded_array = math.outer(array, padding_array)
+            return padded_mat, padded_vec, expanded_array
 
-        return PolyExpAnsatz(new_A, new_b, new_c)
+        def combine_arrays(array1, array2):
+            shape1 = array1.shape[1:]
+            shape2 = array2.shape[1:]
+            max_shape = tuple(map(max, zip(shape1, shape2)))
+            pad_widths1 = [(0, 0)] + [(0, t - s) for s, t in zip(shape1, max_shape)]
+            pad_widths2 = [(0, 0)] + [(0, t - s) for s, t in zip(shape2, max_shape)]
+            padded_array1 = math.pad(array1, pad_widths1, "constant")
+            padded_array2 = math.pad(array2, pad_widths2, "constant")
+            return math.concat([padded_array1, padded_array2], axis=0)
+
+        if n1 <= n2:
+            mat1, vec1, array1 = pad_and_expand(self.A, self.b, self.c, n2)
+            combined_matrices = math.concat([mat1, other.A], axis=0)
+            combined_vectors = math.concat([vec1, other.b], axis=0)
+            combined_arrays = combine_arrays(array1, other.c)
+        else:
+            mat2, vec2, array2 = pad_and_expand(other.A, other.b, other.c, n1)
+            combined_matrices = math.concat([self.A, mat2], axis=0)
+            combined_vectors = math.concat([self.b, vec2], axis=0)
+            combined_arrays = combine_arrays(self.c, array2)
+
+        # note output is not simplified
+        return PolyExpAnsatz(combined_matrices, combined_vectors, combined_arrays)
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
@@ -638,7 +657,6 @@ class PolyExpAnsatz(Ansatz):
             The tensor product of this PolyExpAnsatz and other.
         """
 
-        # TODO: find a general solution such that this can be done batched
         def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
             A3 = math.block(
                 [
@@ -687,7 +705,7 @@ class PolyExpAnsatz(Ansatz):
             return b3
 
         def andc(c1, c2):
-            c3 = math.outer(c1, c2)
+            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
             return c3
 
         dim_beta1, _ = self.polynomial_shape
@@ -705,19 +723,11 @@ class PolyExpAnsatz(Ansatz):
                 dim_beta1,
                 dim_beta2,
             )
-            for A1, A2 in itertools.product(self.A._items, other.A._items)
+            for A1, A2 in itertools.product(self.A, other.A)
         ]
-        bs = [
-            andb(b1, b2, dim_alpha1, dim_alpha2)
-            for b1, b2 in itertools.product(self.b._items, other.b._items)
-        ]
-        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c._items, other.c._items)]
-
-        A_batch = Batch(As, *self.A._new_batch(other.A, "prod"))
-        b_batch = Batch(bs, *self.b._new_batch(other.b, "prod"))
-        c_batch = Batch(cs, *self.c._new_batch(other.c, "prod"))
-
-        return PolyExpAnsatz(A_batch, b_batch, c_batch)
+        bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
+        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
+        return PolyExpAnsatz(As, bs, cs)
 
     def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
         r"""
@@ -738,11 +748,7 @@ class PolyExpAnsatz(Ansatz):
             return self._call_all(z)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
-        if not isinstance(other, PolyExpAnsatz):
-            return False
-        self.simplify()
-        other.simplify()
-        return self.A == other.A and self.b == other.b and self.c == other.c
+        return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx

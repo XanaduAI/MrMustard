@@ -52,6 +52,7 @@ from mrmustard.utils.typing import (
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoPS
 
+
 __all__ = ["State"]
 
 # ~~~~~~~
@@ -333,6 +334,7 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
+
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
