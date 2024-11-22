@@ -111,6 +111,6 @@ class Gdm(DM):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gdm_state_Abc, betas=self.betas, symplectic=self.symplectic
+                fn=triples.gdm_state_Abc, betas=self.betas, symplectic=symplectic
             ),
         ).representation
