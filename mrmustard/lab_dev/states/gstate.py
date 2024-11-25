@@ -67,6 +67,7 @@ class Gket(Ket):
             ),
         ).representation
 
+
 # pylint: disable=too-many-positional-arguments
 class Gdm(DM):
     r"""
