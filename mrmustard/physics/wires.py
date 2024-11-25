@@ -1,10 +1,12 @@
+"""Module containing wire classes for quantum and classical channels."""
+
 from __future__ import annotations
+from functools import cached_property
+from enum import Enum
+from IPython.display import display
 from dataclasses import dataclass, field, replace
 from typing import Any, Iterable, Iterator
 from random import randint
-from enum import Enum, auto
-from IPython.display import display
-from functools import cached_property
 from mrmustard import widgets
 
 __all__ = ["Wires"]
@@ -17,6 +19,8 @@ relationships in quantum optical circuits.
 
 
 class LegibleEnum(Enum):
+    """Enum class that provides a more legible string representation."""
+
     def __str__(self) -> str:
         return self.name
 
@@ -89,6 +93,14 @@ class QuantumWire:
         )
 
     def copy(self, new_id: bool = False) -> QuantumWire:
+        """Create a copy of the quantum wire.
+
+        Args:
+            new_id (bool): If True, generates a new ID for the copy. Defaults to False.
+
+        Returns:
+            QuantumWire: A copy of the quantum wire
+        """
         return QuantumWire(
             mode=self.mode,
             is_out=self.is_out,
@@ -142,6 +154,7 @@ class ClassicalWire:
         return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
 
     def copy(self, new_id: bool = False) -> ClassicalWire:
+        """Returns a copy of the classical wire."""
         return ClassicalWire(
             mode=self.mode,
             is_out=self.is_out,
@@ -154,7 +167,7 @@ class ClassicalWire:
     def _order(self) -> int:
         """
         Artificial ordering for sorting classical wires.
-        Order achieved is by out/in, then mode and they always come after quantum wires.
+        Order is by out/in, then mode and classical wires always come after quantum wires.
         """
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
 

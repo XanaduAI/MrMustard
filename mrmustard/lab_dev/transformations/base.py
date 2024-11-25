@@ -27,7 +27,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 
-import numpy as np
 from typing import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz

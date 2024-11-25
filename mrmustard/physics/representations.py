@@ -18,7 +18,6 @@ This module contains the class for representations.
 
 from __future__ import annotations
 from typing import Sequence
-from dataclasses import replace
 from mrmustard import math
 from mrmustard.utils.typing import (
     ComplexTensor,
