@@ -9,6 +9,8 @@ from random import randint
 from IPython.display import display
 from mrmustard import widgets
 
+# pylint: disable=too-many-positional-arguments
+
 __all__ = ["Wires"]
 
 """
