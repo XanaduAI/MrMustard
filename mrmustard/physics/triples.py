@@ -246,30 +246,10 @@ def gket_state_Abc(symplectic: RealMatrix):
 
     m = symplectic.shape[-1] // 2  # num of modes
 
-    transformation = (
-        1
-        / math.sqrt(complex(2))
-        * math.block(
-            [
-                [
-                    math.eye(m, dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                ],
-                [
-                    -1j * math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
-                ],
-            ]
-        )
-    )
-
-    S = math.conj(math.transpose(transformation)) @ symplectic @ transformation
-    S_1 = S[:m, :m]
-    S_2 = S[:m, m:]
-    A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
+    A = symplectic2Au(symplectic)
     b = math.zeros(m, dtype=A.dtype)
-    c = (math.det(A @ math.conj(A) - math.eye_like(A))) ** 0.25
-    return A, b, c
+    c = ((-1) ** m * math.det(A[m:, m:] @ math.conj(A[m:, m:]) - math.eye_like(A[m:, m:]))) ** 0.25
+    return A[:m, :m], b, c
 
 
 def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
@@ -292,8 +272,12 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
 
     D = math.diag(math.exp(-betas))
     A_fd = math.block([[math.zeros((m, m)), D], [D, math.zeros((m, m))]])
-    t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(1.0))
-    t_u = (math.atleast_3d(A_udagger_u), math.zeros((1, 4 * m)), math.atleast_1d(1.0))
+    c_fd = math.prod((1 - math.exp(-betas)))
+    t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(c_fd))
+    c_u = (
+        (-1) ** m * math.det(Au[m:, m:] @ math.conj(Au[m:, m:]) - math.eye_like(Au[m:, m:]))
+    ) ** (0.5)
+    t_u = (math.atleast_3d(A_udagger_u), math.zeros((1, 4 * m)), math.atleast_1d(c_u))
     return complex_gaussian_integral_2(
         t_fd, t_u, list(range(2 * m)), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
     )

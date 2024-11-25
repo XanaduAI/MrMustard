@@ -27,7 +27,7 @@ from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
 from .ket import Ket
 from .dm import DM
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["Gket", "Gdm"]
 
@@ -88,6 +88,8 @@ class Gdm(DM):
 
         if symplectic is None:
             symplectic = math.random_symplectic(m)
+
+        # symplectics = list(reshape_params(len(modes), symplectic = symplectic))
 
         self._add_parameter(
             make_parameter(
