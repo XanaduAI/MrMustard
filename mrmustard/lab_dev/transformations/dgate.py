@@ -23,9 +23,9 @@ from dataclasses import replace
 
 from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
-from ...physics.wires import Wires
+from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
-from ...physics.representations import Representation, ReprEnum
+from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
