@@ -27,7 +27,7 @@ from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
 from .ket import Ket
 from .dm import DM
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Gket", "Gdm"]
 
