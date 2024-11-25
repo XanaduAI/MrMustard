@@ -544,34 +544,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         """
         return tuple(w.index for w in self.wires)
 
-    # @property
-    # def DV_indices(self) -> tuple[int, ...]:
-    #     r"""
-    #     The indices of the DV wires (both quantum and classical) in standard order.
-    #     """
-    #     return tuple(q.index for q in self.DV_wires)
-
-    # @property
-    # def CV_indices(self) -> tuple[int, ...]:
-    #     r"""
-    #     The indices of the CV wires (both quantum and classical) in standard order.
-    #     """
-    #     return tuple(q.index for q in self.CV_wires)
-
-    # @cached_property
-    # def DV_wires(self) -> tuple[QuantumWire | ClassicalWire, ...]:
-    #     r"""
-    #     The DV wires in standard order.
-    #     """
-    #     return tuple(w for w in self.wires if w.is_dv)
-
-    # @cached_property
-    # def CV_wires(self) -> tuple[QuantumWire | ClassicalWire, ...]:
-    #     r"""
-    #     The CV wires in standard order.
-    #     """
-    #     return tuple(w for w in self.wires if not w.is_dv)
-
     @property
     def args(self) -> tuple[tuple[int, ...], ...]:
         r"""
