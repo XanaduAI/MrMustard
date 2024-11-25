@@ -267,7 +267,10 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     m = len(betas)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
-        [[math.conj(Au), math.zeros((2 * m, 2 * m))], [math.zeros((2 * m, 2 * m)), Au]]
+        [
+            [math.conj(Au), math.zeros((2 * m, 2 * m), dtype="complex128")],
+            [math.zeros((2 * m, 2 * m), dtype="complex128"), Au],
+        ]
     )
 
     D = math.diag(math.exp(-betas))
