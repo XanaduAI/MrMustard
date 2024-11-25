@@ -14,7 +14,7 @@
 
 """Tests for the DisplacedSqueezed class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
+# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement, too-many-positional-arguments
 
 import pytest
 
