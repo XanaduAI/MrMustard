@@ -144,7 +144,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         padding: str = "VALID",
         data_format: str | None = None,  # pylint: disable=unused-argument
     ) -> np.ndarray:  # returns: [width, out_channels]
-        """Performs 2D convolution operation similar to tf.nn.convolution using numpy.
+        """Performs a 2D convolution operation similar to tf.nn.convolution.
 
         Args:
             array: Input array of shape (batch, height, width, channels)
