@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from functools import cached_property
-from enum import Enum
+from enum import Enum, auto
 from typing import Any, Iterable, Iterator
 from dataclasses import dataclass, field, replace
 from random import randint
