@@ -67,7 +67,7 @@ class Gket(Ket):
             ),
         ).representation
 
-
+# pylint: disable=too-many-positional-arguments
 class Gdm(DM):
     r"""
     The `N`-mode mixed state described by a Gaussian gate that acts on a given thermal state.
