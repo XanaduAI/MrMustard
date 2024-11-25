@@ -75,11 +75,6 @@ class QuantumWire:
     repr_params: Any = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
 
-    @property
-    def is_dv(self) -> bool:
-        """Returns True if this wire uses discrete-variable representation."""
-        return self.repr == ReprEnum.FOCK
-
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.is_ket, self.repr))
 
@@ -140,11 +135,6 @@ class ClassicalWire:
     repr: ReprEnum = ReprEnum.UNSPECIFIED
     repr_params: Any = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
-
-    @property
-    def is_dv(self) -> bool:
-        """Returns True if this wire uses discrete-variable representation."""
-        return self.repr == ReprEnum.FOCK
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.repr))
