@@ -32,7 +32,7 @@ class TestGket:
         gket = Gket([0, 1])
 
         assert gket.modes == [0, 1]
-        assert gket.symplectic.shape == (4, 4)
+        assert gket.symplectic.value.shape == (4, 4)
         assert gket.name == "Gket"
         assert math.allclose(gket.probability, 1.0)
 
@@ -53,9 +53,10 @@ class TestGdm:
     def test_init(self):
         "Tests the initialization"
 
-        rho = Gdm([0, 1], 0.2)
+        rho = Gdm([0, 1], [0.2, 0.3])
 
         assert rho.modes == [0, 1]
         assert rho.name == "Gdm"
-        assert rho.symplectic.shape == (4, 4)
+        assert math.allclose(rho.betas.value, math.astensor([0.2, 0.3]))
+        assert rho.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)

@@ -89,8 +89,6 @@ class Gdm(DM):
         if symplectic is None:
             symplectic = math.random_symplectic(m)
 
-        # symplectics = list(reshape_params(len(modes), symplectic = symplectic))
-
         self._add_parameter(
             make_parameter(
                 symplectic_trainable,
