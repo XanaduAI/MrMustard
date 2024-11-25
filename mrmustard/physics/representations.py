@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .wires import Wires, ReprEnum
+from .wires import Wires
 
 __all__ = ["Representation"]
 
