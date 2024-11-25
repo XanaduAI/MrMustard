@@ -3,10 +3,10 @@
 from __future__ import annotations
 from functools import cached_property
 from enum import Enum
-from IPython.display import display
-from dataclasses import dataclass, field, replace
 from typing import Any, Iterable, Iterator
+from dataclasses import dataclass, field, replace
 from random import randint
+from IPython.display import display
 from mrmustard import widgets
 
 __all__ = ["Wires"]
