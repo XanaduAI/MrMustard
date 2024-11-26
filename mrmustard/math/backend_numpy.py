@@ -143,7 +143,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         filters: np.ndarray,  
         padding: str = "VALID",
         data_format: str | None = None,  # pylint: disable=unused-argument
-    ) -> np.ndarray:  # returns: [width, out_channels]
+    ) -> np.ndarray:  
         """Performs a 2D convolution operation similar to tf.nn.convolution.
 
         Args:
