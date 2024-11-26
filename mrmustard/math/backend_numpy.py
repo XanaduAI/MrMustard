@@ -140,7 +140,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def convolution(
         self,
         array: np.ndarray,
-        filters: np.ndarray,  # shape: [kernel_width, in_channels, out_channels]
+        filters: np.ndarray,  
         padding: str = "VALID",
         data_format: str | None = None,  # pylint: disable=unused-argument
     ) -> np.ndarray:  # returns: [width, out_channels]
