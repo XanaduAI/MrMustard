@@ -17,7 +17,7 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Iterable
+from typing import Sequence
 
 from itertools import product
 import warnings
@@ -111,7 +111,7 @@ class DM(State):
     @classmethod
     def from_bargmann(
         cls,
-        modes: Iterable[int],
+        modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
     ) -> State:
@@ -120,7 +120,7 @@ class DM(State):
     @classmethod
     def from_fock(
         cls,
-        modes: Iterable[int],
+        modes: Sequence[int],
         array: ComplexTensor,
         name: str | None = None,
         batched: bool = False,
@@ -130,7 +130,7 @@ class DM(State):
     @classmethod
     def from_ansatz(
         cls,
-        modes: Iterable[int],
+        modes: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
@@ -149,7 +149,7 @@ class DM(State):
     @classmethod
     def from_phase_space(
         cls,
-        modes: Iterable[int],
+        modes: Sequence[int],
         triple: tuple,
         name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
@@ -179,7 +179,7 @@ class DM(State):
     @classmethod
     def from_quadrature(
         cls,
-        modes: Iterable[int],
+        modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         phi: float = 0.0,
         name: str | None = None,
@@ -207,7 +207,7 @@ class DM(State):
         return DM.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
-    def random(cls, modes: Iterable[int], m: int | None = None, max_r: float = 1.0) -> DM:
+    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -382,7 +382,7 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Iterable[int]) -> State:
+    def __getitem__(self, modes: int | Sequence[int]) -> State:
         r"""
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
