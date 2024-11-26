@@ -193,13 +193,13 @@ class TestPolyExpAnsatz:
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-10, 10, size=(1, 1))
-        assert np.allclose(ansatz(z), decomp_ansatz(z))
-        assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
+        assert math.allclose(ansatz(z), decomp_ansatz(z))
+        assert math.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
         c2 = np.random.uniform(-10, 10, size=(1, 4))
         ansatz2 = PolyExpAnsatz(A, b, c2)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
-        assert np.allclose(decomp_ansatz2.A, ansatz2.A)
+        assert math.allclose(decomp_ansatz2.A, ansatz2.A)
 
     def test_decompose_ansatz_batch(self):
         """
@@ -240,9 +240,9 @@ class TestPolyExpAnsatz:
         bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_div = bargmann1 / bargmann2
 
-        assert np.allclose(bargmann_div.A, bargmann1.A - bargmann2.A)
-        assert np.allclose(bargmann_div.b, bargmann1.b - bargmann2.b)
-        assert np.allclose(bargmann_div.c, bargmann1.c / bargmann2.c)
+        assert np.allclose(bargmann_div.A, bargmann1.A.data - bargmann2.A.data)
+        assert np.allclose(bargmann_div.b, bargmann1.b.data - bargmann2.b.data)
+        assert np.allclose(bargmann_div.c, bargmann1.c.data / bargmann2.c.data)
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -340,9 +340,9 @@ class TestPolyExpAnsatz:
         bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_mul = bargmann1 * bargmann2
 
-        assert np.allclose(bargmann_mul.A, bargmann1.A + bargmann2.A)
-        assert np.allclose(bargmann_mul.b, bargmann1.b + bargmann2.b)
-        assert np.allclose(bargmann_mul.c, bargmann1.c * bargmann2.c)
+        assert np.allclose(bargmann_mul.A, bargmann1.A.data + bargmann2.A.data)
+        assert np.allclose(bargmann_mul.b, bargmann1.b.data + bargmann2.b.data)
+        assert np.allclose(bargmann_mul.c, bargmann1.c.data * bargmann2.c.data)
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -406,15 +406,15 @@ class TestPolyExpAnsatz:
 
         ansatz = ansatz + ansatz
 
-        assert np.allclose(ansatz.A[0], ansatz.A[1])
-        assert np.allclose(ansatz.A[0], A)
-        assert np.allclose(ansatz.b[0], ansatz.b[1])
-        assert np.allclose(ansatz.b[0], b)
+        assert math.allclose(ansatz.A[0], ansatz.A[1])
+        assert math.allclose(ansatz.A[0], A)
+        assert math.allclose(ansatz.b[0], ansatz.b[1])
+        assert math.allclose(ansatz.b[0], b)
 
         ansatz.simplify()
         assert len(ansatz.A) == 1
         assert len(ansatz.b) == 1
-        assert ansatz.c == 2 * c
+        assert math.allclose(ansatz.c, 2 * c)
 
     def test_simplify_v2(self):
         A, b, c = Abc_triple(5)

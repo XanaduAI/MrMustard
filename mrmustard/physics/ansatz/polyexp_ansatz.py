@@ -233,7 +233,7 @@ class PolyExpAnsatz(Ansatz):
 
             return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
         else:
-            return PolyExpAnsatz(self.A, self.b, self.c)
+            return self
 
     def plot(
         self,
@@ -310,17 +310,20 @@ class PolyExpAnsatz(Ansatz):
             return
         indices_to_check = set(range(self.batch_size))
         removed = []
+        temp_c = self.c.data
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
                 if np.allclose(self.A[i], self.A[j]) and np.allclose(self.b[i], self.b[j]):
-                    self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
+                    temp_c = math.update_add_tensor(temp_c, [[i]], [temp_c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
         to_keep = [i for i in range(self.batch_size) if i not in removed]
+
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
-        self.c = math.gather(self.c, to_keep, axis=0)
+        self.c = math.gather(temp_c, to_keep, axis=0)
+
         self._simplified = True
 
     def simplify_v2(self) -> None:
@@ -332,16 +335,17 @@ class PolyExpAnsatz(Ansatz):
         self._order_batch()
         to_keep = [d0 := 0]
         mat, vec = self.A[d0], self.b[d0]
+        temp_c = self.c.data
         for d in range(1, self.batch_size):
             if np.allclose(mat, self.A[d]) and np.allclose(vec, self.b[d]):
-                self.c = math.update_add_tensor(self.c, [[d0]], [self.c[d]])
+                temp_c = math.update_add_tensor(temp_c, [[d0]], [temp_c[d]])
             else:
                 to_keep.append(d)
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
-        self.c = math.gather(self.c, to_keep, axis=0)
+        self.c = math.gather(temp_c, to_keep, axis=0)
         self._simplified = True
 
     def to_dict(self) -> dict[str, ArrayLike]:

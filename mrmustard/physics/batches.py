@@ -52,14 +52,13 @@ class Batch:
         batch_labels: list[str] | None = None,
     ):
         self._data = data
-
+        self.dtype = self._data.dtype
         self._batch_shape = batch_shape or (data.shape[0],)
         self._batch_labels = (
             batch_labels
             if batch_labels
             else [random.choice(string.ascii_letters) for _ in self._batch_shape]
         )
-
         self._core_shape = data.shape[len(self._batch_shape) :]
 
     @property
@@ -102,6 +101,16 @@ class Batch:
     def __array__(self):
         return self.data
 
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        r"""
+        Implement the NumPy ufunc interface.
+        """
+        if method == "__call__":
+            inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
+            return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
+        else:
+            raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
+
     def __eq__(self, other):
         if not isinstance(other, Batch):
             return False
@@ -127,8 +136,17 @@ class Batch:
     def __iter__(self):
         return iter(self.data)
 
+    def __len__(self):
+        return len(self.data)
+
     def __mul__(self, other: Scalar):
         return Batch(self.data * other, self.batch_shape, self.batch_labels)
+
+    def __neg__(self):
+        return -1 * self
+
+    def __rmul__(self, other: Scalar):
+        return self * other
 
     def __truediv__(self, other: Scalar):
         return Batch(self.data / other, self.batch_shape, self.batch_labels)
