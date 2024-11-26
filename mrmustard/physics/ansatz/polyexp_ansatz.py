@@ -225,7 +225,7 @@ class PolyExpAnsatz(Ansatz):
             c_decomp = []
             for i in range(batch_size):
                 A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
-                    self.A[i], self.b[i], self.c[i]
+                    self.A.data[i], self.b.data[i], self.c.data[i]
                 )
                 A_decomp.append(A_decomp_i)
                 b_decomp.append(b_decomp_i)
@@ -383,26 +383,26 @@ class PolyExpAnsatz(Ansatz):
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
         A_part = math.sum(
-            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
+            self.A.data[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
         )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
         b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
+            self.b.data[..., :dim_alpha] * z[..., None, :], axes=[-1]
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
+            val = math.sum(exp_sum * self.c.data, axes=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
                 math.einsum(
                     "ijk,hk",
-                    math.cast(self.A[..., dim_alpha:, :dim_alpha], "complex128"),
+                    math.cast(self.A.data[..., dim_alpha:, :dim_alpha], "complex128"),
                     math.cast(z, "complex128"),
                 )
-                + self.b[..., dim_alpha:]
+                + self.b.data[..., dim_alpha:]
             )  # (b_arg, b_abc, m)
             b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
-            A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
+            A_poly = self.A.data[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
             poly = math.astensor(
                 [
                     math.hermite_renormalized_batch(A_poly[i], b_poly[i], complex(1), shape_beta)
@@ -413,7 +413,7 @@ class PolyExpAnsatz(Ansatz):
             val = math.sum(
                 exp_sum
                 * math.sum(
-                    poly * self.c,
+                    poly * self.c.data,
                     axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
                 axes=[-1],
@@ -446,7 +446,10 @@ class PolyExpAnsatz(Ansatz):
             arg_index = 0 if batch_arg == 1 else i
             Abc.append(
                 self._call_none_single(
-                    self.A[abc_index], self.b[abc_index], self.c[abc_index], z[arg_index]
+                    self.A.data[abc_index],
+                    self.b.data[abc_index],
+                    self.c.data[abc_index],
+                    z[arg_index],
                 )
             )
         A, b, c = zip(*Abc)
@@ -546,7 +549,9 @@ class PolyExpAnsatz(Ansatz):
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
         other.simplify()
-        return np.allclose(self.b, other.b, atol=1e-10) and np.allclose(self.A, other.A, atol=1e-10)
+        return math.allclose(self.b, other.b, atol=1e-10) and math.allclose(
+            self.A, other.A, atol=1e-10
+        )
 
     def _generate_ansatz(self):
         r"""
