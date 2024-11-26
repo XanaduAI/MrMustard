@@ -21,6 +21,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab_dev.states import Coherent, Number
 from mrmustard.physics.fock_utils import fock_state
+from mrmustard.physics.wires import ReprEnum
 
 
 class TestNumber:
@@ -60,3 +61,9 @@ class TestNumber:
     def test_representation_error(self):
         with pytest.raises(ValueError):
             Coherent(modes=[0], x=[0.1, 0.2]).ansatz
+
+    def test_wires(self):
+        """Test that the wires are correct."""
+        state = Number([0], n=1)
+        for w in state.representation.wires:
+            assert w.representation == ReprEnum.FOCK
