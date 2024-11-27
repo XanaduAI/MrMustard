@@ -19,7 +19,7 @@ This module contains the Batch class.
 # pylint: disable=too-many-instance-attributes
 
 from __future__ import annotations
-from typing import Iterable
+from typing import Iterable, Collection
 
 import string
 import random
@@ -108,6 +108,14 @@ class Batch:
         if method == "__call__":
             inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
             return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
+        elif method == "reduce":
+            axis = kwargs.pop("axis") or 0
+            inputs = [ufunc.identity] + [i.data if isinstance(i, Batch) else i for i in inputs]
+            batch_shape = list(self.batch_shape)
+            batch_shape.pop(axis)
+            batch_labels = self.batch_labels
+            batch_labels.pop(axis)
+            return Batch(ufunc(*inputs, **kwargs), batch_shape, batch_labels)
         else:
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
 
@@ -121,7 +129,7 @@ class Batch:
         )
 
     def __getitem__(self, idxs):
-        idxs = (idxs,) if isinstance(idxs, (int, slice)) else idxs
+        idxs = (idxs,) if not isinstance(idxs, Collection) else idxs
         if len(idxs) > len(self.batch_shape):
             raise IndentationError("")
         new_data = self.data[idxs]
@@ -147,6 +155,9 @@ class Batch:
 
     def __rmul__(self, other: Scalar):
         return self * other
+
+    def __rtruediv__(self, other: Scalar):
+        return Batch(other / self.data, self.batch_shape, self.batch_labels)
 
     def __truediv__(self, other: Scalar):
         return Batch(self.data / other, self.batch_shape, self.batch_labels)

@@ -244,7 +244,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_expectation_bargmann(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
 
-        assert math.allclose(ket.expectation(ket), 1.0)
+        assert math.allclose(ket.expectation(ket), (1.0,))
 
         k0 = Coherent([0], x=1, y=2)
         k1 = Coherent([1], x=1, y=3)

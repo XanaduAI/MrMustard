@@ -45,8 +45,8 @@ class TestOperation:
         b = np.array([0, 1, 5])
         c = 1
         operator = Operation.from_bargmann([0], [1, 2], (A, b, c), "my_operator")
-        assert np.allclose(operator.ansatz.A[None, ...], A)
-        assert np.allclose(operator.ansatz.b[None, ...], b)
+        assert np.allclose(operator.ansatz.A[None], A)
+        assert np.allclose(operator.ansatz.b[None], b)
 
 
 class TestUnitary:
@@ -91,8 +91,8 @@ class TestUnitary:
         b = np.array([0, 0])
         c = 1
         gate = Unitary.from_bargmann([2], [2], (A, b, c), "my_unitary")
-        assert np.allclose(gate.ansatz.A[None, ...], A)
-        assert np.allclose(gate.ansatz.b[None, ...], b)
+        assert np.allclose(gate.ansatz.A[None], A)
+        assert np.allclose(gate.ansatz.b[None], b)
 
     def test_init_from_symplectic(self):
         S = math.random_symplectic(2)
@@ -124,8 +124,8 @@ class TestMap:
         b = np.array([0, 1, 2, 3])
         c = 1
         map = Map.from_bargmann([0], [0], (A, b, c), "my_map")
-        assert np.allclose(map.ansatz.A[None, ...], A)
-        assert np.allclose(map.ansatz.b[None, ...], b)
+        assert np.allclose(map.ansatz.A[None], A)
+        assert np.allclose(map.ansatz.b[None], b)
 
 
 class TestChannel:
@@ -152,8 +152,8 @@ class TestChannel:
         b = np.array([0, 1, 2, 3])
         c = 1
         channel = Channel.from_bargmann([0], [0], (A, b, c), "my_channel")
-        assert np.allclose(channel.ansatz.A[None, ...], A)
-        assert np.allclose(channel.ansatz.b[None, ...], b)
+        assert np.allclose(channel.ansatz.A[None], A)
+        assert np.allclose(channel.ansatz.b[None], b)
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)

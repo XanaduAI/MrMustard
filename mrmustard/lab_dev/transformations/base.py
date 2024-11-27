@@ -201,7 +201,7 @@ class Unitary(Operation):
         Returns the symplectic matrix that corresponds to this unitary
         """
         batch_size = self.ansatz.batch_size
-        return [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
+        return [au2Symplectic(self.ansatz.A[batch]) for batch in range(batch_size)]
 
     @classmethod
     def from_bargmann(
@@ -366,7 +366,7 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A
+        A = self.ansatz.A.data
         m = A.shape[-1] // 2
         gamma_A = A[0, :m, m:]
 
@@ -382,7 +382,7 @@ class Channel(Map):
         r"""
         Whether this channel is trace preserving (TP).
         """
-        A = self.ansatz.A
+        A = self.ansatz.A.data
         m = A.shape[-1] // 2
         gamma_A = A[0, :m, m:]
         lambda_A = A[0, m:, m:]
