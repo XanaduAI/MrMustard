@@ -155,3 +155,18 @@ class TestWires:
         wires._ipython_display_()
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
+
+    def test_eq(self):
+        w1 = Wires({0}, {1})
+        w2 = Wires({0}, {1})
+        assert w1 == w2
+
+    def test_hash(self):
+        w1 = Wires({0}, {1})
+        w2 = Wires({0}, {1})
+        assert hash(w1) == hash(w2)
+
+    def test_ids(self):
+        wires = Wires({0}, {1})
+        for w in wires:
+            assert isinstance(w.id, int)
