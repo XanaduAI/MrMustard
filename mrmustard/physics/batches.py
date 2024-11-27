@@ -19,7 +19,7 @@ This module contains the Batch class.
 # pylint: disable=too-many-instance-attributes
 
 from __future__ import annotations
-from typing import Iterable, Collection
+from typing import Collection
 
 import string
 import random
@@ -49,7 +49,7 @@ class Batch:
         self,
         data: ComplexMatrix | ComplexVector | ComplexTensor,
         batch_shape: tuple[int, ...] | None = None,
-        batch_labels: list[str] | None = None,
+        batch_labels: tuple[str, ...] | None = None,
     ):
         self._data = data
         self.dtype = self._data.dtype
@@ -57,12 +57,12 @@ class Batch:
         self._batch_labels = (
             batch_labels
             if batch_labels
-            else [random.choice(string.ascii_letters) for _ in self._batch_shape]
+            else tuple((random.choice(string.ascii_letters) for _ in self._batch_shape))
         )
         self._core_shape = data.shape[len(self._batch_shape) :]
 
     @property
-    def batch_labels(self) -> list[str]:
+    def batch_labels(self) -> tuple[str, ...]:
         r"""
         The batch labels.
         """
@@ -108,14 +108,26 @@ class Batch:
         if method == "__call__":
             inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
             return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
+
         elif method == "reduce":
             axis = kwargs.pop("axis") or 0
-            inputs = [ufunc.identity] + [i.data if isinstance(i, Batch) else i for i in inputs]
-            batch_shape = list(self.batch_shape)
-            batch_shape.pop(axis)
-            batch_labels = self.batch_labels
-            batch_labels.pop(axis)
-            return Batch(ufunc(*inputs, **kwargs), batch_shape, batch_labels)
+            input = (
+                inputs[0].data if isinstance(inputs[0], Batch) else inputs[0]
+            )  # assume single input. Not sure if thats always true
+            slices = (slice(None),) * axis
+            inputs = [input[slices + (i,)] for i in range(input.shape[axis])]
+            batch_shape = tuple(
+                (shape for idx, shape in enumerate(self.batch_shape) if idx != axis)
+            )
+            batch_labels = tuple(
+                (label for idx, label in enumerate(self.batch_labels) if idx != axis)
+            )
+
+            temp = inputs[0]
+            for ugh in inputs[1:]:
+                temp = ufunc(temp, ugh, **kwargs)
+
+            return Batch(temp, batch_shape, batch_labels) if batch_shape else temp
         else:
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
 

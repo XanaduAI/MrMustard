@@ -260,7 +260,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
+        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
 
     def test_expectation_bargmann_dm(self):
         dm0 = Coherent([0], x=1, y=2).dm()
