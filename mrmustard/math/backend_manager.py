@@ -981,6 +981,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("real", (array,))
 
+    def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
+        """
+        Repeats elements of a tensor along a specified axis.
+
+        Args:
+            array: The input tensor.
+            repeats: The number of repetitions for each element.
+            axis: The axis along which to repeat values. If None, use the flattened input tensor.
+
+        Returns:
+            The tensor with repeated elements.
+        """
+        return self._apply("repeat", (array, repeats, axis))
+
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         r"""The reshaped array.
 
