@@ -78,7 +78,7 @@ class QuadratureEigenstate(Ket):
             ),
         ).representation
 
-        for w in self.representation.wires.input.wires:
+        for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params = [float(self.x.value[w.index]), float(self.phi.value[w.index])]
 
