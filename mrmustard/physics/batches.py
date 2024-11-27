@@ -84,7 +84,9 @@ class Batch:
 
     @property
     def data(self) -> ComplexMatrix | ComplexVector | ComplexTensor:
-        r""" """
+        r"""
+        The underlying batched data.
+        """
         return self._data
 
     @property
@@ -95,11 +97,13 @@ class Batch:
         return self.data.shape
 
     def conjugate(self) -> Batch:
-        r""" """
+        r"""
+        The complex conjugate.
+        """
         return Batch(math.conj(self.data), self.batch_shape, self.batch_labels)
 
     def __array__(self):
-        return self.data
+        return math.asnumpy(self.data)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         r"""
@@ -111,23 +115,22 @@ class Batch:
 
         elif method == "reduce":
             axis = kwargs.pop("axis") or 0
+            if axis > len(self.batch_shape) - 1:
+                raise ValueError("Axis out of bounds.")
             input = (
                 inputs[0].data if isinstance(inputs[0], Batch) else inputs[0]
-            )  # assume single input. Not sure if thats always true
-            slices = (slice(None),) * axis
-            inputs = [input[slices + (i,)] for i in range(input.shape[axis])]
+            )  # assume single input
+            slices = [input[(slice(None),) * axis + (i,)] for i in range(input.shape[axis])]
             batch_shape = tuple(
                 (shape for idx, shape in enumerate(self.batch_shape) if idx != axis)
             )
             batch_labels = tuple(
                 (label for idx, label in enumerate(self.batch_labels) if idx != axis)
             )
-
-            temp = inputs[0]
-            for ugh in inputs[1:]:
-                temp = ufunc(temp, ugh, **kwargs)
-
-            return Batch(temp, batch_shape, batch_labels) if batch_shape else temp
+            data = slices[0]
+            for item in slices[1:]:
+                data = ufunc(data, item, **kwargs)
+            return Batch(data, batch_shape, batch_labels) if batch_shape else data
         else:
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
 

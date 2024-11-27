@@ -314,7 +314,7 @@ class PolyExpAnsatz(Ansatz):
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if np.allclose(self.A[i], self.A[j]) and np.allclose(self.b[i], self.b[j]):
+                if math.allclose(self.A[i], self.A[j]) and math.allclose(self.b[i], self.b[j]):
                     temp_c = math.update_add_tensor(temp_c, [[i]], [temp_c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)

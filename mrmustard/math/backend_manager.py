@@ -253,7 +253,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             tensor: The tensor to convert.
 
         Returns:
-            The corresponidng numpy array.
+            The corresponding numpy array.
         """
         return self._apply("asnumpy", (tensor,))
 
