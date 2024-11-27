@@ -110,6 +110,7 @@ class Batch:
         Implement the NumPy ufunc interface.
         """
         if method == "__call__":
+            # TODO: make sure batch shape and labels make sense
             inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
             return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
 
@@ -132,6 +133,7 @@ class Batch:
                 data = ufunc(data, item, **kwargs)
             return Batch(data, batch_shape, batch_labels) if batch_shape else data
         else:
+            # TODO: implement more methods as needed
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
 
     def __eq__(self, other):
@@ -146,7 +148,9 @@ class Batch:
     def __getitem__(self, idxs):
         idxs = (idxs,) if not isinstance(idxs, Collection) else idxs
         if len(idxs) > len(self.batch_shape):
-            raise IndentationError("")
+            raise IndentationError(
+                f"Too many indices for batched array: batch is {len(self.batch_shape)}-dimensional, but {len(idxs)} were indexed."
+            )
         new_data = self.data[idxs]
         new_batch_shape = (
             new_data.shape[: len(self.core_shape) - 1]
