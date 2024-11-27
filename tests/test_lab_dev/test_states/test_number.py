@@ -66,4 +66,4 @@ class TestNumber:
         """Test that the wires are correct."""
         state = Number([0], n=1)
         for w in state.representation.wires:
-            assert w.representation == ReprEnum.FOCK
+            assert w.repr == ReprEnum.FOCK
