@@ -38,13 +38,14 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_tf
 
 
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 40
     S = S2gate(
@@ -82,6 +83,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     which lacks a square root in the right hand side.
     """
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     r = np.arcsinh(1.0)
@@ -117,6 +119,7 @@ def test_hong_ou_mandel_optimizer(i, k):
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     ops = [
@@ -149,6 +152,7 @@ def test_learning_two_mode_squeezing():
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     G = Ggate(num_modes=2, symplectic_trainable=True)
@@ -166,6 +170,7 @@ def test_learning_two_mode_Ggate():
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     ops = [
@@ -193,6 +198,7 @@ def test_learning_two_mode_Interferometer():
 def test_learning_two_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 2
     ops = [
@@ -220,6 +226,7 @@ def test_learning_two_mode_RealInterferometer():
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 4
     solution_U = np.array(
@@ -281,6 +288,7 @@ def test_learning_four_mode_Interferometer():
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 6
     solution_O = np.array(
@@ -327,6 +335,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     r = np.arcsinh(1.0)
@@ -348,6 +357,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
 def test_parameter_passthrough():
     """Same as the test above, but with param passthrough"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     r = np.arcsinh(1.0)
@@ -373,6 +383,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
     and mean photon number as a thermal state"""
     skip_np()
+    skip_tf()
 
     settings.SEED = 42
     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
@@ -403,6 +414,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 def test_opt_backend_param():
     """Test the optimization of a backend parameter defined outside a gate."""
     skip_np()
+    skip_tf()
 
     # rotated displaced squeezed state
     settings.SEED = 42
@@ -427,6 +439,7 @@ def test_opt_backend_param():
 def test_dgate_optimization():
     """Test that Dgate is optimized correctly."""
     skip_np()
+    skip_tf()
 
     settings.SEED = 24
 
@@ -447,6 +460,7 @@ def test_dgate_optimization():
 def test_sgate_optimization():
     """Test that Sgate is optimized correctly."""
     skip_np()
+    skip_tf()
 
     settings.SEED = 25
 
@@ -468,6 +482,7 @@ def test_sgate_optimization():
 def test_bsgate_optimization():
     """Test that Sgate is optimized correctly."""
     skip_np()
+    skip_tf()
 
     settings.SEED = 25
 
@@ -491,6 +506,7 @@ def test_bsgate_optimization():
 def test_squeezing_grad_from_fock():
     """Test that the gradient of a squeezing gate is computed from the fock representation."""
     skip_np()
+    skip_tf()
 
     squeezing = Sgate(r=1, r_trainable=True)
 
@@ -504,6 +520,7 @@ def test_squeezing_grad_from_fock():
 def test_displacement_grad_from_fock():
     """Test that the gradient of a displacement gate is computed from the fock representation."""
     skip_np()
+    skip_tf()
 
     disp = Dgate(x=1.0, y=1.0, x_trainable=True, y_trainable=True)
 
@@ -517,6 +534,7 @@ def test_displacement_grad_from_fock():
 def test_bsgate_grad_from_fock():
     """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
     skip_np()
+    skip_tf()
 
     sq = SqueezedVacuum(r=1.0, r_trainable=True)
 

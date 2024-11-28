@@ -18,6 +18,8 @@ from pathlib import Path
 import pytest
 from hypothesis import Verbosity
 from hypothesis import settings as hyp_settings
+from importlib import metadata
+from semantic_version import Version
 
 from mrmustard import math
 
@@ -73,6 +75,12 @@ def set_backend(backend):
 def skip_np():
     if math.backend_name == "numpy":
         pytest.skip("numpy")
+
+
+def skip_tf():
+    if math.backend_name == "tensorflow":
+        if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
+            pytest.skip("tensorflow")
 
 
 def pytest_configure(config):
