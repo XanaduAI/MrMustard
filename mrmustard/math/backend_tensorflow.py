@@ -19,13 +19,9 @@
 from __future__ import annotations
 from typing import Callable, Sequence
 
-from importlib import metadata
 import os
-import platform
-from warnings import warn
 
 import numpy as np
-from semantic_version import Version
 import tensorflow_probability as tfp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
