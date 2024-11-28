@@ -20,14 +20,11 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Self
 import itertools
 
 import numpy as np
 from numpy.typing import ArrayLike
-
-from matplotlib import colors
-import matplotlib.pyplot as plt
 
 from IPython.display import display
 
@@ -44,7 +41,6 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
     join_Abc,
-    reorder_Abc,
 )
 
 from mrmustard import math, settings, widgets
@@ -54,34 +50,42 @@ from mrmustard.utils.argsort import argsort_gen
 
 from .base import Ansatz
 
-__all__ = ["PolyExpAnsatz"]
+__all__ = ["PolyExpAnsatzBase"]
 
 
-class PolyExpAnsatz(Ansatz):
+class PolyExpAnsatzBase(Ansatz):
     r"""
-    The ansatz of the Fock-Bargmann representation.
+    The base class for the PolyExp ansatz.
 
     Represents the ansatz function:
 
-        :math:`F_j(z) = \sum_i [\sum_k c^{(i)}_{jk} \partial_y^k \textrm{exp}((z,y)^T A^{(i)} (z,y) / 2 + (z,y)^T b^{(i)})|_{y=0}]`
+        :math:`F_j^{(i)}(z) = \sum_k c^{(i)}_{jk} \partial_y^k \textrm{exp}((z,y)^T A^{(i)} (z,y) / 2 + (z,y)^T b^{(i)})|_{y=0}`
 
-    with ``j`` and ``k`` are multi-indices. The ``j`` index represents the output shape of the array of polynomials of derivatives,
-    while the ``k`` index is contracted with the vectors of derivatives to form the polynomial of derivatives.
-    The matrices :math:`A_i` and vectors :math:`b_i` are the parameters of the exponential terms in the ansatz,
-    with :math:`z` and :math:`y` vectors of continuous complex variables.
-    :math:`c^{(i)}_{jk}` are the coefficients of the polynomial of derivatives and :math:`y` is the vector of continuous
-    complex variables that are derived by the polynomial of derivatives.
+    with ``i``, ``j`` and ``k`` multi-indices. The ``i`` indices represent a batch dimension that can be used for whatever desired purpose.
+    In this base class the batch dimension is single-dimensional, but subclasses may have a multi-dimensional batch dimension.
+    The ``j`` index represents the output shape of the array of polynomials of derivatives,
+    and the ``k`` index is contracted with the vectors of derivatives to form the polynomial of derivatives.
+    The matrices :math:`A^{(i)}` and vectors :math:`b^{(i)}` are the parameters of the exponential terms in the ansatz,
+    with :math:`z` and :math:`y` vectors of continuous complex variables. They have shape ``(batch, n+m, n+m)`` and ``(batch, n+m)``,
+    respectively for ``n`` continuous variables and ``m`` derived variables (i.e. :math:`z\in\mathbb{C}^{n}` and :math:`y\in\mathbb{C}^{m}`).
+    The coefficients :math:`c^{(i)}_{jk}` are for the polynomial of derivatives and have shape ``(batch, *DV, *derived)``,
+    where ``*DV`` is the shape of the discrete variables (indexed by ``j`` in the formula above) and ``*derived`` is the shape of
+    the derived variables (indexed by ``k`` in the formula above).
 
-        .. code-block::
+    One may want to use the batch index `i` to represent a linear superposition of ansatze (e.g. to write a cat state as the sum of
+    two coherent states) or to represent a collection of ansatze for other purposes. This ansatz defers the processing of the batch
+    index to the classes and functions that use it.
 
-        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+    .. code-block::
+
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatzBase
 
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([[1.0, 2.0, 3.0]])
 
-        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        >>> F = PolyExpAnsatzBase(A, b, c, num_derived_vars=1)
         >>> z = np.array([[1.0],[2.0],[3.0]])
 
         >>> # calculate the value of the function at the three different ``z``, since z is batched.
@@ -99,7 +103,7 @@ class PolyExpAnsatz(Ansatz):
         A: Batch[ComplexMatrix] | None,
         b: Batch[ComplexVector] | None,
         c: Batch[ComplexTensor] | None = math.ones([], dtype=math.complex128),
-        num_derived_vars: int = 0,
+        num_derived_vars: int = 0,  # i.e. size of y
         name: str = "",
     ):
         super().__init__()
@@ -144,7 +148,7 @@ class PolyExpAnsatz(Ansatz):
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""
-        The batch of quadratic coefficient :math:`A_i`.
+        The batch of quadratic coefficient :math:`A^{(i)}`.
         """
         self._generate_ansatz()
         return math.atleast_3d(self._A)
@@ -152,7 +156,7 @@ class PolyExpAnsatz(Ansatz):
     @property
     def b(self) -> Batch[ComplexVector]:
         r"""
-        The batch of linear coefficients :math:`b_i`
+        The batch of linear coefficients :math:`b^{(i)}`.
         """
         self._generate_ansatz()
         return math.atleast_2d(self._b)
@@ -160,18 +164,18 @@ class PolyExpAnsatz(Ansatz):
     @property
     def c(self) -> Batch[ComplexTensor]:
         r"""
-        The batch of polynomial coefficients :math:`c_i`.
+        The batch of polynomial coefficients :math:`c^{(i)}_{jk}`.
         """
         self._generate_ansatz()
         return math.atleast_1d(self._c)
 
     @property
     def batch_size(self) -> int:
-        return self.c.shape[0]
+        return self.A.shape[0]
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(
+        ret = PolyExpAnsatzBase(
             math.conj(self.A), math.conj(self.b), math.conj(self.c), self.num_derived_vars
         )
         ret._contract_idxs = self._contract_idxs
@@ -181,14 +185,15 @@ class PolyExpAnsatz(Ansatz):
     def data(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor], int]:
-        """Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
+        r"""Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
         return self.triple, self.num_derived_vars
 
     @property
     def num_CV_vars(self) -> int:
         r"""
         The number of continuous variables that remain after the polynomial of derivatives is applied.
-        This is the number of continuous variables of the Ansatz function itself.
+        This is the number of continuous variables of the Ansatz function itself, i.e. the size of ``z``
+        in :math:`F_j^{(i)}(z)`.
         """
         return self.A.shape[-1] - self.num_derived_vars
 
@@ -210,10 +215,11 @@ class PolyExpAnsatz(Ansatz):
     @property
     def shape_DV_vars(self) -> tuple[int, ...]:
         r"""
-        The shape of the discrete variables. Encoded in ``c`` as the trailing axes after the derived variables.
+        The shape of the discrete variables. Encoded in ``c`` as the axes between the batch size and the derived variables.
         This is the shape of the array of values that we get when we evaluate the ansatz at a point.
+        The shape of ``c`` is ``(*batch, *DV, *derived)``, so the shape of the discrete variables is
         """
-        return self.c.shape[self.num_derived_vars + 1 :]
+        return self.c.shape[len(self.batch_shape) : -self.num_derived_vars]
 
     @property
     def shape_derived_vars(self) -> tuple[int, ...]:
@@ -221,37 +227,37 @@ class PolyExpAnsatz(Ansatz):
         The shape of the derived variables (i.e. the polynomial of derivatives).
         Encoded in ``c`` as the axes between the batch size (first axis) and the discrete variables.
         """
-        return self.c.shape[1 : self.num_derived_vars + 1]
+        return self.c.shape[-self.num_derived_vars :]
 
     @property
     def triple(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        """Returns the triple of parameters of the exponential part of the ansatz."""
+        r"""Returns the triple of parameters of the exponential part of the ansatz."""
         return self.A, self.b, self.c
 
     @classmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatz:
-        """Creates an ansatz from a dictionary. For deserialization purposes."""
+    def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatzBase:
+        r"""Creates an ansatz from a dictionary. For deserialization purposes."""
         return cls(**data)
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
-        """Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatzBase:
+        r"""Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
         the function is not called until the A,b,c attributes are accessed (even internally)."""
         ansatz = cls(None, None, None, None)
         ansatz._fn = fn
         ansatz._fn_kwargs = kwargs
         return ansatz
 
-    def decompose_ansatz(self) -> PolyExpAnsatz:
+    def decompose_ansatz(self) -> Self:
         r"""
         This method decomposes a PolyExp ansatz to make it more efficient to evaluate.
         An ansatz with ``n`` CV variables and ``m`` derived variables has parameters with the following shapes:
         ``A=(batch;n+m,n+m)``, ``b=(batch;n+m)``, ``c = (batch;k_1,k_2,...,k_m;j_1,...,j_d)``, where ``d`` is the number of
         discrete variables, i.e. axes of the array of values that we get when we evaluate the ansatz at a point.
-        This can be rewritten as an ansatz of dimension ``A=(batch;2n,2n)``, ``b=(batch;2n)``,
-        ``c = (batch;l_1,l_2,...,l_n;j_1,...,j_d)``, with ``l_i = sum_j k_j``.
+        This can be rewritten as an ansatz of dimension ``A=(*batch;2n,2n)``, ``b=(*batch;2n)``,
+        ``c = (*batch;l_1,l_2,...,l_n;j_1,...,j_d)``, with ``l_i = sum_j k_j``.
         This means that the number of continuous variables remains ``n``, the number of derived variables decreases from
         ``m`` to ``n``, and the number of discrete variables remains ``d``. The price we pay is that the order of the
         derivatives is larger (the order of each derivative is the sum of all the orders of the initial derivatives).
@@ -268,7 +274,7 @@ class PolyExpAnsatz(Ansatz):
             A_dec.append(A_dec_i)
             b_dec.append(b_dec_i)
             c_dec.append(c_dec_i)
-        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_derived_vars)
+        return self.__class__(A_dec, b_dec, c_dec, self.num_derived_vars)
 
     def _decompose_single(self, Ai, bi, ci):
         r"""
@@ -290,67 +296,7 @@ class PolyExpAnsatz(Ansatz):
         b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
         return A_decomp, b_decomp, c_prime
 
-    def plot(
-        self,
-        just_phase: bool = False,
-        with_measure: bool = False,
-        log_scale: bool = False,
-        xlim=(-2 * np.pi, 2 * np.pi),
-        ylim=(-2 * np.pi, 2 * np.pi),
-    ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
-        r"""
-        Plots the ansatz as a Bargmann function :math:`F(z)` on the complex plane.
-        Phase is represented by color, magnitude by brightness.
-        The function can be multiplied by :math:`exp(-|z|^2)` to represent the Bargmann
-        function times the measure function (for integration).
-
-        Args:
-            just_phase: Whether to plot only the phase of the Bargmann function.
-            with_measure: Whether to plot the bargmann function times the measure function
-                :math:`exp(-|z|^2)`.
-            log_scale: Whether to plot the log of the Bargmann function.
-            xlim: The `x` limits of the plot.
-            ylim: The `y` limits of the plot.
-
-        Returns:
-            The figure and axes of the plot
-        """
-        # eval F(z) on a grid of complex numbers
-        X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
-        Z = (X + 1j * Y).T
-        f_values = self(Z[..., None])
-        if log_scale:
-            f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
-        if with_measure:
-            f_values = f_values * np.exp(-(np.abs(Z) ** 2))
-
-        # Get phase and magnitude of F(z)
-        phases = np.angle(f_values) / (2 * np.pi) % 1
-        magnitudes = np.abs(f_values)
-        magnitudes_scaled = magnitudes / np.max(magnitudes)
-
-        # Convert to RGB
-        hsv_values = np.zeros(f_values.shape + (3,))
-        hsv_values[..., 0] = phases
-        hsv_values[..., 1] = 1
-        hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
-        rgb_values = colors.hsv_to_rgb(hsv_values)
-
-        # Plot the image
-        fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
-        ax.set_xlabel("$Re(z)$")
-        ax.set_ylabel("$Im(z)$")
-
-        name = "F_{" + self.name + "}(z)"
-        name = f"\\arg({name})\\log|{name}|" if log_scale else name
-        title = name + "e^{-|z|^2}" if with_measure else name
-        title = f"\\arg({name})" if just_phase else title
-        ax.set_title(f"${title}$")
-        plt.show(block=False)
-        return fig, ax
-
-    def reorder(self, order_CV: Sequence[int], order_DV: Sequence[int]) -> PolyExpAnsatz:
+    def reorder(self, order_CV: Sequence[int], order_DV: Sequence[int]) -> Self:
         r"""
         Reorders the CV and DV indices of an (A,b,c) triple.
         The length of ``order_CV`` must be the number of CV variables, and the length of ``order_DV`` must be the number of DV variables.
@@ -362,7 +308,7 @@ class PolyExpAnsatz(Ansatz):
         A = math.gather(math.gather(self.A, order_CV, axis=-1), order_CV, axis=-2)
         b = math.gather(self.b, order_CV, axis=-1)
         c = math.transpose(self.c, [d + 1 for d in order_DV])  # +1 because of batch
-        return PolyExpAnsatz(A, b, c, self.num_derived_vars)
+        return self.__class__(A, b, c, self.num_derived_vars)
 
     def simplify(self, sort_batch: bool = True) -> None:
         r"""
@@ -434,9 +380,9 @@ class PolyExpAnsatz(Ansatz):
         """Returns a dictionary representation of the ansatz. For serialization purposes."""
         return {"A": self.A, "b": self.b, "c": self.c, "num_derived_vars": self.num_derived_vars}
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> PolyExpAnsatz:
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Self:
         r"""
-        Computes the trace of the Bargmann function across the specified index pairs.
+        Computes the trace of the ansatz across the specified index pairs.
         The index pairs must belong to the CV variables.
         """
         if len(idx_z) != len(idx_zconj):
@@ -448,9 +394,9 @@ class PolyExpAnsatz(Ansatz):
                 f"All indices must be less than {self.num_CV_vars}. Got {idx_z} and {idx_zconj}."
             )
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
-        return PolyExpAnsatz(A, b, c, self.num_derived_vars)
+        return self.__class__(A, b, c, self.num_derived_vars)
 
-    def _eval_at_point(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
+    def _eval_at_point(self: PolyExpAnsatzBase, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
         Evaluates the ansatz at a batch of points ``z``.
         The batch can have an arbitrary number of dimensions, which are preserved in the output.
@@ -536,7 +482,7 @@ class PolyExpAnsatz(Ansatz):
         for Ai, bi, ci in zip(self.A, self.b, self.c):
             Abc.append(self._partial_eval_single(Ai, bi, ci, z))
         A, b, c = zip(*Abc)
-        return PolyExpAnsatz(
+        return PolyExpAnsatzBase(
             A=math.astensor(A),
             b=math.astensor(b),
             c=math.astensor(c),
@@ -555,8 +501,8 @@ class PolyExpAnsatz(Ansatz):
         Helper function for the _partial_eval method. Returns the new triple.
 
         Args:
-            Ai: The matrix of the Bargmann function
-            bi: The vector of the Bargmann function
+            Ai: The matrix of the ansatz
+            bi: The vector of the ansatz
             ci: The polynomial coefficients
             zi: point in C^r where the function is evaluated
             indices: indices of the variables to be evaluated
@@ -659,7 +605,7 @@ class PolyExpAnsatz(Ansatz):
             combined_vectors = math.concat([self.b, vec2], axis=0)
             combined_arrays = combine_arrays(self.c, array2)
 
-        return PolyExpAnsatz(  # NOTE: output is not simplified
+        return PolyExpAnsatzBase(  # NOTE: output is not simplified
             combined_matrices,
             combined_vectors,
             combined_arrays,
@@ -681,7 +627,7 @@ class PolyExpAnsatz(Ansatz):
             The tensor product of this PolyExpAnsatz and other.
         """
         As, bs, cs = join_Abc(self.triple, other.triple, mode="kron")
-        return PolyExpAnsatz(As, bs, cs)
+        return PolyExpAnsatzBase(As, bs, cs)
 
     def __call__(self, *z: Batch[Vector] | None, mode: str = "zip") -> Scalar | PolyExpAnsatz:
         r"""
@@ -729,7 +675,7 @@ class PolyExpAnsatz(Ansatz):
             raise IndexError(
                 f"Index(es) {[i for i in idx if i >= self.num_vars]} out of bounds for ansatz of dimension {self.num_vars}."
             )
-        ret = PolyExpAnsatz(self.A, self.b, self.c, self.num_CV_vars)
+        ret = PolyExpAnsatzBase(self.A, self.b, self.c, self.num_CV_vars)
         ret._contract_idxs = idx
         return ret
 
@@ -741,8 +687,8 @@ class PolyExpAnsatz(Ansatz):
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
             >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-            >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
-            >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
+            >>> rep1 = PolyExpAnsatzBase(*vacuum_state_Abc(1))
+            >>> rep2 = PolyExpAnsatzBase(*displacement_gate_Abc(1))
             >>> rep3 = rep1[0] @ rep2[1]
             >>> assert np.allclose(rep3.A, [[0,],])
             >>> assert np.allclose(rep3.b, [1,])
@@ -750,8 +696,8 @@ class PolyExpAnsatz(Ansatz):
          Args:
              other: Another PolyExpAnsatz .
 
-         Returns:
-            Bargmann: the resulting PolyExpAnsatz.
+        Returns:
+            The resulting PolyExpAnsatz.
 
         """
         if not isinstance(other, PolyExpAnsatz):
@@ -768,12 +714,12 @@ class PolyExpAnsatz(Ansatz):
             mode="zip" if settings.UNSAFE_ZIP_BATCH else "kron",
         )
 
-        return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
+        return PolyExpAnsatzBase(A, b, c, self.num_derived_vars + other.num_derived_vars)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c * other)
+                return PolyExpAnsatzBase(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -823,14 +769,14 @@ class PolyExpAnsatz(Ansatz):
             (batch_size,) + self.shape_derived_vars + other.shape_derived_vars + self.shape_DV_vars,
         )
 
-        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
+        return PolyExpAnsatzBase(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c, self.num_derived_vars)
+        return PolyExpAnsatzBase(self.A, self.b, -self.c, self.num_derived_vars)
 
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c / other)
+                return PolyExpAnsatzBase(self.A, self.b, self.c / other)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e

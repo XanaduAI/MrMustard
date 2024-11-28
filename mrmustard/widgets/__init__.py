@@ -15,6 +15,8 @@
 """IPython widgets for various objects in MrMustard."""
 
 import numpy as np
+from matplotlib import colors
+import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import plotly.graph_objs as go
 
@@ -274,3 +276,64 @@ def state(obj, is_ket, is_fock):
         [left_widget, right_widget],
         layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),
     )
+
+
+def plot_bargmann(
+    ansatz,
+    just_phase: bool = False,
+    with_measure: bool = False,
+    log_scale: bool = False,
+    xlim=(-2 * np.pi, 2 * np.pi),
+    ylim=(-2 * np.pi, 2 * np.pi),
+) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
+    r"""
+    Plots the ansatz as a Bargmann function :math:`F(z)` on the complex plane.
+    Phase is represented by color, magnitude by brightness.
+    The function can be multiplied by :math:`exp(-|z|^2)` to represent the Bargmann
+    function times the measure function (for integration).
+
+    Args:
+        just_phase: Whether to plot only the phase of the Bargmann function.
+        with_measure: Whether to plot the bargmann function times the measure function
+            :math:`exp(-|z|^2)`.
+        log_scale: Whether to plot the log of the Bargmann function.
+        xlim: The `x` limits of the plot.
+        ylim: The `y` limits of the plot.
+
+    Returns:
+        The figure and axes of the plot
+    """
+    # eval F(z) on a grid of complex numbers
+    X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
+    Z = (X + 1j * Y).T
+    f_values = ansatz(Z[..., None])
+    if log_scale:
+        f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
+    if with_measure:
+        f_values = f_values * np.exp(-(np.abs(Z) ** 2))
+
+    # Get phase and magnitude of F(z)
+    phases = np.angle(f_values) / (2 * np.pi) % 1
+    magnitudes = np.abs(f_values)
+    magnitudes_scaled = magnitudes / np.max(magnitudes)
+
+    # Convert to RGB
+    hsv_values = np.zeros(f_values.shape + (3,))
+    hsv_values[..., 0] = phases
+    hsv_values[..., 1] = 1
+    hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
+    rgb_values = colors.hsv_to_rgb(hsv_values)
+
+    # Plot the image
+    fig, ax = plt.subplots()
+    ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+    ax.set_xlabel("$Re(z)$")
+    ax.set_ylabel("$Im(z)$")
+
+    name = "F_{" + ansatz.name + "}(z)"
+    name = f"\\arg({name})\\log|{name}|" if log_scale else name
+    title = name + "e^{-|z|^2}" if with_measure else name
+    title = f"\\arg({name})" if just_phase else title
+    ax.set_title(f"${title}$")
+    plt.show(block=False)
+    return fig, ax
