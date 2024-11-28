@@ -73,11 +73,17 @@ def set_backend(backend):
 
 
 def skip_np():
+    r"""
+    Skips tests if the backend is numpy.
+    """
     if math.backend_name == "numpy":
         pytest.skip("numpy")
 
 
 def skip_tf():
+    r"""
+    Skips tests if the backend is tensorflow and the version is ``>2.15.0``.
+    """
     if math.backend_name == "tensorflow":
         if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
             pytest.skip("tensorflow")
