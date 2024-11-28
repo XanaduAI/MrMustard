@@ -413,15 +413,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        use_legacy = Version(metadata.distribution("tensorflow").version) < Version("2.16.0")
-        AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
-        if not use_legacy and platform.system() == "Darwin" and platform.processor() == "arm":
-            warn(
-                "Mac ARM processor detected - MrMustard always trains using the latest Keras Adam "
-                "optimizer with TensorFlow 2.16+, but it is known to be slow on Mac+ARM. To use "
-                "the legacy optimizer, please downgrade TensorFlow to 2.15."
-            )
-        return AdamOpt(learning_rate=0.001)
+        return tf.keras.optimizers.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: list[Trainable]
