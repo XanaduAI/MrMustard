@@ -15,10 +15,10 @@
 import os
 from pathlib import Path
 
+from importlib import metadata
 import pytest
 from hypothesis import Verbosity
 from hypothesis import settings as hyp_settings
-from importlib import metadata
 from semantic_version import Version
 
 from mrmustard import math
