@@ -30,7 +30,6 @@ from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
 
-# pylint: disable=too-many-positional-arguments
 
 __all__ = ["Dgate"]
 
