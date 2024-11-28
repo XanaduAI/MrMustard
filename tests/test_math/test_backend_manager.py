@@ -15,15 +15,12 @@
 """
 Unit tests for the :class:`BackendManager`.
 """
-from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
 from mrmustard import math
-
-from ..conftest import skip_np
 
 
 # pylint: disable=too-many-public-methods
