@@ -17,5 +17,5 @@ The classes for Ansatze in circuit components.
 """
 
 from .base import *
-from .polyexp_ansatz import *
+from .polyexp_ansatz_base import *
 from .array_ansatz import *

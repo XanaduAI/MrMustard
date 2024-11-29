@@ -421,7 +421,7 @@ class PolyExpAnsatzBase(Ansatz):
         else:
             poly = self._compute_polynomial_part(z)  # shape (batch_size, k, *derived_shape)
             ret = self._combine_exp_and_poly(exp_sum, poly)
-        return math.reshape(ret, z_batch_shape + self.shape_DV_vars)
+        return math.reshape(ret, (self.batch_size,) + z_batch_shape + self.shape_DV_vars)
 
     def _compute_exp_part(self, z: Batch[Vector]) -> Batch[Scalar]:
         """Computes the exponential part of the ansatz evaluation.
@@ -455,7 +455,7 @@ class PolyExpAnsatzBase(Ansatz):
         d = np.prod(self.shape_derived_vars)
         c = math.reshape(self.c, (self.batch_size, d, np.prod(self.shape_DV_vars)))
         poly = math.reshape(poly, (self.batch_size, -1, d))
-        return math.einsum("ik,idD,ikd->kD", exp_sum, c, poly, optimize=True)
+        return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
 
     def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""

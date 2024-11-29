@@ -25,7 +25,7 @@ from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
-from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
+from mrmustard.physics.ansatz.polyexp_ansatz_base import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
