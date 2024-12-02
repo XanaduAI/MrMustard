@@ -50,10 +50,10 @@ from mrmustard.utils.argsort import argsort_gen
 
 from .base import Ansatz
 
-__all__ = ["PolyExpAnsatzBase"]
+__all__ = ["PolyExpAnsatz"]
 
 
-class PolyExpAnsatzBase(Ansatz):
+class PolyExpAnsatz(Ansatz):
     r"""
     The base class for the PolyExp ansatz.
 
@@ -73,19 +73,18 @@ class PolyExpAnsatzBase(Ansatz):
     the derived variables (indexed by ``k`` in the formula above).
 
     One may want to use the batch index `i` to represent a linear superposition of ansatze (e.g. to write a cat state as the sum of
-    two coherent states) or to represent a collection of ansatze for other purposes. This ansatz defers the processing of the batch
-    index to the classes and functions that use it.
+    two coherent states) or to represent a collection of ansatze for other purposes.
 
     .. code-block::
 
-        >>> from mrmustard.physics.ansatz import PolyExpAnsatzBase
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([[1.0, 2.0, 3.0]])
 
-        >>> F = PolyExpAnsatzBase(A, b, c, num_derived_vars=1)
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
         >>> z = np.array([[1.0],[2.0],[3.0]])
 
         >>> # calculate the value of the function at the three different ``z``, since z is batched.
@@ -175,7 +174,7 @@ class PolyExpAnsatzBase(Ansatz):
 
     @property
     def conj(self):
-        ret = PolyExpAnsatzBase(
+        ret = PolyExpAnsatz(
             math.conj(self.A), math.conj(self.b), math.conj(self.c), self.num_derived_vars
         )
         ret._contract_idxs = self._contract_idxs
@@ -237,12 +236,12 @@ class PolyExpAnsatzBase(Ansatz):
         return self.A, self.b, self.c
 
     @classmethod
-    def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatzBase:
+    def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatz:
         r"""Creates an ansatz from a dictionary. For deserialization purposes."""
         return cls(**data)
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatzBase:
+    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
         r"""Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
         the function is not called until the A,b,c attributes are accessed (even internally)."""
         ansatz = cls(None, None, None, None)
@@ -383,7 +382,7 @@ class PolyExpAnsatzBase(Ansatz):
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Self:
         r"""
         Computes the trace of the ansatz across the specified index pairs.
-        The index pairs must belong to the CV variables.
+        The index pairs must belong to the CV or DV variables.
         """
         if len(idx_z) != len(idx_zconj):
             raise ValueError("idx_z and idx_zconj must have the same length.")
@@ -396,7 +395,7 @@ class PolyExpAnsatzBase(Ansatz):
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return self.__class__(A, b, c, self.num_derived_vars)
 
-    def _eval_at_point(self: PolyExpAnsatzBase, z: Batch[Vector]) -> Batch[ComplexTensor]:
+    def _eval_at_point(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
         Evaluates the ansatz at a batch of points ``z``.
         The batch can have an arbitrary number of dimensions, which are preserved in the output.
@@ -417,7 +416,7 @@ class PolyExpAnsatzBase(Ansatz):
 
         exp_sum = self._compute_exp_part(z)  # shape (batch_size, k)
         if self.num_derived_vars == 0:
-            ret = math.einsum("ik,i...->k...", exp_sum, self.c)
+            ret = math.einsum("ik,i...->ik...", exp_sum, self.c)
         else:
             poly = self._compute_polynomial_part(z)  # shape (batch_size, k, *derived_shape)
             ret = self._combine_exp_and_poly(exp_sum, poly)
@@ -482,7 +481,7 @@ class PolyExpAnsatzBase(Ansatz):
         for Ai, bi, ci in zip(self.A, self.b, self.c):
             Abc.append(self._partial_eval_single(Ai, bi, ci, z))
         A, b, c = zip(*Abc)
-        return PolyExpAnsatzBase(
+        return PolyExpAnsatz(
             A=math.astensor(A),
             b=math.astensor(b),
             c=math.astensor(c),
@@ -605,7 +604,7 @@ class PolyExpAnsatzBase(Ansatz):
             combined_vectors = math.concat([self.b, vec2], axis=0)
             combined_arrays = combine_arrays(self.c, array2)
 
-        return PolyExpAnsatzBase(  # NOTE: output is not simplified
+        return PolyExpAnsatz(  # NOTE: output is not simplified
             combined_matrices,
             combined_vectors,
             combined_arrays,
@@ -627,7 +626,7 @@ class PolyExpAnsatzBase(Ansatz):
             The tensor product of this PolyExpAnsatz and other.
         """
         As, bs, cs = join_Abc(self.triple, other.triple, mode="kron")
-        return PolyExpAnsatzBase(As, bs, cs)
+        return PolyExpAnsatz(As, bs, cs)
 
     def __call__(self, *z: Batch[Vector] | None, mode: str = "zip") -> Scalar | PolyExpAnsatz:
         r"""
@@ -675,7 +674,7 @@ class PolyExpAnsatzBase(Ansatz):
             raise IndexError(
                 f"Index(es) {[i for i in idx if i >= self.num_vars]} out of bounds for ansatz of dimension {self.num_vars}."
             )
-        ret = PolyExpAnsatzBase(self.A, self.b, self.c, self.num_CV_vars)
+        ret = PolyExpAnsatz(self.A, self.b, self.c, self.num_CV_vars)
         ret._contract_idxs = idx
         return ret
 
@@ -687,8 +686,8 @@ class PolyExpAnsatzBase(Ansatz):
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
             >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-            >>> rep1 = PolyExpAnsatzBase(*vacuum_state_Abc(1))
-            >>> rep2 = PolyExpAnsatzBase(*displacement_gate_Abc(1))
+            >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
+            >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
             >>> rep3 = rep1[0] @ rep2[1]
             >>> assert np.allclose(rep3.A, [[0,],])
             >>> assert np.allclose(rep3.b, [1,])
@@ -714,12 +713,12 @@ class PolyExpAnsatzBase(Ansatz):
             mode="zip" if settings.UNSAFE_ZIP_BATCH else "kron",
         )
 
-        return PolyExpAnsatzBase(A, b, c, self.num_derived_vars + other.num_derived_vars)
+        return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatzBase(self.A, self.b, self.c * other)
+                return PolyExpAnsatz(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -769,14 +768,14 @@ class PolyExpAnsatzBase(Ansatz):
             (batch_size,) + self.shape_derived_vars + other.shape_derived_vars + self.shape_DV_vars,
         )
 
-        return PolyExpAnsatzBase(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
+        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatzBase(self.A, self.b, -self.c, self.num_derived_vars)
+        return PolyExpAnsatz(self.A, self.b, -self.c, self.num_derived_vars)
 
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatzBase(self.A, self.b, self.c / other)
+                return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
