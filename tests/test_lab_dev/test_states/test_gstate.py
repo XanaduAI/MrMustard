@@ -18,7 +18,7 @@
 
 
 from mrmustard import math
-from mrmustard.lab_dev.states import Gdm, Gket, Vacuum
+from mrmustard.lab_dev.states import DM, Gdm, Gket, Vacuum
 from mrmustard.lab_dev.transformations import Unitary
 
 
@@ -44,6 +44,15 @@ class TestGket:
         u = Unitary.from_symplectic([0], sym)
         assert g == Vacuum([0]) >> u
 
+    def test_getitem(self):
+        "Tests the getitem of the Gket"
+
+        psi = Gket([0])
+        assert psi == psi[0]
+
+        phi = Gket([0, 1])
+        assert isinstance(phi[0], DM)
+
 
 class TestGdm:
     r"""
@@ -60,3 +69,12 @@ class TestGdm:
         assert math.allclose(rho.betas.value, math.astensor([0.2, 0.3]))
         assert rho.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
+
+    def test_getitem(self):
+        "Tests the getitem of Gdm"
+
+        rho = Gdm([0], 0.2)
+        assert rho == rho[0]
+
+        sigma = Gdm([0, 1], [0.5, 0.4])
+        assert isinstance(sigma[0], DM)
