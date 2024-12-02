@@ -36,7 +36,7 @@ class CZgate(Unitary):
 
     .. math::
 
-        C_Z = \exp(ig q_1 \otimes q_2 / \hbar).
+        C_Z = \exp(is q_1 \otimes q_2 / \hbar).
 
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
