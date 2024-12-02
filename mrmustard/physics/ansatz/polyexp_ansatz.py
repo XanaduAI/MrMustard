@@ -215,8 +215,8 @@ class PolyExpAnsatz(Ansatz):
     ) -> PolyExpAnsatz:
         idx1 = idx1 or ()
         idx2 = idx2 or ()
-        idx1 = (idx1,) if not isinstance(idx1, int) else idx1
-        idx2 = (idx2,) if not isinstance(idx2, int) else idx2
+        idx1 = (idx1,) if isinstance(idx1, int) else idx1
+        idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
             if i and i >= self.num_vars:
                 raise IndexError(
