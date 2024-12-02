@@ -28,7 +28,7 @@ from mrmustard.utils.typing import RealMatrix
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from .ket import Ket
 from .dm import DM
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["Gket", "Gdm"]
 
@@ -114,10 +114,13 @@ class Gdm(DM):
             )
         )
 
+        betass = math.astensor(list(reshape_params(len(modes), betas=betas))[0])
+        print(betass)
+
         self._add_parameter(
             make_parameter(
                 betas_trainable,
-                math.astensor(betas),
+                math.astensor(betass),
                 "betas",
                 (0, None),
             )
