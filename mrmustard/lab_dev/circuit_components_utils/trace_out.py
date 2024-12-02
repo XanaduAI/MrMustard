@@ -86,7 +86,7 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            ansatz = other.ansatz.conj[idx_z] @ other.ansatz[idx_z]
+            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             ansatz = other.ansatz.trace(idx_z, idx_zconj)

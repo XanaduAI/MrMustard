@@ -20,7 +20,7 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Collection
 import itertools
 
 import numpy as np
@@ -206,6 +206,39 @@ class PolyExpAnsatz(Ansatz):
         ansatz._fn = fn
         ansatz._kwargs = kwargs
         return ansatz
+
+    def contract(
+        self,
+        other: PolyExpAnsatz,
+        idx1: int | tuple[int, ...] | None = None,
+        idx2: int | tuple[int, ...] | None = None,
+    ) -> PolyExpAnsatz:
+        idx1 = idx1 or ()
+        idx2 = idx2 or ()
+        idx1 = (idx1,) if not isinstance(idx1, Collection) else idx1
+        idx2 = (idx2,) if not isinstance(idx2, Collection) else idx2
+        for i, j in zip(idx1, idx2):
+            if i and i >= self.num_vars:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
+                )
+            if j and j >= other.num_vars:
+                raise IndexError(
+                    f"Index {j} out of bounds for ansatz of dimension {other.num_vars}."
+                )
+
+        if settings.UNSAFE_ZIP_BATCH:
+            if self.batch_size != other.batch_size:
+                raise ValueError(
+                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                )
+            A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, mode="zip")
+        else:
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx1, idx2, mode="kron"
+            )
+
+        return PolyExpAnsatz(A, b, c)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -759,58 +792,58 @@ class PolyExpAnsatz(Ansatz):
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
-                )
-        ret = PolyExpAnsatz(self.A, self.b, self.c)
-        ret._contract_idxs = idx
-        return ret
+    # def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
+    #     idx = (idx,) if isinstance(idx, int) else idx
+    #     for i in idx:
+    #         if i >= self.num_vars:
+    #             raise IndexError(
+    #                 f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
+    #             )
+    #     ret = PolyExpAnsatz(self.A, self.b, self.c)
+    #     ret._contract_idxs = idx
+    #     return ret
 
-    def __matmul__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        r"""
-        Implements the inner product between PolyExpAnsatz.
+    # def __matmul__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+    #     r"""
+    #     Implements the inner product between PolyExpAnsatz.
 
-        ..code-block::
+    #     ..code-block::
 
-        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-        >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
-        >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
-        >>> rep3 = rep1[0] @ rep2[1]
-        >>> assert np.allclose(rep3.A, [[0,],])
-        >>> assert np.allclose(rep3.b, [1,])
+    #     >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+    #     >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+    #     >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
+    #     >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
+    #     >>> rep3 = rep1[0] @ rep2[1]
+    #     >>> assert np.allclose(rep3.A, [[0,],])
+    #     >>> assert np.allclose(rep3.b, [1,])
 
-         Args:
-             other: Another PolyExpAnsatz .
+    #      Args:
+    #          other: Another PolyExpAnsatz .
 
-         Returns:
-            Bargmann: the resulting PolyExpAnsatz.
+    #      Returns:
+    #         Bargmann: the resulting PolyExpAnsatz.
 
-        """
-        if not isinstance(other, PolyExpAnsatz):
-            raise NotImplementedError("Only matmul PolyExpAnsatz with PolyExpAnsatz")
+    #     """
+    #     if not isinstance(other, PolyExpAnsatz):
+    #         raise NotImplementedError("Only matmul PolyExpAnsatz with PolyExpAnsatz")
 
-        idx_s = self._contract_idxs
-        idx_o = other._contract_idxs
+    #     idx_s = self._contract_idxs
+    #     idx_o = other._contract_idxs
 
-        if settings.UNSAFE_ZIP_BATCH:
-            if self.batch_size != other.batch_size:
-                raise ValueError(
-                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                )
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="zip"
-            )
-        else:
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="kron"
-            )
+    #     if settings.UNSAFE_ZIP_BATCH:
+    #         if self.batch_size != other.batch_size:
+    #             raise ValueError(
+    #                 f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+    #             )
+    #         A, b, c = complex_gaussian_integral_2(
+    #             self.triple, other.triple, idx_s, idx_o, mode="zip"
+    #         )
+    #     else:
+    #         A, b, c = complex_gaussian_integral_2(
+    #             self.triple, other.triple, idx_s, idx_o, mode="kron"
+    #         )
 
-        return PolyExpAnsatz(A, b, c)
+    #     return PolyExpAnsatz(A, b, c)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):

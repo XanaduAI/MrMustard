@@ -111,7 +111,7 @@ class TestArrayAnsatz:
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
         fock1 = ArrayAnsatz(self.array2578, batched=True)
         fock2 = ArrayAnsatz(array2, batched=True)
-        fock_test = fock1[2] @ fock2[2]
+        fock_test = fock1.contract(fock2, 2, 2)
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(
             math.reshape(fock_test.array, -1),
@@ -191,7 +191,7 @@ class TestArrayAnsatz:
 
     def test_sum_batch(self):
         fock = ArrayAnsatz(self.array2578, batched=True)
-        fock_collapsed = fock.sum_batch()[0]
+        fock_collapsed = fock.sum_batch()
         assert fock_collapsed.array.shape == (1, 5, 7, 8)
         assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
 

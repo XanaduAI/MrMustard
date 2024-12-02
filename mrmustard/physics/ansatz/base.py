@@ -106,6 +106,25 @@ class Ansatz(ABC):
         """
 
     @abstractmethod
+    def contract(
+        self,
+        other: Ansatz,
+        idx1: int | tuple[int, ...] | None = None,
+        idx2: int | tuple[int, ...] | None = None,
+    ) -> Ansatz:
+        r"""
+        Contract two ansatz together.
+
+        Args:
+            other: Another ansatz.
+            idx1: The (optional) index of the first ansatz to contract.
+            idx2: The (optional) index of the second ansatz to contract.
+
+        Returns:
+            The resulting contracted ansatz.
+        """
+
+    @abstractmethod
     def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
         Reorders the ansatz indices.
@@ -177,24 +196,6 @@ class Ansatz(ABC):
     def __eq__(self, other: Ansatz) -> bool:
         r"""
         Whether this ansatz is equal to another.
-        """
-
-    @abstractmethod
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Ansatz:
-        r"""
-        Returns a copy of self with the given indices marked for contraction.
-        """
-
-    @abstractmethod
-    def __matmul__(self, other: Ansatz) -> Ansatz:
-        r"""
-        Implements the inner product of representations over the marked indices.
-
-        Args:
-            other: Another ansatz.
-
-        Returns:
-            The resulting ansatz.
         """
 
     @abstractmethod

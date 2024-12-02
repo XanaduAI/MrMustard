@@ -325,7 +325,7 @@ class TestPolyExpAnsatz:
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
-        res1 = PolyExpAnsatz(*triple1) @ PolyExpAnsatz(*triple2)
+        res1 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2), None, None)
         exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
         assert np.allclose(res1.A, exp1[0])
         assert np.allclose(res1.b, exp1[1])
