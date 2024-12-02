@@ -115,7 +115,6 @@ class Gdm(DM):
         )
 
         betass = math.astensor(list(reshape_params(len(modes), betas=betas))[0])
-        print(betass)
 
         self._add_parameter(
             make_parameter(
