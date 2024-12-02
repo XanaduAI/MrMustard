@@ -25,6 +25,7 @@ from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
+from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from .ket import Ket
 from .dm import DM
 from ..utils import make_parameter
@@ -66,6 +67,19 @@ class Gket(Ket):
                 fn=triples.gket_state_Abc, symplectic=self.symplectic
             ),
         ).representation
+
+    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+        r"""
+        The slicing method for a Gdm state.
+
+        Args:
+            modes: the modes on which we want the reduced density matrix.
+        """
+
+        for m in self.modes:
+            if m not in modes:
+                self = self >> TraceOut(modes)
+        return self
 
 
 # pylint: disable=too-many-positional-arguments
@@ -115,3 +129,15 @@ class Gdm(DM):
                 fn=triples.gdm_state_Abc, betas=self.betas, symplectic=symplectic
             ),
         ).representation
+
+    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+        r"""
+        The slicing method for a Gdm state.
+
+        Args:
+            modes: the modes on which we want the reduced density matrix.
+        """
+        for m in self.modes:
+            if m not in modes:
+                self = self >> TraceOut(modes)
+        return self
