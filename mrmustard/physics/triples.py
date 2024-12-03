@@ -746,8 +746,11 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
         The ``(A, b, c)`` triple of the complex fourier transform.
     """
     O2n = math.zeros((2 * n_modes, 2 * n_modes))
-    Omega = math.J(n_modes)
-    A = math.block([[O2n, -Omega], [Omega, O2n]])
+    On = math.zeros((n_modes, n_modes))
+    In = math.eye(n_modes)
+    Omega = math.block([[On, In], [-In, In]])
+    mOmega = math.block([[On, -In], [In, In]])
+    A = math.block([[O2n, mOmega], [Omega, O2n]])
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
     return A, b, c
