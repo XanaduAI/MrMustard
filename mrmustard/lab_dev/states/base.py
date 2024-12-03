@@ -220,7 +220,7 @@ class State(CircuitComponent):
             >>> coh = Ket.from_fock(modes, array)
 
             >>> assert coh.modes == modes
-            >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
+            >>> assert coh.ansatz == ArrayAnsatz(array)
             >>> assert isinstance(coh, Ket)
 
         Args:

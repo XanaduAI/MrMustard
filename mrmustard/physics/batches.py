@@ -53,7 +53,7 @@ class Batch:
     ):
         self._data = math.astensor(data)
         self.dtype = self._data.dtype
-        self._batch_shape = batch_shape or (self._data.shape[0],)
+        self._batch_shape = batch_shape or self._data.shape[:1]
         self._batch_labels = (
             batch_labels
             if batch_labels
