@@ -81,7 +81,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def conj(self):
-        return ArrayAnsatz(math.conj(self.array))
+        return ArrayAnsatz(Batch(math.conj(self.array)))
 
     @property
     def data(self) -> Batch[Tensor]:
