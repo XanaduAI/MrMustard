@@ -51,15 +51,15 @@ class Batch:
         batch_shape: tuple[int, ...] | None = None,
         batch_labels: tuple[str, ...] | None = None,
     ):
-        self._data = data
+        self._data = math.astensor(data)
         self.dtype = self._data.dtype
-        self._batch_shape = batch_shape or (data.shape[0],)
+        self._batch_shape = batch_shape or (self._data.shape[0],)
         self._batch_labels = (
             batch_labels
             if batch_labels
             else tuple((random.choice(string.ascii_letters) for _ in self._batch_shape))
         )
-        self._core_shape = data.shape[len(self._batch_shape) :]
+        self._core_shape = self._data.shape[len(self._batch_shape) :]
 
     @property
     def batch_labels(self) -> tuple[str, ...]:

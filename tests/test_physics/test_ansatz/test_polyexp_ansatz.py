@@ -25,6 +25,7 @@ from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.physics.batches import Batch
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
@@ -103,7 +104,7 @@ class TestPolyExpAnsatz:
 
     def test_add_error(self):
         bargmann = PolyExpAnsatz(*Abc_triple(3))
-        fock = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
+        fock = ArrayAnsatz(Batch(np.random.random((1, 4, 4, 4))))
 
         with pytest.raises(TypeError, match="Cannot add"):
             bargmann + fock  # pylint: disable=pointless-statement

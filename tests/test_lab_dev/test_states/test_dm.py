@@ -26,6 +26,7 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
+from mrmustard.physics.batches import Batch
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
@@ -99,7 +100,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state01 = Coherent([0, 1], 1).dm()
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
+            DM.from_fock([0], Batch(state01.fock_array(5)), "my_dm")
 
     def test_bargmann_triple_error(self):
         fock = Number([0], n=10).dm()
@@ -128,7 +129,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = DM.from_fock(modes, array_in, "my_dm", True)
+        state_out = DM.from_fock(modes, array_in, "my_dm")
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):

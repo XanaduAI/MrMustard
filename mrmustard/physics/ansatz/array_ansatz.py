@@ -27,9 +27,10 @@ from numpy.typing import ArrayLike
 from IPython.display import display
 
 from mrmustard import math, widgets
-from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+from mrmustard.utils.typing import Scalar, Tensor, Vector
 
 from .base import Ansatz
+from ..batches import Batch
 
 __all__ = ["ArrayAnsatz"]
 
@@ -51,14 +52,15 @@ class ArrayAnsatz(Ansatz):
         array: A (potentially) batched array.
         batched: Whether the array input has a batch dimension.
 
-    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
-    correct batch shape if ``batched`` is set to ``False``.
     """
 
-    def __init__(self, array: Batch[Tensor], batched=False):
+    def __init__(self, array: Batch[Tensor] | Tensor, batch_labels: list[str] | None = None):
         super().__init__()
-        self._array = array if batched else [array]
-        self._backend_array = False
+        self._array = (
+            Batch([array], batch_labels=batch_labels)
+            if array is not None and not isinstance(array, Batch)
+            else array
+        )
         self._original_abc_data = None
 
     @property
@@ -67,15 +69,11 @@ class ArrayAnsatz(Ansatz):
         The array of this ansatz.
         """
         self._generate_ansatz()
-        if not self._backend_array:
-            self._array = math.astensor(self._array)
-            self._backend_array = True
         return self._array
 
     @array.setter
     def array(self, value):
-        self._array = value
-        self._backend_array = False
+        self._array = value if isinstance(value, Batch) else Batch([value])
 
     @property
     def batch_size(self):
@@ -83,7 +81,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def conj(self):
-        return ArrayAnsatz(math.conj(self.array), batched=True)
+        return ArrayAnsatz(math.conj(self.array))
 
     @property
     def data(self) -> Batch[Tensor]:
@@ -100,7 +98,7 @@ class ArrayAnsatz(Ansatz):
         I.e. the vacuum component of the Fock array, whatever it may be.
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
-        return self.array[(slice(None),) + (0,) * self.num_vars]
+        return self.array.data[(slice(None),) + (0,) * self.num_vars]
 
     @property
     def triple(self) -> tuple:
@@ -113,11 +111,11 @@ class ArrayAnsatz(Ansatz):
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
-        return cls(data["array"], batched=True)
+        return cls(data["array"])
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
-        ret = cls(None, True)
+        ret = cls(None)
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
@@ -164,7 +162,7 @@ class ArrayAnsatz(Ansatz):
         for i in range(n_batches_s):
             for j in range(n_batches_o):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
-        return ArrayAnsatz(batched_array, batched=True)
+        return ArrayAnsatz(Batch(batched_array))
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -209,13 +207,13 @@ class ArrayAnsatz(Ansatz):
                 self.array,
                 [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
             )
-            return ArrayAnsatz(padded, batched=True)
+            return ArrayAnsatz(Batch(padded))
 
-        ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
-        return ArrayAnsatz(array=ret, batched=True)
+        ret = self.array.data[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
+        return ArrayAnsatz(array=Batch(ret))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
-        return ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]), batched=True)
+        return ArrayAnsatz(Batch(math.transpose(self.array, [0] + [i + 1 for i in order])))
 
     def sum_batch(self) -> ArrayAnsatz:
         r"""
@@ -224,7 +222,7 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
+        return ArrayAnsatz(Batch(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
@@ -242,11 +240,11 @@ class ArrayAnsatz(Ansatz):
         n = np.prod(new_array.shape[-len(idx_zconj) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
-        return ArrayAnsatz([trace] if trace.shape == () else trace, batched=True)
+        return ArrayAnsatz(Batch([trace] if trace.shape == () else trace))
 
     def _generate_ansatz(self):
         if self._array is None:
-            self.array = [self._fn(**self._kwargs)]
+            self.array = self._fn(**self._kwargs)
 
     def _ipython_display_(self):
         w = widgets.fock(self)
@@ -266,13 +264,13 @@ class ArrayAnsatz(Ansatz):
                 new_array = [
                     a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                 ]
-            return ArrayAnsatz(array=new_array, batched=True)
+            return ArrayAnsatz(array=Batch(new_array))
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return ArrayAnsatz(array=new_array, batched=True)
+        return ArrayAnsatz(array=Batch(new_array))
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         raise AttributeError("Cannot call this ArrayAnsatz.")
@@ -281,7 +279,7 @@ class ArrayAnsatz(Ansatz):
         slices = (slice(0, None),) + tuple(
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
-        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
+        return np.allclose(self.array.data[slices], other.array.data[slices], atol=1e-10)
 
     def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         if isinstance(other, ArrayAnsatz):
@@ -295,11 +293,11 @@ class ArrayAnsatz(Ansatz):
                     new_array = [
                         a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return ArrayAnsatz(array=new_array, batched=True)
+                return ArrayAnsatz(array=Batch(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
-            ret = ArrayAnsatz(array=self.array * other, batched=True)
+            ret = ArrayAnsatz(array=self.array * other)
             ret._original_abc_data = (
                 tuple(i * j for i, j in zip(self._original_abc_data, (1, 1, other)))
                 if self._original_abc_data is not None
@@ -308,7 +306,7 @@ class ArrayAnsatz(Ansatz):
             return ret
 
     def __neg__(self) -> ArrayAnsatz:
-        return ArrayAnsatz(array=-self.array, batched=True)
+        return ArrayAnsatz(array=-self.array)
 
     def __truediv__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         if isinstance(other, ArrayAnsatz):
@@ -322,11 +320,11 @@ class ArrayAnsatz(Ansatz):
                     new_array = [
                         a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return ArrayAnsatz(array=new_array, batched=True)
+                return ArrayAnsatz(array=Batch(new_array))
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            ret = ArrayAnsatz(array=self.array / other, batched=True)
+            ret = ArrayAnsatz(array=self.array / other)
             ret._original_abc_data = (
                 tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
                 if self._original_abc_data is not None

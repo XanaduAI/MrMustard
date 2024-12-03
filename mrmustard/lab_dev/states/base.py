@@ -204,7 +204,6 @@ class State(CircuitComponent):
         modes: Sequence[int],
         array: ComplexTensor,
         name: str | None = None,
-        batched: bool = False,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an array parametrizing the
@@ -218,7 +217,7 @@ class State(CircuitComponent):
 
             >>> modes = [0]
             >>> array = Coherent(modes, x=0.1).to_fock().ansatz.array
-            >>> coh = Ket.from_fock(modes, array, batched=True)
+            >>> coh = Ket.from_fock(modes, array)
 
             >>> assert coh.modes == modes
             >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
@@ -228,7 +227,6 @@ class State(CircuitComponent):
             modes: The modes of this state.
             array: The Fock array.
             name: The name of this state.
-            batched: Whether the given array is batched.
 
         Returns:
             A state.

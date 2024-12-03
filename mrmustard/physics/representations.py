@@ -27,10 +27,10 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     ComplexMatrix,
     ComplexVector,
-    Batch,
 )
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from .batches import Batch
 from .triples import identity_Abc
 from .wires import Wires
 
@@ -208,7 +208,9 @@ class Representation:
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock_array(self, shape: int | Sequence[int], batched=False) -> ComplexTensor:
+    def fock_array(
+        self, shape: int | Sequence[int], batched=False
+    ) -> ComplexTensor | Batch[ComplexTensor]:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -252,7 +254,7 @@ class Representation:
                 ) from e
             arrays = self.ansatz.reduce(shape).array
         array = math.sum(arrays, axes=[0])
-        arrays = math.expand_dims(array, 0) if batched else array
+        arrays = Batch(math.expand_dims(array, 0)) if batched else array
         return arrays
 
     def to_bargmann(self) -> Representation:
@@ -279,7 +281,7 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape, batched=True))
         try:
             if self.ansatz.polynomial_shape[0] == 0:
                 fock._original_abc_data = self.ansatz.triple

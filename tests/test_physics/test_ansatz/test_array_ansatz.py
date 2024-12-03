@@ -25,6 +25,7 @@ from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.physics.batches import Batch
 
 
 class TestArrayAnsatz:
@@ -36,19 +37,19 @@ class TestArrayAnsatz:
     array5578 = np.random.random((5, 5, 7, 8))
 
     def test_init_batched(self):
-        fock = ArrayAnsatz(self.array1578, batched=True)
+        fock = ArrayAnsatz(Batch(self.array1578))
         assert isinstance(fock, ArrayAnsatz)
         assert np.allclose(fock.array, self.array1578)
 
     def test_init_non_batched(self):
-        fock = ArrayAnsatz(self.array578, batched=False)
+        fock = ArrayAnsatz(self.array578)
         assert isinstance(fock, ArrayAnsatz)
         assert fock.array.shape == (1, 5, 7, 8)
-        assert np.allclose(fock.array[0, :, :, :], self.array578)
+        assert np.allclose(fock.array[0], self.array578)
 
     def test_add(self):
-        fock1 = ArrayAnsatz(self.array2578, batched=True)
-        fock2 = ArrayAnsatz(self.array5578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array2578))
+        fock2 = ArrayAnsatz(Batch(self.array5578))
         fock1_add_fock2 = fock1 + fock2
         assert fock1_add_fock2.array.shape == (10, 5, 7, 8)
         assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] + self.array5578[0])
@@ -77,8 +78,8 @@ class TestArrayAnsatz:
             aa1 == aa2  # pylint: disable=pointless-statement
 
     def test_and(self):
-        fock1 = ArrayAnsatz(self.array1578, batched=True)
-        fock2 = ArrayAnsatz(self.array5578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array1578))
+        fock2 = ArrayAnsatz(Batch(self.array5578))
         fock_test = fock1 & fock2
         assert fock_test.array.shape == (5, 5, 7, 8, 5, 7, 8)
         assert np.allclose(
@@ -87,17 +88,17 @@ class TestArrayAnsatz:
         )
 
     def test_call(self):
-        fock = ArrayAnsatz(self.array1578, batched=True)
+        fock = ArrayAnsatz(Batch(self.array1578))
         with pytest.raises(AttributeError, match="Cannot call"):
             fock(0)
 
     def test_conj(self):
-        fock = ArrayAnsatz(self.array1578, batched=True)
+        fock = ArrayAnsatz(Batch(self.array1578))
         fock_conj = fock.conj
         assert np.allclose(fock_conj.array, np.conj(self.array1578))
 
     def test_divide_on_a_scalar(self):
-        fock1 = ArrayAnsatz(self.array1578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array1578))
         fock_test = fock1 / 1.5
         assert np.allclose(fock_test.array, self.array1578 / 1.5)
 
@@ -109,8 +110,8 @@ class TestArrayAnsatz:
 
     def test_matmul_fock_fock(self):
         array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
-        fock1 = ArrayAnsatz(self.array2578, batched=True)
-        fock2 = ArrayAnsatz(array2, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array2578))
+        fock2 = ArrayAnsatz(Batch(array2))
         fock_test = fock1.contract(fock2, 2, 2)
         assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
         assert np.allclose(
@@ -119,8 +120,8 @@ class TestArrayAnsatz:
         )
 
     def test_mul(self):
-        fock1 = ArrayAnsatz(self.array1578, batched=True)
-        fock2 = ArrayAnsatz(self.array5578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array1578))
+        fock2 = ArrayAnsatz(Batch(self.array5578))
         fock1_mul_fock2 = fock1 * fock2
         assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
         assert np.allclose(
@@ -129,7 +130,7 @@ class TestArrayAnsatz:
         )
 
     def test_multiply_a_scalar(self):
-        fock1 = ArrayAnsatz(self.array1578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array1578))
         fock_test = 1.3 * fock1
         assert np.allclose(fock_test.array, 1.3 * self.array1578)
 
@@ -144,7 +145,7 @@ class TestArrayAnsatz:
     def test_reduce(self, batched):
         shape = (1, 3, 3, 3) if batched else (3, 3, 3)
         array1 = math.astensor(np.arange(27).reshape(shape))
-        fock1 = ArrayAnsatz(array1, batched=batched)
+        fock1 = ArrayAnsatz(Batch(array1) if batched else array1)
 
         fock2 = fock1.reduce(3)
         assert fock1 == fock2
@@ -175,14 +176,14 @@ class TestArrayAnsatz:
 
     def test_reorder(self):
         array1 = math.astensor(np.arange(8).reshape((1, 2, 2, 2)))
-        fock1 = ArrayAnsatz(array1, batched=True)
+        fock1 = ArrayAnsatz(Batch(array1))
         fock2 = fock1.reorder(order=(2, 1, 0))
         assert np.allclose(fock2.array, np.array([[[[0, 4], [2, 6]], [[1, 5], [3, 7]]]]))
         assert np.allclose(fock2.array, np.arange(8).reshape((1, 2, 2, 2), order="F"))
 
     def test_sub(self):
-        fock1 = ArrayAnsatz(self.array2578, batched=True)
-        fock2 = ArrayAnsatz(self.array5578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array2578))
+        fock2 = ArrayAnsatz(Batch(self.array5578))
         fock1_sub_fock2 = fock1 - fock2
         assert fock1_sub_fock2.array.shape == (10, 5, 7, 8)
         assert np.allclose(fock1_sub_fock2.array[0], self.array2578[0] - self.array5578[0])
@@ -190,26 +191,26 @@ class TestArrayAnsatz:
         assert np.allclose(fock1_sub_fock2.array[9], self.array2578[1] - self.array5578[4])
 
     def test_sum_batch(self):
-        fock = ArrayAnsatz(self.array2578, batched=True)
+        fock = ArrayAnsatz(Batch(self.array2578))
         fock_collapsed = fock.sum_batch()
         assert fock_collapsed.array.shape == (1, 5, 7, 8)
         assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
 
     def test_to_from_dict(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
-        fock1 = ArrayAnsatz(array1, batched=True)
+        fock1 = ArrayAnsatz(Batch(array1))
         assert ArrayAnsatz.from_dict(fock1.to_dict()) == fock1
 
     def test_trace(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1, 7, 4, 1, 7, 3)))
-        fock1 = ArrayAnsatz(array1, batched=True)
+        fock1 = ArrayAnsatz(Batch(array1))
         fock2 = fock1.trace([0, 3], [1, 6])
         assert fock2.array.shape == (2, 1, 4, 1, 3)
         assert np.allclose(fock2.array, np.einsum("bccefghfj -> beghj", array1))
 
     def test_truediv(self):
-        fock1 = ArrayAnsatz(self.array1578, batched=True)
-        fock2 = ArrayAnsatz(self.array5578, batched=True)
+        fock1 = ArrayAnsatz(Batch(self.array1578))
+        fock2 = ArrayAnsatz(Batch(self.array5578))
         fock1_mul_fock2 = fock1 / fock2
         assert fock1_mul_fock2.array.shape == (5, 5, 7, 8)
         assert np.allclose(
@@ -228,7 +229,7 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
-        rep = ArrayAnsatz(np.random.random(shape), batched=True)
+        rep = ArrayAnsatz(Batch(np.random.random(shape)))
         rep._ipython_display_()
         [hbox] = mock_display.call_args.args
         assert isinstance(hbox, HBox)
@@ -251,13 +252,13 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_batch_1(self, mock_display):
         """Test the IPython repr function does nothing with real batch."""
-        rep = ArrayAnsatz(np.random.random((2, 8)), batched=True)
+        rep = ArrayAnsatz(Batch(np.random.random((2, 8))))
         rep._ipython_display_()
         mock_display.assert_not_called()
 
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
         """Test the IPython repr function does nothing with 4+ dims."""
-        rep = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
+        rep = ArrayAnsatz(Batch(np.random.random((1, 4, 4, 4))))
         rep._ipython_display_()
         mock_display.assert_not_called()

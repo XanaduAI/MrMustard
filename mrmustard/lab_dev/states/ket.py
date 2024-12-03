@@ -28,6 +28,7 @@ from mrmustard import math, settings, widgets
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
+from mrmustard.physics.batches import Batch
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
@@ -37,7 +38,6 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     RealVector,
     Scalar,
-    Batch,
 )
 
 from .base import State, _validate_operator, OperatorType
@@ -100,11 +100,10 @@ class Ket(State):
     def from_fock(
         cls,
         modes: Sequence[int],
-        array: ComplexTensor,
+        array: ComplexTensor | Batch[ComplexTensor],
         name: str | None = None,
-        batched: bool = False,
     ) -> State:
-        return Ket.from_ansatz(modes, ArrayAnsatz(array, batched), name)
+        return Ket.from_ansatz(modes, ArrayAnsatz(array), name)
 
     @classmethod
     def from_ansatz(

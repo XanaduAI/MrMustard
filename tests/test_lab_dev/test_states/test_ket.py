@@ -131,7 +131,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = Ket.from_fock(modes, array_in, "my_ket", True)
+        state_out = Ket.from_fock(modes, array_in, "my_ket")
         assert state_in_fock == state_out
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])

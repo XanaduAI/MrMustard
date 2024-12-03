@@ -24,8 +24,9 @@ from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
 
 from .base import Unitary
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from ...physics.batches import Batch
+from ...physics.representations import Representation
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
 
@@ -103,7 +104,9 @@ class Dgate(Unitary):
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
+    def fock_array(
+        self, shape: int | Sequence[int] = None, batched=False
+    ) -> ComplexTensor | Batch[ComplexTensor]:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -144,11 +147,11 @@ class Dgate(Unitary):
             )
         else:
             array = fock_utils.displacement(x[0], y[0], shape=shape)
-        arrays = math.expand_dims(array, 0) if batched else array
+        arrays = Batch(math.expand_dims(array, 0)) if batched else array
         return arrays
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape, batched=True))
         fock._original_abc_data = self.ansatz.triple
         ret = self._getitem_builtin(self.modes)
         ret._representation = Representation(fock, self.wires)

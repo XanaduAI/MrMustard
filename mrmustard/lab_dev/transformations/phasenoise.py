@@ -83,4 +83,4 @@ class PhaseNoise(Channel):
                 * self.phase_stdev.value**2
             )
             array *= phase_factors
-        return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)
+        return CircuitComponent(Representation(ArrayAnsatz(array), other.wires), self.name)

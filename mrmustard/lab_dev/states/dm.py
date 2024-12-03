@@ -28,6 +28,7 @@ from mrmustard import math, settings, widgets
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
+from mrmustard.physics.batches import Batch
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
@@ -121,11 +122,10 @@ class DM(State):
     def from_fock(
         cls,
         modes: Sequence[int],
-        array: ComplexTensor,
+        array: ComplexTensor | Batch[ComplexTensor],
         name: str | None = None,
-        batched: bool = False,
     ) -> State:
-        return DM.from_ansatz(modes, ArrayAnsatz(array, batched), name)
+        return DM.from_ansatz(modes, ArrayAnsatz(array), name)
 
     @classmethod
     def from_ansatz(
