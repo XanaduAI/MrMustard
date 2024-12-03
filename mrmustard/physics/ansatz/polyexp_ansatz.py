@@ -87,6 +87,8 @@ class PolyExpAnsatz(Ansatz):
         A: A batch of quadratic coefficient :math:`A_i`.
         b: A batch of linear coefficients :math:`b_i`.
         c: A batch of arrays :math:`c_i`.
+        batch_labels: The (optional) batch labels of this ansatz.
+        name: The (optional) name of this ansatz.
     """
 
     def __init__(
