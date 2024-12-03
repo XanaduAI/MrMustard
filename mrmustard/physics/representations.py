@@ -201,15 +201,17 @@ class Representation:
         """
         try:
             A, b, c = self.ansatz.triple
-            if not batched and self.ansatz.batch_size == 1:
-                return A[0], b[0], c[0]
-            else:
-                return A, b, c
+            if not batched:
+                if self.ansatz.batch_size == 1:
+                    return A[0], b[0], c[0]
+                else:
+                    return A.data, b.data, c.data
+            return A, b, c
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
     def fock_array(
-        self, shape: int | Sequence[int], batched=False
+        self, shape: int | Sequence[int], batched: bool = False
     ) -> ComplexTensor | Batch[ComplexTensor]:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
@@ -235,7 +237,8 @@ class Representation:
                 )
             if self.ansatz.polynomial_shape[0] == 0:
                 arrays = [
-                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
+                    math.hermite_renormalized(A, b, c, shape=shape)
+                    for A, b, c in zip(As.data, bs.data, cs.data)
                 ]
             else:
                 arrays = [
@@ -245,7 +248,7 @@ class Representation:
                             num_vars, num_vars + len(c.shape), dtype=math.int32
                         ).tolist(),
                     )
-                    for A, b, c in zip(As, bs, cs)
+                    for A, b, c in zip(As.data, bs.data, cs.data)
                 ]
         except AttributeError as e:
             if len(shape) != num_vars:
