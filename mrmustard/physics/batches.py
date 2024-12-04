@@ -19,10 +19,11 @@ This module contains the Batch class.
 # pylint: disable=too-many-instance-attributes
 
 from __future__ import annotations
-from typing import Collection
+from typing import Any, Collection, Iterable
 
 import string
 import random
+from numpy.typing import NDArray
 
 from mrmustard import math
 from mrmustard.utils.typing import (
@@ -102,7 +103,7 @@ class Batch:
         """
         return Batch(math.conj(self.data), self.batch_shape, self.batch_labels)
 
-    def __array__(self):
+    def __array__(self) -> NDArray:
         return math.asnumpy(self.data)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
@@ -135,7 +136,7 @@ class Batch:
             # TODO: implement more methods as needed
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Batch):
             return False
         return (
@@ -164,23 +165,23 @@ class Batch:
         )
         return Batch(new_data, new_batch_shape, new_batch_labels) if new_batch_shape else new_data
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable:
         return iter(self.data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def __mul__(self, other: Scalar):
+    def __mul__(self, other: Scalar) -> Batch:
         return Batch(self.data * other, self.batch_shape, self.batch_labels)
 
-    def __neg__(self):
+    def __neg__(self) -> Batch:
         return -1 * self
 
-    def __rmul__(self, other: Scalar):
+    def __rmul__(self, other: Scalar) -> Batch:
         return self * other
 
-    def __rtruediv__(self, other: Scalar):
+    def __rtruediv__(self, other: Scalar) -> Batch:
         return Batch(other / self.data, self.batch_shape, self.batch_labels)
 
-    def __truediv__(self, other: Scalar):
+    def __truediv__(self, other: Scalar) -> Batch:
         return Batch(self.data / other, self.batch_shape, self.batch_labels)
