@@ -50,7 +50,7 @@ class ArrayAnsatz(Ansatz):
 
     Args:
         array: A (potentially) batched array.
-        batched: Whether the array input has a batch dimension.
+        batch_labels: The (optional) batch labels for this ansatz.
 
     """
 

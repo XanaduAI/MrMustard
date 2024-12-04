@@ -110,7 +110,6 @@ class Batch:
         Implement the NumPy ufunc interface.
         """
         if method == "__call__":
-            # TODO: make sure batch shape and labels make sense
             inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
             return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
 
@@ -159,7 +158,10 @@ class Batch:
             if len(self.core_shape) < len(new_data.shape)
             else ()
         )
-        new_batch_labels = self.batch_labels[: len(idxs)]
+        new_batch_labels = (
+            tuple(self.batch_labels[i] for i, j in enumerate(idxs) if isinstance(j, slice))
+            + self.batch_labels[len(idxs) :]
+        )
         return Batch(new_data, new_batch_shape, new_batch_labels) if new_batch_shape else new_data
 
     def __iter__(self):
