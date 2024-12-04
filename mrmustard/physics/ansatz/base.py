@@ -198,6 +198,18 @@ class Ansatz(ABC):
         """
 
     @abstractmethod
+    def __getitem__(self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]) -> Ansatz:
+        r"""
+        Slices this ansatz.
+
+        Args:
+            idxs: The indices to slice the ansatz with.
+
+        Returns:
+            The sliced ansatz.
+        """
+
+    @abstractmethod
     def __mul__(self, other: Scalar | Ansatz) -> Ansatz:
         r"""
         Multiplies this ansatz by a scalar or another ansatz.

@@ -145,7 +145,9 @@ class Batch:
             and self.batch_labels == other.batch_labels
         )
 
-    def __getitem__(self, idxs):
+    def __getitem__(
+        self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]
+    ) -> ComplexMatrix | ComplexVector | ComplexTensor | Batch:
         idxs = (idxs,) if not isinstance(idxs, Collection) else idxs
         if len(idxs) > len(self.batch_shape):
             raise IndentationError(

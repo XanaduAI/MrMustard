@@ -97,6 +97,17 @@ class TestArrayAnsatz:
         fock_conj = fock.conj
         assert np.allclose(fock_conj.array, np.conj(self.array1578))
 
+    def test_contract_fock_fock(self):
+        array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
+        fock1 = ArrayAnsatz(Batch(self.array2578))
+        fock2 = ArrayAnsatz(Batch(array2))
+        fock_test = fock1.contract(fock2, 2, 2)
+        assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
+        assert np.allclose(
+            math.reshape(fock_test.array, -1),
+            math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
+        )
+
     def test_divide_on_a_scalar(self):
         fock1 = ArrayAnsatz(Batch(self.array1578))
         fock_test = fock1 / 1.5
@@ -107,17 +118,6 @@ class TestArrayAnsatz:
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
-
-    def test_matmul_fock_fock(self):
-        array2 = math.astensor(np.random.random((5, 6, 7, 8, 10)))
-        fock1 = ArrayAnsatz(Batch(self.array2578))
-        fock2 = ArrayAnsatz(Batch(array2))
-        fock_test = fock1.contract(fock2, 2, 2)
-        assert fock_test.array.shape == (10, 5, 7, 6, 7, 10)
-        assert np.allclose(
-            math.reshape(fock_test.array, -1),
-            math.reshape(np.einsum("bcde, pfgeh -> bpcdfgh", self.array2578, array2), -1),
-        )
 
     def test_mul(self):
         fock1 = ArrayAnsatz(Batch(self.array1578))

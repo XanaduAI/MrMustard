@@ -77,7 +77,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_size(self):
-        return self.array.shape[0]
+        return sum(self.array.batch_shape)
 
     @property
     def conj(self):
@@ -89,7 +89,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def num_vars(self) -> int:
-        return len(self.array.shape) - 1
+        return len(self.array.core_shape)
 
     @property
     def scalar(self) -> Scalar:
@@ -98,7 +98,7 @@ class ArrayAnsatz(Ansatz):
         I.e. the vacuum component of the Fock array, whatever it may be.
         Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
-        return self.array.data[(slice(None),) + (0,) * self.num_vars]
+        return self.array.data[(slice(None),) * len(self.array.batch_shape) + (0,) * self.num_vars]
 
     @property
     def triple(self) -> tuple:
@@ -140,13 +140,11 @@ class ArrayAnsatz(Ansatz):
                     f"Index {j} out of bounds for representation with {other.num_vars} variables."
                 )
 
-        # the number of batches in self and other
-        n_batches_s = self.array.shape[0]
-        n_batches_o = other.array.shape[0]
+        n_batches_s = self.batch_size
+        n_batches_o = other.batch_size
 
-        # the shapes each batch in self and other
-        shape_s = self.array.shape[1:]
-        shape_o = other.array.shape[1:]
+        shape_s = self.array.core_shape
+        shape_o = other.array.core_shape
 
         new_shape_s = list(shape_s)
         new_shape_o = list(shape_o)
@@ -280,6 +278,9 @@ class ArrayAnsatz(Ansatz):
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
         return np.allclose(self.array.data[slices], other.array.data[slices], atol=1e-10)
+
+    def __getitem__(self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]) -> ArrayAnsatz:
+        return ArrayAnsatz(self.array[idxs])
 
     def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         if isinstance(other, ArrayAnsatz):

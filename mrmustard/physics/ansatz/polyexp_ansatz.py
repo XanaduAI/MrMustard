@@ -792,6 +792,9 @@ class PolyExpAnsatz(Ansatz):
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
+    def __getitem__(self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]) -> PolyExpAnsatz:
+        return PolyExpAnsatz(self.A[idxs], self.b[idxs], self.c[idxs])
+
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
             A3 = math.block(
