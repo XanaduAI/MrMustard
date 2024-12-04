@@ -54,7 +54,7 @@ class ArrayAnsatz(Ansatz):
 
     """
 
-    def __init__(self, array: Batch[Tensor] | Tensor, batch_labels: list[str] | None = None):
+    def __init__(self, array: Tensor | Batch[Tensor], batch_labels: list[str] | None = None):
         super().__init__()
         self._array = (
             Batch([array], batch_labels=batch_labels)
@@ -76,11 +76,11 @@ class ArrayAnsatz(Ansatz):
         self._array = value if isinstance(value, Batch) else Batch([value])
 
     @property
-    def batch_size(self):
+    def batch_size(self) -> int:
         return sum(self.array.batch_shape)
 
     @property
-    def conj(self):
+    def conj(self) -> ArrayAnsatz:
         return ArrayAnsatz(Batch(math.conj(self.array)))
 
     @property

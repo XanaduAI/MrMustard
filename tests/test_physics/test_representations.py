@@ -91,6 +91,13 @@ class TestRepresentation:
             0: (RepEnum.QUADRATURE, 0.1),
         }
 
+    def test_fock_array(self, d_gate_rep):
+        fock_array = d_gate_rep.fock_array(shape=(4, 6))
+        assert math.allclose(
+            fock_array,
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
+        )
+
     def test_matmul_btoq(self, d_gate_rep, btoq_rep):
         q_dgate = d_gate_rep @ btoq_rep
         assert q_dgate._idx_reps == {
