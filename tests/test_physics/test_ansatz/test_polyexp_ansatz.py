@@ -276,6 +276,15 @@ class TestPolyExpAnsatz:
         assert ansatz != ansatz2
         assert ansatz2 != ansatz
 
+    def test_getitem(self):
+        A, b, c = Abc_triple(5)
+        batched_ansatz = PolyExpAnsatz(Batch([A, A, A]), Batch([b, b, b]), Batch([c, c, c]))
+        sliced_ansatz = batched_ansatz[0]
+        expected_ansatz = PolyExpAnsatz(A, b, c)
+        assert math.allclose(sliced_ansatz.A, expected_ansatz.A)
+        assert math.allclose(sliced_ansatz.b, expected_ansatz.b)
+        assert math.allclose(sliced_ansatz.c, expected_ansatz.c)
+
     def test_inconsistent_poly_shapes(self):
         A1 = np.random.random((1, 2, 2))
         A2 = np.random.random((1, 3, 3))

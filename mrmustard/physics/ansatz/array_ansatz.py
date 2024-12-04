@@ -188,7 +188,7 @@ class ArrayAnsatz(Ansatz):
         Args:
             shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
-        if shape == self.array.shape[1:]:
+        if shape == self.array.core_shape:
             return self
         length = self.num_vars
         shape = (shape,) * length if isinstance(shape, int) else shape
@@ -197,17 +197,20 @@ class ArrayAnsatz(Ansatz):
             msg += f"given shape has length {len(shape)}."
             raise ValueError(msg)
 
-        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+        if any(s > t for s, t in zip(shape, self.array.core_shape)):
             warn(
                 "Warning: the fock array is being padded with zeros. If possible, slice the arrays this one will contract with instead."
             )
             padded = math.pad(
                 self.array,
-                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+                [(0, 0)] * len(self.array.batch_shape)
+                + [(0, s - t) for s, t in zip(shape, self.array.core_shape)],
             )
             return ArrayAnsatz(Batch(padded))
 
-        ret = self.array.data[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
+        ret = self.array.data[
+            (slice(None),) * len(self.array.batch_shape) + tuple(slice(0, s) for s in shape)
+        ]
         return ArrayAnsatz(array=Batch(ret))
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
@@ -230,7 +233,7 @@ class ArrayAnsatz(Ansatz):
             raise ValueError("The idxs must be of equal length and disjoint.")
         order = (
             [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idx_z + idx_zconj]
+            + [i + 1 for i in range(len(self.array.core_shape)) if i not in idx_z + idx_zconj]
             + [i + 1 for i in idx_z]
             + [i + 1 for i in idx_zconj]
         )
@@ -253,14 +256,14 @@ class ArrayAnsatz(Ansatz):
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         try:
-            diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
+            diff = sum(self.array.core_shape) - sum(other.array.core_shape)
             if diff < 0:
                 new_array = [
-                    a + b for a in self.reduce(other.array.shape[1:]).array for b in other.array
+                    a + b for a in self.reduce(other.array.core_shape).array for b in other.array
                 ]
             else:
                 new_array = [
-                    a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
+                    a + b for a in self.array for b in other.reduce(self.array.core_shape).array
                 ]
             return ArrayAnsatz(array=Batch(new_array))
         except Exception as e:
@@ -274,8 +277,8 @@ class ArrayAnsatz(Ansatz):
         raise AttributeError("Cannot call this ArrayAnsatz.")
 
     def __eq__(self, other: Ansatz) -> bool:
-        slices = (slice(0, None),) + tuple(
-            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
+        slices = (slice(None),) * len(self.array.batch_shape) + tuple(
+            slice(0, min(si, oi)) for si, oi in zip(self.array.core_shape, other.array.core_shape)
         )
         return np.allclose(self.array.data[slices], other.array.data[slices], atol=1e-10)
 

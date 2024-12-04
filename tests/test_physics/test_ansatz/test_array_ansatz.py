@@ -119,6 +119,14 @@ class TestArrayAnsatz:
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
 
+    def test_getitem(self):
+        batched_ansatz = ArrayAnsatz(
+            Batch(self.array5578, batch_shape=(5, 5), batch_labels=("a", "b"))
+        )
+        sliced_ansatz = batched_ansatz[0]
+        expected_ansatz = ArrayAnsatz(Batch(self.array5578[0], batch_labels=("b",)))
+        assert sliced_ansatz.array == expected_ansatz.array
+
     def test_mul(self):
         fock1 = ArrayAnsatz(Batch(self.array1578))
         fock2 = ArrayAnsatz(Batch(self.array5578))

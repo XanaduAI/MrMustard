@@ -159,7 +159,7 @@ class PolyExpAnsatz(Ansatz):
         self._c = value if isinstance(value, Batch) else Batch(math.atleast_1d(value))
 
     @property
-    def conj(self):
+    def conj(self) -> PolyExpAnsatz:
         return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
 
     @property
@@ -169,7 +169,7 @@ class PolyExpAnsatz(Ansatz):
         return self.triple
 
     @property
-    def num_vars(self):
+    def num_vars(self) -> int:
         return self.A.shape[-1] - self.polynomial_shape[0]
 
     @property

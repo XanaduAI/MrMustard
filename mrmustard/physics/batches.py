@@ -148,6 +148,12 @@ class Batch:
     def __getitem__(
         self, idxs: int | slice | tuple[int, ...] | tuple[slice, ...]
     ) -> ComplexMatrix | ComplexVector | ComplexTensor | Batch:
+        r"""
+        Index the batch dimensions.
+
+        Note:
+            To index core dimensions use ``self.data``.
+        """
         idxs = (idxs,) if not isinstance(idxs, Collection) else idxs
         if len(idxs) > len(self.batch_shape):
             raise IndentationError(
