@@ -22,6 +22,7 @@ from typing import Sequence
 from itertools import product
 import warnings
 import numpy as np
+from IPython import get_ipython, InteractiveShell
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
@@ -335,6 +336,9 @@ class Ket(State):
         return math.abs(self.quadrature(quad, phi)) ** 2
 
     def _ipython_display_(self):  # pragma: no cover
+        if isinstance(get_ipython(), InteractiveShell):
+            print(self)
+            return
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 

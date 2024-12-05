@@ -18,6 +18,7 @@ from __future__ import annotations
 from functools import cached_property
 import numpy as np
 
+from IPython import get_ipython, InteractiveShell
 from IPython.display import display
 
 from mrmustard import widgets
@@ -546,4 +547,7 @@ class Wires:
         return f"Wires{self.args}"
 
     def _ipython_display_(self):
+        if isinstance(get_ipython(), InteractiveShell):
+            print(self)
+            return
         display(widgets.wires(self))

@@ -28,6 +28,7 @@ from functools import cached_property
 import numpy as np
 from numpy.typing import ArrayLike
 import ipywidgets as widgets
+from IPython import get_ipython, InteractiveShell
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
@@ -724,6 +725,9 @@ class CircuitComponent:
         return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
 
     def _ipython_display_(self):
+        if isinstance(get_ipython(), InteractiveShell):
+            print(self)
+            return
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.ansatz, ArrayAnsatz) else mmwidgets.bargmann
         rep_widget = rep_fn(self.ansatz)

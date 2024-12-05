@@ -24,6 +24,7 @@ from warnings import warn
 import numpy as np
 from numpy.typing import ArrayLike
 
+from IPython import get_ipython, InteractiveShell
 from IPython.display import display
 
 from mrmustard import math, widgets
@@ -207,6 +208,9 @@ class ArrayAnsatz(Ansatz):
             self.array = [self._fn(**self._kwargs)]
 
     def _ipython_display_(self):
+        if isinstance(get_ipython(), InteractiveShell):
+            print(self)
+            return
         w = widgets.fock(self)
         if w is None:
             print(repr(self))
