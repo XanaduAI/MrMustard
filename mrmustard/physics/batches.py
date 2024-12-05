@@ -55,6 +55,10 @@ class Batch:
         self._data = math.astensor(data)
         self.dtype = self._data.dtype
         self._batch_shape = batch_shape or self._data.shape[:1]
+        if self._data.shape[: len(self._batch_shape)] != self._batch_shape:
+            raise ValueError(
+                f"Invalid batch shape {self._batch_shape} for data shape {self._data.shape}."
+            )
         self._batch_labels = (
             batch_labels
             if batch_labels
