@@ -32,7 +32,7 @@ from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexMatrix, RealMatrix, Vector
+from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
@@ -258,6 +258,19 @@ class Unitary(Operation):
         A_inin = math.atleast_2d(A[m:, m:])
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
         return Unitary.from_bargmann(modes, modes, [A, b, c])
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> Unitary:
+        r"""
+        Allows initialization of unitaries from their Fock representation.
+        """
+        return Unitary.from_ansatz(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes, max_r=1):
