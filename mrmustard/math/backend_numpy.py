@@ -14,7 +14,7 @@
 
 """This module contains the numpy backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
+# pylint: disable = missing-function-docstring, missing-class-docstring, fixme
 
 from __future__ import annotations
 
