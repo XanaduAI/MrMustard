@@ -128,7 +128,7 @@ class GDM(DM):
         beta: float | Sequence[float],
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
-        betas_trainable: bool = False,
+        beta_trainable: bool = False,
     ) -> None:
         super().__init__(name="GDM")
         m = len(modes)
