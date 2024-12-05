@@ -79,7 +79,7 @@ class TestBatch:
         assert not isinstance(batch_slice2, Batch)
         assert math.allclose(batch_slice2, self.array5688[0, 0])
 
-        with pytest.raises(IndentationError, match="indices"):
+        with pytest.raises(IndexError, match="indices"):
             batch[:, :, 0]  # pylint: disable=pointless-statement
 
     def test_ufunc(self):

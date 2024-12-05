@@ -156,7 +156,7 @@ class Batch:
         """
         idxs = (idxs,) if not isinstance(idxs, Collection) else idxs
         if len(idxs) > len(self.batch_shape):
-            raise IndentationError(
+            raise IndexError(
                 f"Too many indices for batched array: batch is {len(self.batch_shape)}-dimensional, but {len(idxs)} were indexed."
             )
         new_data = self.data[idxs]
