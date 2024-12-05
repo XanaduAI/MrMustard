@@ -22,7 +22,7 @@ from mrmustard.lab_dev.states import DM, GDM, GKet, Vacuum
 from mrmustard.lab_dev.transformations import Unitary
 
 
-class TestGket:
+class TestGKet:
     r"""
     Tests for the ``GKet`` class.
     """
