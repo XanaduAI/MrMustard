@@ -94,7 +94,7 @@ class GDM(DM):
     def __init__(
         self,
         modes: Sequence[int],
-        betas: float | Sequence[float],
+        beta: float | Sequence[float],
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
         betas_trainable: bool = False,
@@ -115,13 +115,13 @@ class GDM(DM):
             )
         )
 
-        betass = math.astensor(list(reshape_params(len(modes), betas=betas))[0])
+        betas = math.astensor(list(reshape_params(len(modes), betas=beta))[0])
 
         self._add_parameter(
             make_parameter(
                 betas_trainable,
-                math.astensor(betass),
-                "betas",
+                math.astensor(betas),
+                "beta",
                 (0, None),
             )
         )
@@ -129,7 +129,7 @@ class GDM(DM):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gdm_state_Abc, betas=self.betas, symplectic=symplectic
+                fn=triples.gdm_state_Abc, betas=self.beta, symplectic=symplectic
             ),
         ).representation
 

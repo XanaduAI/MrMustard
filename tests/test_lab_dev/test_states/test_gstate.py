@@ -66,7 +66,7 @@ class TestGDM:
 
         assert rho.modes == [0, 1]
         assert rho.name == "GDM"
-        assert math.allclose(rho.betas.value, math.astensor([0.2, 0.3]))
+        assert math.allclose(rho.beta.value, math.astensor([0.2, 0.3]))
         assert rho.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
