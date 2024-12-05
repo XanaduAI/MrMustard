@@ -150,7 +150,7 @@ class GDM(DM):
 
         self._add_parameter(
             make_parameter(
-                betas_trainable,
+                beta_trainable,
                 math.astensor(betas),
                 "beta",
                 (0, None),
