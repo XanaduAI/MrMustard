@@ -17,7 +17,7 @@ Classes that are initialized by a symplectic matrix and possibly thermal states 
 """
 
 from __future__ import annotations
-
+from copy import deepcopy
 from typing import Sequence
 
 from mrmustard import math
@@ -76,10 +76,11 @@ class Gket(Ket):
             modes: the modes on which we want the reduced density matrix.
         """
 
+        ret = deepcopy(self)
         for m in self.modes:
             if m not in modes:
-                self = self >> TraceOut(modes)
-        return self
+                ret = ret >> TraceOut(modes)
+        return ret
 
 
 # pylint: disable=too-many-positional-arguments
@@ -139,7 +140,8 @@ class Gdm(DM):
         Args:
             modes: the modes on which we want the reduced density matrix.
         """
+        ret = deepcopy(self)
         for m in self.modes:
             if m not in modes:
-                self = self >> TraceOut(modes)
-        return self
+                ret = ret >> TraceOut(modes)
+        return ret
