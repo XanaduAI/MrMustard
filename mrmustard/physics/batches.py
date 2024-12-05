@@ -110,7 +110,7 @@ class Batch:
     def __array__(self) -> NDArray:
         return math.asnumpy(self.data)
 
-    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):  # pragma: no cover
         r"""
         Implement the NumPy ufunc interface.
         """

@@ -22,6 +22,8 @@ import numpy as np
 from mrmustard import math
 from mrmustard.physics.batches import Batch
 
+from ..conftest import skip_tf
+
 
 class TestBatch:
     r"""
@@ -86,6 +88,7 @@ class TestBatch:
             batch[:, :, 0]  # pylint: disable=pointless-statement
 
     def test_ufunc(self):
+        skip_tf()
         batch = Batch(data=self.array5688, batch_shape=(5, 6), batch_labels=("a", "b"))
         # __call__
         assert math.allclose(math.exp(batch), math.exp(self.array5688))

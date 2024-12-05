@@ -170,7 +170,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def num_vars(self) -> int:
-        return self.A.shape[-1] - self.polynomial_shape[0]
+        return self.A.core_shape[-1] - self.polynomial_shape[0]
 
     @property
     def polynomial_shape(self) -> tuple[int, tuple]:
@@ -247,10 +247,15 @@ class PolyExpAnsatz(Ansatz):
         it can be rewritten as an ansatz of dimension
         A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
         This decomposition is typically favourable if m>n, and will only run if that is the case.
-        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
+        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``.
+
+        Raises:
+            NotImplementedError: If the number of batch dimensions is greater than 1.
         """
+        if len(self.c.batch_shape) > 1:  # pragma: no cover
+            raise NotImplementedError("``decompose_ansatz`` is only compatible with 1-D batches.")
         dim_beta, _ = self.polynomial_shape
-        dim_alpha = self.A.shape[-1] - dim_beta
+        dim_alpha = self.A.core_shape[-1] - dim_beta
         batch_size = self.batch_size
         if dim_beta > dim_alpha:
             A_decomp = []
@@ -258,7 +263,7 @@ class PolyExpAnsatz(Ansatz):
             c_decomp = []
             for i in range(batch_size):
                 A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
-                    self.A.data[i], self.b.data[i], self.c.data[i]
+                    self.A[i], self.b[i], self.c[i]
                 )
                 A_decomp.append(A_decomp_i)
                 b_decomp.append(b_decomp_i)

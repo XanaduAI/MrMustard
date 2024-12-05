@@ -75,5 +75,10 @@ def skip_np():
         pytest.skip("numpy")
 
 
+def skip_tf():
+    if math.backend_name == "tensorflow":
+        pytest.skip("tensorflow")
+
+
 def pytest_configure(config):
     pass  # your code goes here
