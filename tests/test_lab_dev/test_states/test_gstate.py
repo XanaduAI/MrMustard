@@ -18,63 +18,63 @@
 
 
 from mrmustard import math
-from mrmustard.lab_dev.states import DM, Gdm, Gket, Vacuum
+from mrmustard.lab_dev.states import DM, GDM, GKet, Vacuum
 from mrmustard.lab_dev.transformations import Unitary
 
 
 class TestGket:
     r"""
-    Tests for the ``Gket`` class.
+    Tests for the ``GKet`` class.
     """
 
     def test_init(self):
         "Tests initialization"
-        gket = Gket([0, 1])
+        gket = GKet([0, 1])
 
         assert gket.modes == [0, 1]
         assert gket.symplectic.value.shape == (4, 4)
-        assert gket.name == "Gket"
+        assert gket.name == "GKet"
         assert math.allclose(gket.probability, 1.0)
 
     def test_correctness(self):
         "Tests is the attributes are consistent"
 
-        g = Gket([0])
+        g = GKet([0])
         sym = g.symplectic.value
         u = Unitary.from_symplectic([0], sym)
         assert g == Vacuum([0]) >> u
 
     def test_getitem(self):
-        "Tests the getitem of the Gket"
+        "Tests the getitem of the GKet"
 
-        psi = Gket([0])
+        psi = GKet([0])
         assert psi == psi[0]
 
-        phi = Gket([0, 1])
+        phi = GKet([0, 1])
         assert isinstance(phi[0], DM)
 
 
-class TestGdm:
+class TestGDM:
     r"""
-    Tests the ``Gdm`` class.
+    Tests the ``GDM`` class.
     """
 
     def test_init(self):
         "Tests the initialization"
 
-        rho = Gdm([0, 1], [0.2, 0.3])
+        rho = GDM([0, 1], [0.2, 0.3])
 
         assert rho.modes == [0, 1]
-        assert rho.name == "Gdm"
+        assert rho.name == "GDM"
         assert math.allclose(rho.betas.value, math.astensor([0.2, 0.3]))
         assert rho.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
     def test_getitem(self):
-        "Tests the getitem of Gdm"
+        "Tests the getitem of GDM"
 
-        rho = Gdm([0], 0.2)
+        rho = GDM([0], 0.2)
         assert rho == rho[0]
 
-        sigma = Gdm([0, 1], [0.5, 0.4])
+        sigma = GDM([0, 1], [0.5, 0.4])
         assert isinstance(sigma[0], DM)

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Classes that are initialized by a symplectic matrix and possibly thermal states if we have a DM.
+Classes representing Gaussian states.
 """
 
 from __future__ import annotations
@@ -30,10 +30,10 @@ from .ket import Ket
 from .dm import DM
 from ..utils import make_parameter, reshape_params
 
-__all__ = ["Gket", "Gdm"]
+__all__ = ["GKet", "GDM"]
 
 
-class Gket(Ket):
+class GKet(Ket):
     r"""
     The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
     """
@@ -46,7 +46,7 @@ class Gket(Ket):
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
     ) -> None:
-        super().__init__(name="Gket")
+        super().__init__(name="GKet")
         m = len(modes)
         if symplectic is None:
             symplectic = math.random_symplectic(m)
@@ -70,7 +70,7 @@ class Gket(Ket):
 
     def _getitem_builtin(self, modes: set[int] | Sequence[int]):
         r"""
-        The slicing method for a Gdm state.
+        The slicing method for a GDM state.
 
         Args:
             modes: the modes on which we want the reduced density matrix.
@@ -84,7 +84,7 @@ class Gket(Ket):
 
 
 # pylint: disable=too-many-positional-arguments
-class Gdm(DM):
+class GDM(DM):
     r"""
     The `N`-mode mixed state described by a Gaussian gate that acts on a given thermal state.
     """
@@ -99,7 +99,7 @@ class Gdm(DM):
         symplectic_trainable: bool = False,
         betas_trainable: bool = False,
     ) -> None:
-        super().__init__(name="Gdm")
+        super().__init__(name="GDM")
         m = len(modes)
 
         if symplectic is None:
@@ -135,7 +135,7 @@ class Gdm(DM):
 
     def _getitem_builtin(self, modes: set[int] | Sequence[int]):
         r"""
-        The slicing method for a Gdm state.
+        The slicing method for a GDM state.
 
         Args:
             modes: the modes on which we want the reduced density matrix.
