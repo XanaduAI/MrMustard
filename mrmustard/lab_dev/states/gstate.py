@@ -36,6 +36,22 @@ __all__ = ["GKet", "GDM"]
 class GKet(Ket):
     r"""
     The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
+
+    ..details:
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), produces the state
+        ..math:
+            |\psi\rangle = U |0\rangle
+
+    Args:
+        modes: the modes over which the state is defined.
+
+        symplectic: the symplectic representation of the unitary that acts on
+        vacuum to produce the desired state. If `None`, a random symplectic matrix
+        is chosen.
+
+        symplectic_trainable: determines if the symplectic matrix can be trained.
+
     """
 
     short_name = "Gk"
@@ -71,9 +87,6 @@ class GKet(Ket):
     def _getitem_builtin(self, modes: set[int] | Sequence[int]):
         r"""
         The slicing method for a GDM state.
-
-        Args:
-            modes: the modes on which we want the reduced density matrix.
         """
 
         remaining_modes = [mode for mode in self.modes if mode not in modes]
@@ -83,7 +96,28 @@ class GKet(Ket):
 
 class GDM(DM):
     r"""
-    The `N`-mode mixed state described by a Gaussian gate that acts on a given thermal state.
+    The `N`-mode mixed state described by a Gaussian gate that acts on a given
+    thermal state.
+
+    ..details:
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), and a set of temperatures, produces the state
+        ..math:
+            \rho = U (\bigotimes_i \rho_t(\beta_i))
+        where rho_t are thermal states with temperatures determined by beta.
+
+    Args:
+        modes: the modes over which the state is defined.
+
+        beta: the set of temperatures determining the thermal states. If only a
+        float is provided for a multi-modes, the same temperature is considered
+        across all modes.
+
+        symplectic: the symplectic representation of the unitary that acts on
+        vacuum to produce the desired state. If `None`, a random symplectic matrix
+        is chosen.
+
+        symplectic_trainable: determines if the symplectic matrix can be trained.
     """
 
     short_name = "Gd"
@@ -133,9 +167,6 @@ class GDM(DM):
     def _getitem_builtin(self, modes: set[int] | Sequence[int]):
         r"""
         The slicing method for a GDM state.
-
-        Args:
-            modes: the modes on which we want the reduced density matrix.
         """
         remaining_modes = [mode for mode in self.modes if mode not in modes]
 
