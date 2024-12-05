@@ -17,7 +17,7 @@ Classes representing Gaussian states.
 """
 
 from __future__ import annotations
-from copy import deepcopy
+
 from typing import Sequence
 
 from mrmustard import math
@@ -76,11 +76,9 @@ class GKet(Ket):
             modes: the modes on which we want the reduced density matrix.
         """
 
-        ret = deepcopy(self)
-        for m in self.modes:
-            if m not in modes:
-                ret = ret >> TraceOut(modes)
-        return ret
+        remaining_modes = [mode for mode in self.modes if mode not in modes]
+
+        return self >> TraceOut(remaining_modes)
 
 
 class GDM(DM):
@@ -139,8 +137,6 @@ class GDM(DM):
         Args:
             modes: the modes on which we want the reduced density matrix.
         """
-        ret = deepcopy(self)
-        for m in self.modes:
-            if m not in modes:
-                ret = ret >> TraceOut(modes)
-        return ret
+        remaining_modes = [mode for mode in self.modes if mode not in modes]
+
+        return self >> TraceOut(remaining_modes)
