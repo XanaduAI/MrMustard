@@ -49,7 +49,7 @@ class GKet(Ket):
         super().__init__(name="GKet")
         m = len(modes)
         if symplectic is None:
-            symplectic = math.random_symplectic(m)
+            symplectic = symplectic or math.random_symplectic(m)
 
         self._add_parameter(
             make_parameter(
