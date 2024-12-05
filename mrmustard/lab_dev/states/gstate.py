@@ -83,7 +83,6 @@ class GKet(Ket):
         return ret
 
 
-# pylint: disable=too-many-positional-arguments
 class GDM(DM):
     r"""
     The `N`-mode mixed state described by a Gaussian gate that acts on a given thermal state.
