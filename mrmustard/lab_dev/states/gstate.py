@@ -49,7 +49,7 @@ class GKet(Ket):
         super().__init__(name="GKet")
         m = len(modes)
         if symplectic is None:
-            symplectic = math.random_symplectic(m)
+            symplectic = symplectic or math.random_symplectic(m)
 
         self._add_parameter(
             make_parameter(
@@ -83,7 +83,6 @@ class GKet(Ket):
         return ret
 
 
-# pylint: disable=too-many-positional-arguments
 class GDM(DM):
     r"""
     The `N`-mode mixed state described by a Gaussian gate that acts on a given thermal state.
