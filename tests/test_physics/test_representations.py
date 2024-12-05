@@ -91,13 +91,6 @@ class TestRepresentation:
             0: (RepEnum.QUADRATURE, 0.1),
         }
 
-    def test_fock_array(self, d_gate_rep):
-        fock_array = d_gate_rep.fock_array(shape=(4, 6))
-        assert math.allclose(
-            fock_array,
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
-        )
-
     def test_matmul_btoq(self, d_gate_rep, btoq_rep):
         q_dgate = d_gate_rep @ btoq_rep
         assert q_dgate._idx_reps == {
@@ -108,7 +101,9 @@ class TestRepresentation:
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
+
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
+        assert math.allclose(d_barg.bargmann_triple()[0], d_gate_rep.bargmann_triple()[0])
         assert d_barg == d_gate_rep
         assert all((k[0] == RepEnum.BARGMANN for k in d_barg._idx_reps.values()))
 

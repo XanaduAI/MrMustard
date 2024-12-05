@@ -81,3 +81,13 @@ class TestBatch:
 
         with pytest.raises(IndentationError, match="indices"):
             batch[:, :, 0]  # pylint: disable=pointless-statement
+
+    def test_ufunc(self):
+        batch = Batch(data=self.array5688, batch_shape=(5, 6), batch_labels=("a", "b"))
+        # __call__
+        assert math.allclose(math.exp(batch), math.exp(self.array5688))
+        # reduce
+        assert math.allclose(math.sum(batch, axes=(1,)), math.sum(self.array5688, axes=(1,)))
+
+        with pytest.raises(ValueError, match="out of bounds"):
+            math.sum(batch, axes=(2,))  # pylint: disable=pointless-statement
