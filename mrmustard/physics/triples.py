@@ -817,9 +817,9 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
     In = math.eye(n_modes)
     Omega = math.block([[On, In], [-In, In]])
     mOmega = math.block([[On, -In], [In, In]])
-    A = math.block([[O2n, Omega], [mOmega, O2n]])
+    A = math.block([[O2n, mOmega], [Omega, O2n]])
     b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0 + 0j
+    c = (1.0 + 0j) * np.pi ** (n_modes)
     return A, b, c
 
 
