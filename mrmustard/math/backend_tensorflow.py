@@ -410,12 +410,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        if platform.system() == "Darwin" and platform.processor() == "arm":
-            os.environ["TF_USE_LEGACY_KERAS"] = "True"
-            AdamOpt = tf.keras.optimizers.legacy.Adam
-        else:
-            AdamOpt = tf.keras.optimizers.Adam
-        return AdamOpt(learning_rate=0.001)
+        os.environ["TF_USE_LEGACY_KERAS"] = "True"
+        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: list[Trainable]

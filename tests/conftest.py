@@ -15,11 +15,9 @@
 import os
 from pathlib import Path
 
-from importlib import metadata
 import pytest
 from hypothesis import Verbosity
 from hypothesis import settings as hyp_settings
-from semantic_version import Version
 
 from mrmustard import math
 
@@ -73,9 +71,6 @@ def set_backend(backend):
 
 
 def skip_np():
-    r"""
-    Skips tests if the backend is numpy.
-    """
     if math.backend_name == "numpy":
         pytest.skip("numpy")
 
