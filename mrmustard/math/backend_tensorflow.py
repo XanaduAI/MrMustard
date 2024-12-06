@@ -19,9 +19,11 @@
 from __future__ import annotations
 from typing import Callable, Sequence
 
+from importlib import metadata
 import os
 
 import numpy as np
+from semantic_version import Version
 import tensorflow_probability as tfp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -409,7 +411,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        os.environ["TF_USE_LEGACY_KERAS"] = "True"
+        if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
+            os.environ["TF_USE_LEGACY_KERAS"] = "True"
         return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
