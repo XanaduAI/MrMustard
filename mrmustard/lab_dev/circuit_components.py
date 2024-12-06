@@ -222,7 +222,7 @@ class CircuitComponent:
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
-    ) -> CircuitComponent:
+    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
@@ -251,7 +251,7 @@ class CircuitComponent:
         triple: tuple,
         phi: float = 0.0,
         name: str | None = None,
-    ) -> CircuitComponent:
+    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.

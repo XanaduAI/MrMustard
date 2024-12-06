@@ -169,7 +169,7 @@ class Wires:
         modes_in_ket: set[int] | None = None,
         classical_out: set[int] | None = None,
         classical_in: set[int] | None = None,
-    ) -> None:
+    ) -> None:  # pylint:disable=too-many-positional-arguments
         self.args: tuple[set, ...] = (
             modes_out_bra or set(),
             modes_in_bra or set(),

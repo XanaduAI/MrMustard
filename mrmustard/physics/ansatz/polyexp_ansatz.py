@@ -16,7 +16,7 @@
 This module contains the PolyExp ansatz.
 """
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-positional-arguments
 
 from __future__ import annotations
 
