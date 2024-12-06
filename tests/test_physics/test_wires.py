@@ -229,6 +229,10 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
 
+
+class TestWiresDisplay:
+    """Test the wires _ipython_display_ functionality."""
+
     @patch("mrmustard.physics.wires.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
