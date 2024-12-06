@@ -20,7 +20,6 @@ from __future__ import annotations
 from typing import Callable, Sequence
 
 import os
-import platform
 
 import numpy as np
 import tensorflow_probability as tfp
