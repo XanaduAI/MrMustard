@@ -100,6 +100,13 @@ class TestUnitary:
         assert u >> u.dual == Identity([0, 1])
         assert u.dual >> u == Identity([0, 1])
 
+    def test_init_from_fock(self):
+        cutoff = 100
+        eigs = [math.exp(1j * n**2) for n in range(cutoff)]
+        kerr = Unitary.from_fock([0], math.diag(math.astensor(eigs)))
+
+        assert kerr >> kerr.dual == Identity([0])
+
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
         gate_inv = gate.inverse()
