@@ -724,6 +724,8 @@ class CircuitComponent:
         return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
 
     def _ipython_display_(self):
+        if mmwidgets.IN_INTERACTIVE_SHELL:
+            return print(self)
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.ansatz, ArrayAnsatz) else mmwidgets.bargmann
         rep_widget = rep_fn(self.ansatz)

@@ -568,6 +568,8 @@ class PolyExpAnsatz(Ansatz):
             self.c = c
 
     def _ipython_display_(self):
+        if widgets.IN_INTERACTIVE_SHELL:
+            return print(self)
         display(widgets.bargmann(self))
 
     def _order_batch(self):
