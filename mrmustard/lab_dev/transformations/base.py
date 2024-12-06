@@ -270,7 +270,7 @@ class Unitary(Operation):
         r"""
         Allows initialization of unitaries from their Fock representation.
         """
-        return Unitary.from_ansatz(modes, ArrayAnsatz(array, batched), name)
+        return Unitary.from_ansatz(modes, modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes, max_r=1):
