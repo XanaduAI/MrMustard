@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Callable, Sequence
 
 import os
+import platform
 
 import numpy as np
 import tensorflow_probability as tfp
@@ -409,7 +410,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        return tf.keras.optimizers.Adam(learning_rate=0.001)
+        if platform.system() == "Darwin" and platform.processor() == "arm":
+            os.environ["TF_USE_LEGACY_KERAS"] = "True"
+            AdamOpt = tf.keras.optimizers.legacy.Adam
+        else:
+            AdamOpt = tf.keras.optimizers.Adam
+        return AdamOpt(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: list[Trainable]

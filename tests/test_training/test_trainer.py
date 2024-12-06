@@ -37,7 +37,7 @@ from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
-from ..conftest import skip_np, skip_tf
+from ..conftest import skip_np
 
 
 def wrappers():
@@ -79,7 +79,6 @@ class TestTrainer:
     def test_circ_cost(self, tasks, seed):  # pylint: disable=redefined-outer-name
         """Test distributed cost calculations."""
         skip_np()
-        skip_tf()
 
         has_seed = isinstance(seed, int)
         _, cost_fn = wrappers()
@@ -114,7 +113,6 @@ class TestTrainer:
     def test_circ_optimize(self, tasks, return_type):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
         skip_np()
-        skip_tf()
 
         max_steps = 15
         make_circ, cost_fn = wrappers()
@@ -158,7 +156,6 @@ class TestTrainer:
     def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
         skip_np()
-        skip_tf()
 
         make_circ, cost_fn = wrappers()
 
@@ -197,7 +194,6 @@ class TestTrainer:
     def test_update_pop(self):
         """Test for coverage."""
         skip_np()
-        skip_tf()
 
         d = {"a": 3, "b": "foo"}
         kwargs = {"b": "bar", "c": 22}
@@ -208,7 +204,6 @@ class TestTrainer:
     def test_no_ray(self, monkeypatch):
         """Tests ray import error"""
         skip_np()
-        skip_tf()
 
         monkeypatch.setitem(sys.modules, "ray", None)
         with pytest.raises(ImportError, match="Failed to import `ray`"):
@@ -220,7 +215,6 @@ class TestTrainer:
     def test_invalid_tasks(self):
         """Tests unexpected tasks arg"""
         skip_np()
-        skip_tf()
 
         with pytest.raises(
             ValueError, match="`tasks` is expected to be of type int, list, or dict."
@@ -233,7 +227,6 @@ class TestTrainer:
     def test_warn_unused_kwargs(self):  # pylint: disable=redefined-outer-name
         """Test warning of unused kwargs"""
         skip_np()
-        skip_tf()
 
         _, cost_fn = wrappers()
         with pytest.warns(UserWarning, match="Unused kwargs:"):
@@ -247,7 +240,6 @@ class TestTrainer:
     def test_no_pbar(self):  # pylint: disable=redefined-outer-name
         """Test turning off pregress bar"""
         skip_np()
-        skip_tf()
 
         _, cost_fn = wrappers()
         results = map_trainer(
@@ -262,7 +254,6 @@ class TestTrainer:
     def test_unblock(self, tasks):  # pylint: disable=redefined-outer-name
         """Test unblock async mode"""
         skip_np()
-        skip_tf()
 
         _, cost_fn = wrappers()
         result_getter = map_trainer(
