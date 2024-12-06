@@ -19,6 +19,7 @@
 from unittest.mock import patch
 
 import pytest
+from IPython import InteractiveShell
 from ipywidgets import HTML
 
 from mrmustard.physics.wires import Wires
@@ -235,3 +236,12 @@ class TestWires:
         wires._ipython_display_()
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
+
+    @patch("mrmustard.physics.wires.get_ipython")
+    def test_ipython_repr_interactive(self, mock_ipython, capsys):
+        """Test the IPython repr function."""
+        mock_ipython.return_value = InteractiveShell()
+        wires = Wires({0}, {}, {3}, {3, 4})
+        wires._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(wires)

@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from IPython import InteractiveShell
 from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
 from plotly.graph_objs import FigureWidget
 
@@ -320,6 +321,15 @@ class TestPolyExpAnsatz:
         # max_width is spot-check that this is bargmann widget
         assert len(stack.children) == 2
         assert all(box.layout.max_width == "50%" for box in stack.children)
+
+    @patch("mrmustard.physics.ansatz.polyexp_ansatz.get_ipython")
+    def test_ipython_repr_interactive(self, mock_ipython, capsys):
+        """Test the IPython repr function."""
+        mock_ipython.return_value = InteractiveShell()
+        rep = PolyExpAnsatz(*Abc_triple(2))
+        rep._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(rep)
 
     def test_matmul_barg_barg(self):
         triple1 = Abc_triple(3)

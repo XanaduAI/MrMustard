@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from IPython import InteractiveShell
 from ipywidgets import HTML, Box, HBox, VBox
 
 from mrmustard import math, settings
@@ -558,6 +559,15 @@ class TestCircuitComponent:
         [title_widget, wires_widget] = box.children
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
+
+    @patch("mrmustard.lab_dev.circuit_components.get_ipython")
+    def test_ipython_repr_interactive(self, mock_ipython, capsys):
+        """Test the IPython repr function."""
+        mock_ipython.return_value = InteractiveShell()
+        dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
+        dgate._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(dgate)
 
     def test_serialize_default_behaviour(self):
         """Test the default serializer."""
