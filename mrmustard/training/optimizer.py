@@ -87,7 +87,7 @@ class Optimizer:
                 Learn more about how to use callbacks to have finer control of the optimization
                 process in the :mod:`.callbacks` module.
         """
-        math._euclidean_opt = None  # temporary workaround
+        math._euclidean_opt = None  # TODO: fix this temporary workaround
         callbacks = self._coerce_callbacks(callbacks)
 
         try:
