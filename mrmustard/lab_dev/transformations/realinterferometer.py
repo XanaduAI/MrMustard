@@ -45,22 +45,16 @@ class RealInterferometer(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        num_modes: int | None = None,
         orthogonal: RealMatrix | None = None,
         orthogonal_trainable: bool = False,
     ):
-        if num_modes is not None and (num_modes != len(modes)):
-            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
-
-        if num_modes is None:
-            num_modes = len(modes)
+        num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(
                 f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}"
             )
 
-        if orthogonal is None:
-            orthogonal = math.random_orthogonal(num_modes)
+        orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
 
         super().__init__(name="RealInterferometer")
         self._add_parameter(

@@ -56,8 +56,8 @@ class Ggate(Unitary):
         symplectic_trainable: bool = False,
     ):
         super().__init__(name="Ggate")
-        if symplectic is None:
-            symplectic = math.random_symplectic(len(modes))
+
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
         self.parameter_set.add_parameter(S)
         self._representation = self.from_ansatz(

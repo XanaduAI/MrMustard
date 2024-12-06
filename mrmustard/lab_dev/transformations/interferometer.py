@@ -47,20 +47,15 @@ class Interferometer(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        num_modes: int | None = None,
         unitary: ComplexMatrix | None = None,
         unitary_trainable: bool = False,
     ):
-        if num_modes is not None and num_modes != len(modes):
-            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
-        if num_modes is None:
-            num_modes = len(modes)
-        if unitary is not None and unitary.shape[-1] != num_modes:
+        num_modes = len(modes)
+        unitary = unitary if unitary is not None else math.random_unitary(num_modes)
+        if unitary.shape[-1] != num_modes:
             raise ValueError(
                 f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
             )
-        if unitary is None:
-            unitary = math.random_unitary(num_modes)
         super().__init__(name="Interferometer")
         self._add_parameter(
             make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
