@@ -29,7 +29,6 @@ from numpy.typing import ArrayLike
 from matplotlib import colors
 import matplotlib.pyplot as plt
 
-from IPython import get_ipython, InteractiveShell
 from IPython.display import display
 
 from mrmustard.utils.typing import (
@@ -569,9 +568,6 @@ class PolyExpAnsatz(Ansatz):
             self.c = c
 
     def _ipython_display_(self):
-        if isinstance(get_ipython(), InteractiveShell):
-            print(self)
-            return
         display(widgets.bargmann(self))
 
     def _order_batch(self):
