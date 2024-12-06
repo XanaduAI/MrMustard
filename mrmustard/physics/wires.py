@@ -547,5 +547,6 @@ class Wires:
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
-            return print(self)
+            print(self)
+            return
         display(widgets.wires(self))

@@ -207,10 +207,9 @@ class ArrayAnsatz(Ansatz):
             self.array = [self._fn(**self._kwargs)]
 
     def _ipython_display_(self):
-        if widgets.IN_INTERACTIVE_SHELL:
-            return print(self)
-        if (w := widgets.fock(self)) is None:
-            return print(repr(self))
+        if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
+            print(self)
+            return
         display(w)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
