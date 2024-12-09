@@ -19,11 +19,14 @@ from matplotlib import colors
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import plotly.graph_objs as go
+from IPython import get_ipython
+from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
 from .css import FOCK, WIRES, TABLE, STATE
 
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
+IN_INTERACTIVE_SHELL = isinstance(get_ipython(), TerminalInteractiveShell)
 
 
 def _batch_widget(obj, batch_size, widget_fn, *widget_args):

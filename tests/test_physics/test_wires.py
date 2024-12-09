@@ -148,6 +148,10 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
 
+
+class TestWiresDisplay:
+    """Test the wires _ipython_display_ functionality."""
+
     @patch("mrmustard.physics.wires.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
@@ -170,3 +174,11 @@ class TestWires:
         wires = Wires({0}, {1})
         for w in wires:
             assert isinstance(w.id, int)
+
+    @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
+    def test_ipython_repr_interactive(self, capsys):
+        """Test the IPython repr function."""
+        wires = Wires({0}, {}, {3}, {3, 4})
+        wires._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(wires)

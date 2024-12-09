@@ -697,4 +697,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return new_wires, perm
 
     def _ipython_display_(self):
+        if widgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
         display(widgets.wires(self))
