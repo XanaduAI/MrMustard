@@ -176,7 +176,7 @@ class Ket(State):
         S = math.random_symplectic(m, max_r)
         transformation = (
             1
-            / np.sqrt(2)
+            / math.sqrt(complex(2))
             * math.block(
                 [
                     [

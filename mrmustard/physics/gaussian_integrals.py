@@ -218,8 +218,8 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
     if mode == "kron":
         A1 = math.repeat(A1, batch2, axis=0)
         A2 = math.tile(A2, (batch1, 1, 1))
-        A1Z = math.concat([A1, math.zeros((batch1 * batch2, nA1, nA2))], axis=-1)
-        ZA2 = math.concat([math.zeros((batch1 * batch2, nA2, nA1)), A2], axis=-1)
+        A1Z = math.concat([A1, math.zeros((batch1 * batch2, nA1, nA2), dtype=A1.dtype)], axis=-1)
+        ZA2 = math.concat([math.zeros((batch1 * batch2, nA2, nA1), dtype=A2.dtype), A2], axis=-1)
         b1 = math.repeat(b1, batch2, axis=0)
         b2 = math.tile(b2, (batch1, 1))
         c = math.reshape(
@@ -227,8 +227,8 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
             [batch1 * batch2] + poly_shape1 + poly_shape2,
         )
     elif mode == "zip":
-        A1Z = math.concat([A1, math.zeros((batch1, nA1, nA2))], axis=-1)
-        ZA2 = math.concat([math.zeros((batch1, nA2, nA1)), A2], axis=-1)
+        A1Z = math.concat([A1, math.zeros((batch1, nA1, nA2), dtype=A1.dtype)], axis=-1)
+        ZA2 = math.concat([math.zeros((batch1, nA2, nA1), dtype=A2.dtype), A2], axis=-1)
         c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
 
     A = math.concat([A1Z, ZA2], axis=-2)
