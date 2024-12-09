@@ -309,6 +309,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
+    def repeat(self, array: tf.Tensor, repeats: int, axis: int = None) -> tf.Tensor:
+        return tf.repeat(array, repeats, axis=axis)
+
     def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
         return tf.round(10**decimals * array) / 10**decimals
 
