@@ -345,7 +345,7 @@ class Representation:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
 
-        rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
+        rep = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
         rep = rep.reorder(perm) if perm else rep
         idx_reps = self._matmul_idx_reps(wires_result, other)
         return Representation(rep, wires_result, idx_reps)

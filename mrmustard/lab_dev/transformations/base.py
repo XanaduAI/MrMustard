@@ -493,7 +493,7 @@ class Channel(Map):
         U = Unitary.random(range(3 * m), max_r)
         u_psi = Vacuum(range(2 * m)) >> U
         A = u_psi.ansatz
-        kraus = A.conj[range(2 * m)] @ A[range(2 * m)]
+        kraus = A.conj.contract(A, range(2 * m), range(2 * m))
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
