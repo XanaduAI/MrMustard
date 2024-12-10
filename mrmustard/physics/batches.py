@@ -101,12 +101,6 @@ class Batch:
         """
         return self.data.shape
 
-    def conjugate(self) -> Batch:
-        r"""
-        The complex conjugate.
-        """
-        return Batch(math.conj(self.data), self.batch_shape, self.batch_labels)
-
     def __array__(self) -> NDArray:
         return math.asnumpy(self.data)
 

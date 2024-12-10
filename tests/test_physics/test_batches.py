@@ -53,14 +53,6 @@ class TestBatch:
         with pytest.raises(ValueError, match="batch shape"):
             Batch(self.array5688, batch_shape=(6, 6))  # pylint: disable=pointless-statement
 
-    def test_conjugate(self):
-        batch = Batch(data=self.array5688, batch_shape=(5, 6), batch_labels=("a", "b"))
-        conj_batch = batch.conjugate()
-        assert math.allclose(conj_batch.data, math.conj(self.array5688))
-        assert conj_batch.batch_labels == batch.batch_labels
-        assert conj_batch.batch_shape == batch.batch_shape
-        assert conj_batch.core_shape == batch.core_shape
-
     def test_getitem(self):
         batch = Batch(data=self.array5688, batch_shape=(5, 6), batch_labels=("a", "b"))
 
