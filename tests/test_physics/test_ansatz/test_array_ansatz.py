@@ -270,3 +270,11 @@ class TestArrayAnsatz:
         rep = ArrayAnsatz(Batch(np.random.random((1, 4, 4, 4))))
         rep._ipython_display_()
         mock_display.assert_not_called()
+
+    @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
+    def test_ipython_repr_interactive(self, capsys):
+        """Test the IPython repr function."""
+        rep = ArrayAnsatz(Batch(np.random.random((1, 8))))
+        rep._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(rep)

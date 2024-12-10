@@ -16,7 +16,7 @@
 This module contains the PolyExp ansatz.
 """
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-positional-arguments
 
 from __future__ import annotations
 
@@ -615,6 +615,9 @@ class PolyExpAnsatz(Ansatz):
             self.c = c
 
     def _ipython_display_(self):
+        if widgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
         display(widgets.bargmann(self))
 
     def _order_batch(self):

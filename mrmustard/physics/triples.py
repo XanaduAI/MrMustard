@@ -24,6 +24,7 @@ import numpy as np
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix, ComplexMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from .bargmann_utils import symplectic2Au
 
 
 #  ~~~~~~~~~
@@ -91,6 +92,18 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     b = _vacuum_B_vector(n_modes)
     c = 1.0 + 0j
 
+    return A, b, c
+
+
+def bargmann_eigenstate_Abc(x: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The Abc triple of a Bargmann eigenstate.
+    """
+    x = list(_reshape(x=x))
+    nmodes = len(x[0])
+    A = _vacuum_A_matrix(nmodes)
+    b = x
+    c = 1
     return A, b, c
 
 
@@ -218,6 +231,59 @@ def two_mode_squeezed_vacuum_state_Abc(
     c = math.prod(1 / math.cosh(r))
 
     return A, b, c
+
+
+def gket_state_Abc(symplectic: RealMatrix):
+    r"""
+    The A,b,c parameters of a Gaussian Ket (Gket) state. This is simply a Gaussian acted on the vacuum.
+
+    Args:
+        symplectic: the symplectic representation of the Gaussian
+
+    Returns:
+        The ``(A,b,c)`` triple of the Gket state.
+    """
+
+    m = symplectic.shape[-1] // 2  # num of modes
+
+    A = symplectic2Au(symplectic)
+    b = math.zeros(m, dtype=A.dtype)
+    c = ((-1) ** m * math.det(A[m:, m:] @ math.conj(A[m:, m:]) - math.eye_like(A[m:, m:]))) ** 0.25
+    return A[:m, :m], b, c
+
+
+def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
+    r"""
+    The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
+
+    Args:
+        betas: the list of betas corresponding to the temperatures of the initial thermal state
+        symplectic: the symplectic matrix of the Gaussian
+
+    Returns:
+        The ``(A,b,c)`` triple of the resulting Gaussian DM state.
+    """
+    betas = math.atleast_1d(betas)  # makes it work
+    m = len(betas)
+    Au = symplectic2Au(symplectic)
+    A_udagger_u = math.block(
+        [
+            [math.conj(Au), math.zeros((2 * m, 2 * m), dtype="complex128")],
+            [math.zeros((2 * m, 2 * m), dtype="complex128"), Au],
+        ]
+    )
+
+    D = math.diag(math.exp(-betas))
+    A_fd = math.block([[math.zeros((m, m)), D], [D, math.zeros((m, m))]])
+    c_fd = math.prod((1 - math.exp(-betas)))
+    t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(c_fd))
+    c_u = (
+        (-1) ** m * math.det(Au[m:, m:] @ math.conj(Au[m:, m:]) - math.eye_like(Au[m:, m:]))
+    ) ** (0.5)
+    t_u = (math.atleast_3d(A_udagger_u), math.zeros((1, 4 * m)), math.atleast_1d(c_u))
+    return complex_gaussian_integral_2(
+        t_fd, t_u, list(range(2 * m)), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
+    )
 
 
 def sauron_state_Abc(n: int, epsilon: float):

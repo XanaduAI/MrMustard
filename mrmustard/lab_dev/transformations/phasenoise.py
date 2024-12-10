@@ -77,7 +77,7 @@ class PhaseNoise(Channel):
         array = math.asnumpy(other.fock_array())
         mode_indices = np.indices(array.shape)
         for mode in self.modes:
-            phase_factors = np.exp(
+            phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
                 * self.phase_stdev.value**2

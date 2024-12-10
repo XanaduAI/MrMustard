@@ -248,9 +248,8 @@ class ArrayAnsatz(Ansatz):
             self.array = self._fn(**self._kwargs)
 
     def _ipython_display_(self):
-        w = widgets.fock(self)
-        if w is None:
-            print(repr(self))
+        if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
+            print(self)
             return
         display(w)
 

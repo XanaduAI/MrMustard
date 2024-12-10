@@ -341,6 +341,14 @@ class TestPolyExpAnsatz:
         assert len(stack.children) == 2
         assert all(box.layout.max_width == "50%" for box in stack.children)
 
+    @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
+    def test_ipython_repr_interactive(self, capsys):
+        """Test the IPython repr function."""
+        rep = PolyExpAnsatz(*Abc_triple(2))
+        rep._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(rep)
+
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_mul(self, n):
         triple1 = Abc_triple(n)

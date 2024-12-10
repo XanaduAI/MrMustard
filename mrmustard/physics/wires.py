@@ -169,7 +169,7 @@ class Wires:
         modes_in_ket: set[int] | None = None,
         classical_out: set[int] | None = None,
         classical_in: set[int] | None = None,
-    ) -> None:
+    ) -> None:  # pylint:disable=too-many-positional-arguments
         self.args: tuple[set, ...] = (
             modes_out_bra or set(),
             modes_in_bra or set(),
@@ -546,4 +546,7 @@ class Wires:
         return f"Wires{self.args}"
 
     def _ipython_display_(self):
+        if widgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
         display(widgets.wires(self))

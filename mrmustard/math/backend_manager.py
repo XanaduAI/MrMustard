@@ -981,6 +981,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("real", (array,))
 
+    def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
+        """
+        Repeats elements of a tensor along a specified axis.
+
+        Args:
+            array: The input tensor.
+            repeats: The number of repetitions for each element.
+            axis: The axis along which to repeat values. If None, use the flattened input tensor.
+
+        Returns:
+            The tensor with repeated elements.
+        """
+        return self._apply("repeat", (array, repeats, axis))
+
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         r"""The reshaped array.
 
@@ -1357,8 +1371,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
-            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            W = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            V = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
             V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)

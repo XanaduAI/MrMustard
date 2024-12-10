@@ -366,6 +366,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
 
+    def repeat(self, array: np.ndarray, repeats: int, axis: int = None) -> np.ndarray:
+        return np.repeat(array, repeats, axis=axis)
+
     def round(self, array: np.ndarray, decimals: int = 0) -> np.ndarray:
         return np.round(array, decimals)
 
