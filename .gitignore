@@ -22,4 +22,4 @@ coverage.xml
 .coverage
 /.serialize_cache/
 
-.venv
+.venv*

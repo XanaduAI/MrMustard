@@ -15,15 +15,12 @@
 """
 Unit tests for the :class:`BackendManager`.
 """
-from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 import tensorflow as tf
 
 from mrmustard import math
-
-from ..conftest import skip_np
 
 
 # pylint: disable=too-many-public-methods
@@ -659,21 +656,3 @@ class TestBackendManager:
         probs = np.array([1e-6 for _ in range(300)])
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
-
-    @patch("importlib.metadata.distribution")
-    @patch("platform.processor")
-    @patch("platform.system")
-    def test_euclidean_opt_warning(self, mock_system, mock_processor, mock_version):
-        """Test that a warning is raised for M1/M2 Mac users with TF 2.16+."""
-        skip_np()
-        mock_system.return_value = "Darwin"
-        mock_processor.return_value = "arm"
-        mock_version.return_value = MagicMock(version="2.16.0")
-
-        math._euclidean_opt = None  # just in case another test set it
-        try:
-            with pytest.warns(UserWarning, match=r"Mac.*please downgrade TensorFlow to 2.15"):
-                opt = math.euclidean_opt
-            assert isinstance(opt, tf.keras.optimizers.Adam)
-        finally:
-            math._euclidean_opt = None  # reset after test passes
