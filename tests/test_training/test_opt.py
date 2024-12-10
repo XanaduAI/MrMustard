@@ -15,6 +15,7 @@
 """optimization tests"""
 
 import numpy as np
+import tensorflow as tf
 from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
@@ -47,6 +48,9 @@ def test_S2gate_coincidence_prob(n):
     skip_np()
 
     settings.SEED = 40
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     S = S2gate(
         r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
         r_trainable=True,
@@ -84,6 +88,9 @@ def test_hong_ou_mandel_optimizer(i, k):
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
@@ -119,6 +126,9 @@ def test_learning_two_mode_squeezing():
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     ops = [
         Sgate(
             r=abs(settings.rng.normal(size=2)),
@@ -151,6 +161,9 @@ def test_learning_two_mode_Ggate():
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
@@ -167,7 +180,10 @@ def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
     skip_np()
 
-    settings.SEED = 42
+    settings.SEED = 4
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     ops = [
         Sgate(
             r=settings.rng.normal(size=2) ** 2,
@@ -195,6 +211,9 @@ def test_learning_two_mode_RealInterferometer():
     skip_np()
 
     settings.SEED = 2
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     ops = [
         Sgate(
             r=settings.rng.normal(size=2) ** 2,
@@ -222,6 +241,9 @@ def test_learning_four_mode_Interferometer():
     skip_np()
 
     settings.SEED = 4
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     solution_U = np.array(
         [
             [
@@ -283,6 +305,9 @@ def test_learning_four_mode_RealInterferometer():
     skip_np()
 
     settings.SEED = 6
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     solution_O = np.array(
         [
             [0.5, -0.5, 0.5, 0.5],
@@ -329,6 +354,9 @@ def test_squeezing_hong_ou_mandel_optimizer():
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     r = np.arcsinh(1.0)
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
@@ -350,6 +378,9 @@ def test_parameter_passthrough():
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     r = np.arcsinh(1.0)
     r_var = Variable(r, "r", (0.0, None))
     phi_var = Variable(settings.rng.normal(), "phi", (None, None))
@@ -375,6 +406,9 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     skip_np()
 
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
 
     nbar = 1.4
@@ -406,6 +440,9 @@ def test_opt_backend_param():
 
     # rotated displaced squeezed state
     settings.SEED = 42
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
+
     rotation_angle = np.pi / 2
     target_state = SqueezedVacuum(r=1.0, phi=rotation_angle)
 
@@ -429,6 +466,8 @@ def test_dgate_optimization():
     skip_np()
 
     settings.SEED = 24
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
 
     dgate = Dgate(x_trainable=True, y_trainable=True)
     target_state = DisplacedSqueezed(r=0.0, x=0.1, y=0.2).ket(cutoffs=[40])
@@ -449,6 +488,8 @@ def test_sgate_optimization():
     skip_np()
 
     settings.SEED = 25
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
 
     sgate = Sgate(r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
     target_state = SqueezedVacuum(r=0.1, phi=0.2).ket(cutoffs=[40])
@@ -470,6 +511,8 @@ def test_bsgate_optimization():
     skip_np()
 
     settings.SEED = 25
+    rng = tf.random.get_global_generator()
+    rng.reset_from_seed(settings.SEED)
 
     G = Gaussian(2)
 
