@@ -16,6 +16,7 @@
 This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
 various states and transformations.
 """
+from __future__ import annotations
 
 from typing import Generator, Iterable, Union
 
