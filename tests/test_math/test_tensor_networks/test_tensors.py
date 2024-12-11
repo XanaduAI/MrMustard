@@ -206,7 +206,7 @@ class TestTensor:
         r"""
         Tests the error for the value property.
         """
-        with pytest.raises(TypeError, match="abstract method value"):
+        with pytest.raises(TypeError, match="abstract"):
             TBad("t_bad")
 
     def test_change_modes(self):

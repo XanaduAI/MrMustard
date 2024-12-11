@@ -49,6 +49,9 @@
 * Fix the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
   [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
 
+* Use the default repr when in interactive IPython.
+  [(#531)](https://github.com/XanaduAI/MrMustard/pull/531)
+
 ### Documentation
 
 ### Tests

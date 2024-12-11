@@ -335,6 +335,9 @@ class Ket(State):
         return math.abs(self.quadrature(quad, phi)) ** 2
 
     def _ipython_display_(self):  # pragma: no cover
+        if widgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
