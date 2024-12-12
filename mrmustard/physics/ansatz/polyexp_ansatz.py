@@ -783,6 +783,8 @@ class PolyExpAnsatz(Ansatz):
             return self._call_all(z)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
+        if not isinstance(other, PolyExpAnsatz):
+            return False
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
