@@ -32,7 +32,7 @@ from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexMatrix, RealMatrix, Vector
+from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
@@ -270,6 +270,20 @@ class Unitary(Operation):
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
     @classmethod
+    def from_fock(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        array: ComplexTensor,
+        batched: bool = False,
+        name: str | None = None,
+    ) -> Unitary:
+        r"""
+        Allows initialization of unitaries from their Fock representation.
+        """
+        return Unitary.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
+
+    @classmethod
     def random(cls, modes, max_r=1):
         r"""
         Returns a random unitary.
@@ -493,6 +507,20 @@ class Channel(Map):
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        array: ComplexTensor,
+        batched: bool = False,
+        name: str | None = None,
+    ) -> Channel:
+        r"""
+        Allows initialization of unitaries from their Fock representation.
+        """
+        return Channel.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:

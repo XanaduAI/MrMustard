@@ -669,6 +669,8 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
+        if not isinstance(other, PolyExpAnsatz):
+            return False
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
