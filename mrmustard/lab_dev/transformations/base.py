@@ -262,7 +262,8 @@ class Unitary(Operation):
     @classmethod
     def from_fock(
         cls,
-        modes: Sequence[int],
+        modes_in: Sequence[int],
+        modes_out: Sequence[int],
         array: ComplexTensor,
         name: str | None = None,
         batched: bool = False,
@@ -270,7 +271,7 @@ class Unitary(Operation):
         r"""
         Allows initialization of unitaries from their Fock representation.
         """
-        return Unitary.from_ansatz(modes, modes, ArrayAnsatz(array, batched), name)
+        return Unitary.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes, max_r=1):
@@ -490,6 +491,20 @@ class Channel(Map):
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes_in: Sequence[int],
+        modes_out: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batched: bool = False,
+    ) -> Unitary:
+        r"""
+        Allows initialization of unitaries from their Fock representation.
+        """
+        return Channel.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
