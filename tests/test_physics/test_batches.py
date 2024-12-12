@@ -85,7 +85,7 @@ class TestBatch:
         # __call__
         assert math.allclose(math.exp(batch), math.exp(self.array5688))
         # reduce
-        assert math.allclose(math.sum(batch, axes=(1,)), math.sum(self.array5688, axes=(1,)))
+        assert math.allclose(math.sum(batch, axis=(1,)), math.sum(self.array5688, axis=(1,)))
 
         with pytest.raises(ValueError, match="out of bounds"):
-            math.sum(batch, axes=(2,))  # pylint: disable=pointless-statement
+            math.sum(batch, axis=(2,))  # pylint: disable=pointless-statement

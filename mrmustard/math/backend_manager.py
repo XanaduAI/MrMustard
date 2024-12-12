@@ -110,6 +110,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             raise NotImplementedError(msg)
         return attr(*args)
 
+    def _get_fn(self, fn_str: str) -> Callable:
+        try:
+            return getattr(self.backend, fn_str)
+        except AttributeError:
+            msg = f"Function ``{fn_str}`` not implemented for backend ``{self.backend_name}``."
+            # pylint: disable=raise-missing-from
+            raise NotImplementedError(msg)
+
     def _bind(self) -> None:
         r"""
         Binds the types and decorators of this backend manager to those of the given ``self._backend``.
@@ -199,7 +207,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The absolute value of the given ``array``.
         """
-        return self._apply("abs", (array,))
+        fn = self._get_fn("abs")
+        try:
+            return array.__array_ufunc__(fn, "__call__", array)
+        except AttributeError:
+            return fn(array=array)
 
     def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
         r"""
@@ -218,7 +230,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Raises:
             ValueError: If the shape of the two arrays do not match.
         """
-        return self._apply("allclose", (array1, array2, atol))
+        fn = self._get_fn("allclose")
+        return fn(array1=array1, array2=array2, atol=atol)
 
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
@@ -229,7 +242,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             ``True`` if any element of array is ``True``, ``False`` otherwise.
         """
-        return self._apply("any", (array,))
+        fn = self._get_fn("any")
+        return fn(array=array)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
@@ -238,13 +252,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             start: The start of the interval.
             limit: The end of the interval.
             delta: The step size.
-            dtype: The dtype of the returned array.
+            dtype: The dtype of the returned array. Defaults to float64.
 
         Returns:
             The array of evenly spaced values.
         """
-        # NOTE: is float64 by default
-        return self._apply("arange", (start, limit, delta, dtype))
+        fn = self._get_fn("arange")
+        return fn(start=start, limit=limit, delta=delta, dtype=dtype)
 
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts an array to a numpy array.
@@ -255,7 +269,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The corresponding numpy array.
         """
-        return self._apply("asnumpy", (tensor,))
+        fn = self._get_fn("asnumpy")
+        return fn(tensor=tensor)
 
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         r"""Assigns value to tensor.
@@ -267,7 +282,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensor with value assigned
         """
-        return self._apply("assign", (tensor, value))
+        fn = self._get_fn("assign")
+        return fn(tensor=tensor, value=value)
 
     def astensor(self, array: Tensor, dtype=None):
         r"""Converts a numpy array to a tensor.
@@ -280,7 +296,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensor with dtype.
         """
-        return self._apply("astensor", (array, dtype))
+        fn = self._get_fn("astensor")
+        try:
+            return array.__array_ufunc__(fn, "__call__", array, dtype=dtype)
+        except AttributeError:
+            return fn(array=array, dtype=dtype)
 
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least one dimension.
@@ -293,7 +313,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least one dimension.
         """
-        return self._apply("atleast_1d", (array, dtype))
+        fn = self._get_fn("atleast_1d")
+        return fn(array=array, dtype=dtype)
 
     def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least two dimensions.
@@ -306,7 +327,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least two dimensions.
         """
-        return self._apply("atleast_2d", (array, dtype))
+        fn = self._get_fn("atleast_2d")
+        return fn(array=array, dtype=dtype)
 
     def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least three dimensions by eventually inserting
@@ -321,7 +343,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least three dimensions.
         """
-        return self._apply("atleast_3d", (array, dtype))
+        fn = self._get_fn("atleast_3d")
+        return fn(array=array, dtype=dtype)
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
@@ -396,7 +419,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The concatenated values.
         """
-        return self._apply("concat", (values, axis))
+        fn = self._get_fn("concat")
+        return fn(values, axis)
 
     def conj(self, array: Tensor) -> Tensor:
         r"""The complex conjugate of array.
@@ -407,7 +431,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The complex conjugate of the given ``array``.
         """
-        return self._apply("conj", (array,))
+        fn = self._get_fn("conj")
+        try:
+            return array.__array_ufunc__(fn, "__call__", array)
+        except AttributeError:
+            return fn(array=array)
 
     def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
         r"""Returns a constraint function for the given bounds.
@@ -619,14 +647,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
-        return self._apply(
-            "gather",
-            (
-                array,
-                indices,
-                axis,
-            ),
-        )
+        fn = self._get_fn("gather")
+        return fn(array=array, indices=indices, axis=axis)
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -899,7 +921,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The outer product of array1 and array2
         """
-        return self._apply("outer", (array1, array2))
+        fn = self._get_fn("outer")
+        return fn(array1=array1, array2=array2)
 
     def pad(
         self,
@@ -919,7 +942,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The padded array
         """
-        return self._apply("pad", (array, paddings, mode, constant_values))
+        fn = self._get_fn("pad")
+        return fn(array=array, paddings=paddings, mode=mode, constant_values=constant_values)
 
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""The pseudo-inverse of matrix.
@@ -979,7 +1003,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The real part of ``array``
         """
-        return self._apply("real", (array,))
+        fn = self._get_fn("real")
+        return fn(array=array)
 
     def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
         """
@@ -1102,21 +1127,25 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
-    def sum(self, array: Tensor, axes: Sequence[int] = None):
+    def sum(self, array: Tensor, axis: Sequence[int] = None):
         r"""The sum of array.
 
         Args:
             array: The array to take the sum of
-            axes (tuple): axes to sum over
+            axis (tuple): The axis to sum over
 
         Returns:
             The sum of array
         """
-        if axes is not None:
-            neg = [a for a in axes if a < 0]
-            pos = [a for a in axes if a >= 0]
-            axes = sorted(neg) + sorted(pos)[::-1]
-        return self._apply("sum", (array, axes))
+        fn = self._get_fn("sum")
+        if axis is not None:
+            neg = [a for a in axis if a < 0]
+            pos = [a for a in axis if a >= 0]
+            axis = tuple(sorted(neg) + sorted(pos)[::-1])
+        try:
+            return array.__array_ufunc__(fn, "reduce", array, axis=axis)
+        except AttributeError:
+            return fn(array=array, axis=axis)
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
@@ -1165,7 +1194,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array
         """
-        return self._apply("transpose", (a, perm))
+        fn = self._get_fn("transpose")
+        return fn(a=a, perm=perm)
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.

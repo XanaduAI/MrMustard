@@ -23,7 +23,6 @@ from typing import Any, Collection, Iterable
 
 import string
 import random
-from numpy.typing import NDArray
 
 from mrmustard import math
 from mrmustard.utils.typing import (
@@ -52,7 +51,7 @@ class Batch:
         batch_shape: tuple[int, ...] | None = None,
         batch_labels: tuple[str, ...] | None = None,
     ):
-        self._data = math.astensor(data)
+        self._data = data
         self.dtype = self._data.dtype
         self._batch_shape = batch_shape or self._data.shape[:1]
         if self._data.shape[: len(self._batch_shape)] != self._batch_shape:
@@ -101,7 +100,7 @@ class Batch:
         """
         return self.data.shape
 
-    def __array__(self) -> NDArray:
+    def __array__(self):
         return math.asnumpy(self.data)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):  # pragma: no cover
@@ -111,25 +110,23 @@ class Batch:
         if method == "__call__":
             inputs = [i.data if isinstance(i, Batch) else i for i in inputs]
             return Batch(ufunc(*inputs, **kwargs), self.batch_shape, self.batch_labels)
-
         elif method == "reduce":
-            axis = kwargs.pop("axis") or 0
-            if axis > len(self.batch_shape) - 1:
+            axes = kwargs.get("axis") or (0,)
+
+            if any(axis > len(self.batch_shape) - 1 for axis in axes):
                 raise ValueError("Axis out of bounds.")
             input = (
                 inputs[0].data if isinstance(inputs[0], Batch) else inputs[0]
             )  # assume single input
-            slices = [input[(slice(None),) * axis + (i,)] for i in range(input.shape[axis])]
             batch_shape = tuple(
-                (shape for idx, shape in enumerate(self.batch_shape) if idx != axis)
+                (shape for idx, shape in enumerate(self.batch_shape) if idx not in axes)
             )
             batch_labels = tuple(
-                (label for idx, label in enumerate(self.batch_labels) if idx != axis)
+                (label for idx, label in enumerate(self.batch_labels) if idx not in axes)
             )
-            data = slices[0]
-            for item in slices[1:]:
-                data = ufunc(data, item, **kwargs)
+            data = ufunc(input.data, **kwargs)
             return Batch(data, batch_shape, batch_labels) if batch_shape else data
+
         else:
             # TODO: implement more methods as needed
             raise NotImplementedError(f"Cannot call {method} on {ufunc}.")

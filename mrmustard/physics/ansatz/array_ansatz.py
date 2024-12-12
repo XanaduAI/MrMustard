@@ -57,7 +57,7 @@ class ArrayAnsatz(Ansatz):
     def __init__(self, array: Tensor | Batch[Tensor], batch_labels: list[str] | None = None):
         super().__init__()
         self._array = (
-            Batch([array], batch_labels=batch_labels)
+            Batch(math.astensor([array]), batch_labels=batch_labels)
             if array is not None and not isinstance(array, Batch)
             else array
         )
@@ -73,7 +73,7 @@ class ArrayAnsatz(Ansatz):
 
     @array.setter
     def array(self, value):
-        self._array = value if isinstance(value, Batch) else Batch([value])
+        self._array = value if isinstance(value, Batch) else Batch(math.astensor([value]))
 
     @property
     def batch_size(self) -> int:
@@ -81,7 +81,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def conj(self) -> ArrayAnsatz:
-        return ArrayAnsatz(Batch(math.conj(self.array)))
+        return ArrayAnsatz(Batch(math.conj(self.array.data)))
 
     @property
     def data(self) -> Batch[Tensor]:
@@ -160,7 +160,7 @@ class ArrayAnsatz(Ansatz):
         for i in range(n_batches_s):
             for j in range(n_batches_o):
                 batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
-        return ArrayAnsatz(Batch(batched_array))
+        return ArrayAnsatz(Batch(math.astensor(batched_array)))
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -223,7 +223,7 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(Batch(math.expand_dims(math.sum(self.array, axes=[0]), 0)))
+        return ArrayAnsatz(Batch(math.expand_dims(math.sum(self.array, axis=[0]), 0)))
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
@@ -241,7 +241,7 @@ class ArrayAnsatz(Ansatz):
         n = np.prod(new_array.shape[-len(idx_zconj) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
-        return ArrayAnsatz(Batch([trace] if trace.shape == () else trace))
+        return ArrayAnsatz(Batch(math.astensor([trace]) if trace.shape == () else trace))
 
     def _generate_ansatz(self):
         if self._array is None:
@@ -264,13 +264,13 @@ class ArrayAnsatz(Ansatz):
                 new_array = [
                     a + b for a in self.array for b in other.reduce(self.array.core_shape).array
                 ]
-            return ArrayAnsatz(array=Batch(new_array))
+            return ArrayAnsatz(array=Batch(math.astensor(new_array)))
         except Exception as e:
             raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return ArrayAnsatz(array=Batch(new_array))
+        return ArrayAnsatz(array=Batch(math.astensor(new_array)))
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         raise AttributeError("Cannot call this ArrayAnsatz.")
@@ -296,7 +296,7 @@ class ArrayAnsatz(Ansatz):
                     new_array = [
                         a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return ArrayAnsatz(array=Batch(new_array))
+                return ArrayAnsatz(array=Batch(math.astensor(new_array)))
             except Exception as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         else:
@@ -323,7 +323,7 @@ class ArrayAnsatz(Ansatz):
                     new_array = [
                         a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return ArrayAnsatz(array=Batch(new_array))
+                return ArrayAnsatz(array=Batch(math.astensor(new_array)))
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:

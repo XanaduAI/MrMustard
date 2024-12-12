@@ -278,7 +278,11 @@ class TestPolyExpAnsatz:
 
     def test_getitem(self):
         A, b, c = Abc_triple(5)
-        batched_ansatz = PolyExpAnsatz(Batch([A, A, A]), Batch([b, b, b]), Batch([c, c, c]))
+        batched_ansatz = PolyExpAnsatz(
+            Batch(math.astensor([A, A, A])),
+            Batch(math.astensor([b, b, b])),
+            Batch(math.astensor([c, c, c])),
+        )
         sliced_ansatz = batched_ansatz[0]
         expected_ansatz = PolyExpAnsatz(A, b, c)
         assert math.allclose(sliced_ansatz.A, expected_ansatz.A)
