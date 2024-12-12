@@ -262,11 +262,11 @@ class Unitary(Operation):
     @classmethod
     def from_fock(
         cls,
-        modes_in: Sequence[int],
         modes_out: Sequence[int],
+        modes_in: Sequence[int],
         array: ComplexTensor,
-        name: str | None = None,
         batched: bool = False,
+        name: str | None = None,
     ) -> Unitary:
         r"""
         Allows initialization of unitaries from their Fock representation.
@@ -495,12 +495,12 @@ class Channel(Map):
     @classmethod
     def from_fock(
         cls,
-        modes_in: Sequence[int],
         modes_out: Sequence[int],
+        modes_in: Sequence[int],
         array: ComplexTensor,
-        name: str | None = None,
         batched: bool = False,
-    ) -> Unitary:
+        name: str | None = None,
+    ) -> Channel:
         r"""
         Allows initialization of unitaries from their Fock representation.
         """
