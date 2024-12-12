@@ -391,13 +391,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.sqrt(self.cast(x, dtype))
 
     def sum(self, array: np.ndarray, axes: Sequence[int] = None):
-        if axes is None:
-            return np.sum(array)
-
-        ret = array
-        for axis in axes:
-            ret = np.sum(ret, axis=axis)
-        return ret
+        return np.sum(array, axis=axes)
 
     @Autocast()
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:

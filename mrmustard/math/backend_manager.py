@@ -1115,7 +1115,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if axes is not None:
             neg = [a for a in axes if a < 0]
             pos = [a for a in axes if a >= 0]
-            axes = sorted(neg) + sorted(pos)[::-1]
+            axes = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axes))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
