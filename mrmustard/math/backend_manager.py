@@ -1102,21 +1102,21 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
-    def sum(self, array: Tensor, axes: Sequence[int] = None):
+    def sum(self, array: Tensor, axis: Sequence[int] = None):
         r"""The sum of array.
 
         Args:
             array: The array to take the sum of
-            axes (tuple): axes to sum over
+            axes (tuple): The axis/axes to sum over
 
         Returns:
             The sum of array
         """
-        if axes is not None:
-            neg = [a for a in axes if a < 0]
-            pos = [a for a in axes if a >= 0]
-            axes = tuple(sorted(neg) + sorted(pos)[::-1])
-        return self._apply("sum", (array, axes))
+        if axis is not None:
+            neg = [a for a in axis if a < 0]
+            pos = [a for a in axis if a >= 0]
+            axis = tuple(sorted(neg) + sorted(pos)[::-1])
+        return self._apply("sum", (array, axis))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.

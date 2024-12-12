@@ -412,15 +412,15 @@ class PolyExpAnsatz(Ansatz):
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
         A_part = math.sum(
-            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
+            self.A[..., :dim_alpha, :dim_alpha] * zz, axis=[-1, -2]
         )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
         b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
+            self.b[..., :dim_alpha] * z[..., None, :], axis=[-1]
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
+            val = math.sum(exp_sum * self.c, axis=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
                 math.einsum(
@@ -443,9 +443,9 @@ class PolyExpAnsatz(Ansatz):
                 exp_sum
                 * math.sum(
                     poly * self.c,
-                    axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
+                    axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
-                axes=[-1],
+                axis=[-1],
             )  # (b_arg)
         return val
 
@@ -553,7 +553,7 @@ class PolyExpAnsatz(Ansatz):
         )
         c_decomp = math.sum(
             poly_bar * ci,
-            axes=math.arange(
+            axis=math.arange(
                 len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
             ).tolist(),
         )

@@ -385,7 +385,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state.dm()
-        dm = math.sum(state.ansatz.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axis=[0])
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -501,7 +501,7 @@ class State(CircuitComponent):
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape))
         state = state.dm()
-        dm = math.sum(state.ansatz.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axis=[0])
 
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
@@ -575,7 +575,7 @@ class State(CircuitComponent):
             raise ValueError("DM visualization not available for multi-mode states.")
         state = self.to_fock(cutoff)
         state = state.dm()
-        dm = math.sum(state.ansatz.array, axes=[0])
+        dm = math.sum(state.ansatz.array, axis=[0])
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
