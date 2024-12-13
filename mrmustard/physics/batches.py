@@ -124,7 +124,7 @@ class Batch:
             batch_labels = tuple(
                 (label for idx, label in enumerate(self.batch_labels) if idx not in axes)
             )
-            data = ufunc(input.data, **kwargs)
+            data = ufunc(input, **kwargs)
             return Batch(data, batch_shape, batch_labels) if batch_shape else data
 
         else:
