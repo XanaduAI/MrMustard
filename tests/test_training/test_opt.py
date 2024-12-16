@@ -21,15 +21,23 @@ from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import Circuit, Sgate, S2gate, Vacuum, BSgate, Ggate, Interferometer
-from mrmustard.lab.gates import (
-    Dgate,
-    # Ggate,
-    # Interferometer,
-    RealInterferometer,
+from mrmustard.lab_dev import (
+    Circuit,
+    Sgate,
+    S2gate,
+    Vacuum,
+    BSgate,
+    Ggate,
+    Interferometer,
     Rgate,
+    Dgate,
+    RealInterferometer,
+    DisplacedSqueezed,
+    SqueezedVacuum,
+    GKet,
+    Number,
 )
-from mrmustard.lab.states import DisplacedSqueezed, Fock, Gaussian, SqueezedVacuum
+from mrmustard.lab.states import Fock, Gaussian
 from mrmustard.math.parameters import Variable, update_euclidean
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -368,31 +376,31 @@ class TestOptimizer:
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
 
-    # def test_parameter_passthrough(self):
-    #     """Same as the test above, but with param passthrough"""
-    #     skip_np()
+    def test_parameter_passthrough(self):
+        """Same as the test above, but with param passthrough"""
+        skip_np()
 
-    #     settings.SEED = 42
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 42
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     r = np.arcsinh(1.0)
-    #     r_var = Variable(r, "r", (0.0, None))
-    #     phi_var = Variable(settings.rng.normal(), "phi", (None, None))
+        r = np.arcsinh(1.0)
+        r_var = Variable(r, "r", (0.0, None))
+        phi_var = Variable(settings.rng.normal(), "phi", (None, None))
 
-    #     ops = [
-    #         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-    #         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-    #         S2gate(r=r_var, phi=phi_var)[1, 2],
-    #     ]
-    #     circ = Circuit(ops)
+        state_in = Vacuum((0, 1, 2, 3))
+        s2_gate0 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
+        s2_gate1 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
+        s2_gate2 = S2gate((1, 2), r=r_var, phi=phi_var)
 
-    #     def cost_fn():
-    #         return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        circ = Circuit([state_in, s2_gate0, s2_gate1, s2_gate2])
 
-    #     opt = Optimizer(euclidean_lr=0.001)
-    #     opt.minimize(cost_fn, by_optimizing=[r_var, phi_var], max_steps=300)
-    #     assert np.allclose(np.sinh(r_var.value) ** 2, 1, atol=1e-2)
+        def cost_fn():
+            return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
+
+        opt = Optimizer(euclidean_lr=0.001)
+        opt.minimize(cost_fn, by_optimizing=[r_var, phi_var], max_steps=300)
+        assert np.allclose(np.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
     # def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum(self):
     #     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
@@ -437,15 +445,16 @@ class TestOptimizer:
     #     rng.reset_from_seed(settings.SEED)
 
     #     rotation_angle = np.pi / 2
-    #     target_state = SqueezedVacuum(r=1.0, phi=rotation_angle)
+    #     target_state = SqueezedVacuum((0,), r=1.0, phi=rotation_angle)
 
     #     # angle of rotation gate
     #     r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
     #     # trainable squeezing
-    #     S = Sgate(r=0.1, phi=0, r_trainable=True, phi_trainable=False)
+    #     S = Sgate((0,), r=0.1, phi=0, r_trainable=True, phi_trainable=False)
 
     #     def cost_fn_sympl():
-    #         state_out = Vacuum(1) >> S >> Rgate(angle=r_angle)
+    #         state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
+    #         # TODO: fidelity
     #         return 1 - fidelity(state_out, target_state)
 
     #     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
@@ -453,81 +462,83 @@ class TestOptimizer:
 
     #     assert np.allclose(math.asnumpy(r_angle), rotation_angle / 2, atol=1e-4)
 
-    # def test_dgate_optimization(self):
-    #     """Test that Dgate is optimized correctly."""
-    #     skip_np()
+    def test_dgate_optimization(self):
+        """Test that Dgate is optimized correctly."""
+        skip_np()
 
-    #     settings.SEED = 24
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 24
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     dgate = Dgate(x_trainable=True, y_trainable=True)
-    #     target_state = DisplacedSqueezed(r=0.0, x=0.1, y=0.2).ket(cutoffs=[40])
+        dgate = Dgate((0,), x_trainable=True, y_trainable=True)
+        target_state = DisplacedSqueezed((0,), r=0.0, x=0.1, y=0.2).fock_array((40,))
 
-    #     def cost_fn():
-    #         state_out = Vacuum(1) >> dgate
-    #         return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
+        def cost_fn():
+            state_out = Vacuum((0,)) >> dgate
+            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
 
-    #     opt = Optimizer()
-    #     opt.minimize(cost_fn, by_optimizing=[dgate])
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[dgate])
 
-    #     assert np.allclose(dgate.x.value, 0.1, atol=0.01)
-    #     assert np.allclose(dgate.y.value, 0.2, atol=0.01)
+        assert np.allclose(dgate.x.value, 0.1, atol=0.01)
+        assert np.allclose(dgate.y.value, 0.2, atol=0.01)
 
-    # def test_sgate_optimization(self):
-    #     """Test that Sgate is optimized correctly."""
-    #     skip_np()
+    def test_sgate_optimization(self):
+        """Test that Sgate is optimized correctly."""
+        skip_np()
 
-    #     settings.SEED = 25
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 25
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     sgate = Sgate(r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
-    #     target_state = SqueezedVacuum(r=0.1, phi=0.2).ket(cutoffs=[40])
+        sgate = Sgate((0,), r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
+        target_state = SqueezedVacuum((0,), r=0.1, phi=0.2).fock_array((40,))
 
-    #     def cost_fn():
-    #         state_out = Vacuum(1) >> sgate
+        def cost_fn():
+            state_out = Vacuum((0,)) >> sgate
 
-    #         return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
+            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
 
-    #     opt = Optimizer()
-    #     opt.minimize(cost_fn, by_optimizing=[sgate])
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[sgate])
 
-    #     assert np.allclose(sgate.r.value, 0.1, atol=0.01)
-    #     assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
+        assert np.allclose(sgate.r.value, 0.1, atol=0.01)
+        assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
 
-    # def test_bsgate_optimization(self):
-    #     """Test that Sgate is optimized correctly."""
-    #     skip_np()
+    def test_bsgate_optimization(self):
+        """Test that Sgate is optimized correctly."""
+        skip_np()
 
-    #     settings.SEED = 25
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 25
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     G = Gaussian(2)
+        G = GKet((0, 1))
 
-    #     bsgate = BSgate(0.05, 0.1, theta_trainable=True, phi_trainable=True)
-    #     target_state = (G >> BSgate(0.1, 0.2)).ket(cutoffs=[40, 40])
+        bsgate = BSgate((0, 1), 0.05, 0.1, theta_trainable=True, phi_trainable=True)
+        target_state = (G >> BSgate((0, 1), 0.1, 0.2)).fock_array((40, 40))
 
-    #     def cost_fn():
-    #         state_out = G >> bsgate
+        def cost_fn():
+            state_out = G >> bsgate
 
-    #         return -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+            return (
+                -math.abs(math.sum(math.conj(state_out.fock_array((40, 40))) * target_state)) ** 2
+            )
 
-    #     opt = Optimizer()
-    #     opt.minimize(cost_fn, by_optimizing=[bsgate])
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[bsgate])
 
-    #     assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
-    #     assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
+        assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
+        assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
 
     # def test_squeezing_grad_from_fock(self):
     #     """Test that the gradient of a squeezing gate is computed from the fock representation."""
     #     skip_np()
 
-    #     squeezing = Sgate(r=1, r_trainable=True)
+    #     squeezing = Sgate((0,), r=1, r_trainable=True)
 
     #     def cost_fn():
-    #         return -(Fock(2) >> squeezing << Vacuum(1))
+    #         return -(Number((0,), 2) >> squeezing >> Vacuum((0,)).dual)
 
     #     opt = Optimizer(euclidean_lr=0.05)
     #     opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
