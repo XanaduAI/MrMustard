@@ -98,18 +98,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[Any] | None = ()) -> Any:
-        r"""
-        Applies a function ``fn`` from the backend in use to the given ``args``.
-        """
-        try:
-            attr = getattr(self.backend, fn)
-        except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
-            # pylint: disable=raise-missing-from
-            raise NotImplementedError(msg)
-        return attr(*args)
-
     def _get_fn(self, fn_str: str) -> Callable:
         try:
             return getattr(self.backend, fn_str)
@@ -211,7 +199,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return array.__array_ufunc__(fn, "__call__", array)
         except AttributeError:
-            return fn(array=array)
+            return fn(array)
 
     def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
         r"""
@@ -231,7 +219,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ValueError: If the shape of the two arrays do not match.
         """
         fn = self._get_fn("allclose")
-        return fn(array1=array1, array2=array2, atol=atol)
+        return fn(array1, array2, atol)
 
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
@@ -243,7 +231,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ``True`` if any element of array is ``True``, ``False`` otherwise.
         """
         fn = self._get_fn("any")
-        return fn(array=array)
+        return fn(array)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
@@ -258,7 +246,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of evenly spaced values.
         """
         fn = self._get_fn("arange")
-        return fn(start=start, limit=limit, delta=delta, dtype=dtype)
+        return fn(start, limit, delta, dtype)
 
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts an array to a numpy array.
@@ -270,7 +258,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The corresponding numpy array.
         """
         fn = self._get_fn("asnumpy")
-        return fn(tensor=tensor)
+        return fn(tensor)
 
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         r"""Assigns value to tensor.
@@ -283,7 +271,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The tensor with value assigned
         """
         fn = self._get_fn("assign")
-        return fn(tensor=tensor, value=value)
+        return fn(tensor, value)
 
     def astensor(self, array: Tensor, dtype=None):
         r"""Converts a numpy array to a tensor.
@@ -300,7 +288,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return array.__array_ufunc__(fn, "__call__", array, dtype=dtype)
         except AttributeError:
-            return fn(array=array, dtype=dtype)
+            return fn(array, dtype)
 
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least one dimension.
@@ -314,7 +302,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least one dimension.
         """
         fn = self._get_fn("atleast_1d")
-        return fn(array=array, dtype=dtype)
+        return fn(array, dtype)
 
     def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least two dimensions.
@@ -328,7 +316,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least two dimensions.
         """
         fn = self._get_fn("atleast_2d")
-        return fn(array=array, dtype=dtype)
+        return fn(array, dtype)
 
     def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least three dimensions by eventually inserting
@@ -344,7 +332,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least three dimensions.
         """
         fn = self._get_fn("atleast_3d")
-        return fn(array=array, dtype=dtype)
+        return fn(array, dtype)
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
@@ -356,7 +344,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             A block diagonal matrix from the given matrices.
         """
-        return self._apply("block_diag", (mat1, mat2))
+        fn = self._get_fn("block_diag")
+        return fn(mat1, mat2)
 
     def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
         """
@@ -369,7 +358,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             A tensor based on the truth value of the boolean mask.
         """
-        return self._apply("boolean_mask", (tensor, mask))
+        fn = self._get_fn("boolean_mask")
+        return fn(tensor, mask)
 
     def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
         r"""Returns a matrix made from the given blocks.
@@ -381,7 +371,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix made of blocks.
         """
-        return self._apply("block", (blocks, axes))
+        fn = self._get_fn("block")
+        return fn(blocks, axes)
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
@@ -394,7 +385,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array cast to dtype.
         """
-        return self._apply("cast", (array, dtype))
+        fn = self._get_fn("cast")
+        return fn(array, dtype)
 
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
         r"""Clips array to the interval ``[a_min, a_max]``.
@@ -407,7 +399,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The clipped array.
         """
-        return self._apply("clip", (array, a_min, a_max))
+        fn = self._get_fn("clip")
+        return fn(array, a_min, a_max)
 
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
         r"""Concatenates values along the given axis.
@@ -435,7 +428,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return array.__array_ufunc__(fn, "__call__", array)
         except AttributeError:
-            return fn(array=array)
+            return fn(array)
 
     def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
         r"""Returns a constraint function for the given bounds.
@@ -453,7 +446,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The constraint function.
         """
-        return self._apply("constraint_func", (bounds))
+        fn = self._get_fn("constraint_func")
+        return fn(bounds)
 
     def convolution(
         self,
@@ -473,7 +467,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The convolved array.
         """
-        return self._apply("convolution", (array, filters, padding, data_format))
+        fn = self._get_fn("convolution")
+        return fn(array, filters, padding, data_format)
 
     def cos(self, array: Tensor) -> Tensor:
         r"""The cosine of an array.
@@ -484,7 +479,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The cosine of ``array``.
         """
-        return self._apply("cos", (array,))
+        fn = self._get_fn("cos")
+        return fn(array)
 
     def cosh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic cosine of array.
@@ -495,7 +491,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The hyperbolic cosine of ``array``.
         """
-        return self._apply("cosh", (array,))
+        fn = self._get_fn("cosh")
+        return fn(array)
 
     def det(self, matrix: Tensor) -> Tensor:
         r"""The determinant of matrix.
@@ -506,7 +503,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The determinant of ``matrix``.
         """
-        return self._apply("det", (matrix,))
+        fn = self._get_fn("det")
+        return fn(matrix)
 
     def diag(self, array: Tensor, k: int = 0) -> Tensor:
         r"""The array made by inserting the given array along the :math:`k`-th diagonal.
@@ -518,7 +516,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with ``array`` inserted into the ``k``-th diagonal.
         """
-        return self._apply("diag", (array, k))
+        fn = self._get_fn("diag")
+        return fn(array, k)
 
     def diag_part(self, array: Tensor, k: int = 0) -> Tensor:
         r"""The array of the main diagonal of array.
@@ -530,7 +529,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of the main diagonal of ``array``.
         """
-        return self._apply("diag_part", (array, k))
+        fn = self._get_fn("diag_part")
+        return fn(array, k)
 
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"""The eigenvalues of a tensor.
@@ -541,7 +541,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The eigenvalues of ``tensor``.
         """
-        return self._apply("eigvals", (tensor,))
+        fn = self._get_fn("eigvals")
+        return fn(tensor)
 
     def eigh(self, tensor: Tensor) -> Tensor:
         """
@@ -553,7 +554,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The eigenvalues and eigenvectors of ``tensor``.
         """
-        return self._apply("eigh", (tensor,))
+        fn = self._get_fn("eigh")
+        return fn(tensor)
 
     def einsum(self, string: str, *tensors) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
@@ -565,7 +567,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        fn = self._get_fn("einsum")
+        return fn(string, *tensors)
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -576,7 +579,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The exponential of array.
         """
-        return self._apply("exp", (array,))
+        fn = self._get_fn("exp")
+        return fn(array)
 
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         r"""The array with an additional dimension inserted at the given axis.
@@ -588,7 +592,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with an additional dimension inserted at the given axis.
         """
-        return self._apply("expand_dims", (array, axis))
+        fn = self._get_fn("expand_dims")
+        return fn(array, axis)
 
     def expm(self, matrix: Tensor) -> Tensor:
         r"""The matrix exponential of matrix.
@@ -599,7 +604,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The exponential of ``matrix``.
         """
-        return self._apply("expm", (matrix,))
+        fn = self._get_fn("expm")
+        return fn(matrix)
 
     def eye(self, size: int, dtype=None) -> Tensor:
         r"""The identity matrix of size.
@@ -612,7 +618,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The identity matrix.
         """
-        return self._apply("eye", (size, dtype))
+        fn = self._get_fn("eye")
+        return fn(size, dtype)
 
     def eye_like(self, array: Tensor) -> Tensor:
         r"""The identity matrix of the same shape and dtype as array.
@@ -623,7 +630,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The identity matrix.
         """
-        return self._apply("eye_like", (array,))
+        fn = self._get_fn("eye_like")
+        return fn(array)
 
     def from_backend(self, value: Any) -> bool:
         r"""Whether the given tensor is a tensor of the concrete backend.
@@ -634,7 +642,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             Whether given ``value`` is a tensor of the concrete backend.
         """
-        return self._apply("from_backend", (value,))
+        fn = self._get_fn("from_backend")
+        return fn(value)
 
     def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
@@ -648,7 +657,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The values of the array at the given indices.
         """
         fn = self._get_fn("gather")
-        return fn(array=array, indices=indices, axis=axis)
+        return fn(array, indices, axis)
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -668,7 +677,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The batched Hermite polynomial of given shape.
         """
-        return self._apply("hermite_renormalized_batch", (A, B, C, shape))
+        fn = self._get_fn("hermite_renormalized_batch")
+        return fn(A, B, C, shape)
 
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
@@ -676,7 +686,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
         """
-        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+        fn = self._get_fn("hermite_renormalized_diagonal")
+        return fn(A, B, C, cutoffs)
 
     def hermite_renormalized_diagonal_batch(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
@@ -684,7 +695,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
         Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
+        fn = self._get_fn("hermite_renormalized_diagonal_batch")
+        return fn(A, B, C, cutoffs)
 
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
@@ -692,7 +704,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
-        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
+        fn = self._get_fn("hermite_renormalized_1leftoverMode")
+        return fn(A, B, C, cutoffs)
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
@@ -703,7 +716,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The imaginary part of array
         """
-        return self._apply("imag", (array,))
+        fn = self._get_fn("imag")
+        return fn(array)
 
     def inv(self, tensor: Tensor) -> Tensor:
         r"""The inverse of tensor.
@@ -714,7 +728,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The inverse of tensor
         """
-        return self._apply("inv", (tensor,))
+        fn = self._get_fn("inv")
+        return fn(tensor)
 
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
@@ -725,7 +740,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             Whether the given tensor can be trained.
         """
-        return self._apply("is_trainable", (tensor,))
+        fn = self._get_fn("is_trainable")
+        return fn(tensor)
 
     def lgamma(self, x: Tensor) -> Tensor:
         r"""The natural logarithm of the gamma function of ``x``.
@@ -736,7 +752,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The natural logarithm of the gamma function of ``x``
         """
-        return self._apply("lgamma", (x,))
+        fn = self._get_fn("lgamma")
+        return fn(x)
 
     def log(self, x: Tensor) -> Tensor:
         r"""The natural logarithm of ``x``.
@@ -747,7 +764,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The natural logarithm of ``x``
         """
-        return self._apply("log", (x,))
+        fn = self._get_fn("log")
+        return fn(x)
 
     def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
         """Given two real tensors representing the real and imaginary part of a complex number,
@@ -760,7 +778,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The complex array ``real + 1j * imag``.
         """
-        return self._apply("make_complex", (real, imag))
+        fn = self._get_fn("make_complex")
+        return fn(real, imag)
 
     def matmul(self, *matrices: Matrix) -> Tensor:
         r"""The matrix product of the given matrices.
@@ -771,7 +790,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix product
         """
-        return self._apply("matmul", matrices)
+        fn = self._get_fn("matmul")
+        return fn(*matrices)
 
     def matvec(self, a: Matrix, b: Vector) -> Tensor:
         r"""The matrix vector product of ``a`` (matrix) and ``b`` (vector).
@@ -783,7 +803,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix vector product of ``a`` and ``b``
         """
-        return self._apply("matvec", (a, b))
+        fn = self._get_fn("matvec")
+        return fn(a, b)
 
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""The element-wise maximum of ``a`` and ``b``.
@@ -795,13 +816,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The element-wise maximum of ``a`` and ``b``
         """
-        return self._apply(
-            "maximum",
-            (
-                a,
-                b,
-            ),
-        )
+        fn = self._get_fn("maximum")
+        return fn(a, b)
 
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""The element-wise minimum of ``a`` and ``b``.
@@ -813,13 +829,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The element-wise minimum of ``a`` and ``b``
         """
-        return self._apply(
-            "minimum",
-            (
-                a,
-                b,
-            ),
-        )
+        fn = self._get_fn("minimum")
+        return fn(a, b)
 
     def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
         r"""
@@ -834,14 +845,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The updated array
         """
-        return self._apply(
-            "moveaxis",
-            (
-                array,
-                old,
-                new,
-            ),
-        )
+        fn = self._get_fn("moveaxis")
+        return fn(array, old, new)
 
     def new_variable(
         self,
@@ -860,7 +865,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The new variable.
         """
-        return self._apply("new_variable", (value, bounds, name, dtype))
+        fn = self._get_fn("new_variable")
+        return fn(value, bounds, name, dtype)
 
     def new_constant(self, value: Tensor, name: str, dtype=None) -> Tensor:
         r"""Returns a new constant with the given value.
@@ -873,7 +879,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The new constant
         """
-        return self._apply("new_constant", (value, name, dtype))
+        fn = self._get_fn("new_constant")
+        return fn(value, name, dtype)
 
     def norm(self, array: Tensor) -> Tensor:
         r"""The norm of array.
@@ -884,7 +891,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The norm of array
         """
-        return self._apply("norm", (array,))
+        fn = self._get_fn("norm")
+        return fn(array)
 
     def ones(self, shape: Sequence[int], dtype=None) -> Tensor:
         r"""Returns an array of ones with the given ``shape`` and ``dtype``.
@@ -897,8 +905,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of ones
         """
-        # NOTE : should be float64 by default
-        return self._apply("ones", (shape, dtype))
+        fn = self._get_fn("ones")
+        return fn(shape, dtype)
 
     def ones_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of ones with the same shape and ``dtype`` as ``array``.
@@ -909,7 +917,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of ones
         """
-        return self._apply("ones_like", (array,))
+        fn = self._get_fn("ones_like")
+        return fn(array)
 
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
         r"""The outer product of ``array1`` and ``array2``.
@@ -922,7 +931,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The outer product of array1 and array2
         """
         fn = self._get_fn("outer")
-        return fn(array1=array1, array2=array2)
+        return fn(array1, array2)
 
     def pad(
         self,
@@ -943,7 +952,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The padded array
         """
         fn = self._get_fn("pad")
-        return fn(array=array, paddings=paddings, mode=mode, constant_values=constant_values)
+        return fn(array, paddings, mode, constant_values)
 
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""The pseudo-inverse of matrix.
@@ -954,7 +963,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The pseudo-inverse of matrix
         """
-        return self._apply("pinv", (matrix,))
+        fn = self._get_fn("pinv")
+        return fn(matrix)
 
     def pow(self, x: Tensor, y: Tensor) -> Tensor:
         r"""Returns :math:`x^y`. Broadcasts ``x`` and ``y`` if necessary.
@@ -965,7 +975,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The :math:`x^y`
         """
-        return self._apply("pow", (x, y))
+        fn = self._get_fn("pow")
+        return fn(x, y)
 
     def kron(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
         r"""
@@ -978,7 +989,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The Kroenecker product.
         """
-        return self._apply("kron", (tensor1, tensor2))
+        fn = self._get_fn("kron")
+        return fn(tensor1, tensor2)
 
     def prod(self, array: Tensor, axis=None) -> Tensor:
         r"""
@@ -992,7 +1004,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The product of the elements in ``array``.
         """
-        return self._apply("prod", (array, axis))
+        fn = self._get_fn("prod")
+        return fn(array, axis)
 
     def real(self, array: Tensor) -> Tensor:
         r"""The real part of ``array``.
@@ -1004,7 +1017,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The real part of ``array``
         """
         fn = self._get_fn("real")
-        return fn(array=array)
+        return fn(array)
 
     def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
         """
@@ -1018,7 +1031,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensor with repeated elements.
         """
-        return self._apply("repeat", (array, repeats, axis))
+        fn = self._get_fn("repeat")
+        return fn(array, repeats, axis)
 
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         r"""The reshaped array.
@@ -1030,7 +1044,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The reshaped array
         """
-        return self._apply("reshape", (array, shape))
+        fn = self._get_fn("reshape")
+        return fn(array, shape)
 
     def round(self, array: Tensor, decimals: int) -> Tensor:
         r"""The array rounded to the nearest integer.
@@ -1042,7 +1057,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array rounded to the nearest integer
         """
-        return self._apply("round", (array, decimals))
+        fn = self._get_fn("round")
+        return fn(array, decimals)
 
     def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
         r"""The array with the diagonal set to ``diag``.
@@ -1055,7 +1071,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with the diagonal set to ``diag``
         """
-        return self._apply("set_diag", (array, diag, k))
+        fn = self._get_fn("set_diag")
+        return fn(array, diag, k)
 
     def sin(self, array: Tensor) -> Tensor:
         r"""The sine of ``array``.
@@ -1066,7 +1083,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The sine of ``array``
         """
-        return self._apply("sin", (array,))
+        fn = self._get_fn("sin")
+        return fn(array)
 
     def sinh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic sine of ``array``.
@@ -1077,7 +1095,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The hyperbolic sine of ``array``
         """
-        return self._apply("sinh", (array,))
+        fn = self._get_fn("sinh")
+        return fn(array)
 
     def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
         r"""The solution of the linear system :math:`Ax = b`.
@@ -1089,7 +1108,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The solution :math:`x`
         """
-        return self._apply("solve", (matrix, rhs))
+        fn = self._get_fn("solve")
+        return fn(matrix, rhs)
 
     def sort(self, array: Tensor, axis: int = -1) -> Tensor:
         r"""Sort the array along an axis.
@@ -1101,7 +1121,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             A sorted version of the array in acending order.
         """
-        return self._apply("sort", (array, axis))
+        fn = self._get_fn("sort")
+        return fn(array, axis)
 
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""The square root of ``x``.
@@ -1113,7 +1134,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The square root of ``x``
         """
-        return self._apply("sqrt", (x, dtype))
+        fn = self._get_fn("sqrt")
+        return fn(x, dtype)
 
     def sqrtm(self, tensor: Tensor, dtype=None) -> Tensor:
         r"""The matrix square root.
@@ -1125,7 +1147,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         Returns:
             The square root of ``x``"""
-        return self._apply("sqrtm", (tensor, dtype))
+        fn = self._get_fn("sqrtm")
+        return fn(tensor, dtype)
 
     def sum(self, array: Tensor, axis: Sequence[int] = None):
         r"""The sum of array.
@@ -1145,7 +1168,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return array.__array_ufunc__(fn, "reduce", array, axis=axis)
         except AttributeError:
-            return fn(array=array, axis=axis)
+            return fn(array, axis)
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
@@ -1158,7 +1181,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensordot product of ``a`` and ``b``
         """
-        return self._apply("tensordot", (a, b, axes))
+        fn = self._get_fn("tensordot")
+        return fn(a, b, axes)
 
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         r"""The tiled array.
@@ -1170,7 +1194,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tiled array
         """
-        return self._apply("tile", (array, repeats))
+        fn = self._get_fn("tile")
+        return fn(array, repeats)
 
     def trace(self, array: Tensor, dtype=None) -> Tensor:
         r"""The trace of array.
@@ -1182,7 +1207,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The trace of array
         """
-        return self._apply("trace", (array, dtype))
+        fn = self._get_fn("trace")
+        return fn(array, dtype)
 
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         r"""The transposed arrays.
@@ -1195,7 +1221,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The transposed array
         """
         fn = self._get_fn("transpose")
-        return fn(a=a, perm=perm)
+        return fn(a, perm)
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.
@@ -1208,7 +1234,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The updated tensor
         """
-        return self._apply("update_tensor", (tensor, indices, values))
+        fn = self._get_fn("update_tensor")
+        return fn(tensor, indices, values)
 
     def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place by adding the given values.
@@ -1221,7 +1248,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The updated tensor
         """
-        return self._apply("update_add_tensor", (tensor, indices, values))
+        fn = self._get_fn("update_add_tensor")
+        return fn(tensor, indices, values)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: dict[str, list[Trainable]]
@@ -1235,13 +1263,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             tuple: loss and gradients (dict) of the given cost function
         """
-        return self._apply("value_and_gradients", (cost_fn, parameters))
+        fn = self._get_fn("value_and_gradients")
+        return fn(cost_fn, parameters)
 
     def xlogy(self, x: Tensor, y: Tensor) -> Tensor:
         """
         Returns ``0`` if ``x == 0`` elementwise and ``x * log(y)`` otherwise.
         """
-        return self._apply("xlogy", (x, y))
+        fn = self._get_fn("xlogy")
+        return fn(x, y)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> Tensor:
         r"""Returns an array of zeros with the given shape and ``dtype``.
@@ -1254,7 +1284,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of zeros.
         """
-        return self._apply("zeros", (shape, dtype))
+        fn = self._get_fn("zeros")
+        return fn(shape, dtype)
 
     def zeros_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of zeros with the same shape and ``dtype`` as ``array``.
@@ -1265,9 +1296,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of zeros.
         """
-        return self._apply("zeros_like", (array,))
+        fn = self._get_fn("zeros_like")
+        return fn(array)
 
-    def map_fn(self, fn: Callable, elements: Tensor) -> Tensor:
+    def map_fn(self, func: Callable, elements: Tensor) -> Tensor:
         """Transforms elems by applying fn to each element unstacked on axis 0.
 
         Args:
@@ -1280,7 +1312,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             Tensor: applied ``func`` on ``elements``
         """
-        return self._apply("map_fn", (fn, elements))
+        fn = self._get_fn("map_fn")
+        return fn(func, elements)
 
     def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
         """Removes dimensions of size 1 from the shape of a tensor.
@@ -1293,7 +1326,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             Tensor: tensor with one or more dimensions of size 1 removed
         """
-        return self._apply("squeeze", (tensor, axis))
+        fn = self._get_fn("squeeze")
+        return fn(tensor, axis)
 
     def cholesky(self, input: Tensor) -> Tensor:
         """Computes the Cholesky decomposition of square matrices.
@@ -1304,7 +1338,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             Tensor: tensor with the same type as input
         """
-        return self._apply("cholesky", (input,))
+        fn = self._get_fn("cholesky")
+        return fn(input)
 
     def Categorical(self, probs: Tensor, name: str):
         """Categorical distribution over integers.
@@ -1316,7 +1351,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
         """
-        return self._apply("Categorical", (probs, name))
+        fn = self._get_fn("Categorical")
+        return fn(probs, name)
 
     def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
@@ -1330,7 +1366,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
         """
-        return self._apply("MultivariateNormalTriL", (loc, scale_tril))
+        fn = self._get_fn("MultivariateNormalTriL")
+        return fn(loc, scale_tril)
 
     def custom_gradient(self, func):
         r"""
@@ -1351,7 +1388,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
-        return self._apply("DefaultEuclideanOptimizer")
+        fn = self._get_fn("DefaultEuclideanOptimizer")
+        return fn()
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation

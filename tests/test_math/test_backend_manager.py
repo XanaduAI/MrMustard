@@ -47,7 +47,7 @@ class TestBackendManager:
         """
         msg = f"Function ``ciao`` not implemented for backend ``{math.backend_name}``."
         with pytest.raises(NotImplementedError, match=msg):
-            math._apply("ciao")
+            math._get_fn("ciao")
 
     def test_types(self):
         r"""
