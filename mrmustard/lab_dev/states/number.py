@@ -74,9 +74,7 @@ class Number(Ket):
         self._add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=ArrayAnsatz.from_function(
-                fock_state, n=self.n.value, cutoffs=self.cutoffs.value
-            ),
+            ansatz=ArrayAnsatz.from_function(fock_state, n=self.n, cutoffs=self.cutoffs),
         ).representation
         self.short_name = [str(int(n)) for n in self.n.value]
         for i, cutoff in enumerate(self.cutoffs.value):
