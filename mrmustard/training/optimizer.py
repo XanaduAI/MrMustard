@@ -29,7 +29,7 @@ from mrmustard.math.parameters import (
     update_symplectic,
     update_unitary,
 )
-from mrmustard.lab import Circuit
+from mrmustard.lab_dev import Circuit
 
 __all__ = ["Optimizer"]
 
@@ -188,7 +188,7 @@ class Optimizer:
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Circuit):
-                for j, op in enumerate(item.ops):
+                for j, op in enumerate(item.components):
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameter_set.tagged_variables(tag)
                     trainables.append(tagged_vars.items())
