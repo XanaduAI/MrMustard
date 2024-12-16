@@ -201,12 +201,10 @@ class Representation:
         """
         try:
             A, b, c = self.ansatz.triple
-            if not batched:
-                if self.ansatz.batch_size == 1:
-                    return A[0], b[0], c[0]
-                else:
-                    return A.data, b.data, c.data
-            return A, b, c
+            if not batched and self.ansatz.batch_size == 1:
+                return A[0], b[0], c[0]
+            else:
+                return A, b, c
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
