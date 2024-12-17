@@ -36,6 +36,7 @@ from mrmustard.lab_dev import (
     SqueezedVacuum,
     GKet,
     Number,
+    TwoModeSqueezedVacuum,
 )
 from mrmustard.math.parameters import Variable, update_euclidean
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -59,14 +60,12 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        S = S2gate(
-            modes=(0, 1),
-            r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
-            r_trainable=True,
+        S = TwoModeSqueezedVacuum(
+            (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
         )
 
         def cost_fn():
-            return -math.abs((Vacuum((0, 1)) >> S).fock_array((n + 1, n + 1))[n, n]) ** 2
+            return -math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2
 
         def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
             return {
