@@ -430,7 +430,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         except AttributeError:
             return fn(array)
 
-    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
+    def constraint_func(
+        self, bounds: tuple[float | None, float | None]
+    ) -> Callable | None:  # pragma: no cover
         r"""Returns a constraint function for the given bounds.
 
         A constraint function will clip the value to the interval given by the bounds.
@@ -954,7 +956,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         fn = self._get_fn("pad")
         return fn(array, paddings, mode, constant_values)
 
-    def pinv(self, matrix: Tensor) -> Tensor:
+    def pinv(self, matrix: Tensor) -> Tensor:  # pragma: no cover
         r"""The pseudo-inverse of matrix.
 
         Args:
@@ -1315,7 +1317,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         fn = self._get_fn("map_fn")
         return fn(func, elements)
 
-    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
+    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:  # pragma: no cover
         """Removes dimensions of size 1 from the shape of a tensor.
 
         Args:
