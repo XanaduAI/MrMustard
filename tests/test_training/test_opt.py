@@ -99,8 +99,10 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         r = np.arcsinh(1.0)
-        s2_0 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
-        s2_1 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
+        cutoff = 1 + i + k
+
+        state = TwoModeSqueezedVacuum((0, 1), r=r, phi_trainable=True)
+        state2 = TwoModeSqueezedVacuum((2, 3), r=r, phi_trainable=True)
         bs = BSgate(
             (1, 2),
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
@@ -108,9 +110,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        state_in = Vacuum((0, 1, 2, 3))
-        circ = Circuit([state_in, s2_0, s2_1, bs])
-        cutoff = 1 + i + k
+        circ = Circuit([state, state2, bs])
 
         def cost_fn():
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
@@ -134,11 +134,10 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        state_in = Vacuum((0, 1))
-        s_gate = Sgate(
+        state = TwoModeSqueezedVacuum(
             (0, 1),
-            r=abs(settings.rng.normal(size=2)),
-            phi=settings.rng.normal(size=2),
+            r=abs(settings.rng.normal()),
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
@@ -149,7 +148,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        circ = Circuit([state_in, s_gate, bs_gate])
+        circ = Circuit([state, bs_gate])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -168,10 +167,10 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        G = Ggate((0, 1), symplectic_trainable=True)
+        G = GKet((0, 1), symplectic_trainable=True)
 
         def cost_fn():
-            amps = (Vacuum((0, 1)) >> G).fock_array((2, 2))
+            amps = G.fock_array((2, 2))
             return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
@@ -187,16 +186,15 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        state_in = Vacuum((0, 1))
-        s_gate = Sgate(
+        state = TwoModeSqueezedVacuum(
             (0, 1),
-            r=settings.rng.normal(size=2) ** 2,
-            phi=settings.rng.normal(size=2),
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
         interferometer = Interferometer((0, 1), unitary_trainable=True)
-        circ = Circuit([state_in, s_gate, interferometer])
+        circ = Circuit([state, interferometer])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -215,17 +213,16 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        state_in = Vacuum((0, 1))
-        s_gate = Sgate(
+        state = TwoModeSqueezedVacuum(
             (0, 1),
-            r=settings.rng.normal(size=2) ** 2,
-            phi=settings.rng.normal(size=2),
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
         r_inter = RealInterferometer((0, 1), orthogonal_trainable=True)
 
-        circ = Circuit([state_in, s_gate, r_inter])
+        circ = Circuit([state, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
