@@ -59,20 +59,17 @@ class RealInterferometer(Unitary):
         super().__init__(name="RealInterferometer")
         self._add_parameter(
             make_parameter(
-                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
+                orthogonal_trainable, orthogonal, "ortho", (None, None), update_orthogonal
             )
         )
-        symplectic = math.block(
-            [
-                [self.orthogonal.value, -math.zeros_like(self.orthogonal.value)],
-                [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
-            ]
-        )
-
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda sym: Unitary.from_symplectic(modes, sym).bargmann_triple(), sym=symplectic
+                fn=lambda ortho: Unitary.from_symplectic(
+                    modes,
+                    math.block([[ortho, -math.zeros_like(ortho)], [math.zeros_like(ortho), ortho]]),
+                ).bargmann_triple(),
+                ortho=self.ortho,
             ),
         ).representation

@@ -182,62 +182,62 @@ class TestOptimizer:
         opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
         assert np.allclose(-cost_fn(), 0.25, atol=1e-4)
 
-    # def test_learning_two_mode_Interferometer(self):
-    #     """Finding the optimal Interferometer to make a pair of single photons"""
-    #     skip_np()
+    def test_learning_two_mode_Interferometer(self):
+        """Finding the optimal Interferometer to make a pair of single photons"""
+        skip_np()
 
-    #     settings.SEED = 4
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 4
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     state_in = Vacuum((0,1))
-    #     s_gate = Sgate(
-    #             (0,1),
-    #             r=settings.rng.normal(size=2) ** 2,
-    #             phi=settings.rng.normal(size=2),
-    #             r_trainable=True,
-    #             phi_trainable=True,
-    #         )
-    #     interferometer =  Interferometer((0,1), unitary_trainable=True)
-    #     circ = Circuit([state_in, s_gate, interferometer])
+        state_in = Vacuum((0, 1))
+        s_gate = Sgate(
+            (0, 1),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        interferometer = Interferometer((0, 1), unitary_trainable=True)
+        circ = Circuit([state_in, s_gate, interferometer])
 
-    #     def cost_fn():
-    #         amps = circ.contract().fock_array((2, 2))
-    #         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+        def cost_fn():
+            amps = circ.contract().fock_array((2, 2))
+            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
-    #     opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
+        opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
-    #     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    #     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
+        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+        assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
-    # def test_learning_two_mode_RealInterferometer(self):
-    #     """Finding the optimal Interferometer to make a pair of single photons"""
-    #     skip_np()
+    def test_learning_two_mode_RealInterferometer(self):
+        """Finding the optimal Interferometer to make a pair of single photons"""
+        skip_np()
 
-    #     settings.SEED = 2
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 2
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     ops = [
-    #         Sgate(
-    #             r=settings.rng.normal(size=2) ** 2,
-    #             phi=settings.rng.normal(size=2),
-    #             r_trainable=True,
-    #             phi_trainable=True,
-    #         ),
-    #         RealInterferometer(num_modes=2, orthogonal_trainable=True),
-    #     ]
-    #     circ = Circuit(ops)
-    #     state_in = Vacuum(num_modes=2)
+        state_in = Vacuum((0, 1))
+        s_gate = Sgate(
+            (0, 1),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        r_inter = RealInterferometer((0, 1), orthogonal_trainable=True)
 
-    #     def cost_fn():
-    #         amps = (state_in >> circ).ket(cutoffs=[2, 2])
-    #         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+        circ = Circuit([state_in, s_gate, r_inter])
 
-    #     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
+        def cost_fn():
+            amps = circ.contract().fock_array((2, 2))
+            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
-    #     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    #     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
+        opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
+
+        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+        assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
     # def test_learning_four_mode_Interferometer(self):
     #     """Finding the optimal Interferometer to make a NOON state with N=2"""
@@ -282,6 +282,7 @@ class TestOptimizer:
     #         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
     #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     #     )
+    #     # TODO: XYd
     #     X = math.cast(perturbed.XYd()[0], "complex128")
     #     perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
@@ -326,21 +327,23 @@ class TestOptimizer:
     #         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
     #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     #     )
+    #     # TODO: XYd
     #     perturbed_O = pertubed.XYd()[0][:4, :4]
 
-    #     ops = [
-    #         Sgate(
+    #     state_in = Vacuum((0,1,2,3))
+    #     s_gate = Sgate(
+    #             (0,1,2,3),
     #             r=solution_S[0] + settings.rng.normal(scale=0.01, size=4),
     #             phi=solution_S[1] + settings.rng.normal(scale=0.01, size=4),
     #             r_trainable=True,
     #             phi_trainable=True,
-    #         ),
-    #         RealInterferometer(orthogonal=perturbed_O, num_modes=4, orthogonal_trainable=True),
-    #     ]
-    #     circ = Circuit(ops)
+    #         )
+    #     r_inter = RealInterferometer((0,1,2,3), orthogonal=perturbed_O, orthogonal_trainable=True)
+
+    #     circ = Circuit([state_in, s_gate, r_inter])
 
     #     def cost_fn():
-    #         amps = (Vacuum(num_modes=4) >> circ).ket(cutoffs=[2, 2, 3, 3])
+    #         amps = circ.contract().fock_array((2,2,3,3))
     #         return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
 
     #     opt = Optimizer()

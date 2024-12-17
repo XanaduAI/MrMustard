@@ -58,19 +58,18 @@ class Interferometer(Unitary):
             )
         super().__init__(name="Interferometer")
         self._add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+            make_parameter(unitary_trainable, unitary, "uni", (None, None), update_unitary)
         )
-        symplectic = math.block(
-            [
-                [math.real(self.unitary.value), -math.imag(self.unitary.value)],
-                [math.imag(self.unitary.value), math.real(self.unitary.value)],
-            ]
-        )
-
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda sym: Unitary.from_symplectic(modes, sym).bargmann_triple(), sym=symplectic
+                fn=lambda uni: Unitary.from_symplectic(
+                    modes,
+                    math.block(
+                        [[math.real(uni), -math.imag(uni)], [math.imag(uni), math.real(uni)]]
+                    ),
+                ).bargmann_triple(),
+                uni=self.uni,
             ),
         ).representation
