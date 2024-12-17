@@ -439,32 +439,31 @@ class TestOptimizer:
     #     cov = S @ S.T
     #     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
-    # def test_opt_backend_param(self):
-    #     """Test the optimization of a backend parameter defined outside a gate."""
-    #     skip_np()
+    def test_opt_backend_param(self):
+        """Test the optimization of a backend parameter defined outside a gate."""
+        skip_np()
 
-    #     # rotated displaced squeezed state
-    #     settings.SEED = 42
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        # rotated displaced squeezed state
+        settings.SEED = 42
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     rotation_angle = np.pi / 2
-    #     target_state = SqueezedVacuum((0,), r=1.0, phi=rotation_angle)
+        rotation_angle = np.pi / 2
+        target_state = SqueezedVacuum((0,), r=1.0, phi=rotation_angle)
 
-    #     # angle of rotation gate
-    #     r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
-    #     # trainable squeezing
-    #     S = Sgate((0,), r=0.1, phi=0, r_trainable=True, phi_trainable=False)
+        # angle of rotation gate
+        r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
+        # trainable squeezing
+        S = Sgate((0,), r=0.1, phi=0, r_trainable=True, phi_trainable=False)
 
-    #     def cost_fn_sympl():
-    #         state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
-    #         # TODO: fidelity
-    #         return 1 - fidelity(state_out, target_state)
+        def cost_fn_sympl():
+            state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
+            return 1 - (state_out >> target_state.dual)
 
-    #     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
-    #     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
+        opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
+        opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    #     assert np.allclose(math.asnumpy(r_angle), rotation_angle / 2, atol=1e-4)
+        assert np.allclose(math.asnumpy(r_angle), rotation_angle / 2, atol=1e-4)
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
