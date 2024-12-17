@@ -163,24 +163,24 @@ class TestOptimizer:
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
-    # def test_learning_two_mode_Ggate(self):
-    #     """Finding the optimal Ggate to make a pair of single photons"""
-    #     skip_np()
+    def test_learning_two_mode_Ggate(self):
+        """Finding the optimal Ggate to make a pair of single photons"""
+        skip_np()
 
-    #     settings.SEED = 42
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 42
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     G = Ggate((0,1), symplectic_trainable=True)
+        G = Ggate((0, 1), symplectic_trainable=True)
 
-    #     def cost_fn():
-    #         amps = (Vacuum((0,1)) >> G).fock_array((2,2))
-    #         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+        def cost_fn():
+            amps = (Vacuum((0, 1)) >> G).fock_array((2, 2))
+            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
-    #     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
+        opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
-    #     opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
-    #     assert np.allclose(-cost_fn(), 0.25, atol=1e-4)
+        opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
+        assert np.allclose(-cost_fn(), 0.25, atol=1e-4)
 
     # def test_learning_two_mode_Interferometer(self):
     #     """Finding the optimal Interferometer to make a pair of single photons"""
@@ -418,10 +418,11 @@ class TestOptimizer:
     #     def thermal_entropy(nbar):
     #         return -(nbar * np.log((nbar) / (1 + nbar)) - np.log(1 + nbar))
 
-    #     G = Ggate(num_modes=2, symplectic_trainable=True, symplectic=S_init)
+    #     G = Ggate((0,1), symplectic=S_init, symplectic_trainable=True)
 
     #     def cost_fn():
-    #         state = Vacuum(2) >> G
+    #         state = Vacuum((0,1)) >> G
+    #         # TODO: cov and means
     #         cov1, _ = trace(state.cov, state.means, [0])
     #         mean1 = state.number_means[0]
     #         mean2 = state.number_means[1]
