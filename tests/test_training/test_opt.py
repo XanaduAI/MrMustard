@@ -37,9 +37,7 @@ from mrmustard.lab_dev import (
     GKet,
     Number,
 )
-from mrmustard.lab.states import Fock, Gaussian
 from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
@@ -458,6 +456,7 @@ class TestOptimizer:
 
         def cost_fn_sympl():
             state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
+            # TODO: fidelity
             return 1 - (state_out >> target_state.dual)
 
         opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
