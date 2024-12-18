@@ -37,9 +37,10 @@ from mrmustard.lab_dev import (
     GKet,
     Number,
     TwoModeSqueezedVacuum,
+    Operation,
 )
 from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics.gaussian import trace, von_neumann_entropy
+from mrmustard.physics.gaussian import trace, von_neumann_entropy, number_means
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
@@ -233,117 +234,118 @@ class TestOptimizer:
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
         assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
-    # def test_learning_four_mode_Interferometer(self):
-    #     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    #     skip_np()
+    def test_learning_four_mode_Interferometer(self):
+        """Finding the optimal Interferometer to make a NOON state with N=2"""
+        skip_np()
 
-    #     settings.SEED = 4
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 4
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     solution_U = np.array(
-    #         [
-    #             [
-    #                 -0.47541806 + 0.00045878j,
-    #                 -0.41513474 - 0.27218387j,
-    #                 -0.11065812 - 0.39556922j,
-    #                 -0.29912017 + 0.51900235j,
-    #             ],
-    #             [
-    #                 -0.05246398 + 0.5209089j,
-    #                 -0.29650069 - 0.40653082j,
-    #                 0.57434638 - 0.04417284j,
-    #                 0.28230532 - 0.24738672j,
-    #             ],
-    #             [
-    #                 0.28437557 + 0.08773767j,
-    #                 0.18377764 - 0.66496587j,
-    #                 -0.5874942 - 0.19866946j,
-    #                 0.2010813 - 0.10210844j,
-    #             ],
-    #             [
-    #                 -0.63173183 - 0.11057324j,
-    #                 -0.03468292 + 0.15245454j,
-    #                 -0.25390362 - 0.2244298j,
-    #                 0.18706333 - 0.64375049j,
-    #             ],
-    #         ]
-    #     )
-    #     perturbed = (
-    #         Interferometer(num_modes=4, unitary=solution_U)
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 1])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[2, 3])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
-    #     )
-    #     # TODO: XYd
-    #     X = math.cast(perturbed.XYd()[0], "complex128")
-    #     perturbed_U = X[:4, :4] + 1j * X[4:, :4]
+        solution_U = np.array(
+            [
+                [
+                    -0.47541806 + 0.00045878j,
+                    -0.41513474 - 0.27218387j,
+                    -0.11065812 - 0.39556922j,
+                    -0.29912017 + 0.51900235j,
+                ],
+                [
+                    -0.05246398 + 0.5209089j,
+                    -0.29650069 - 0.40653082j,
+                    0.57434638 - 0.04417284j,
+                    0.28230532 - 0.24738672j,
+                ],
+                [
+                    0.28437557 + 0.08773767j,
+                    0.18377764 - 0.66496587j,
+                    -0.5874942 - 0.19866946j,
+                    0.2010813 - 0.10210844j,
+                ],
+                [
+                    -0.63173183 - 0.11057324j,
+                    -0.03468292 + 0.15245454j,
+                    -0.25390362 - 0.2244298j,
+                    0.18706333 - 0.64375049j,
+                ],
+            ]
+        )
+        perturbed = (
+            Interferometer((0, 1, 2, 3), unitary=solution_U)
+            >> BSgate((0, 1), settings.rng.normal(scale=0.01))
+            >> BSgate((2, 3), settings.rng.normal(scale=0.01))
+            >> BSgate((1, 2), settings.rng.normal(scale=0.01))
+            >> BSgate((0, 3), settings.rng.normal(scale=0.01))
+        )
+        X = perturbed.symplectic[0]
+        perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
-    #     ops = [
-    #         Sgate(
-    #             r=settings.rng.normal(loc=np.arcsinh(1.0), scale=0.01, size=4),
-    #             r_trainable=True,
-    #         ),
-    #         Interferometer(unitary=perturbed_U, num_modes=4, unitary_trainable=True),
-    #     ]
-    #     circ = Circuit(ops)
+        state_in = Vacuum((0, 1, 2, 3))
+        s_gate = Sgate(
+            (0, 1, 2, 3),
+            r=settings.rng.normal(loc=np.arcsinh(1.0), scale=0.01),
+            r_trainable=True,
+        )
+        interferometer = Interferometer((0, 1, 2, 3), unitary=perturbed_U, unitary_trainable=True)
 
-    #     def cost_fn():
-    #         amps = (Vacuum(num_modes=4) >> circ).ket(cutoffs=[3, 3, 3, 3])
-    #         return -math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2
+        circ = Circuit([state_in, s_gate, interferometer])
 
-    #     opt = Optimizer(unitary_lr=0.05)
-    #     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
-    #     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
+        def cost_fn():
+            amps = circ.contract().fock_array((3, 3, 3, 3))
+            return -math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2
 
-    # def test_learning_four_mode_RealInterferometer(self):
-    #     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    #     skip_np()
+        opt = Optimizer(unitary_lr=0.05)
+        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
+        assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
-    #     settings.SEED = 6
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+    def test_learning_four_mode_RealInterferometer(self):
+        """Finding the optimal Interferometer to make a NOON state with N=2"""
+        skip_np()
 
-    #     solution_O = np.array(
-    #         [
-    #             [0.5, -0.5, 0.5, 0.5],
-    #             [-0.5, -0.5, -0.5, 0.5],
-    #             [0.5, 0.5, -0.5, 0.5],
-    #             [0.5, -0.5, -0.5, -0.5],
-    #         ]
-    #     )
-    #     solution_S = (np.arcsinh(1.0), np.array([0.0, np.pi / 2, -np.pi, -np.pi / 2]))
-    #     pertubed = (
-    #         RealInterferometer(orthogonal=solution_O, num_modes=4)
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 1])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[2, 3])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
-    #         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
-    #     )
-    #     # TODO: XYd
-    #     perturbed_O = pertubed.XYd()[0][:4, :4]
+        settings.SEED = 6
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     state_in = Vacuum((0,1,2,3))
-    #     s_gate = Sgate(
-    #             (0,1,2,3),
-    #             r=solution_S[0] + settings.rng.normal(scale=0.01, size=4),
-    #             phi=solution_S[1] + settings.rng.normal(scale=0.01, size=4),
-    #             r_trainable=True,
-    #             phi_trainable=True,
-    #         )
-    #     r_inter = RealInterferometer((0,1,2,3), orthogonal=perturbed_O, orthogonal_trainable=True)
+        solution_O = np.array(
+            [
+                [0.5, -0.5, 0.5, 0.5],
+                [-0.5, -0.5, -0.5, 0.5],
+                [0.5, 0.5, -0.5, 0.5],
+                [0.5, -0.5, -0.5, -0.5],
+            ]
+        )
+        solution_S = (np.arcsinh(1.0), np.array([0.0, np.pi / 2, -np.pi, -np.pi / 2]))
+        pertubed = (
+            RealInterferometer((0, 1, 2, 3), orthogonal=solution_O)
+            >> BSgate((0, 1), settings.rng.normal(scale=0.01))
+            >> BSgate((2, 3), settings.rng.normal(scale=0.01))
+            >> BSgate((1, 2), settings.rng.normal(scale=0.01))
+            >> BSgate((0, 3), settings.rng.normal(scale=0.01))
+        )
+        perturbed_O = pertubed.symplectic[0][:4, :4]
 
-    #     circ = Circuit([state_in, s_gate, r_inter])
+        state_in = Vacuum((0, 1, 2, 3))
+        s_gate = Sgate(
+            (0, 1, 2, 3),
+            r=solution_S[0] + settings.rng.normal(scale=0.01),
+            phi=solution_S[1] + settings.rng.normal(scale=0.01),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        r_inter = RealInterferometer(
+            (0, 1, 2, 3), orthogonal=perturbed_O, orthogonal_trainable=True
+        )
 
-    #     def cost_fn():
-    #         amps = circ.contract().fock_array((2,2,3,3))
-    #         return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
+        circ = Circuit([state_in, s_gate, r_inter])
 
-    #     opt = Optimizer()
+        def cost_fn():
+            amps = circ.contract().fock_array((2, 2, 3, 3))
+            return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
 
-    #     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
-    #     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
+        opt = Optimizer()
+
+        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
+        assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
     def test_squeezing_hong_ou_mandel_optimizer(self):
         """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
@@ -399,39 +401,44 @@ class TestOptimizer:
         opt.minimize(cost_fn, by_optimizing=[r_var, phi_var], max_steps=300)
         assert np.allclose(np.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
-    # def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum(self):
-    #     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
-    #     and mean photon number as a thermal state"""
-    #     skip_np()
+    def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum(self):
+        """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
+        and mean photon number as a thermal state"""
+        skip_np()
 
-    #     settings.SEED = 42
-    #     rng = tf.random.get_global_generator()
-    #     rng.reset_from_seed(settings.SEED)
+        settings.SEED = 42
+        rng = tf.random.get_global_generator()
+        rng.reset_from_seed(settings.SEED)
 
-    #     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
+        def thermal_entropy(nbar):
+            return -(nbar * np.log((nbar) / (1 + nbar)) - np.log(1 + nbar))
 
-    #     nbar = 1.4
+        nbar = 1.4
+        S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
+        S = thermal_entropy(nbar)
 
-    #     def thermal_entropy(nbar):
-    #         return -(nbar * np.log((nbar) / (1 + nbar)) - np.log(1 + nbar))
+        G = Ggate((0, 1), symplectic=S_init, symplectic_trainable=True)
 
-    #     G = Ggate((0,1), symplectic=S_init, symplectic_trainable=True)
+        def cost_fn():
+            state = Vacuum((0, 1)) >> G
 
-    #     def cost_fn():
-    #         state = Vacuum((0,1)) >> G
-    #         # TODO: cov and means
-    #         cov1, _ = trace(state.cov, state.means, [0])
-    #         mean1 = state.number_means[0]
-    #         mean2 = state.number_means[1]
-    #         entropy = von_neumann_entropy(cov1)
-    #         S = thermal_entropy(nbar)
-    #         return (mean1 - nbar) ** 2 + (entropy - S) ** 2 + (mean2 - nbar) ** 2
+            state0 = state[0]
+            state1 = state[1]
 
-    #     opt = Optimizer(symplectic_lr=0.1)
-    #     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-    #     S = math.asnumpy(G.symplectic.value)
-    #     cov = S @ S.T
-    #     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
+            cov0, mean0, _ = [x[0] for x in state0.phase_space(s=0)]
+            cov1, mean1, _ = [x[0] for x in state1.phase_space(s=0)]
+
+            num_mean0 = number_means(cov0, mean0)[0]
+            num_mean1 = number_means(cov1, mean1)[0]
+
+            entropy = von_neumann_entropy(cov0)
+            return (num_mean0 - nbar) ** 2 + (entropy - S) ** 2 + (num_mean1 - nbar) ** 2
+
+        opt = Optimizer(symplectic_lr=0.1)
+        opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
+        S = math.asnumpy(G.symp.value)
+        cov = S @ S.T
+        assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
     def test_opt_backend_param(self):
         """Test the optimization of a backend parameter defined outside a gate."""

@@ -171,6 +171,20 @@ class Operation(Transformation):
         )
 
     @classmethod
+    def from_fock(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        array: ComplexTensor,
+        batched: bool = False,
+        name: str | None = None,
+    ) -> Operation:
+        r"""
+        Allows initialization of operations from their Fock representation.
+        """
+        return Operation.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
+
+    @classmethod
     def from_quadrature(
         cls,
         modes_out: Sequence[int],
@@ -201,7 +215,9 @@ class Unitary(Operation):
         Returns the symplectic matrix that corresponds to this unitary
         """
         batch_size = self.ansatz.batch_size
-        return [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
+        return math.astensor(
+            [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
+        )
 
     @classmethod
     def from_bargmann(
