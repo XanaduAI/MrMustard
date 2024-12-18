@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Vacuum
+from mrmustard.lab_dev.states import Vacuum, Coherent
 from mrmustard.lab_dev.transformations import (
     Attenuator,
     Channel,
@@ -31,6 +31,7 @@ from mrmustard.lab_dev.transformations import (
     Operation,
     Sgate,
     Unitary,
+    PhaseNoise,
 )
 from mrmustard.physics.wires import Wires
 
@@ -99,6 +100,13 @@ class TestUnitary:
         u = Unitary.from_symplectic([0, 1], S)
         assert u >> u.dual == Identity([0, 1])
         assert u.dual >> u == Identity([0, 1])
+
+    def test_init_from_fock(self):
+        cutoff = 100
+        eigs = [math.exp(1j * n**2) for n in range(cutoff)]
+        kerr = Unitary.from_fock([0], [0], math.diag(math.astensor(eigs)))
+
+        assert math.allclose((kerr >> kerr.dual).fock_array(), math.eye(cutoff))
 
     def test_inverse_unitary(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2)
@@ -212,3 +220,20 @@ class TestChannel:
         x, y = Channel.from_XY(range(nmodes), range(nmodes), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)
+
+    def test_from_fock(self):
+        # Here we test our from_fock method by a PhaseNoise example
+        cutoff = 20
+        ph_n = np.zeros((cutoff, cutoff, cutoff, cutoff))
+        sigma = 1
+
+        for m in range(cutoff):
+            for n in range(cutoff):
+                ph_n[m, m, n, n] = math.exp(-0.5 * (m - n) ** 2 * sigma**2)
+
+        phi = Channel.from_fock([0], [0], ph_n)
+        psi = Coherent([0], 2) >> phi
+
+        assert psi.to_fock() == (Coherent([0], 2) >> PhaseNoise([0], sigma)).to_fock(
+            (cutoff, cutoff)
+        )

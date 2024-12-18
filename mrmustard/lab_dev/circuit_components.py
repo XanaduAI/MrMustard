@@ -224,7 +224,7 @@ class CircuitComponent:
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
-    ) -> CircuitComponent:
+    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
@@ -253,7 +253,7 @@ class CircuitComponent:
         triple: tuple,
         phi: float = 0.0,
         name: str | None = None,
-    ) -> CircuitComponent:
+    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
@@ -725,6 +725,9 @@ class CircuitComponent:
         return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
 
     def _ipython_display_(self):
+        if mmwidgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
         # both reps might return None
         rep_fn = mmwidgets.fock if isinstance(self.ansatz, ArrayAnsatz) else mmwidgets.bargmann
         rep_widget = rep_fn(self.ansatz)

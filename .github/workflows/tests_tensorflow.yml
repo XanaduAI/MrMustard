@@ -10,11 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT for S3 access
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
       cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
+      UPLOAD_TIMINGS: ${{ github.event_name == 'push' && matrix.python-version == '3.12' && 'true' || 'false' }}
 
     steps:
       - name: Checkout repo
@@ -23,7 +27,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Setup Julia
         uses: julia-actions/setup-julia@v1
@@ -47,7 +51,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ github.event_name == 'push' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: Upload coverage to Codecov
@@ -58,14 +62,16 @@ jobs:
           fail_ci_if_error: true
 
       - name: configure aws credentials
-        if: github.event_name == 'push'
+        if: env.UPLOAD_TIMINGS == 'true'
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
 
       - name: Copy durations to s3
-        if: github.event_name == 'push'
+        if: env.UPLOAD_TIMINGS == 'true'
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.record_file.outputs.filename }}
-          aws s3 cp ./${{ steps.record_file.outputs.filename }} s3://${{ secrets.AWS_TIMINGS_BUCKET }}/tf_tests/${{ github.ref_name }}/
+          aws s3 cp ./${{ steps.record_file.outputs.filename }} s3://${{ secrets.AWS_TIMINGS_BUCKET }}/tf_tests/$REF_NAME/

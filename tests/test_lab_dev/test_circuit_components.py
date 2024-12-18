@@ -545,6 +545,14 @@ class TestCircuitComponent:
         assert isinstance(title_widget, HTML)
         assert isinstance(wires_widget, HTML)
 
+    @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
+    def test_ipython_repr_interactive(self, capsys):
+        """Test the IPython repr function."""
+        dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
+        dgate._ipython_display_()
+        captured = capsys.readouterr()
+        assert captured.out.rstrip() == repr(dgate)
+
     def test_serialize_default_behaviour(self):
         """Test the default serializer."""
         name = "my_component"

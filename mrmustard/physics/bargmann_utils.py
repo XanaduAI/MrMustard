@@ -270,7 +270,12 @@ def XY_of_channel(A: ComplexMatrix):
             [A[2 * m : 3 * m, m : 2 * m], A[2 * m : 3 * m, 3 * m :]],
         ]
     )
-    X_tilde = -math.inv(np.eye(n) - math.Xmat(m) @ A_out) @ math.Xmat(m) @ R @ math.Xmat(m)
+    X_tilde = (
+        -math.inv(math.eye(n, dtype=math.complex128) - math.Xmat(m) @ A_out)
+        @ math.Xmat(m)
+        @ R
+        @ math.Xmat(m)
+    )
     transformation = math.block(
         [
             [math.eye(m, dtype=math.complex128), math.eye(m, dtype=math.complex128)],

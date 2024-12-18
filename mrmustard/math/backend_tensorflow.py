@@ -21,8 +21,6 @@ from typing import Callable, Sequence
 
 from importlib import metadata
 import os
-import platform
-from warnings import warn
 
 import numpy as np
 from semantic_version import Version
@@ -311,6 +309,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
+    def repeat(self, array: tf.Tensor, repeats: int, axis: int = None) -> tf.Tensor:
+        return tf.repeat(array, repeats, axis=axis)
+
     def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
         return tf.round(10**decimals * array) / 10**decimals
 
@@ -413,15 +414,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        use_legacy = Version(metadata.distribution("tensorflow").version) < Version("2.16.0")
-        AdamOpt = tf.keras.optimizers.legacy.Adam if use_legacy else tf.keras.optimizers.Adam
-        if not use_legacy and platform.system() == "Darwin" and platform.processor() == "arm":
-            warn(
-                "Mac ARM processor detected - MrMustard always trains using the latest Keras Adam "
-                "optimizer with TensorFlow 2.16+, but it is known to be slow on Mac+ARM. To use "
-                "the legacy optimizer, please downgrade TensorFlow to 2.15."
-            )
-        return AdamOpt(learning_rate=0.001)
+        if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
+            os.environ["TF_USE_LEGACY_KERAS"] = "True"
+        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: list[Trainable]
