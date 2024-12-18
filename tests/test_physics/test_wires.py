@@ -178,7 +178,7 @@ class TestWiresDisplay:
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
-        wires = Wires({0}, {}, {3}, {3, 4})
+        wires = Wires({0}, set(), {3}, {3, 4})
         wires._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
