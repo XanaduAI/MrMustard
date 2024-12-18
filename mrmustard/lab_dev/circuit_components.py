@@ -42,7 +42,6 @@ from mrmustard.utils.typing import (
 from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.wires import Wires
 from mrmustard.physics.representations import Representation
 
