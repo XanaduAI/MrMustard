@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""optimization tests"""
+"""Tests for the Optimizer class"""
 
 import numpy as np
 import tensorflow as tf
@@ -37,10 +37,9 @@ from mrmustard.lab_dev import (
     GKet,
     Number,
     TwoModeSqueezedVacuum,
-    Operation,
 )
 from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics.gaussian import trace, von_neumann_entropy, number_means
+from mrmustard.physics.gaussian import von_neumann_entropy, number_means
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
