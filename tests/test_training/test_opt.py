@@ -534,6 +534,7 @@ class TestOptimizer:
         skip_np()
 
         squeezing = Sgate((0,), r=1.0, r_trainable=True)
+        og_r = math.asnumpy(squeezing.r.value)
 
         def cost_fn():
             return -(Number((0,), 2) >> squeezing >> Vacuum((0,)).dual)
@@ -541,23 +542,30 @@ class TestOptimizer:
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
+        assert squeezing.r.value != og_r
+
     def test_displacement_grad_from_fock(self):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
         skip_np()
 
-        disp = Dgate((0,), x=1.0, y=1.0, x_trainable=True, y_trainable=True)
+        disp = Dgate((0,), x=1.0, y=0.5, x_trainable=True, y_trainable=True)
+        og_x = math.asnumpy(disp.x.value)
+        og_y = math.asnumpy(disp.y.value)
 
         def cost_fn():
             return -(Number((0,), 2) >> disp >> Vacuum((0,)).dual)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
+        assert og_x != disp.x.value
+        assert og_y != disp.y.value
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
         skip_np()
 
         sq = SqueezedVacuum((0,), r=1.0, r_trainable=True)
+        og_r = math.asnumpy(sq.r.value)
 
         def cost_fn():
             return -(
@@ -569,3 +577,5 @@ class TestOptimizer:
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
+
+        assert og_r != sq.r.value
