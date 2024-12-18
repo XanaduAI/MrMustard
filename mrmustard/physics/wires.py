@@ -158,7 +158,7 @@ class ClassicalWire:
     def _order(self) -> int:
         """
         Artificial ordering for sorting classical wires.
-        Order is by out/in, then mode and classical wires always come after quantum wires.
+        Order is by out/in, then mode. Classical wires always come after quantum wires.
         """
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
 
@@ -363,8 +363,9 @@ class Wires:  # pylint: disable=too-many-public-methods
         r"""
         Returns a new Wires object with references to the given wires.
         If copy is True, the wires are copied, otherwise they are referenced.
+        Does not reindex the wires.
         """
-        w = Wires()
+        w = cls()
         w.quantum_wires = set(quantum) if not copy else {q.copy() for q in quantum}
         w.classical_wires = set(classical) if not copy else {c.copy() for c in classical}
         return w
@@ -404,39 +405,6 @@ class Wires:  # pylint: disable=too-many-public-methods
             modes_in_ket=self.output.ket.modes,
             classical_out=self.input.classical.modes,
             classical_in=self.output.classical.modes,
-        )
-
-    def to_fock(self, shape: tuple[int, ...]) -> Wires:
-        r"""
-        Returns a new Wires object with the quantum wires in Fock representation.
-        """
-        return Wires.from_wires(
-            quantum={
-                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.quantum_wires
-            },
-            classical={
-                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.classical_wires
-            },
-        )
-
-    def to_bargmann(self) -> Wires:
-        r"""
-        Returns a new Wires object with the quantum wires in Bargmann representation.
-        """
-        return Wires.from_wires(
-            quantum={replace(w, repr=ReprEnum.BARGMANN) for w in self.quantum_wires},
-            classical={replace(w, repr=ReprEnum.BARGMANN) for w in self.classical_wires},
-        )
-
-    def to_quadrature(
-        self,
-    ) -> Wires:
-        r"""
-        Returns a new Wires object with the quantum wires in quadrature representation.
-        """
-        return Wires.from_wires(
-            quantum={replace(w, repr=ReprEnum.QUADRATURE) for w in self.quantum_wires},
-            classical={replace(w, repr=ReprEnum.QUADRATURE) for w in self.classical_wires},
         )
 
     ###### SUBSETS OF WIRES ######
@@ -507,11 +475,6 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     ###### PROPERTIES ######
 
-    @cached_property
-    def id(self) -> int:
-        """Returns a unique identifier for this Wires object."""
-        return randint(0, 2**32 - 1)
-
     @property
     def modes(self) -> set[int]:
         r"""
@@ -536,7 +499,7 @@ class Wires:  # pylint: disable=too-many-public-methods
     @property
     def args(self) -> tuple[tuple[int, ...], ...]:
         r"""
-        The arguments to pass to ``Wires`` to create the same object with fresh wires.
+        The arguments needed to create a new ``Wires`` object with the same wires.
         """
         return (
             self.bra.output.modes,
@@ -569,7 +532,8 @@ class Wires:  # pylint: disable=too-many-public-methods
 
     def contracted_indices(self, other: Wires) -> tuple[tuple[int, ...], tuple[int, ...]]:
         r"""
-        Returns the indices being contracted between self and other when calling matmul.
+        Returns the indices (in standard order) being contracted between self and other when
+        calling matmul.
 
         Args:
             other: another Wires object
@@ -621,10 +585,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return hash((tuple(self.classical_wires), tuple(self.quantum_wires)))
 
     def __eq__(self, other: Wires) -> bool:
-        return (
-            self.quantum_wires == other.quantum_wires
-            and self.classical_wires == other.classical_wires
-        )
+        return self.args == other.args
 
     def __len__(self) -> int:
         return len(self.quantum_wires) + len(self.classical_wires)

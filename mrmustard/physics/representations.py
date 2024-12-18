@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .wires import Wires
+from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
 
@@ -172,7 +172,9 @@ class Representation:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.ansatz.data
             bargmann = PolyExpAnsatz(A, b, c)
-            return Representation(bargmann, self.wires.to_bargmann())
+            for w in self.wires.quantum:
+                w.repr = ReprEnum.BARGMANN
+            return Representation(bargmann, self.wires)
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""
@@ -189,7 +191,10 @@ class Representation:
                 fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
-        return Representation(fock, self.wires.to_fock(shape))
+        wires = self.wires.copy()
+        for w in wires.quantum_wires:
+            w.repr = ReprEnum.FOCK
+        return Representation(fock, wires)
 
     def __eq__(self, other):
         if isinstance(other, Representation):

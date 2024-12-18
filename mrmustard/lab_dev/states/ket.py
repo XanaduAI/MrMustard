@@ -30,7 +30,7 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexVector,
@@ -122,7 +122,8 @@ class Ket(State):
             )
         wires = Wires(modes_out_ket=modes)
         if isinstance(ansatz, ArrayAnsatz):
-            wires = wires.to_fock(ansatz.array.shape)
+            for w in wires.quantum_wires:
+                w.repr = ReprEnum.FOCK
         return Ket(Representation(ansatz, wires), name)
 
     @classmethod
