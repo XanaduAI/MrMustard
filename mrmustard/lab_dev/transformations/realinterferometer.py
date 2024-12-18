@@ -57,15 +57,21 @@ class RealInterferometer(Unitary):
         orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
 
         super().__init__(name="RealInterferometer")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
             )
         )
         symplectic = math.block(
             [
-                [self.orthogonal.value, -math.zeros_like(self.orthogonal.value)],
-                [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
+                [
+                    self.parameters.orthogonal.value,
+                    -math.zeros_like(self.parameters.orthogonal.value),
+                ],
+                [
+                    math.zeros_like(self.parameters.orthogonal.value),
+                    self.parameters.orthogonal.value,
+                ],
             ]
         )
 

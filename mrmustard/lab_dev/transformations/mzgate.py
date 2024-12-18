@@ -62,8 +62,8 @@ class MZgate(Unitary):
         internal: bool = False,
     ):
         super().__init__(name="MZgate")
-        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
-        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
+        self.parameters.add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
+        self.parameters.add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
 
         ca = math.cos(complex(phi_a))
         sa = math.sin(complex(phi_a))

@@ -59,7 +59,7 @@ class Pgate(Unitary):
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Pgate")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
         )
 

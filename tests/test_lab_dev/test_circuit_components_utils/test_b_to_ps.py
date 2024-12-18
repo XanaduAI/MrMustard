@@ -48,7 +48,7 @@ class TestBtoPS:
         kets = btops.wires.ket.indices
         assert adjoint_btops.ansatz == btops.ansatz.reorder(kets + bras).conj
         assert adjoint_btops.wires == btops.wires.adjoint
-        assert adjoint_btops.s == btops.s
+        assert adjoint_btops.parameters.s == btops.parameters.s
 
     def test_dual(self):
         btops = BtoPS([0], 0)
@@ -60,7 +60,7 @@ class TestBtoPS:
         ob = btops.wires.bra.output.indices
         assert dual_btops.ansatz == btops.ansatz.reorder(ib + ob + ik + ok).conj
         assert dual_btops.wires == btops.wires.dual
-        assert dual_btops.s == btops.s
+        assert dual_btops.parameters.s == btops.parameters.s
 
     def test_inverse(self):
         btops = BtoPS([0], 0)

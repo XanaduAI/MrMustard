@@ -102,12 +102,14 @@ class BSgate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(name="BSgate")
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.beamsplitter_gate_Abc, theta=self.theta, phi=self.phi
+                fn=triples.beamsplitter_gate_Abc,
+                theta=self.parameters.theta,
+                phi=self.parameters.phi,
             ),
         ).representation

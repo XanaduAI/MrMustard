@@ -57,13 +57,19 @@ class Interferometer(Unitary):
                 f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
             )
         super().__init__(name="Interferometer")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
         )
         symplectic = math.block(
             [
-                [math.real(self.unitary.value), -math.imag(self.unitary.value)],
-                [math.imag(self.unitary.value), math.real(self.unitary.value)],
+                [
+                    math.real(self.parameters.unitary.value),
+                    -math.imag(self.parameters.unitary.value),
+                ],
+                [
+                    math.imag(self.parameters.unitary.value),
+                    math.real(self.parameters.unitary.value),
+                ],
             ]
         )
 

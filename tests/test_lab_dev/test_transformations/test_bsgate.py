@@ -37,8 +37,8 @@ class TestBSgate:
 
         assert gate.name == "BSgate"
         assert gate.modes == [0, 1]
-        assert gate.theta.value == 2
-        assert gate.phi.value == 3
+        assert gate.parameters.theta.value == 2
+        assert gate.parameters.phi.value == 3
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="Expected a pair"):
@@ -77,10 +77,10 @@ class TestBSgate:
         gate3 = BSgate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.theta.value = 3
+            gate1.parameters.theta.value = 3
 
-        gate2.theta.value = 2
-        assert gate2.theta.value == 2
+        gate2.parameters.theta.value = 2
+        assert gate2.parameters.theta.value == 2
 
-        gate3.phi.value = 2
-        assert gate3.phi.value == 2
+        gate3.parameters.phi.value = 2
+        assert gate3.parameters.phi.value == 2

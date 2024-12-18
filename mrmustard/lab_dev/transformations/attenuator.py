@@ -86,7 +86,7 @@ class Attenuator(Channel):
     ):
         super().__init__(name="Att~")
         (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 transmissivity_trainable,
                 etas,
@@ -98,5 +98,7 @@ class Attenuator(Channel):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.attenuator_Abc, eta=self.transmissivity),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
+            ),
         ).representation

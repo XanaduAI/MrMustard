@@ -89,10 +89,10 @@ class TestRgate:
         gate2 = Rgate([0], 1, True, (-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.phi.value = 3
+            gate1.parameters.phi.value = 3
 
-        gate2.phi.value = 2
-        assert gate2.phi.value == 2
+        gate2.parameters.phi.value = 2
+        assert gate2.parameters.phi.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

@@ -67,7 +67,7 @@ class GKet(Ket):
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
 
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
                 symplectic,
@@ -80,7 +80,7 @@ class GKet(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gket_state_Abc, symplectic=self.symplectic
+                fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
             ),
         ).representation
 
@@ -136,7 +136,7 @@ class GDM(DM):
         if symplectic is None:
             symplectic = math.random_symplectic(m)
 
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
                 symplectic,
@@ -148,7 +148,7 @@ class GDM(DM):
 
         betas = math.astensor(list(reshape_params(len(modes), betas=beta))[0])
 
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 beta_trainable,
                 math.astensor(betas),
@@ -160,7 +160,7 @@ class GDM(DM):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gdm_state_Abc, betas=self.beta, symplectic=symplectic
+                fn=triples.gdm_state_Abc, betas=self.parameters.beta, symplectic=symplectic
             ),
         ).representation
 

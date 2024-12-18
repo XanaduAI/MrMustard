@@ -64,7 +64,7 @@ class CZgate(Unitary):
                 f"The number of modes for a CZgate must be 2 (your input has {len(modes)} many modes)."
             )
         super().__init__(name="CZgate")
-        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
+        self.parameters.add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
         symplectic = math.astensor(
             [
                 [1, 0, 0, 0],

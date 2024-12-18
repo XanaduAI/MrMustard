@@ -68,7 +68,7 @@ class CircuitComponent:
         name: str | None = None,
     ) -> None:
         self._name = name
-        self._parameter_set = ParameterSet()
+        self._parameters = ParameterSet()
         self._representation = representation or Representation()
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
@@ -97,11 +97,11 @@ class CircuitComponent:
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
-        if self.parameter_set:
-            for k, v in self.parameter_set.variables.items():
+        if self.parameters:
+            for k, v in self.parameters.variables.items():
                 serializable[f"{k}_bounds"] = v.bounds
                 serializable[f"{k}_trainable"] = True
-            return serializable, {k: v.value for k, v in self.parameter_set.all_parameters.items()}
+            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
 
         return serializable, {}
 
@@ -125,8 +125,8 @@ class CircuitComponent:
         """
         ret = CircuitComponent(self.representation.adjoint, self.name)
         ret.short_name = self.short_name
-        for param in self.parameter_set.all_parameters.values():
-            ret._add_parameter(param)
+        for param in self.parameters.all_parameters.values():
+            ret.parameters.add_parameter(param)
         return ret
 
     @property
@@ -137,8 +137,8 @@ class CircuitComponent:
         """
         ret = CircuitComponent(self.representation.dual, self.name)
         ret.short_name = self.short_name
-        for param in self.parameter_set.all_parameters.values():
-            ret._add_parameter(param)
+        for param in self.parameters.all_parameters.values():
+            ret.parameters.add_parameter(param)
         return ret
 
     @cached_property
@@ -186,11 +186,11 @@ class CircuitComponent:
         return len(self.modes)
 
     @property
-    def parameter_set(self) -> ParameterSet:
+    def parameters(self) -> ParameterSet:
         r"""
         The set of parameters of this component.
         """
-        return self._parameter_set
+        return self._parameters
 
     @property
     def ansatz(self) -> Ansatz | None:
@@ -519,20 +519,6 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def _add_parameter(self, parameter: Constant | Variable):
-        r"""
-        Adds a parameter to this circuit component and makes it accessible as an attribute.
-
-        Args:
-            parameter: The parameter to add.
-
-        Raises:
-            ValueError: If the the given parameter is incompatible with the number
-                of modes (e.g. for parallel gates).
-        """
-        self.parameter_set.add_parameter(parameter)
-        self.__dict__[parameter.name] = parameter
-
     def _getitem_builtin(self, modes: set[int]):
         r"""
         A convenience function to slice built-in circuit components (CCs).
@@ -544,7 +530,7 @@ class CircuitComponent:
         it allows returning trainable CCs.
         """
         items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = self.parameter_set[items].to_dict()
+        kwargs = self.parameters[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:

@@ -76,7 +76,7 @@ class FockDamping(Operation):
     ):
         super().__init__(name="FockDamping")
         (betas,) = list(reshape_params(len(modes), damping=damping))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 damping_trainable,
                 betas,
@@ -88,5 +88,7 @@ class FockDamping(Operation):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.fock_damping_Abc, beta=self.damping),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.fock_damping_Abc, beta=self.parameters.damping
+            ),
         ).representation
