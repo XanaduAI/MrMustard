@@ -4,7 +4,7 @@ from __future__ import annotations
 from functools import cached_property
 from enum import Enum, auto
 from typing import Any, Iterable, Iterator
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from random import randint
 from IPython.display import display
 from mrmustard import widgets
@@ -52,7 +52,7 @@ class WiresType(LegibleEnum):
     CLASSICAL_LIKE = auto()  # only classical wires
 
 
-@dataclass(slots=True)
+@dataclass
 class QuantumWire:
     """
     Represents a quantum wire in a circuit.
@@ -115,7 +115,7 @@ class QuantumWire:
         return self.mode + 10_000 * (1 - 2 * self.is_out) - 100_000 * (1 - 2 * self.is_ket)
 
 
-@dataclass(slots=True)
+@dataclass
 class ClassicalWire:
     """
     Represents a classical wire in a circuit.
