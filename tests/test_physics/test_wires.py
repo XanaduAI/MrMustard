@@ -170,6 +170,11 @@ class TestWiresDisplay:
         w2 = Wires({0}, {1})
         assert hash(w1) == hash(w2)
 
+    def test_ids(self):
+        wires = Wires({0}, {1})
+        for w in wires:
+            assert isinstance(w.id, int)
+
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
