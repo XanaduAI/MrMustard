@@ -153,9 +153,8 @@ class State(CircuitComponent):
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
         element-wise along the batch dimension.
         """
-        settings.UNSAFE_ZIP_BATCH = True
-        rep = self >> self.dual
-        settings.UNSAFE_ZIP_BATCH = False
+        with settings(UNSAFE_ZIP_BATCH=True):
+            rep = self >> self.dual
         return math.real(rep)
 
     @classmethod

@@ -33,7 +33,7 @@ class TestPgate:
         up = Pgate([0, 1], 0.3)
         assert up.modes == [0, 1]
         assert up.name == "Pgate"
-        assert up.shearing.value == 0.3
+        assert up.parameters.shearing.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.5, 1])
     def test_application(self, s):

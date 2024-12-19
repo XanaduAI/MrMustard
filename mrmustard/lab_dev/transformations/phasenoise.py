@@ -54,7 +54,7 @@ class PhaseNoise(Channel):
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(name="PhaseNoise")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
         self._representation = self.from_ansatz(
@@ -80,7 +80,7 @@ class PhaseNoise(Channel):
             phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
-                * self.phase_stdev.value**2
+                * self.parameters.phase_stdev.value**2
             )
             array *= phase_factors
         return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)

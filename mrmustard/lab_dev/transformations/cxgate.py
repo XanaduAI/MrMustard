@@ -19,11 +19,11 @@ The class representing a controlled-X gate.
 from __future__ import annotations
 
 from typing import Sequence
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
 from ..utils import make_parameter
+from ...physics import symplectics
 
 __all__ = ["CXgate"]
 
@@ -62,20 +62,15 @@ class CXgate(Unitary):
                 f"The number of modes for a CXgate must be 2 (your input has {len(modes)} many modes)."
             )
         super().__init__(name="CXgate")
-        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
-        symplectic = math.astensor(
-            [
-                [1, 0, 0, 0],
-                [s, 1, 0, 0],
-                [0, 0, 1, -s],
-                [0, 0, 0, 1],
-            ],
-            dtype="complex128",
-        )
+        self.parameters.add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
+
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda sym: Unitary.from_symplectic(modes, sym).bargmann_triple(), sym=symplectic
+                fn=lambda s: Unitary.from_symplectic(
+                    modes, symplectics.cxgate_symplectic(s)
+                ).bargmann_triple(),
+                s=self.parameters.s,
             ),
         ).representation
