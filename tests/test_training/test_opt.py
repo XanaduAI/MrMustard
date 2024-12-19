@@ -122,7 +122,7 @@ class TestOptimizer:
             max_steps=300,
             callbacks=[Callback(tag="null_cb", steps_per_call=3)],
         )
-        assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
+        assert np.allclose(np.cos(bs.parameters.theta.value) ** 2, k / (i + k), atol=1e-2)
         assert "null_cb" in opt.callback_history
         assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
 
