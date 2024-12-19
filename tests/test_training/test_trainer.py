@@ -32,8 +32,7 @@ try:
 except ImportError:
     ray_available = False
 
-from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
-from mrmustard.physics import fidelity
+from mrmustard.lab_dev import Dgate, GKet, Ggate, Vacuum
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
@@ -48,8 +47,8 @@ def wrappers():
 
         math.change_backend("tensorflow")
 
-        circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
-            x=x, x_trainable=True, y_trainable=True
+        circ = Ggate((0,), symplectic_trainable=True) >> Dgate(
+            (0,), x=x, x_trainable=True, y_trainable=True
         )
         return (
             [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
@@ -60,9 +59,9 @@ def wrappers():
 
         math.change_backend("tensorflow")
 
-        target = Gaussian(1) >> Dgate(-0.1, y_targ)
-        s = Vacuum(1) >> circ
-        return -fidelity(s, target)
+        target = GKet((0,)) >> Dgate((0,), -0.1, y_targ)
+        s = Vacuum((0,)) >> circ
+        return -math.abs(s >> target.dual)
 
     return make_circ, cost_fn
 
