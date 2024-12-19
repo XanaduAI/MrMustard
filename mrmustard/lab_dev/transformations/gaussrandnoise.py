@@ -41,7 +41,7 @@ class GaussRandNoise(Channel):
 
         >>> channel = GaussRandNoise(modes=[1, 2], Y = .2 * np.eye(4))
         >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.Y.value, .2 * np.eye(4))
+        >>> assert np.allclose(channel.parameters.Y.value, .2 * np.eye(4))
 
     Args:
         modes: The modes the channel is applied to

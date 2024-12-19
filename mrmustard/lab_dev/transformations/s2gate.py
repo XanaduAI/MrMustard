@@ -41,8 +41,8 @@ class S2gate(Unitary):
 
         >>> unitary = S2gate(modes=[1, 2], r=1)
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.r.value, 1)
-        >>> assert np.allclose(unitary.phi.value, 0.0)
+        >>> assert np.allclose(unitary.parameters.r.value, 1)
+        >>> assert np.allclose(unitary.parameters.phi.value, 0.0)
 
     Args:
         modes: The modes this gate is applied to.

@@ -42,8 +42,8 @@ class Sgate(Unitary):
 
         >>> unitary = Sgate(modes=[1, 2], r=0.1, phi=[0.2, 0.3])
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.r.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.phi.value, [0.2, 0.3])
+        >>> assert np.allclose(unitary.parameters.r.value, [0.1, 0.1])
+        >>> assert np.allclose(unitary.parameters.phi.value, [0.2, 0.3])
 
     Args:
         modes: The modes this gate is applied to.

@@ -42,7 +42,7 @@ class Attenuator(Channel):
 
         >>> channel = Attenuator(modes=[1, 2], transmissivity=0.1)
         >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
+        >>> assert np.allclose(channel.parameters.transmissivity.value, [0.1, 0.1])
 
     Args:
         modes: The modes this gate is applied to.

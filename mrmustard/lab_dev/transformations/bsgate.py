@@ -41,8 +41,8 @@ class BSgate(Unitary):
 
         >>> unitary = BSgate(modes=[1, 2], theta=0.1)
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.theta.value, 0.1)
-        >>> assert np.allclose(unitary.phi.value, 0.0)
+        >>> assert np.allclose(unitary.parameters.theta.value, 0.1)
+        >>> assert np.allclose(unitary.parameters.phi.value, 0.0)
 
     Args:
         modes: The modes this gate is applied to.

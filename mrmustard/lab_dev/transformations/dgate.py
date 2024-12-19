@@ -46,8 +46,8 @@ class Dgate(Unitary):
 
         >>> unitary = Dgate(modes=[1, 2], x=0.1, y=[0.2, 0.3])
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.x.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.y.value, [0.2, 0.3])
+        >>> assert np.allclose(unitary.parameters.x.value, [0.1, 0.1])
+        >>> assert np.allclose(unitary.parameters.y.value, [0.2, 0.3])
 
     Args:
         modes: The modes this gate is applied to.
