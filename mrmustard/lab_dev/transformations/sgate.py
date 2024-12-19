@@ -42,8 +42,8 @@ class Sgate(Unitary):
 
         >>> unitary = Sgate(modes=[1, 2], r=0.1, phi=[0.2, 0.3])
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.r.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.phi.value, [0.2, 0.3])
+        >>> assert np.allclose(unitary.parameters.r.value, [0.1, 0.1])
+        >>> assert np.allclose(unitary.parameters.phi.value, [0.2, 0.3])
 
     Args:
         modes: The modes this gate is applied to.
@@ -92,12 +92,12 @@ class Sgate(Unitary):
     ):
         super().__init__(name="Sgate")
         rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
-        self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezing_gate_Abc, r=self.r, delta=self.phi
+                fn=triples.squeezing_gate_Abc, r=self.parameters.r, delta=self.parameters.phi
             ),
         ).representation

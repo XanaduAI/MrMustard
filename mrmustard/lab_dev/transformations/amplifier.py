@@ -86,7 +86,7 @@ class Amplifier(Channel):
     ):
         super().__init__(name="Amp~")
         (gs,) = list(reshape_params(len(modes), gain=gain))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 gain_trainable,
                 gs,
@@ -98,5 +98,5 @@ class Amplifier(Channel):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.gain),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain),
         ).representation

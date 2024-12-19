@@ -52,13 +52,13 @@ class TestCoherent:
         state3 = Coherent([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            state1.x.value = 3
+            state1.parameters.x.value = 3
 
-        state2.x.value = 2
-        assert state2.x.value == 2
+        state2.parameters.x.value = 2
+        assert state2.parameters.x.value == 2
 
-        state3.y.value = 2
-        assert state3.y.value == 2
+        state3.parameters.y.value = 2
+        assert state3.parameters.y.value == 2
 
     def test_representation(self):
         rep1 = Coherent(modes=[0], x=0.1, y=0.2).ansatz

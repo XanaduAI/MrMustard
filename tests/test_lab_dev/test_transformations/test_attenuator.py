@@ -56,10 +56,10 @@ class TestAttenuator:
         )
 
         with pytest.raises(AttributeError):
-            gate1.transmissivity.value = 0.3
+            gate1.parameters.transmissivity.value = 0.3
 
-        gate2.transmissivity.value = 0.2
-        assert gate2.transmissivity.value == 0.2
+        gate2.parameters.transmissivity.value = 0.2
+        assert gate2.parameters.transmissivity.value == 0.2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

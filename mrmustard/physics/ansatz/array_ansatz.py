@@ -27,6 +27,7 @@ from numpy.typing import ArrayLike
 from IPython.display import display
 
 from mrmustard import math, widgets
+from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
 from .base import Ansatz
@@ -247,8 +248,20 @@ class ArrayAnsatz(Ansatz):
         return ArrayAnsatz([trace] if trace.shape == () else trace, batched=True)
 
     def _generate_ansatz(self):
-        if self._array is None:
-            self.array = [self._fn(**self._kwargs)]
+        names = list(self._kwargs.keys())
+        vars = list(self._kwargs.values())
+
+        params = {}
+        param_types = []
+        for name, param in zip(names, vars):
+            try:
+                params[name] = param.value
+                param_types.append(type(param))
+            except AttributeError:  # pragma: no cover
+                params[name] = param
+
+        if self._array is None or Variable in param_types:
+            self.array = [self._fn(**params)]
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
