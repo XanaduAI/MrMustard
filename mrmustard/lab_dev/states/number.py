@@ -75,7 +75,7 @@ class Number(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=ArrayAnsatz.from_function(
-                fock_state, n=self.parameters.n.value, cutoffs=self.parameters.cutoffs.value
+                fock_state, n=self.parameters.n, cutoffs=self.parameters.cutoffs
             ),
         ).representation
         self.short_name = [str(int(n)) for n in self.parameters.n.value]

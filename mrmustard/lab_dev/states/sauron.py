@@ -48,7 +48,7 @@ class Sauron(Ket):
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 triples.sauron_state_Abc,
-                n=self.parameters.n.value,
-                epsilon=self.parameters.epsilon.value,
+                n=self.parameters.n,
+                epsilon=self.parameters.epsilon,
             ),
         ).representation

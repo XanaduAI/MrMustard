@@ -19,11 +19,11 @@ The class representing a controlled-phase gate.
 from __future__ import annotations
 
 from typing import Sequence
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
 from ..utils import make_parameter
+from ...physics import symplectics
 
 __all__ = ["CZgate"]
 
@@ -65,18 +65,13 @@ class CZgate(Unitary):
             )
         super().__init__(name="CZgate")
         self.parameters.add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
-        symplectic = math.astensor(
-            [
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, s, 1, 0],
-                [s, 0, 0, 1],
-            ]
-        )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda sym: Unitary.from_symplectic(modes, sym).bargmann_triple(), sym=symplectic
+                fn=lambda s: Unitary.from_symplectic(
+                    modes, symplectics.czgate_symplectic(s)
+                ).bargmann_triple(),
+                s=self.parameters.s,
             ),
         ).representation
