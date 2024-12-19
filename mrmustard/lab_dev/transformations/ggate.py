@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from typing import Sequence
 from mrmustard import math
+from mrmustard.math.parameters import update_symplectic
 from mrmustard.utils.typing import RealMatrix
 
 from .base import Unitary
@@ -58,17 +59,20 @@ class Ggate(Unitary):
         super().__init__(name="Ggate")
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        S = make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None))
-        self.parameter_set.add_parameter(S)
+        self.parameters.add_parameter(
+            make_parameter(
+                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+            )
+        )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-                s=self.parameter_set.symplectic,
+                s=self.parameters.symplectic,
             ),
         ).representation
 
     @property
     def symplectic(self):
-        return self.parameter_set.symplectic.value
+        return self.parameters.symplectic.value

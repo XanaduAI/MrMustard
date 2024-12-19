@@ -35,7 +35,7 @@ class TestCZgate:
         cz = CZgate([0, 1], 0.3)
         assert cz.modes == [0, 1]
         assert cz.name == "CZgate"
-        assert cz.s.value == 0.3
+        assert cz.parameters.s.value == 0.3
 
         with pytest.raises(
             ValueError,

@@ -46,8 +46,8 @@ class Dgate(Unitary):
 
         >>> unitary = Dgate(modes=[1, 2], x=0.1, y=[0.2, 0.3])
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.x.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.y.value, [0.2, 0.3])
+        >>> assert np.allclose(unitary.parameters.x.value, [0.1, 0.1])
+        >>> assert np.allclose(unitary.parameters.y.value, [0.2, 0.3])
 
     Args:
         modes: The modes this gate is applied to.
@@ -93,13 +93,13 @@ class Dgate(Unitary):
     ) -> None:
         super().__init__(name="Dgate")
         xs, ys = list(reshape_params(len(modes), x=x, y=y))
-        self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
-        self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
+        self.parameters.add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.x, y=self.y
+                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
             ),
         ).representation
 
@@ -125,8 +125,8 @@ class Dgate(Unitary):
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
             )
         N = self.n_modes
-        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
-        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+        x = self.parameters.x.value * math.ones(N, dtype=self.parameters.x.value.dtype)
+        y = self.parameters.y.value * math.ones(N, dtype=self.parameters.y.value.dtype)
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product

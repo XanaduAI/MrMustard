@@ -32,7 +32,7 @@ class TestGKet:
         gket = GKet([0, 1])
 
         assert gket.modes == [0, 1]
-        assert gket.symplectic.value.shape == (4, 4)
+        assert gket.parameters.symplectic.value.shape == (4, 4)
         assert gket.name == "GKet"
         assert math.allclose(gket.probability, 1.0)
 
@@ -40,7 +40,7 @@ class TestGKet:
         "Tests is the attributes are consistent"
 
         g = GKet([0])
-        sym = g.symplectic.value
+        sym = g.parameters.symplectic.value
         u = Unitary.from_symplectic([0], sym)
         assert g == Vacuum([0]) >> u
 
@@ -66,8 +66,8 @@ class TestGDM:
 
         assert rho.modes == [0, 1]
         assert rho.name == "GDM"
-        assert math.allclose(rho.beta.value, math.astensor([0.2, 0.3]))
-        assert rho.symplectic.value.shape == (4, 4)
+        assert math.allclose(rho.parameters.beta.value, math.astensor([0.2, 0.3]))
+        assert rho.parameters.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
     def test_getitem(self):
