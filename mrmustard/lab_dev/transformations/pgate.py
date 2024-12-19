@@ -19,11 +19,11 @@ The class representing a quadratic phase gate.
 from __future__ import annotations
 
 from typing import Sequence
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
 from ..utils import make_parameter
+from ...physics import symplectics
 
 __all__ = ["Pgate"]
 
@@ -59,20 +59,17 @@ class Pgate(Unitary):
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Pgate")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
-        )
-
-        symplectic = math.block(
-            [
-                [math.eye(len(modes)), math.zeros((len(modes), len(modes)))],
-                [math.eye(len(modes)) * shearing, math.eye(len(modes))],
-            ]
         )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(), s=symplectic
+                fn=lambda n_modes, shearing: Unitary.from_symplectic(
+                    modes, symplectics.pgate_symplectic(n_modes, shearing)
+                ).bargmann_triple(),
+                n_modes=len(modes),
+                shearing=self.parameters.shearing,
             ),
         ).representation

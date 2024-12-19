@@ -213,7 +213,7 @@ class ArrayAnsatz(Ansatz):
             try:
                 params[name] = param.value
                 param_types.append(type(param))
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 params[name] = param
 
         if self._array is None or Variable in param_types:

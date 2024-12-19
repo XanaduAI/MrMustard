@@ -394,7 +394,7 @@ class DM(State):
             msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
             raise ValueError(msg)
 
-        if self._parameter_set:
+        if self._parameters:
             # if ``self`` has a parameter set it means it is a built-in state,
             # in which case we slice the parameters
             return self._getitem_builtin(modes)

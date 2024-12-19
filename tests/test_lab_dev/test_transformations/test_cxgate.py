@@ -35,7 +35,7 @@ class TestCXgate:
         cx = CXgate([0, 1], 0.3)
         assert cx.modes == [0, 1]
         assert cx.name == "CXgate"
-        assert cx.s.value == 0.3
+        assert cx.parameters.s.value == 0.3
 
         with pytest.raises(
             ValueError,

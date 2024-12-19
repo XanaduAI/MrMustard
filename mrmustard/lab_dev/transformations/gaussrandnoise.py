@@ -41,7 +41,7 @@ class GaussRandNoise(Channel):
 
         >>> channel = GaussRandNoise(modes=[1, 2], Y = .2 * np.eye(4))
         >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.Y.value, .2 * np.eye(4))
+        >>> assert np.allclose(channel.parameters.Y.value, .2 * np.eye(4))
 
     Args:
         modes: The modes the channel is applied to
@@ -75,9 +75,13 @@ class GaussRandNoise(Channel):
             raise ValueError("The input Y matrix has negative eigen-values.")
 
         super().__init__(name="GRN~")
-        self._add_parameter(make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)))
+        self.parameters.add_parameter(
+            make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None))
+        )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.gaussian_random_noise_Abc, Y=self.Y),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.gaussian_random_noise_Abc, Y=self.parameters.Y
+            ),
         ).representation

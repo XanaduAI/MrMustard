@@ -61,9 +61,13 @@ class Rgate(Unitary):
     ):
         super().__init__(name="Rgate")
         (thetas,) = list(reshape_params(len(modes), theta=theta))
-        self._add_parameter(make_parameter(theta_trainable, thetas, "theta", theta_bounds))
+        self.parameters.add_parameter(
+            make_parameter(theta_trainable, thetas, "theta", theta_bounds)
+        )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.theta),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
+            ),
         ).representation

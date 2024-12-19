@@ -26,12 +26,14 @@ from mrmustard.utils.typing import RealMatrix
 
 from .base import Unitary
 from ..utils import make_parameter
+from ...physics import symplectics
 
 __all__ = ["RealInterferometer"]
 
 
 class RealInterferometer(Unitary):
-    r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
+    r"""
+    N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix).
     Does not mix q's and p's.
 
     Args:
@@ -57,9 +59,9 @@ class RealInterferometer(Unitary):
         orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
 
         super().__init__(name="RealInterferometer")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
-                orthogonal_trainable, orthogonal, "ortho", (None, None), update_orthogonal
+                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
             )
         )
         self._representation = self.from_ansatz(
@@ -67,9 +69,8 @@ class RealInterferometer(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda ortho: Unitary.from_symplectic(
-                    modes,
-                    math.block([[ortho, -math.zeros_like(ortho)], [math.zeros_like(ortho), ortho]]),
+                    modes, symplectics.realinterferometer_symplectic(ortho)
                 ).bargmann_triple(),
-                ortho=self.ortho,
+                ortho=self.parameters.orthogonal,
             ),
         ).representation

@@ -190,11 +190,11 @@ class Optimizer:
             if isinstance(item, Circuit):
                 for j, op in enumerate(item.components):
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
-                    tagged_vars = op.parameter_set.tagged_variables(tag)
+                    tagged_vars = op.parameters.tagged_variables(tag)
                     trainables.append(tagged_vars.items())
-            elif hasattr(item, "parameter_set"):
+            elif hasattr(item, "parameters"):
                 tag = f"{owner_tag}:{item.__class__.__qualname__}"
-                tagged_vars = item.parameter_set.tagged_variables(tag)
+                tagged_vars = item.parameters.tagged_variables(tag)
                 trainables.append(tagged_vars.items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above

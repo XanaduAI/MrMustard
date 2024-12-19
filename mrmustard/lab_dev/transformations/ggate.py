@@ -59,9 +59,9 @@ class Ggate(Unitary):
         super().__init__(name="Ggate")
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symp", (None, None), update_symplectic
+                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
             )
         )
         self._representation = self.from_ansatz(
@@ -69,10 +69,10 @@ class Ggate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-                s=self.symp,
+                s=self.parameters.symplectic,
             ),
         ).representation
 
     @property
     def symplectic(self):
-        return self.symp.value
+        return self.parameters.symplectic.value
