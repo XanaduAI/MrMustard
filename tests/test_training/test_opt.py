@@ -372,7 +372,7 @@ class TestOptimizer:
 
         opt = Optimizer(euclidean_lr=0.001)
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-        assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
+        assert np.allclose(np.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
 
     def test_parameter_passthrough(self):
         """Same as the test above, but with param passthrough"""
@@ -435,7 +435,7 @@ class TestOptimizer:
 
         opt = Optimizer(symplectic_lr=0.1)
         opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-        S = math.asnumpy(G.symp.value)
+        S = math.asnumpy(G.parameters.symplectic.value)
         cov = S @ S.T
         assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
@@ -458,7 +458,6 @@ class TestOptimizer:
 
         def cost_fn_sympl():
             state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
-            # TODO: fidelity
             return 1 - (state_out >> target_state.dual)
 
         opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
@@ -484,8 +483,8 @@ class TestOptimizer:
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert np.allclose(dgate.x.value, 0.1, atol=0.01)
-        assert np.allclose(dgate.y.value, 0.2, atol=0.01)
+        assert np.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
+        assert np.allclose(dgate.parameters.y.value, 0.2, atol=0.01)
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
@@ -506,8 +505,8 @@ class TestOptimizer:
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[sgate])
 
-        assert np.allclose(sgate.r.value, 0.1, atol=0.01)
-        assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
+        assert np.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
+        assert np.allclose(sgate.parameters.phi.value, 0.2, atol=0.01)
 
     def test_bsgate_optimization(self):
         """Test that Sgate is optimized correctly."""
@@ -532,15 +531,15 @@ class TestOptimizer:
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[bsgate])
 
-        assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
-        assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
+        assert np.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
+        assert np.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
 
     def test_squeezing_grad_from_fock(self):
         """Test that the gradient of a squeezing gate is computed from the fock representation."""
         skip_np()
 
         squeezing = Sgate((0,), r=1.0, r_trainable=True)
-        og_r = math.asnumpy(squeezing.r.value)
+        og_r = math.asnumpy(squeezing.parameters.r.value)
 
         def cost_fn():
             return -(Number((0,), 2) >> squeezing >> Vacuum((0,)).dual)
@@ -548,30 +547,30 @@ class TestOptimizer:
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
-        assert squeezing.r.value != og_r
+        assert squeezing.parameters.r.value != og_r
 
     def test_displacement_grad_from_fock(self):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
         skip_np()
 
         disp = Dgate((0,), x=1.0, y=0.5, x_trainable=True, y_trainable=True)
-        og_x = math.asnumpy(disp.x.value)
-        og_y = math.asnumpy(disp.y.value)
+        og_x = math.asnumpy(disp.parameters.x.value)
+        og_y = math.asnumpy(disp.parameters.y.value)
 
         def cost_fn():
             return -(Number((0,), 2) >> disp >> Vacuum((0,)).dual)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert og_x != disp.x.value
-        assert og_y != disp.y.value
+        assert og_x != disp.parameters.x.value
+        assert og_y != disp.parameters.y.value
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
         skip_np()
 
         sq = SqueezedVacuum((0,), r=1.0, r_trainable=True)
-        og_r = math.asnumpy(sq.r.value)
+        og_r = math.asnumpy(sq.parameters.r.value)
 
         def cost_fn():
             return -(
@@ -584,4 +583,4 @@ class TestOptimizer:
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
-        assert og_r != sq.r.value
+        assert og_r != sq.parameters.r.value
