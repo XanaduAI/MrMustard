@@ -461,7 +461,7 @@ class TestOptimizer:
 
         def cost_fn_sympl():
             state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
-            return 1 - math.pow(state_out >> target_state.dual, 2)
+            return 1 - math.abs((state_out >> target_state.dual) ** 2)
 
         opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
         opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
