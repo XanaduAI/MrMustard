@@ -542,7 +542,7 @@ class TestOptimizer:
         og_r = math.asnumpy(squeezing.parameters.r.value)
 
         def cost_fn():
-            return -(Number((0,), 2) >> squeezing >> Vacuum((0,)).dual)
+            return -((Number((0,), 2) >> squeezing >> Vacuum((0,)).dual) ** 2)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
@@ -558,7 +558,7 @@ class TestOptimizer:
         og_y = math.asnumpy(disp.parameters.y.value)
 
         def cost_fn():
-            return -(Number((0,), 2) >> disp >> Vacuum((0,)).dual)
+            return -((Number((0,), 2) >> disp >> Vacuum((0,)).dual) ** 2)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
@@ -574,10 +574,13 @@ class TestOptimizer:
 
         def cost_fn():
             return -(
-                sq
-                >> Number((1,), 1)
-                >> BSgate((0, 1), 0.5)
-                >> (Vacuum((0,)) >> Number((1,), 1)).dual
+                (
+                    sq
+                    >> Number((1,), 1)
+                    >> BSgate((0, 1), 0.5)
+                    >> (Vacuum((0,)) >> Number((1,), 1)).dual
+                )
+                ** 2
             )
 
         opt = Optimizer(euclidean_lr=0.05)
