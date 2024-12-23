@@ -48,21 +48,6 @@ class Transformation(CircuitComponent):
 
     @classmethod
     @abstractmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Transformation:
-        r"""
-        Initialize a Transformation from the given Bargmann triple (A,b,c)
-        which parametrizes the Bargmann function of the transformation as
-        :math:`c * exp(0.5*z^T A z + b^T z)`.
-        """
-
-    @classmethod
-    @abstractmethod
     def from_ansatz(
         cls,
         modes_out: Sequence[int],
@@ -84,7 +69,45 @@ class Transformation(CircuitComponent):
         """
 
     @classmethod
-    @abstractmethod
+    def from_bargmann(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        triple: tuple,
+        name: str | None = None,
+    ) -> Transformation:
+        r"""
+        Initialize a Transformation from the given Bargmann triple (A,b,c)
+        which parametrizes the Bargmann function of the transformation as
+        :math:`c * exp(0.5*z^T A z + b^T z)`.
+        """
+        return cls.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes_out: Sequence[int],
+        modes_in: Sequence[int],
+        array: ComplexTensor,
+        batched: bool = False,
+        name: str | None = None,
+    ) -> Unitary:
+        r"""
+        Initializes a transformation of type ``cls`` given modes and a fock array.
+
+        Args:
+            modes_out: The output modes of this transformation.
+            modes_in: The input modes of this transformation.
+            array: The fock array of this transformation.
+            batched: Whether the fock array is batched.
+            name: The name of this transformation.
+
+        Returns:
+            A transformation in the Fock representation.
+        """
+        return cls.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
+
+    @classmethod
     def from_quadrature(
         cls,
         modes_out: Sequence[int],
@@ -98,6 +121,13 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
+        from ..circuit_components_utils.b_to_q import BtoQ
+
+        QtoB_out = BtoQ(modes_out, phi).inverse()
+        QtoB_in = BtoQ(modes_in, phi).inverse().dual
+        QQ = cls.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
+        BB = QtoB_in >> QQ >> QtoB_out
+        return cls.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     def inverse(self) -> Transformation:
         r"""
@@ -146,16 +176,6 @@ class Operation(Transformation):
     short_name = "Op"
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Transformation:
-        return Operation.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes_out: Sequence[int],
@@ -169,23 +189,6 @@ class Operation(Transformation):
             representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
             name=name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        phi: float = 0,
-        name: str | None = None,
-    ) -> Transformation:
-        from ..circuit_components_utils.b_to_q import BtoQ
-
-        QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Operation.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
-        BB = QtoB_in >> QQ >> QtoB_out
-        return Operation.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
 
 class Unitary(Operation):
@@ -204,16 +207,6 @@ class Unitary(Operation):
         return [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Transformation:
-        return Unitary.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes_out: Sequence[int],
@@ -227,23 +220,6 @@ class Unitary(Operation):
             representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
             name=name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        phi: float = 0,
-        name: str | None = None,
-    ) -> Transformation:
-        from ..circuit_components_utils.b_to_q import BtoQ
-
-        QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Unitary.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
-        BB = QtoB_in >> QQ >> QtoB_out
-        return Unitary.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def from_symplectic(cls, modes, S) -> Unitary:
@@ -260,25 +236,13 @@ class Unitary(Operation):
         return Unitary.from_bargmann(modes, modes, [A, b, c])
 
     @classmethod
-    def from_fock(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        array: ComplexTensor,
-        batched: bool = False,
-        name: str | None = None,
-    ) -> Unitary:
-        r"""
-        Allows initialization of unitaries from their Fock representation.
-        """
-        return Unitary.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
-
-    @classmethod
-    def random(cls, modes, max_r=1):
+    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Unitary:
         r"""
         Returns a random unitary.
-        modes: the modes the unitary acts on non-trivially
-        max_r: maximum squeezing parameter as defined in math.random_symplecic
+
+        Args:
+            modes: The modes of the unitary.
+            max_r: The maximum squeezing parameter.
         """
         m = len(modes)
         S = math.random_symplectic(m, max_r)
@@ -319,16 +283,6 @@ class Map(Transformation):
     short_name = "Map"
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Transformation:
-        return Map.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes_out: Sequence[int],
@@ -344,23 +298,6 @@ class Map(Transformation):
             ),
             name=name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        phi: float = 0,
-        name: str | None = None,
-    ) -> Transformation:
-        from ..circuit_components_utils.b_to_q import BtoQ
-
-        QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Map.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
-        BB = QtoB_in >> QQ >> QtoB_out
-        return Map.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
 
 class Channel(Map):
@@ -418,16 +355,6 @@ class Channel(Map):
         return XY_of_channel(self.ansatz.A[0])
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        name: str | None = None,
-    ) -> Transformation:
-        return Channel.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes_out: Sequence[int],
@@ -443,23 +370,6 @@ class Channel(Map):
             ),
             name=name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        triple: tuple,
-        phi: float = 0,
-        name: str | None = None,
-    ) -> Transformation:
-        from ..circuit_components_utils.b_to_q import BtoQ
-
-        QtoB_out = BtoQ(modes_out, phi).inverse()
-        QtoB_in = BtoQ(modes_in, phi).inverse().dual
-        QQ = Channel.from_ansatz(modes_out, modes_in, PolyExpAnsatz(*triple))
-        BB = QtoB_in >> QQ >> QtoB_out
-        return Channel.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     @classmethod
     def from_XY(
@@ -491,20 +401,6 @@ class Channel(Map):
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes_out: Sequence[int],
-        modes_in: Sequence[int],
-        array: ComplexTensor,
-        batched: bool = False,
-        name: str | None = None,
-    ) -> Channel:
-        r"""
-        Allows initialization of unitaries from their Fock representation.
-        """
-        return Channel.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:

@@ -50,7 +50,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS
+from ..circuit_components_utils import BtoPS, BtoQ
 
 
 __all__ = ["State"]
@@ -158,7 +158,6 @@ class State(CircuitComponent):
         return math.real(rep)
 
     @classmethod
-    @abstractmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
@@ -195,9 +194,9 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
+        return cls.from_ansatz(modes, PolyExpAnsatz(*triple), name)
 
     @classmethod
-    @abstractmethod
     def from_fock(
         cls,
         modes: Sequence[int],
@@ -236,6 +235,7 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
+        return cls.from_ansatz(modes, ArrayAnsatz(array, batched), name)
 
     @classmethod
     @abstractmethod
@@ -320,6 +320,9 @@ class State(CircuitComponent):
             ValueError: If the given triple has shapes that are inconsistent
                 with the number of modes.
         """
+        QtoB = BtoQ(modes, phi).inverse()
+        Q = cls.from_ansatz(modes, PolyExpAnsatz(*triple))
+        return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     def phase_space(self, s: float) -> tuple:
         r"""
