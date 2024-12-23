@@ -295,7 +295,6 @@ class State(CircuitComponent):
         """
 
     @classmethod
-    @abstractmethod
     def from_quadrature(
         cls,
         modes: Sequence[int],
