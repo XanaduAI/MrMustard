@@ -60,8 +60,10 @@ class BargmannEigenstate(Ket):
     ):
         super().__init__(name="BargmannEigenstate")
 
-        self._add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
+        self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.bargmann_eigenstate_Abc, x=self.alpha),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.bargmann_eigenstate_Abc, x=self.parameters.alpha
+            ),
         ).representation

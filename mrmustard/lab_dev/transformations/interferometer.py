@@ -26,12 +26,14 @@ from mrmustard.utils.typing import ComplexMatrix
 
 from .base import Unitary
 from ..utils import make_parameter
+from ...physics import symplectics
 
 __all__ = ["Interferometer"]
 
 
 class Interferometer(Unitary):
-    r"""N-mode interferometer.
+    r"""
+    N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
 
@@ -57,20 +59,16 @@ class Interferometer(Unitary):
                 f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
             )
         super().__init__(name="Interferometer")
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
         )
-        symplectic = math.block(
-            [
-                [math.real(self.unitary.value), -math.imag(self.unitary.value)],
-                [math.imag(self.unitary.value), math.real(self.unitary.value)],
-            ]
-        )
-
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda sym: Unitary.from_symplectic(modes, sym).bargmann_triple(), sym=symplectic
+                fn=lambda uni: Unitary.from_symplectic(
+                    modes, symplectics.interferometer_symplectic(uni)
+                ).bargmann_triple(),
+                uni=self.parameters.unitary,
             ),
         ).representation

@@ -80,18 +80,18 @@ class DisplacedSqueezed(Ket):
 
         params = reshape_params(len(modes), x=x, y=y, r=r, phi=phi)
         xs, ys, rs, phis = list(params)
-        self._add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
-        self._add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-        self._add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
 
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displaced_squeezed_vacuum_state_Abc,
-                x=self.x,
-                y=self.y,
-                r=self.r,
-                phi=self.phi,
+                x=self.parameters.x,
+                y=self.parameters.y,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
             ),
         ).representation

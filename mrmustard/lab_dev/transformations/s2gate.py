@@ -41,8 +41,8 @@ class S2gate(Unitary):
 
         >>> unitary = S2gate(modes=[1, 2], r=1)
         >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.r.value, 1)
-        >>> assert np.allclose(unitary.phi.value, 0.0)
+        >>> assert np.allclose(unitary.parameters.r.value, 1)
+        >>> assert np.allclose(unitary.parameters.phi.value, 0.0)
 
     Args:
         modes: The modes this gate is applied to.
@@ -85,12 +85,12 @@ class S2gate(Unitary):
             raise ValueError(f"Expected a pair of modes, found {modes}.")
 
         super().__init__(name="S2gate")
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.twomode_squeezing_gate_Abc, r=self.r, phi=self.phi
+                fn=triples.twomode_squeezing_gate_Abc, r=self.parameters.r, phi=self.parameters.phi
             ),
         ).representation

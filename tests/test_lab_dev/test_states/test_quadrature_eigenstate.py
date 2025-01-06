@@ -48,8 +48,8 @@ class TestQuadratureEigenstate:
         assert state.name == "QuadratureEigenstate"
         assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
         assert state.L2_norm == np.inf
-        assert np.allclose(state.x.value, x)
-        assert np.allclose(state.phi.value, phi)
+        assert np.allclose(state.parameters.x.value, x)
+        assert np.allclose(state.parameters.phi.value, phi)
 
     def test_init_error(self):
         with pytest.raises(ValueError, match="x"):
@@ -78,13 +78,13 @@ class TestQuadratureEigenstate:
         state3 = QuadratureEigenstate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            state1.x.value = 3
+            state1.parameters.x.value = 3
 
-        state2.x.value = 2
-        assert state2.x.value == 2
+        state2.parameters.x.value = 2
+        assert state2.parameters.x.value == 2
 
-        state3.phi.value = 2
-        assert state3.phi.value == 2
+        state3.parameters.phi.value = 2
+        assert state3.parameters.phi.value == 2
 
     def test_with_coherent(self):
         val0 = Coherent([0], 0, 0) >> QuadratureEigenstate([0], 0, 0).dual

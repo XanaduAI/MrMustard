@@ -34,7 +34,7 @@ class TestPhaseNoise:
         "Tests the PhaseNoise initialization."
         ch = PhaseNoise([0, 1], 0.2)
         assert ch.name == "PhaseNoise"
-        assert ch.phase_stdev.value == 0.2
+        assert ch.parameters.phase_stdev.value == 0.2
         assert ch.modes == [0, 1]
         assert ch.ansatz is None
 
