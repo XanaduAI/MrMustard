@@ -57,7 +57,7 @@ class BtoPS(Map):
         ).representation
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.CHARACTERISTIC
-            w.repr_params = float(self.s.value)
+            w.repr_params = float(self.parameters.s.value)
 
     def inverse(self):
         ret = BtoPS(self.modes, self.parameters.s)

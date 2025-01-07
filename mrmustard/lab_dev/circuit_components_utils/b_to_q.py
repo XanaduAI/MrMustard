@@ -58,7 +58,7 @@ class BtoQ(Operation):
             w.repr_params = None
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params = float(self.phi.value)
+            w.repr_params = float(self.parameters.phi.value)
 
     def inverse(self):
         ret = BtoQ(self.modes, self.parameters.phi)
