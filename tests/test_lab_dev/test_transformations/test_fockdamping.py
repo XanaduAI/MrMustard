@@ -37,7 +37,7 @@ class TestFockDamping:
 
         assert gate.name == "FockDamping"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-        assert np.allclose(gate.damping.value, damping)
+        assert np.allclose(gate.parameters.damping.value, damping)
 
     def test_representation(self):
         rep1 = FockDamping(modes=[0], damping=0.1).ansatz
@@ -62,10 +62,10 @@ class TestFockDamping:
         gate2 = FockDamping([0], 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
 
         with pytest.raises(AttributeError):
-            gate1.damping.value = 0.3
+            gate1.parameters.damping.value = 0.3
 
-        gate2.damping.value = 0.2
-        assert gate2.damping.value == 0.2
+        gate2.parameters.damping.value = 0.2
+        assert gate2.parameters.damping.value == 0.2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

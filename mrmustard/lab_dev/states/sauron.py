@@ -40,12 +40,14 @@ class Sauron(Ket):
     def __init__(self, modes: Sequence[int], n: int, epsilon: float = 0.1):
         super().__init__(name=f"Sauron-{n}")
 
-        self._add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
-        self._add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
+        self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
 
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                triples.sauron_state_Abc, n=self.n.value, epsilon=self.epsilon.value
+                triples.sauron_state_Abc,
+                n=self.parameters.n,
+                epsilon=self.parameters.epsilon,
             ),
         ).representation

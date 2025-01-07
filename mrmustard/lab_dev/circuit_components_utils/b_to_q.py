@@ -45,12 +45,12 @@ class BtoQ(Operation):
         phi: float = 0.0,
     ):
         super().__init__(name="BtoQ")
-        self._add_parameter(make_parameter(False, phi, "phi", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.phi
+                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.parameters.phi
             ),
         ).representation
         for w in self.representation.wires.input.wires:
@@ -61,7 +61,7 @@ class BtoQ(Operation):
             w.repr_params = float(self.phi.value)
 
     def inverse(self):
-        ret = BtoQ(self.modes, self.phi)
+        ret = BtoQ(self.modes, self.parameters.phi)
         ret._representation = super().inverse().representation
         ret._representation._wires = ret.representation.wires.dual
         return ret

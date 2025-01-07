@@ -44,7 +44,7 @@ class FockDamping(Operation):
         >>> input_state = Coherent(modes=[0], x=1, y=0.5)
         >>> output_state = input_state >> operator
         >>> assert operator.modes == [0]
-        >>> assert np.allclose(operator.damping.value, [0.1, 0.1])
+        >>> assert np.allclose(operator.parameters.damping.value, [0.1, 0.1])
         >>> assert output_state.L2_norm < 1
 
     Args:
@@ -76,7 +76,7 @@ class FockDamping(Operation):
     ):
         super().__init__(name="FockDamping")
         (betas,) = list(reshape_params(len(modes), damping=damping))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 damping_trainable,
                 betas,
@@ -88,5 +88,7 @@ class FockDamping(Operation):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.fock_damping_Abc, beta=self.damping),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.fock_damping_Abc, beta=self.parameters.damping
+            ),
         ).representation

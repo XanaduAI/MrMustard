@@ -119,14 +119,14 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.parameter_set == d1.parameter_set
+        assert d1_adj.parameters == d1.parameters
         assert d1_adj.ansatz == d1.ansatz.conj  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
         assert d1_adj_adj.wires == d1.wires
-        assert d1_adj_adj.parameter_set == d1_adj.parameter_set
-        assert d1_adj_adj.parameter_set == d1.parameter_set
+        assert d1_adj_adj.parameters == d1_adj.parameters
+        assert d1_adj_adj.parameters == d1.parameters
         assert d1_adj_adj.ansatz == d1.ansatz
 
     def test_dual(self):
@@ -137,14 +137,14 @@ class TestCircuitComponent:
         assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.parameter_set == d1.parameter_set
+        assert d1_dual.parameters == d1.parameters
         assert (vac >> d1 >> d1_dual).ansatz == vac.ansatz
         assert (vac >> d1_dual >> d1).ansatz == vac.ansatz
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
-        assert d1_dual_dual.parameter_set == d1_dual.parameter_set
-        assert d1_dual_dual.parameter_set == d1.parameter_set
+        assert d1_dual_dual.parameters == d1_dual.parameters
+        assert d1_dual_dual.parameters == d1.parameters
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.ansatz == d1.ansatz
 
@@ -156,7 +156,7 @@ class TestCircuitComponent:
         )
         d1_cp = d1._light_copy()
 
-        assert d1_cp.parameter_set is d1.parameter_set
+        assert d1_cp.parameters is d1.parameters
         assert d1_cp.ansatz is d1.ansatz
         assert d1_cp.wires is not d1.wires
 
@@ -166,13 +166,13 @@ class TestCircuitComponent:
 
         d89 = DisplacedSqueezed([8, 9], x=[1, 2], y=3, r_trainable=True)
         d67 = d89.on([6, 7])
-        assert isinstance(d67.x, Constant)
-        assert math.allclose(d89.x.value, d67.x.value)
-        assert isinstance(d67.y, Constant)
-        assert math.allclose(d89.y.value, d67.y.value)
-        assert isinstance(d67.r, Variable)
-        assert math.allclose(d89.r.value, d67.r.value)
-        assert bool(d67.parameter_set) is True
+        assert isinstance(d67.parameters.x, Constant)
+        assert math.allclose(d89.parameters.x.value, d67.parameters.x.value)
+        assert isinstance(d67.parameters.y, Constant)
+        assert math.allclose(d89.parameters.y.value, d67.parameters.y.value)
+        assert isinstance(d67.parameters.r, Variable)
+        assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
+        assert bool(d67.parameters) is True
         assert d67.ansatz is d89.ansatz
 
     def test_on_error(self):

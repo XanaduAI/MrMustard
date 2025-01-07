@@ -152,7 +152,7 @@ class Sampler(ABC):
         if self._povms is None:
             raise ValueError("This sampler has no POVMs defined.")
         if isinstance(self.povms, CircuitComponent):
-            kwargs = self.povms.parameter_set.to_dict()
+            kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
             return self.povms.__class__(modes=[mode], **kwargs)
         else:

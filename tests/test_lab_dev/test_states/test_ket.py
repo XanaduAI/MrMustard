@@ -376,30 +376,30 @@ class TestKet:  # pylint: disable=too-many-public-methods
         x = math.asnumpy([0, 1, 2])
         s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
 
-        assert np.all(s.y.value == 3)
-        assert s.y.value.shape == (len(modes),)
-        assert s.r.value.shape == (len(modes),)
-        assert s.phi.value.shape == (len(modes),)
+        assert np.all(s.parameters.y.value == 3)
+        assert s.parameters.y.value.shape == (len(modes),)
+        assert s.parameters.r.value.shape == (len(modes),)
+        assert s.parameters.phi.value.shape == (len(modes),)
 
         si = s[m]
         assert isinstance(si, DisplacedSqueezed)
         assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
 
-        assert isinstance(si.x, Constant)
-        assert math.allclose(si.x.value, x[idx])
+        assert isinstance(si.parameters.x, Constant)
+        assert math.allclose(si.parameters.x.value, x[idx])
 
-        assert isinstance(si.y, Variable)
-        assert np.all(si.y.value == 3)
-        assert si.y.value.shape == (len(idx),)
-        assert si.y.bounds == s.y.bounds
+        assert isinstance(si.parameters.y, Variable)
+        assert np.all(si.parameters.y.value == 3)
+        assert si.parameters.y.value.shape == (len(idx),)
+        assert si.parameters.y.bounds == s.parameters.y.bounds
 
-        assert isinstance(si.r, Constant)
-        assert np.all(si.r.value == 0)
-        assert si.r.value.shape == (len(idx),)
+        assert isinstance(si.parameters.r, Constant)
+        assert np.all(si.parameters.r.value == 0)
+        assert si.parameters.r.value.shape == (len(idx),)
 
-        assert isinstance(si.phi, Constant)
-        assert np.all(si.phi.value == 0)
-        assert si.phi.value.shape == (len(idx),)
+        assert isinstance(si.parameters.phi, Constant)
+        assert np.all(si.parameters.phi.value == 0)
+        assert si.parameters.phi.value.shape == (len(idx),)
 
     def test_private_batched_properties(self):
         cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch

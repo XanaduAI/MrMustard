@@ -369,12 +369,12 @@ class Circuit:
             else:
                 cc_names = [f"{cc_name}"]
 
-            if comp.parameter_set.names and settings.DRAW_CIRCUIT_PARAMS:
+            if comp.parameters.names and settings.DRAW_CIRCUIT_PARAMS:
                 values = []
-                for name in comp.parameter_set.names:
-                    param = comp.parameter_set.constants.get(
+                for name in comp.parameters.names:
+                    param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
                         name
-                    ) or comp.parameter_set.variables.get(name)
+                    )
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))

@@ -58,10 +58,10 @@ class TestAmplifier:
         gate2 = Amplifier([0], 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
 
         with pytest.raises(AttributeError):
-            gate1.gain.value = 1.7
+            gate1.parameters.gain.value = 1.7
 
-        gate2.gain.value = 1.5
-        assert gate2.gain.value == 1.5
+        gate2.parameters.gain.value = 1.5
+        assert gate2.parameters.gain.value == 1.5
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

@@ -94,13 +94,13 @@ class TestSgate:
         gate3 = Sgate([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.r.value = 3
+            gate1.parameters.r.value = 3
 
-        gate2.r.value = 2
-        assert gate2.r.value == 2
+        gate2.parameters.r.value = 2
+        assert gate2.parameters.r.value == 2
 
-        gate3.phi.value = 2
-        assert gate3.phi.value == 2
+        gate3.parameters.phi.value = 2
+        assert gate3.parameters.phi.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):

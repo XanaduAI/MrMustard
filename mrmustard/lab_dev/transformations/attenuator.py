@@ -42,7 +42,7 @@ class Attenuator(Channel):
 
         >>> channel = Attenuator(modes=[1, 2], transmissivity=0.1)
         >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.transmissivity.value, [0.1, 0.1])
+        >>> assert np.allclose(channel.parameters.transmissivity.value, [0.1, 0.1])
 
     Args:
         modes: The modes this gate is applied to.
@@ -86,7 +86,7 @@ class Attenuator(Channel):
     ):
         super().__init__(name="Att~")
         (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
-        self._add_parameter(
+        self.parameters.add_parameter(
             make_parameter(
                 transmissivity_trainable,
                 etas,
@@ -98,5 +98,7 @@ class Attenuator(Channel):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.attenuator_Abc, eta=self.transmissivity),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
+            ),
         ).representation

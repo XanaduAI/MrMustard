@@ -55,13 +55,13 @@ class TestSqueezedVacuum:
         state3 = SqueezedVacuum([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            state1.r.value = 3
+            state1.parameters.r.value = 3
 
-        state2.r.value = 2
-        assert state2.r.value == 2
+        state2.parameters.r.value = 2
+        assert state2.parameters.r.value == 2
 
-        state3.phi.value = 2
-        assert state3.phi.value == 2
+        state3.parameters.phi.value = 2
+        assert state3.parameters.phi.value == 2
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_representation(self, modes, r, phi):

@@ -45,12 +45,14 @@ class BtoPS(Map):
         s: float,
     ):
         super().__init__(name="BtoPS")
-        self._add_parameter(make_parameter(False, s, "s", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc, s=self.s, n_modes=len(modes)
+                fn=triples.displacement_map_s_parametrized_Abc,
+                s=self.parameters.s,
+                n_modes=len(modes),
             ),
         ).representation
         for w in self.representation.wires.output.wires:
@@ -58,7 +60,7 @@ class BtoPS(Map):
             w.repr_params = float(self.s.value)
 
     def inverse(self):
-        ret = BtoPS(self.modes, self.s)
+        ret = BtoPS(self.modes, self.parameters.s)
         ret._representation = super().inverse().representation
         ret._representation._wires = ret.representation.wires.dual
         return ret

@@ -77,17 +77,17 @@ class TestDgate:
         gate3 = Dgate([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.x.value = 3
+            gate1.parameters.x.value = 3
 
-        gate2.x.value = 2
-        assert gate2.x.value == 2
+        gate2.parameters.x.value = 2
+        assert gate2.parameters.x.value == 2
 
-        gate3.y.value = 2
-        assert gate3.y.value == 2
+        gate3.parameters.y.value = 2
+        assert gate3.parameters.y.value == 2
 
         gate_fock = gate3.to_fock()
         assert isinstance(gate_fock.ansatz, ArrayAnsatz)
-        assert gate_fock.y.value == 2
+        assert gate_fock.parameters.y.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
