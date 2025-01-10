@@ -154,12 +154,8 @@ class Dgate(Unitary):
         fock._original_abc_data = self.ansatz.triple
         ret = self._getitem_builtin(self.modes)
         wires = Wires.from_wires(
-            quantum={
-                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.wires.quantum
-            },
-            classical={
-                replace(w, repr=ReprEnum.FOCK, repr_params=[shape]) for w in self.wires.classical
-            },
+            quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
+            classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
         ret._representation = Representation(fock, wires)
 

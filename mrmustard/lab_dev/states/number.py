@@ -85,4 +85,4 @@ class Number(Ket):
 
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params = [int(self.parameters.n.value[w.index])]
+            w.repr_params_func = lambda: [int(self.parameters.n.value[w.index])]

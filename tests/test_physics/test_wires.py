@@ -19,9 +19,11 @@
 from unittest.mock import patch
 
 import pytest
+from ..conftest import skip_np
 from ipywidgets import HTML
-
+from mrmustard import math
 from mrmustard.physics.wires import Wires
+from mrmustard.lab_dev.states import QuadratureEigenstate
 
 
 class TestWires:
@@ -182,3 +184,11 @@ class TestWiresDisplay:
         wires._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
+
+    def test_repr_params(self):
+        "test that repr params change when the params change"
+        skip_np()
+        q = QuadratureEigenstate(modes=[0], x=0.0, phi=1.0, phi_trainable=True)
+        assert q.representation.wires.output.wires[0].repr_params[1] == 1.0
+        q.parameters.phi.value.assign([2.0])
+        assert q.representation.wires.output.wires[0].repr_params[1] == 2.0

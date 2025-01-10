@@ -3,7 +3,7 @@
 from __future__ import annotations
 from functools import cached_property
 from enum import Enum, auto
-from typing import Any, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from random import randint
 from IPython.display import display
@@ -71,8 +71,12 @@ class QuantumWire:
     is_ket: bool
     index: int
     repr: ReprEnum = ReprEnum.BARGMANN
-    repr_params: Any = None
+    repr_params_func: Callable[[], Any] = lambda: None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
+
+    @property
+    def repr_params(self) -> Any:
+        return self.repr_params_func()
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.is_ket, self.repr))
@@ -103,7 +107,7 @@ class QuantumWire:
             is_ket=self.is_ket,
             index=self.index,
             repr=self.repr,
-            repr_params=self.repr_params,
+            repr_params_func=self.repr_params_func,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
@@ -132,8 +136,12 @@ class ClassicalWire:
     is_out: bool
     index: int
     repr: ReprEnum = ReprEnum.UNSPECIFIED
-    repr_params: Any = None
+    repr_params_func: Callable[[], Any] = lambda: None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
+
+    @property
+    def repr_params(self) -> Any:
+        return self.repr_params_func()
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.repr))
@@ -151,7 +159,7 @@ class ClassicalWire:
             is_out=self.is_out,
             index=self.index,
             repr=self.repr,
-            repr_params=self.repr_params,
+            repr_params_func=self.repr_params_func,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
@@ -311,20 +319,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         classical_out: set[int] | None = None,
         classical_in: set[int] | None = None,
     ):
-        if any(
-            not (isinstance(g, set) or g is None)
-            for g in (
-                modes_out_bra,
-                modes_in_bra,
-                modes_out_ket,
-                modes_in_ket,
-                classical_out,
-                classical_in,
-            )
-        ):
-            raise ValueError(
-                f"All arguments must be sets or None. got {type(modes_out_bra)}, {type(modes_in_bra)}, {type(modes_out_ket)}, {type(modes_in_ket)}, {type(classical_out)}, {type(classical_in)}"
-            )
 
         modes_out_bra = modes_out_bra or set()
         modes_in_bra = modes_in_bra or set()
