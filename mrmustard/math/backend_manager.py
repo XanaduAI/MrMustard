@@ -70,12 +70,21 @@ module_np, loader_np = lazy_import(module_name_np)
 module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
+# lazy import for jax
+module_name_jax = "mrmustard.math.backend_jax"
+module_jax, loader_jax = lazy_import(module_name_jax)
+
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
     "tensorflow": {
         "module": module_tf,
         "loader": loader_tf,
         "object": "BackendTensorflow",
+    },
+    "jax": {
+        "module": module_jax,
+        "loader": loader_jax,
+        "object": "BackendJax",
     },
 }
 
@@ -160,8 +169,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Args:
             name: The name of the new backend.
         """
-        if name not in ["numpy", "tensorflow"]:
-            msg = "Backend must be either ``numpy`` or ``tensorflow``"
+        if name not in ["numpy", "tensorflow", "jax"]:
+            msg = "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"
             raise ValueError(msg)
 
         if self.backend_name != name:
@@ -189,6 +198,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # Methods
     # ~~~~~~~
     # Below are the methods supported by the various backends.
+
+    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
+        r"""
+        Whether two arrays are equal within tolerance.
+        """
+        return self._apply("allclose", (array1, array2, atol))
 
     def abs(self, array: Tensor) -> Tensor:
         r"""The absolute value of array.
@@ -456,7 +471,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The cosine of ``array``.
         """
-        return self._apply("cos", (array,))
+        return self._apply("cos", array)
 
     def cosh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic cosine of array.
