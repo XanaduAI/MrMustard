@@ -20,14 +20,11 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 import itertools
 
 import numpy as np
 from numpy.typing import ArrayLike
-
-from matplotlib import colors
-import matplotlib.pyplot as plt
 
 from IPython.display import display
 
@@ -41,9 +38,9 @@ from mrmustard.utils.typing import (
 )
 
 from mrmustard.physics.gaussian_integrals import (
-    reorder_abc,
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
+    join_Abc,
 )
 
 from mrmustard import math, settings, widgets
@@ -58,26 +55,37 @@ __all__ = ["PolyExpAnsatz"]
 
 class PolyExpAnsatz(Ansatz):
     r"""
-    The ansatz of the Fock-Bargmann representation.
+    The base class for the PolyExp ansatz.
 
     Represents the ansatz function:
 
-        :math:`F(z) = \sum_i [\sum_k c^{(i)}_k \partial_y^k \textrm{exp}((z,y)^T A_i (z,y) / 2 + (z,y)^T b_i)|_{y=0}]`
+        :math:`F^{(b)}_j(z) = \sum_{i=0}^{L-1} \sum_k c^{(b,i)}_{jk} \partial_y^k \textrm{exp}(\frac{1}{2}(z,y)^T A^{(b,i)} (z,y) + (z,y)^T b^{(b,i)})|_{y=0}`
 
-    with ``k`` being a multi-index. The matrices :math:`A_i` and vectors :math:`b_i` are
-    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables, and  and :math:`y` is a vector linked to the polynomial coefficients.
-    The dimension of ``z + y`` must be equal to the dimension of ``A`` and ``b``.
+    with ``j`` and ``k`` multi-indices. The ``i`` index represents a linear superposition of ansatze
+    and ``b`` is the batch index. Both ``i`` and ``b`` are one-dimensional, but there can exist an
+    interface that shows the batch dimension as a multi-dimensional index. We keep them separate
+    because the linear superposition index is implicitly summed over in the evaluation of the ansatz.
+    The ``j`` index represents the output shape of the array of polynomials of derivatives, and the
+    ``k`` index is contracted with the vectors of derivatives to form the polynomial of derivatives.
+    The matrices :math:`A^{(i)}` and vectors :math:`b^{(i)}` are the parameters of the exponential
+    terms in the ansatz, with :math:`z` and :math:`y` vectors of continuous complex variables.
+    They have shape ``(L, n+m, n+m)`` and ``(L, n+m)``, respectively for ``n`` continuous variables
+    and ``m`` derived variables (i.e. :math:`z\in\mathbb{C}^{n}` and :math:`y\in\mathbb{C}^{m}`).
+    The coefficients :math:`c^{(i)}_{jk}` are for the polynomial of derivatives and have shape
+    ``(L, *DV, *derived)``, where ``*DV`` is the shape of the discrete variables (indexed by ``j``
+    in the formula above) and ``*derived`` is the shape of the derived variables (indexed by ``k``
+    in the formula above).
 
-        .. code-block::
+    .. code-block::
 
         >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([[1.0,2.0,3.0]])
+        >>> c = np.array([[1.0, 2.0, 3.0]])
 
-        >>> F = PolyExpAnsatz(A, b, c)
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
         >>> z = np.array([[1.0],[2.0],[3.0]])
 
         >>> # calculate the value of the function at the three different ``z``, since z is batched.
@@ -87,485 +95,456 @@ class PolyExpAnsatz(Ansatz):
         A: A batch of quadratic coefficient :math:`A_i`.
         b: A batch of linear coefficients :math:`b_i`.
         c: A batch of arrays :math:`c_i`.
+        num_derived_vars: The number of variables :math:`y` that are derived by the polynomial of derivatives.
     """
 
     def __init__(
         self,
-        A: Batch[ComplexMatrix],
-        b: Batch[ComplexVector],
-        c: Batch[ComplexTensor] = 1.0,
+        A: Batch[ComplexMatrix] | None,
+        b: Batch[ComplexVector] | None,
+        c: Batch[ComplexTensor] | None = math.ones([], dtype=math.complex128),
+        num_derived_vars: int = 0,  # i.e. size of y
         name: str = "",
     ):
         super().__init__()
         self._A = A
         self._b = b
         self._c = c
-        self._backends = [False, False, False]
+        self.num_derived_vars = num_derived_vars
         self._simplified = False
         self.name = name
+        self._fn = None
+        self._fn_kwargs = {}
+        self._batch_size = A.shape[0] if A is not None else None
+        self._linear_size = A.shape[1] if A is not None else None
+
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the (A, b, c) triple given a function and some kwargs.
+        """
+        if (
+            self._A is None
+            or self._b is None
+            or self._c is None
+            or Variable in {type(param) for param in self._fn_kwargs.values()}
+        ):
+            params = {}
+            for name, param in self._fn_kwargs.items():
+                try:
+                    params[name] = param.value
+                except AttributeError:
+                    params[name] = param
+
+            data = self._fn(**params)
+            if len(data) == 4:
+                A, b, c, num_derived_vars = data
+            else:
+                A, b, c = data
+                c = math.astensor(c)
+                num_derived_vars = 0
+            self._A = A
+            self._b = b
+            self._c = c
+            self.num_derived_vars = num_derived_vars
+            self._batch_size = A.shape[0]
+            self._linear_size = A.shape[1]
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""
-        The batch of quadratic coefficient :math:`A_i`.
+        The batch of quadratic coefficient :math:`A^{(b,i)}`.
         """
         self._generate_ansatz()
-        if not self._backends[0]:
-            self._A = math.atleast_3d(self._A)
-            self._backends[0] = True
-        return self._A
-
-    @A.setter
-    def A(self, value):
-        self._A = value
-        self._backends[0] = False
+        return math.atleast_nd(self._A, 4)
 
     @property
     def b(self) -> Batch[ComplexVector]:
         r"""
-        The batch of linear coefficients :math:`b_i`
+        The batch of linear coefficients :math:`b^{(b,i)}`.
         """
         self._generate_ansatz()
-        if not self._backends[1]:
-            self._b = math.atleast_2d(self._b)
-            self._backends[1] = True
-        return self._b
-
-    @b.setter
-    def b(self, value):
-        self._b = value
-        self._backends[1] = False
-
-    @property
-    def batch_size(self):
-        return self.c.shape[0]
+        return math.atleast_nd(self._b, 3)
 
     @property
     def c(self) -> Batch[ComplexTensor]:
         r"""
-        The batch of arrays :math:`c_i`.
+        The batch of polynomial coefficients :math:`c^{(b,i)}_{jk}`.
         """
         self._generate_ansatz()
-        if not self._backends[2]:
-            self._c = math.atleast_1d(self._c)
-            self._backends[2] = True
-        return self._c
+        return math.atleast_nd(self._c, 4)
 
-    @c.setter
-    def c(self, value):
-        self._c = value
-        self._backends[2] = False
+    @property
+    def batch_size(self) -> int:
+        return self._batch_size
+
+    @property
+    def linear_size(self) -> int:
+        return self._linear_size
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        ret = PolyExpAnsatz(
+            math.conj(self.A), math.conj(self.b), math.conj(self.c), self.num_derived_vars
+        )
         ret._contract_idxs = self._contract_idxs
         return ret
 
     @property
     def data(
         self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        return self.triple
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor], int]:
+        r"""Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
+        return self.triple, self.num_derived_vars
+
+    @property
+    def num_CV_vars(self) -> int:
+        r"""
+        The number of continuous variables that remain after the polynomial of derivatives is applied.
+        This is the number of continuous variables of the Ansatz function itself, i.e. the size of ``z``
+        in :math:`F_j^{(i)}(z)`.
+        """
+        return self.A.shape[-1] - self.num_derived_vars
+
+    @property
+    def num_DV_vars(self) -> int:
+        r"""
+        The number of discrete variables after the polynomial of derivatives is applied.
+        This is the number of axes of the array of values that we get when we evaluate the ansatz at a point.
+        """
+        return len(self.shape_DV_vars)
 
     @property
     def num_vars(self):
-        return self.A.shape[-1] - self.polynomial_shape[0]
-
-    @property
-    def polynomial_shape(self) -> tuple[int, tuple]:
         r"""
-        This method finds the dimensionality of the polynomial, i.e. how many wires
-        have polynomials attached to them and what the degree(+1) of the polynomial is
-        on each of the wires.
+        The total number of variables of this ansatz before the polynomial of derivatives is applied.
         """
-        shape_poly = self.c.shape[1:]
-        dim_poly = len(shape_poly)
-        return dim_poly, shape_poly
+        return self.num_CV_vars + self.num_derived_vars
 
     @property
-    def scalar(self) -> Batch[ComplexTensor]:
-        if self.polynomial_shape[0] > 0:
-            return self([])
-        else:
-            return self.c
+    def shape_DV_vars(self) -> tuple[int, ...]:
+        r"""
+        The shape of the discrete variables. Encoded in ``c`` as the axes between the batch size and the derived variables.
+        This is the shape of the array of values that we get when we evaluate the ansatz at a point.
+        The shape of ``c`` is ``(*batch, *DV, *derived)``, so the shape of the discrete variables is
+        """
+        return self.c.shape[len(self.batch_shape) : -self.num_derived_vars]
+
+    @property
+    def shape_derived_vars(self) -> tuple[int, ...]:
+        r"""
+        The shape of the derived variables (i.e. the polynomial of derivatives).
+        Encoded in ``c`` as the axes between the batch size (first axis) and the discrete variables.
+        """
+        return self.c.shape[-self.num_derived_vars :]
 
     @property
     def triple(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""Returns the triple of parameters of the exponential part of the ansatz."""
         return self.A, self.b, self.c
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatz:
+        r"""Creates an ansatz from a dictionary. For deserialization purposes."""
         return cls(**data)
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
-        ansatz = cls(None, None, None)
+        r"""Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
+        the function is not called until the A,b,c attributes are accessed (even internally)."""
+        ansatz = cls(None, None, None, None)
         ansatz._fn = fn
-        ansatz._kwargs = kwargs
+        ansatz._fn_kwargs = kwargs
         return ansatz
 
-    def decompose_ansatz(self) -> PolyExpAnsatz:
+    def decompose_ansatz(self):
         r"""
-        This method decomposes a PolyExp ansatz. Given an ansatz of dimension:
-        A=(batch,n+m,n+m), b=(batch,n+m), c = (batch,k_1,k_2,...,k_m),
-        it can be rewritten as an ansatz of dimension
-        A=(batch,2n,2n), b=(batch,2n), c = (batch,l_1,l_2,...,l_n), with l_i = sum_j k_j
-        This decomposition is typically favourable if m>n, and will only run if that is the case.
-        The naming convention is ``n = dim_alpha``  and ``m = dim_beta`` and ``(k_1,k_2,...,k_m) = shape_beta``
+        This method decomposes a PolyExp ansatz to make it more efficient to evaluate.
+        An ansatz with ``n`` CV variables and ``m`` derived variables has parameters with the following shapes:
+        ``A=(batch;n+m,n+m)``, ``b=(batch;n+m)``, ``c = (batch;k_1,k_2,...,k_m;j_1,...,j_d)``, where ``d`` is the number of
+        discrete variables, i.e. axes of the array of values that we get when we evaluate the ansatz at a point.
+        This can be rewritten as an ansatz of dimension ``A=(*batch;2n,2n)``, ``b=(*batch;2n)``,
+        ``c = (*batch;l_1,l_2,...,l_n;j_1,...,j_d)``, with ``l_i = sum_j k_j``.
+        This means that the number of continuous variables remains ``n``, the number of derived variables decreases from
+        ``m`` to ``n``, and the number of discrete variables remains ``d``. The price we pay is that the order of the
+        derivatives is larger (the order of each derivative is the sum of all the orders of the initial derivatives).
+        This decomposition is typically favourable if ``m > n`` and the sum of the elements in ``c.shape[1:]`` is not too large.
+        This method will actually decompose the ansatz only if ``m > n`` and return the original ansatz otherwise.
         """
-        dim_beta, _ = self.polynomial_shape
-        dim_alpha = self.A.shape[-1] - dim_beta
-        batch_size = self.batch_size
-        if dim_beta > dim_alpha:
-            A_decomp = []
-            b_decomp = []
-            c_decomp = []
-            for i in range(batch_size):
-                A_decomp_i, b_decomp_i, c_decomp_i = self._decompose_ansatz_single(
-                    self.A[i], self.b[i], self.c[i]
-                )
-                A_decomp.append(A_decomp_i)
-                b_decomp.append(b_decomp_i)
-                c_decomp.append(c_decomp_i)
+        if self.num_derived_vars < self.num_CV_vars:
+            return self
+        A_dec = []
+        b_dec = []
+        c_dec = []
+        for Ai, bi, ci in zip(self.A, self.b, self.c):
+            A_dec_i, b_dec_i, c_dec_i = self._decompose_single(Ai, bi, ci)
+            A_dec.append(A_dec_i)
+            b_dec.append(b_dec_i)
+            c_dec.append(c_dec_i)
+        return self.__class__(A_dec, b_dec, c_dec, self.num_derived_vars)
 
-            return PolyExpAnsatz(A_decomp, b_decomp, c_decomp)
-        else:
-            return PolyExpAnsatz(self.A, self.b, self.c)
-
-    def plot(
-        self,
-        just_phase: bool = False,
-        with_measure: bool = False,
-        log_scale: bool = False,
-        xlim=(-2 * np.pi, 2 * np.pi),
-        ylim=(-2 * np.pi, 2 * np.pi),
-    ) -> tuple[plt.figure.Figure, plt.axes.Axes]:  # pragma: no cover
+    def _decompose_single(self, Ai, bi, ci):
         r"""
-        Plots the Bargmann function :math:`F(z)` on the complex plane. Phase is represented by
-        color, magnitude by brightness. The function can be multiplied by :math:`exp(-|z|^2)`
-        to represent the Bargmann function times the measure function (for integration).
-
-        Args:
-            just_phase: Whether to plot only the phase of the Bargmann function.
-            with_measure: Whether to plot the bargmann function times the measure function
-                :math:`exp(-|z|^2)`.
-            log_scale: Whether to plot the log of the Bargmann function.
-            xlim: The `x` limits of the plot.
-            ylim: The `y` limits of the plot.
-
-        Returns:
-            The figure and axes of the plot
+        Decomposes a single batch element of the ansatz.
         """
-        # eval F(z) on a grid of complex numbers
-        X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
-        Z = (X + 1j * Y).T
-        f_values = self(Z[..., None])
-        if log_scale:
-            f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
-        if with_measure:
-            f_values = f_values * np.exp(-(np.abs(Z) ** 2))
+        n = self.num_CV_vars
+        m = self.num_derived_vars
+        A_core = math.block(
+            [[math.zeros((n, n), dtype=Ai.dtype), Ai[:n, n:]], [Ai[n:, :n], Ai[n:, n:]]]
+        )
+        b_core = math.concat((math.zeros((n,), dtype=bi.dtype), bi[n:]), axis=-1)
+        poly_shape = (math.sum(self.shape_derived_vars),) * n + self.shape_derived_vars
+        poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
+        c_prime = math.sum(poly_core * ci, axes=[i for i in range(n, n + m)])
+        block = Ai[:n, :n]
+        A_decomp = math.block(
+            [[block, math.eye_like(block)], [math.eye_like(block), math.zeros_like(block)]]
+        )
+        b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
+        return A_decomp, b_decomp, c_prime
 
-        # Get phase and magnitude of F(z)
-        phases = np.angle(f_values) / (2 * np.pi) % 1
-        magnitudes = np.abs(f_values)
-        magnitudes_scaled = magnitudes / np.max(magnitudes)
-
-        # Convert to RGB
-        hsv_values = np.zeros(f_values.shape + (3,))
-        hsv_values[..., 0] = phases
-        hsv_values[..., 1] = 1
-        hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
-        rgb_values = colors.hsv_to_rgb(hsv_values)
-
-        # Plot the image
-        fig, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
-        ax.set_xlabel("$Re(z)$")
-        ax.set_ylabel("$Im(z)$")
-
-        name = "F_{" + self.name + "}(z)"
-        name = f"\\arg({name})\\log|{name}|" if log_scale else name
-        title = name + "e^{-|z|^2}" if with_measure else name
-        title = f"\\arg({name})" if just_phase else title
-        ax.set_title(f"${title}$")
-        plt.show(block=False)
-        return fig, ax
-
-    def reorder(self, order: tuple[int, ...] | list[int]) -> PolyExpAnsatz:
-        A, b, c = reorder_abc(self.triple, order)
-        return PolyExpAnsatz(A, b, c)
-
-    def simplify(self) -> None:
+    def reorder(self, order_CV: Sequence[int], order_DV: Sequence[int]):
         r"""
-        Simplifies the ansatz by combining together terms that have the same
+        Reorders the CV and DV indices of an (A,b,c) triple.
+        The length of ``order_CV`` must be the number of CV variables, and the length of ``order_DV`` must be the number of DV variables.
+        """
+        if len(order_CV) != self.num_CV_vars:
+            raise ValueError(f"order_CV must have length {self.num_CV_vars}, got {len(order_CV)}")
+        if len(order_DV) != self.num_DV_vars:
+            raise ValueError(f"order_DV must have length {self.num_DV_vars}, got {len(order_DV)}")
+        A = math.gather(math.gather(self.A, order_CV, axis=-1), order_CV, axis=-2)
+        b = math.gather(self.b, order_CV, axis=-1)
+        c = math.transpose(self.c, [d + 1 for d in order_DV])  # +1 because of batch
+        return self.__class__(A, b, c, self.num_derived_vars)
+
+    def simplify(self, sort_batch: bool = True) -> None:
+        r"""
+        Simplifies an ansatz by combining together terms that have the same
         exponential part, i.e. two terms along the batch are considered equal if their
         matrix and vector are equal. In this case only one is kept and the arrays are added.
 
-        Does not run if the ansatz has already been simplified, so it is safe to call.
+        Does not run if the ansatz has already been simplified, so it is always safe to call.
+
+        Args:
+            sort_batch: If True, orders the batch dimension first before simplifying, which can
+                be more efficient for large batch sizes. If False, uses the original implementation
+                that checks pairs of terms. Defaults to True.
         """
         if self._simplified:
             return
-        indices_to_check = set(range(self.batch_size))
-        removed = []
-        while indices_to_check:
-            i = indices_to_check.pop()
-            for j in indices_to_check.copy():
-                if np.allclose(self.A[i], self.A[j]) and np.allclose(self.b[i], self.b[j]):
-                    self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
-                    indices_to_check.remove(j)
-                    removed.append(j)
-        to_keep = [i for i in range(self.batch_size) if i not in removed]
+
+        to_keep = (
+            self._find_unique_terms_sorted() if sort_batch else self._find_unique_terms_pairwise()
+        )
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
         self.c = math.gather(self.c, to_keep, axis=0)
         self._simplified = True
 
-    def simplify_v2(self) -> None:
+    def _find_unique_terms_sorted(self) -> list[int]:
         r"""
-        A different implementation of ``simplify`` that orders the batch dimension first.
+        Find unique terms by first sorting the batch dimension.
+        Needed in ``simplify``.
+
+        Returns:
+            List of indices to keep after simplification.
         """
-        if self._simplified:
-            return
         self._order_batch()
         to_keep = [d0 := 0]
         mat, vec = self.A[d0], self.b[d0]
+
         for d in range(1, self.batch_size):
-            if np.allclose(mat, self.A[d]) and np.allclose(vec, self.b[d]):
-                self.c = math.update_add_tensor(self.c, [[d0]], [self.c[d]])
-            else:
+            if not (np.array_equal(mat, self.A[d]) and np.array_equal(vec, self.b[d])):
                 to_keep.append(d)
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
-        self.A = math.gather(self.A, to_keep, axis=0)
-        self.b = math.gather(self.b, to_keep, axis=0)
-        self.c = math.gather(self.c, to_keep, axis=0)
-        self._simplified = True
+            else:
+                self.c = math.update_add_tensor(self.c, [[d0]], [self.c[d]])
 
-    def to_dict(self) -> dict[str, ArrayLike]:
-        return {"A": self.A, "b": self.b, "c": self.c}
+        return to_keep
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> PolyExpAnsatz:
-        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
-        return PolyExpAnsatz(A, b, c)
-
-    def _call_all(self, z: Batch[Vector]) -> PolyExpAnsatz:
-        r"""
-        Value of this ansatz at ``z``. If ``z`` is batched a value of the function at each of the batches are returned.
-        If ``Abc`` is batched it is thought of as a linear combination, and thus the results are added linearly together.
-        Note that the batch dimension of ``z`` and ``Abc`` can be different.
-
-        Conventions in code comments:
-            n: is the same as dim_alpha
-            m: is the same as dim_beta
-
-        Args:
-            z: point in C^n where the function is evaluated
+    def _find_unique_terms_pairwise(self) -> list[int]:
+        """Find unique terms by checking all pairs.
+        Needed in ``simplify``.
 
         Returns:
-            The value of the function.
+            List of indices to keep after simplification.
         """
-        dim_beta, shape_beta = self.polynomial_shape
-        dim_alpha = self.A.shape[-1] - dim_beta
-        batch_size = self.batch_size
+        indices_to_check = set(range(self.batch_size))
+        removed = []
 
-        z = math.atleast_2d(z)  # shape (b_arg, n)
-        if z.shape[-1] != dim_alpha or z.shape[-1] != self.num_vars:
-            raise ValueError(
-                "The sum of the dimension of the argument and polynomial must be equal to the dimension of A and b."
-            )
-        zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
+        while indices_to_check:
+            i = indices_to_check.pop()
+            for j in indices_to_check.copy():
+                if np.array_equal(self.A[i], self.A[j]) and np.array_equal(self.b[i], self.b[j]):
+                    self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
+                    indices_to_check.remove(j)
+                    removed.append(j)
 
-        A_part = math.sum(
-            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
-        )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
-        b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
-        )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
+        return [i for i in range(self.batch_size) if i not in removed]
 
-        exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
-        if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
-        else:
-            b_poly = math.astensor(
-                math.einsum(
-                    "ijk,hk",
-                    math.cast(self.A[..., dim_alpha:, :dim_alpha], "complex128"),
-                    math.cast(z, "complex128"),
-                )
-                + self.b[..., dim_alpha:]
-            )  # (b_arg, b_abc, m)
-            b_poly = math.moveaxis(b_poly, 0, 1)  # (b_abc, b_arg, m)
-            A_poly = self.A[..., dim_alpha:, dim_alpha:]  # (b_abc, m)
-            poly = math.astensor(
-                [
-                    math.hermite_renormalized_batch(A_poly[i], b_poly[i], complex(1), shape_beta)
-                    for i in range(batch_size)
-                ]
-            )  # (b_abc,b_arg,poly)
-            poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
-            val = math.sum(
-                exp_sum
-                * math.sum(
-                    poly * self.c,
-                    axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
-                ),
-                axes=[-1],
-            )  # (b_arg)
-        return val
+    def to_dict(self) -> dict[str, ArrayLike]:
+        """Returns a dictionary representation of the ansatz. For serialization purposes."""
+        return {"A": self.A, "b": self.b, "c": self.c, "num_derived_vars": self.num_derived_vars}
 
-    def _call_none(self, z: Batch[Vector]) -> PolyExpAnsatz:
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]):
         r"""
-        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
-        For example, if ``self`` represents the function ``F(z1,z2)``, the call ``self._call_none([np.array([1.0, None]])``
-        returns ``F(1.0, z2)`` as a new ansatz with a single variable.
-        Note that the batch of the triple and argument in this method is handled parwise, unlike the regular call where the batch over the triple is a superposition.
+        Computes the trace of the ansatz across the specified index pairs.
+        The index pairs must belong to the CV or DV variables.
+        """
+        if len(idx_z) != len(idx_zconj):
+            raise ValueError("idx_z and idx_zconj must have the same length.")
+        if any(i >= self.num_CV_vars for i in idx_z) or any(
+            i >= self.num_CV_vars for i in idx_zconj
+        ):
+            raise ValueError(
+                f"All indices must be less than {self.num_CV_vars}. Got {idx_z} and {idx_zconj}."
+            )
+        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
+        return self.__class__(A, b, c, self.num_derived_vars)
+
+    def _eval_at_point(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
+        r"""
+        Evaluates the ansatz at a batch of points ``z``.
+        The batch can have an arbitrary number of dimensions, which are preserved in the output.
 
         Args:
-            z: slice in C^n where the function is evaluated, while unevaluated along other axes of the space.
+            z: Point(s) in C^(*b, n) where the function is evaluated. ``b`` here stands for the batch dimensions.
+
+        Returns:
+            The value of the function at the point(s) with the same batch dimensions as ``z``.
+        """
+        z = math.atleast_2d(z)
+        z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
+        if z_dim != self.num_CV_vars:
+            raise ValueError(
+                f"The last dimension of `z` must equal {self.num_CV_vars}, got {z_dim}."
+            )
+        z = math.reshape(z, (-1, z_dim))  # shape (k, num_CV_vars)
+
+        exp_sum = self._compute_exp_part(z)  # shape (batch_size, k)
+        if self.num_derived_vars == 0:
+            ret = math.einsum("ik,i...->ik...", exp_sum, self.c)
+        else:
+            poly = self._compute_polynomial_part(z)  # shape (batch_size, k, *derived_shape)
+            ret = self._combine_exp_and_poly(exp_sum, poly)
+        return math.reshape(ret, (self.batch_size,) + z_batch_shape + self.shape_DV_vars)
+
+    def _compute_exp_part(self, z: Batch[Vector]) -> Batch[Scalar]:
+        """Computes the exponential part of the ansatz evaluation.
+        Needed in ``_eval_at_point``.
+        """
+        n = self.num_CV_vars
+        A_part = math.einsum("ka,kb,iab->ik", z, z, self.A[..., :n, :n])
+        b_part = math.einsum("ka,ia->ik", z, self.b[..., :n])
+        return math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, k)
+
+    def _compute_polynomial_part(self, z: Batch[Vector]) -> Batch[Scalar]:
+        """Computes the polynomial part of the ansatz evaluation.
+        Needed in ``_eval_at_point``.
+        """
+        n = self.num_CV_vars
+        b_poly = math.einsum("iab,ka->ikb", self.A[..., :n, n:], z) + self.b[..., None, n:]
+        A_poly = self.A[..., n:, n:]  # shape (batch_size,derived_vars,derived_vars)
+        result = []
+        for Ai, bi in zip(A_poly, b_poly):
+            result.append(
+                math.hermite_renormalized_batch(Ai, bi, complex(1), self.shape_derived_vars)
+            )
+        return math.astensor(result)
+
+    def _combine_exp_and_poly(
+        self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor]
+    ) -> Batch[ComplexTensor]:
+        """Combines exponential and polynomial parts using einsum.
+        Needed in ``_eval_at_point``.
+        """
+        d = np.prod(self.shape_derived_vars)
+        c = math.reshape(self.c, (self.batch_size, d, np.prod(self.shape_DV_vars)))
+        poly = math.reshape(poly, (self.batch_size, -1, d))
+        return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
+
+    def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
+        r"""
+        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
+        For example, if ``self`` represents the function ``F(z1,z2)``, the call
+        ``self._partial_eval(np.array([[1.0]]), None)`` returns ``G(z2) = F(1.0, z2)``
+        as a new ansatz of a single variable.
+        The vector ``z`` must have the same number of dimensions as the number of CV variables,
+        and for this function it is not allowed batch dimensions.
+
+        Args:
+            z: vector in ``C^r`` where the function is evaluated.
+            indices: indices of the variables of the ansatz to be evaluated.
 
         Returns:
             A new ansatz.
         """
-        batch_abc = self.batch_size
-        batch_arg = z.shape[0]
-        if batch_abc != batch_arg and batch_abc != 1 and batch_arg != 1:
-            raise ValueError(
-                "Batch size of the ansatz and argument must match or one of the batch sizes must be 1."
-            )
+        if len(indices) == self.num_CV_vars:
+            return self._eval_at_point(z)
+        if len(z.shape) > 1:
+            raise ValueError("The vector `z` cannot have batch dimensions.")
+        z = math.reshape(z, (-1,))  # shape (*r,)
         Abc = []
-        max_batch = max(batch_abc, batch_arg)
-        for i in range(max_batch):
-            abc_index = 0 if batch_abc == 1 else i
-            arg_index = 0 if batch_arg == 1 else i
-            Abc.append(
-                self._call_none_single(
-                    self.A[abc_index], self.b[abc_index], self.c[abc_index], z[arg_index]
-                )
-            )
+        for Ai, bi, ci in zip(self.A, self.b, self.c):
+            Abc.append(self._partial_eval_single(Ai, bi, ci, z))
         A, b, c = zip(*Abc)
-        return PolyExpAnsatz(A=A, b=b, c=c)
+        return PolyExpAnsatz(
+            A=math.astensor(A),
+            b=math.astensor(b),
+            c=math.astensor(c),
+            num_derived_vars=self.num_derived_vars,
+        )
 
-    def _call_none_single(self, Ai, bi, ci, zi):
+    def _partial_eval_single(
+        self,
+        Ai: Batch[ComplexMatrix],
+        bi: Batch[ComplexVector],
+        ci: Batch[ComplexTensor],
+        zi: Vector,
+        indices: tuple[int, ...],
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
-        Helper function for the call_none method. Returns the new triple.
+        Helper function for the _partial_eval method. Returns the new triple.
 
         Args:
-            Ai: The matrix of the Bargmann function
-            bi: The vector of the Bargmann function
-            ci: The polynomial coefficients (or scalar)
-            z: point in C^n where the function is evaluated
+            Ai: The matrix of the ansatz
+            bi: The vector of the ansatz
+            ci: The polynomial coefficients
+            zi: point in C^r where the function is evaluated
+            indices: indices of the variables to be evaluated
 
         Returns:
             The new Abc triple.
         """
-        gamma = math.astensor(zi[zi != None], dtype=math.complex128)
+        # evaluated, remaining and derived indices
+        r = indices
+        a = [i for i in range(self.num_CV_vars) if i not in indices]
+        b = [i for i in range(len(r), len(r) + self.num_derived_vars)]
 
-        z_none = np.argwhere(zi == None).reshape(-1)
-        z_not_none = np.argwhere(zi != None).reshape(-1)
-        beta_indices = np.arange(len(zi), Ai.shape[-1])
-        new_indices = np.concatenate([z_none, beta_indices], axis=0)
+        # new A of shape (a+b,a+b)
+        new_A = math.gather(math.gather(Ai, a + b, axis=0), a + b, axis=1)
 
-        # new A
-        new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
+        # new b of shape (a+b,)
+        A_ra = math.gather(math.gather(Ai, r, axis=0), a, axis=1)  # shape (r,a)
+        b_a = math.einsum("ra,r->a", A_ra, zi)  # shape (a,)
+        A_rb = math.gather(math.gather(Ai, r, axis=0), b, axis=1)  # shape (r,b)
+        b_b = math.einsum("rb,r->b", A_rb, zi)  # shape (b,)
+        new_b = math.gather(bi, a + b, axis=0)[None, ...] + math.concat((b_a, b_b), axis=-1)
 
-        # new b
-        b_alpha = math.einsum(
-            "ij,j",
-            math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1),
-            gamma,
-        )
-        b_beta = math.einsum(
-            "ij,j",
-            math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
-            gamma,
-        )
-        new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
-
-        # new c
-        A_part = math.einsum(
-            "i,j,ij",
-            gamma,
-            gamma,
-            math.gather(math.gather(Ai, z_not_none, axis=0), z_not_none, axis=1),
-        )
-        b_part = math.einsum("j,j", math.gather(bi, z_not_none, axis=0), gamma)
-        exp_sum = math.exp(1 / 2 * A_part + b_part)
-        new_c = ci * exp_sum
+        # new c of shape (shape_DV_vars,)
+        A_aa = math.gather(math.gather(Ai, a, axis=-1), a, axis=-2)
+        A_part = math.einsum("a,aA,aA->", zi, zi, A_aa)
+        b_part = math.einsum("a,a->", math.gather(bi, a, axis=-1), zi)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape ()
+        new_c = exp_sum * ci
         return new_A, new_b, new_c
-
-    def _decompose_ansatz_single(self, Ai, bi, ci):
-        dim_beta, shape_beta = self.polynomial_shape
-        dim_alpha = self.A.shape[-1] - dim_beta
-        A_bar = math.block(
-            [
-                [
-                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
-                    Ai[:dim_alpha, dim_alpha:],
-                ],
-                [
-                    Ai[dim_alpha:, :dim_alpha],
-                    Ai[dim_alpha:, dim_alpha:],
-                ],
-            ]
-        )
-        b_bar = math.concat((math.zeros((dim_alpha), dtype=bi.dtype), bi[dim_alpha:]), axis=0)
-        poly_bar = math.hermite_renormalized(
-            A_bar,
-            b_bar,
-            complex(1),
-            (math.sum(shape_beta),) * dim_alpha + shape_beta,
-        )
-        c_decomp = math.sum(
-            poly_bar * ci,
-            axes=math.arange(
-                len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
-            ).tolist(),
-        )
-        A_decomp = math.block(
-            [
-                [
-                    Ai[:dim_alpha, :dim_alpha],
-                    math.eye(dim_alpha, dtype=Ai.dtype),
-                ],
-                [
-                    math.eye((dim_alpha), dtype=Ai.dtype),
-                    math.zeros((dim_alpha, dim_alpha), dtype=Ai.dtype),
-                ],
-            ]
-        )
-        b_decomp = math.concat((bi[:dim_alpha], math.zeros((dim_alpha), dtype=bi.dtype)), axis=0)
-        return A_decomp, b_decomp, c_decomp
 
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
         other.simplify()
         return np.allclose(self.b, other.b, atol=1e-10) and np.allclose(self.A, other.A, atol=1e-10)
-
-    def _generate_ansatz(self):
-        r"""
-        This method computes and sets the (A, b, c) given a function
-        and some kwargs.
-        """
-        names = list(self._kwargs.keys())
-        vars = list(self._kwargs.values())
-
-        params = {}
-        param_types = []
-        for name, param in zip(names, vars):
-            try:
-                params[name] = param.value
-                param_types.append(type(param))
-            except AttributeError:
-                params[name] = param
-
-        if self._c is None or Variable in param_types:
-            A, b, c = self._fn(**params)
-            self.A = A
-            self.b = b
-            self.c = c
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
@@ -589,65 +568,65 @@ class PolyExpAnsatz(Ansatz):
             for i in range(self.batch_size)
         ]
         sorted_indices = argsort_gen(generators)
-        self.A = math.gather(self.A, sorted_indices, axis=0)
-        self.b = math.gather(self.b, sorted_indices, axis=0)
-        self.c = math.gather(self.c, sorted_indices, axis=0)
+        self._A = math.gather(self._A, sorted_indices, axis=0)
+        self._b = math.gather(self._b, sorted_indices, axis=0)
+        self._c = math.gather(self._c, sorted_indices, axis=0)
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
         Adds two PolyExp ansatz together. This means concatenating them in the batch dimension.
-        In the case where c is a polynomial of different shapes it will add padding zeros to make
-        the shapes fit. Example: If the shape of c1 is (1,3,4,5) and the shape of c2 is (1,5,4,3) then the
-        shape of the combined object will be (2,5,4,5). It also pads A and b, to account for an eventual
-        different number of polynomial wires.
+        In the case where ``c`` on self and other are of different shapes it will add padding zeros to make
+        the shapes fit. Example: If the shape of ``c1`` is (1,3,4,5) and the shape of ``c2`` is (1,5,4,3) then the
+        shape of the combined object will be (2,5,4,5). It also pads ``A`` and ``b``, to account for an eventual
+        different number of derived variables.
         """
         if not isinstance(other, PolyExpAnsatz):
-            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.")
-        (_, n1, _) = self.A.shape
-        (_, n2, _) = other.A.shape
-        self_num_poly, _ = self.polynomial_shape
-        other_num_poly, _ = other.polynomial_shape
-        if self_num_poly - other_num_poly != n1 - n2:
+            raise TypeError(f"Cannot add PolyExpAnsatz and {other.__class__.__name__}.")
+        if self.num_CV_vars != other.num_CV_vars:
             raise ValueError(
-                f"Inconsistent polynomial shapes: the A matrices have shape {(n1,n1)} and {(n2,n2)} (difference of {n1-n2}), "
-                f"but the polynomials have {self_num_poly} and {other_num_poly} variables (difference of {self_num_poly-other_num_poly})."
+                f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
             )
 
-        def pad_and_expand(mat, vec, array, target_size):
-            pad_size = target_size - mat.shape[-1]
-            padded_mat = math.pad(mat, ((0, 0), (0, pad_size), (0, pad_size)))
-            padded_vec = math.pad(vec, ((0, 0), (0, pad_size)))
-            padding_array = math.ones((1,) * pad_size, dtype=array.dtype)
-            expanded_array = math.outer(array, padding_array)
-            return padded_mat, padded_vec, expanded_array
+        def pad_and_expand(mat, vec, array, target_vars):
+            matvec_padding = target_vars - mat.shape[-1]
+            padded_mat = math.pad(mat, ((0, 0), (0, matvec_padding), (0, matvec_padding)))
+            padded_vec = math.pad(vec, ((0, 0), (0, matvec_padding)))
+            array_padding = math.ones((1,) * matvec_padding, dtype=array.dtype)
+            padded_array = math.outer(array, array_padding)
+            return padded_mat, padded_vec, padded_array
 
         def combine_arrays(array1, array2):
             shape1 = array1.shape[1:]
             shape2 = array2.shape[1:]
             max_shape = tuple(map(max, zip(shape1, shape2)))
-            pad_widths1 = [(0, 0)] + [(0, t - s) for s, t in zip(shape1, max_shape)]
-            pad_widths2 = [(0, 0)] + [(0, t - s) for s, t in zip(shape2, max_shape)]
+            pad_widths1 = [(0, 0)] + [(0, t - s) for t, s in zip(max_shape, shape1)]
+            pad_widths2 = [(0, 0)] + [(0, t - s) for t, s in zip(max_shape, shape2)]
             padded_array1 = math.pad(array1, pad_widths1, "constant")
             padded_array2 = math.pad(array2, pad_widths2, "constant")
             return math.concat([padded_array1, padded_array2], axis=0)
 
-        if n1 <= n2:
-            mat1, vec1, array1 = pad_and_expand(self.A, self.b, self.c, n2)
+        if self.num_vars <= other.num_vars:  # pad self
+            mat1, vec1, array1 = pad_and_expand(self.A, self.b, self.c, other.num_vars)
             combined_matrices = math.concat([mat1, other.A], axis=0)
             combined_vectors = math.concat([vec1, other.b], axis=0)
             combined_arrays = combine_arrays(array1, other.c)
-        else:
-            mat2, vec2, array2 = pad_and_expand(other.A, other.b, other.c, n1)
+        else:  # pad other
+            mat2, vec2, array2 = pad_and_expand(other.A, other.b, other.c, self.num_vars)
             combined_matrices = math.concat([self.A, mat2], axis=0)
             combined_vectors = math.concat([self.b, vec2], axis=0)
             combined_arrays = combine_arrays(self.c, array2)
-        # note output is not simplified
-        return PolyExpAnsatz(combined_matrices, combined_vectors, combined_arrays)
+
+        return PolyExpAnsatz(  # NOTE: output is not simplified
+            combined_matrices,
+            combined_vectors,
+            combined_arrays,
+            max(self.num_derived_vars, other.num_derived_vars),
+        )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
         Tensor product of this PolyExpAnsatz with another.
-        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
+        Equivalent to :math:`H(a,b) = F(a) * G(b)`.
         As it distributes over addition on both self and other,
         the batch size of the result is the product of the batch
         size of this ansatz and the other one.
@@ -658,96 +637,45 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The tensor product of this PolyExpAnsatz and other.
         """
-
-        def andA(A1, A2, dim_alpha1, dim_alpha2, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha1, :dim_alpha1],
-                        math.zeros((dim_alpha1, dim_alpha2), dtype=math.complex128),
-                        A1[:dim_alpha1, dim_alpha1:],
-                        math.zeros((dim_alpha1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        math.zeros((dim_alpha2, dim_alpha1), dtype=math.complex128),
-                        A2[:dim_alpha2:, :dim_alpha2],
-                        math.zeros((dim_alpha2, dim_beta1), dtype=math.complex128),
-                        A2[:dim_alpha2, dim_alpha2:],
-                    ],
-                    [
-                        A1[dim_alpha1:, :dim_alpha1],
-                        math.zeros((dim_beta1, dim_alpha2), dtype=math.complex128),
-                        A1[dim_alpha1:, dim_alpha1:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        math.zeros((dim_beta2, dim_alpha1), dtype=math.complex128),
-                        A2[dim_alpha2:, :dim_alpha2],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha2:, dim_alpha2:],
-                    ],
-                ]
-            )
-            return A3
-
-        def andb(b1, b2, dim_alpha1, dim_alpha2):
-            b3 = math.reshape(
-                math.block(
-                    [
-                        [
-                            b1[:dim_alpha1],
-                            b2[:dim_alpha2],
-                            b1[dim_alpha1:],
-                            b2[dim_alpha2:],
-                        ]
-                    ]
-                ),
-                -1,
-            )
-            return b3
-
-        def andc(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        dim_beta1, _ = self.polynomial_shape
-        dim_beta2, _ = other.polynomial_shape
-
-        dim_alpha1 = self.A.shape[-1] - dim_beta1
-        dim_alpha2 = other.A.shape[-1] - dim_beta2
-
-        As = [
-            andA(
-                math.cast(A1, "complex128"),
-                math.cast(A2, "complex128"),
-                dim_alpha1,
-                dim_alpha2,
-                dim_beta1,
-                dim_beta2,
-            )
-            for A1, A2 in itertools.product(self.A, other.A)
-        ]
-        bs = [andb(b1, b2, dim_alpha1, dim_alpha2) for b1, b2 in itertools.product(self.b, other.b)]
-        cs = [andc(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
+        As, bs, cs = join_Abc(self.triple, other.triple, mode="kron")
         return PolyExpAnsatz(As, bs, cs)
 
-    def __call__(self, z: Batch[Vector]) -> Scalar | PolyExpAnsatz:
+    def __call__(self, *z: Batch[Vector] | None, mode: str = "zip") -> Scalar | PolyExpAnsatz:
         r"""
-        Returns either the value of the ansatz or a new ansatz depending on the argument.
-        If the argument contains None, returns a new ansatz.
-        If the argument only contains numbers, returns the value of the ansatz at that argument.
-        Note that the batch dimensions are handled differently in the two cases. See subfunctions for further information.
+        Returns either the value of the ansatz or a new ansatz depending on the arguments.
+        If an argument is None, the corresponding variable is not evaluated, and the method
+        returns a new ansatz with the remaining variables unevaluated.
+        For example, if the ansatz is a function of 3 variables and we want to evaluate it at a point in C^2,
+        we would get a new ansatz with one variable unevaluated: F(z1, z2, None) or F(z1, None, z3), or F(None, z2, z3).
+        The ``mode`` argument can be used to specify how the vectors of arguments are broadcast together.
+        The default is "zip", which is to broadcast the vectors pairwise.
+        The alternative is "kron", which is to broadcast the vectors Kronecker-style.
+        For example, ``F(z1, z2, mode="zip")`` returns the array of values ``[F(z1[0], z2[0]), F(z1[1], z2[1]), ...]``.
+        ``F(z1, z2, mode="kron")`` returns the Kronecker product of the vectors, i.e.
+        ``[[F(z1[0], z2[0]), F(z1[0], z2[1]), ...], [F(z1[1], z2[0]), F(z1[1], z2[1]), ...], ...]``.
+        In `zip` mode the batch dimensions of the z vectors must match, while in `kron` mode they can differ, and
+        the result will have a batch dimension equal to the concatenation of the batch dimensions of the z vectors.
 
         Args:
-            z: point in C^n where the function is evaluated.
+            z: points in C where the function is (partially) evaluated or None if the variable is not evaluated.
+            mode: "zip" or "kron"
 
         Returns:
-            The value of the function if ``z`` has no ``None``, else it returns a new ansatz.
+            The value of the function or a new ansatz.
         """
-        if (np.array(z) == None).any():
-            return self._call_none(z)
+        only_z = [z_i for z_i in z if z_i is not None]
+        indices = [i for i, z_i in enumerate(z) if z_i is not None]
+        if mode == "zip":
+            z_batches = [z_i.shape[0] for z_i in only_z]
+            if any(z_batch != z_batches[0] for z_batch in z_batches):
+                raise ValueError(
+                    f"In mode 'zip' the batch size of the z vectors must match. Got {z_batches}."
+                )
+            return self._partial_eval(math.concat(only_z, axis=-1), indices)
+        elif mode == "kron":
+            return self._partial_eval(math.outer(*only_z), indices)
         else:
-            return self._call_all(z)
+            raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
@@ -756,12 +684,11 @@ class PolyExpAnsatz(Ansatz):
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
         idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
-                )
-        ret = PolyExpAnsatz(self.A, self.b, self.c)
+        if max(idx) >= self.num_vars:
+            raise IndexError(
+                f"Index(es) {[i for i in idx if i >= self.num_vars]} out of bounds for ansatz of dimension {self.num_vars}."
+            )
+        ret = PolyExpAnsatz(self.A, self.b, self.c, self.num_CV_vars)
         ret._contract_idxs = idx
         return ret
 
@@ -769,172 +696,99 @@ class PolyExpAnsatz(Ansatz):
         r"""
         Implements the inner product between PolyExpAnsatz.
 
-        ..code-block::
+            ..code-block::
 
-        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-        >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
-        >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
-        >>> rep3 = rep1[0] @ rep2[1]
-        >>> assert np.allclose(rep3.A, [[0,],])
-        >>> assert np.allclose(rep3.b, [1,])
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+            >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
+            >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
+            >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
+            >>> rep3 = rep1[0] @ rep2[1]
+            >>> assert np.allclose(rep3.A, [[0,],])
+            >>> assert np.allclose(rep3.b, [1,])
 
          Args:
              other: Another PolyExpAnsatz .
 
-         Returns:
-            Bargmann: the resulting PolyExpAnsatz.
+        Returns:
+            The resulting PolyExpAnsatz.
 
         """
         if not isinstance(other, PolyExpAnsatz):
-            raise NotImplementedError("Only matmul PolyExpAnsatz with PolyExpAnsatz")
+            raise NotImplementedError(f"Cannot matmul PolyExpAnsatz and {other.__class__}.")
 
         idx_s = self._contract_idxs
         idx_o = other._contract_idxs
 
-        if settings.UNSAFE_ZIP_BATCH:
-            if self.batch_size != other.batch_size:
-                raise ValueError(
-                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                )
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="zip"
-            )
-        else:
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="kron"
-            )
+        A, b, c = complex_gaussian_integral_2(
+            self.triple,
+            other.triple,
+            idx_s,
+            idx_o,
+            mode="zip" if settings.UNSAFE_ZIP_BATCH else "kron",
+        )
 
-        return PolyExpAnsatz(A, b, c)
+        return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
-        def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
-                        A1[:dim_alpha, dim_alpha:],
-                        A2[:dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        A1[dim_alpha:, :dim_alpha],
-                        A1[dim_alpha:, dim_alpha:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        A2[dim_alpha:, :dim_alpha],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
-            return A3
-
-        def mul_b(b1, b2, dim_alpha):
-            b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
-                -1,
-            )
-            return b3
-
-        def mul_c(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        if isinstance(other, PolyExpAnsatz):
-            dim_beta1, _ = self.polynomial_shape
-            dim_beta2, _ = other.polynomial_shape
-
-            dim_alpha1 = self.A.shape[-1] - dim_beta1
-            dim_alpha2 = other.A.shape[-1] - dim_beta2
-            if dim_alpha1 != dim_alpha2:
-                raise TypeError("The dimensionality of the two ansatze must be the same.")
-            dim_alpha = dim_alpha1
-
-            new_a = [
-                mul_A(
-                    math.cast(A1, "complex128"),
-                    math.cast(A2, "complex128"),
-                    dim_alpha,
-                    dim_beta1,
-                    dim_beta2,
-                )
-                for A1, A2 in itertools.product(self.A, other.A)
-            ]
-            new_b = [mul_b(b1, b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-            new_c = [mul_c(c1, c2) for c1, c2 in itertools.product(self.c, other.c)]
-
-            return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
-        else:
+        if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c * other)
             except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
+
+        if self.num_CV_vars != other.num_CV_vars:
+            raise TypeError(
+                "The number of CV variables of the two ansatze must be the same. "
+                f"Got {self.num_CV_vars} and {other.num_CV_vars}."
+            )
+        if self.shape_DV_vars != other.shape_DV_vars:  # TODO: pad if not the same?
+            raise TypeError(
+                "The shape of the discrete variables of the two ansatze must be the same. "
+                f"Got {self.shape_DV_vars} and {other.shape_DV_vars}."
+            )
+        # outer product along batch via tile and repeat to get all pairs
+        A1 = math.tile(self.A, (other.A.shape[0], 1, 1))
+        b1 = math.tile(self.b, (other.b.shape[0], 1))
+        A2 = math.repeat(other.A, self.A.shape[0], axis=0)
+        b2 = math.repeat(other.b, self.b.shape[0], axis=0)
+
+        batch_size = self.batch_size * other.batch_size
+        n = self.num_vars  # alpha
+        m1 = self.num_derived_vars  # beta1
+        m2 = other.num_derived_vars  # beta2
+        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
+        newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
+        newA[:, :n, :n] = A1[:, :n, :n] + A2[:, :n, :n]
+        newA[:, :n, n:m1] = A1[:, :n, -m1:]
+        newA[:, n:m1, :n] = A1[:, -m1:, :n]
+        newA[:, :n, -m2:] = A2[:, :n, -m2:]
+        newA[:, -m2:, :n] = A2[:, -m2:, :n]
+        newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
+        newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
+        newb[:, :n] = b1[:, :n] + b2[:, :n]
+        newb[:, n:m1] = b1[:, -m1:]
+        newb[:, -m2:] = b2[:, -m2:]
+        self_c = math.reshape(
+            self.c,
+            (self.batch_size, math.prod(self.shape_derived_vars), math.prod(self.shape_DV_vars)),
+        )
+        other_c = math.reshape(
+            other.c,
+            (other.batch_size, math.prod(other.shape_derived_vars), math.prod(other.shape_DV_vars)),
+        )
+        newc = math.einsum("ijk,lmk->iljmk", self_c, other_c)
+        newc = math.reshape(
+            newc,
+            (batch_size,) + self.shape_derived_vars + other.shape_derived_vars + self.shape_DV_vars,
+        )
+
+        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c)
+        return PolyExpAnsatz(self.A, self.b, -self.c, self.num_derived_vars)
 
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
-        def div_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):
-            A3 = math.block(
-                [
-                    [
-                        A1[:dim_alpha, :dim_alpha] + A2[:dim_alpha, :dim_alpha],
-                        A1[:dim_alpha, dim_alpha:],
-                        A2[:dim_alpha, dim_alpha:],
-                    ],
-                    [
-                        A1[dim_alpha:, :dim_alpha],
-                        A1[dim_alpha:, dim_alpha:],
-                        math.zeros((dim_beta1, dim_beta2), dtype=math.complex128),
-                    ],
-                    [
-                        A2[dim_alpha:, :dim_alpha],
-                        math.zeros((dim_beta2, dim_beta1), dtype=math.complex128),
-                        A2[dim_alpha:, dim_alpha:],
-                    ],
-                ]
-            )
-            return A3
-
-        def div_b(b1, b2, dim_alpha):
-            b3 = math.reshape(
-                math.block([[b1[:dim_alpha] + b2[:dim_alpha], b1[dim_alpha:], b2[dim_alpha:]]]),
-                -1,
-            )
-            return b3
-
-        def div_c(c1, c2):
-            c3 = math.reshape(math.outer(c1, c2), (c1.shape + c2.shape))
-            return c3
-
-        if isinstance(other, PolyExpAnsatz):
-            dim_beta1, _ = self.polynomial_shape
-            dim_beta2, _ = other.polynomial_shape
-            if dim_beta1 == 0 and dim_beta2 == 0:
-                dim_alpha1 = self.A.shape[-1] - dim_beta1
-                dim_alpha2 = other.A.shape[-1] - dim_beta2
-                if dim_alpha1 != dim_alpha2:
-                    raise TypeError("The dimensionality of the two ansatze must be the same.")
-                dim_alpha = dim_alpha1
-
-                new_a = [
-                    div_A(
-                        math.cast(A1, "complex128"),
-                        -math.cast(A2, "complex128"),
-                        dim_alpha,
-                        dim_beta1,
-                        dim_beta2,
-                    )
-                    for A1, A2 in itertools.product(self.A, other.A)
-                ]
-                new_b = [div_b(b1, -b2, dim_alpha) for b1, b2 in itertools.product(self.b, other.b)]
-                new_c = [div_c(c1, 1 / c2) for c1, c2 in itertools.product(self.c, other.c)]
-
-                return PolyExpAnsatz(A=new_a, b=new_b, c=new_c)
-            else:
-                raise NotImplementedError("Only implemented if both c are scalars")
-        else:
+        if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:

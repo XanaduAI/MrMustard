@@ -102,10 +102,23 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.atleast_2d(self.astensor(array, dtype))
 
     def atleast_3d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = self.atleast_2d(self.atleast_1d(array))
+        array = self.atleast_2d(array, dtype)
         if len(array.shape) == 2:
             array = array[None, ...]
         return array
+
+    def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
+        if n == 1:
+            return self.atleast_1d(array, dtype)
+        elif n == 2:
+            return self.atleast_2d(array, dtype)
+        elif n == 3:
+            return self.atleast_3d(array, dtype)
+        elif n > 3:
+            array = self.atleast_3d(array, dtype)
+            return array.__getitem__((None,) * (n - 3) + (Ellipsis,))
+        else:
+            raise ValueError(f"Cannot at least {n} dimensions")
 
     def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
