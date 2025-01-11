@@ -76,6 +76,9 @@ class QuantumWire:
 
     @property
     def repr_params(self) -> Any:
+        r"""
+        Returns the parameters of the representation of this wire.
+        """
         return self.repr_params_func()
 
     def __hash__(self) -> int:
@@ -141,6 +144,9 @@ class ClassicalWire:
 
     @property
     def repr_params(self) -> Any:
+        r"""
+        Returns the parameters of the representation of this wire.
+        """
         return self.repr_params_func()
 
     def __hash__(self) -> int:

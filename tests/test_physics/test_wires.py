@@ -19,11 +19,10 @@
 from unittest.mock import patch
 
 import pytest
-from ..conftest import skip_np
 from ipywidgets import HTML
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 from mrmustard.lab_dev.states import QuadratureEigenstate
+from ..conftest import skip_np
 
 
 class TestWires:
