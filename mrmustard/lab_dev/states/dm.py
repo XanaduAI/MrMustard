@@ -31,11 +31,11 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
+from mrmustard.utils.typing import ComplexTensor, RealVector
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoQ, TraceOut
+from ..circuit_components_utils import TraceOut
 
 from ..utils import shape_check
 
@@ -109,25 +109,6 @@ class DM(State):
         return self._L2_norms / self._probabilities
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: str | None = None,
-    ) -> State:
-        return DM.from_ansatz(modes, PolyExpAnsatz(*triple), name)
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Collection[int],
-        array: ComplexTensor,
-        name: str | None = None,
-        batched: bool = False,
-    ) -> State:
-        return DM.from_ansatz(modes, ArrayAnsatz(array, batched), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes: Collection[int],
@@ -176,36 +157,6 @@ class DM(State):
             PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
             name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        phi: float = 0.0,
-        name: str | None = None,
-    ) -> State:
-        r"""
-        Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
-        as `c * exp(0.5 z^T A z + b^T z)` in the quadrature representation.
-
-        Args:
-            modes: The modes of this state.
-            triple: The ``(A, b, c)`` triple.
-            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
-            name: The name of this state.
-
-        Returns:
-            A state of type ``cls``.
-
-        Raises:
-            ValueError: If the given triple has shapes that are inconsistent
-                with the number of modes.
-        """
-
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = DM.from_ansatz(modes, PolyExpAnsatz(*triple))
-        return DM.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
