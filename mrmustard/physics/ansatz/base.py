@@ -41,7 +41,6 @@ class Ansatz(ABC):
     """
 
     def __init__(self) -> None:
-        self._contract_idxs: tuple[int, ...] = ()
         self._fn = None
         self._kwargs = {}
 

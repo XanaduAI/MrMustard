@@ -158,9 +158,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
-        ret._contract_idxs = self._contract_idxs
-        return ret
+        return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
 
     @property
     def data(
