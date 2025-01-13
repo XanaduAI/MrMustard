@@ -55,7 +55,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     coeff = [0.5, 0.3]
 
     @pytest.mark.parametrize("name", [None, "my_dm"])
-    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {2, 3, 19}])
     def test_init(self, name, modes):
         state = DM.from_ansatz(modes, None, name)
 
@@ -78,7 +78,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm = Coherent([0, 1], x=1).dm() >> Number([1], 10).dual
         assert dm.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_bargmann(self, modes):
         state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
         triple_in = state_in.bargmann_triple()
@@ -120,7 +120,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
@@ -336,7 +336,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
+        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -378,7 +378,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
-    @pytest.mark.parametrize("modes", [[9, 2], [0, 1, 2, 3, 4]])
+    @pytest.mark.parametrize("modes", [[2, 9], [0, 1, 2, 3, 4]])
     def test_is_positive(self, modes):
         assert (Ket.random(modes) >> Attenuator(modes)).is_positive
         A = np.zeros([2 * len(modes), 2 * len(modes)])

@@ -29,7 +29,7 @@ class TestDgate:
     Tests for the ``Dgate`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     x = [[1], 1, [1, 2]]
     y = [[3], [3, 4], [3, 4]]
 
