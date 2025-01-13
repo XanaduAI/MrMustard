@@ -91,7 +91,7 @@ class Transformation(CircuitComponent):
         array: ComplexTensor,
         batched: bool = False,
         name: str | None = None,
-    ) -> Unitary:
+    ) -> Transformation:
         r"""
         Initializes a transformation of type ``cls`` given modes and a fock array.
 
