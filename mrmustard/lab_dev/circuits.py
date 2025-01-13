@@ -287,7 +287,7 @@ class Circuit:
     @classmethod
     def deserialize(cls, data: dict) -> Circuit:
         r"""Deserialize a Circuit."""
-        comps, path = map(data.pop, ("components", "path"))
+        comps, path = data.pop("components"), data.pop("path")
 
         for k, v in data.items():
             kwarg, i = k.split(":")

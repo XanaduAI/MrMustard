@@ -118,10 +118,10 @@ class TestCircuit:
     def test_path_errors(self):
         vac12 = Vacuum([1, 2])
 
-        with pytest.raises(ValueError, match="overlap"):
+        with pytest.raises(ValueError, match="Overlapping"):
             Circuit([vac12, vac12])
 
-        with pytest.raises(ValueError, match="overlap"):
+        with pytest.raises(ValueError, match="Overlapping"):
             Circuit([vac12.adjoint, vac12.adjoint])
 
     def test_eq(self):
