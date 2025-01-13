@@ -32,8 +32,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexVector,
     ComplexTensor,
     RealVector,
     Scalar,
@@ -43,7 +41,7 @@ from mrmustard.utils.typing import (
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoQ, TraceOut
+from ..circuit_components_utils import TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -88,25 +86,6 @@ class Ket(State):
         return self._L2_norms
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: str | None = None,
-    ) -> State:
-        return Ket.from_ansatz(modes, PolyExpAnsatz(*triple), name)
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Collection[int],
-        array: ComplexTensor,
-        name: str | None = None,
-        batched: bool = False,
-    ) -> State:
-        return Ket.from_ansatz(modes, ArrayAnsatz(array, batched), name)
-
-    @classmethod
     def from_ansatz(
         cls,
         modes: Collection[int],
@@ -148,19 +127,6 @@ class Ket(State):
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
             name,
         )
-
-    @classmethod
-    def from_quadrature(
-        cls,
-        modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        phi: float = 0.0,
-        name: str | None = None,
-    ) -> State:
-
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
-        return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     @classmethod
     def random(cls, modes: Collection[int], max_r: float = 1.0) -> Ket:
