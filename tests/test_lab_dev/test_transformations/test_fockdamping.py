@@ -28,7 +28,7 @@ class TestFockDamping:
     Tests for the ``FockDamping`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     damping = [[0.1], 0.1, [0.1, 0.2]]
 
     @pytest.mark.parametrize("modes,damping", zip(modes, damping))

@@ -19,15 +19,17 @@ The class representing a displacement gate.
 from __future__ import annotations
 
 from typing import Sequence
+from dataclasses import replace
+
 from mrmustard.utils.typing import ComplexTensor
-
 from mrmustard import math
-
+from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
 from ..utils import make_parameter, reshape_params
+
 
 __all__ = ["Dgate"]
 
@@ -151,5 +153,10 @@ class Dgate(Unitary):
         fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
         fock._original_abc_data = self.ansatz.triple
         ret = self._getitem_builtin(self.modes)
-        ret._representation = Representation(fock, self.wires)
+        wires = Wires.from_wires(
+            quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
+            classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
+        )
+        ret._representation = Representation(fock, wires)
+
         return ret

@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard.physics.ansatz import ArrayAnsatz
+from mrmustard.physics.wires import ReprEnum
 from mrmustard.physics.fock_utils import fock_state
 from .ket import Ket
 from ..utils import make_parameter, reshape_params
@@ -81,3 +82,7 @@ class Number(Ket):
         self.short_name = [str(int(n)) for n in self.parameters.n.value]
         for i, cutoff in enumerate(self.parameters.cutoffs.value):
             self.manual_shape[i] = int(cutoff) + 1
+
+        for w in self.representation.wires.output.wires:
+            w.repr = ReprEnum.FOCK
+            w.repr_params_func = lambda w=w: [int(self.parameters.n.value[w.index])]
