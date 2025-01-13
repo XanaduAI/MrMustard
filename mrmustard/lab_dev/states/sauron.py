@@ -18,7 +18,6 @@ from typing import Sequence
 from mrmustard.lab_dev.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-
 from ..utils import make_parameter
 
 

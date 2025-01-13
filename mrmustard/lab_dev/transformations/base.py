@@ -153,14 +153,16 @@ class Transformation(CircuitComponent):
         A, b, _ = self.dual.ansatz.conj.triple  # apply X(.)X
         almost_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j), self.wires
+                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
+                self.wires.copy(new_ids=True),
             )
         )
         almost_identity = self @ almost_inverse
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c), self.wires
+                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
+                self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",
         )
@@ -183,10 +185,14 @@ class Operation(Transformation):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> Transformation:
-        modes_out = set(modes_out)
-        modes_in = set(modes_in)
+        if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
+            raise ValueError(f"Output modes must be sorted. got {modes_out}")
+        if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
+            raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Operation(
-            representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
+            representation=Representation(
+                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+            ),
             name=name,
         )
 
@@ -214,10 +220,14 @@ class Unitary(Operation):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> Transformation:
-        modes_out = set(modes_out)
-        modes_in = set(modes_in)
+        if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
+            raise ValueError(f"Output modes must be sorted. got {modes_out}")
+        if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
+            raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Unitary(
-            representation=Representation(ansatz=ansatz, wires=Wires((), (), modes_out, modes_in)),
+            representation=Representation(
+                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+            ),
             name=name,
         )
 
@@ -290,11 +300,14 @@ class Map(Transformation):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> Transformation:
-        modes_out = set(modes_out)
-        modes_in = set(modes_in)
+        if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
+            raise ValueError(f"Output modes must be sorted. got {modes_out}")
+        if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
+            raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Map(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(modes_out, modes_in, modes_out, modes_in)
+                ansatz=ansatz,
+                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             ),
             name=name,
         )
@@ -362,11 +375,14 @@ class Channel(Map):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> Transformation:
-        modes_out = set(modes_out)
-        modes_in = set(modes_in)
+        if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
+            raise ValueError(f"Output modes must be sorted. got {modes_out}")
+        if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
+            raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Channel(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(modes_out, modes_in, modes_out, modes_in)
+                ansatz=ansatz,
+                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             ),
             name=name,
         )

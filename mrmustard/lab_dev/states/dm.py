@@ -17,7 +17,7 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Sequence
+from typing import Collection
 
 from itertools import product
 import warnings
@@ -30,8 +30,8 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexTensor, RealVector
+from mrmustard.physics.wires import Wires, ReprEnum
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
@@ -111,22 +111,27 @@ class DM(State):
     @classmethod
     def from_ansatz(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
+        if not isinstance(modes, set) and sorted(modes) != list(modes):
+            raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
                 f"Expected an ansatz with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
-        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+        wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in wires:
+                w.repr = ReprEnum.FOCK
         return DM(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         triple: tuple,
         name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
@@ -154,7 +159,7 @@ class DM(State):
         )
 
     @classmethod
-    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
+    def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -332,13 +337,13 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Sequence[int]) -> State:
+    def __getitem__(self, modes: int | Collection[int]) -> State:
         r"""
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
         """
         if isinstance(modes, int):
-            modes = [modes]
+            modes = {modes}
         modes = set(modes)
 
         if not modes.issubset(self.modes):

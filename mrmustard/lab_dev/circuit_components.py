@@ -83,7 +83,7 @@ class CircuitComponent:
         if "name" in params:  # assume abstract type, serialize the representation
             ansatz_cls = type(self.ansatz)
             serializable["name"] = self.name
-            serializable["wires"] = self.wires.sorted_args
+            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
             serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
             return serializable, self.ansatz.to_dict()
 
@@ -112,7 +112,9 @@ class CircuitComponent:
         if "ansatz_cls" in data:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(Representation(ansatz, Wires(*map(set, wires))), name=name)
+            return cls._from_attributes(
+                Representation(ansatz, Wires(*tuple(set(m) for m in wires))), name=name
+            )
 
         return cls(**data)
 
@@ -500,7 +502,6 @@ class CircuitComponent:
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
-            >>> assert d_fock.wires == d.wires
             >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
 
         Args:
@@ -683,9 +684,9 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self @ other
         elif self_needs_bra or self_needs_ket:
-            ret = (self.adjoint @ self) @ other
+            ret = self.adjoint @ (self @ other)
         elif other_needs_bra or other_needs_ket:
-            ret = self @ (other @ other.adjoint)
+            ret = (self @ other.adjoint) @ other
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
