@@ -28,7 +28,7 @@ class TestThermal:
     Tests for the ``Thermal`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
+    modes = [[0], [1, 2], [7, 9]]
     nbar = [[3], 4, [5, 6]]
 
     @pytest.mark.parametrize("modes,nbar", zip(modes, nbar))

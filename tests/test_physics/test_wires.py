@@ -20,8 +20,9 @@ from unittest.mock import patch
 
 import pytest
 from ipywidgets import HTML
-
 from mrmustard.physics.wires import Wires
+from mrmustard.lab_dev.states import QuadratureEigenstate
+from ..conftest import skip_np
 
 
 class TestWires:
@@ -32,41 +33,6 @@ class TestWires:
     def test_init(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
         assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
-
-    def test_ids(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
-        assert w.ids == [w.id + i for i in range(9)]
-
-    def test_ids_with_subsets(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9, 10}, {11})
-
-        assert w.input.ids == [w.ids[3], w.ids[4], w.ids[5], w.ids[8], w.ids[11]]
-        assert w.output.ids == [
-            w.ids[0],
-            w.ids[1],
-            w.ids[2],
-            w.ids[6],
-            w.ids[7],
-            w.ids[9],
-            w.ids[10],
-        ]
-        assert w.bra.ids == [w.ids[0], w.ids[1], w.ids[2], w.ids[3], w.ids[4], w.ids[5]]
-        assert w.ket.ids == [w.ids[6], w.ids[7], w.ids[8]]
-        assert w.quantum.ids == [
-            w.ids[0],
-            w.ids[1],
-            w.ids[2],
-            w.ids[3],
-            w.ids[4],
-            w.ids[5],
-            w.ids[6],
-            w.ids[7],
-            w.ids[8],
-        ]
-        assert w.classical.ids == [w.ids[9], w.ids[10], w.ids[11]]
-
-        assert w.output.bra.ids == [w.ids[0], w.ids[1], w.ids[2]]
-        assert w.input.bra.ids == [w.ids[3], w.ids[4], w.ids[5]]
 
     def test_indices(self):
         w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
@@ -91,44 +57,6 @@ class TestWires:
         assert w.input.bra.modes == {1}
         assert w.output.ket.modes == {2}
         assert w.input.ket.modes == {3}
-
-    def test_index_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [{0: 0, 1: 1, 2: 2}, {6: 3, 7: 4, 8: 5}, {3: 6, 4: 7}, {4: 8}, {5: 9}, {9: 10}]
-
-        assert w.index_dicts == d
-        assert w.input.index_dicts == d
-        assert w.input.bra.index_dicts == d
-
-    def test_ids_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [
-            {0: w.id, 1: w.id + 1, 2: w.id + 2},
-            {6: w.id + 3, 7: w.id + 4, 8: w.id + 5},
-            {3: w.id + 6, 4: w.id + 7},
-            {4: w.id + 8},
-            {5: w.id + 9},
-            {9: w.id + 10},
-        ]
-
-        assert w.ids_dicts == d
-        assert w.input.ids_dicts == d
-        assert w.input.bra.ids_dicts == d
-
-    def test_ids_index_dicts(self):
-        w = Wires({0, 2, 1}, {6, 7, 8}, {3, 4}, {4}, {5}, {9})
-        d = [
-            {w.id: 0, w.id + 1: 1, w.id + 2: 2},
-            {w.id + 3: 3, w.id + 4: 4, w.id + 5: 5},
-            {w.id + 6: 6, w.id + 7: 7},
-            {w.id + 8: 8},
-            {w.id + 9: 9},
-            {w.id + 10: 10},
-        ]
-
-        assert w.ids_index_dicts == d
-        assert w.input.ids_index_dicts == d
-        assert w.input.bra.ids_index_dicts == d
 
     def test_adjoint(self):
         w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
@@ -168,19 +96,12 @@ class TestWires:
 
         w0 = Wires({0}, {0})
         assert w[0] == w0
-        assert w._mode_cache == {(0,): w0}
 
         w1 = Wires({1})
         assert w[1] == w1
-        assert w._mode_cache == {(0,): w0, (1,): w1}
 
         w2 = Wires(set(), {2})
         assert w[2] == w2
-        assert w._mode_cache == {
-            (0,): w0,
-            (1,): w1,
-            (2,): w2,
-        }
 
         assert w[0].indices == (0, 2)
         assert w[1].indices == (1,)
@@ -235,15 +156,38 @@ class TestWiresDisplay:
     @patch("mrmustard.physics.wires.display")
     def test_ipython_repr(self, mock_display):
         """Test the IPython repr function."""
-        wires = Wires({0}, {}, {3}, {3, 4})
+        wires = Wires({0}, set(), {3}, {3, 4})
         wires._ipython_display_()
         [widget] = mock_display.call_args.args
         assert isinstance(widget, HTML)
 
+    def test_eq(self):
+        w1 = Wires({0}, {1})
+        w2 = Wires({0}, {1})
+        assert w1 == w2
+
+    def test_hash(self):
+        w1 = Wires({0}, {1})
+        w2 = Wires({0}, {1})
+        assert hash(w1) == hash(w2)
+
+    def test_ids(self):
+        wires = Wires({0}, {1})
+        for w in wires:
+            assert isinstance(w.id, int)
+
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
-        wires = Wires({0}, {}, {3}, {3, 4})
+        wires = Wires({0}, set(), {3}, {3, 4})
         wires._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
+
+    def test_repr_params(self):
+        "test that repr params change when the params change"
+        skip_np()
+        q = QuadratureEigenstate(modes=[0], x=0.0, phi=1.0, phi_trainable=True)
+        assert q.representation.wires.output.wires[0].repr_params[1] == 1.0
+        q.parameters.phi.value.assign([2.0])
+        assert q.representation.wires.output.wires[0].repr_params[1] == 2.0

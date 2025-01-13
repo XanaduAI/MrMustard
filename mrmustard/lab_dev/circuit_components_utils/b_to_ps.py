@@ -23,7 +23,7 @@ from mrmustard.physics import triples
 
 from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics.representations import RepEnum
+from ...physics.wires import ReprEnum
 from ..utils import make_parameter
 
 __all__ = ["BtoPS"]
@@ -55,10 +55,9 @@ class BtoPS(Map):
                 n_modes=len(modes),
             ),
         ).representation
-        for i in self.wires.input.indices:
-            self.representation._idx_reps[i] = (RepEnum.BARGMANN, None)
-        for i in self.wires.output.indices:
-            self.representation._idx_reps[i] = (RepEnum.PHASESPACE, float(self.parameters.s.value))
+        for w in self.representation.wires.output.wires:
+            w.repr = ReprEnum.CHARACTERISTIC
+            w.repr_params_func = lambda: self.parameters.s
 
     def inverse(self):
         ret = BtoPS(self.modes, self.parameters.s)

@@ -28,8 +28,8 @@ class TestRgate:
     Tests for the ``Rgate`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
-    thetas = [[1], 1, [1, 2]]
+    modes = [[0], [1, 2], [7, 9]]
+    phis = [[1], 1, [1, 2]]
 
     @pytest.mark.parametrize("modes,theta", zip(modes, thetas))
     def test_init(self, modes, theta):

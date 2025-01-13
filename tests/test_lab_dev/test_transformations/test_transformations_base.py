@@ -117,7 +117,7 @@ class TestUnitary:
         assert should_be_identity.ansatz == Dgate([0], 0.0, 0.0).ansatz
 
     def test_random(self):
-        modes = [3, 1, 20]
+        modes = [1, 3, 20]
         u = Unitary.random(modes)
         assert (u >> u.dual) == Identity(modes)
 
@@ -188,7 +188,7 @@ class TestChannel:
         assert should_be_identity.ansatz == Attenuator([0], 1.0).ansatz
 
     def test_random(self):
-        modes = [2, 6, 1]
+        modes = [1, 2, 6]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
