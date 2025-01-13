@@ -636,7 +636,7 @@ def contract_states(
     try:
         return dm / math.sum(math.all_diagonals(dm, real=False)) if normalize else dm
     except NameError:
-        return ket / math.norm(ket) if normalize else ket
+        return ket / math.norm(ket) if normalize else ket  # pylint: disable=used-before-assignment
 
 
 def normalize(fock: Tensor, is_dm: bool):
