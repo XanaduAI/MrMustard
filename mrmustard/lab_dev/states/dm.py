@@ -17,7 +17,7 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Collection
+from typing import Collection, Sequence
 
 from itertools import product
 import warnings
@@ -283,6 +283,34 @@ class DM(State):
             result = (self @ operator) >> TraceOut(self.modes)
 
         return result
+
+    def fock_array(
+        self, shape: int | Sequence[int] | None = None, batched=False, MM_order: bool = True
+    ) -> ComplexTensor:
+        r"""
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+            batched: Whether the returned representation is batched or not. If ``False`` (default)
+                it will squeeze the batch dimension if it is 1.
+            MM_order: The ordering of the wires. If ``MM_order = True``, then the conventional ordering
+            of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+            standard conventions of linear algebra, then ``MM_order=False`` must be chosen.
+        Returns:
+            array: The Fock representation of this component.
+        """
+        m = self.n_modes
+        axes = tuple(range(m, 2 * m)) + tuple(
+            range(m)
+        )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
+        array = self._representation.fock_array(shape or self.auto_shape(), batched)
+        if not MM_order:
+            array = math.transpose(array, perm=axes)
+        return array
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
