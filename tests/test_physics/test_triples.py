@@ -375,3 +375,18 @@ class TestTriples:
         assert np.allclose(A, A_by_hand)
         assert np.allclose(b, np.zeros((4, 1)))
         assert np.isclose(c, 1.0)
+
+    def test_phase_space_transform(self):
+        # for wigner
+        A, b, c = triples.phase_space_transform(n_modes=1, s=0)
+        assert math.allclose(
+            A, -2 * np.array([[0, 0, 1, 1], [0, 0, 1, 0.5], [1, 1, 0, 0], [1, 0.5, 0, 0]])
+        )
+        assert math.allclose(b, math.zeros(4))
+        assert math.allclose(c, 1.0)
+
+        # for Husimi
+        A, b, c = triples.phase_space_transform(n_modes=1, s=-1)
+        assert math.allclose(A, -np.array([[0, 0, 1, 1], [0, 0, 1, 0], [1, 1, 0, 0], [1, 0, 0, 0]]))
+        assert math.allclose(b, math.zeros(4))
+        assert math.allclose(c, 1.0)

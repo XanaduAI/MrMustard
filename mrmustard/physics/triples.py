@@ -772,30 +772,15 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    A = math.block(
-        [
-            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
-            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
-        ]
-    )
-    order_list = math.arange(4 * n_modes)  # [0,3,1,2]
-    order_list = list(
-        math.cast(
-            math.concat(
-                (
-                    math.concat((order_list[:n_modes], order_list[3 * n_modes :]), axis=0),
-                    order_list[n_modes : 3 * n_modes],
-                ),
-                axis=0,
-            ),
-            math.int32,
-        )
-    )
+    O = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    I = math.eye(n_modes, dtype=math.complex128)
 
-    A = math.astensor(math.asnumpy(A)[order_list, :][:, order_list])
-    b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0
-    return math.astensor(A), b, c
+    A = math.block(
+        [[O, O, (s - 1) / 2 * I, -I], [O, O, I, I], [(s - 1) / 2 * I, I, O, O], [-I, I, O, O]]
+    )
+    b = math.zeros(4 * n_modes, dtype=math.complex128)
+    c = 1.0 + 0j
+    return A, b, c
 
 
 def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
@@ -817,6 +802,22 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
     A = math.block([[O2n, -Omega], [Omega, O2n]])
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
+    return A, b, c
+
+
+def phase_space_transform(n_modes: int, s: float) -> tuple[Matrix, Vector, Scalar]:
+    r"""
+    The ``(A, b, c)`` triple of the transformation between Bargmann and phase space functions.
+    """
+    O = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    I = math.eye(n_modes, dtype=math.complex128)
+
+    A = (2 / (s - 1)) * math.block(
+        [[O, O, I, I], [O, O, I, (s + 1) / 2 * I], [I, I, O, O], [I, (s + 1) / 2 * I, O, O]]
+    )
+    b = math.zeros(4 * n_modes, dtype=math.complex128)
+    c = 1.0 + 0j
+
     return A, b, c
 
 
