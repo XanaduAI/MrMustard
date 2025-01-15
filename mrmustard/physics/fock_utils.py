@@ -342,7 +342,7 @@ def number_means(tensor, is_dm: bool):
     r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
             math.sum(marginal * math.arange(len(marginal), dtype=math.float64))
@@ -355,7 +355,7 @@ def number_variances(tensor, is_dm: bool):
     r"""Returns the variance of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
             (
