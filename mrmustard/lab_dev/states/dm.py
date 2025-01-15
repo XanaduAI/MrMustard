@@ -291,6 +291,7 @@ class DM(State):
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
