@@ -158,9 +158,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        ret = PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
-        ret._contract_idxs = self._contract_idxs
-        return ret
+        return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
 
     @property
     def data(
@@ -206,6 +204,39 @@ class PolyExpAnsatz(Ansatz):
         ansatz._fn = fn
         ansatz._kwargs = kwargs
         return ansatz
+
+    def contract(
+        self,
+        other: PolyExpAnsatz,
+        idx1: int | tuple[int, ...] | None = None,
+        idx2: int | tuple[int, ...] | None = None,
+    ) -> PolyExpAnsatz:
+        idx1 = idx1 or ()
+        idx2 = idx2 or ()
+        idx1 = (idx1,) if isinstance(idx1, int) else idx1
+        idx2 = (idx2,) if isinstance(idx2, int) else idx2
+        for i, j in zip(idx1, idx2):
+            if i and i >= self.num_vars:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
+                )
+            if j and j >= other.num_vars:
+                raise IndexError(
+                    f"Index {j} out of bounds for ansatz of dimension {other.num_vars}."
+                )
+
+        if settings.UNSAFE_ZIP_BATCH:
+            if self.batch_size != other.batch_size:
+                raise ValueError(
+                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
+                )
+            A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, mode="zip")
+        else:
+            A, b, c = complex_gaussian_integral_2(
+                self.triple, other.triple, idx1, idx2, mode="kron"
+            )
+
+        return PolyExpAnsatz(A, b, c)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -379,15 +410,15 @@ class PolyExpAnsatz(Ansatz):
         zz = math.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (b_arg, 1, n, n))
 
         A_part = math.sum(
-            self.A[..., :dim_alpha, :dim_alpha] * zz, axes=[-1, -2]
+            self.A[..., :dim_alpha, :dim_alpha] * zz, axis=[-1, -2]
         )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
         b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axes=[-1]
+            self.b[..., :dim_alpha] * z[..., None, :], axis=[-1]
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axes=[-1])  # (b_arg)
+            val = math.sum(exp_sum * self.c, axis=[-1])  # (b_arg)
         else:
             b_poly = math.astensor(
                 math.einsum(
@@ -410,9 +441,9 @@ class PolyExpAnsatz(Ansatz):
                 exp_sum
                 * math.sum(
                     poly * self.c,
-                    axes=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
+                    axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
-                axes=[-1],
+                axis=[-1],
             )  # (b_arg)
         return val
 
@@ -520,7 +551,7 @@ class PolyExpAnsatz(Ansatz):
         )
         c_decomp = math.sum(
             poly_bar * ci,
-            axes=math.arange(
+            axis=math.arange(
                 len(poly_bar.shape) - dim_beta, len(poly_bar.shape), dtype=math.int32
             ).tolist(),
         )
@@ -753,59 +784,6 @@ class PolyExpAnsatz(Ansatz):
         if not isinstance(other, PolyExpAnsatz):
             return False
         return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=1e-10)
-
-    def __getitem__(self, idx: int | tuple[int, ...]) -> PolyExpAnsatz:
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz of dimension {self.num_vars}."
-                )
-        ret = PolyExpAnsatz(self.A, self.b, self.c)
-        ret._contract_idxs = idx
-        return ret
-
-    def __matmul__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        r"""
-        Implements the inner product between PolyExpAnsatz.
-
-        ..code-block::
-
-        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-        >>> from mrmustard.physics.triples import displacement_gate_Abc, vacuum_state_Abc
-        >>> rep1 = PolyExpAnsatz(*vacuum_state_Abc(1))
-        >>> rep2 = PolyExpAnsatz(*displacement_gate_Abc(1))
-        >>> rep3 = rep1[0] @ rep2[1]
-        >>> assert np.allclose(rep3.A, [[0,],])
-        >>> assert np.allclose(rep3.b, [1,])
-
-         Args:
-             other: Another PolyExpAnsatz .
-
-         Returns:
-            Bargmann: the resulting PolyExpAnsatz.
-
-        """
-        if not isinstance(other, PolyExpAnsatz):
-            raise NotImplementedError("Only matmul PolyExpAnsatz with PolyExpAnsatz")
-
-        idx_s = self._contract_idxs
-        idx_o = other._contract_idxs
-
-        if settings.UNSAFE_ZIP_BATCH:
-            if self.batch_size != other.batch_size:
-                raise ValueError(
-                    f"Batch size of the two representations must match since the settings.UNSAFE_ZIP_BATCH is {settings.UNSAFE_ZIP_BATCH}."
-                )
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="zip"
-            )
-        else:
-            A, b, c = complex_gaussian_integral_2(
-                self.triple, other.triple, idx_s, idx_o, mode="kron"
-            )
-
-        return PolyExpAnsatz(A, b, c)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         def mul_A(A1, A2, dim_alpha, dim_beta1, dim_beta2):

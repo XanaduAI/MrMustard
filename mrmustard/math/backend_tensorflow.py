@@ -336,8 +336,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
-    def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
-        return tf.reduce_sum(array, axes)
+    def sum(self, array: tf.Tensor, axis: Sequence[int] = None):
+        return tf.reduce_sum(array, axis)
 
     @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: list[int]) -> tf.Tensor:
@@ -618,9 +618,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
 
             ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
             return dLdA, dLdB, dLdC
 
         return poly0, grad
@@ -724,9 +724,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
 
             ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
             return dLdA, dLdB, dLdC
 
         return poly0, grad
