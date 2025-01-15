@@ -285,7 +285,7 @@ class DM(State):
         return result
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, batched=False, MM_order: bool = True
+        self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
@@ -297,18 +297,18 @@ class DM(State):
                 it is broadcasted to all the dimensions. If not given, it is estimated.
             batched: Whether the returned representation is batched or not. If ``False`` (default)
                 it will squeeze the batch dimension if it is 1.
-            MM_order: The ordering of the wires. If ``MM_order = True``, then the conventional ordering
+            standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
             of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
-            standard conventions of linear algebra, then ``MM_order=False`` must be chosen.
+            standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
         Returns:
             array: The Fock representation of this component.
         """
-        m = self.n_modes
-        axes = tuple(range(m, 2 * m)) + tuple(
-            range(m)
-        )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
-        array = self._representation.fock_array(shape or self.auto_shape(), batched)
-        if not MM_order:
+        array = super()._representation.fock_array(shape or self.auto_shape(), batched)
+        if standard_order:
+            m = self.n_modes
+            axes = tuple(range(m, 2 * m)) + tuple(
+                range(m)
+            )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
             array = math.transpose(array, perm=axes)
         return array
 

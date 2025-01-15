@@ -399,7 +399,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_from_fock(self):
         rho = Number([0], 0) + 1j * Number([0], 1)
         rho = (Number([0], 0) + 1j * Number([0], 1)).dm()
-        rho_fock = rho.fock_array(MM_order=False)
+        rho_fock = rho.fock_array(standard_order=True)
 
         assert math.allclose(
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
