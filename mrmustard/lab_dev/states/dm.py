@@ -303,7 +303,7 @@ class DM(State):
         Returns:
             array: The Fock representation of this component.
         """
-        array = super()._representation.fock_array(shape or self.auto_shape(), batched)
+        array = super().fock_array(shape or self.auto_shape(), batched)
         if standard_order:
             m = self.n_modes
             axes = tuple(range(m, 2 * m)) + tuple(
