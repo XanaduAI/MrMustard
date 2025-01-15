@@ -143,7 +143,7 @@ class Representation:
                 arrays = [
                     math.sum(
                         math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
-                        axes=math.arange(
+                        axis=math.arange(
                             num_vars, num_vars + len(c.shape), dtype=math.int32
                         ).tolist(),
                     )
@@ -155,7 +155,7 @@ class Representation:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 ) from e
             arrays = self.ansatz.reduce(shape).array
-        array = math.sum(arrays, axes=[0])
+        array = math.sum(arrays, axis=[0])
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
 
@@ -211,6 +211,7 @@ class Representation:
         else:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
-        rep = self_ansatz[idx_z] @ other_ansatz[idx_zconj]
+
+        rep = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
         rep = rep.reorder(perm) if perm else rep
         return Representation(rep, wires_result)

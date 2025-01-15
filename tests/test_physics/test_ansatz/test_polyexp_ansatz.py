@@ -186,6 +186,16 @@ class TestPolyExpAnsatz:
         assert np.allclose(bargmann.b, math.conj(b))
         assert np.allclose(bargmann.c, math.conj(c))
 
+    def test_contract_barg_barg(self):
+        triple1 = Abc_triple(3)
+        triple2 = Abc_triple(3)
+
+        res1 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2))
+        exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
+        assert np.allclose(res1.A, exp1[0])
+        assert np.allclose(res1.b, exp1[1])
+        assert np.allclose(res1.c, exp1[2])
+
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
         c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
@@ -328,16 +338,6 @@ class TestPolyExpAnsatz:
         rep._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(rep)
-
-    def test_matmul_barg_barg(self):
-        triple1 = Abc_triple(3)
-        triple2 = Abc_triple(3)
-
-        res1 = PolyExpAnsatz(*triple1) @ PolyExpAnsatz(*triple2)
-        exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
-        assert np.allclose(res1.A, exp1[0])
-        assert np.allclose(res1.b, exp1[1])
-        assert np.allclose(res1.c, exp1[2])
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_mul(self, n):
