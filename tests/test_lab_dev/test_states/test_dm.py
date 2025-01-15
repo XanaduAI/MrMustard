@@ -134,7 +134,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
-        assert coeff == 1.0
+        assert math.allclose(coeff, math.atleast_1d(1.0))
         assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
         assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
 
@@ -167,15 +167,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
-        assert state.L2_norm == 1
+        assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
-        assert state1.probability == 1
-        assert state1.to_fock(20).probability == 1
+        assert math.allclose(state1.probability, 1)
+        assert math.allclose(state1.to_fock(20).probability, 1)
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
-        assert state2.probability == 1
+        assert math.allclose(state2.probability, 1)
         assert math.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
