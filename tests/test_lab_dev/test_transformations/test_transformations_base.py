@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Vacuum, Coherent
+from mrmustard.lab_dev.states import Coherent, Vacuum
 from mrmustard.lab_dev.transformations import (
     Attenuator,
     Channel,
@@ -29,9 +29,9 @@ from mrmustard.lab_dev.transformations import (
     Identity,
     Map,
     Operation,
+    PhaseNoise,
     Sgate,
     Unitary,
-    PhaseNoise,
 )
 from mrmustard.physics.wires import Wires
 
