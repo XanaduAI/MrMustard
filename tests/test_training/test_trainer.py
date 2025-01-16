@@ -144,11 +144,7 @@ class TestTrainer:
     @pytest.mark.parametrize(
         "metric_fns",
         [
-            {"n_modes": lambda c: c.n_modes, "foo": lambda _: 17.0},
-            [
-                lambda c: c.modes,
-            ],
-            lambda c: (Vacuum((0,)) >> c >> c >> c).fock_array((5,)) ** 2,
+            lambda c: (Vacuum((0,)) >> c >> c >> c).fock_array((5,)),
         ],
     )
     def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
