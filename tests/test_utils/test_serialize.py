@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from mrmustard import __version__, math, settings
 from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
-from mrmustard.lab_dev.circuits import Circuit
+from mrmustard.lab_dev.circuits.circuits import Circuit
 from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,

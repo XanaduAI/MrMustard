@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2024 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The lab module in development.
+"""
+The classes representing circuits and computational graphs.
 """
 
-from .circuit_components import *
-from .circuit_components_utils import *
-from .circuits.circuits import *
-from .states import *
-from .transformations import *
+from .circuits import *
