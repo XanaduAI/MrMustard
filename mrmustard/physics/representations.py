@@ -233,13 +233,13 @@ class Representation:
                 )
             if self.ansatz.polynomial_shape[0] == 0:
                 arrays = [
-                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
+                    math.hermite_renormalized(A=A, b=b, c=c, shape=shape) for A, b, c in zip(As, bs, cs)
                 ]
             else:
                 arrays = [
                     math.sum(
-                        math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
-                        axes=math.arange(
+                        math.hermite_renormalized(A=A, b=b, c=1, shape=shape + c.shape) * c,
+                        axis=math.arange(
                             num_vars, num_vars + len(c.shape), dtype=math.int32
                         ).tolist(),
                     )
@@ -251,9 +251,12 @@ class Representation:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 ) from e
             arrays = self.ansatz.reduce(shape).array
-        array = math.sum(arrays, axes=[0])
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+        if not batched:
+            return arrays[0]
+        else:
+            array = math.sum(arrays, axes=[0])
+            arrays = math.expand_dims(array, 0)
+            return arrays
 
     def to_bargmann(self) -> Representation:
         r"""

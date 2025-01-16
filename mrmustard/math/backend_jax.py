@@ -57,8 +57,9 @@ class BackendJax(BackendBase):
         return np.array(tensor)
 
 
-    @partial(jax.jit, static_argnames=['self', 'axes'])
+    #@partial(jax.jit, static_argnames=['self', 'axes'])
     def block(self, blocks: list[list[jnp.ndarray]], axes=(-2, -1)) -> jnp.ndarray:
+        #jax.debug.print('blocks={blocks}, axes={axes}, shape={shape1}, {shape2}, {shape3}, {shape4}', blocks=blocks, axes=axes, shape1=blocks[0][0].shape, shape2=blocks[0][1].shape, shape3=blocks[1][0].shape, shape4=blocks[1][1].shape)
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
@@ -75,7 +76,7 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_1d(self.cast(self.astensor(array), dtype))
+        return jnp.atleast_1d(self.cast(array, dtype))
 
     @partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
@@ -106,6 +107,7 @@ class BackendJax(BackendBase):
             return jnp.clip(x, lower, upper)
         return constraint
 
+    @partial(jax.jit, static_argnames=['self', 'dtype'])
     def cast(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if dtype is None:
             return array
@@ -192,28 +194,10 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=['self', 'k'])
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if len(array.shape) == 1:
-            # Case: 1D array
-            return jnp.diag(array, k=k)
-        elif len(array.shape) == 2:
-            # Case: 2D array
-            return jax.vmap(lambda l: jnp.diag(l, k=k))(array)
+        if array.ndim == 0:
+            return array
         else:
-            # Fallback: Higher-dimensional arrays
-            original_sh = array.shape
-
-            # Compute ravelled shape statically
-            ravelled_size = array.size // original_sh[-1]
-            ravelled_sh = (ravelled_size, original_sh[-1])
-            array = array.reshape(*ravelled_sh)
-
-            # Use JAX-compatible operations
-            ret = jax.vmap(lambda line: jnp.diag(line, k))(array)
-            inner_shape = (
-                original_sh[-1] + abs(k),
-                original_sh[-1] + abs(k),
-            )
-            return ret.reshape(original_sh[:-1] + inner_shape)
+            return jnp.diag(array, k=k)
 
             
     @partial(jax.jit, static_argnames=['self', 'k'])
@@ -255,13 +239,13 @@ class BackendJax(BackendBase):
     def repeat(self, array: jnp.ndarray, repeats: int, axis: int = None) -> jnp.ndarray:
         return jnp.repeat(array, repeats, axis=axis)
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
-    def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int) -> jnp.ndarray:
-        return jnp.take(array, indices, axis=axis)
+    #@partial(jax.jit, static_argnames=['self', 'axis'])
+    #def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int) -> jnp.ndarray:
+    #    return jnp.take(array, indices, axis=axis)
 
-    #@partial(jax.jit, static_argnames=['self', 'indices', 'axis'])
-    #def gather(self, array: jnp.ndarray, indices: tuple[int], axis: int) -> jnp.ndarray:
-    #    return jnp.take(array, np.array(indices), axis=axis)
+    @partial(jax.jit, static_argnames=['self', 'indices', 'axis'])
+    def gather(self, array: jnp.ndarray, indices: tuple[int], axis: int) -> jnp.ndarray:
+        return jnp.take(array, np.array(indices), axis=axis)
 
     @partial(jax.jit, static_argnames=['self'])
     def imag(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -335,9 +319,9 @@ class BackendJax(BackendBase):
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
 
-    @partial(jax.jit, static_argnames=['self', 'axes'])
+    #@partial(jax.jit, static_argnames=['self', 'axes'])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
-        return jnp.sum(array, axis=axes)
+        return jnp.sum(array, axis=-1)
 
     @partial(jax.jit, static_argnames=['self', 'dtype'])
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
@@ -368,6 +352,14 @@ class BackendJax(BackendBase):
     @jax.jit
     def eigh(tensor: jnp.ndarray) -> tuple:
         return jnp.linalg.eigh(tensor)
+    
+    @partial(jax.jit, static_argnames=['self'])
+    def where(self, array: jnp.ndarray, array1: jnp.ndarray, array2: jnp.ndarray):
+        return jnp.where(array, array1, array2)
+    
+    @property
+    def inf(self):
+        return jnp.inf
 
     @staticmethod
     @jax.jit
@@ -441,21 +433,88 @@ class BackendJax(BackendBase):
         return loss, gradients
 
 
-    # Hermite polynomial related functions
-    def hermite_renormalized(self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
+    @jax.custom_vjp
+    def hermite_renormalized(
+        A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+    ) -> jnp.ndarray:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`c * exp(bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        A, b, c = np.array(A), np.array(b), np.array(c)
+
+        if precision_bits == 128:  # numba
+            if settings.STABLE_FOCK_CONVERSION:
+                G = strategies.vanilla_stable(tuple(shape), A, b, c)
+            else:
+                G = strategies.vanilla(tuple(shape), A, b, c)
+        else:  # julia
+            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
+
+            A, b, c = (
+                A.astype(np.complex128),
+                b.astype(np.complex128),
+                c.astype(np.complex128),
+            )
+
+            G = jnp.array(
+                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
+            )
+
+        return jnp.array(G), (G, c, A, b)
+
         
-        A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        
-        if settings.STABLE_FOCK_CONVERSION:
-            G = strategies.vanilla_stable(tuple(shape), A, b, c)
-        else:
-            G = strategies.vanilla(tuple(shape), A, b, c)
-            
-        return jnp.array(G)
+    def hermite_renormalized_fwd(A, b, c, shape):
+
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        A, b, c = np.array(A), np.array(b), np.array(c)
+
+        if precision_bits == 128:  # numba
+            if settings.STABLE_FOCK_CONVERSION:
+                G = strategies.vanilla_stable(tuple(shape), A, b, c)
+            else:
+                G = strategies.vanilla(tuple(shape), A, b, c)
+        else:  # julia
+            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
+            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
+
+            A, b, c = (
+                A.astype(np.complex128),
+                b.astype(np.complex128),
+                c.astype(np.complex128),
+            )
+
+            G = jnp.array(
+                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
+            )
+
+        return jnp.array(G), (G, c, A, b)
+
+    def hermite_renormalized_bwd(res, g):
+        G, c, A, b = res
+        dLdGconj = np.array(g)
+        dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
+        return (jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC), None)
+
+    hermite_renormalized.defvjp(hermite_renormalized_fwd, hermite_renormalized_bwd)
+
 
     # Add other Hermite-related functions as needed, following the same pattern as the TensorFlow backend 
-    @jax.custom_vjp
+    @jax.custom_jvp
     def hermite_renormalized_binomial(
         self,
         A: jnp.ndarray,
@@ -477,21 +536,14 @@ class BackendJax(BackendBase):
             max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )
-        return jnp.array(G)
+        return jnp.array(G), (G, c, A, B)
 
-    def hermite_renormalized_binomial_fwd(self, A, B, C, shape, max_l2, global_cutoff):
-        G = self.hermite_renormalized_binomial(A, B, C, shape, max_l2, global_cutoff)
-        return G, (G, C, A, B)
-
-    def hermite_renormalized_binomial_bwd(self, res, g):
-        G, C, A, B = res
+    @hermite_renormalized_binomial.defjvp
+    def hermite_renormalized_binomial_jvp(self, res, g):
+        G, c, A, B = res
         dLdGconj = np.array(g)
-        dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
-        return (self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None, None)
-
-    hermite_renormalized_binomial.defvjp(
-        hermite_renormalized_binomial_fwd, hermite_renormalized_binomial_bwd
-    )
+        dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
+        return (self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None)
 
     @jax.custom_vjp
     def hermite_renormalized_diagonal_reorderedAB(

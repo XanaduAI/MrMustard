@@ -103,6 +103,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # whether or not the backend can be changed
     _is_immutable = False
 
+    @property
+    def inf(self):
+        return self._backend.inf
+
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
@@ -471,7 +475,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The cosine of ``array``.
         """
-        return self._apply("cos", array)
+        return self._apply("cos", [array])
 
     def cosh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic cosine of array.
@@ -642,6 +646,25 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 axis,
             ),
         )
+
+    def hermite_renormalized(
+        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
+
+        Args:
+            A: The A matrix.
+            B: The b vector.
+            C: The c scalar.
+            shape: The shape of the final tensor.
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized", (A, B, C, shape))
+
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -1131,7 +1154,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             neg = [a for a in axes if a < 0]
             pos = [a for a in axes if a >= 0]
             axes = sorted(neg) + sorted(pos)[::-1]
-        return self._apply("sum", (array, axes))
+            return self._apply("sum", (array, tuple(axes)))
+        else:
+            return self._apply("sum", (array, axes))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
@@ -1169,6 +1194,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The trace of array
         """
         return self._apply("trace", (array, dtype))
+    
+    def where(self, array: Tensor, array1: Tensor, array2: Tensor):
+        r"""Conditional return
+        
+        Args:
+            array: The array/variable to condition on
+            array1: The array to return if ``array`` is ``True``
+            array2: The array to return if ``array`` is ``False``
+
+        Returns:
+            The array1 if ``array`` is ``True``, otherwise array2
+        """
+        return self._apply("where", (array, array1, array2))
 
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         r"""The transposed arrays.
