@@ -61,7 +61,7 @@ def wrappers():
 
         target = GKet((0,)) >> Dgate((0,), -0.1, y_targ)
         s = Vacuum((0,)) >> circ
-        return -math.abs(s >> target.dual) ** 2
+        return -math.abs((s >> target.dual) ** 2)
 
     return make_circ, cost_fn
 
