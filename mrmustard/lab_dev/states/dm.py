@@ -17,7 +17,7 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Collection
+from typing import Collection, Sequence
 
 from itertools import product
 import warnings
@@ -283,6 +283,35 @@ class DM(State):
             result = (self @ operator) >> TraceOut(self.modes)
 
         return result
+
+    def fock_array(
+        self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
+    ) -> ComplexTensor:
+        r"""
+                Returns an array representation of this component in the Fock basis with the given shape.
+                If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+                available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
+
+                Args:
+                    shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                        it is broadcasted to all the dimensions. If not given, it is estimated.
+                    batched: Whether the returned representation is batched or not. If ``False`` (default)
+                        it will squeeze the batch dimension if it is 1.
+                    standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
+                    of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+                    standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+                Returns:
+                    array: The Fock representation of this component.
+        """
+        array = super().fock_array(shape or self.auto_shape(), batched)
+        if standard_order:
+            m = self.n_modes
+            axes = tuple(range(m, 2 * m)) + tuple(
+                range(m)
+            )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
+            array = math.transpose(array, perm=axes)
+        return array
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
