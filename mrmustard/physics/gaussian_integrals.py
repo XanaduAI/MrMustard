@@ -174,8 +174,8 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     if any(i >= n or n < 0 for i in order):
         raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
     order += list(range(len(order), len(order) + dim_poly))
-    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
-    b = math.gather(b, order, axis=-1)
+    A = math.gather(math.gather(A, tuple(order), axis=-1), tuple(order), axis=-2)
+    b = math.gather(b, tuple(order), axis=-1)
     return A, b, c
 
 
@@ -378,19 +378,24 @@ def complex_gaussian_integral_1(
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
     bR = math.gather(b, not_idx, axis=-1)
     det_M = math.det(M)
-    if np.all(math.abs(det_M) > 1e-12):
-        inv_M = math.inv(M)
-        c_post = c * math.reshape(
-            math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
-            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axes=[-1])),
-            c.shape[:1] + (1,) * (len(c.shape) - 1),
-        )
-        A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
-        b_post = bR - math.einsum("bij,bj->bi", D, math.solve(M, bM))
-    else:
-        A_post = R - math.einsum("bij,bjk,blk->bil", D, M * np.inf, D)
-        b_post = bR - math.einsum("bij,bjk,bk->bi", D, M * np.inf, bM)
-        c_post = math.real(c) * np.inf
+    # Use math.where instead of if/else for jit compatibility
+    det_nonzero = math.abs(det_M) > 1e-12
+    # Calculate both branches
+    #inv_M = math.where(det_nonzero, math.inv(M), math.ones_like(M) * math.inf)
+    inv_M = math.inv(M)
+    M_bM = math.solve(M, bM)
+    
+    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * \
+               math.exp(-0.5 * math.sum(bM * M_bM, axes=(-1,)))
+    c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
+    #c_post = math.where(det_nonzero,
+    #                   c * c_reshaped,
+    #                   math.real(c) * math.inf)
+    c_post = c * c_reshaped
+
+    A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
+    b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
+    
     if not batched:
         return A_post[0], b_post[0], c_post[0]
     return A_post, b_post, c_post
