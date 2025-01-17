@@ -174,7 +174,7 @@ def draw(
         labels=mode_labels,
         font_size=12,
         font_color="black",
-        font_family="FreeMono",
+        font_family="Monospace",
     )
 
     plt.title("Mr Mustard Network")
