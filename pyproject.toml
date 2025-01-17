@@ -1,9 +1,15 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "mrmustard"
 version = "0.7.3"
 description = "Differentiable quantum Gaussian circuits"
-authors = ["Xanadu <filippo@xanadu.ai>"]
-license = "Apache License 2.0"
+authors = [
+    {name= "Xanadu", email= "filippo@xanadu.ai"},
+]
+license = {text = "Apache License 2.0"}
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -24,57 +30,56 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "grpcio == 1.60.0",
+    "numpy >=1.23.5, <2",
+    "scipy >=1.8.0, <2",
+    "numba >=0.59, <1",
+    "thewalrus >=0.19.0,<1",
+    "rich >=13.9.0, <14",
+    "matplotlib >=3.5.0, <4",
+    "networkx >=3.1, <4",
+    "juliacall >=0.9.20, <1",
+    "ipython >=8.18.1",
+    "plotly >=5.20.0, <6",
+    "nbformat >=5.10, <6",
+    "ipywidgets >=8.1.3, <9",
+    "tensorflow >=2.15.0, <2.19.0",
+    "tensorflow-probability[tf] >=0.22.0,<1.0",
+    "semantic-version >=2.10.0, <3",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-grpcio = "1.60.0"
-numpy = "^1.23.5"
-scipy = "^1.8.0"
-numba = "^0.59"
-thewalrus = ">=0.19.0,<1.0"
-rich = "^13.9.0"
-matplotlib = "^3.5.0"
-ray = { version = "^2.5.0", extras = ["tune"], optional = true }
-scikit-optimize = { version = "^0.9.0", optional = true }
-networkx = "^3.1"
-juliacall = "^0.9.20"
-ipython = ">=8.18.1"
-plotly = "^5.20.0"
-nbformat = "^5.10"
-ipywidgets = "^8.1.3"
+[project.optional-dependencies]
+ray = [
+  "ray>=2.5.0,<3",
+  "scikit-optimize>=0.9.0,<1",
+]
 
-######################  The Tensorflow Section ######################
-tensorflow = {version = "^2.15.0, <2.19.0" }
-tensorflow-probability = {version = ">=0.22.0,<1.0", extras = ["tf"]}
-semantic-version = "^2.10.0"
+[dependency-groups]
+dev = [
+    "pre-commit==3.7.1",
+    "pytest==8.0",
+    "pytest-cov==3.0.0",
+    "hypothesis==6.31.6",
+    "pylint>=3.0,<4",
+    "black>=22.1.0,<23",
+]
 
-[tool.poetry.extras]
-ray = ["ray", "scikit-optimize"]
+doc = [
+    "sphinx>=7.0.1,<8",
+    "docutils>=0.20.1,<1",
+    "m2r2>=0.3.3.post2,<1",
+    "sphinx-autodoc-typehints>=1.23.3,<2",
+    "sphinx-copybutton>=0.5.2,<1",
+    "sphinx-automodapi>=0.15.0,<1",
+    "sphinxcontrib-bibtex>=2.5.0,<3",
+    "mistune==0.8.4",
+    "xanadu-sphinx-theme==0.1.0",
+]
 
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "3.7.1"
-pytest = "8.0"
-pytest-cov ="3.0.0"
-hypothesis = "6.31.6"
-pylint = "^3.0"
-black = ">=22.1.0"
-
-[tool.poetry.group.doc]
-optional = true
-
-[tool.poetry.group.doc.dependencies]
-sphinx = "^7.0.1"
-docutils = "^0.20.1"
-m2r2 = "^0.3.3.post2"
-sphinx-autodoc-typehints = "^1.23.3"
-sphinx-copybutton = "^0.5.2"
-sphinx-automodapi = "^0.15.0"
-sphinxcontrib-bibtex = "^2.5.0"
-mistune = "0.8.4"
-xanadu-sphinx-theme = "0.1.0"
+[tool.setuptools]
+py-modules = []
 
 [tool.black]
 line-length = 100
@@ -131,7 +136,3 @@ directory = "coverage_html_report"
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore::DeprecationWarning"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
