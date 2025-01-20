@@ -42,7 +42,7 @@ jobs:
           mv mrmustard src
 
       - name: Install only test dependencies
-        run: uv sync --all-extras
+        run: uv pip install -r pyproject.toml --system --all-extras
 
       - name: Setup Julia
         uses: julia-actions/setup-julia@v1
@@ -50,4 +50,4 @@ jobs:
           version: 1.9.3
 
       - name: Run tests
-        run: uv run pytest tests -p no:warnings --tb=native --backend=${{ matrix.backend }}
+        run: python -m pytest tests -p no:warnings --tb=native --backend=${{ matrix.backend }}

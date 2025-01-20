@@ -33,10 +33,10 @@ jobs:
         run: |
           python -m pip install --no-cache-dir --upgrade pip
           pip install --no-cache-dir uv==0.5.21
-          uv sync --all-extras
+          uv pip install -r pyproject.toml --system --all-extras
 
       - name: Run tests
         run: |
-          uv run pytest --doctest-modules mrmustard/math/parameter_set.py
-          uv run pytest --doctest-modules mrmustard/physics/ansatz
-          uv run pytest --doctest-modules mrmustard/lab_dev
+          python -m pytest --doctest-modules mrmustard/math/parameter_set.py
+          python -m pytest --doctest-modules mrmustard/physics/ansatz
+          python -m pytest --doctest-modules mrmustard/lab_dev

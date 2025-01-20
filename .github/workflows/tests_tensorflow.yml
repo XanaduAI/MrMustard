@@ -37,10 +37,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --no-cache-dir --upgrade pip
-          uv sync --all-extras
+          pip install --no-cache-dir uv==0.5.21
+          uv pip install -r pyproject.toml --system --all-extras
 
       - name: Initialize Julia project  # to keep test times stable
-        run: uv run python -c 'from juliacall import Main as jl'
+        run: python -c 'from juliacall import Main as jl'
 
       - name: Create durations file name
         id: record_file
@@ -49,7 +50,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          uv run pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: Upload coverage to Codecov
