@@ -126,11 +126,9 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: int | tuple[int, ...] | None = None,
-        idx2: int | tuple[int, ...] | None = None,
+        idx1: int | tuple[int, ...] = tuple(),
+        idx2: int | tuple[int, ...] = tuple(),
     ) -> ArrayAnsatz:
-        idx1 = idx1 or ()
-        idx2 = idx2 or ()
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
