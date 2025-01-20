@@ -180,7 +180,7 @@ class TestSerialize:
                 BSgate([1, 2], theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
                 Dgate([0], x=1.1, y=2.2),
                 Identity([1, 2]),
-                Rgate([1, 2], phi=0.1),
+                Rgate([1, 2], theta=0.1),
                 S2gate([0, 1], 1, 1),
                 Sgate([0], 0.1, 0.2, r_trainable=True),
                 FockDamping([0], damping=0.1),

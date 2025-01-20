@@ -84,9 +84,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def conj(self):
-        ret = ArrayAnsatz(math.conj(self.array), batched=True)
-        ret._contract_idxs = self._contract_idxs
-        return ret
+        return ArrayAnsatz(math.conj(self.array), batched=True)
 
     @property
     def data(self) -> Batch[Tensor]:
@@ -124,6 +122,48 @@ class ArrayAnsatz(Ansatz):
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
+
+    def contract(
+        self,
+        other: ArrayAnsatz,
+        idx1: int | tuple[int, ...] = tuple(),
+        idx2: int | tuple[int, ...] = tuple(),
+    ) -> ArrayAnsatz:
+        idx1 = (idx1,) if isinstance(idx1, int) else idx1
+        idx2 = (idx2,) if isinstance(idx2, int) else idx2
+        for i, j in zip(idx1, idx2):
+            if i >= self.num_vars:
+                raise IndexError(
+                    f"Index {i} out of bounds for representation with {self.num_vars} variables."
+                )
+            if j >= other.num_vars:
+                raise IndexError(
+                    f"Index {j} out of bounds for representation with {other.num_vars} variables."
+                )
+
+        # the number of batches in self and other
+        n_batches_s = self.array.shape[0]
+        n_batches_o = other.array.shape[0]
+
+        # the shapes each batch in self and other
+        shape_s = self.array.shape[1:]
+        shape_o = other.array.shape[1:]
+
+        new_shape_s = list(shape_s)
+        new_shape_o = list(shape_o)
+        for s, o in zip(idx1, idx2):
+            new_shape_s[s] = min(shape_s[s], shape_o[o])
+            new_shape_o[o] = min(shape_s[s], shape_o[o])
+
+        reduced_s = self.reduce(new_shape_s)
+        reduced_o = other.reduce(new_shape_o)
+
+        axes = [list(idx1), list(idx2)]
+        batched_array = []
+        for i in range(n_batches_s):
+            for j in range(n_batches_o):
+                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+        return ArrayAnsatz(batched_array, batched=True)
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -183,7 +223,7 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axes=[0]), 0), batched=True)
+        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=[0]), 0), batched=True)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
@@ -252,45 +292,6 @@ class ArrayAnsatz(Ansatz):
             slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
         )
         return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
-
-    def __getitem__(self, idx: int | tuple[int, ...]) -> ArrayAnsatz:
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for representation with {self.num_vars} variables."
-                )
-        ret = ArrayAnsatz(self.array, batched=True)
-        ret._contract_idxs = idx
-        return ret
-
-    def __matmul__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        idx_s = list(self._contract_idxs)
-        idx_o = list(other._contract_idxs)
-
-        # the number of batches in self and other
-        n_batches_s = self.array.shape[0]
-        n_batches_o = other.array.shape[0]
-
-        # the shapes each batch in self and other
-        shape_s = self.array.shape[1:]
-        shape_o = other.array.shape[1:]
-
-        new_shape_s = list(shape_s)
-        new_shape_o = list(shape_o)
-        for s, o in zip(idx_s, idx_o):
-            new_shape_s[s] = min(shape_s[s], shape_o[o])
-            new_shape_o[o] = min(shape_s[s], shape_o[o])
-
-        reduced_s = self.reduce(new_shape_s)[idx_s]
-        reduced_o = other.reduce(new_shape_o)[idx_o]
-
-        axes = [list(idx_s), list(idx_o)]
-        batched_array = []
-        for i in range(n_batches_s):
-            for j in range(n_batches_o):
-                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
-        return ArrayAnsatz(batched_array, batched=True)
 
     def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
         if isinstance(other, ArrayAnsatz):

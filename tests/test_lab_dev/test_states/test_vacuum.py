@@ -28,7 +28,7 @@ class TestVacuum:
     Tests for the ``Vacuum`` class.
     """
 
-    @pytest.mark.parametrize("modes", [(0,), (0, 1), (3, 19, 2)])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_init(self, modes):
         state = Vacuum(modes)
 

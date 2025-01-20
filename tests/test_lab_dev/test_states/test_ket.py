@@ -60,7 +60,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     coeff = [0.5, 0.3]
 
     @pytest.mark.parametrize("name", [None, "my_ket"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
@@ -83,7 +83,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket = Coherent([0, 1], x=1) >> Number([1], 10).dual
         assert ket.auto_shape() == (settings.AUTOSHAPE_MAX,)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_bargmann(self, modes):
         x = 1
         y = 2
@@ -123,7 +123,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
@@ -134,7 +134,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state_out = Ket.from_fock(modes, array_in, "my_ket", True)
         assert state_in_fock == state_out
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_phase_space(self, modes):
         cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
         assert math.allclose(coeff[0], 1.0)
@@ -168,7 +168,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
-        assert state.L2_norm == 1
+        assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
@@ -182,7 +182,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_purity(self, modes):
         state = Ket.from_ansatz(modes, None, "my_ket")
         assert state.purity == 1
@@ -330,7 +330,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
+        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 

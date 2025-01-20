@@ -28,22 +28,22 @@ class TestRgate:
     Tests for the ``Rgate`` class.
     """
 
-    modes = [[0], [1, 2], [9, 7]]
-    phis = [[1], 1, [1, 2]]
+    modes = [[0], [1, 2], [7, 9]]
+    thetas = [[1], 1, [1, 2]]
 
-    @pytest.mark.parametrize("modes,phi", zip(modes, phis))
-    def test_init(self, modes, phi):
-        gate = Rgate(modes, phi)
+    @pytest.mark.parametrize("modes,theta", zip(modes, thetas))
+    def test_init(self, modes, theta):
+        gate = Rgate(modes, theta)
 
         assert gate.name == "Rgate"
         assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
 
     def test_init_error(self):
-        with pytest.raises(ValueError, match="phi"):
-            Rgate(modes=[0, 1], phi=[2, 3, 4])
+        with pytest.raises(ValueError, match="theta"):
+            Rgate(modes=[0, 1], theta=[2, 3, 4])
 
     def test_representation(self):
-        rep1 = Rgate(modes=[0], phi=0.1).ansatz
+        rep1 = Rgate(modes=[0], theta=0.1).ansatz
         assert math.allclose(
             rep1.A,
             [
@@ -56,7 +56,7 @@ class TestRgate:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [1.0 + 0.0j])
 
-        rep2 = Rgate(modes=[0, 1], phi=[0.1, 0.3]).ansatz
+        rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).ansatz
         assert math.allclose(
             rep2.A,
             [
@@ -71,7 +71,7 @@ class TestRgate:
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [1.0 + 0.0j])
 
-        rep3 = Rgate(modes=[1], phi=0.1).ansatz
+        rep3 = Rgate(modes=[1], theta=0.1).ansatz
         assert math.allclose(
             rep3.A,
             [
@@ -89,11 +89,11 @@ class TestRgate:
         gate2 = Rgate([0], 1, True, (-2, 2))
 
         with pytest.raises(AttributeError):
-            gate1.parameters.phi.value = 3
+            gate1.parameters.theta.value = 3
 
-        gate2.parameters.phi.value = 2
-        assert gate2.parameters.phi.value == 2
+        gate2.parameters.theta.value = 2
+        assert gate2.parameters.theta.value == 2
 
     def test_representation_error(self):
         with pytest.raises(ValueError):
-            Rgate(modes=[0], phi=[0.1, 0.2]).ansatz
+            Rgate(modes=[0], theta=[0.1, 0.2]).ansatz

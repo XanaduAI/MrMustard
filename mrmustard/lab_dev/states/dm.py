@@ -17,7 +17,7 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Sequence
+from typing import Collection, Sequence
 
 from itertools import product
 import warnings
@@ -30,12 +30,12 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealVector
+from mrmustard.physics.wires import Wires, ReprEnum
+from mrmustard.utils.typing import ComplexTensor, RealVector
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoQ, TraceOut
+from ..circuit_components_utils import TraceOut
 
 from ..utils import shape_check
 
@@ -109,43 +109,29 @@ class DM(State):
         return self._L2_norms / self._probabilities
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: str | None = None,
-    ) -> State:
-        return DM.from_ansatz(modes, PolyExpAnsatz(*triple), name)
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Sequence[int],
-        array: ComplexTensor,
-        name: str | None = None,
-        batched: bool = False,
-    ) -> State:
-        return DM.from_ansatz(modes, ArrayAnsatz(array, batched), name)
-
-    @classmethod
     def from_ansatz(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
+        if not isinstance(modes, set) and sorted(modes) != list(modes):
+            raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
                 f"Expected an ansatz with {2*len(modes)} variables, found {ansatz.num_vars}."
             )
-        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
+        wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in wires:
+                w.repr = ReprEnum.FOCK
         return DM(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         triple: tuple,
         name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
@@ -173,37 +159,7 @@ class DM(State):
         )
 
     @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        phi: float = 0.0,
-        name: str | None = None,
-    ) -> State:
-        r"""
-        Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
-        as `c * exp(0.5 z^T A z + b^T z)` in the quadrature representation.
-
-        Args:
-            modes: The modes of this state.
-            triple: The ``(A, b, c)`` triple.
-            phi: The angle of the quadrature. 0 corresponds to the x quadrature (default).
-            name: The name of this state.
-
-        Returns:
-            A state of type ``cls``.
-
-        Raises:
-            ValueError: If the given triple has shapes that are inconsistent
-                with the number of modes.
-        """
-
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = DM.from_ansatz(modes, PolyExpAnsatz(*triple))
-        return DM.from_ansatz(modes, (Q >> QtoB).ansatz, name)
-
-    @classmethod
-    def random(cls, modes: Sequence[int], m: int | None = None, max_r: float = 1.0) -> DM:
+    def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
         Samples a random density matrix. The final state has zero displacement.
 
@@ -328,6 +284,35 @@ class DM(State):
 
         return result
 
+    def fock_array(
+        self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
+    ) -> ComplexTensor:
+        r"""
+                Returns an array representation of this component in the Fock basis with the given shape.
+                If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+                available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
+
+                Args:
+                    shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                        it is broadcasted to all the dimensions. If not given, it is estimated.
+                    batched: Whether the returned representation is batched or not. If ``False`` (default)
+                        it will squeeze the batch dimension if it is 1.
+                    standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
+                    of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+                    standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+                Returns:
+                    array: The Fock representation of this component.
+        """
+        array = super().fock_array(shape or self.auto_shape(), batched)
+        if standard_order:
+            m = self.n_modes
+            axes = tuple(range(m, 2 * m)) + tuple(
+                range(m)
+            )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
+            array = math.transpose(array, perm=axes)
+        return array
+
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
         Returns the Fock distribution of the state up to some cutoff.
@@ -381,13 +366,13 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Sequence[int]) -> State:
+    def __getitem__(self, modes: int | Collection[int]) -> State:
         r"""
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
         """
         if isinstance(modes, int):
-            modes = [modes]
+            modes = {modes}
         modes = set(modes)
 
         if not modes.issubset(self.modes):

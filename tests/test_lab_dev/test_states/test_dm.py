@@ -55,7 +55,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     coeff = [0.5, 0.3]
 
     @pytest.mark.parametrize("name", [None, "my_dm"])
-    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {3, 19, 2}])
+    @pytest.mark.parametrize("modes", [{0}, {0, 1}, {2, 3, 19}])
     def test_init(self, name, modes):
         state = DM.from_ansatz(modes, None, name)
 
@@ -78,7 +78,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm = Coherent([0, 1], x=1).dm() >> Number([1], 10).dual
         assert dm.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_bargmann(self, modes):
         state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
         triple_in = state_in.bargmann_triple()
@@ -120,7 +120,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [3, 19, 2]])
+    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
         state_in_fock = state_in.to_fock(5)
@@ -134,7 +134,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
-        assert coeff == 1.0
+        assert math.allclose(coeff, math.atleast_1d(1.0))
         assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
         assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
 
@@ -167,15 +167,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
-        assert state.L2_norm == 1
+        assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
-        assert state1.probability == 1
-        assert state1.to_fock(20).probability == 1
+        assert math.allclose(state1.probability, 1)
+        assert math.allclose(state1.to_fock(20).probability, 1)
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
-        assert state2.probability == 1
+        assert math.allclose(state2.probability, 1)
         assert math.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
@@ -336,7 +336,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=[(), (), (1,), (0,)]))
+        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -378,7 +378,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
-    @pytest.mark.parametrize("modes", [[9, 2], [0, 1, 2, 3, 4]])
+    @pytest.mark.parametrize("modes", [[2, 9], [0, 1, 2, 3, 4]])
     def test_is_positive(self, modes):
         assert (Ket.random(modes) >> Attenuator(modes)).is_positive
         A = np.zeros([2 * len(modes), 2 * len(modes)])
@@ -395,3 +395,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         rho = 2 * rho
         assert not rho.is_physical
         assert Ket.random(modes).dm().is_physical
+
+    def test_fock_array_ordering(self):
+        rho = Number([0], 0) + 1j * Number([0], 1)
+        rho = (Number([0], 0) + 1j * Number([0], 1)).dm()
+        rho_fock = rho.fock_array(standard_order=True)
+
+        assert math.allclose(
+            rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
+        )
