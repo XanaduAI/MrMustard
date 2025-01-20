@@ -196,6 +196,12 @@ class TestPolyExpAnsatz:
         assert np.allclose(res1.b, exp1[1])
         assert np.allclose(res1.c, exp1[2])
 
+        res2 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2), idx1=0, idx2=0)
+        exp2 = complex_gaussian_integral_2(triple1, triple2, [0], [0])
+        assert np.allclose(res2.A, exp2[0])
+        assert np.allclose(res2.b, exp2[1])
+        assert np.allclose(res2.c, exp2[2])
+
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
         c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
