@@ -14,8 +14,6 @@
 
 """Tests for the lattice module"""
 
-import importlib
-
 import numpy as np
 import pytest
 

@@ -2,14 +2,11 @@
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
 
-import importlib
-
 import numpy as np
-import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
 from mrmustard.physics import fidelity, normalize
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
