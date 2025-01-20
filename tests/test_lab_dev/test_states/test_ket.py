@@ -168,7 +168,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_L2_norm(self):
         state = Coherent([0], x=1)
-        assert state.L2_norm == 1
+        assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
         state1 = Coherent([0], x=1) / 3
