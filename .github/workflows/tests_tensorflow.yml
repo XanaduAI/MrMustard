@@ -37,12 +37,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --no-cache-dir --upgrade pip
-          pip install --no-cache-dir poetry==1.8.0
-          poetry config virtualenvs.create false
-          poetry install --extras "ray" --with dev
+          uv sync --all-extras
 
       - name: Initialize Julia project  # to keep test times stable
-        run: python -c 'from juliacall import Main as jl'
+        run: uv run python -c 'from juliacall import Main as jl'
 
       - name: Create durations file name
         id: record_file
@@ -51,7 +49,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          uv run pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: Upload coverage to Codecov
