@@ -41,7 +41,7 @@ jobs:
           uv sync --all-extras --python 3.12
 
       - name: Initialize Julia project  # to keep test times stable
-        run: uv runpython -c 'from juliacall import Main as jl'
+        run: uv run python -c 'from juliacall import Main as jl'
 
       - name: Create durations file name
         id: record_file
