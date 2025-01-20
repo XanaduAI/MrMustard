@@ -108,8 +108,8 @@ class Ansatz(ABC):
     def contract(
         self,
         other: Ansatz,
-        idx1: int | tuple[int, ...] | None = None,
-        idx2: int | tuple[int, ...] | None = None,
+        idx1: int | tuple[int, ...] = tuple(),
+        idx2: int | tuple[int, ...] = tuple(),
     ) -> Ansatz:
         r"""
         Contract two ansatz together.
