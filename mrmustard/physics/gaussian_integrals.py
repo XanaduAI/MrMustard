@@ -386,7 +386,7 @@ def complex_gaussian_integral_1(
     M_bM = math.solve(M, bM)
     
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * \
-               math.exp(-0.5 * math.sum(bM * M_bM, axes=(-1,)))
+               math.exp(-0.5 * math.sum(bM * M_bM, axis=(-1,)))
     c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
     #c_post = math.where(det_nonzero,
     #                   c * c_reshaped,
