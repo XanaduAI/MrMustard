@@ -518,23 +518,10 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial of given shape.
         """
 
-        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
-
-        if precision_bits == 128:  # numba
-            if settings.STABLE_FOCK_CONVERSION:
-                G = vanilla_stable(tuple(shape), A, b, c)
-            else:
-                G = vanilla(tuple(shape), A, b, c)
-        else:  # julia (with precision_bits = 512)
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-
-            A, b, c = (
-                np.array(A, dtype=np.complex128),
-                np.array(b, dtype=np.complex128),
-                np.array(c, dtype=np.complex128),
-            )
-            G = jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
+        if settings.STABLE_FOCK_CONVERSION:
+            G = vanilla_stable(tuple(shape), A, b, c)
+        else:
+            G = vanilla(tuple(shape), A, b, c)
 
         return G
 

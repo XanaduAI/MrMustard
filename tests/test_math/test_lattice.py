@@ -33,32 +33,16 @@ from mrmustard.math.lattice.strategies.displacement import displacement
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_stable_batch
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 
-original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
-do_julia = bool(importlib.util.find_spec("juliacall"))
-precisions = (
-    [128, 256, 384, 512]
-    if do_julia
-    else [
-        128,
-    ]
-)
+def test_vanillaNumba_vs_binomial():
+    """Test that the vanilla method and the binomial method give the same result."""
 
-
-@pytest.mark.parametrize("precision", precisions)
-def test_vanillaNumba_vs_binomial(precision):
-    """Test that the vanilla method and the binomial method give the same result.
-    Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
-
-    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
     ket_binomial = G.ket(max_photons=10)[:5, :5]
 
     assert np.allclose(ket_vanilla, ket_binomial)
-
-    settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
 def test_binomial_vs_binomialDict():
