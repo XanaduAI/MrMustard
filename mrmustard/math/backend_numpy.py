@@ -518,10 +518,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial of given shape.
         """
 
+        shape = tuple(int(i) for i in shape)  # ensure each item in the tuple is of the same dtype
         if settings.STABLE_FOCK_CONVERSION:
-            G = vanilla_stable(tuple(shape), A, b, c)
+            G = vanilla_stable(shape, A, b, c)
         else:
-            G = vanilla(tuple(shape), A, b, c)
+            G = vanilla(shape, A, b, c)
 
         return G
 
