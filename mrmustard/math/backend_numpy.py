@@ -519,7 +519,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         """
 
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
-
+        shape = tuple(int(i) for i in shape)  # ensure each item in the tuple is of the same dtype
         if precision_bits == 128:  # numba
             if settings.STABLE_FOCK_CONVERSION:
                 G = vanilla_stable(tuple(shape), A, b, c)
