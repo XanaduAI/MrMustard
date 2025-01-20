@@ -336,7 +336,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
-    def sum(self, array: tf.Tensor, axis: Sequence[int] = None):
+    def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)
 
     @Autocast()
