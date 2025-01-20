@@ -434,80 +434,36 @@ class BackendJax(BackendBase):
 
 
     @jax.custom_vjp
+    @partial(jax.jit, static_argnames=['shape'])
     def hermite_renormalized(
         A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`c * exp(bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape.
+        function = partial(strategies.vanilla, tuple(shape))
+        G = jax.pure_callback(
+            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            A, b, c,
+        )
+        return G
 
-        Args:
-            A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
-
-        A, b, c = np.array(A), np.array(b), np.array(c)
-
-        if precision_bits == 128:  # numba
-            if settings.STABLE_FOCK_CONVERSION:
-                G = strategies.vanilla_stable(tuple(shape), A, b, c)
-            else:
-                G = strategies.vanilla(tuple(shape), A, b, c)
-        else:  # julia
-            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
-            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-
-            A, b, c = (
-                A.astype(np.complex128),
-                b.astype(np.complex128),
-                c.astype(np.complex128),
-            )
-
-            G = jnp.array(
-                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
-            )
-
-        return jnp.array(G), (G, c, A, b)
-
-        
+    @partial(jax.jit, static_argnames=['shape'])
     def hermite_renormalized_fwd(A, b, c, shape):
+        function = partial(strategies.vanilla, tuple(shape))
+        G = jax.pure_callback(
+            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            A, b, c,
+        )
+        return G, (G, c, A, b)
 
-        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
-
-        A, b, c = np.array(A), np.array(b), np.array(c)
-
-        if precision_bits == 128:  # numba
-            if settings.STABLE_FOCK_CONVERSION:
-                G = strategies.vanilla_stable(tuple(shape), A, b, c)
-            else:
-                G = strategies.vanilla(tuple(shape), A, b, c)
-        else:  # julia
-            # The following import must come after settings settings.PRECISION_BITS_HERMITE_POLY
-            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-
-            A, b, c = (
-                A.astype(np.complex128),
-                b.astype(np.complex128),
-                c.astype(np.complex128),
-            )
-
-            G = jnp.array(
-                jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
-            )
-
-        return jnp.array(G), (G, c, A, b)
-
+    @jax.jit
     def hermite_renormalized_bwd(res, g):
         G, c, A, b = res
-        dLdGconj = np.array(g)
-        dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
+        dLdA, dLdB, dLdC = jax.pure_callback(
+            lambda G, c, g: strategies.vanilla_vjp(np.array(G), np.array(c), np.conj(jax.lax.stop_gradient(g))),
+            [jax.ShapeDtypeStruct(A.shape, jnp.complex128), jax.ShapeDtypeStruct(b.shape, jnp.complex128), jax.ShapeDtypeStruct(c.shape, jnp.complex128)],
+            G, c, g
+        )
         return (jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC), None)
 
     hermite_renormalized.defvjp(hermite_renormalized_fwd, hermite_renormalized_bwd)
