@@ -40,7 +40,7 @@ class Rgate(Unitary):
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Rgate
 
-        >>> unitary = Rgate(modes=[1, 2], phi=0.1)
+        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
         >>> assert unitary.modes == [1, 2]
 
     Args:
@@ -55,17 +55,19 @@ class Rgate(Unitary):
     def __init__(
         self,
         modes: Sequence[int],
-        phi: float | Sequence[float] = 0.0,
-        phi_trainable: bool = False,
-        phi_bounds: tuple[float | None, float | None] = (0.0, None),
+        theta: float | Sequence[float] = 0.0,
+        theta_trainable: bool = False,
+        theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(name="Rgate")
-        (phis,) = list(reshape_params(len(modes), phi=phi))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        (thetas,) = list(reshape_params(len(modes), theta=theta))
+        self.parameters.add_parameter(
+            make_parameter(theta_trainable, thetas, "theta", theta_bounds)
+        )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.rotation_gate_Abc, theta=self.parameters.phi
+                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
             ),
         ).representation
