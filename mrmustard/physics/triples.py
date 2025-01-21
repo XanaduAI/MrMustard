@@ -805,9 +805,11 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
     return A, b, c
 
 
-def phase_space_transform(n_modes: int, s: float) -> tuple[Matrix, Vector, Scalar]:
+def phase_space_transform_Abc(n_modes: int, s: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the transformation between Bargmann and phase space functions.
+    Note that for s=1 (P function) the transform is not defined, because it would turn a coherent
+    state into a delta function.
     """
     O = math.zeros((n_modes, n_modes), dtype=math.complex128)
     I = math.eye(n_modes, dtype=math.complex128)
@@ -816,7 +818,7 @@ def phase_space_transform(n_modes: int, s: float) -> tuple[Matrix, Vector, Scala
         [[O, O, I, I], [O, O, I, (s + 1) / 2 * I], [I, I, O, O], [I, (s + 1) / 2 * I, O, O]]
     )
     b = math.zeros(4 * n_modes, dtype=math.complex128)
-    c = 1.0 + 0j
+    c = math.abs(1 / (settings.HBAR * np.pi * (s - 1))) ** n_modes
 
     return A, b, c
 

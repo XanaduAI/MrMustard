@@ -378,7 +378,7 @@ class TestTriples:
 
     def test_phase_space_transform(self):
         # for wigner
-        A, b, c = triples.phase_space_transform(n_modes=1, s=0)
+        A, b, c = triples.phase_space_transform_Abc(n_modes=1, s=0)
         assert math.allclose(
             A, -2 * np.array([[0, 0, 1, 1], [0, 0, 1, 0.5], [1, 1, 0, 0], [1, 0.5, 0, 0]])
         )
