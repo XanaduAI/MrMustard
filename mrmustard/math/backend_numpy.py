@@ -390,7 +390,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
-    def sum(self, array: np.ndarray, axis: Sequence[int] = None):
+    def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
     @Autocast()

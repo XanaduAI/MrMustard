@@ -1102,17 +1102,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
-    def sum(self, array: Tensor, axis: Sequence[int] = None):
+    def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
         r"""The sum of array.
 
         Args:
             array: The array to take the sum of
-            axes (tuple): The axis/axes to sum over
+            axis (int | Sequence[int] | None): The axis/axes to sum over
 
         Returns:
             The sum of array
         """
-        if axis is not None:
+        if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
