@@ -14,6 +14,7 @@
 
 """Implementation of the mm_einsum function."""
 
+from __future__ import annotations
 import itertools
 import numpy as np
 from mrmustard.lab_dev import CircuitComponent
