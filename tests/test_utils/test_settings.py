@@ -43,7 +43,6 @@ class TestSettings:
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
         assert settings.PNR_INTERNAL_CUTOFF == 50
         assert settings.HOMODYNE_SQUEEZING == 10.0
-        assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
         assert settings.BS_FOCK_METHOD == "vanilla"
 
@@ -60,17 +59,9 @@ class TestSettings:
         assert settings.SEED is not None
         settings.SEED = s0
 
-        p0 = settings.PRECISION_BITS_HERMITE_POLY
-        settings.PRECISION_BITS_HERMITE_POLY = 256
-        assert settings.PRECISION_BITS_HERMITE_POLY == 256
-        settings.PRECISION_BITS_HERMITE_POLY = p0
-
         assert settings.HBAR == 1.0
         with pytest.warns(UserWarning, match="Changing HBAR can conflict with prior computations"):
             settings.HBAR = 3
-
-        with pytest.raises(ValueError, match="precision_bits_hermite_poly"):
-            settings.PRECISION_BITS_HERMITE_POLY = 9
 
     def test_settings_seed_randomness_at_init(self):
         """Test that the random seed is set randomly as MM is initialized."""
