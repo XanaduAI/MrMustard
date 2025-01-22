@@ -24,10 +24,6 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 # Install all dependencies
 RUN poetry install --no-root --all-extras --with dev,doc
 
-# Install Julia
-COPY juliapkg.json .
-RUN poetry run python -c 'from juliacall import Main'
-
 ENV DEBIAN_FRONTEND=dialog
 
 # Add source code, tests and configuration

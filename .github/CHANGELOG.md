@@ -13,6 +13,7 @@
   [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
 
 ### Breaking changes
+* Remove julia code and dependencies. PRECISION_BITS_HERMITE_POLY setting removed.
 
 ### Improvements
 * Switch from the `julia` Python package to `juliacall` for easier installation and usage.

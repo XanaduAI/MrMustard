@@ -60,7 +60,6 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
         self._complex_warning: bool = False
-        self._julia_initialized: bool = False
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
@@ -154,46 +153,6 @@ class Settings:
     def HBAR(self, value: float):
         warnings.warn("Changing HBAR can conflict with prior computations.")
         self._hbar = value
-
-    @property
-    def PRECISION_BITS_HERMITE_POLY(self):
-        r"""
-        The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
-        Default is 128 (i.e. the Fock representation has dtype complex128).
-        Currently allowed values: 128, 256, 384, 512
-        """
-        return self._precision_bits_hermite_poly
-
-    @PRECISION_BITS_HERMITE_POLY.setter
-    def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = [128, 256, 384, 512]
-        if value not in allowed_values:
-            raise ValueError(
-                f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
-            )
-        self._precision_bits_hermite_poly = value
-        if (
-            value != 128 and not self._julia_initialized
-        ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
-            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-
-            # import Julia functions
-            julia_directory = (
-                Path(__file__)
-                .parent.parent.joinpath("math", "lattice", "strategies", "julia")
-                .resolve()
-                .absolute()
-            )
-            jl.cd(str(julia_directory))
-            jl.include("getPrecision.jl")
-            jl.include("vanilla.jl")
-            jl.include("compactFock/helperFunctions.jl")
-            jl.include("compactFock/diagonal_amps.jl")
-            jl.include("compactFock/diagonal_grad.jl")
-            jl.include("compactFock/singleLeftoverMode_amps.jl")
-            jl.include("compactFock/singleLeftoverMode_grad.jl")
-
-            self._julia_initialized = True
 
     @property
     def SEED(self) -> int:
