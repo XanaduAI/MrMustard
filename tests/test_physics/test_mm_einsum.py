@@ -14,13 +14,15 @@
 
 """Tests for the mm_einsum function."""
 
+import numpy as np
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.lab_dev import Number, BSgate, QuadratureEigenstate
 from mrmustard.physics.wires import Wires
-import numpy as np
 
 
 def test_mm_einsum():
+    r"""tests that the mm_einsum function returns the correct result compared to a manual contraction.
+    This specific example cannot be done with the usual >> and @ operators."""
     n = 100
     input1 = Number([0], n).to_fock().dm()
     input2 = Number([1], n).to_fock().dm()

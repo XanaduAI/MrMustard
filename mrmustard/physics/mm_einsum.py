@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Implementation of the mm_einsum function."""
 
-import numpy as np
 import itertools
+import numpy as np
 from mrmustard.lab_dev import CircuitComponent
 from mrmustard.physics.wires import ReprEnum
 
@@ -44,7 +45,7 @@ def mm_einsum(*args: list[CircuitComponent | list[int]]):
     representations = args[:-1:2]
     ansatze = [r.ansatz for r in representations]
 
-    sizes = dict()
+    sizes = {}
     for rep, idx in zip(representations, indices):
         for j, (i, wire) in enumerate(zip(idx, rep.wires)):
             # i+1 because the first index is the batch dimension
