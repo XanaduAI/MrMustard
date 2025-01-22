@@ -45,10 +45,5 @@ jobs:
       - name: Install only test dependencies
         run: poetry install --no-root --extras "ray" --with dev
 
-      - name: Setup Julia
-        uses: julia-actions/setup-julia@v1
-        with:
-          version: 1.9.3
-
       - name: Run tests
         run: python -m pytest tests -p no:warnings --tb=native --backend=${{ matrix.backend }}
