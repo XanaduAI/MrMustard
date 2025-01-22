@@ -411,12 +411,12 @@ class PolyExpAnsatz(Ansatz):
             self.A[..., :dim_alpha, :dim_alpha] * zz, axis=[-1, -2]
         )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
         b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axis=[-1]
+            self.b[..., :dim_alpha] * z[..., None, :], axis=-1
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axis=[-1])  # (b_arg)
+            val = math.sum(exp_sum * self.c, axis=-1)  # (b_arg)
         else:
             b_poly = math.astensor(
                 math.einsum(
@@ -441,7 +441,7 @@ class PolyExpAnsatz(Ansatz):
                     poly * self.c,
                     axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
                 ),
-                axis=[-1],
+                axis=-1,
             )  # (b_arg)
         return val
 

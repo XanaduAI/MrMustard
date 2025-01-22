@@ -382,7 +382,7 @@ def complex_gaussian_integral_1(
         inv_M = math.inv(M)
         c_post = c * math.reshape(
             math.sqrt(math.cast((-1) ** m / det_M, "complex128"))
-            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axis=[-1])),
+            * math.exp(-0.5 * math.sum(bM * math.solve(M, bM), axis=-1)),
             c.shape[:1] + (1,) * (len(c.shape) - 1),
         )
         A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
