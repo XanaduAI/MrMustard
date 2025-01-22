@@ -13,14 +13,12 @@
 # limitations under the License.
 
 
-from numba import njit
 import numpy as np
 import itertools
 
 
-@njit
 def _CV_flops(nA: int, nB: int, m: int) -> int:
-    """Calculate the cost of contracting two tensors with CV indices.
+    r"""Calculate the cost of contracting two tensors with CV indices.
     Args:
         nA: Number of CV indices in the first tensor
         nB: Number of CV indices in the second tensor
@@ -36,10 +34,24 @@ def _CV_flops(nA: int, nB: int, m: int) -> int:
     return cost
 
 
+def _fock_flops(
+    fock_contracted_shape: tuple[int, ...], fock_remaining_shape: tuple[int, ...]
+) -> int:
+    r"""Calculate the cost of contracting two tensors with Fock indices.
+    Args:
+        fock_contracted_shape: shape of the indices that participate in the contraction
+        fock_remaining_shape: shape of the indices that do not
+    """
+    if len(fock_contracted_shape) > 0:
+        return np.prod(fock_contracted_shape) * np.prod(fock_remaining_shape)
+    else:
+        return 0
+
+
 def new_indices_and_flops(
     idx1: frozenset[int], idx2: frozenset[int], fock_size_dict: dict[int, int]
 ) -> tuple[frozenset[int], int]:
-    """Calculate the cost of contracting two tensors with mixed CV and Fock indices.
+    r"""Calculate the cost of contracting two tensors with mixed CV and Fock indices.
 
     This function computes both the surviving indices and the computational cost (in FLOPS)
     of contracting two tensors that contain a mixture of continuous-variable (CV) and
@@ -64,7 +76,7 @@ def new_indices_and_flops(
         >>> idx2 = frozenset({1, 2})  # 2 is Fock
         >>> fock_size_dict = {1: 2, 2: 3}
         >>> new_indices_and_flops(idx1, idx2, fock_size_dict)
-        (frozenset({0, 2}), 9)  # Example values
+        (frozenset({0, 2}), 9)
     """
 
     # Calculate index sets for contraction
@@ -82,33 +94,33 @@ def new_indices_and_flops(
         nA=len(idx1) - num_cv_contracted, nB=len(idx2) - num_cv_contracted, m=num_cv_contracted
     )
 
-    if len(fock_contracted_shape) > 0:
-        fock_flops = np.prod(fock_contracted_shape) * np.prod(fock_remaining_shape)
-    else:
-        fock_flops = 0
+    fock_flops = _fock_flops(fock_contracted_shape, fock_remaining_shape)
 
     # Try decomposing the remaining indices
     new_indices, decomp_flops = attempt_decomposition(remaining_indices, fock_size_dict)
 
-    # pretending that we call the ansatz with the remaining indices
-    call_flops = np.prod([fock_size_dict[idx] for idx in new_indices if idx in fock_size_dict])
+    # flops for evaluating the ansatz with the remaining indices (measures ansatz complexity)
+    eval_flops = np.prod([fock_size_dict[idx] for idx in new_indices if idx in fock_size_dict])
 
-    total_flops = int(cv_flops + fock_flops + decomp_flops + call_flops)
+    total_flops = int(cv_flops + fock_flops + decomp_flops + eval_flops)
     return new_indices, total_flops
 
 
 def attempt_decomposition(
     indices: set[int], fock_size_dict: dict[int, int]
 ) -> tuple[set[int], int]:
-    """Attempt to reduce the number of indices by combining Fock indices when possible.
-    Only possible if there is only one CV index and multiple Fock indices.
+    r"""Attempt to reduce the number of indices by combining Fock indices,
+    which is possible if there is only one CV index and multiple Fock indices.
+    (This is Kasper's decompose method).
 
     Args:
         indices: Set of indices to potentially decompose
-        fock_size_dict: Dictionary mapping indices to their sizes
+        fock_size_dict: Dictionary mapping indices to their dimensions
 
     Returns:
-        Tuple of (decomposed indices, cost of decomposition)
+        tuple[frozenset[int], int]: A tuple containing:
+            - frozenset of decomposed indices
+            - computational cost of decomposition in FLOPS
     """
     fock_indices_shape = [fock_size_dict[idx] for idx in indices if idx in fock_size_dict]
     cv_indices = [idx for idx in indices if idx not in fock_size_dict]
@@ -127,7 +139,7 @@ def optimal(
     fock_size_dict: dict[int, int],
     info: bool = False,
 ) -> list[tuple[int, int]]:
-    """Find the optimal contraction path for a mixed CV-Fock tensor network.
+    r"""Find the optimal contraction path for a mixed CV-Fock tensor network.
 
     This function performs an exhaustive search over all possible contraction orders
     for a tensor network containing both continuous-variable (CV) and Fock-space tensors.
