@@ -15,6 +15,35 @@
 
 import numpy as np
 import itertools
+from mrmustard.lab_dev import CircuitComponent
+from mrmustard.physics.wires import ReprEnum
+
+
+def mm_einsum(*args: list[CircuitComponent | list[int]]):
+    """
+    Assumes args = [cc1, lst1, cc2, lst2, ..., ccN, lstN, lstOut]
+    like np.einsum without the string.
+    """
+    indices = list(args[1::2])
+    representations = args[:-1:2]
+    ansatze = [r.ansatz for r in representations]
+
+    sizes = dict()
+    for rep, idx in zip(representations, indices):
+        for i, wire in enumerate(rep.wires):
+            sizes[i] = rep.ansatz.array.shape[i + 1] if wire.repr == ReprEnum.FOCK else 0
+
+    path = optimal(inputs=[frozenset(idx) for idx in indices], fock_size_dict=sizes)
+
+    for a, b in path:
+        common = list(set(indices[a]) & set(indices[b]))
+        remaining = [i for i in indices[a] + indices[b] if i not in common]
+        idx_a = [indices[a].index(i) for i in common]
+        idx_b = [indices[b].index(i) for i in common]
+        ansatze.append(ansatze[a].contract(ansatze[b], idx_a, idx_b))
+        indices.append(remaining)
+
+    return ansatze[-1]
 
 
 def _CV_flops(nA: int, nB: int, m: int) -> int:
