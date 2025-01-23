@@ -223,7 +223,7 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=[0]), 0), batched=True)
+        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=0), 0), batched=True)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
