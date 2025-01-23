@@ -475,7 +475,7 @@ class PolyExpAnsatz(Ansatz):
                 )
             )
         A, b, c = zip(*Abc)
-        return PolyExpAnsatz(A=A, b=b, c=c)
+        return PolyExpAnsatz(A=math.astensor(A), b=math.astensor(b), c=math.astensor(c))
 
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
