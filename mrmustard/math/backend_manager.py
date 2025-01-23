@@ -36,6 +36,7 @@ from ..utils.typing import (
 )
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
+from .backend_jax import BackendJax
 
 __all__ = [
     "BackendManager",
@@ -1167,7 +1168,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensordot product of ``a`` and ``b``
         """
-        return self._apply("tensordot", (a, b, axes))
+        return self._apply("tensordot", (a, b, tuple(axes)))
 
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         r"""The tiled array.

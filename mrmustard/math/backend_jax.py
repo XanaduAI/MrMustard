@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 from typing import Callable, Sequence
-
+import os
 import jax
+
+jax.config.update('jax_default_device', jax.devices('cpu')[0])  # comment this line to run on GPU
+jax.config.update("jax_enable_x64", True)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # comment this line to run on GPU
+os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
+
 import jax.numpy as jnp
 import jax.scipy as jsp
 from jax.experimental import host_callback
@@ -74,19 +80,25 @@ class BackendJax(BackendBase):
         dtype = dtype or (array.dtype.name if hasattr(array, 'dtype') else None)
         return jnp.asarray(array, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    #@partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_1d(self.cast(array, dtype))
+        return jnp.atleast_1d(array)
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    #@partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_2d(self.cast(self.astensor(array), dtype))
+        return jnp.atleast_2d(array)
+    
+    @partial(jax.jit, static_argnames=['self'])
+    def log(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.log(array)
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    #@partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
+        if isinstance(array, tuple):
+            raise ValueError("Tuple input is not supported for atleast_3d.")
+        array = self.atleast_2d(self.atleast_1d(array))
         if len(array.shape) == 2:
-            array = self.expand_dims(array, 0)
+            array = array[None, ...]
         return array
 
     @partial(jax.jit, static_argnames=['self'])
@@ -319,9 +331,13 @@ class BackendJax(BackendBase):
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
 
-    #@partial(jax.jit, static_argnames=['self', 'axes'])
+    @partial(jax.jit, static_argnames=['self', 'axes'])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
-        return jnp.sum(array, axis=-1)
+        return jnp.sum(array, axis=axes)
+
+    @Autocast()
+    def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
+        return jnp.tensordot(a, b, axes)
 
     @partial(jax.jit, static_argnames=['self', 'dtype'])
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
@@ -467,6 +483,9 @@ class BackendJax(BackendBase):
         return (jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC), None)
 
     hermite_renormalized.defvjp(hermite_renormalized_fwd, hermite_renormalized_bwd)
+
+    def hermite_renormalized_batch(self, A, b, c, shape):
+        return strategies.vanilla_batch(tuple(shape), np.array(A), np.array(b), np.array(c))
 
 
     # Add other Hermite-related functions as needed, following the same pattern as the TensorFlow backend 

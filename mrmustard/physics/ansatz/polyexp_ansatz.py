@@ -435,12 +435,13 @@ class PolyExpAnsatz(Ansatz):
                 ]
             )  # (b_abc,b_arg,poly)
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
-            val = math.sum(
-                exp_sum
-                * math.sum(
+            res = math.sum(
                     poly * self.c,
                     axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
-                ),
+            )
+            val = math.sum(
+                exp_sum
+                * res,
                 axis=[-1],
             )  # (b_arg)
         return val
@@ -475,7 +476,7 @@ class PolyExpAnsatz(Ansatz):
                 )
             )
         A, b, c = zip(*Abc)
-        return PolyExpAnsatz(A=A, b=b, c=c)
+        return PolyExpAnsatz(A=math.astensor(A), b=math.astensor(b), c=math.astensor(c))
 
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
@@ -498,29 +499,29 @@ class PolyExpAnsatz(Ansatz):
         new_indices = np.concatenate([z_none, beta_indices], axis=0)
 
         # new A
-        new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
+        new_A = math.gather(math.gather(Ai, tuple(new_indices), axis=0), tuple(new_indices), axis=1)
 
         # new b
         b_alpha = math.einsum(
             "ij,j",
-            math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1),
+            math.gather(math.gather(Ai, tuple(z_none), axis=0), tuple(z_not_none), axis=1),
             gamma,
         )
         b_beta = math.einsum(
             "ij,j",
-            math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
+            math.gather(math.gather(Ai, tuple(beta_indices), axis=0), tuple(z_not_none), axis=1),
             gamma,
         )
-        new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
+        new_b = math.gather(bi, tuple(new_indices), axis=0) + math.concat((b_alpha, b_beta), axis=-1)
 
         # new c
         A_part = math.einsum(
             "i,j,ij",
             gamma,
             gamma,
-            math.gather(math.gather(Ai, z_not_none, axis=0), z_not_none, axis=1),
+            math.gather(math.gather(Ai, tuple(z_not_none), axis=0), tuple(z_not_none), axis=1),
         )
-        b_part = math.einsum("j,j", math.gather(bi, z_not_none, axis=0), gamma)
+        b_part = math.einsum("j,j", math.gather(bi, tuple(z_not_none), axis=0), gamma)
         exp_sum = math.exp(1 / 2 * A_part + b_part)
         new_c = ci * exp_sum
         return new_A, new_b, new_c
