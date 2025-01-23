@@ -80,9 +80,6 @@ doc = [
     "xanadu-sphinx-theme==0.1.0",
 ]
 
-[tool.uv]
-default-groups = ["dev", "doc"]
-
 [tool.setuptools]
 py-modules = []
 
