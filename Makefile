@@ -27,7 +27,7 @@ install:
 ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
-	poetry install
+	uv install
 
 
 .PHONY: install-all
@@ -35,11 +35,11 @@ install-all:
 ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
-	poetry install --all-extras --with dev,doc
+	uv install --all-extras --group doc
 
 .PHONY: dist
 dist:
-	poetry build
+	uv build
 
 .PHONY : clean
 clean:
