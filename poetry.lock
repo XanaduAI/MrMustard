@@ -1352,34 +1352,6 @@ files = [
 referencing = ">=0.31.0"
 
 [[package]]
-name = "juliacall"
-version = "0.9.23"
-description = "Julia and Python in seamless harmony"
-optional = false
-python-versions = "~=3.8"
-files = [
-    {file = "juliacall-0.9.23-py3-none-any.whl", hash = "sha256:67689bdeadf8438f4b302cbe88b31610ee8b345577b4df04328d67c4e66f5e62"},
-    {file = "juliacall-0.9.23.tar.gz", hash = "sha256:536f2e0f4ccfd34920322121b4353079029123eae81b7200ed1787e49d8053d2"},
-]
-
-[package.dependencies]
-juliapkg = ">=0.1.8,<0.2.0"
-
-[[package]]
-name = "juliapkg"
-version = "0.1.15"
-description = "Julia version manager and package manager"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "juliapkg-0.1.15-py3-none-any.whl", hash = "sha256:47b3ebb5bc200b31252e3be0e740a37925ff472919cac84f32b7bd4afa3a1a53"},
-    {file = "juliapkg-0.1.15.tar.gz", hash = "sha256:a36096fed2ddfe6fbd1af9bfd1b182136d84a660d0c4187539194229fb383720"},
-]
-
-[package.dependencies]
-semver = ">=3.0,<4.0"
-
-[[package]]
 name = "jupyter-core"
 version = "5.7.2"
 description = "Jupyter core package. A base package on which Jupyter projects rely."
@@ -3346,17 +3318,6 @@ dev = ["Django (>=1.11)", "check-manifest", "colorama (<=0.4.1)", "coverage", "f
 doc = ["Sphinx", "sphinx-rtd-theme"]
 
 [[package]]
-name = "semver"
-version = "3.0.2"
-description = "Python helper for Semantic Versioning (https://semver.org)"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "semver-3.0.2-py3-none-any.whl", hash = "sha256:b1ea4686fe70b981f85359eda33199d60c53964284e0cfb4977d243e37cf4bf4"},
-    {file = "semver-3.0.2.tar.gz", hash = "sha256:6253adb39c70f6e51afed2fa7152bcd414c411286088fb4b9effb133885ab4cc"},
-]
-
-[[package]]
 name = "setuptools"
 version = "75.6.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -4287,4 +4248,4 @@ ray = ["ray", "scikit-optimize"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "1e119b47477c660785711a20bda14c7e5934074e8f5db62ee4082b0a1f63187f"
+content-hash = "f6eabccf70c3adf4e33e514bc82a9e01e99c91a5b3f793a9c60082f02313836d"
