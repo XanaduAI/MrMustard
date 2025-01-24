@@ -215,3 +215,8 @@ class Representation:
         rep = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
         rep = rep.reorder(perm) if perm else rep
         return Representation(rep, wires_result)
+
+    def contract(
+        self, other: Representation, idx_z: list[int], idx_zconj: list[int]
+    ) -> Representation:
+        pass

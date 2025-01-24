@@ -49,8 +49,8 @@ def mm_einsum(*args: list[CircuitComponent | list[int]]):
     sizes = {}
     for rep, idx in zip(representations, indices):
         for j, (i, wire) in enumerate(zip(idx, rep.wires)):
-            # i+1 because the first index is the batch dimension
-            sizes[i] = rep.ansatz.array.shape[j + 1] if wire.repr == ReprEnum.FOCK else 0
+            if wire.repr == ReprEnum.FOCK:
+                sizes[i] = rep.ansatz.array.shape[j + 1]  # j+1 because the first index is the batch
 
     contraction_order = optimal(inputs=[frozenset(idx) for idx in indices], fock_size_dict=sizes)
 
