@@ -58,7 +58,7 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor], batched=False):
         super().__init__()
-        self._array = array if batched else [array]
+        self._array = array if batched else math.astensor([array])
         self._backend_array = False
         self._original_abc_data = None
 

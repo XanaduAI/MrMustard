@@ -35,6 +35,9 @@
 * Update major version of `rich` dependency to version 13.
   [(#512)](https://github.com/XanaduAI/MrMustard/pull/512)
 
+* Cast tuples to tensors before initializing the `PolyExpAnsatz` class.
+  [(#545)](https://github.com/XanaduAI/MrMustard/pull/545)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
@@ -65,7 +68,7 @@
 [Kasper Nielsen](https://github.com/kaspernielsen96)
 [Matthew Silverman](https://github.com/timmysilv)
 [Ali Asadi](https://github.com/maliasadi)
-
+[Hitarth Choubisa](https://github.com/hitarth64)
 
 ---
 
