@@ -97,9 +97,9 @@ class PolyExpAnsatz(Ansatz):
         name: str = "",
     ):
         super().__init__()
-        self._A = A
-        self._b = b
-        self._c = c
+        self._A = math.astensor(A) if A is not None else None
+        self._b = math.astensor(b) if b is not None else None
+        self._c = math.astensor(c) if c is not None else None
         self._backends = [False, False, False]
         self._simplified = False
         self.name = name
@@ -475,7 +475,7 @@ class PolyExpAnsatz(Ansatz):
                 )
             )
         A, b, c = zip(*Abc)
-        return PolyExpAnsatz(A=A, b=b, c=c)
+        return PolyExpAnsatz(A=math.astensor(A), b=math.astensor(b), c=math.astensor(c))
 
     def _call_none_single(self, Ai, bi, ci, zi):
         r"""
