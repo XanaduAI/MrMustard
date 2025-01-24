@@ -22,7 +22,7 @@ import pytest
 from ipywidgets import HTML
 
 from mrmustard.lab_dev.states import QuadratureEigenstate
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, ReprEnum
 
 from ..conftest import skip_np
 
@@ -150,6 +150,20 @@ class TestWires:
         v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
+
+    def test_wire_properties_adjoint(self):
+        w = Wires(modes_out_bra={0}, modes_out_ket={0})
+        w.wire(0, is_ket=True, is_out=True).repr = ReprEnum.FOCK
+
+        w_adj = w.adjoint
+        assert w_adj.wire(0, is_ket=False, is_out=True).repr == ReprEnum.FOCK
+
+    def test_wire_properties_dual(self):
+        w = Wires(modes_out_bra={0}, modes_in_bra={0})
+        w.wire(0, is_ket=False, is_out=True).repr = ReprEnum.FOCK
+
+        w_d = w.dual
+        assert w_d.wire(0, is_ket=False, is_out=False).repr == ReprEnum.FOCK
 
 
 class TestWiresDisplay:

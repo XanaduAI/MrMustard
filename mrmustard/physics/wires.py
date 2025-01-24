@@ -20,7 +20,7 @@ relationships in quantum optical circuits.
 
 
 class LegibleEnum(Enum):
-    """Enum class that provides a more legible string representation."""
+    r"""Enum class that provides a more legible string representation."""
 
     def __str__(self) -> str:
         return self.name
@@ -30,7 +30,7 @@ class LegibleEnum(Enum):
 
 
 class ReprEnum(LegibleEnum):
-    """Enumeration of possible representations for quantum states and operations."""
+    r"""Enumeration of possible representations for quantum states and operations."""
 
     UNSPECIFIED = auto()
     BARGMANN = auto()
@@ -41,7 +41,7 @@ class ReprEnum(LegibleEnum):
 
 
 class WiresType(LegibleEnum):
-    """Enumeration of possible wire types in quantum circuits."""
+    r"""Enumeration of possible wire types in quantum circuits."""
 
     DM_LIKE = auto()  # only output ket and bra on same modes
     KET_LIKE = auto()  # only output ket
@@ -54,7 +54,7 @@ class WiresType(LegibleEnum):
 
 @dataclass
 class QuantumWire:
-    """
+    r"""
     Represents a quantum wire in a circuit.
 
     Args:
@@ -96,7 +96,7 @@ class QuantumWire:
         )
 
     def copy(self, new_id: bool = False) -> QuantumWire:
-        """Create a copy of the quantum wire.
+        r"""Create a copy of the quantum wire.
 
         Args:
             new_id (bool): If True, generates a new ID for the copy. Defaults to False.
@@ -115,7 +115,7 @@ class QuantumWire:
         )
 
     def _order(self) -> int:
-        """
+        r"""
         Artificial ordering for sorting quantum wires.
         Order achieved is by bra/ket, then out/in, then mode.
         """
@@ -124,7 +124,7 @@ class QuantumWire:
 
 @dataclass
 class ClassicalWire:
-    """
+    r"""
     Represents a classical wire in a circuit.
 
     Args:
@@ -159,7 +159,7 @@ class ClassicalWire:
         return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
 
     def copy(self, new_id: bool = False) -> ClassicalWire:
-        """Returns a copy of the classical wire."""
+        r"""Returns a copy of the classical wire."""
         return ClassicalWire(
             mode=self.mode,
             is_out=self.is_out,
@@ -170,11 +170,14 @@ class ClassicalWire:
         )
 
     def _order(self) -> int:
-        """
+        r"""
         Artificial ordering for sorting classical wires.
         Order is by out/in, then mode. Classical wires always come after quantum wires.
         """
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
+
+
+## MARK: WIRES
 
 
 class Wires:  # pylint: disable=too-many-public-methods
@@ -371,43 +374,77 @@ class Wires:  # pylint: disable=too-many-public-methods
         return w
 
     def copy(self, new_ids: bool = False) -> Wires:
-        """Returns a deep copy of this Wires object."""
+        r"""Returns a deep copy of this Wires object."""
         return Wires.from_wires(
             quantum={q.copy(new_ids) for q in self.quantum_wires},
             classical={c.copy(new_ids) for c in self.classical_wires},
         )
 
-    ###### NEW WIRES ######
+    def _transform(
+        self,
+        quantum_transform: Callable[[QuantumWire], QuantumWire],
+        classical_transform: Callable[[ClassicalWire], ClassicalWire] = lambda x: x,
+        reindex: bool = False,
+    ) -> Wires:
+        r"""
+        Applies a transformation function to each wire, preserving their data
+        (mode, representation, etc.) unless deliberately changed.
+
+        Args:
+            quantum_transform: A function that takes a QuantumWire and returns a new QuantumWire.
+            classical_transform: A function that takes a ClassicalWire and returns a new ClassicalWire.
+            reindex: Whether to reindex the wires.
+
+        Returns:
+            A new Wires object with the transformed wires.
+        """
+        new_quantum = {quantum_transform(q) for q in self.quantum_wires}
+        new_classical = {classical_transform(c) for c in self.classical_wires}
+        new_wires = Wires.from_wires(quantum=new_quantum, classical=new_classical, copy=False)
+        if reindex:
+            new_wires._reindex()
+        return new_wires
+
+    ## MARK: NEW WIRES
 
     @cached_property
     def adjoint(self) -> Wires:
         r"""
         New ``Wires`` object with the adjoint quantum wires (ket becomes bra and vice versa).
         """
-        return Wires(
-            modes_out_bra=self.output.ket.modes,
-            modes_in_bra=self.input.ket.modes,
-            modes_out_ket=self.output.bra.modes,
-            modes_in_ket=self.input.bra.modes,
-            classical_out=self.output.classical.modes,
-            classical_in=self.input.classical.modes,
-        )
+
+        def _adjoint_transform(wire: QuantumWire) -> QuantumWire:
+            new_wire = wire.copy()
+            new_wire.is_ket = not wire.is_ket
+            return new_wire
+
+        return self._transform(quantum_transform=_adjoint_transform, reindex=True)
 
     @cached_property
     def dual(self) -> Wires:
         r"""
         New ``Wires`` object with dual quantum and classical wires (input becomes output and vice versa).
         """
-        return Wires(
-            modes_out_bra=self.input.bra.modes,
-            modes_in_bra=self.output.bra.modes,
-            modes_out_ket=self.input.ket.modes,
-            modes_in_ket=self.output.ket.modes,
-            classical_out=self.input.classical.modes,
-            classical_in=self.output.classical.modes,
+
+        def _dual_transform(wire: QuantumWire | ClassicalWire) -> QuantumWire | ClassicalWire:
+            new_wire = wire.copy()
+            new_wire.is_out = not wire.is_out
+            return new_wire
+
+        return self._transform(
+            quantum_transform=_dual_transform, classical_transform=_dual_transform, reindex=True
         )
 
-    ###### SUBSETS OF WIRES ######
+    ## MARK: SUBSETS OF WIRES
+
+    def wire(self, mode: int, is_ket: bool, is_out: bool) -> QuantumWire | ClassicalWire:
+        r"""
+        Returns the wire with the given mode, is_ket, and is_out.
+        """
+        return next(
+            (w for w in self.wires if w.mode == mode and w.is_ket == is_ket and w.is_out == is_out),
+            None,
+        )
 
     def __getitem__(self, modes: tuple[int, ...] | int) -> Wires:
         r"""
@@ -473,7 +510,7 @@ class Wires:  # pylint: disable=too-many-public-methods
             classical={c for c in self.classical_wires if c.is_out},
         )
 
-    ###### PROPERTIES ######
+    ## MARK: PROPERTIES
 
     @property
     def modes(self) -> set[int]:
@@ -517,7 +554,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         """
         return sorted({*self.quantum_wires, *self.classical_wires}, key=lambda s: s._order())
 
-    ###### METHODS ######
+    ## MARK: METHODS
 
     def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
         r"""
