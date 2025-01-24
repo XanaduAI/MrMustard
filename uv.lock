@@ -2,12 +2,18 @@ version = 1
 requires-python = ">=3.9, <3.13"
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -245,8 +251,10 @@ name = "contourpy"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -308,10 +316,14 @@ version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -424,8 +436,10 @@ name = "dask"
 version = "2024.8.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -449,10 +463,14 @@ version = "2025.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -885,8 +903,10 @@ name = "ipython"
 version = "8.18.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -913,10 +933,14 @@ version = "8.31.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -1072,8 +1096,10 @@ name = "kiwisolver"
 version = "1.4.7"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/4d/2255e1c76304cbd60b48cee302b66d1dde4468dc5b1160e4b7cb43778f2a/kiwisolver-1.4.7.tar.gz", hash = "sha256:9893ff81bd7107f7b685d3017cc6583daadb4fc26e4a888350df530e41980a60", size = 97286 }
@@ -1162,10 +1188,14 @@ version = "1.4.8"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -1378,8 +1408,10 @@ name = "matplotlib"
 version = "3.9.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -1432,10 +1464,14 @@ version = "3.10.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -1574,8 +1610,6 @@ dependencies = [
     { name = "semantic-version" },
     { name = "tensorflow" },
     { name = "tensorflow-intel", marker = "sys_platform == 'win32'" },
-    { name = "tensorflow-io-gcs-filesystem", version = "0.31.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' and sys_platform == 'win32'" },
-    { name = "tensorflow-io-gcs-filesystem", version = "0.37.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and sys_platform == 'win32') or (platform_machine != 'arm64' and sys_platform == 'darwin') or (sys_platform != 'darwin' and sys_platform != 'win32')" },
     { name = "tensorflow-probability", extra = ["tf"] },
     { name = "thewalrus" },
 ]
@@ -1625,8 +1659,6 @@ requires-dist = [
     { name = "semantic-version", specifier = ">=2.10.0,<3" },
     { name = "tensorflow", specifier = ">=2.15.0,<2.19.0" },
     { name = "tensorflow-intel", marker = "sys_platform == 'win32'", specifier = ">=2.15.0,<3" },
-    { name = "tensorflow-io-gcs-filesystem", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'", specifier = ">=0.23.1,<1" },
-    { name = "tensorflow-io-gcs-filesystem", marker = "python_full_version < '3.12' and sys_platform == 'win32'", specifier = "<0.32.0" },
     { name = "tensorflow-probability", extras = ["tf"], specifier = ">=0.22.0,<1.0" },
     { name = "thewalrus", specifier = ">=0.19.0,<1" },
 ]
@@ -1742,8 +1774,10 @@ name = "networkx"
 version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c4/80/a84676339aaae2f1cfdf9f418701dd634aef9cc76f708ef55c36ff39c3ca/networkx-3.2.1.tar.gz", hash = "sha256:9f1bb5cf3409bf324e0a722c20bdb4c20ee39bf1c30ce8ae499c8502b0b5e0c6", size = 2073928 }
@@ -1757,10 +1791,14 @@ version = "3.4.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -2533,8 +2571,10 @@ name = "scipy"
 version = "1.13.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -2574,10 +2614,14 @@ version = "1.15.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -2895,8 +2939,8 @@ dependencies = [
     { name = "setuptools" },
     { name = "six" },
     { name = "tensorboard" },
-    { name = "tensorflow-io-gcs-filesystem", version = "0.31.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' and sys_platform == 'win32'" },
-    { name = "tensorflow-io-gcs-filesystem", version = "0.37.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' and sys_platform != 'win32'" },
+    { name = "tensorflow-io-gcs-filesystem", version = "0.31.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and platform_machine == 'Windows') or (python_full_version < '3.12' and sys_platform == 'win32')" },
+    { name = "tensorflow-io-gcs-filesystem", version = "0.37.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' and platform_machine != 'Windows' and sys_platform != 'win32'" },
     { name = "termcolor" },
     { name = "typing-extensions" },
     { name = "wrapt" },
@@ -2925,29 +2969,28 @@ name = "tensorflow-intel"
 version = "2.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "astunparse", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "flatbuffers", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "gast", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "google-pasta", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "grpcio", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "h5py", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "keras", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "libclang", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "ml-dtypes", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "numpy", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "opt-einsum", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "packaging", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "protobuf", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "requests", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "setuptools", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "six", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "tensorboard", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
+    { name = "absl-py", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "astunparse", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "flatbuffers", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "gast", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "google-pasta", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "grpcio", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "h5py", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "keras", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "libclang", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "ml-dtypes", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "numpy", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "opt-einsum", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "packaging", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "protobuf", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "requests", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "setuptools", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "six", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "tensorboard", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
     { name = "tensorflow-io-gcs-filesystem", version = "0.31.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' and sys_platform == 'win32'" },
-    { name = "tensorflow-io-gcs-filesystem", version = "0.37.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'win32')" },
-    { name = "termcolor", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "typing-extensions", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
-    { name = "wrapt", marker = "platform_machine != 'arm64' or sys_platform != 'darwin'" },
+    { name = "termcolor", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "typing-extensions", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
+    { name = "wrapt", marker = "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin') or sys_platform == 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/47/e1a7cc95eccaaa52f47c3de8fd81abcfce105979790892f52e745339f929/tensorflow_intel-2.18.0-cp310-cp310-win_amd64.whl", hash = "sha256:34701c988f3e20415a8e450a1384339e9f013950db70fa0361b79cddd1e8431b", size = 390026830 },
@@ -2961,13 +3004,28 @@ name = "tensorflow-io-gcs-filesystem"
 version = "0.31.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.10.*' and sys_platform == 'win32'",
-    "python_full_version < '3.10' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform != 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine == 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform == 'win32'",
 ]
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/f1/30c558bf7e795d02415e6e836f6190367130e0dfb8de585b8b81ddde5c7f/tensorflow_io_gcs_filesystem-0.31.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:a71421f8d75a093b6aac65b4c8c8d2f768c3ca6215307cf8c16192e62d992bcf", size = 1642401 },
+    { url = "https://files.pythonhosted.org/packages/d4/e0/802488d94fdd14832d9832bd1fbd89cebac2519270d99ce1fe1c75eeb4b2/tensorflow_io_gcs_filesystem-0.31.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:359134ecbd3bf938bb0cf65be4526106c30da461b2e2ce05446a229ed35f6832", size = 2381672 },
+    { url = "https://files.pythonhosted.org/packages/be/79/b18c800a17a10abeae3e8aa420fb452646c8f501bac82d61626437c48b0e/tensorflow_io_gcs_filesystem-0.31.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b658b33567552f155af2ed848130f787bfda29381fa78cd905d5ee8254364f3c", size = 2572150 },
     { url = "https://files.pythonhosted.org/packages/78/51/437068ed6b44162d54addb8ac0ddfe9e406d07ac6f9c8a6cf96869ec2262/tensorflow_io_gcs_filesystem-0.31.0-cp310-cp310-win_amd64.whl", hash = "sha256:961353b38c76471fa296bb7d883322c66b91415e7d47087236a6706db3ab2758", size = 1486315 },
+    { url = "https://files.pythonhosted.org/packages/84/00/900ca310ff2e46eb3127f8f54af0b0000a6cc786be6a54dc2cfe841f4683/tensorflow_io_gcs_filesystem-0.31.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:8909c4344b0e96aa356230ab460ffafe5900c33c1aaced65fafae71d177a1966", size = 1642401 },
+    { url = "https://files.pythonhosted.org/packages/e7/c4/0d44ef93add3432ce43f37fe0c205cc7b6fd685fca80054fb4a646a9dbe3/tensorflow_io_gcs_filesystem-0.31.0-cp311-cp311-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e417faf8755aafe52d8f8c6b5ae5bae6e4fae8326ee3acd5e9181b83bbfbae87", size = 2381673 },
+    { url = "https://files.pythonhosted.org/packages/a8/2b/3064195efa016fff942009fe965ecbbbbd7d70bf34ee22d4ff31a0f3443a/tensorflow_io_gcs_filesystem-0.31.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:37c40e3c4ee1f8dda3b545deea6b8839192c82037d8021db9f589908034ad975", size = 2572150 },
     { url = "https://files.pythonhosted.org/packages/ac/4e/9566a313927be582ca99455a9523a097c7888fc819695bdc08415432b202/tensorflow_io_gcs_filesystem-0.31.0-cp311-cp311-win_amd64.whl", hash = "sha256:4bb37d23f21c434687b11059cb7ffd094d52a7813368915ba1b7057e3c16e414", size = 1486315 },
+    { url = "https://files.pythonhosted.org/packages/8f/1e/156cfa4ec1355404306877c717fd9146d84f756b7dd3d56ac56b35e6fe3d/tensorflow_io_gcs_filesystem-0.31.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:68b89ef9f63f297de1cd9d545bc45dddc7d8fe12bcda4266279b244e8cf3b7c0", size = 1642405 },
+    { url = "https://files.pythonhosted.org/packages/df/06/da3836020ea6e19e261dc2af5d1202afc476fac8c89194acbd28bc522cfa/tensorflow_io_gcs_filesystem-0.31.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e6d8cc7b14ade870168b9704ee44f9c55b468b9a00ed40e12d20fffd321193b5", size = 2383431 },
+    { url = "https://files.pythonhosted.org/packages/de/6e/7e3ad8dc858bc74c4fe44b28386b0e5df0dbb63dc25ab7df95cef03fe6c1/tensorflow_io_gcs_filesystem-0.31.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:97ebb9a8001a38f615aa1f90d2e998b7bd6eddae7aafc92897833610b039401b", size = 2572153 },
     { url = "https://files.pythonhosted.org/packages/7f/a7/5cf33981539f8bb8d50e5743d82435e09b387583f48ca40c211a9bf3ea3c/tensorflow_io_gcs_filesystem-0.31.0-cp39-cp39-win_amd64.whl", hash = "sha256:cb7459c15608fe42973a78e4d3ad7ac79cfc7adae1ccb1b1846db3165fbc081a", size = 1486315 },
 ]
 
@@ -2976,10 +3034,9 @@ name = "tensorflow-io-gcs-filesystem"
 version = "0.37.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "(python_full_version >= '3.12' and platform_machine != 'arm64') or (python_full_version >= '3.12' and sys_platform != 'darwin')",
-    "(python_full_version == '3.11.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version == '3.10.*' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
-    "(python_full_version < '3.10' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "(python_full_version == '3.11.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "(python_full_version == '3.10.*' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.10.*' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "(python_full_version < '3.10' and platform_machine != 'Windows' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.10' and platform_machine != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32')",
     "python_full_version == '3.11.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.10.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version < '3.10' and platform_machine == 'arm64' and sys_platform == 'darwin'",
