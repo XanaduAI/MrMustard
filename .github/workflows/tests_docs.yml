@@ -29,14 +29,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --no-cache-dir --upgrade pip setuptools wheel
-          pip install --no-cache-dir uv==0.5.23
-          uv sync --all-extras --group doc
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.23"
 
       - name: Run tests
         run: |
-          uv run pytest --doctest-modules mrmustard/math/parameter_set.py
-          uv run pytest --doctest-modules mrmustard/physics/ansatz
-          uv run pytest --doctest-modules mrmustard/lab_dev
+          uv run --all-extras --group doc pytest --doctest-modules mrmustard/math/parameter_set.py
+          uv run --all-extras --group doc pytest --doctest-modules mrmustard/physics/ansatz
+          uv run --all-extras --group doc pytest --doctest-modules mrmustard/lab_dev
