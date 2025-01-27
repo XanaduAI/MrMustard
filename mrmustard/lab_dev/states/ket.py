@@ -162,7 +162,7 @@ class Ket(State):
         S_2 = S[:m, m:]
         A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
-        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
+        psi = cls.from_bargmann(modes, (A, b, complex(1)))
         return psi.normalize()
 
     def auto_shape(
