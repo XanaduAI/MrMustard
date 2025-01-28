@@ -41,11 +41,13 @@ Development environment
 -----------------------
 
 Mr Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
-dependencies can be installed via ``poetry``:
+dependencies can be installed via ``uv``:
 
 .. code-block:: bash
 
-    poetry install --with dev
+    uv sync
+
+This will install all dependencies and create a virtual environment for development.
 
 Software tests
 --------------
@@ -158,7 +160,7 @@ Additional packages are required to build the documentation, as specified in
 
 .. code-block:: bash
 
-    poetry install --with doc
+    uv sync --group doc
 
 from within the top-level directory. To then build the HTML documentation, run
 
