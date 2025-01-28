@@ -158,7 +158,7 @@ class Representation:
         if not batched:
             return arrays[0]
         else:
-            array = math.sum(arrays, axes=[0])
+            array = math.sum(arrays, axis=[0])
             arrays = math.expand_dims(array, 0)
             return arrays
 

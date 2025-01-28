@@ -276,6 +276,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The corresponidng numpy array.
         """
         return self._apply("asnumpy", (tensor,))
+    
+    def getnan(self, size):
+        return self._apply("getnan", (size,))
 
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         r"""Assigns value to tensor.
@@ -342,6 +345,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least three dimensions.
         """
         return self._apply("atleast_3d", (array, dtype))
+
+    def vectorize(self, func, signature):
+        return self._apply("vectorize", (func, signature))
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
@@ -1544,10 +1550,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return b_full
 
         N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
+        indices = self.astensor(modes + [m + N for m in modes])
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices[:, None], b_rows)
+        return self.update_tensor(b_full, indices, b_rows)
 
     def right_matmul_at_modes(
         self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
@@ -1577,9 +1583,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
+        indices = self.astensor(modes + [m + N for m in modes])
         updates = self.matvec(mat, self.gather(vec, indices, axis=0))
-        return self.update_tensor(vec, indices[:, None], updates)
+        return self.update_tensor(vec, indices, updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         """Returns all the diagonals of a density matrix."""

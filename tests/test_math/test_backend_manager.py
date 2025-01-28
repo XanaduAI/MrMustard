@@ -19,6 +19,7 @@ Unit tests for the :class:`BackendManager`.
 import numpy as np
 import pytest
 import tensorflow as tf
+from jax import numpy as jnp
 
 from mrmustard import math
 
@@ -71,10 +72,10 @@ class TestBackendManager:
         r"""
         Tests the ``allclose`` method.
         """
-        arr1 = [1, 2, 3]
-        arr2 = [1, 2, 3]
-        arr3 = [1.01, 2, 3]
-        arr4 = [2, 3, 1]
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([1, 2, 3])
+        arr3 = math.astensor([1.01, 2, 3])
+        arr4 = math.astensor([2, 3, 1])
 
         assert math.allclose(arr1, arr2)
         assert not math.allclose(arr1, arr3)
@@ -85,11 +86,16 @@ class TestBackendManager:
         r"""
         Tests the error of ``allclose`` method.
         """
-        arr1 = [1, 2, 3]
-        arr2 = [[1, 2, 3]]
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([[1, 2], [1, 2]])
 
-        with pytest.raises(ValueError, match="Cannot compare"):
-            math.allclose(arr1, arr2)
+        if math.backend_name != "jax":
+            with pytest.raises(ValueError, match="Cannot compare"):
+                math.allclose(arr1, arr2)
+        else:
+            with pytest.raises(ValueError, match="Incompatible shapes"):
+                math.allclose(arr2, arr1)
+
 
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
@@ -207,11 +213,11 @@ class TestBackendManager:
         r"""
         Tests the ``boolean_mask`` method.
         """
-        arr = np.array([1, 2, 3, 4])
-        mask = [True, False, True, True]
-        res = math.asnumpy(math.boolean_mask(arr, mask))
-        exp = np.array([1, 3, 4])
-        assert np.allclose(res, exp)
+        arr = math.astensor([1, 2, 3, 4])
+        mask = math.astensor([True, False, True, True])
+        res = math.boolean_mask(arr, mask)
+        exp = math.astensor([1, 3, 4])
+        assert math.allclose(res, exp)
 
     def test_block(self):
         r"""
@@ -257,10 +263,10 @@ class TestBackendManager:
         r"""
         Tests the ``clip`` method.
         """
-        arr = np.array(l)
+        arr = math.astensor(l)
         params = (arr, 0, 3)
-        res = math.asnumpy(math.clip(*params))
-        assert np.allclose(res, np.clip(*params))
+        res = math.astensor(math.clip(*params))
+        assert math.allclose(res, math.clip(*params))
 
     @pytest.mark.parametrize("axis", [0, 1])
     def test_concat(self, axis):
@@ -399,10 +405,13 @@ class TestBackendManager:
 
         v2 = np.array(v1)
         v3 = tf.constant(v1)
+        v4 = jnp.array(v1)
         if math.backend_name == "numpy":
-            assert math.from_backend(v2) and not math.from_backend(v3)
-        else:
-            assert math.from_backend(v3) and not math.from_backend(v2)
+            assert math.from_backend(v2) and not math.from_backend(v3) and not math.from_backend(v4)
+        elif math.backend_name == "tensorflow":
+            assert math.from_backend(v3) and not math.from_backend(v2) and not math.from_backend(v4)
+        elif math.backend_name == "jax":
+            assert math.from_backend(v4) and not math.from_backend(v2) and not math.from_backend(v3)
 
     def test_gather(self):
         r"""
@@ -442,6 +451,7 @@ class TestBackendManager:
         arr1 = np.array([1, 2])
         arr2 = tf.constant(arr1)
         arr3 = tf.Variable(arr1)
+        arr4 = jnp.array(arr1)
 
         assert not math.is_trainable(arr1)
         assert not math.is_trainable(arr2)
@@ -513,9 +523,13 @@ class TestBackendManager:
             assert np.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
-        else:
+        elif math.backend_name == "tensorflow":
             assert isinstance(res, tf.Variable)
             assert np.allclose(math.asnumpy(res), arr)
+            assert res.dtype == dtype or math.float64
+        elif math.backend_name == "jax":
+            assert isinstance(res, jnp.ndarray)
+            assert math.allclose(res, arr)
             assert res.dtype == dtype or math.float64
 
     @pytest.mark.parametrize("t", types)
@@ -570,9 +584,9 @@ class TestBackendManager:
         r"""
         Tests the ``prod`` method.
         """
-        assert np.allclose(math.prod([1]), 1)
-        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=0), [6, 6])
-        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=1), [4, 9])
+        assert np.allclose(math.prod(math.astensor([1])), 1)
+        assert np.allclose(math.prod(math.astensor([[2, 2], [3, 3]]), axis=0), [6, 6])
+        assert np.allclose(math.prod(math.astensor([[2, 2], [3, 3]]), axis=1), [4, 9])
 
     def test_real(self):
         r"""

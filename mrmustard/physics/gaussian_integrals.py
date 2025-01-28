@@ -174,8 +174,9 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     if any(i >= n or n < 0 for i in order):
         raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
     order += list(range(len(order), len(order) + dim_poly))
-    A = math.gather(math.gather(A, tuple(order), axis=-1), tuple(order), axis=-2)
-    b = math.gather(b, tuple(order), axis=-1)
+    order = math.astensor(order)
+    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
+    b = math.gather(b, order, axis=-1)
     return A, b, c
 
 
@@ -365,7 +366,9 @@ def complex_gaussian_integral_1(
             return A[0], b[0], c[0]
         return A, b, c
 
-    not_idx = tuple(i for i in range(n_plus_N) if i not in idx)
+    not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx])
+    # order matters here; idx should be made a tensor after doing all the list comprehensions and boolean operations.
+    idx = math.astensor(idx)
     eye = math.eye(m, dtype=A.dtype)
 
     eye = math.eye(m, dtype=A.dtype)

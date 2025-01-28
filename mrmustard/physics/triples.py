@@ -364,7 +364,7 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = math.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
-    c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
+    c = math.prod(math.astensor([1 / (_nbar + 1) for _nbar in nbar]))
     b = _vacuum_B_vector(n_modes * 2)
 
     return A, b, c
