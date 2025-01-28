@@ -21,8 +21,8 @@ import random
 from copy import deepcopy
 from queue import PriorityQueue
 from math import factorial
-import numpy as np
 from typing import Generator
+import numpy as np
 import networkx as nx
 from mrmustard.physics.wires import Wires
 from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
