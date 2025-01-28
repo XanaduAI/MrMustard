@@ -74,7 +74,7 @@ def update_unitary(grads_and_vars, unitary_lr: float):
 
 
 def update_euclidean(grads_and_vars, euclidean_lr: float):
-    """Updates the parameters using the euclidian gradients.""" 
+    """Updates the parameters using the euclidian gradients."""
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(grads_and_vars)
 

@@ -5,9 +5,9 @@ from typing import Callable, Sequence
 import os
 import jax
 
-jax.config.update('jax_default_device', jax.devices('cpu')[0])  # comment this line to run on GPU
+jax.config.update("jax_default_device", jax.devices("cpu")[0])  # comment this line to run on GPU
 jax.config.update("jax_enable_x64", True)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # comment this line to run on GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # comment this line to run on GPU
 os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
 
 import jax.numpy as jnp
@@ -47,11 +47,11 @@ class BackendJax(BackendBase):
     def __repr__(self) -> str:
         return "BackendJax()"
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def abs(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.abs(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
@@ -62,14 +62,13 @@ class BackendJax(BackendBase):
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
-
-    #@partial(jax.jit, static_argnames=['self', 'axes'])
+    # @partial(jax.jit, static_argnames=['self', 'axes'])
     def block(self, blocks: list[list[jnp.ndarray]], axes=(-2, -1)) -> jnp.ndarray:
-        #jax.debug.print('blocks={blocks}, axes={axes}, shape={shape1}, {shape2}, {shape3}, {shape4}', blocks=blocks, axes=axes, shape1=blocks[0][0].shape, shape2=blocks[0][1].shape, shape3=blocks[1][0].shape, shape4=blocks[1][1].shape)
+        # jax.debug.print('blocks={blocks}, axes={axes}, shape={shape1}, {shape2}, {shape3}, {shape4}', blocks=blocks, axes=axes, shape1=blocks[0][0].shape, shape2=blocks[0][1].shape, shape3=blocks[1][0].shape, shape4=blocks[1][1].shape)
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
+    @partial(jax.jit, static_argnames=["self", "axis"])
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
 
@@ -78,26 +77,26 @@ class BackendJax(BackendBase):
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
-    
+
     def vectorize(self, func, signature):
         return jnp.vectorize(func, signature=signature)
-    
+
     def getnan(self, size):
         return jnp.full(size, jnp.nan)
 
-    #@partial(jax.jit, static_argnames=['self', 'dtype'])
+    # @partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.atleast_1d(array)
 
-    #@partial(jax.jit, static_argnames=['self', 'dtype'])
+    # @partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.atleast_2d(array)
-    
-    @partial(jax.jit, static_argnames=['self'])
+
+    @partial(jax.jit, static_argnames=["self"])
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
-    #@partial(jax.jit, static_argnames=['self', 'dtype'])
+    # @partial(jax.jit, static_argnames=['self', 'dtype'])
     def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if isinstance(array, tuple):
             raise ValueError("Tuple input is not supported for atleast_3d.")
@@ -106,7 +105,7 @@ class BackendJax(BackendBase):
             array = array[None, ...]
         return array
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def block_diag(self, mat1: jnp.ndarray, mat2: jnp.ndarray) -> jnp.ndarray:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
         Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
@@ -118,48 +117,49 @@ class BackendJax(BackendBase):
     def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable:
         lower = -jnp.inf if bounds[0] is None else bounds[0]
         upper = jnp.inf if bounds[1] is None else bounds[1]
-        
+
         @jax.jit
         def constraint(x):
             return jnp.clip(x, lower, upper)
+
         return constraint
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    @partial(jax.jit, static_argnames=["self", "dtype"])
     def cast(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if dtype is None:
             return array
         return jnp.asarray(array, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
+    @partial(jax.jit, static_argnames=["self", "axis"])
     def concat(self, values: Sequence[jnp.ndarray], axis: int) -> jnp.ndarray:
         return jnp.concatenate(values, axis)
-    
-    @partial(jax.jit, static_argnames=['self'])
+
+    @partial(jax.jit, static_argnames=["self"])
     def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9) -> bool:
         return jnp.allclose(array1, array2, atol=atol)
 
-    @partial(jax.jit, static_argnames=['self', 'a_min', 'a_max'])
+    @partial(jax.jit, static_argnames=["self", "a_min", "a_max"])
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
         return jax.lax.lgamma(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
-    
+
     @Autocast()
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
@@ -175,16 +175,16 @@ class BackendJax(BackendBase):
                 return jax.random.choice(key, idx, p=self._probs / jnp.sum(self._probs))
 
         return Generator(probs)
-    
-    @partial(jax.jit, static_argnames=['self', 'k'])
+
+    @partial(jax.jit, static_argnames=["self", "k"])
     def set_diag(self, array: jnp.ndarray, diag: jnp.ndarray, k: int) -> jnp.ndarray:
         i = jnp.arange(0, array.shape[-2] - abs(k))
-        j = jnp.arange(abs(k), array.shape[-1]) 
+        j = jnp.arange(abs(k), array.shape[-1])
         i = jnp.where(k < 0, i - array.shape[-2] + abs(k), i)
         j = jnp.where(k < 0, j - abs(k), j)
         return array.at[..., i, j].set(diag)
 
-    #@partial(jax.jit, static_argnames=['self', 'name', 'dtype', 'bounds'])
+    # @partial(jax.jit, static_argnames=['self', 'name', 'dtype', 'bounds'])
     def new_variable(
         self,
         value: jnp.ndarray,
@@ -199,14 +199,14 @@ class BackendJax(BackendBase):
             return value
         return self.constraint_func(bounds)(value)
 
-    @partial(jax.jit, static_argnames=['self', 'name', 'dtype'])
+    @partial(jax.jit, static_argnames=["self", "name", "dtype"])
     def new_constant(self, value, name: str, dtype=None):  # pylint: disable=unused-argument
         dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return value
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self', 'data_format', 'padding'])
+    @partial(jax.jit, static_argnames=["self", "data_format", "padding"])
     def convolution(
         self,
         array: jnp.ndarray,
@@ -223,15 +223,15 @@ class BackendJax(BackendBase):
         return jnp.tile(array, repeats)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
         indices = self.atleast_2d(indices)
         return tensor.at[indices].set(values)
-    
+
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def update_add_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
@@ -239,23 +239,23 @@ class BackendJax(BackendBase):
         return tensor.at[tuple(indices.T)].add(values)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.matmul(a, b)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def cos(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.cos(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def cosh(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.cosh(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
-    #@partial(jax.jit, static_argnames=['self', 'k'])
+    # @partial(jax.jit, static_argnames=['self', 'k'])
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim == 0:
             return array
@@ -279,26 +279,25 @@ class BackendJax(BackendBase):
             )
             return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
 
-            
-    @partial(jax.jit, static_argnames=['self', 'k'])
+    @partial(jax.jit, static_argnames=["self", "k"])
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    @partial(jax.jit, static_argnames=['self', 'string'])
+    @partial(jax.jit, static_argnames=["self", "string"])
     def einsum(self, string: str, *tensors) -> jnp.ndarray:
         if isinstance(string, str):
             return jnp.einsum(string, *tensors)
         return None
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.exp(array)
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
+    @partial(jax.jit, static_argnames=["self", "axis"])
     def expand_dims(self, array: jnp.ndarray, axis: int) -> jnp.ndarray:
         return jnp.expand_dims(array, axis)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jsp.linalg.expm(matrix)
 
@@ -306,32 +305,33 @@ class BackendJax(BackendBase):
         dtype = dtype or self.float64
         return jnp.eye(size, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
-    #@partial(jax.jit, static_argnames=['self'])
+    # @partial(jax.jit, static_argnames=['self'])
     def from_backend(self, value) -> bool:
         return isinstance(value, jnp.ndarray)
 
-    
-    @partial(jax.jit, static_argnames=['self', 'repeats', 'axis'])
+    @partial(jax.jit, static_argnames=["self", "repeats", "axis"])
     def repeat(self, array: jnp.ndarray, repeats: int, axis: int = None) -> jnp.ndarray:
         return jnp.repeat(array, repeats, axis=axis)
 
-    #@partial(jax.jit, static_argnames=['self', 'axis'])
-    #def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int) -> jnp.ndarray:
+    # @partial(jax.jit, static_argnames=['self', 'axis'])
+    # def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int) -> jnp.ndarray:
     #    return jnp.take(array, indices, axis=axis)
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
-    def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: None | int = None) -> jnp.ndarray:
+    @partial(jax.jit, static_argnames=["self", "axis"])
+    def gather(
+        self, array: jnp.ndarray, indices: jnp.ndarray, axis: None | int = None
+    ) -> jnp.ndarray:
         return jnp.take(array, indices, axis=axis)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def imag(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.imag(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
@@ -340,12 +340,12 @@ class BackendJax(BackendBase):
             return True
         return False
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
         return real + 1j * imag
 
     @Autocast()
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         mat = jnp.linalg.multi_dot(matrices)
         """
@@ -355,59 +355,67 @@ class BackendJax(BackendBase):
         """
         return mat
 
-    @partial(jax.jit, static_argnames=['self', 'old', 'new'])
-    def moveaxis(self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]) -> jnp.ndarray:
+    @partial(jax.jit, static_argnames=["self", "old", "new"])
+    def moveaxis(
+        self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def ones_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.ones_like(array)
 
-    def pad(self, array: jnp.ndarray, paddings: Sequence[tuple[int, int]], mode="constant", constant_values=0) -> jnp.ndarray:
+    def pad(
+        self,
+        array: jnp.ndarray,
+        paddings: Sequence[tuple[int, int]],
+        mode="constant",
+        constant_values=0,
+    ) -> jnp.ndarray:
         return jnp.pad(array, paddings, mode=mode.lower(), constant_values=constant_values)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def pinv(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.pinv(matrix)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def real(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.real(array)
 
     def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def sin(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sin(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def sinh(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sinh(array)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def solve(self, matrix: jnp.ndarray, rhs: jnp.ndarray) -> jnp.ndarray:
         if len(rhs.shape) == len(matrix.shape) - 1:
             rhs = jnp.expand_dims(rhs, -1)
             return jnp.linalg.solve(matrix, rhs)[..., 0]
         return jnp.linalg.solve(matrix, rhs)
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    @partial(jax.jit, static_argnames=["self", "dtype"])
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
-    
-    @partial(jax.jit, static_argnames=['self'])
+
+    @partial(jax.jit, static_argnames=["self"])
     def kron(self, tensor1: jnp.ndarray, tensor2: jnp.ndarray):
         return jnp.kron(tensor1, tensor2)
 
     def boolean_mask(self, tensor: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
         return tensor[mask]
 
-    @partial(jax.jit, static_argnames=['self', 'axes'])
+    @partial(jax.jit, static_argnames=["self", "axes"])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
         return jnp.sum(array, axis=axes)
 
@@ -415,7 +423,7 @@ class BackendJax(BackendBase):
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
         return jnp.tensordot(a, b, axes)
 
-    @partial(jax.jit, static_argnames=['self', 'dtype'])
+    @partial(jax.jit, static_argnames=["self", "dtype"])
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return self.cast(jnp.trace(array), dtype)
 
@@ -428,15 +436,15 @@ class BackendJax(BackendBase):
         dtype = dtype or self.float64
         return jnp.zeros(shape, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def zeros_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.zeros_like(array)
 
-    @partial(jax.jit, static_argnames=['self', 'axis'])
+    @partial(jax.jit, static_argnames=["self", "axis"])
     def squeeze(self, tensor: jnp.ndarray, axis=None):
         return jnp.squeeze(tensor, axis=axis)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def cholesky(self, input: jnp.ndarray):
         return jnp.linalg.cholesky(input)
 
@@ -444,11 +452,11 @@ class BackendJax(BackendBase):
     @jax.jit
     def eigh(tensor: jnp.ndarray) -> tuple:
         return jnp.linalg.eigh(tensor)
-    
-    @partial(jax.jit, static_argnames=['self'])
+
+    @partial(jax.jit, static_argnames=["self"])
     def where(self, array: jnp.ndarray, array1: jnp.ndarray, array2: jnp.ndarray):
         return jnp.where(array, array1, array2)
-    
+
     @property
     def inf(self):
         return jnp.inf
@@ -458,18 +466,18 @@ class BackendJax(BackendBase):
     def eigvals(tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.eigvals(tensor)
 
-    @partial(jax.jit, static_argnames=['self'])
+    @partial(jax.jit, static_argnames=["self"])
     def eqigendecomposition_sqrtm(self, tensor: jnp.ndarray) -> jnp.ndarray:
         eigvals, eigvecs = jnp.linalg.eigh(tensor)
         return eigvecs @ jnp.diag(jnp.sqrt(eigvals)) @ jnp.conj(eigvecs.T)
-    
-    @partial(jax.jit, static_argnames=['self', 'dtype', 'rtol', 'atol'])
+
+    @partial(jax.jit, static_argnames=["self", "dtype", "rtol", "atol"])
     def sqrtm(self, tensor: jnp.ndarray, dtype, rtol=1e-05, atol=1e-08) -> jnp.ndarray:
         ret = jax.lax.cond(
             jnp.allclose(tensor, 0, rtol=rtol, atol=atol),
             lambda _: self.zeros_like(tensor),
             lambda _: self.eqigendecomposition_sqrtm(tensor),
-            None
+            None,
         )
 
         if dtype is None:
@@ -480,9 +488,10 @@ class BackendJax(BackendBase):
     def DefaultEuclideanOptimizer(self):
         return jax.experimental.optimizers.adam(learning_rate=0.001)
 
-
-    #@partial(jax.jit, static_argnames=['self'])
-    def reorder_AB_bargmann(self, A: jnp.ndarray, B: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray]:
+    # @partial(jax.jit, static_argnames=['self'])
+    def reorder_AB_bargmann(
+        self, A: jnp.ndarray, B: jnp.ndarray
+    ) -> tuple[jnp.ndarray, jnp.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -492,12 +501,11 @@ class BackendJax(BackendBase):
         B = self.gather(B, ordering, axis=0)
         return A, B
 
-
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~
     @jax.custom_vjp
-    @partial(jax.jit, static_argnames=['shape'])
+    @partial(jax.jit, static_argnames=["shape"])
     def hermite_renormalized(
         A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
@@ -505,17 +513,21 @@ class BackendJax(BackendBase):
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A, b, c,
+            A,
+            b,
+            c,
         )
         return G
 
-    @partial(jax.jit, static_argnames=['shape'])
+    @partial(jax.jit, static_argnames=["shape"])
     def hermite_renormalized_fwd(A, b, c, shape):
         function = partial(strategies.vanilla, tuple(shape))
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A, b, c,
+            A,
+            b,
+            c,
         )
         return G, (G, c, A, b)
 
@@ -523,14 +535,21 @@ class BackendJax(BackendBase):
     def hermite_renormalized_bwd(res, g):
         G, c, A, b = res
         dLdA, dLdB, dLdC = jax.pure_callback(
-            lambda G, c, g: strategies.vanilla_vjp(np.array(G), np.array(c), np.conj(jax.lax.stop_gradient(g))),
-            [jax.ShapeDtypeStruct(A.shape, jnp.complex128), jax.ShapeDtypeStruct(b.shape, jnp.complex128), jax.ShapeDtypeStruct(c.shape, jnp.complex128)],
-            G, c, g
+            lambda G, c, g: strategies.vanilla_vjp(
+                np.array(G), np.array(c), np.conj(jax.lax.stop_gradient(g))
+            ),
+            [
+                jax.ShapeDtypeStruct(A.shape, jnp.complex128),
+                jax.ShapeDtypeStruct(b.shape, jnp.complex128),
+                jax.ShapeDtypeStruct(c.shape, jnp.complex128),
+            ],
+            G,
+            c,
+            g,
         )
         return (jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC), None)
 
     hermite_renormalized.defvjp(hermite_renormalized_fwd, hermite_renormalized_bwd)
-
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_batch
@@ -539,11 +558,10 @@ class BackendJax(BackendBase):
     def hermite_renormalized_batch(self, A, b, c, shape):
         return strategies.vanilla_batch(tuple(shape), np.array(A), np.array(b), np.array(c))
 
-
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_diagonal
     # ~~~~~~~~~~~~~~~~~
-    #@partial(jax.jit, static_argnames=['self', 'cutoffs'])
+    # @partial(jax.jit, static_argnames=['self', 'cutoffs'])
     def hermite_renormalized_diagonal(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -551,10 +569,11 @@ class BackendJax(BackendBase):
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
-        print('A.shape', A.shape)
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal(cutoffs=cutoffs, A=np.array(A), B=np.array(B), G0=np.array(C))
+        print("A.shape", A.shape)
+        poly0, _, _, _, _ = hermite_multidimensional_diagonal(
+            cutoffs=cutoffs, A=np.array(A), B=np.array(B), G0=np.array(C)
+        )
         return poly0
-
 
     def hermite_renormalized_diagonal_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -579,10 +598,12 @@ class BackendJax(BackendBase):
         poly0, _, _, _, _ = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C)),
             [jax.ShapeDtypeStruct(cutoffs, jnp.complex128), None, None, None, None],
-            A, B, C
+            A,
+            B,
+            C,
         )
         return poly0
-    
+
     def hermite_renormalized_binomial(
         self,
         A: jnp.ndarray,
@@ -613,10 +634,12 @@ class BackendJax(BackendBase):
         G, _ = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C)),
             [jax.ShapeDtypeStruct(shape, jnp.complex128), None, None, None],
-            A, B, C
+            A,
+            B,
+            C,
         )
         return G
-    
+
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -641,6 +664,8 @@ class BackendJax(BackendBase):
         poly0, _, _, _, _ = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C)),
             [jax.ShapeDtypeStruct(cutoffs, jnp.complex128), None, None, None, None],
-            A, B, C
+            A,
+            B,
+            C,
         )
         return poly0

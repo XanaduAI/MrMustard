@@ -96,7 +96,6 @@ class TestBackendManager:
             with pytest.raises(ValueError, match="Incompatible shapes"):
                 math.allclose(arr2, arr1)
 
-
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
         r"""
