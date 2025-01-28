@@ -276,7 +276,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The corresponidng numpy array.
         """
         return self._apply("asnumpy", (tensor,))
-    
+
     def getnan(self, size):
         return self._apply("getnan", (size,))
 
@@ -654,9 +654,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def hermite_renormalized(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
-    ) -> Tensor:
+    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
@@ -671,7 +669,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The renormalized Hermite polynomial of given shape.
         """
         return self._apply("hermite_renormalized", (A, B, C, shape))
-
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -1147,17 +1144,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
-    def sum(self, array: Tensor, axis: Sequence[int] = None):
+    def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
         r"""The sum of array.
 
         Args:
             array: The array to take the sum of
-            axes (tuple): The axis/axes to sum over
+            axis (int | Sequence[int] | None): The axis/axes to sum over
 
         Returns:
             The sum of array
         """
-        if axis is not None:
+        if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
@@ -1199,10 +1196,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The trace of array
         """
         return self._apply("trace", (array, dtype))
-    
+
     def where(self, array: Tensor, array1: Tensor, array2: Tensor):
         r"""Conditional return
-        
+
         Args:
             array: The array/variable to condition on
             array1: The array to return if ``array`` is ``True``

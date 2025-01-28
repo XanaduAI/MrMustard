@@ -97,9 +97,9 @@ class PolyExpAnsatz(Ansatz):
         name: str = "",
     ):
         super().__init__()
-        self._A = A
-        self._b = b
-        self._c = c
+        self._A = math.astensor(A) if A is not None else None
+        self._b = math.astensor(b) if b is not None else None
+        self._c = math.astensor(c) if c is not None else None
         self._backends = [False, False, False]
         self._simplified = False
         self.name = name
@@ -411,12 +411,12 @@ class PolyExpAnsatz(Ansatz):
             self.A[..., :dim_alpha, :dim_alpha] * zz, axis=[-1, -2]
         )  # sum((b_arg,1,n,n) * (b_abc,n,n), [-1,-2]) ~ (b_arg,b_abc)
         b_part = math.sum(
-            self.b[..., :dim_alpha] * z[..., None, :], axis=[-1]
+            self.b[..., :dim_alpha] * z[..., None, :], axis=-1
         )  # sum((b_arg,1,n) * (b_abc,n), [-1]) ~ (b_arg,b_abc)
 
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # (b_arg, b_abc)
         if dim_beta == 0:
-            val = math.sum(exp_sum * self.c, axis=[-1])  # (b_arg)
+            val = math.sum(exp_sum * self.c, axis=-1)  # (b_arg)
         else:
             b_poly = math.astensor(
                 math.einsum(
@@ -436,13 +436,12 @@ class PolyExpAnsatz(Ansatz):
             )  # (b_abc,b_arg,poly)
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
             res = math.sum(
-                    poly * self.c,
-                    axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
+                poly * self.c,
+                axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
             )
             val = math.sum(
-                exp_sum
-                * res,
-                axis=[-1],
+                exp_sum * res,
+                axis=-1,
             )  # (b_arg)
         return val
 
@@ -512,7 +511,9 @@ class PolyExpAnsatz(Ansatz):
             math.gather(math.gather(Ai, tuple(beta_indices), axis=0), tuple(z_not_none), axis=1),
             gamma,
         )
-        new_b = math.gather(bi, tuple(new_indices), axis=0) + math.concat((b_alpha, b_beta), axis=-1)
+        new_b = math.gather(bi, tuple(new_indices), axis=0) + math.concat(
+            (b_alpha, b_beta), axis=-1
+        )
 
         # new c
         A_part = math.einsum(

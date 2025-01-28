@@ -384,21 +384,22 @@ def complex_gaussian_integral_1(
     # Use math.where instead of if/else for jit compatibility
     det_nonzero = math.abs(det_M) > 1e-12
     # Calculate both branches
-    #inv_M = math.where(det_nonzero, math.inv(M), math.ones_like(M) * math.inf)
+    # inv_M = math.where(det_nonzero, math.inv(M), math.ones_like(M) * math.inf)
     inv_M = math.inv(M)
     M_bM = math.solve(M, bM)
-    
-    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * \
-               math.exp(-0.5 * math.sum(bM * M_bM, axis=(-1,)))
+
+    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
+        -0.5 * math.sum(bM * M_bM, axis=-1)
+    )
     c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
-    #c_post = math.where(det_nonzero,
+    # c_post = math.where(det_nonzero,
     #                   c * c_reshaped,
     #                   math.real(c) * math.inf)
     c_post = c * c_reshaped
 
     A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
     b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
-    
+
     if not batched:
         return A_post[0], b_post[0], c_post[0]
     return A_post, b_post, c_post

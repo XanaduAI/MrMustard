@@ -137,7 +137,8 @@ class Representation:
                 )
             if self.ansatz.polynomial_shape[0] == 0:
                 arrays = [
-                    math.hermite_renormalized(A=A, b=b, c=c, shape=shape) for A, b, c in zip(As, bs, cs)
+                    math.hermite_renormalized(A=A, b=b, c=c, shape=shape)
+                    for A, b, c in zip(As, bs, cs)
                 ]
             else:
                 arrays = [
@@ -158,7 +159,7 @@ class Representation:
         if not batched:
             return arrays[0]
         else:
-            array = math.sum(arrays, axis=[0])
+            array = math.sum(arrays, axis=0)
             arrays = math.expand_dims(array, 0)
             return arrays
 

@@ -1,6 +1,0 @@
-{
-    "julia": "~1.9.3",
-    "packages": {
-        "MultiFloats": {"uuid": "bdf0d083-296b-4888-a5b6-7498122e68a5"}
-    }
-}
