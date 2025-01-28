@@ -22,7 +22,7 @@ from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
-    Circuit,
+    ComputationalGraph,
     Sgate,
     S2gate,
     Vacuum,
@@ -110,7 +110,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        circ = Circuit([state, state2, bs])
+        circ = ComputationalGraph([state, state2, bs])
 
         def cost_fn():
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
@@ -149,7 +149,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        circ = Circuit([state_in, s_gate, bs_gate])
+        circ = ComputationalGraph([state_in, s_gate, bs_gate])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -196,7 +196,7 @@ class TestOptimizer:
             phi_trainable=True,
         )
         interferometer = Interferometer((0, 1), unitary_trainable=True)
-        circ = Circuit([state_in, s_gate, interferometer])
+        circ = ComputationalGraph([state_in, s_gate, interferometer])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -225,7 +225,7 @@ class TestOptimizer:
         )
         r_inter = RealInterferometer((0, 1), orthogonal_trainable=True)
 
-        circ = Circuit([state_in, s_gate, r_inter])
+        circ = ComputationalGraph([state_in, s_gate, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -290,7 +290,7 @@ class TestOptimizer:
         )
         interferometer = Interferometer((0, 1, 2, 3), unitary=perturbed_U, unitary_trainable=True)
 
-        circ = Circuit([state_in, s_gate, interferometer])
+        circ = ComputationalGraph([state_in, s_gate, interferometer])
 
         def cost_fn():
             amps = circ.contract().fock_array((3, 3, 3, 3))
@@ -338,7 +338,7 @@ class TestOptimizer:
             (0, 1, 2, 3), orthogonal=perturbed_O, orthogonal_trainable=True
         )
 
-        circ = Circuit([state_in, s_gate, r_inter])
+        circ = ComputationalGraph([state_in, s_gate, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2, 3, 3))
@@ -368,7 +368,7 @@ class TestOptimizer:
             (1, 2), r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
         )
 
-        circ = Circuit([state_in, S_01, S_23, S_12])
+        circ = ComputationalGraph([state_in, S_01, S_23, S_12])
 
         def cost_fn():
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
@@ -394,7 +394,7 @@ class TestOptimizer:
         s2_gate1 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
         s2_gate2 = S2gate((1, 2), r=r_var, phi=phi_var)
 
-        circ = Circuit([state_in, s2_gate0, s2_gate1, s2_gate2])
+        circ = ComputationalGraph([state_in, s2_gate0, s2_gate1, s2_gate2])
 
         def cost_fn():
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2

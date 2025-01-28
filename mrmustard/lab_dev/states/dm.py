@@ -34,8 +34,8 @@ from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import ComplexTensor, RealVector
 
 from .base import State, _validate_operator, OperatorType
-from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
+from ..computational_graphs.graph_component import GraphComponent
+from ..graph_component_utils import TraceOut
 
 from ..utils import shape_check
 
@@ -240,7 +240,7 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: GraphComponent):
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -394,7 +394,7 @@ class DM(State):
 
         return DM(Representation(ansatz, wires), self.name)
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rshift__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``DM`` object which
@@ -402,11 +402,11 @@ class DM(State):
         ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
 
         Returns a ``DM`` when the wires of the resulting components are compatible with
-        those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+        those of a ``DM``, a ``GraphComponent`` otherwise, and a scalar if there are no wires left.
         """
 
         result = super().__rshift__(other)
-        if not isinstance(result, CircuitComponent):
+        if not isinstance(result, GraphComponent):
             return result  # scalar case handled here
 
         if not result.wires.input and result.wires.bra.modes == result.wires.ket.modes:

@@ -22,7 +22,7 @@ from typing import Sequence
 from mrmustard import math
 from mrmustard.physics import triples
 
-from ..circuit_components import CircuitComponent
+from ..computational_graphs.graph_component import GraphComponent
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.representations import Representation
 from ...physics.wires import Wires
@@ -30,7 +30,7 @@ from ...physics.wires import Wires
 __all__ = ["TraceOut"]
 
 
-class TraceOut(CircuitComponent):
+class TraceOut(GraphComponent):
     r"""
     A circuit component to perform trace-out operations.
 
@@ -71,7 +71,7 @@ class TraceOut(CircuitComponent):
             name="Tr",
         )
 
-    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+    def __custom_rrshift__(self, other: GraphComponent | complex) -> GraphComponent | complex:
         r"""A custom ``>>`` operator for the ``TraceOut`` component.
         It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
         We know that the trace in Bargmann is a Gaussian integral, and in

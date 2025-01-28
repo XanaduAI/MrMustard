@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
+from mrmustard.lab_dev.graph_component_utils import TraceOut
 from mrmustard.lab_dev.states import Coherent
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import identity_Abc
@@ -51,7 +51,7 @@ class TestTraceOut:
         assert np.isclose(trace, 1.0)
 
     def test_trace_out_complex(self):
-        cc = CircuitComponent.from_bargmann(
+        cc = GraphComponent.from_bargmann(
             (
                 np.array([[0.1 + 0.2j, 0.3 + 0.4j], [0.3 + 0.4j, 0.5 - 0.6j]]),
                 np.array([0.7 + 0.8j, -0.9 + 0.10j]),

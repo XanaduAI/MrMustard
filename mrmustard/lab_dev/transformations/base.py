@@ -35,13 +35,13 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
-from ..circuit_components import CircuitComponent
+from ..computational_graphs.graph_component import GraphComponent
 
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 
 
-class Transformation(CircuitComponent):
+class Transformation(GraphComponent):
     r"""
     Base class for all transformations.
     """
@@ -121,7 +121,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from ..circuit_components_utils.b_to_q import BtoQ
+        from ..graph_component_utils.b_to_q import BtoQ
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -171,7 +171,7 @@ class Transformation(CircuitComponent):
 
 class Operation(Transformation):
     r"""
-    A CircuitComponent with input and output wires on the ket side. Operation are allowed
+    A GraphComponent with input and output wires on the ket side. Operation are allowed
     to have a different number of input and output wires.
     """
 
@@ -265,7 +265,7 @@ class Unitary(Operation):
             name=unitary_dual.name,
         )
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rshift__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
@@ -274,7 +274,7 @@ class Unitary(Operation):
         channel requires an input on the bra side as well.
 
         Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
-        ``Channel``, and a ``CircuitComponent`` otherwise.
+        ``Channel``, and a ``GraphComponent`` otherwise.
         """
         ret = super().__rshift__(other)
 
@@ -287,7 +287,7 @@ class Unitary(Operation):
 
 class Map(Transformation):
     r"""
-    A CircuitComponent more general than Channels, which are CPTP Maps.
+    A GraphComponent more general than Channels, which are CPTP Maps.
     """
 
     short_name = "Map"
@@ -436,12 +436,12 @@ class Channel(Map):
         kraus = ansatz.conj.contract(ansatz, range(2 * m), range(2 * m))
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __rshift__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
 
-        Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
+        Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``GraphComponent`` otherwise.
         """
         ret = super().__rshift__(other)
         if isinstance(other, (Channel, Unitary)):

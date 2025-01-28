@@ -32,7 +32,7 @@ from mrmustard.math.parameters import (
 
 import mrmustard.lab as mrml
 
-from mrmustard.lab_dev import Circuit
+from mrmustard.lab_dev import ComputationalGraph
 
 __all__ = ["Optimizer"]
 
@@ -68,11 +68,11 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Union[Constant, Variable, Circuit]],
+        by_optimizing: Sequence[Union[Constant, Variable, ComputationalGraph]],
         max_steps: int = 1000,
         callbacks: Union[Callable, Sequence[Callable], Mapping[str, Callable]] = None,
     ):
-        r"""Minimizes the given cost function by optimizing circuits and/or detectors.
+        r"""Minimizes the given cost function by optimizing graphs and/or detectors.
 
         Args:
             cost_fn (Callable): a function that will be executed in a differentiable context in
@@ -190,7 +190,7 @@ class Optimizer:
         trainables = []
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
-            if isinstance(item, Circuit):
+            if isinstance(item, ComputationalGraph):
                 for j, op in enumerate(item.components):
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameters.tagged_variables(tag)

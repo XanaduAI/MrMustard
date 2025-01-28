@@ -28,8 +28,8 @@ from mrmustard.lab_dev import (
     Attenuator,
     BSgate,
     Channel,
-    Circuit,
-    CircuitComponent,
+    GraphComponent,
+    ComputationalGraph,
     Coherent,
     Dgate,
     DisplacedSqueezed,
@@ -49,7 +49,7 @@ from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
 
-from ..random import Abc_triple
+from ...random import Abc_triple
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -58,7 +58,7 @@ autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
 # pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
-    Tests ``CircuitComponent`` objects.
+    Tests ``GraphComponent`` objects.
     """
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -66,9 +66,7 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
-        )
+        cc = GraphComponent(Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name)
 
         assert cc.name == name
         assert list(cc.modes) == [1, 8]
@@ -77,7 +75,7 @@ class TestCircuitComponent:
         assert cc.manual_shape == [None] * 4
 
     def test_missing_name(self):
-        cc = CircuitComponent(
+        cc = GraphComponent(
             Representation(
                 PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires(set(), set(), {1, 8}, {1, 8})
             )
@@ -86,7 +84,7 @@ class TestCircuitComponent:
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
+        cc = GraphComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
         assert cc.ansatz == PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
 
     @pytest.mark.parametrize("x", [0.1, [0.2, 0.3]])
@@ -96,7 +94,7 @@ class TestCircuitComponent:
 
         cc1 = Dgate._from_attributes(cc.representation, cc.name)
         cc2 = Unitary._from_attributes(cc.representation, cc.name)
-        cc3 = CircuitComponent._from_attributes(cc.representation, cc.name)
+        cc3 = GraphComponent._from_attributes(cc.representation, cc.name)
 
         assert cc1 == cc
         assert cc2 == cc
@@ -104,26 +102,26 @@ class TestCircuitComponent:
 
         assert isinstance(cc1, Unitary) and not isinstance(cc2, Dgate)
         assert isinstance(cc2, Unitary) and not isinstance(cc2, Dgate)
-        assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
+        assert isinstance(cc3, GraphComponent) and not isinstance(cc3, Unitary)
 
     def test_from_to_quadrature(self):
         c = Dgate([0], x=0.1, y=0.2) >> Sgate([0], r=1.0, phi=0.1)
-        cc = CircuitComponent(c.representation, c.name)
-        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
+        cc = GraphComponent(c.representation, c.name)
+        ccc = GraphComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
         d1 = Dgate([1, 8], x=0.1, y=0.2)
         d1_adj = d1.adjoint
 
-        assert isinstance(d1_adj, CircuitComponent)
+        assert isinstance(d1_adj, GraphComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
         assert d1_adj.parameters == d1.parameters
         assert d1_adj.ansatz == d1.ansatz.conj  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
-        assert isinstance(d1_adj_adj, CircuitComponent)
+        assert isinstance(d1_adj_adj, GraphComponent)
         assert d1_adj_adj.wires == d1.wires
         assert d1_adj_adj.parameters == d1_adj.parameters
         assert d1_adj_adj.parameters == d1.parameters
@@ -134,7 +132,7 @@ class TestCircuitComponent:
         d1_dual = d1.dual
         vac = Vacuum([1, 8])
 
-        assert isinstance(d1_dual, CircuitComponent)
+        assert isinstance(d1_dual, GraphComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
         assert d1_dual.parameters == d1.parameters
@@ -142,14 +140,14 @@ class TestCircuitComponent:
         assert (vac >> d1_dual >> d1).ansatz == vac.ansatz
 
         d1_dual_dual = d1_dual.dual
-        assert isinstance(d1_dual_dual, CircuitComponent)
+        assert isinstance(d1_dual_dual, GraphComponent)
         assert d1_dual_dual.parameters == d1_dual.parameters
         assert d1_dual_dual.parameters == d1.parameters
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.ansatz == d1.ansatz
 
     def test_light_copy(self):
-        d1 = CircuitComponent(
+        d1 = GraphComponent(
             Representation(
                 PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires(set(), set(), {1}, {1})
             )
@@ -212,7 +210,7 @@ class TestCircuitComponent:
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5))
         polyexp = PolyExpAnsatz(A, b, c)
-        fock_cc = CircuitComponent(
+        fock_cc = GraphComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
@@ -467,13 +465,13 @@ class TestCircuitComponent:
         assert math.allclose(result2.ansatz.c, 0.8 * d0.ansatz.c)
 
     def test_repr(self):
-        c1 = CircuitComponent(Representation(wires=Wires(modes_out_ket={0, 1, 2})))
-        c2 = CircuitComponent(
+        c1 = GraphComponent(Representation(wires=Wires(modes_out_ket={0, 1, 2})))
+        c2 = GraphComponent(
             Representation(wires=Wires(modes_out_ket={0, 1, 2})), name="my_component"
         )
 
-        assert repr(c1) == "CircuitComponent(modes=[0, 1, 2], name=CC012)"
-        assert repr(c2) == "CircuitComponent(modes=[0, 1, 2], name=my_component)"
+        assert repr(c1) == "GraphComponent(modes=[0, 1, 2], name=CC012)"
+        assert repr(c2) == "GraphComponent(modes=[0, 1, 2], name=my_component)"
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
@@ -521,7 +519,7 @@ class TestCircuitComponent:
         assert U == back
 
     @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
-    @patch("mrmustard.lab_dev.circuit_components.display")
+    @patch("mrmustard.lab_dev.computational_graphs.graph_component.display")
     def test_ipython_repr(self, mock_display, is_fock, widget_cls):
         """Test the IPython repr function."""
         dgate = Dgate([1], x=0.1, y=0.1)
@@ -534,7 +532,7 @@ class TestCircuitComponent:
         assert isinstance(wires_widget, HTML)
         assert isinstance(rep_widget, widget_cls)
 
-    @patch("mrmustard.lab_dev.circuit_components.display")
+    @patch("mrmustard.lab_dev.computational_graphs.graph_component.display")
     def test_ipython_repr_invalid_obj(self, mock_display):
         """Test the IPython repr function."""
         dgate = Dgate([1, 2], x=0.1, y=0.1).to_fock()
@@ -557,12 +555,10 @@ class TestCircuitComponent:
         """Test the default serializer."""
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
-        )
+        cc = GraphComponent(Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name)
         kwargs, arrays = cc._serialize()
         assert kwargs == {
-            "class": f"{CircuitComponent.__module__}.CircuitComponent",
+            "class": f"{GraphComponent.__module__}.GraphComponent",
             "wires": tuple(tuple(w) for w in cc.wires.args),
             "ansatz_cls": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
             "name": name,
@@ -572,7 +568,7 @@ class TestCircuitComponent:
     def test_serialize_fail_when_no_modes_input(self):
         """Test that the serializer fails if no modes or name+wires are present."""
 
-        class MyComponent(CircuitComponent):
+        class MyComponent(GraphComponent):
             """A dummy class without a valid modes kwarg."""
 
             def __init__(self, ansatz, custom_modes):
@@ -597,12 +593,12 @@ class TestCircuitComponent:
             ket = S.fock_array(shape=[3])
             return -math.real(ket[2])
 
-        circuit = Circuit([S])
+        comp_graph = ComputationalGraph([S])
 
         opt = Optimizer()
 
         if math.backend_name == "tensorflow":
-            assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
+            assert opt.minimize(cost, by_optimizing=[comp_graph], max_steps=5) is None
         else:
             with pytest.raises(NotImplementedError, match="not implemented for backend ``numpy``"):
-                opt.minimize(cost, by_optimizing=[circuit], max_steps=5)
+                opt.minimize(cost, by_optimizing=[comp_graph], max_steps=5)

@@ -25,7 +25,7 @@ from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.graph_component_utils import TraceOut
 from .ket import Ket
 from .dm import DM
 from ..utils import make_parameter, reshape_params

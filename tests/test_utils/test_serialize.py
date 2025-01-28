@@ -22,8 +22,8 @@ import pytest
 import tensorflow as tf
 
 from mrmustard import __version__, math, settings
-from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
-from mrmustard.lab_dev.circuits.circuits import Circuit
+from mrmustard.lab_dev.graph_component_utils import BtoPS, BtoQ, TraceOut
+from mrmustard.lab_dev import ComputationalGraph
 from mrmustard.lab_dev.states import (
     Coherent,
     DisplacedSqueezed,
@@ -172,8 +172,8 @@ class TestSerialize:
         assert not list(settings.CACHE_DIR.glob("*"))
 
     def test_all_components_serializable(self):
-        """Test that all circuit components are serializable."""
-        circ = Circuit(
+        """Test that all graph components are serializable."""
+        graph = ComputationalGraph(
             [
                 Coherent([0], x=1.0),
                 Dgate([0], 0.1),
@@ -201,11 +201,11 @@ class TestSerialize:
                 Vacuum([2]).dual,
             ],
         )
-        path = circ.serialize()
+        path = graph.serialize()
         assert list(path.parent.glob("*")) == [path]
         assert path.suffix == ".zip"
 
         loaded = load(path)
-        assert loaded == circ
-        assert all(type(a) is type(b) for a, b in zip(circ.components, loaded.components))
+        assert loaded == graph
+        assert all(type(a) is type(b) for a, b in zip(graph.components, loaded.components))
         assert list(path.parent.glob("*")) == [path]

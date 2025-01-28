@@ -24,8 +24,8 @@ from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
+from mrmustard.lab_dev.graph_component_utils import TraceOut
 from mrmustard.lab_dev.states import DM, Coherent, DisplacedSqueezed, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
 from mrmustard.math.parameters import Constant, Variable
@@ -330,7 +330,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
+        op2 = GraphComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -341,9 +341,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = GraphComponent(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent(
+        ch_component = GraphComponent(
             channel.representation,
             channel.name,
         )
@@ -353,8 +353,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(ket >> channel, DM)
         assert isinstance(ket >> unitary >> channel, DM)
         assert isinstance(ket >> channel >> unitary, DM)
-        assert isinstance(ket >> u_component, CircuitComponent)
-        assert isinstance(ket >> ch_component, CircuitComponent)
+        assert isinstance(ket >> u_component, GraphComponent)
+        assert isinstance(ket >> ch_component, GraphComponent)
 
         # measurements
         assert isinstance(ket >> Coherent([0], 1).dual, Ket)

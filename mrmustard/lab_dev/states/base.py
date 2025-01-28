@@ -49,8 +49,8 @@ from mrmustard.utils.typing import (
     RealVector,
 )
 
-from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS, BtoQ
+from ..computational_graphs.graph_component import GraphComponent
+from ..graph_component_utils import BtoPS, BtoQ
 
 
 __all__ = ["State"]
@@ -72,7 +72,7 @@ class OperatorType(Enum):
     INVALID_TYPE = 4
 
 
-def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
+def _validate_operator(operator: GraphComponent) -> tuple[OperatorType, str]:
     r"""
     A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
     ``DM``.
@@ -113,7 +113,7 @@ def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
 # ~~~~~~~
 
 
-class State(CircuitComponent):
+class State(GraphComponent):
     r"""
     Base class for all states.
     """

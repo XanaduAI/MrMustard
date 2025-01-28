@@ -25,7 +25,7 @@ import numpy as np
 from typing import Generator
 import networkx as nx
 from mrmustard.physics.wires import Wires
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
 
 Edge = tuple[int, int]
 
@@ -35,17 +35,18 @@ Edge = tuple[int, int]
 # =====================
 
 
-class GraphComponent:
+class LightGraphComponent:
     r"""
-    A lightweight "CircuitComponent" without the actual representation.
+    A lightweight "GraphComponent" without the actual representation.
     Basically a wrapper around Wires, so that it can emulate components in
-    a circuit. It exposes the representation, wires, shape, name and cost of obtaining
+    a graph. It exposes the representation, wires, shape, name and cost of obtaining
     the component from previous contractions.
 
     Args:
         representation: The name of the representation of the component.
         wires: The wires of the component.
         shape: The fock shape of the component.
+
         name: The name of the component.
         cost: The cost of obtaining this component.
     """
@@ -62,21 +63,21 @@ class GraphComponent:
         self.cost = cost
 
     @classmethod
-    def from_circuitcomponent(cls, c: CircuitComponent):
+    def from_graphcomponent(cls, c: GraphComponent) -> LightGraphComponent:
         r"""
-        Creates a GraphComponent from a CircuitComponent.
+        Creates a LightGraphComponent from a GraphComponent.
 
         Args:
-            c: A CircuitComponent.
+            c: A GraphComponent.
         """
-        return GraphComponent(
+        return LightGraphComponent(
             representation=str(c.ansatz.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
             name=c.__class__.__name__,
         )
 
-    def contraction_cost(self, other: GraphComponent) -> int:
+    def contraction_cost(self, other: LightGraphComponent) -> int:
         r"""
         Returns the computational cost in approx FLOPS for contracting this component with another
         one. Three cases are possible:
@@ -93,7 +94,7 @@ class GraphComponent:
         which scales like the cube of the number of contracted indices, i.e. ~ just 8 in the example above.
 
         Arguments:
-            other: GraphComponent
+            other: LightGraphComponent
 
         Returns:
             int: contraction cost in approx FLOPS
@@ -124,12 +125,12 @@ class GraphComponent:
             )
         return int(cost)
 
-    def __matmul__(self, other) -> GraphComponent:
+    def __matmul__(self, other) -> LightGraphComponent:
         r"""
-        Returns the contracted GraphComponent.
+        Returns the contracted LightGraphComponent.
 
         Args:
-            other: Another GraphComponent
+            other: Another LightGraphComponent
         """
         new_wires, perm = self.wires @ other.wires
         idxA, idxB = self.wires.contracted_indices(other.wires)
@@ -137,7 +138,7 @@ class GraphComponent:
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = GraphComponent(
+        new_component = LightGraphComponent(
             "Bargmann" if self.representation == other.representation == "Bargmann" else "Fock",
             new_wires,
             new_shape,
@@ -171,18 +172,18 @@ class Graph(nx.DiGraph):
         """
         return sum(self.costs)
 
-    def component(self, n) -> GraphComponent:
+    def component(self, n) -> LightGraphComponent:
         r"""
-        Returns the ``GraphComponent`` associated with a node.
+        Returns the ``LightGraphComponent`` associated with a node.
 
         Args:
             n: The node index.
         """
         return self.nodes[n]["component"]
 
-    def components(self) -> Generator[GraphComponent, None, None]:
+    def components(self) -> Generator[LightGraphComponent, None, None]:
         r"""
-        Yields the ``GraphComponents`` associated with the nodes.
+        Yields the ``LightGraphComponent``s associated with the nodes.
         """
         for n in self.nodes:
             yield self.component(n)
@@ -257,21 +258,21 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
     return graph
 
 
-def parse_components(components: list[CircuitComponent]) -> Graph:
+def parse_components(components: list[GraphComponent]) -> Graph:
     r"""
-    Parses a list of CircuitComponents into a Graph.
+    Parses a list of GraphComponents into a Graph.
 
-    Each node in the graph corresponds to a GraphComponent and an edge between two nodes indicates that
-    the GraphComponents are connected in the circuit. Whether they are connected by one wire
+    Each node in the graph corresponds to a LightGraphComponent and an edge between two nodes indicates that
+    the LightGraphComponents are connected in the circuit. Whether they are connected by one wire
     or by many, in the graph they will have a single edge between them.
 
     Args:
-        components: A list of CircuitComponents.
+        components: A list of GraphComponents.
     """
     validate_components(components)
     graph = Graph()
     for i, A in enumerate(components):
-        comp = GraphComponent.from_circuitcomponent(A)
+        comp = LightGraphComponent.from_graphcomponent(A)
         wires = Wires(*A.wires.args)
         comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
@@ -290,12 +291,12 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     return graph
 
 
-def validate_components(components: list[CircuitComponent]) -> None:
+def validate_components(components: list[GraphComponent]) -> None:
     r"""
     Raises an error if the components will not contract correctly.
 
     Args:
-        components: A list of CircuitComponents.
+        components: A list of GraphComponents.
     """
     if len(components) == 0:
         return

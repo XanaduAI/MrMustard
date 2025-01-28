@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number
 from mrmustard.lab_dev.transformations import Dgate, FockDamping, PhaseNoise
 
@@ -72,4 +72,4 @@ class TestPhaseNoise:
         r"""
         Tests if the PhaseNoise custum rrshift correcly adds the adjoint.
         """
-        assert isinstance(FockDamping([0], 0.5) >> PhaseNoise([0], 0.2), CircuitComponent)
+        assert isinstance(FockDamping([0], 0.5) >> PhaseNoise([0], 0.2), GraphComponent)

@@ -18,7 +18,7 @@ The class representing a Phase noise channel.
 
 from __future__ import annotations
 from typing import Sequence
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard import math
@@ -61,7 +61,7 @@ class PhaseNoise(Channel):
             modes_in=modes, modes_out=modes, ansatz=None
         ).representation
 
-    def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
+    def __custom_rrshift__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.
 
@@ -83,4 +83,4 @@ class PhaseNoise(Channel):
                 * self.parameters.phase_stdev.value**2
             )
             array *= phase_factors
-        return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)
+        return GraphComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)

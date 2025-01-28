@@ -181,9 +181,9 @@ class Wires:  # pylint: disable=too-many-public-methods
     r"""
     A class with wire functionality for tensor network applications.
 
-    In MrMustard, instances of ``CircuitComponent`` have a ``Wires`` attribute.
+    In MrMustard, instances of ``GraphComponent`` have a ``Wires`` attribute.
     The wires describe how they connect with the surrounding components in a tensor network picture,
-    where states flow from left to right. ``CircuitComponent``\s can have wires on the
+    where states flow from left to right. ``GraphComponent``\s can have wires on the
     bra and/or on the ket side. Additionally, they may have classical wires. Here are some examples
     for the types of components available on ``mrmustard.lab_dev``:
 

@@ -22,8 +22,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
+from mrmustard.lab_dev.graph_component_utils import TraceOut
 from mrmustard.lab_dev.states import DM, Coherent, Ket, Number, Vacuum
 from mrmustard.lab_dev.transformations import Attenuator, Dgate
 from mrmustard.physics.gaussian import vacuum_cov
@@ -336,7 +336,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
+        op2 = GraphComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -347,9 +347,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent([0, 1], 1)
         unitary = Dgate([0], 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = GraphComponent(unitary.representation, unitary.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent(channel.representation, channel.name)
+        ch_component = GraphComponent(channel.representation, channel.name)
 
         dm = ket >> channel
 
@@ -357,8 +357,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert isinstance(dm, DM)
         assert isinstance(dm >> unitary >> channel, DM)
         assert isinstance(dm >> channel >> unitary, DM)
-        assert isinstance(dm >> u_component, CircuitComponent)
-        assert isinstance(dm >> ch_component, CircuitComponent)
+        assert isinstance(dm >> u_component, GraphComponent)
+        assert isinstance(dm >> ch_component, GraphComponent)
 
         # measurements
         assert isinstance(dm >> Coherent([0], 1).dual, DM)

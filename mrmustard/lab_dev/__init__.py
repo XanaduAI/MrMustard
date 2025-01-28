@@ -16,8 +16,8 @@ r"""
 The lab module in development.
 """
 
-from .circuit_components import *
-from .circuit_components_utils import *
-from .circuits.circuits import *
+from .computational_graphs.graph_component import *
+from .graph_component_utils import *
+from .computational_graphs.computational_graph import *
 from .states import *
 from .transformations import *

@@ -28,8 +28,8 @@ import numpy as np
 from mrmustard import math, settings
 
 from .states import State, Number, Ket
-from .circuit_components import CircuitComponent
-from .circuit_components_utils import BtoQ
+from .computational_graphs.graph_component import GraphComponent
+from .graph_component_utils import BtoQ
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 
@@ -46,14 +46,14 @@ class Sampler(ABC):
     def __init__(
         self,
         meas_outcomes: Sequence[Any],
-        povms: CircuitComponent | Sequence[CircuitComponent] | None = None,
+        povms: GraphComponent | Sequence[GraphComponent] | None = None,
     ):
         self._povms = povms
         self._meas_outcomes = meas_outcomes
         self._outcome_arg = None
 
     @property
-    def povms(self) -> CircuitComponent | Sequence[CircuitComponent] | None:
+    def povms(self) -> GraphComponent | Sequence[GraphComponent] | None:
         r"""
         The POVMs of this sampler.
         """
@@ -135,7 +135,7 @@ class Sampler(ABC):
         )
         return samples, np.array([probs[meas_outcomes.index(tuple(sample))] for sample in samples])
 
-    def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
+    def _get_povm(self, meas_outcome: Any, mode: int) -> GraphComponent:
         r"""
         Returns the POVM associated with a given outcome on a given mode.
 
@@ -151,7 +151,7 @@ class Sampler(ABC):
         """
         if self._povms is None:
             raise ValueError("This sampler has no POVMs defined.")
-        if isinstance(self.povms, CircuitComponent):
+        if isinstance(self.povms, GraphComponent):
             kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
             return self.povms.__class__(modes=[mode], **kwargs)

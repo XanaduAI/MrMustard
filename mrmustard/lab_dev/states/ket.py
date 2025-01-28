@@ -40,8 +40,8 @@ from mrmustard.utils.typing import (
 
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
-from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
+from ..computational_graphs.graph_component import GraphComponent
+from ..graph_component_utils import TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -215,7 +215,7 @@ class Ket(State):
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: GraphComponent):
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
@@ -333,7 +333,7 @@ class Ket(State):
         # we must turn it into a density matrix and slice the representation
         return self.dm()[modes]
 
-    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
+    def __rshift__(self, other: GraphComponent | Scalar) -> GraphComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing. Given this is a ``Ket`` object which
@@ -344,12 +344,12 @@ class Ket(State):
         not needed and the method returns a new ``Ket``.
 
         Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
+        with those of a ``DM`` or of a ``Ket``. Returns a ``GraphComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
 
         result = super().__rshift__(other)
-        if not isinstance(result, CircuitComponent):
+        if not isinstance(result, GraphComponent):
             return result  # scalar case handled here
 
         if not result.wires.input:

@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import Circuit, BSgate, S2gate, Vacuum
+from mrmustard.lab_dev import ComputationalGraph, BSgate, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
 from ..conftest import skip_np
@@ -43,7 +43,7 @@ def test_tensorboard_callback(tmp_path):
             phi_trainable=True,
         ),
     )
-    circ = Circuit([state_in, s2_0, s2_1, bs])
+    circ = ComputationalGraph([state_in, s2_0, s2_1, bs])
     cutoff = 1 + i + k
 
     free_var = math.new_variable([1.1, -0.2], None, "free_var")

@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
 from mrmustard.lab_dev.states import Coherent, Vacuum
 from mrmustard.lab_dev.transformations import (
     Attenuator,
@@ -67,24 +67,24 @@ class TestUnitary:
     def test_rshift(self):
         unitary1 = Dgate([0, 1], 1)
         unitary2 = Dgate([1, 2], 2)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = GraphComponent(unitary1.representation, unitary1.name)
         channel = Attenuator([1], 1)
-        ch_component = CircuitComponent(channel.representation, channel.name)
+        ch_component = GraphComponent(channel.representation, channel.name)
 
         assert isinstance(unitary1 >> unitary2, Unitary)
         assert isinstance(unitary1 >> channel, Channel)
-        assert isinstance(unitary1 >> u_component, CircuitComponent)
-        assert isinstance(unitary1 >> ch_component, CircuitComponent)
+        assert isinstance(unitary1 >> u_component, GraphComponent)
+        assert isinstance(unitary1 >> ch_component, GraphComponent)
 
     def test_repr(self):
         unitary1 = Dgate([0, 1], 1)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = GraphComponent(unitary1.representation, unitary1.name)
         assert repr(unitary1) == "Dgate(modes=[0, 1], name=Dgate, repr=PolyExpAnsatz)"
         assert repr(unitary1.to_fock(5)) == "Dgate(modes=[0, 1], name=Dgate, repr=ArrayAnsatz)"
-        assert repr(u_component) == "CircuitComponent(modes=[0, 1], name=Dgate, repr=PolyExpAnsatz)"
+        assert repr(u_component) == "GraphComponent(modes=[0, 1], name=Dgate, repr=PolyExpAnsatz)"
         assert (
             repr(u_component.to_fock(5))
-            == "CircuitComponent(modes=[0, 1], name=Dgate, repr=ArrayAnsatz)"
+            == "GraphComponent(modes=[0, 1], name=Dgate, repr=ArrayAnsatz)"
         )
 
     def test_init_from_bargmann(self):
@@ -165,22 +165,22 @@ class TestChannel:
 
     def test_rshift(self):
         unitary = Dgate([0, 1], 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = GraphComponent(unitary.representation, unitary.name)
         channel1 = Attenuator([1, 2], 0.9)
         channel2 = Attenuator([2, 3], 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = GraphComponent(channel1.representation, channel1.name)
 
         assert isinstance(channel1 >> unitary, Channel)
         assert isinstance(channel1 >> channel2, Channel)
-        assert isinstance(channel1 >> u_component, CircuitComponent)
-        assert isinstance(channel1 >> ch_component, CircuitComponent)
+        assert isinstance(channel1 >> u_component, GraphComponent)
+        assert isinstance(channel1 >> ch_component, GraphComponent)
 
     def test_repr(self):
         channel1 = Attenuator([0, 1], 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = GraphComponent(channel1.representation, channel1.name)
 
         assert repr(channel1) == "Attenuator(modes=[0, 1], name=Att~, repr=PolyExpAnsatz)"
-        assert repr(ch_component) == "CircuitComponent(modes=[0, 1], name=Att~, repr=PolyExpAnsatz)"
+        assert repr(ch_component) == "GraphComponent(modes=[0, 1], name=Att~, repr=PolyExpAnsatz)"
 
     def test_inverse_channel(self):
         gate = Sgate([0], 0.1, 0.2) >> Dgate([0], 0.1, 0.2) >> Attenuator([0], 0.5)

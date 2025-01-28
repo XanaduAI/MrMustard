@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-The classes representing circuits and computational graphs.
+The classes representing computational graphs.
 """
 
-from .circuits import *
+from .computational_graph import *

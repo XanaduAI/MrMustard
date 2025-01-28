@@ -14,7 +14,7 @@
 
 
 """
-A class to simulate quantum circuits.
+A class to represent a computational graph.
 """
 
 from __future__ import annotations
@@ -25,26 +25,26 @@ from typing import Sequence
 from pydoc import locate
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-import mrmustard.lab_dev.circuits.branch_and_bound as bb
+from mrmustard.lab_dev.computational_graphs.graph_component import GraphComponent
+import mrmustard.lab_dev.computational_graphs.branch_and_bound as bb
 
-__all__ = ["Circuit"]
+__all__ = ["ComputationalGraph"]
 
 
-class Circuit:
+class ComputationalGraph:
     r"""
-    A quantum circuit. It is a sequence of uncontracted components, which leaves the
+    A computational graph. It is a sequence of uncontracted components, which leaves the
     possibility of contracting them in different orders. The order in which the components
     are contracted is specified by the ``path`` attribute.
 
     Different orders of contraction lead to the same result, but the cost of the contraction
     can vary significantly. The ``optimize`` method optimizes the Fock shapes and the contraction
-    path of the circuit, while the ``contract`` method contracts the components in the order
+    path of the graph, while the ``contract`` method contracts the components in the order
     specified by the ``path`` attribute.
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, ComputationalGraph
 
         >>> vac = Vacuum([0, 1, 2])
         >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
@@ -52,31 +52,31 @@ class Circuit:
         >>> bs12 = BSgate([1, 2])
 
         >>> components = [vac, s01, bs01, bs12]
-        >>> circ = Circuit(components)
-        >>> assert circ.components == components
+        >>> comp_graph = ComputationalGraph(components)
+        >>> assert comp_graph.components == components
 
-    New components (or entire circuits) can be appended using the ``>>`` operator.
+    New components (or entire graphs) can be appended using the ``>>`` operator.
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, ComputationalGraph
 
         >>> vac = Vacuum([0, 1, 2])
         >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
         >>> bs01 = BSgate([0, 1])
         >>> bs12 = BSgate([1, 2])
 
-        >>> circ1 = Circuit() >> vac >> s01
-        >>> circ2 = Circuit([bs01]) >> bs12
-        >>> assert circ1 >> circ2 == Circuit([vac, s01, bs01, bs12])
+        >>> comp_graph1 = ComputationalGraph() >> vac >> s01
+        >>> comp_graph2 = ComputationalGraph([bs01]) >> bs12
+        >>> assert comp_graph1 >> comp_graph2 == ComputationalGraph([vac, s01, bs01, bs12])
 
     Args:
-        components: A list of circuit components.
+        components: A list of graph components.
     """
 
     def __init__(
         self,
-        components: Sequence[CircuitComponent] | None = None,
+        components: Sequence[GraphComponent] | None = None,
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
         self._graph = bb.parse_components(self.components)
@@ -88,7 +88,7 @@ class Circuit:
         self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
     ) -> None:
         r"""
-        Optimizes the Fock shapes and the contraction path of this circuit.
+        Optimizes the Fock shapes and the contraction path of this graph.
         It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
         components with multimode Bargmann/Fock components leads to a higher total cost.
 
@@ -101,11 +101,11 @@ class Circuit:
         bb.assign_costs(graph)
         G = bb.random_solution(graph)
         if len(G.nodes) > 1:
-            raise ValueError("Circuit has disconnected components.")
+            raise ValueError("Graph has disconnected components.")
 
         i = list(G.nodes)[0]
         if len(G.nodes[i]["component"].wires) > 0:
-            raise NotImplementedError("Cannot optimize a circuit with dangling wires yet.")
+            raise NotImplementedError("Cannot optimize a graph with dangling wires.")
 
         self.optimize_fock_shapes(verbose)
         heuristics = (
@@ -116,18 +116,18 @@ class Circuit:
         optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
         self.path = list(optimized_graph.solution)
 
-    def contract(self) -> CircuitComponent:
+    def contract(self) -> GraphComponent:
         r"""
-        Contracts the components in this circuit in the order specified by the ``path`` attribute.
+        Contracts the components in this graph in the order specified by the ``path`` attribute.
 
         Returns:
-            The result of contracting the circuit.
+            The result of contracting the graph.
 
         Raises:
-            ValueError: If ``circuit`` has an incomplete path.
+            ValueError: If ``self`` has an incomplete path.
         """
         if len(self.path) != len(self) - 1:
-            msg = f"``circuit.path`` needs to specify {len(self) - 1} contractions, found "
+            msg = f"``self.path`` needs to specify {len(self) - 1} contractions, found "
             msg += (
                 f"{len(self.path)}. Please run the ``.optimize()`` method or set the path manually."
             )
@@ -141,10 +141,10 @@ class Circuit:
 
     def optimize_fock_shapes(self, verbose: bool) -> None:
         r"""
-        Optimizes the Fock shapes of the components in this circuit.
+        Optimizes the Fock shapes of the components in this computational graph.
         It starts by matching the existing connected wires and keeps the smaller shape,
         then it enforces the BSgate symmetry (conservation of photon number) to further
-        reduce the shapes across the circuit.
+        reduce the shapes across the graph.
         This operation acts in place.
         """
         if verbose:
@@ -155,25 +155,25 @@ class Circuit:
 
     def check_contraction(self, n: int) -> None:
         r"""
-        An auxiliary function that helps visualize the contraction path of the circuit.
+        An auxiliary function that helps visualize the contraction path of the graph.
 
         Shows the remaining components and the corresponding contraction indices after n
         of the contractions in ``self.path``.
 
         .. code-block::
 
-                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, ComputationalGraph
 
                 >>> vac = Vacuum([0, 1, 2])
                 >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
                 >>> bs01 = BSgate([0, 1])
                 >>> bs12 = BSgate([1, 2])
 
-                >>> circ = Circuit([vac, s01, bs01, bs12])
+                >>> comp_graph = ComputationalGraph([vac, s01, bs01, bs12])
 
-                >>> # ``circ`` has no path: all the components are available, and indexed
+                >>> # ``comp_graph`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
-                >>> circ.check_contraction(0)  # no contractions
+                >>> comp_graph.check_contraction(0)  # no contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗
@@ -199,9 +199,9 @@ class Circuit:
                 <BLANKLINE>
 
                 >>> # start building the path manually
-                >>> circ.path = ((0, 1), (2, 3), (0, 2))
+                >>> comp_graph.path = ((0, 1), (2, 3), (0, 2))
 
-                >>> circ.check_contraction(1)  # after 1 contraction
+                >>> comp_graph.check_contraction(1)  # after 1 contraction
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -221,7 +221,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.check_contraction(2)  # after 2 contractions
+                >>> comp_graph.check_contraction(2)  # after 2 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
@@ -237,7 +237,7 @@ class Circuit:
                 <BLANKLINE>
                 <BLANKLINE>
 
-                >>> circ.check_contraction(3)  # after 3 contractions
+                >>> comp_graph.check_contraction(3)  # after 3 contractions
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
@@ -249,14 +249,14 @@ class Circuit:
 
 
         Raises:
-            ValueError: If ``circuit.path`` contains invalid contractions.
+            ValueError: If ``comp_graph.path`` contains invalid contractions.
         """
-        remaining = {i: Circuit([c]) for i, c in enumerate(self.components)}
+        remaining = {i: ComputationalGraph([c]) for i, c in enumerate(self.components)}
         for idx0, idx1 in self.path[:n]:
             try:
                 left = remaining[idx0].components
                 right = remaining.pop(idx1).components
-                remaining[idx0] = Circuit(left + right)
+                remaining[idx0] = ComputationalGraph(left + right)
             except KeyError as e:
                 wrong_key = idx0 if idx0 not in remaining else idx1
                 msg = f"index {wrong_key} in pair ({idx0}, {idx1}) is invalid."
@@ -271,7 +271,7 @@ class Circuit:
 
     def serialize(self, filestem: str = None):
         r"""
-        Serialize a Circuit.
+        Serialize a ComputationalGraph.
 
         Args:
             filestem: An optional name to give the resulting file saved to disk.
@@ -285,59 +285,59 @@ class Circuit:
         return save(type(self), filename=filestem, **kwargs)
 
     @classmethod
-    def deserialize(cls, data: dict) -> Circuit:
-        r"""Deserialize a Circuit."""
+    def deserialize(cls, data: dict) -> ComputationalGraph:
+        r"""Deserialize a ComputationalGraph."""
         comps, path = data.pop("components"), data.pop("path")
 
         for k, v in data.items():
             kwarg, i = k.split(":")
             comps[int(i)][kwarg] = v
 
-        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        classes: list[GraphComponent] = [locate(c.pop("class")) for c in comps]
         circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
         circ.path = [tuple(p) for p in path]
         return circ
 
-    def __eq__(self, other: Circuit) -> bool:
-        if not isinstance(other, Circuit):
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ComputationalGraph):
             return False
         return self.components == other.components
 
-    def __getitem__(self, idx: int) -> CircuitComponent:
+    def __getitem__(self, idx: int) -> GraphComponent:
         r"""
-        The component in position ``idx`` of this circuit's components.
+        The component in position ``idx`` of this graph's components.
         """
         return self.components[idx]
 
     def __len__(self):
         r"""
-        The number of components in this circuit.
+        The number of components in this graph.
         """
         return len(self.components)
 
     def __iter__(self):
         r"""
-        An iterator over the components in this circuit.
+        An iterator over the components in this graph.
         """
         return iter(self.components)
 
-    def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
+    def __rshift__(self, other: GraphComponent | ComputationalGraph) -> ComputationalGraph:
         r"""
-        Returns a ``Circuit`` that contains all the components of ``self`` as well as
-        ``other`` if ``other`` is a ``CircuitComponent``, or ``other.components`` if
-        ``other`` is a ``Circuit``).
+        Returns a ``ComputationalGraph`` that contains all the components of ``self`` as well as
+        ``other`` if ``other`` is a ``GraphComponent``, or ``other.components`` if
+        ``other`` is a ``ComputationalGraph``).
         """
-        if isinstance(other, CircuitComponent):
-            other = Circuit([other])
-        return Circuit(self.components + other.components)
+        if isinstance(other, GraphComponent):
+            other = ComputationalGraph([other])
+        return ComputationalGraph(self.components + other.components)
 
     # pylint: disable=too-many-branches,too-many-statements
     def __repr__(self) -> str:
         r"""
-        A string-based representation of this component.
+        A string-based representation of this graph.
         """
 
-        def component_to_str(comp: CircuitComponent) -> list[str]:
+        def component_to_str(comp: GraphComponent) -> list[str]:
             r"""
             Generates a list string-based representation for the given component.
 
@@ -350,7 +350,7 @@ class Circuit:
             ``['BSgate(0.0,0.0)']``.
 
             Args:
-                comp: A circuit component.
+                comp: A graph component.
             """
             cc_name = comp.short_name
             parallel = isinstance(cc_name, list)
@@ -369,7 +369,7 @@ class Circuit:
             else:
                 cc_names = [f"{cc_name}"]
 
-            if comp.parameters.names and settings.DRAW_CIRCUIT_PARAMS:
+            if comp.parameters.names and settings.DRAW_GRAPH_PARAMS:
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(

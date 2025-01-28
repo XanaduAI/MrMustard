@@ -80,8 +80,8 @@ class Settings:
         self.BS_FOCK_METHOD: str = "vanilla"  # can be 'vanilla' or 'schwinger'
         r"""The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."""
 
-        self.CIRCUIT_DECIMALS: int = 3
-        r"""The number of decimal places to display when drawing a circuit. Default is ``3``."""
+        self.GRAPH_DECIMALS: int = 3
+        r"""The number of decimal places to display when drawing a graph. Default is ``3``."""
 
         self.DEBUG: bool = False  # TODO: remove in MM 1.0
         r"""Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is ``False``."""
@@ -89,8 +89,8 @@ class Settings:
         self.DISCRETIZATION_METHOD: str = "clenshaw"
         r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
 
-        self.DRAW_CIRCUIT_PARAMS: bool = True
-        r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
+        self.DRAW_GRAPH_PARAMS: bool = True
+        r"""Whether or not to draw the parameters of a graph. Default is ``True``."""
 
         self.EQ_TRANSFORMATION_CUTOFF: int = 3  # TODO: remove in MM 1.0
         r"""The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is ``3``."""

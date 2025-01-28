@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-A base class for the components of quantum circuits.
+A base class for the components of computational graphs.
 """
 
 # pylint: disable=super-init-not-called, import-outside-toplevel
@@ -45,17 +45,17 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics.wires import Wires
 from mrmustard.physics.representations import Representation
 
-__all__ = ["CircuitComponent"]
+__all__ = ["GraphComponent"]
 
 
-class CircuitComponent:
+class GraphComponent:
     r"""
-    A base class for the circuit components (states, transformations, measurements,
-    and any component made by combining CircuitComponents). CircuitComponents are
+    A base class for components of a computational graph. These include states, transformations,
+    measurements, and any component made by combining GraphComponents. GraphComponents are
     defined by their ``representation``. See :class:`Representation` for more details.
 
     Args:
-        representation: The representation of this circuit component.
+        representation: The representation of this graph component.
         name: The name of this component.
     """
 
@@ -72,7 +72,7 @@ class CircuitComponent:
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
-        Inner serialization to be used by Circuit.serialize().
+        Inner serialization to be used by ComputationalGraph.serialize().
 
         The first dict must be JSON-serializable, and the second dict must contain
         the (non-JSON-serializable) array-like data to be collected separately.
@@ -105,9 +105,9 @@ class CircuitComponent:
         return serializable, {}
 
     @classmethod
-    def _deserialize(cls, data: dict) -> CircuitComponent:
+    def _deserialize(cls, data: dict) -> GraphComponent:
         r"""
-        Deserialization when within a circuit.
+        Deserialization when within a computational graph.
         """
         if "ansatz_cls" in data:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
@@ -119,24 +119,24 @@ class CircuitComponent:
         return cls(**data)
 
     @property
-    def adjoint(self) -> CircuitComponent:
+    def adjoint(self) -> GraphComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
         the ket and bra wires.
         """
-        ret = CircuitComponent(self.representation.adjoint, self.name)
+        ret = GraphComponent(self.representation.adjoint, self.name)
         ret.short_name = self.short_name
         for param in self.parameters.all_parameters.values():
             ret.parameters.add_parameter(param)
         return ret
 
     @property
-    def dual(self) -> CircuitComponent:
+    def dual(self) -> GraphComponent:
         r"""
         The dual of this component obtained by conjugating the representation and swapping
         the input and output wires.
         """
-        ret = CircuitComponent(self.representation.dual, self.name)
+        ret = GraphComponent(self.representation.dual, self.name)
         ret.short_name = self.short_name
         for param in self.parameters.all_parameters.values():
             ret.parameters.add_parameter(param)
@@ -223,9 +223,9 @@ class CircuitComponent:
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> GraphComponent:  # pylint:disable=too-many-positional-arguments
         r"""
-        Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
+        Initializes a ``GraphComponent`` object from its Bargmann (A,b,c) parametrization.
 
         Args:
             triple: The Bargmann representation of the component.
@@ -252,7 +252,7 @@ class CircuitComponent:
         triple: tuple,
         phi: float = 0.0,
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> GraphComponent:  # pylint:disable=too-many-positional-arguments
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
@@ -269,7 +269,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from ..graph_component_utils.b_to_q import BtoQ
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
@@ -277,11 +277,11 @@ class CircuitComponent:
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent(Representation(PolyExpAnsatz(*triple), wires))
+        QQQQ = GraphComponent(Representation(PolyExpAnsatz(*triple), wires))
         BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
         return cls._from_attributes(Representation(BBBB.ansatz, wires), name)
 
-    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
+    def to_quadrature(self, phi: float = 0.0) -> GraphComponent:
         r"""
         Returns a circuit component with the quadrature representation of this component
         in terms of A,b,c.
@@ -292,7 +292,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from ..graph_component_utils.b_to_q import BtoQ
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
@@ -349,14 +349,14 @@ class CircuitComponent:
         cls,
         representation: Representation,
         name: str | None = None,
-    ) -> CircuitComponent:
+    ) -> GraphComponent:
         r"""
         Initializes a circuit component from a ``Representation`` and a name.
         It differs from the __init__ in that the return type is the closest parent
         among the types ``Ket``, ``DM``, ``Unitary``, ``Operation``, ``Channel``,
         and ``Map``. This is to ensure the right properties are used when calling
         methods on the returned object, e.g. when adding two coherent states we
-        don't get a generic ``CircuitComponent`` but a ``Ket``:
+        don't get a generic ``GraphComponent`` but a ``Ket``:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
@@ -374,7 +374,7 @@ class CircuitComponent:
         for tp in cls.mro():
             if tp.__name__ in types:
                 return tp(representation=representation, name=name)
-        return CircuitComponent(representation, name)
+        return GraphComponent(representation, name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -398,10 +398,10 @@ class CircuitComponent:
 
         .. code-block:: pycon
 
-            >>> from mrmustard.lab_dev import CircuitComponent, Coherent
+            >>> from mrmustard.lab_dev import GraphComponent, Coherent
             >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
-            >>> assert isinstance(coh_cc, CircuitComponent)
+            >>> coh_cc = GraphComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
+            >>> assert isinstance(coh_cc, GraphComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
         return self._representation.bargmann_triple(batched)
@@ -422,7 +422,7 @@ class CircuitComponent:
         """
         return self._representation.fock_array(shape or self.auto_shape(), batched)
 
-    def on(self, modes: Sequence[int]) -> CircuitComponent:
+    def on(self, modes: Sequence[int]) -> GraphComponent:
         r"""
         Creates a light copy of this component that acts on the given ``modes`` instead of the
         original modes. It only works if the component's wires are all defined on the same modes.
@@ -463,7 +463,7 @@ class CircuitComponent:
         )
         return ret
 
-    def to_bargmann(self) -> CircuitComponent:
+    def to_bargmann(self) -> GraphComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
         .. code-block::
@@ -489,7 +489,7 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
+    def to_fock(self, shape: int | Sequence[int] | None = None) -> GraphComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
 
@@ -533,7 +533,7 @@ class CircuitComponent:
         kwargs = self.parameters[items].to_dict()
         return self.__class__(modes=modes, **kwargs)
 
-    def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
+    def _light_copy(self, wires: Wires | None = None) -> GraphComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
         which are a new object or the given one.
@@ -547,15 +547,15 @@ class CircuitComponent:
         return instance
 
     def _rshift_return(
-        self, result: CircuitComponent | np.ndarray | complex
-    ) -> CircuitComponent | np.ndarray | complex:
+        self, result: GraphComponent | np.ndarray | complex
+    ) -> GraphComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
         if len(result.wires) > 0:
             return result
         scalar = result.ansatz.scalar
         return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
 
-    def __add__(self, other: CircuitComponent) -> CircuitComponent:
+    def __add__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Implements the addition between circuit components.
         """
@@ -572,11 +572,11 @@ class CircuitComponent:
         Compares representations, but not the other attributes
         (e.g. name and parameter set).
         """
-        if isinstance(other, CircuitComponent):
+        if isinstance(other, GraphComponent):
             return self._representation == other._representation
         return False
 
-    def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
+    def __matmul__(self, other: GraphComponent | Scalar) -> GraphComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for contracting components exactly as specified.
@@ -596,9 +596,9 @@ class CircuitComponent:
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
         result = self._representation @ other._representation
-        return CircuitComponent(result, None)
+        return GraphComponent(result, None)
 
-    def __mul__(self, other: Scalar) -> CircuitComponent:
+    def __mul__(self, other: Scalar) -> GraphComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
@@ -616,32 +616,32 @@ class CircuitComponent:
                 + f", repr={repr_name})"
             )
 
-    def __rmatmul__(self, other: Scalar) -> CircuitComponent:
+    def __rmatmul__(self, other: Scalar) -> GraphComponent:
         r"""
         Multiplies a scalar with a circuit component when written as ``scalar @ component``.
         """
         return self * other
 
-    def __rmul__(self, other: Scalar) -> CircuitComponent:
+    def __rmul__(self, other: Scalar) -> GraphComponent:
         r"""
         Implements the multiplication by a scalar from the left.
         """
         return self * other
 
-    def __rrshift__(self, other: Scalar) -> CircuitComponent | np.array:
+    def __rrshift__(self, other: Scalar) -> GraphComponent | np.array:
         r"""
         Multiplies a scalar with a circuit component when written as ``scalar >> component``.
         This is needed when the "component" on the left is the result of a contraction that leaves
         no wires and the component is returned as a scalar. Note that there is an edge case if the
         object on the left happens to have the ``__rshift__`` method, but it's not the one we want
         (usually `>>` is about bit shifts) like a numpy array. In this case in an expression with
-        types ``np.ndarray >> CircuitComponent`` the method ``CircuitComponent.__rrshift__`` will
+        types ``np.ndarray >> GraphComponent`` the method ``GraphComponent.__rrshift__`` will
         not be called, and something else will be returned.
         """
         ret = self * other
         return ret.ansatz.scalar
 
-    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
+    def __rshift__(self, other: GraphComponent | numbers.Number) -> GraphComponent | np.ndarray:
         r"""
         Contracts ``self`` and ``other`` (output of self going into input of other).
         It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
@@ -649,7 +649,7 @@ class CircuitComponent:
         the wires of the components. For example this allows ``Ket``s to be right-shifted
         into ``Channel``s and automatically the result is a ``DM``. If the result has
         no wires left, it returns the (batched) scalar value of the representation.
-        Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar
+        Note that a ``GraphComponent`` is allowed to right-shift into scalars because the scalar
         part may result from an automated contraction subroutine that involves several components).
 
         .. code-block::
@@ -693,7 +693,7 @@ class CircuitComponent:
             raise ValueError(msg)
         return self._rshift_return(ret)
 
-    def __sub__(self, other: CircuitComponent) -> CircuitComponent:
+    def __sub__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Implements the subtraction between circuit components.
         """
@@ -703,7 +703,7 @@ class CircuitComponent:
         name = self.name if self.name == other.name else ""
         return self._from_attributes(Representation(ansatz, self.wires), name)
 
-    def __truediv__(self, other: Scalar) -> CircuitComponent:
+    def __truediv__(self, other: Scalar) -> GraphComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
