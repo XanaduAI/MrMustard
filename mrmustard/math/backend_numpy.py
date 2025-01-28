@@ -412,7 +412,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_2d(indices, dtype=int)
         for i, v in zip(indices, values):
             tensor[tuple(i)] = v
         return tensor
