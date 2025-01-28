@@ -31,13 +31,6 @@ Mr Mustard supports:
 - Plug-and-play backends (`numpy` as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
-# Increased numerical stability using Julia [optional]
-
-Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
-To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
-an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3 recommended).
-If no valid version of Julia is found, it will be installed automatically before trying to run any Julia code.
-
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
 

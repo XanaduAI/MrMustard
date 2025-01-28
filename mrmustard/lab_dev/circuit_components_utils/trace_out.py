@@ -25,6 +25,7 @@ from mrmustard.physics import triples
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.representations import Representation
+from ...physics.wires import Wires
 
 __all__ = ["TraceOut"]
 
@@ -65,7 +66,7 @@ class TraceOut(CircuitComponent):
         super().__init__(
             Representation(
                 PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
-                [(), modes, (), modes],
+                Wires(set(), set(modes), set(), set(modes)),
             ),
             name="Tr",
         )
@@ -86,7 +87,7 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            ansatz = other.ansatz.conj[idx_z] @ other.ansatz[idx_z]
+            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             ansatz = other.ansatz.trace(idx_z, idx_zconj)

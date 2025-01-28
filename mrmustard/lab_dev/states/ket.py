@@ -18,7 +18,7 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Collection
 from itertools import product
 import warnings
 import numpy as np
@@ -30,10 +30,8 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexVector,
     ComplexTensor,
     RealVector,
     Scalar,
@@ -43,7 +41,7 @@ from mrmustard.utils.typing import (
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoQ, TraceOut
+from ..circuit_components_utils import TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -88,43 +86,29 @@ class Ket(State):
         return self._L2_norms
 
     @classmethod
-    def from_bargmann(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        name: str | None = None,
-    ) -> State:
-        return Ket.from_ansatz(modes, PolyExpAnsatz(*triple), name)
-
-    @classmethod
-    def from_fock(
-        cls,
-        modes: Sequence[int],
-        array: ComplexTensor,
-        name: str | None = None,
-        batched: bool = False,
-    ) -> State:
-        return Ket.from_ansatz(modes, ArrayAnsatz(array, batched), name)
-
-    @classmethod
     def from_ansatz(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
+        if not isinstance(modes, set) and sorted(modes) != list(modes):
+            raise ValueError(f"Modes must be sorted. Got {modes}")
         modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
                 f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
             )
         wires = Wires(modes_out_ket=modes)
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in wires.quantum_wires:
+                w.repr = ReprEnum.FOCK
         return Ket(Representation(ansatz, wires), name)
 
     @classmethod
     def from_phase_space(
         cls,
-        modes: Sequence[int],
+        modes: Collection[int],
         triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
@@ -145,20 +129,7 @@ class Ket(State):
         )
 
     @classmethod
-    def from_quadrature(
-        cls,
-        modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
-        phi: float = 0.0,
-        name: str | None = None,
-    ) -> State:
-
-        QtoB = BtoQ(modes, phi).inverse()
-        Q = Ket.from_ansatz(modes, PolyExpAnsatz(*triple))
-        return Ket.from_ansatz(modes, (Q >> QtoB).ansatz, name)
-
-    @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Ket:
+    def random(cls, modes: Collection[int], max_r: float = 1.0) -> Ket:
         r"""
         Generates a random zero displacement state.
 
@@ -191,7 +162,7 @@ class Ket(State):
         S_2 = S[:m, m:]
         A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
-        psi = cls.from_bargmann(modes, [[A], [b], [complex(1)]])
+        psi = cls.from_bargmann(modes, (A, b, complex(1)))
         return psi.normalize()
 
     def auto_shape(
@@ -341,7 +312,7 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Sequence[int]) -> State:
+    def __getitem__(self, modes: int | Collection[int]) -> State:
         r"""
         Reduced density matrix obtained by tracing out all the modes except those in the given
         ``modes``. Note that the result is returned with modes in increasing order.

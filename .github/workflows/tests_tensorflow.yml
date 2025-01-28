@@ -29,20 +29,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Setup Julia
-        uses: julia-actions/setup-julia@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          version: 1.9.3
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --no-cache-dir --upgrade pip
-          pip install --no-cache-dir poetry==1.8.0
-          poetry config virtualenvs.create false
-          poetry install --extras "ray" --with dev
-
-      - name: Initialize Julia project  # to keep test times stable
-        run: python -c 'from juliacall import Main as jl'
+          version: "0.5.23"
 
       - name: Create durations file name
         id: record_file
@@ -51,7 +41,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          uv run --all-extras pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: Upload coverage to Codecov

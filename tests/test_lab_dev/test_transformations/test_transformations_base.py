@@ -21,7 +21,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.states import Vacuum, Coherent
+from mrmustard.lab_dev.states import Coherent, Vacuum
 from mrmustard.lab_dev.transformations import (
     Attenuator,
     Channel,
@@ -29,9 +29,9 @@ from mrmustard.lab_dev.transformations import (
     Identity,
     Map,
     Operation,
+    PhaseNoise,
     Sgate,
     Unitary,
-    PhaseNoise,
 )
 from mrmustard.physics.wires import Wires
 
@@ -117,7 +117,7 @@ class TestUnitary:
         assert should_be_identity.ansatz == Dgate([0], 0.0, 0.0).ansatz
 
     def test_random(self):
-        modes = [3, 1, 20]
+        modes = [1, 3, 20]
         u = Unitary.random(modes)
         assert (u >> u.dual) == Identity(modes)
 
@@ -188,13 +188,13 @@ class TestChannel:
         assert should_be_identity.ansatz == Attenuator([0], 1.0).ansatz
 
     def test_random(self):
-        modes = [2, 6, 1]
+        modes = [1, 2, 6]
         assert np.isclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [0, 1, 2]])
     def test_is_CP(self, modes):
         u = Unitary.random(modes).ansatz
-        kraus = u @ u.conj
+        kraus = u.contract(u.conj)
         assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
 
     def test_is_TP(self):
@@ -206,7 +206,7 @@ class TestChannel:
     def test_XY(self):
         U = Unitary.random([0, 1])
         u = U.ansatz
-        unitary_channel = Channel.from_bargmann([0, 1], [0, 1], (u.conj @ u).triple)
+        unitary_channel = Channel.from_bargmann([0, 1], [0, 1], u.conj.contract(u).triple)
         X, Y = unitary_channel.XY
         assert np.allclose(X, U.symplectic) and np.allclose(Y, np.zeros(4))
 

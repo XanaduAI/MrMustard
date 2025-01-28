@@ -37,22 +37,17 @@ using development mode:
 The ``-e`` flag ensures that edits to the source code will be reflected when
 importing Mr Mustard in Python.
 
-Increased numerical stability using Julia [optional]
-------------------
-Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
-To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
-an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3 recommended).
-If no valid version of Julia is found, it will be installed automatically before trying to run any Julia code.
-
 Development environment
 -----------------------
 
 Mr Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
-dependencies can be installed via ``poetry``:
+dependencies can be installed via ``uv``:
 
 .. code-block:: bash
 
-    poetry install --with dev
+    uv sync
+
+This will install all dependencies and create a virtual environment for development.
 
 Software tests
 --------------
@@ -165,7 +160,7 @@ Additional packages are required to build the documentation, as specified in
 
 .. code-block:: bash
 
-    poetry install --with doc
+    uv sync --group doc
 
 from within the top-level directory. To then build the HTML documentation, run
 

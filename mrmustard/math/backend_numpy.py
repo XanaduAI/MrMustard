@@ -403,14 +403,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
-    def sum(self, array: np.ndarray, axes: Sequence[int] = None):
-        if axes is None:
-            return np.sum(array)
-
-        ret = array
-        for axis in axes:
-            ret = np.sum(ret, axis=axis)
-        return ret
+    def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
+        return np.sum(array, axis=axis)
 
     @Autocast()
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
@@ -537,23 +531,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial of given shape.
         """
 
-        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
-
-        if precision_bits == 128:  # numba
-            if settings.STABLE_FOCK_CONVERSION:
-                G = vanilla_stable(tuple(shape), A, b, c)
-            else:
-                G = vanilla(tuple(shape), A, b, c)
-        else:  # julia (with precision_bits = 512)
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
-            from juliacall import Main as jl  # pylint: disable=import-outside-toplevel
-
-            A, b, c = (
-                np.array(A, dtype=np.complex128),
-                np.array(b, dtype=np.complex128),
-                np.array(c, dtype=np.complex128),
-            )
-            G = jl.Vanilla.vanilla(A, b, c.item(), np.array(shape, dtype=np.int64), precision_bits)
+        shape = tuple(int(i) for i in shape)  # ensure each item in the tuple is of the same dtype
+        if settings.STABLE_FOCK_CONVERSION:
+            G = vanilla_stable(shape, A, b, c)
+        else:
+            G = vanilla(shape, A, b, c)
 
         return G
 
