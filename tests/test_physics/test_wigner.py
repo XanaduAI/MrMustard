@@ -19,7 +19,8 @@ import pytest
 from scipy.special import assoc_laguerre
 
 from mrmustard import settings
-from mrmustard.lab import Coherent, Fock, SqueezedVacuum, State
+from mrmustard.lab_dev import Coherent, Number, SqueezedVacuum, Ket
+from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.wigner import wigner_discretized
 
 # original settings
@@ -122,10 +123,10 @@ class TestWignerDiscretized:
         p_vec = np.linspace(-1.5, 1.5, 100)
 
         q0 = 2.0
-        cat_amps = Coherent(q0).ket([20]) + Coherent(-q0).ket([20])
+        cat_amps = Coherent([0], q0).fock_array((20,)) + Coherent([0], -q0).fock_array((20,))
         cat_amps = cat_amps / np.linalg.norm(cat_amps)
-        state = State(ket=cat_amps)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        state = Ket.from_ansatz([0], ArrayAnsatz(cat_amps))
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
         W_th = W_cat(q_vec, p_vec, q0)
 
         assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
@@ -149,8 +150,8 @@ class TestWignerDiscretized:
         q_vec = np.linspace(left, right, 50)
         p_vec = np.linspace(left, right, 50)
 
-        state = Coherent(np.real(alpha), np.imag(alpha))
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        state = Coherent([0], np.real(alpha), np.imag(alpha))
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(100).conj(), q_vec, p_vec)
         W_th = W_coherent(q_vec, p_vec, alpha, 0)
 
         assert np.allclose(distance(W_mm, W_th), 0)
@@ -168,8 +169,8 @@ class TestWignerDiscretized:
         q_vec = np.linspace(-1, 1, 20)
         p_vec = np.linspace(-1, 1, 20)
 
-        state = Fock(n)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        state = Number([0], n)
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
         W_th = W_fock(q_vec, p_vec, n)
 
         assert np.allclose(distance(W_mm, W_th), 0)
