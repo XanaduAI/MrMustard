@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 from scipy.special import assoc_laguerre
 
-from mrmustard import settings
+from mrmustard import settings, math
 from mrmustard.lab_dev import Coherent, Number, SqueezedVacuum, Ket
 from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.wigner import wigner_discretized
@@ -151,7 +151,7 @@ class TestWignerDiscretized:
         p_vec = np.linspace(left, right, 50)
 
         state = Coherent([0], np.real(alpha), np.imag(alpha))
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(100).conj(), q_vec, p_vec)
+        W_mm, q_mat, p_mat = wigner_discretized(math.conj(state.dm().fock_array(100)), q_vec, p_vec)
         W_th = W_coherent(q_vec, p_vec, alpha, 0)
 
         assert np.allclose(distance(W_mm, W_th), 0)
