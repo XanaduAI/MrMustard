@@ -190,8 +190,8 @@ class TestWignerDiscretized:
         p_vec = np.linspace(-5, 5, 50)
 
         s = 1
-        state = SqueezedVacuum(s)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        state = SqueezedVacuum([0], s)
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(100), q_vec, p_vec)
         W_th = W_coherent(q_vec, p_vec, 0j, s)
 
         assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
@@ -211,8 +211,8 @@ class TestWignerDiscretized:
         p_vec = np.linspace(-5, 5, 50)
 
         s = 2
-        state = SqueezedVacuum(s)
-        W_mm, _, _ = wigner_discretized(state.dm(), q_vec, p_vec)
+        state = SqueezedVacuum([0], s)
+        W_mm, _, _ = wigner_discretized(state.dm().fock_array(100), q_vec, p_vec)
         W_th = W_coherent(q_vec, p_vec, 0j, s)
 
         success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
