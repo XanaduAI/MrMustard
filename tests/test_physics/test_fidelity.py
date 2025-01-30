@@ -4,7 +4,7 @@ from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
 from mrmustard import physics, settings
-from mrmustard.lab import Coherent, Fock, State
+from mrmustard.lab_dev import Coherent, Number, State
 from mrmustard.physics import fock_utils as fp
 from mrmustard.physics import gaussian as gp
 
@@ -144,29 +144,24 @@ class TestGaussianFock:
 
     def test_fidelity_across_representations_ket_ket(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(x=1.0)
-        state2ket = Fock(n=1)
-        assert np.allclose(physics.fidelity(state1ket, state2ket), 0.36787944, atol=1e-4)
+        state1ket = Coherent([0], x=1.0)
+        state2ket = Number([0], n=1)
+        assert np.allclose((state1ket >> state2ket.dual) ** 2, 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_ket_dm(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(x=1.0)
-        state1dm = State(dm=state1ket.dm())
-        state2ket = Fock(n=1)
-        state2dm = State(dm=state2ket.dm(state1dm.cutoffs))
-        assert np.allclose(physics.fidelity(state1ket, state2dm), 0.36787944, atol=1e-4)
+        state1ket = Coherent([0], x=1.0)
+        state2dm = Number([0], n=1).dm()
+        assert np.allclose((state1ket >> state2dm.dual), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_ket(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(x=1.0)
-        state1dm = State(dm=state1ket.dm())
-        state2ket = Fock(n=1)
-        assert np.allclose(physics.fidelity(state1dm, state2ket), 0.36787944, atol=1e-4)
+        state1dm = Coherent([0], x=1.0).dm()
+        state2ket = Number([0], n=1)
+        assert np.allclose((state1dm >> state2ket.dual), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_dm(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(x=1.0)
-        state1dm = State(dm=state1ket.dm())
-        state2ket = Fock(n=1)
-        state2dm = State(dm=state2ket.dm(state1dm.cutoffs))
-        assert np.allclose(physics.fidelity(state1dm, state2dm), 0.36787944, atol=1e-4)
+        state1dm = Coherent([0], x=1.0).dm()
+        state2dm = Number([0], n=1).dm()
+        assert np.allclose((state1dm >> state2dm.dual), 0.36787944, atol=1e-4)
