@@ -366,9 +366,9 @@ def complex_gaussian_integral_1(
             return A[0], b[0], c[0]
         return A, b, c
 
-    not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx])
+    not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx], dtype='int')
     # order matters here; idx should be made a tensor after doing all the list comprehensions and boolean operations.
-    idx = math.astensor(idx)
+    idx = math.astensor(idx, dtype='int')
     eye = math.eye(m, dtype=A.dtype)
 
     eye = math.eye(m, dtype=A.dtype)
@@ -392,9 +392,6 @@ def complex_gaussian_integral_1(
         -0.5 * math.sum(bM * M_bM, axis=-1)
     )
     c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
-    # c_post = math.where(det_nonzero,
-    #                   c * c_reshaped,
-    #                   math.real(c) * math.inf)
     c_post = c * c_reshaped
 
     A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)

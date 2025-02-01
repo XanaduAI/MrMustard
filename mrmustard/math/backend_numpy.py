@@ -349,6 +349,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     @staticmethod
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
+    
+    def argwhere(self, array: np.ndarray) -> np.ndarray:
+        return np.argwhere(array)
 
     @Autocast()
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
@@ -412,7 +415,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices, dtype=int)
+        indices = self.atleast_2d(indices)
         for i, v in zip(indices, values):
             tensor[tuple(i)] = v
         return tensor

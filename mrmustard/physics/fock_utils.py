@@ -155,7 +155,7 @@ def wigner_to_fock_state(
             max_photons = sum(shape) - len(shape)
         if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
             return math.hermite_renormalized_binomial(
-                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
+                A, B, C, shape=tuple(shape), max_l2=max_prob, global_cutoff=max_photons + 1
             )
         return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
@@ -999,7 +999,7 @@ def squeezer(r, phi, shape):
     sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def vjp(dLdGc):

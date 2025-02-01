@@ -205,9 +205,6 @@ class Variable:
     def value(self, value):
         self._value = self._get_value(value, self.bounds, self.name)
 
-    def assign(self, value):
-        self._value = value
-
     @staticmethod
     def orthogonal(
         value: Any | None,

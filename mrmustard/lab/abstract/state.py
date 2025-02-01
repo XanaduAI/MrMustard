@@ -270,7 +270,7 @@ class State:  # pylint: disable=too-many-public-methods
 
     def ket(
         self,
-        cutoffs: list[int] | None = None,
+        cutoffs: tuple[int] | None = None,
         max_prob: float = 1.0,
         max_photons: int | None = None,
     ) -> ComplexTensor | None:
@@ -293,7 +293,7 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = tuple(c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs))
 
         if self.is_gaussian:
             self._ket = fock_utils.wigner_to_fock_state(

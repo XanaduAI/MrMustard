@@ -129,6 +129,7 @@ class Representation:
         num_vars = self.ansatz.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
+        shape = tuple(shape)
         try:
             As, bs, cs = self.bargmann_triple(batched=True)
             if len(shape) != num_vars:

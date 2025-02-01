@@ -492,26 +492,26 @@ class PolyExpAnsatz(Ansatz):
         """
         gamma = math.astensor(zi[zi != None], dtype=math.complex128)
 
-        z_none = np.argwhere(zi == None).reshape(-1)
-        z_not_none = np.argwhere(zi != None).reshape(-1)
-        beta_indices = np.arange(len(zi), Ai.shape[-1])
-        new_indices = np.concatenate([z_none, beta_indices], axis=0)
+        z_none = math.argwhere(zi == None).reshape(-1)
+        z_not_none = math.argwhere(zi != None).reshape(-1)
+        beta_indices = math.arange(len(zi), Ai.shape[-1])
+        new_indices = math.concat([z_none, beta_indices], axis=0)
 
         # new A
-        new_A = math.gather(math.gather(Ai, tuple(new_indices), axis=0), tuple(new_indices), axis=1)
+        new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
 
         # new b
         b_alpha = math.einsum(
             "ij,j",
-            math.gather(math.gather(Ai, tuple(z_none), axis=0), tuple(z_not_none), axis=1),
+            math.gather(math.gather(Ai, z_none, axis=0), z_not_none, axis=1),
             gamma,
         )
         b_beta = math.einsum(
             "ij,j",
-            math.gather(math.gather(Ai, tuple(beta_indices), axis=0), tuple(z_not_none), axis=1),
+            math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
             gamma,
         )
-        new_b = math.gather(bi, tuple(new_indices), axis=0) + math.concat(
+        new_b = math.gather(bi, new_indices, axis=0) + math.concat(
             (b_alpha, b_beta), axis=-1
         )
 
@@ -520,9 +520,9 @@ class PolyExpAnsatz(Ansatz):
             "i,j,ij",
             gamma,
             gamma,
-            math.gather(math.gather(Ai, tuple(z_not_none), axis=0), tuple(z_not_none), axis=1),
+            math.gather(math.gather(Ai, z_not_none, axis=0), z_not_none, axis=1),
         )
-        b_part = math.einsum("j,j", math.gather(bi, tuple(z_not_none), axis=0), gamma)
+        b_part = math.einsum("j,j", math.gather(bi, z_not_none, axis=0), gamma)
         exp_sum = math.exp(1 / 2 * A_part + b_part)
         new_c = ci * exp_sum
         return new_A, new_b, new_c

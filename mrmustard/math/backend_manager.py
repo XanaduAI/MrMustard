@@ -265,6 +265,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
+    
+    def argwhere(self, array: Tensor) -> Tensor:
+        r"""Returns the indices of the elements that are True.
+
+        Args:
+            array: Boolean array.
+
+        Returns:
+            The indices of the elements that are True.
+        """
+        return self._apply("argwhere", (array,))
 
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts an array to a numpy array.
@@ -1547,10 +1558,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return b_full
 
         N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes])
+        indices = self.astensor(modes + [m + N for m in modes], dtype=int)
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices, b_rows)
+        return self.update_tensor(b_full, indices[:, None], b_rows)
 
     def right_matmul_at_modes(
         self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
@@ -1580,9 +1591,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes])
+        indices = self.astensor(modes + [m + N for m in modes], dtype=int)
         updates = self.matvec(mat, self.gather(vec, indices, axis=0))
-        return self.update_tensor(vec, indices, updates)
+        return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         """Returns all the diagonals of a density matrix."""
