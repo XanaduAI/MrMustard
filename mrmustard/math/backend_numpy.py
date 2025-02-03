@@ -336,7 +336,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.full_like(array.shape, np.inf, dtype=array.dtype)
     
     def conditional(self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args) -> np.ndarray:
-        if cond:
+        if cond.all():
             return true_fn(*args)
         else:
             return false_fn(*args)
