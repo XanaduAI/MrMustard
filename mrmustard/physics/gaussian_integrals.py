@@ -381,21 +381,28 @@ def complex_gaussian_integral_1(
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
     bR = math.gather(b, not_idx, axis=-1)
     det_M = math.det(M)
-    # Use math.where instead of if/else for jit compatibility
     det_nonzero = math.abs(det_M) > 1e-12
+
     # Calculate both branches
-    # inv_M = math.where(det_nonzero, math.inv(M), math.ones_like(M) * math.inf)
-    inv_M = math.inv(M)
-    M_bM = math.solve(M, bM)
 
-    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
-        -0.5 * math.sum(bM * M_bM, axis=-1)
-    )
-    c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
-    c_post = c * c_reshaped
+    def true_branch(m, M, bM, det_M, c, D, R, bR):
+        inv_M = math.inv(M)
+        M_bM = math.solve(M, bM)
 
-    A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
-    b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
+        c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
+            -0.5 * math.sum(bM * M_bM, axis=-1)
+        )
+        c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
+        c_post = c * c_reshaped
+
+        A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
+        b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
+        return A_post, b_post, c_post
+
+    def false_branch(m, M, bM, det_M, c, D, R, bR):
+        return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(c)
+
+    A_post, b_post, c_post = math.conditional(det_nonzero, true_branch, false_branch, m, M, bM, det_M, c, D, R, bR)
 
     if not batched:
         return A_post[0], b_post[0], c_post[0]

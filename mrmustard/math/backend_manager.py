@@ -1291,6 +1291,24 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of zeros.
         """
         return self._apply("zeros", (shape, dtype))
+    
+    def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
+        r"""Exectures ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+
+        Args:
+            cond: The condition to check
+            true_fn: The function to execute if ``cond`` is ``True``
+            false_fn: The function to execute if ``cond`` is ``False``
+            
+        Returns:
+            The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+        """
+        return self._apply("conditional", (cond, true_fn, false_fn, *args))
+
+    def infinity_like(self, array: Tensor) -> Tensor:
+        r"""Returns an array of infinities with the same shape as ``array``.
+        """
+        return self._apply("infinity_like", (array,))
 
     def zeros_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of zeros with the same shape and ``dtype`` as ``array``.

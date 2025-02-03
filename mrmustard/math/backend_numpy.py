@@ -28,6 +28,7 @@ from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
+from typing import Callable
 
 from ..utils.settings import settings
 from .autocast import Autocast
@@ -330,6 +331,15 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def ones_like(self, array: np.ndarray) -> np.ndarray:
         return np.ones(array.shape, dtype=array.dtype)
+    
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return np.full_like(array.shape, np.inf, dtype=array.dtype)
+    
+    def conditional(self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args) -> np.ndarray:
+        if cond:
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
 
     @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:

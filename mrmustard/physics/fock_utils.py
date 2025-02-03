@@ -944,7 +944,7 @@ def displacement(x, y, shape, tol=1e-15):
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def grad(dL_dDc):

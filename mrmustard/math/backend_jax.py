@@ -195,11 +195,8 @@ class BackendJax(BackendBase):
         name: str,  # pylint: disable=unused-argument
         dtype='float64',
     ):
-        bounds = bounds or (None, None)
         value = jnp.array(value, dtype=dtype)
-        if value.dtype in [jnp.complex128, jnp.int64, jnp.int32]:
-            return value
-        return self.constraint_func(bounds)(value)
+        return value
 
     @partial(jax.jit, static_argnames=["self"])
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
@@ -371,6 +368,13 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["self"])
     def ones_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.ones_like(array)
+    
+    @partial(jax.jit, static_argnames=["self"])
+    def infinity_like(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.full_like(array, jnp.inf, dtype='complex128')
+    
+    def conditional(self, cond: jnp.ndarray, true_fn: Callable, false_fn: Callable, *args) -> jnp.ndarray:
+        return jax.lax.cond(cond[0], true_fn, false_fn, *args)
 
     def pad(
         self,
