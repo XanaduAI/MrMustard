@@ -78,8 +78,8 @@ doc = [
     "xanadu-sphinx-theme==0.1.0",
 ]
 
-[tool.setuptools]
-py-modules = []
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.black]
 line-length = 100
