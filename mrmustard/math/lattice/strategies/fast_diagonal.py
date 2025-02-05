@@ -37,12 +37,12 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
     b = b[perm]
     output = np.zeros(pnr_cutoffs + output_shape, dtype=np.complex128)
     output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
-    buffer_1 = dict()
+    buffer_1 = {}
     buffer_0 = {(0, 0) * (L - 1): output[(0,) * (L - 1)]}
     for weight in range(1, 2 * output_cutoff + 2 * np.sum(pnr_cutoffs) - L):
         buffer_2 = buffer_1
         buffer_1 = buffer_0
-        buffer_0 = dict()
+        buffer_0 = {}
         for w in enumerate_diagonal_coords(weight, pnr_cutoffs):
             i, pivot = get_pivot(w)
             buffer_0[w] = single_step(A, b, buffer_1, buffer_2, i, pivot)
@@ -53,6 +53,15 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
 
 
 def get_pivot(k: tuple[int, ...]) -> list[tuple[int, tuple[int, ...]]]:
+    r"""
+    Find the index and pivot for the next recursion step.
+
+    Args:
+        k: Tuple of integers representing current coordinates
+
+    Returns:
+        A list containing the index and pivot
+    """
     modes = len(k) // 2
     pairs = [(k[2 * m], k[2 * m + 1]) for m in range(modes)]
     deltas = [abs(a - b) for (a, b) in pairs]
@@ -66,7 +75,20 @@ def get_pivot(k: tuple[int, ...]) -> list[tuple[int, tuple[int, ...]]]:
 
 
 def single_step(A, b, buffer_1, buffer_2, i, pivot):
-    # now vals of buffer dicts are arrays
+    r"""
+    Perform a single step in the fast diagonal algorithm.
+
+    Args:
+        A: Matrix of parameters
+        b: Vector of parameters
+        buffer_1: Previous buffer
+        buffer_2: Buffer from two steps ago
+        i: lowered index
+        pivot: Pivot coordinates
+
+    Returns:
+        Updated values for the current step
+    """
     val = b[i + 2] * buffer_1[pivot]
     mat = buffer_1[pivot]
     val[1:, :] += A[i + 2, 0] * SQRT[1 : mat.shape[0]][:, None] * mat[:-1]
@@ -78,6 +100,16 @@ def single_step(A, b, buffer_1, buffer_2, i, pivot):
 
 
 def lower(pivot, j):
+    r"""
+    Decrease the j-th coordinate of the pivot by 1.
+
+    Args:
+        pivot: Tuple of coordinates
+        j: Index to decrease
+
+    Returns:
+        New tuple with j-th coordinate decreased by 1
+    """
     return pivot[:j] + (pivot[j] - 1,) + pivot[j + 1 :]
 
 
