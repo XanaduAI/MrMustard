@@ -620,17 +620,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         return poly0
 
-    def hermite_renormalized_1leftoverMode(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
-    ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
     @tf.custom_gradient
-    def hermite_renormalized_1leftoverMode_reorderedAB(
+    def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
@@ -651,7 +642,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial.
         """
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-
+        A, B = self.reorder_AB_bargmann(A, B)
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
             hermite_multidimensional_1leftoverMode,
             [A, B, C.item(), cutoffs],
