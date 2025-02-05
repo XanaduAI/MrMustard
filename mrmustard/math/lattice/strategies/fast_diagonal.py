@@ -17,8 +17,8 @@ This module contains the fast diagonal strategy for computing the conditional de
 """
 
 from itertools import product
-import numpy as np
 from functools import lru_cache
+import numpy as np
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable
 
 __all__ = ["fast_diagonal"]
