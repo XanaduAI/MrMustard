@@ -123,7 +123,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "hermite_renormalized",
             "hermite_renormalized_binomial",
             "hermite_renormalized_diagonal_reorderedAB",
-            "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
             setattr(self, name, getattr(self._backend, name))
 
