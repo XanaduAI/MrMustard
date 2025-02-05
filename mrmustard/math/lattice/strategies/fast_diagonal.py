@@ -21,6 +21,7 @@ import numpy as np
 from functools import lru_cache
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable
 
+__all__ = ["fast_diagonal"]
 
 SQRT = np.sqrt(np.arange(10000))
 
