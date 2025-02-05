@@ -642,11 +642,18 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_1leftoverMode(
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        r"""Compute the conditional density matrix of mode 0, where all other modes are PNR detected.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The conditional density matrix of mode 0.
         """
         output_cutoffs = cutoffs[0]
-        pnr_cutoffs = cutoffs[1:]
         return fast_diagonal(A, b, c, output_cutoffs, pnr_cutoffs).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
