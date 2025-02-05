@@ -38,8 +38,8 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
     output = np.zeros(pnr_cutoffs + output_shape, dtype=np.complex128)
     output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
     buffer_1 = dict()
-    buffer_0 = {(0, 0) * (L - 1): output[0, 0]}
-    for weight in range(1, 2 * output_cutoff + np.sum(pnr_cutoffs) - L):
+    buffer_0 = {(0, 0) * (L - 1): output[(0,) * (L - 1)]}
+    for weight in range(1, 2 * output_cutoff + 2 * np.sum(pnr_cutoffs) - L):
         buffer_2 = buffer_1
         buffer_1 = buffer_0
         buffer_0 = dict()
