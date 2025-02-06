@@ -1392,7 +1392,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
 
         def wrapper(*args, **kwargs):
-            if self.backend_name == "numpy":
+            if self.backend_name in ["numpy", "jax"]:
                 return func(*args, **kwargs)
             else:
                 from tensorflow import (  # pylint: disable=import-outside-toplevel

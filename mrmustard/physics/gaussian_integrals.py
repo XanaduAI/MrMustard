@@ -20,6 +20,8 @@ from typing import Sequence
 import numpy as np
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+#if math.backend.name == 'jax':
+import jax
 
 
 def real_gaussian_integral(
@@ -52,6 +54,8 @@ def real_gaussian_integral(
     if not idx:
         return A, b, c
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
+    idx = math.astensor(idx)
+    not_idx = math.astensor(not_idx)
 
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
     bM = math.gather(b, idx, axis=-1)
@@ -113,16 +117,19 @@ def join_Abc_real(
     not_idx1 = tuple(i for i in range(A1.shape[-1]) if i not in idx1)
     not_idx2 = tuple(i for i in range(A2.shape[-1]) if i not in idx2)
 
+    idx1, idx2 = math.astensor(idx1), math.astensor(idx2)
+    not_idx1, not_idx2 = math.astensor(not_idx1), math.astensor(not_idx2)
+
     A1_idx_idx = math.gather(math.gather(A1, idx1, axis=-1), idx1, axis=-2)
     b1_idx = math.gather(b1, idx1, axis=-1)
-    if not_idx1:
+    if not_idx1.size>0:
         A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
         A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
         A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
         b1_notidx = math.gather(b1, not_idx1, axis=-1)
     A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
     b2_idx = math.gather(b2, idx2, axis=-1)
-    if not_idx2:
+    if not_idx2.size>0:
         A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
         A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
         A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
@@ -295,6 +302,56 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
 
     return A, b, c
 
+def true_branch(m, M, bM, det_M, c, D, R, bR):
+    r"""
+    True branch of the complex gaussian_integral_1 function.
+    Executed if the matrix M is invertible.
+
+    Args:
+        m: the number of pairs of conjugate variables to integrate over
+        M: the matrix of the quadratic form
+        bM: the vector of the linear term
+        det_M: the determinant of M
+        c: the coefficient of the exponential
+        D: the matrix of the linear term
+        R: the matrix of the quadratic form
+        bR: the vector of the linear term
+
+    Returns:
+        The post-integration parameters
+    """
+    inv_M = math.inv(M)
+    M_bM = math.solve(M, bM)
+
+    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
+        -0.5 * math.sum(bM * M_bM, axis=-1)
+    )
+    c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
+    c_post = c * c_reshaped
+
+    A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
+    b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
+    return math.cast(A_post, 'complex128'), math.cast(b_post, 'complex128'), math.cast(c_post, 'complex128')
+
+def false_branch(m, M, bM, det_M, c, D, R, bR):
+    r"""
+    False branch of the complex gaussian_integral_1 function. 
+    Exectued if the matrix M is singular.
+
+    Args:
+        m: the number of pairs of conjugate variables to integrate over
+        M: the matrix of the quadratic form
+        bM: the vector of the linear term
+        det_M: the determinant of M
+        c: the coefficient of the exponential
+        D: the matrix of the linear term
+        R: the matrix of the quadratic form
+        bR: the vector of the linear term
+
+    Returns:
+        The post-integration parameters
+    """
+    return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(c)
 
 def complex_gaussian_integral_1(
     Abc: tuple,
@@ -383,25 +440,7 @@ def complex_gaussian_integral_1(
     det_M = math.det(M)
     det_nonzero = math.abs(det_M) > 1e-12
 
-    # Calculate both branches
-
-    def true_branch(m, M, bM, det_M, c, D, R, bR):
-        inv_M = math.inv(M)
-        M_bM = math.solve(M, bM)
-
-        c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
-            -0.5 * math.sum(bM * M_bM, axis=-1)
-        )
-        c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
-        c_post = c * c_reshaped
-
-        A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
-        b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
-        return A_post, b_post, c_post
-
-    def false_branch(m, M, bM, det_M, c, D, R, bR):
-        return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(c)
-
+    # return infinity if M is singular; otherwise, return the post-integration parameters
     A_post, b_post, c_post = math.conditional(det_nonzero, true_branch, false_branch, m, M, bM, det_M, c, D, R, bR)
 
     if not batched:

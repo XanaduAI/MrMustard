@@ -40,6 +40,6 @@ class TestVacuum:
     def test_representation(self, n_modes):
         rep = Vacuum(range(n_modes)).ansatz
 
-        assert math.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
-        assert math.allclose(rep.b, np.zeros((1, n_modes)))
-        assert math.allclose(rep.c, [1.0])
+        assert np.allclose(rep.A, np.zeros((1, n_modes, n_modes)))
+        assert np.allclose(rep.b, np.zeros((1, n_modes)))
+        assert np.allclose(rep.c, [1.0])

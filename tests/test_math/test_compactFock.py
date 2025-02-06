@@ -38,7 +38,7 @@ def test_compactFock_diagonal(A_B_G0):
 
     # Vanilla MM
     G_ref = math.hermite_renormalized(
-        math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
+        math.conj(-A), math.conj(B), math.conj(G0), shape=cutoffs * 2
     )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
     G_ref = math.asnumpy(G_ref)
 
@@ -48,7 +48,6 @@ def test_compactFock_diagonal(A_B_G0):
         inds_expanded = list(inds) + list(inds)  # a,b,c,a,b,c
         ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
-    # New MM
     G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
     assert np.allclose(ref_diag, G_diag)
 

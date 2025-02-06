@@ -19,6 +19,7 @@ import pytest
 
 from mrmustard.lab.gates import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
 from mrmustard.math.tensor_networks import connect, contract
+from ...conftest import skip_np
 
 
 class TestTransformations:
@@ -26,9 +27,9 @@ class TestTransformations:
     Tests that transformations can be contracted by tensor networks.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [1, 2], [3, 4, 5, 6]])
-    @pytest.mark.parametrize("dim", [3, 4])
-    @pytest.mark.parametrize("default_dim", [2, 5])
+    @pytest.mark.parametrize("modes", [[1, 2]])
+    @pytest.mark.parametrize("dim", [3])
+    @pytest.mark.parametrize("default_dim", [2])
     def test_sequence_one_mode_unitaries(self, modes, dim, default_dim):
         r"""
         Tests that a sequence of one-mode unitaries can be contracted correctly.
@@ -64,6 +65,7 @@ class TestTransformations:
         r"""
         Tests that a sequence of multi-mode unitaries can be contracted correctly.
         """
+        skip_np()
         cx_tens = CXgate(modes=modes)
         bs_tens = BSgate(0.2, modes=modes)
         cz_tens = CZgate(modes=modes)

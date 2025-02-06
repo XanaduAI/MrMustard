@@ -46,7 +46,7 @@ class TestIdentity:
 
     def test_representation(self):
         rep1 = Identity(modes=[0]).ansatz
-        assert math.allclose(
+        assert np.allclose(
             rep1.A,
             [
                 [
@@ -55,11 +55,11 @@ class TestIdentity:
                 ]
             ],
         )
-        assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [1.0 + 0.0j])
+        assert np.allclose(rep1.b, np.zeros((1, 2)))
+        assert np.allclose(rep1.c, [1.0 + 0.0j])
 
         rep2 = Identity(modes=[0, 1]).ansatz
-        assert math.allclose(
+        assert np.allclose(
             rep2.A,
             [
                 [
@@ -70,5 +70,5 @@ class TestIdentity:
                 ]
             ],
         )
-        assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1.0 + 0.0j])
+        assert np.allclose(rep2.b, np.zeros((1, 4)))
+        assert np.allclose(rep2.c, [1.0 + 0.0j])

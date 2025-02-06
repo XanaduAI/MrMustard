@@ -736,7 +736,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, [cutoff])
+        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
 
     hermite_polys = math.map_fn(f_hermite_polys, x)
 
@@ -978,7 +978,7 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
 
     ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def vjp(dLdGc):
@@ -1020,7 +1020,7 @@ def squeezed(r, phi, shape):
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def vjp(dLdGc):

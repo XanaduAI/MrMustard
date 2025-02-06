@@ -582,7 +582,7 @@ def general_dyne(
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
     if proj_means is None:
-        pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+        pdf = math.MultivariateNormalTriL(loc=math.cast(b, 'float64'), scale_tril=math.cast(math.cholesky(reduced_cov / 2), 'float64'))
         outcome = (
             pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
         )

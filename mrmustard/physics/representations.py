@@ -157,6 +157,7 @@ class Representation:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 ) from e
             arrays = self.ansatz.reduce(shape).array
+        arrays = math.astensor(arrays)
         if not batched:
             return arrays[0]
         else:

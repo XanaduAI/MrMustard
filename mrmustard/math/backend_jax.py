@@ -135,7 +135,14 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["self", "axis"])
     def concat(self, values: Sequence[jnp.ndarray], axis: int) -> jnp.ndarray:
-        return jnp.concatenate(values, axis)
+        try:
+            return jnp.concatenate(values, axis)
+        except ValueError:
+            return jnp.array(values)
+    
+    @partial(jax.jit, static_argnames=["self", "axis"])
+    def sort(self, array: jnp.ndarray, axis: int = -1) -> jnp.ndarray:
+        return jnp.sort(array, axis)
 
     @partial(jax.jit, static_argnames=["self"])
     def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9) -> bool:
@@ -395,6 +402,10 @@ class BackendJax(BackendBase):
 
     def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
+    
+    @partial(jax.jit, static_argnames=["self", "decimals"])
+    def round(self, array: jnp.ndarray, decimals: int = 0) -> jnp.ndarray:
+        return jnp.round(array, decimals)
 
     @partial(jax.jit, static_argnames=["self"])
     def sin(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -425,6 +436,31 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["self", "axes"])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
         return jnp.sum(array, axis=axes)
+    
+    @partial(jax.jit, static_argnames=["self"])
+    def norm(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.linalg.norm(array)
+    
+    def map_fn(self, func, elements):
+        return jax.vmap(func)(elements)
+    
+    def MultivariateNormalTriL(self, loc: jnp.ndarray, scale_tril: jnp.ndarray, key:int = 0):
+        class Generator:
+            def __init__(self, mean, cov, key):
+                self._mean = mean
+                self._cov = cov
+                self._rng = jax.random.PRNGKey(key)
+
+            def sample(self, dtype=None):  # pylint: disable=unused-argument
+                fn = jax.random.multivariate_normal
+                ret = fn(self._rng, self._mean, self._cov)
+                return ret
+
+            def prob(self, x):
+                return jsp.stats.multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
+
+        scale_tril = scale_tril @ jnp.transpose(scale_tril)
+        return Generator(loc, scale_tril, key)
 
     @Autocast()
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
@@ -432,7 +468,7 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["self", "dtype"])
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return self.cast(jnp.trace(array), dtype)
+        return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
     def transpose(self, a: jnp.ndarray, perm: Sequence[int] = None) -> jnp.ndarray:
         if a is None:
@@ -443,9 +479,9 @@ class BackendJax(BackendBase):
         dtype = dtype or self.float64
         return jnp.zeros(shape, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self"])
-    def zeros_like(self, array: jnp.ndarray) -> jnp.ndarray:
-        return jnp.zeros_like(array)
+    @partial(jax.jit, static_argnames=["self", "dtype"])
+    def zeros_like(self, array: jnp.ndarray, dtype: str ='complex128') -> jnp.ndarray:
+        return jnp.zeros_like(array, dtype=dtype)
 
     @partial(jax.jit, static_argnames=["self", "axis"])
     def squeeze(self, tensor: jnp.ndarray, axis=None):
@@ -480,11 +516,12 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["self", "dtype", "rtol", "atol"])
     def sqrtm(self, tensor: jnp.ndarray, dtype, rtol=1e-05, atol=1e-08) -> jnp.ndarray:
+
         ret = jax.lax.cond(
             jnp.allclose(tensor, 0, rtol=rtol, atol=atol),
-            lambda _: self.zeros_like(tensor),
-            lambda _: self.eqigendecomposition_sqrtm(tensor),
-            None,
+            lambda _: self.zeros_like(tensor, dtype='complex128'),
+            lambda _: jsp.linalg.sqrtm(tensor),
+            None
         )
 
         if dtype is None:
@@ -643,9 +680,6 @@ class BackendJax(BackendBase):
 
         return poly0
 
-    @partial(jax.jit, static_argnames=["self", "decimals"])
-    def round(self, array: jnp.ndarray, decimals: int = 0) -> jnp.ndarray:
-        return jnp.round(array, decimals)
 
     @partial(jax.jit, static_argnames=["self", "shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(

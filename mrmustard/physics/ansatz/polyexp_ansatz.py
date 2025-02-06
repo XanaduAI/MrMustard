@@ -346,7 +346,7 @@ class PolyExpAnsatz(Ansatz):
                     self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
-        to_keep = [i for i in range(self.batch_size) if i not in removed]
+        to_keep = math.astensor([i for i in range(self.batch_size) if i not in removed])
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
         self.c = math.gather(self.c, to_keep, axis=0)
@@ -368,6 +368,7 @@ class PolyExpAnsatz(Ansatz):
                 to_keep.append(d)
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
+        to_keep = math.astensor(to_keep)
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
         self.c = math.gather(self.c, to_keep, axis=0)
@@ -492,10 +493,15 @@ class PolyExpAnsatz(Ansatz):
         """
         gamma = math.astensor(zi[zi != None], dtype=math.complex128)
 
-        z_none = math.argwhere(zi == None).reshape(-1)
-        z_not_none = math.argwhere(zi != None).reshape(-1)
-        beta_indices = math.arange(len(zi), Ai.shape[-1])
-        new_indices = math.concat([z_none, beta_indices], axis=0)
+        z_none = np.argwhere(zi == None).reshape(-1)
+        z_not_none = np.argwhere(zi != None).reshape(-1)
+        beta_indices = np.arange(len(zi), Ai.shape[-1])
+        new_indices = np.concatenate([z_none, beta_indices], axis=0)
+        
+        new_indices = math.astensor(new_indices, dtype='int32')
+        z_none = math.astensor(z_none, dtype='int32')
+        z_not_none = math.astensor(z_not_none, dtype='int32')
+        beta_indices = math.astensor(beta_indices, dtype='int32')
 
         # new A
         new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
@@ -547,7 +553,7 @@ class PolyExpAnsatz(Ansatz):
             A_bar,
             b_bar,
             complex(1),
-            (math.sum(shape_beta),) * dim_alpha + shape_beta,
+            (np.sum(shape_beta),) * dim_alpha + shape_beta,
         )
         c_decomp = math.sum(
             poly_bar * ci,
@@ -619,7 +625,7 @@ class PolyExpAnsatz(Ansatz):
             )
             for i in range(self.batch_size)
         ]
-        sorted_indices = argsort_gen(generators)
+        sorted_indices = math.astensor(argsort_gen(generators))
         self.A = math.gather(self.A, sorted_indices, axis=0)
         self.b = math.gather(self.b, sorted_indices, axis=0)
         self.c = math.gather(self.c, sorted_indices, axis=0)

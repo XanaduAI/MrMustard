@@ -57,19 +57,19 @@ class TestDgate:
 
     def test_representation(self):
         rep1 = Dgate(modes=[0], x=0.1, y=0.1).ansatz
-        assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
-        assert math.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
-        assert math.allclose(rep1.c, [0.990049833749168])
+        assert np.allclose(rep1.A, [[[0, 1], [1, 0]]])
+        assert np.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
+        assert np.allclose(rep1.c, [0.990049833749168])
 
         rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).ansatz
-        assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
-        assert math.allclose(rep2.c, [0.9656054162575665])
+        assert np.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
+        assert np.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
+        assert np.allclose(rep2.c, [0.9656054162575665])
 
         rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).ansatz
-        assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
-        assert math.allclose(rep3.c, [0.9753099120283327])
+        assert np.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
+        assert np.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
+        assert np.allclose(rep3.c, [0.9753099120283327])
 
     def test_trainable_parameters(self):
         gate1 = Dgate([0], 1, 1)

@@ -48,7 +48,7 @@ class TestSgate:
 
     def test_representation(self):
         rep1 = Sgate(modes=[0], r=0.1, phi=0.2).ansatz
-        assert math.allclose(
+        assert np.allclose(
             rep1.A,
             [
                 [
@@ -57,11 +57,11 @@ class TestSgate:
                 ]
             ],
         )
-        assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [0.9975072676192522])
+        assert np.allclose(rep1.b, np.zeros((1, 2)))
+        assert np.allclose(rep1.c, [0.9975072676192522])
 
         rep2 = Sgate(modes=[0, 1], r=[0.1, 0.3], phi=0.2).ansatz
-        assert math.allclose(
+        assert np.allclose(
             rep2.A,
             [
                 [
@@ -72,11 +72,11 @@ class TestSgate:
                 ]
             ],
         )
-        assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [0.9756354961606032])
+        assert np.allclose(rep2.b, np.zeros((1, 4)))
+        assert np.allclose(rep2.c, [0.9756354961606032])
 
         rep3 = Sgate(modes=[1], r=0.1).ansatz
-        assert math.allclose(
+        assert np.allclose(
             rep3.A,
             [
                 [
@@ -85,8 +85,8 @@ class TestSgate:
                 ]
             ],
         )
-        assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [0.9975072676192522])
+        assert np.allclose(rep3.b, np.zeros((1, 2)))
+        assert np.allclose(rep3.c, [0.9975072676192522])
 
     def test_trainable_parameters(self):
         gate1 = Sgate([0], 1, 1)

@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 
 import pytest
-
+import numpy as np
 from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent
 
@@ -48,13 +48,13 @@ class TestVisualization:
         with open(self.path / "visualize_2d.json") as file:
             ref_data = json.load(file)
 
-        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
-        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
-        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
-        assert math.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
-        assert math.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
-        assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
-        assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
+        assert np.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert np.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert np.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert np.allclose(data["data"][1]["x"], ref_data["data"][1]["x"])
+        assert np.allclose(data["data"][1]["y"], ref_data["data"][1]["y"])
+        assert np.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
+        assert np.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
 
     def test_visualize_2d_error(self):
         with pytest.raises(ValueError):
@@ -72,9 +72,9 @@ class TestVisualization:
         with open(self.path / "visualize_3d.json") as file:
             ref_data = json.load(file)
 
-        assert math.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
-        assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
-        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert np.allclose(data["data"][0]["x"], ref_data["data"][0]["x"])
+        assert np.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
+        assert np.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_3d_error(self):
         with pytest.raises(ValueError):
@@ -91,7 +91,7 @@ class TestVisualization:
 
         with open(self.path / "visualize_dm.json") as file:
             ref_data = json.load(file)
-        assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
+        assert np.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_dm_error(self):
         with pytest.raises(ValueError):

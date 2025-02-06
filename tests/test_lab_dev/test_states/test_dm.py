@@ -126,7 +126,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5, batched=True)
 
-        assert math.allclose(array_in, state_in_fock.ansatz.array)
+        assert np.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(modes, array_in, "my_dm", True)
         assert state_in_fock == state_out
@@ -134,9 +134,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_phase_space(self):
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
-        assert math.allclose(coeff, math.atleast_1d(1.0))
-        assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
+        assert np.allclose(coeff, math.atleast_1d(1.0))
+        assert np.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
+        assert np.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
 
         # test error
         with pytest.raises(ValueError):
@@ -167,19 +167,19 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_L2_norm(self):
         state = Coherent([0], x=1).dm()
-        assert math.allclose(state.L2_norm, 1)
+        assert np.allclose(state.L2_norm, 1)
 
     def test_probability(self):
         state1 = Coherent([0], x=1).dm()
-        assert math.allclose(state1.probability, 1)
-        assert math.allclose(state1.to_fock(20).probability, 1)
+        assert np.allclose(state1.probability, 1)
+        assert np.allclose(state1.to_fock(20).probability, 1)
 
         state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
-        assert math.allclose(state2.probability, 1)
-        assert math.allclose(state2.to_fock(20).probability, 1)
+        assert np.allclose(state2.probability, 1)
+        assert np.allclose(state2.to_fock(20).probability, 1)
 
         state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
-        assert math.allclose(state3.probability, 1)
+        assert np.allclose(state3.probability, 1)
 
     def test_probability_from_ket(self):
         ket_state = Vacuum([0, 1]) >> Number([0], n=1).dual
@@ -188,7 +188,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_purity(self):
         state = Coherent([0], 1, 2).dm()
-        assert math.allclose(state.purity, 1)
+        assert np.allclose(state.purity, 1)
         assert state.is_pure
 
     def test_quadrature_single_mode_dm(self):
@@ -198,10 +198,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         quad = math.transpose(math.astensor([q, q + 1]))
         ket = coherent_state_quad(q + 1, x, y)
         bra = np.conj(coherent_state_quad(q, x, y))
-        assert math.allclose(state.quadrature(quad), bra * ket)
-        assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
-        assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+        assert np.allclose(state.quadrature(quad), bra * ket)
+        assert np.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
+        assert np.allclose(state.to_fock(40).quadrature(quad), bra * ket)
+        assert np.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_quadrature_multimode_dm(self):
         x, y = 1, 2
@@ -212,16 +212,16 @@ class TestDM:  # pylint:disable=too-many-public-methods
         bra = math.kron(
             np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y))
         )
-        assert math.allclose(state.quadrature(quad), bra * ket)
-        assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
+        assert np.allclose(state.quadrature(quad), bra * ket)
+        assert np.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
 
         quad_slice = math.transpose(math.astensor([q, q, q + 1, q + 1]))
         q_slice = math.transpose(math.astensor([q] * state.n_modes))
         ket_slice = coherent_state_quad(q + 1, x, y) * coherent_state_quad(q + 1, x, y)
         bra_slice = np.conj(coherent_state_quad(q, x, y)) * np.conj(coherent_state_quad(q, x, y))
 
-        assert math.allclose(state.to_fock(40).quadrature(quad_slice), bra_slice * ket_slice)
-        assert math.allclose(
+        assert np.allclose(state.to_fock(40).quadrature(quad_slice), bra_slice * ket_slice)
+        assert np.allclose(
             state.to_fock(40).quadrature_distribution(q_slice), math.abs(bra_slice) ** 2
         )
 
@@ -232,7 +232,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         q2 = np.linspace(-10, 10, 100)
         quad = np.array([[qa, qb] for qa in q1 for qb in q2])
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
-        assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
+        assert np.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
@@ -241,10 +241,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         quad = math.transpose(math.astensor([q, q + 1]))
         ket = coherent_state_quad(q + 1, x1, y1) + coherent_state_quad(q + 1, x2, y2)
         bra = np.conj(coherent_state_quad(q, x1, y1) + coherent_state_quad(q, x2, y2))
-        assert math.allclose(state.quadrature(quad), bra * ket)
-        assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
-        assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+        assert np.allclose(state.quadrature(quad), bra * ket)
+        assert np.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
+        assert np.allclose(state.to_fock(40).quadrature(quad), bra * ket)
+        assert np.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):
         ket = Coherent([0, 1], x=1, y=[2, 3])
@@ -258,9 +258,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
         res_k01 = dm @ k01.dual @ k01.dual.adjoint
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
+        assert np.allclose(dm.expectation(k0), res_k0)
+        assert np.allclose(dm.expectation(k1), res_k1)
+        assert np.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
 
     def test_expectation_bargmann_dm(self):
         dm0 = Coherent([0], x=1, y=2).dm()
@@ -271,9 +271,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_dm1 = (dm01 @ dm1.dual) >> TraceOut([0])
         res_dm01 = dm01 >> dm01.dual
 
-        assert math.allclose(dm01.expectation(dm0), res_dm0)
-        assert math.allclose(dm01.expectation(dm1), res_dm1)
-        assert math.allclose(dm01.expectation(dm01), res_dm01)
+        assert np.allclose(dm01.expectation(dm0), res_dm0)
+        assert np.allclose(dm01.expectation(dm1), res_dm1)
+        assert np.allclose(dm01.expectation(dm01), res_dm01)
 
     def test_expectation_bargmann_u(self):
         dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
@@ -285,9 +285,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_u1 = (dm @ u1) >> TraceOut([0, 1])
         res_u01 = (dm @ u01) >> TraceOut([0, 1])
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        assert np.allclose(dm.expectation(u0), res_u0)
+        assert np.allclose(dm.expectation(u1), res_u1)
+        assert np.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
         ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
@@ -301,9 +301,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
         res_k01 = dm @ k01.dual >> k01.dual.adjoint
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert np.allclose(dm.expectation(k0), res_k0)
+        assert np.allclose(dm.expectation(k1), res_k1)
+        assert np.allclose(dm.expectation(k01), res_k01)
 
         dm0 = Coherent([0], x=1, y=2).to_fock(10).dm()
         dm1 = Coherent([1], x=1, y=3).to_fock(10).dm()
@@ -313,9 +313,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
         res_dm01 = dm >> dm01.dual
 
-        assert math.allclose(dm.expectation(dm0), res_dm0)
-        assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
+        assert np.allclose(dm.expectation(dm0), res_dm0)
+        assert np.allclose(dm.expectation(dm1), res_dm1)
+        assert np.allclose(dm.expectation(dm01), res_dm01)
 
         u0 = Dgate([0], x=0.1).to_fock(10)
         u1 = Dgate([1], x=0.2).to_fock(10)
@@ -325,9 +325,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         res_u1 = (dm @ u1) >> TraceOut([0, 1])
         res_u01 = (dm @ u01) >> TraceOut([0, 1])
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        assert np.allclose(dm.expectation(u0), res_u0)
+        assert np.allclose(dm.expectation(u1), res_u1)
+        assert np.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_error(self):
         dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
@@ -401,6 +401,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
         rho = (Number([0], 0) + 1j * Number([0], 1)).dm()
         rho_fock = rho.fock_array(standard_order=True)
 
-        assert math.allclose(
+        assert np.allclose(
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
         )

@@ -30,6 +30,7 @@ from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_stable_batch
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
+from ..conftest import skip_np
 
 
 def test_vanillaNumba_vs_binomial():
@@ -92,7 +93,7 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
 
     # replicate the B
-    B_batched = np.stack((B,) * batch_size, axis=1)
+    B_batched = math.astensor(np.stack((B,) * batch_size, axis=1))
 
     G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
 
