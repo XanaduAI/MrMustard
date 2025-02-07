@@ -64,7 +64,7 @@ dev = [
     "pytest-cov==3.0.0",
     "hypothesis==6.31.6",
     "pylint>=3.0,<4",
-    "black>=22.1.0,<23",
+    "black==22.12.0",
 ]
 
 doc = [
@@ -79,8 +79,8 @@ doc = [
     "xanadu-sphinx-theme==0.1.0",
 ]
 
-[tool.setuptools]
-py-modules = []
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.black]
 line-length = 100
