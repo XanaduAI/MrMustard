@@ -87,6 +87,7 @@ class DM(State):
 
     @property
     def purity(self) -> float:
+        "Computes the putiry (:math:`tr(rho^2)) of this DM."
         return self.L2_norm
 
     @property
@@ -164,9 +165,9 @@ class DM(State):
         Samples a random density matrix. The final state has zero displacement.
 
         Args:
-        modes: the modes where the state is defined over
-        m: is the number modes to be considered for tracing out from a random pure state (Ket)
-        if not specified, m is considered to be len(modes)
+            modes: the modes where the state is defined over
+            m: is the number modes to be considered for tracing out from a random pure state (Ket)
+            if not specified, m is considered to be len(modes)
         """
         if m is None:
             m = len(modes)

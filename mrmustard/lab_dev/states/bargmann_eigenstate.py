@@ -32,6 +32,9 @@ class BargmannEigenstate(Ket):
     r"""
     The `N`-mode Bargmann eigenstate.
 
+    If ``alphas`` is a ``Sequence``, its length must be equal to `1` or `N`.
+    If its length is equal to `1`, all the modes share the same parameters.
+
     .. code-block ::
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
@@ -47,6 +50,7 @@ class BargmannEigenstate(Ket):
         Its ``(A,b,c)`` triple is given by
         .. math::
             A = 0 , b = alpha, c = 1.
+        Note that the only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
     """
 
     short_name = "Be"

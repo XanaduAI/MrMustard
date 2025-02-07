@@ -63,6 +63,8 @@ class Coherent(Ket):
 
         .. math::
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+        Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
+        ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
     """
 
     short_name = "Coh"

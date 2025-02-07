@@ -31,12 +31,43 @@ __all__ = ["BtoPS"]
 
 class BtoPS(Map):
     r"""The `s`-parametrized ``Dgate`` as a ``Map``.
-
     Used internally as a ``Channel`` for transformations between representations.
 
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import BtoPS, Ket
+        >>> from mrmustard import math
+
+        >>> chi = (Ket.random([0]) >> BtoPS([0], s=0)).ansatz
+        >>> assert math.allclose(chi([0,0]), math.astensor([1]))
+
+
     Args:
-        num_modes: The number of modes of this channel.
+        modes: The modes on which the transformation is to be applied.
         s: The `s` parameter of this channel.
+
+
+    ..detals:
+        This class represents the transformation from the Bargmann (B) representation
+        to phase space (PS).
+
+        Any operator, say O can be expressed in the displacement basis. Formally, we have that
+        the s-parametrized phase space basis is characterized by the following operators
+        ..math:
+            D_s(\alpha) = exp(s|\alpha|^2/2) D(\alpha).
+        The s-parametrized phase space representation of an object O, would therefore be
+        ..math:
+            mathrm{tr}(D_s(\alpha) O).
+
+        Important s-parametrizations include:
+        - s=1: returns the complex Fourier transform (or often
+        called the symplectic Fourier transform) of Galuber-Sudarshan P function.
+
+        - s=0: returns the characteristic function, which is equivalent to the complex Fourier
+        transform of the Wigner function.
+
+        - s=-1: returns the complex Fourier transform of the Q function.
     """
 
     def __init__(

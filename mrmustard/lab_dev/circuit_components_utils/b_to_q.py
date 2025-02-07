@@ -30,9 +30,11 @@ __all__ = ["BtoQ"]
 
 class BtoQ(Operation):
     r"""
-    The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
-    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
-    ones unless they support inner products in quadrature representation.
+    The Operation that changes the representation of an object from Bargmann (B) into quadrature (Q).
+    By default it's defined on the output ket side.
+
+    Note that beyond such gate we should be cautious placing further
+    ones as the change in the representation reflects in the Abc parametrization of ``Ansatz``.
 
     Args:
         modes: The modes of this channel.

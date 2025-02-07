@@ -37,11 +37,6 @@ class GKet(Ket):
     r"""
     The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
 
-    ..details:
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), produces the state
-        ..math:
-            |\psi\rangle = U |0\rangle
 
     Args:
         modes: the modes over which the state is defined.
@@ -52,6 +47,11 @@ class GKet(Ket):
 
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
+    ..details:
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), produces the state
+        ..math:
+            |\psi\rangle = U |0\rangle
     """
 
     short_name = "Gk"

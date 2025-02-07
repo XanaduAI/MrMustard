@@ -56,6 +56,11 @@ class DisplacedSqueezed(Ket):
         y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
+
+    ..details:
+        The covariance matrix :math: `V` and vector of means :math: `r` are parametrized as
+        ..math:
+
     """
 
     short_name = "DSq"
