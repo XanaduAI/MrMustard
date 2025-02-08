@@ -37,5 +37,4 @@ def test_fast_diagonal_3modes():
     control = math.hermite_renormalized(A, b, c, (3, 4, 5, 3, 4, 5))
     control = control[:, :, np.arange(5), :, :, np.arange(5)]  # shape (5,)+(3,4,3,4)
     control = control[:, :, np.arange(4), :, np.arange(4)]  # shape (4,5)+(3,3)
-    control = np.transpose(control, (2, 3, 0, 1))
     assert np.allclose(fd, control)
