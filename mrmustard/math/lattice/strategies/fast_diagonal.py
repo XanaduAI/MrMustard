@@ -33,16 +33,19 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
     output_shape = (output_cutoff, output_cutoff)
     L = len(pnr_cutoffs) + 1  # total number of modes
     perm = [i for m in range(L) for i in (m, m + L)]
+    A = np.array(A)
     A = A[perm, :][:, perm]
+    b = np.array(b)
     b = b[perm]
+    c = np.array(c)
     output = np.zeros(pnr_cutoffs + output_shape, dtype=np.complex128)
     output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
+    buffer_2 = {}
     buffer_1 = {}
     buffer_0 = {(0, 0) * (L - 1): output[(0,) * (L - 1)]}
     for weight in range(1, 2 * output_cutoff + 2 * np.sum(pnr_cutoffs) - L):
-        buffer_2 = buffer_1
-        buffer_1 = buffer_0
-        buffer_0 = {}
+        buffer_2, buffer_1, buffer_0 = buffer_1, buffer_0, buffer_2
+        buffer_0.clear()
         for w in enumerate_diagonal_coords(weight, pnr_cutoffs):
             i, pivot = get_pivot(w)
             buffer_0[w] = single_step(A, b, buffer_1, buffer_2, i, pivot)
