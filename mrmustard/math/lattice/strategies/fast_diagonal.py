@@ -30,15 +30,13 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
     r"""
     Computes an array of conditional density matrices using the fast diagonal strategy.
     """
-    output_shape = (output_cutoff, output_cutoff)
+    output_shape = (output_cutoff + 1, output_cutoff + 1)
     L = len(pnr_cutoffs) + 1  # total number of modes
     perm = [i for m in range(L) for i in (m, m + L)]
-    A = np.array(A)
-    A = A[perm, :][:, perm]
-    b = np.array(b)
-    b = b[perm]
+    A = np.array(A[perm, :][:, perm])
+    b = np.array(b[perm])
     c = np.array(c)
-    output = np.zeros(pnr_cutoffs + output_shape, dtype=np.complex128)
+    output = np.zeros(tuple(p + 1 for p in pnr_cutoffs) + output_shape, dtype=np.complex128)
     output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
     buffer_2 = {}
     buffer_1 = {}
