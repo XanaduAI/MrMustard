@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
+"The base for the ``State`` class"
 
 from __future__ import annotations
 
