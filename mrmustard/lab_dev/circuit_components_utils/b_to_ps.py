@@ -34,21 +34,16 @@ class BtoPS(Map):
     Used internally as a ``Channel`` for transformations between representations.
 
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import BtoPS, Ket
-        >>> from mrmustard import math
-
-        >>> chi = (Ket.random([0]) >> BtoPS([0], s=0)).ansatz
-        >>> assert math.allclose(chi([0,0]), math.astensor([1]))
-
-
     Args:
         modes: The modes on which the transformation is to be applied.
         s: The `s` parameter of this channel.
 
 
-    ..detals:
+    Returns:
+        a ``Channel`` type object that applies the Bargmann to Phase Space transformation
+        on any input.
+
+    ..details:
         This class represents the transformation from the Bargmann (B) representation
         to phase space (PS).
 
@@ -68,6 +63,15 @@ class BtoPS(Map):
         transform of the Wigner function.
 
         - s=-1: returns the complex Fourier transform of the Q function.
+
+    Example:
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import BtoPS, Ket
+        >>> from mrmustard import math
+
+        >>> chi = (Ket.random([0]) >> BtoPS([0], s=0)).ansatz
+        >>> assert math.allclose(chi([0,0]), math.astensor([1]))
     """
 
     def __init__(

@@ -33,12 +33,24 @@ class BtoQ(Operation):
     The Operation that changes the representation of an object from Bargmann (B) into quadrature (Q).
     By default it's defined on the output ket side.
 
-    Note that beyond such gate we should be cautious placing further
-    ones as the change in the representation reflects in the Abc parametrization of ``Ansatz``.
 
     Args:
         modes: The modes of this channel.
         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
+
+
+    Returns:
+        An ``Operation`` type object that performs the change of representation.
+
+    Note:
+        Be cautious about contractions after change of reresentation as the Abc parametrization has altered.
+
+    Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import BtoQ, Ket, QuadratureEigenstate
+            >>> psi = Ket.random([0])
+            >>> np.isclose(psi >> QuadratureEigenstate([0], x=1).dual, (psi >> BtoQ([0])).ansatz([1])[0])
     """
 
     def __init__(

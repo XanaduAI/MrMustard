@@ -37,6 +37,13 @@ class TraceOut(CircuitComponent):
     It has input wires on both the ket and bra sides, but no output wires. Its representation is
     the same as that of the identity channel.
 
+
+    Args:
+        modes: The modes to trace out.
+
+    Returns:
+        A ``CircuitComponent`` object that applies the trace-out opretation.
+
     .. code-block::
 
         >>> from mrmustard.lab_dev import *
@@ -54,9 +61,6 @@ class TraceOut(CircuitComponent):
         >>> expectation = (state.dm() @ op) >> TraceOut([0, 1, 2])
 
         >>> assert np.allclose(expectation, state.expectation(op))
-
-    Args:
-        modes: The modes to trace out.
     """
 
     def __init__(

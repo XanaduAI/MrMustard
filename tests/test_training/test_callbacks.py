@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import Circuit, BSgate, S2gate, Vacuum
+from mrmustard.lab_dev import BSgate, Circuit, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
 from ..conftest import skip_np

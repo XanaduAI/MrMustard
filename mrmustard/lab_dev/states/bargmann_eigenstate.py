@@ -32,25 +32,27 @@ class BargmannEigenstate(Ket):
     r"""
     The `N`-mode Bargmann eigenstate.
 
-    If ``alphas`` is a ``Sequence``, its length must be equal to `1` or `N`.
-    If its length is equal to `1`, all the modes share the same parameters.
+    Args:
+        modes: A list of modes.
+        alpha: The displacement of the state (i.e., the eigen-value).
 
+    Notes:
+        If ``alphas`` is a ``Sequence``, its length must be equal to `1` or `N`.
+        If its length is equal to `1`, all the modes share the same parameters.
+        Note that the only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
+
+    .. details::
+        Its ``(A,b,c)`` triple is given by
+        .. math::
+            A = 0 , b = alpha, c = 1.
+
+    Example:
     .. code-block ::
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
 
         >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
         >>> assert state.modes == [1, 2]
-
-    Args:
-        modes: A list of modes.
-        alpha: The displacement of the state (i.e., the eigen-value).
-
-    .. details::
-        Its ``(A,b,c)`` triple is given by
-        .. math::
-            A = 0 , b = alpha, c = 1.
-        Note that the only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
     """
 
     short_name = "Be"

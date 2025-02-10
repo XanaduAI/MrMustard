@@ -14,15 +14,6 @@
 
 # pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
 
-"""
-This module contains the base classes for the available quantum states.
-
-In the docstrings defining the available states we provide a definition in terms of
-the covariance matrix :math:`V` and the vector of means :math:`r`. Additionally, we
-provide the ``(A, b, c)`` triples that define the states in the Fock Bargmann
-representation.
-"""
-
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -168,6 +159,19 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
         parametrizing the Ansatz in Bargmann representation.
 
+        Args:
+            modes: The modes of this state.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
+
+        Returns:
+            A ``State``.
+
+        Raises:
+            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
+                the number of modes.
+
+        Examples:
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -181,18 +185,6 @@ class State(CircuitComponent):
             >>> assert coh.modes == modes
             >>> assert coh.ansatz == PolyExpAnsatz(*triple)
             >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this state.
-            triple: The ``(A, b, c)`` triple.
-            name: The name of this state.
-
-        Returns:
-            A state.
-
-        Raises:
-            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
-                the number of modes.
         """
         return cls.from_ansatz(modes, PolyExpAnsatz(*triple), name)
 
@@ -208,6 +200,21 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an array parametrizing the
         state in Fock representation.
 
+
+        Args:
+            modes: The modes of this state.
+            array: The Fock array.
+            name: The name of this state.
+            batched: Whether the given array is batched.
+
+        Returns:
+            A ``State``.
+
+        Raises:
+            ValueError: If the given array has a shape that is inconsistent with the number of
+                modes.
+
+        Examples:
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
@@ -221,19 +228,6 @@ class State(CircuitComponent):
             >>> assert coh.modes == modes
             >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
             >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this state.
-            array: The Fock array.
-            name: The name of this state.
-            batched: Whether the given array is batched.
-
-        Returns:
-            A state.
-
-        Raises:
-            ValueError: If the given array has a shape that is inconsistent with the number of
-                modes.
         """
         return cls.from_ansatz(modes, ArrayAnsatz(array, batched), name)
 
@@ -262,8 +256,7 @@ class State(CircuitComponent):
     def from_phase_space(
         cls,
         modes: Sequence[int],
-        cov: ComplexMatrix,
-        means: ComplexMatrix,
+        triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
     ) -> State:  # pylint: disable=abstract-method
@@ -271,27 +264,34 @@ class State(CircuitComponent):
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
 
-        Note that if the given covariance matrix and vector of means are consistent with a pure
-        state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
-        setting ``atol_purity`` to ``None``.
 
         Args:
             modes: The modes of this states.
-            cov: The covariance matrix.
-            means: The vector of means.
+            triple: Consists of the covariance matrix, vector of means, and a constant multiple.
             name: The name of this state.
             atol_purity: If ``atol_purity`` is given, the purity of the state is computed, and an
                 error is raised if its value is smaller than ``1-atol_purity`` or larger than
                 ``1+atol_purity``. If ``None``, this check is skipped.
 
         Returns:
-            A state.
+            A ``State``.
 
         Raises:
             ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
                 with the number of modes.
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
+
+        Note:
+            If the given covariance matrix and vector of means are consistent with a pure
+            state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
+            setting ``atol_purity`` to ``None``.
+
+        Example:
+            .. code-block::
+                >>> import numpy as np
+                >>> from mrmustard.lab_dev import Ket
+                >>> assert Ket.from_phase_space([0], (np.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 
     @classmethod

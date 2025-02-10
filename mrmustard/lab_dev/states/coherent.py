@@ -35,12 +35,6 @@ class Coherent(Ket):
     If ``x`` and/or ``y`` are ``Sequence``\s, their length must be equal to `1` or `N`. If their length is equal to `1`,
     all the modes share the same parameters.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
-
-        >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
 
     Args:
         modes: The modes of the coherent state.
@@ -50,6 +44,9 @@ class Coherent(Ket):
         y_trainable: Whether the `y` displacement is trainable.
         x_bounds: The bounds of the `x` displacement.
         y_bounds: The bounds of the `y` displacement.
+
+    Returns:
+        A ``Ket`` object representing a coherent state.
 
     .. details::
 
@@ -65,6 +62,15 @@ class Coherent(Ket):
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
         Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
         ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
+
+
+    Example:
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
+
+        >>> state = Coherent(modes=[0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Dgate([0, 1, 2], x=[0.3, 0.4, 0.5], y=0.2)
     """
 
     short_name = "Coh"
