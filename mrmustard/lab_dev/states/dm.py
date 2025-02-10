@@ -135,7 +135,7 @@ class DM(State):
         modes: Collection[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
-        s: float = 0,  # pylint: disable=unused-argument
+        atol_purity: None = None,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
