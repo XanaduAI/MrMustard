@@ -257,7 +257,7 @@ class State(CircuitComponent):
     def from_phase_space(
         cls,
         modes: Sequence[int],
-        triple: tuple,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         atol_purity: float | None = 1e-5,
     ) -> State:  # pylint: disable=abstract-method

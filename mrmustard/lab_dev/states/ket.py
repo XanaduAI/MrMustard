@@ -36,6 +36,8 @@ from mrmustard.utils.typing import (
     RealVector,
     Scalar,
     Batch,
+    ComplexMatrix,
+    ComplexVector,
 )
 
 from .base import State, _validate_operator, OperatorType
@@ -109,7 +111,7 @@ class Ket(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         atol_purity: float | None = 1e-5,
     ) -> Ket:

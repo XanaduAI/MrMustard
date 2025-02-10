@@ -31,7 +31,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import ComplexTensor, RealVector
+from mrmustard.utils.typing import ComplexTensor, RealVector, ComplexMatrix, ComplexVector
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
@@ -133,7 +133,7 @@ class DM(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         s: float = 0,  # pylint: disable=unused-argument
     ) -> DM:
