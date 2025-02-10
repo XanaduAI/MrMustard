@@ -22,6 +22,9 @@ from math import lgamma as mlgamma
 from typing import Sequence
 
 import numpy as np
+
+np.set_printoptions(legacy="1.25")
+
 import scipy as sp
 from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
