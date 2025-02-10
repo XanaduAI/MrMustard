@@ -6,3 +6,6 @@ Settings
 .. automodapi:: mrmustard.utils.settings
     :no-heading:
     :include-all-objects:
+
+.. autoclass:: Settings
+    :members:
