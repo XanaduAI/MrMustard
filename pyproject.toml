@@ -68,7 +68,7 @@ dev = [
 
 doc = [
     "sphinx>=7.0.1,<8",
-    "docutils>=0.20.1,<1",
+    "docutils>=0.20.1,<0.21",
     "m2r2>=0.3.3.post2,<1",
     "sphinx-autodoc-typehints>=1.23.3,<2",
     "sphinx-copybutton>=0.5.2,<1",
