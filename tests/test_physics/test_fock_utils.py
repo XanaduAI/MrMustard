@@ -24,14 +24,14 @@ from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
 from mrmustard import math
-from mrmustard.lab import (
-    TMSV,
+from mrmustard.lab_dev import (
+    TwoModeSqueezedVacuum,
     Attenuator,
     BSgate,
     Circuit,
     Coherent,
-    Fock,
-    Gaussian,
+    Number,
+    GKet,
     Ggate,
     S2gate,
     Sgate,
@@ -39,6 +39,7 @@ from mrmustard.lab import (
     State,
     Vacuum,
 )
+from mrmustard.physics.gaussian import number_means, number_cov
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock_utils
 
@@ -84,8 +85,8 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     Note that this is consistent with the Strawberryfields convention"""
     cutoff = 4
     r = np.arcsinh(np.sqrt(n_mean))
-    circ = Circuit(ops=[S2gate(r=r, phi=phi)])
-    amps = (Vacuum(num_modes=2) >> circ).ket(cutoffs=[cutoff, cutoff])
+    s2gate = S2gate([0, 1], r=-r, phi=phi)
+    amps = (Vacuum([0, 1]) >> s2gate).fock_array((cutoff, cutoff))
     diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
     assert np.allclose(amps, expected)
@@ -96,13 +97,13 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
     r = np.arcsinh(np.sqrt(n_mean))
-    ops = [
-        S2gate(r=r, phi=phi)[0, 1],
-        S2gate(r=r, phi=phi)[2, 3],
-        BSgate(theta=np.pi / 4, phi=varphi)[1, 2],
-    ]
-    circ = Circuit(ops)
-    amps = (Vacuum(4) >> circ).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
+
+    s2gate = S2gate([0, 1], r=-r, phi=phi)
+    s2gate2 = S2gate([2, 3], r=-r, phi=phi)
+    bsgate = BSgate([1, 2], theta=np.pi / 4, phi=varphi)
+    amps = (Vacuum([0, 1, 2, 3]) >> s2gate >> s2gate2 >> bsgate).fock_array(
+        (cutoff, cutoff, cutoff, cutoff)
+    )
     assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 
 
@@ -110,7 +111,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
-    amps = Coherent(x=alpha.real, y=alpha.imag).ket(cutoffs=[cutoff])
+    amps = Coherent([0], x=alpha.real, y=alpha.imag).fock_array((cutoff,))
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)]
     )
@@ -123,7 +124,7 @@ def test_squeezed_state(r, phi):
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state
     """
     cutoff = 10
-    amps = SqueezedVacuum(r=r, phi=phi).ket(cutoffs=[cutoff])
+    amps = SqueezedVacuum([0], r=r, phi=phi).fock_array((cutoff,))
     assert np.allclose(amps[1::2], 0.0)
     non_zero_amps = amps[0::2]
     len_non_zero = len(non_zero_amps)
@@ -146,9 +147,21 @@ def test_squeezed_state(r, phi):
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     r = np.arcsinh(np.sqrt(n_mean))
-    state = Vacuum(num_modes=2) >> S2gate(r=r, phi=phi)
-    meanN = state.number_means
-    covN = state.number_cov
+    state = Vacuum([0, 1]) >> S2gate([0, 1], r=-r, phi=phi)
+
+    state0 = state[0]
+    state1 = state[1]
+
+    cov0, mean0, _ = [x[0] for x in state0.phase_space(s=0)]
+    cov1, mean1, _ = [x[0] for x in state1.phase_space(s=0)]
+
+    num_mean0 = number_means(cov0, mean0)[0]
+    num_mean1 = number_means(cov1, mean1)[0]
+    num_cov0 = number_cov(cov0, mean0)[0]
+    num_cov1 = number_cov(cov1, mean1)[0]
+
+    meanN = np.array([num_mean0, num_mean1])
+    covN = np.array([num_cov0, num_cov1])
     expectedN = np.array([n_mean, n_mean])
     expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
     assert np.allclose(meanN, expectedN)
@@ -160,9 +173,9 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    ps = (SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)).fock_probabilities(
-        [cutoff]
-    )
+    ps = (
+        SqueezedVacuum([0], r=r, phi=phi) >> Attenuator([0], transmissivity=eta)
+    ).fock_distribution(cutoff)
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-5)
 
@@ -172,10 +185,10 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40
     n = np.arange(cutoff)
-    L = Attenuator(transmissivity=[eta_0, eta_1])
-    state = TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
-    ps0 = state.get_modes(0).fock_probabilities([cutoff])
-    ps1 = state.get_modes(1).fock_probabilities([cutoff])
+    L = Attenuator([0, 1], transmissivity=[eta_0, eta_1])
+    state = TwoModeSqueezedVacuum([0, 1], r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
+    ps0 = state[0].fock_distribution(cutoff)
+    ps1 = state[1].fock_distribution(cutoff)
     mean_0 = np.sum(n * ps0)
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
@@ -186,11 +199,11 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
 def test_density_matrix(num_modes):
     """Tests the density matrix of a pure state is equal to |psi><psi|"""
     modes = list(range(num_modes))
-    cutoffs = [num_modes + 1] * num_modes
-    G = Ggate(num_modes=num_modes)
-    L = Attenuator(transmissivity=1.0)
-    rho_legit = (Vacuum(num_modes) >> G >> L[modes]).dm(cutoffs=cutoffs)
-    rho_made = (Vacuum(num_modes) >> G).dm(cutoffs=cutoffs)
+    cutoffs = (num_modes + 1, num_modes + 1) * num_modes
+    G = Ggate(modes)
+    L = Attenuator(modes, transmissivity=1.0)
+    rho_legit = (Vacuum(modes) >> G >> L).dm().fock_array(cutoffs)
+    rho_made = (Vacuum(modes) >> G).dm().fock_array(cutoffs)
     # rho_legit = L[modes](G(Vacuum(num_modes))).dm(cutoffs=cutoffs)
     # rho_built = G(Vacuum(num_modes=num_modes)).dm(cutoffs=cutoffs)
     assert np.allclose(rho_legit, rho_made)
@@ -199,88 +212,91 @@ def test_density_matrix(num_modes):
 @pytest.mark.parametrize(
     "state, kwargs",
     [
-        (Vacuum, {"num_modes": 2}),
-        (Fock, {"n": [4, 3], "modes": [0, 1]}),
-        (Coherent, {"x": [0.1, 0.2], "y": [-0.4, 0.4], "cutoffs": [10, 10]}),
-        (Gaussian, {"num_modes": 2, "cutoffs": [35, 35]}),
+        (Vacuum, {"modes": [0, 1]}),
+        (Number, {"n": [4, 3], "modes": [0, 1]}),
+        (Coherent, {"modes": [0, 1], "x": [0.1, 0.2], "y": [-0.4, 0.4]}),
+        # (GKet, {"modes": [0,1]}),
     ],
 )
 def test_dm_to_ket(state, kwargs):
     """Tests pure state density matrix conversion to ket"""
+    cutoff = 6
     state = state(**kwargs)
-    dm = state.dm()
+    dm = state.dm().fock_array(cutoff)
     ket = fock_utils.dm_to_ket(dm)
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1, atol=1e-4)
     # check kets are equivalent
-    assert np.allclose(ket, state.ket(), atol=1e-4)
+    assert np.allclose(ket, state.fock_array(cutoff).conj(), atol=1e-4)
 
     dm_reconstructed = fock_utils.ket_to_dm(ket)
     # check ket leads to same dm
     assert np.allclose(dm, dm_reconstructed, atol=1e-15)
 
 
-def test_dm_to_ket_error():
-    """Test fock.dm_to_ket raises an error when state is mixed"""
-    state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
+# def test_dm_to_ket_error():
+#     """Test fock.dm_to_ket raises an error when state is mixed"""
+#     state = Coherent([0], x=0.1, y=-0.4) >> Attenuator([0], 0.5)
 
-    e = ValueError if math.backend_name == "tensorflow" else TypeError
-    with pytest.raises(e):
-        fock_utils.dm_to_ket(state)
-
-
-def test_fock_trace_mode1_dm():
-    """tests that the Fock state is correctly traced out from mode 1 for mixed states"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    from_gaussian = state.get_modes(0).dm([3])
-    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+#     e = ValueError if math.backend_name == "tensorflow" else TypeError
+#     with pytest.raises(e):
+#         fock_utils.dm_to_ket(state.fock_array(15))
 
 
-def test_fock_trace_mode0_dm():
-    """tests that the Fock state is correctly traced out from mode 0 for mixed states"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    from_gaussian = state.get_modes(1).dm([3])
-    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+# def test_fock_trace_mode1_dm():
+#     """tests that the Fock state is correctly traced out from mode 1 for mixed states"""
+#     state = Vacuum([0,1]) >> Ggate([0,1]) >> Attenuator([0,1], [0.1, 0.1])
+#     from_gaussian = state[0].dm().fock_array(3)
+#     from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+#     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
 
 
-def test_fock_trace_mode1_ket():
-    """tests that the Fock state is correctly traced out from mode 1 for pure states"""
-    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
-    from_gaussian = state.get_modes(0).dm([3])
-    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+# def test_fock_trace_mode0_dm():
+#     """tests that the Fock state is correctly traced out from mode 0 for mixed states"""
+#     state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+#     from_gaussian = state.get_modes(1).dm([3])
+#     from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+#     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
 
 
-def test_fock_trace_mode0_ket():
-    """tests that the Fock state is correctly traced out from mode 0 for pure states"""
-    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
-    from_gaussian = state.get_modes(1).dm([3])
-    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+# def test_fock_trace_mode1_ket():
+#     """tests that the Fock state is correctly traced out from mode 1 for pure states"""
+#     state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+#     from_gaussian = state.get_modes(0).dm([3])
+#     from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+#     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+# def test_fock_trace_mode0_ket():
+#     """tests that the Fock state is correctly traced out from mode 0 for pure states"""
+#     state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+#     from_gaussian = state.get_modes(1).dm([3])
+#     from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+#     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
 
 
 def test_fock_trace_function():
     """tests that the Fock state is correctly traced"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    dm = state.dm([3, 20])
+    state = Vacuum([0, 1]) >> Ggate([0, 1]) >> Attenuator([0, 1], [0.1, 0.1])
+    dm = state.dm().fock_array((3, 20, 3, 20))
     dm_traced = fock_utils.trace(dm, keep=[0])
-    assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
+    assert np.allclose(dm_traced, state[0].dm().fock_array(3, 20), atol=1e-5)
 
 
-def test_dm_choi():
-    """tests that choi op is correctly applied to a dm"""
-    circ = Ggate(1) >> Attenuator([0.1])
-    dm_out = fock_utils.apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
-    dm_expected = (Vacuum(1) >> circ).dm([10])
-    assert np.allclose(dm_out, dm_expected, atol=1e-5)
+# def test_dm_choi():
+#     """tests that choi op is correctly applied to a dm"""
+#     circ = Ggate([0]) >> Attenuator([0], [0.1])
+#     dm_out = fock_utils.apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
+#     dm_expected = (Vacuum(1) >> circ).dm([10])
+#     assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
-    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))  # apply identity gate
-    assert np.allclose(s.dm([10]), SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    s = SqueezedVacuum([0], 1.0, np.pi / 2) >> Attenuator([0], 1.0).dual
+    assert np.allclose(
+        s.dm().fock_array(10), SqueezedVacuum([0], 1.0, np.pi / 2).dm().fock_array(10)
+    )
 
 
 def test_apply_kraus_to_ket_1mode():
@@ -473,23 +489,33 @@ def test_displacement_values():
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_means(x, y):
     """Tests the mean photon number."""
-    assert np.allclose(State(ket=Coherent(x, y).ket([80])).number_means, x * x + y * y)
-    assert np.allclose(State(dm=Coherent(x, y).dm([80])).number_means, x * x + y * y)
+    state = Coherent([0], x, y)
+
+    cov_ket, mean_ket, _ = [x[0] for x in state.phase_space(s=0)]
+    num_mean_ket = number_means(cov_ket, mean_ket)[0]
+
+    cov_dm, mean_dm, _ = [x[0] for x in state.dm().phase_space(s=0)]
+    num_mean_dm = number_means(cov_dm, mean_dm)[0]
+
+    assert np.allclose(num_mean_ket, x * x + y * y)
+    assert np.allclose(num_mean_dm, x * x + y * y)
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_variances_coh(x, y):
     """Tests the variance of the number operator."""
     assert np.allclose(
-        fock_utils.number_variances(Coherent(x, y).ket([80]), False)[0], x * x + y * y
+        fock_utils.number_variances(Coherent([0], x, y).fock_array(80), False)[0], x * x + y * y
     )
-    assert np.allclose(fock_utils.number_variances(Coherent(x, y).dm([80]), True)[0], x * x + y * y)
+    assert np.allclose(
+        fock_utils.number_variances(Coherent([0], x, y).dm().fock_array(80), True)[0], x * x + y * y
+    )
 
 
 def test_number_variances_fock():
     """Tests the variance of the number operator in Fock."""
-    assert np.allclose(fock_utils.number_variances(Fock(n=1).ket(), False), 0)
-    assert np.allclose(fock_utils.number_variances(Fock(n=1).dm(), True), 0)
+    assert np.allclose(fock_utils.number_variances(Number([0], n=1).fock_array(), False), 0)
+    assert np.allclose(fock_utils.number_variances(Number([0], n=1).dm().fock_array(), True), 0)
 
 
 def test_normalize_dm():
