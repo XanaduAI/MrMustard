@@ -131,7 +131,7 @@ class Settings:
 
     @property
     def COMPLEX_WARNING(self):
-        r"""Whether tensorflow's ``ComplexWarning``s should be raised when a complex is cast to a float. Default is ``False``."""
+        r"""Whether tensorflow's ``ComplexWarning`` should be raised when a complex is cast to a float. Default is ``False``."""
         return self._complex_warning
 
     @COMPLEX_WARNING.setter
