@@ -39,7 +39,7 @@ from mrmustard.physics.gaussian import controlled_X, controlled_Z, number_means
 @given(r=st.floats(0, 2), phi=st.floats(0, 2 * np.pi))
 def test_two_mode_squeezing(r, phi):
     """Tests that the two-mode squeezing operation is implemented correctly"""
-    state = Vacuum([0, 1]) >> S2gate([0, 1], r=-r, phi=phi)
+    state = Vacuum([0, 1]) >> S2gate([0, 1], r=r, phi=phi)
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
     S = two_mode_squeezing(r, phi)
     assert np.allclose(2 * cov, S @ S.T, atol=1e-6)
@@ -49,7 +49,7 @@ def test_two_mode_squeezing(r, phi):
 def test_Sgate(r, phi):
     """Tests the Sgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
-    S2 = S2gate([0, 1], r=-r_choi, phi=0.0)
+    S2 = S2gate([0, 1], r=r_choi, phi=0.0)
     S = Sgate([0], r=r, phi=phi)
     state = Vacuum([0, 1]) >> S2 >> S
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
@@ -63,7 +63,7 @@ def test_Sgate(r, phi):
 def test_Pgate(s):
     """Tests the Pgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
-    S2 = S2gate([0, 1], r=-r_choi, phi=0.0)
+    S2 = S2gate([0, 1], r=r_choi, phi=0.0)
     P = Pgate([0], shearing=s)
     state = Vacuum([0, 1]) >> S2 >> P
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
@@ -78,8 +78,8 @@ def test_CXgate(s):
     """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
     s = 2
     r_choi = np.arcsinh(1.0)
-    S2a = S2gate([0, 2], r=-r_choi, phi=0.0)
-    S2b = S2gate([1, 3], r=-r_choi, phi=0.0)
+    S2a = S2gate([0, 2], r=r_choi, phi=0.0)
+    S2b = S2gate([1, 3], r=r_choi, phi=0.0)
     CX = CXgate([0, 1], s=s)
     state = Vacuum([0, 1, 2, 3]) >> S2a >> S2b >> CX
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
@@ -96,8 +96,8 @@ def test_CZgate(s):
     """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
     s = 2
     r_choi = np.arcsinh(1.0)
-    S2a = S2gate([0, 2], r=-r_choi, phi=0.0)
-    S2b = S2gate([1, 3], r=-r_choi, phi=0.0)
+    S2a = S2gate([0, 2], r=r_choi, phi=0.0)
+    S2b = S2gate([1, 3], r=r_choi, phi=0.0)
     CZ = CZgate([0, 1], s=s)
     state = Vacuum([0, 1, 2, 3]) >> S2a >> S2b >> CZ
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
@@ -113,7 +113,7 @@ def test_CZgate(s):
 def test_Rgate(theta):
     """Tests the Rgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
-    S2 = S2gate([0, 1], r=-r_choi, phi=0.0)
+    S2 = S2gate([0, 1], r=r_choi, phi=0.0)
     R = Rgate([0], theta=theta)
     state = Vacuum([0, 1]) >> S2 >> R
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]
@@ -129,8 +129,8 @@ def test_BSgate(theta, phi):
     r_choi = np.arcsinh(1.0)
     state = (
         Vacuum([0, 1, 2, 3])
-        >> S2gate([0, 2], r=-r_choi, phi=0.0)
-        >> S2gate([1, 3], r=-r_choi, phi=0.0)
+        >> S2gate([0, 2], r=r_choi, phi=0.0)
+        >> S2gate([1, 3], r=r_choi, phi=0.0)
         >> BSgate([0, 1], theta=theta, phi=phi)
     )
     cov, _, _ = [x[0] for x in state.phase_space(s=0)]

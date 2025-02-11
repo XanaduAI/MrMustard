@@ -85,7 +85,7 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     Note that this is consistent with the Strawberryfields convention"""
     cutoff = 4
     r = np.arcsinh(np.sqrt(n_mean))
-    s2gate = S2gate([0, 1], r=-r, phi=phi)
+    s2gate = S2gate([0, 1], r=r, phi=phi)
     amps = (Vacuum([0, 1]) >> s2gate).fock_array((cutoff, cutoff))
     diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
@@ -98,8 +98,8 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     cutoff = 2
     r = np.arcsinh(np.sqrt(n_mean))
 
-    s2gate = S2gate([0, 1], r=-r, phi=phi)
-    s2gate2 = S2gate([2, 3], r=-r, phi=phi)
+    s2gate = S2gate([0, 1], r=r, phi=phi)
+    s2gate2 = S2gate([2, 3], r=r, phi=phi)
     bsgate = BSgate([1, 2], theta=np.pi / 4, phi=varphi)
     amps = (Vacuum([0, 1, 2, 3]) >> s2gate >> s2gate2 >> bsgate).fock_array(
         (cutoff, cutoff, cutoff, cutoff)
@@ -147,7 +147,7 @@ def test_squeezed_state(r, phi):
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     r = np.arcsinh(np.sqrt(n_mean))
-    state = Vacuum([0, 1]) >> S2gate([0, 1], r=-r, phi=phi)
+    state = Vacuum([0, 1]) >> S2gate([0, 1], r=r, phi=phi)
 
     state0 = state[0]
     state1 = state[1]
