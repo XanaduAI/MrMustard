@@ -3,8 +3,8 @@ import pytest
 from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
-from mrmustard import physics, settings
-from mrmustard.lab_dev import Coherent, Number, State
+from mrmustard import settings
+from mrmustard.lab_dev import Coherent, Number
 from mrmustard.physics import fock_utils as fp
 from mrmustard.physics import gaussian as gp
 
