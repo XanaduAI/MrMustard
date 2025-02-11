@@ -388,7 +388,8 @@ class TestPolyExpAnsatz:
         c = np.array([[1, 2, 3]])
         ansatz = PolyExpAnsatz(A, b, c)
 
-        poly_dim, poly_shape = ansatz.polynomial_shape
+        poly_dim = ansatz.num_derived_vars
+        poly_shape = ansatz.shape_derived_vars
         assert np.allclose(poly_dim, 1)
         assert np.allclose(poly_shape, (3,))
 
@@ -402,7 +403,8 @@ class TestPolyExpAnsatz:
 
         ansatz3 = ansatz1 * ansatz2
 
-        poly_dim, poly_shape = ansatz3.polynomial_shape
+        poly_dim = ansatz3.num_derived_vars
+        poly_shape = ansatz3.shape_derived_vars
         assert np.allclose(poly_dim, 2)
         assert np.allclose(poly_shape, (3, 3))
 

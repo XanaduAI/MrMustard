@@ -213,7 +213,7 @@ class DM(State):
             try:  # fock
                 shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz
                     A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
                     ansatz = ansatz / self.probability

@@ -1266,7 +1266,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
+    def squeeze(self, tensor: Tensor, axis: list[int] | None = None) -> Tensor:
         """Removes dimensions of size 1 from the shape of a tensor.
 
         Args:

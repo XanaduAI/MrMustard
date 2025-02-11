@@ -103,7 +103,7 @@ class PolyExpAnsatz(Ansatz):
         super().__init__()
         self._A = math.atleast_3d(math.astensor(A)) if A is not None else None
         self._b = math.atleast_2d(math.astensor(b)) if b is not None else None
-        self._c = math.atleast_3d(math.astensor(c)) if c is not None else None
+        self._c = math.atleast_1d(math.astensor(c)) if c is not None else None
         self.num_derived_vars = num_derived_vars
         self.name = name
         self._simplified = False
@@ -137,9 +137,9 @@ class PolyExpAnsatz(Ansatz):
                 num_derived_vars = 0
             self._A = math.atleast_3d(A)
             self._b = math.atleast_2d(b)
-            self._c = math.atleast_3d(c)
+            self._c = math.atleast_1d(c)
             self.num_derived_vars = num_derived_vars
-            self._batch_size = A.shape[0]
+            self._batch_size = self._A.shape[0]
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -166,7 +166,16 @@ class PolyExpAnsatz(Ansatz):
         return self._c
 
     @property
+    def scalar(self) -> Scalar:
+        r"""
+        The scalar part of the ansatz.
+        """
+        return self.c
+
+    @property
     def batch_size(self) -> int:
+        if self._batch_size is None:
+            return 1
         return self._batch_size
 
     @property
@@ -334,9 +343,9 @@ class PolyExpAnsatz(Ansatz):
             return
 
         to_keep = self._find_unique_terms_sorted()
-        self.A = math.gather(self.A, to_keep, axis=0)
-        self.b = math.gather(self.b, to_keep, axis=0)
-        self.c = math.gather(self.c, to_keep, axis=0)  # already added
+        self._A = math.gather(self._A, to_keep, axis=0)
+        self._b = math.gather(self._b, to_keep, axis=0)
+        self._c = math.gather(self._c, to_keep, axis=0)  # already added
         self._simplified = True
 
     def _find_unique_terms_sorted(self) -> list[int]:
@@ -601,6 +610,11 @@ class PolyExpAnsatz(Ansatz):
             The value of the function or a new ansatz.
         """
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
+        if len(evaluated_indices) > self.num_CV_vars:
+            raise ValueError(
+                f"The ansatz was called with {len(evaluated_indices)} variables, "
+                f"but it only has {self.num_CV_vars} CV variables."
+            )
 
         # Full evaluation: all continuous variables have been provided.
         if len(evaluated_indices) == self.num_CV_vars:
@@ -612,7 +626,7 @@ class PolyExpAnsatz(Ansatz):
                         f"In mode 'zip' all z vectors must have the same batch size, got {batch_sizes}."
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
-                z_input = math.concatenate(only_z, axis=-1)
+                z_input = math.concat(only_z, axis=-1)
                 return self._eval(z_input)
             elif mode == "kron":
                 only_z = [math.atleast_1d(zi) for zi in z]
@@ -627,9 +641,9 @@ class PolyExpAnsatz(Ansatz):
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
                 result_flat = self._eval(
                     z_flat
-                )  # returns an array of shape (batch_size, prod(b_i))
-                return math.reshape(
-                    result_flat, (self.batch_size,) + grid_shape
+                )  # returns an array of shape (batch_size, prod(b_i)) but squeezed because of no batch
+                return math.squeeze(
+                    math.reshape(result_flat, (self.batch_size,) + grid_shape)
                 )  # (batch_size, b0, b1, …, b_n)
             else:
                 raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
@@ -640,7 +654,7 @@ class PolyExpAnsatz(Ansatz):
             if mode not in ("zip", "kron"):
                 raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
             # For partial evaluation (i.e. currying) both modes behave the same.
-            z_input = math.concatenate(
+            z_input = math.concat(
                 only_z, axis=-1
             )  # z_input will have shape (r,) with r the number of evaluated indices.
             return self._partial_eval(z_input, evaluated_indices)

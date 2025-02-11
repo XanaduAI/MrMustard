@@ -135,7 +135,7 @@ class Representation:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
-            if self.ansatz.polynomial_shape[0] == 0:
+            if self.ansatz.num_derived_vars == 0:
                 arrays = [
                     math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
                 ]
@@ -187,7 +187,7 @@ class Representation:
         """
         fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
         try:
-            if self.ansatz.polynomial_shape[0] == 0:
+            if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
