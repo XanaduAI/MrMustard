@@ -18,6 +18,7 @@
 
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.states import SqueezedVacuum, TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
 
@@ -62,7 +63,7 @@ class TestTwoModeSqueezedVacuum:
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_representation(self, modes, r, phi):
         rep = TwoModeSqueezedVacuum(modes, r, phi).ansatz
-        exp = (Vacuum(modes) >> S2gate(modes, r, phi)).ansatz
+        exp = (Vacuum(modes) >> S2gate(modes, -math.astensor(r), phi)).ansatz
         assert rep == exp
 
     def test_representation_error(self):

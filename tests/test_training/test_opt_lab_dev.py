@@ -22,24 +22,24 @@ from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
-    Circuit,
-    Sgate,
-    S2gate,
-    Vacuum,
     BSgate,
-    Ggate,
-    Interferometer,
-    Rgate,
+    Circuit,
     Dgate,
-    RealInterferometer,
     DisplacedSqueezed,
-    SqueezedVacuum,
+    Ggate,
     GKet,
+    Interferometer,
     Number,
+    RealInterferometer,
+    Rgate,
+    S2gate,
+    Sgate,
+    SqueezedVacuum,
     TwoModeSqueezedVacuum,
+    Vacuum,
 )
 from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics.gaussian import von_neumann_entropy, number_means
+from mrmustard.physics.gaussian import number_means, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
