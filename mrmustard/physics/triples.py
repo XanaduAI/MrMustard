@@ -526,9 +526,9 @@ def twomode_squeezing_gate_Abc(
     tanhr = math.diag(math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
     sechr = math.diag(1 / math.cosh(r))
 
-    A_block1 = math.block([[O, -tanhr], [-tanhr, O]])
+    A_block1 = math.block([[O, tanhr], [tanhr, O]])
 
-    A_block2 = math.block([[O, math.conj(tanhr)], [math.conj(tanhr), O]])
+    A_block2 = math.block([[O, -math.conj(tanhr)], [-math.conj(tanhr), O]])
 
     A_block3 = math.block([[sechr, O], [O, sechr]])
 
