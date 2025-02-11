@@ -39,7 +39,7 @@ class TwoModeSqueezedVacuum(Ket):
         >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate, Vacuum
 
         >>> state = TwoModeSqueezedVacuum(modes=[0, 1], r=0.3, phi=0.2)
-        >>> assert state == Vacuum([0, 1]) >> S2gate([0, 1], r=0.3, phi=0.2)
+        >>> assert state == Vacuum([0, 1]) >> S2gate([0, 1], r=-0.3, phi=0.2)
 
 
     Args:
