@@ -56,7 +56,7 @@
 * Use the default repr when in interactive IPython.
   [(#531)](https://github.com/XanaduAI/MrMustard/pull/531)
 
-* Increments the version to 0.7.4.
+* Increments the version to 1.0.0-dev.
   [(#553)](https://github.com/XanaduAI/MrMustard/pull/553)
 
 
