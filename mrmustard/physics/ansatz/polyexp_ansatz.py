@@ -611,7 +611,7 @@ class PolyExpAnsatz(Ansatz):
                     raise ValueError(
                         f"In mode 'zip' all z vectors must have the same batch size, got {batch_sizes}."
                     )
-                # Concatenate along the last axis to form an array of shape (batch, num_CV_vars)
+                # Concatenate along the last axis to form an array of shape (batch, n)
                 z_input = math.concatenate(only_z, axis=-1)
                 return self._eval(z_input)
             elif mode == "kron":
@@ -622,13 +622,9 @@ class PolyExpAnsatz(Ansatz):
                     )
                 # Create a meshgrid from the provided arrays; they may have different batch sizes.
                 grid = np.meshgrid(*only_z, indexing="ij")
-                z_combined = math.astensor(
-                    np.stack(grid, axis=-1)
-                )  # shape (b0, b1, …, b_{n}, num_CV_vars)
+                z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_{n}, n)
                 grid_shape = z_combined.shape[:-1]  # (b0, b1, …, b_n)
-                z_flat = math.reshape(
-                    z_combined, (-1, self.num_CV_vars)
-                )  # shape (prod(b_i), num_CV_vars)
+                z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
                 result_flat = self._eval(
                     z_flat
                 )  # returns an array of shape (batch_size, prod(b_i))
