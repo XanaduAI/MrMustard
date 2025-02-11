@@ -59,7 +59,7 @@ def use_offDiag_pivot_grad(
     arr1010_dB,
     arr1001_dB,
     arr1_dB,
-):
+):  # pragma: no cover
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
