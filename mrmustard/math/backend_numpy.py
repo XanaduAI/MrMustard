@@ -22,9 +22,6 @@ from math import lgamma as mlgamma
 from typing import Sequence
 
 import numpy as np
-
-np.set_printoptions(legacy="1.25")
-
 import scipy as sp
 from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
@@ -48,6 +45,7 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal_batch,
 )
 
+np.set_printoptions(legacy="1.25")
 
 # pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):  # pragma: no cover
