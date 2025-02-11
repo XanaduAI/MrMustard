@@ -103,7 +103,7 @@ class PolyExpAnsatz(Ansatz):
         super().__init__()
         self._A = math.atleast_3d(math.astensor(A)) if A is not None else None
         self._b = math.atleast_2d(math.astensor(b)) if b is not None else None
-        self._c = math.atleast_1d(math.astensor(c)) if c is not None else None
+        self._c = math.atleast_2d(math.astensor(c)) if c is not None else None
         self.num_derived_vars = num_derived_vars
         self.name = name
         self._simplified = False
@@ -137,7 +137,7 @@ class PolyExpAnsatz(Ansatz):
                 num_derived_vars = 0
             self._A = math.atleast_3d(A)
             self._b = math.atleast_2d(b)
-            self._c = math.atleast_1d(c)
+            self._c = math.atleast_2d(c)
             self.num_derived_vars = num_derived_vars
             self._batch_size = self._A.shape[0]
 
@@ -402,6 +402,7 @@ class PolyExpAnsatz(Ansatz):
 
         Returns:
             The value of the function at the point(s) with the same batch dimensions as ``z``.
+            The output has shape (L, *b) where L is the batch size of the ansatz.
         """
         z = math.atleast_2d(z)
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
@@ -447,7 +448,7 @@ class PolyExpAnsatz(Ansatz):
         poly = math.reshape(poly, (self.batch_size, -1, d))
         return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
 
-    def _partial_eval(self, z: Batch[Vector], indices: tuple[int, ...]) -> PolyExpAnsatz:
+    def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z0,z1,z2)``, the call
