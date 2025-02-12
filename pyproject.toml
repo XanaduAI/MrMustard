@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mrmustard"
-version = "0.7.3"
+version = "1.0.0-dev"
 description = "Differentiable quantum Gaussian circuits"
 authors = [
     {name= "Xanadu", email= "filippo@xanadu.ai"},
