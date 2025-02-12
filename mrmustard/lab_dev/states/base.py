@@ -252,6 +252,7 @@ class State(CircuitComponent):
             A state.
 
         Example:
+        .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Ket
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -300,10 +301,10 @@ class State(CircuitComponent):
             setting ``atol_purity`` to ``None``.
 
         Example:
-            .. code-block::
-                >>> import numpy as np
-                >>> from mrmustard.lab_dev import Ket, Vacuum
-                >>> assert Ket.from_phase_space([0], (np.eye(2)/2, [0,0], 1)) == Vacuum([0])
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Ket, Vacuum
+            >>> assert Ket.from_phase_space([0], (np.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 
     @classmethod
