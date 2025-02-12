@@ -43,7 +43,7 @@ class BtoPS(Map):
         a ``Channel`` type object that applies the Bargmann to Phase Space transformation
         on any input.
 
-    ..details:
+    .. details::
         This class represents the transformation from the Bargmann (B) representation
         to phase space (PS).
 

@@ -47,7 +47,7 @@ class GKet(Ket):
 
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
-    ..details:
+    .. details::
         For a given Gaussian unitary U (that is determined by its symplectic
         representation), produces the state
         ..math:
@@ -99,7 +99,7 @@ class GDM(DM):
     The `N`-mode mixed state described by a Gaussian gate that acts on a given
     thermal state.
 
-    ..details:
+    .. details::
         For a given Gaussian unitary U (that is determined by its symplectic
         representation), and a set of temperatures, produces the state
         ..math:

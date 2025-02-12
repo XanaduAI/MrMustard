@@ -52,7 +52,15 @@ class DM(State):
     @property
     def is_positive(self) -> bool:
         r"""
-        Whether this DM is a positive operator.
+        Whether this DM corresponds to a positive operator.
+
+        Raises:
+            ValueError: if the batch dimension of the state is greater than 1.
+
+        Example:
+            .. code-block::
+                >>> from mrmustard.lab_dev import DM
+                >>> assert DM.random([0]).is_positive
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -74,6 +82,14 @@ class DM(State):
     def is_physical(self) -> bool:
         r"""
         Whether this DM is a physical density operator.
+
+        Raises:
+            ValueError: if the batch dimension of the state is greater than 1.
+
+        Example:
+            .. code-block::
+                >>> from mrmustard.lab_dev import DM
+                >>> assert DM.random([0]).is_physical
         """
         return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
@@ -82,12 +98,23 @@ class DM(State):
         r"""
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
+
+        Example:
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import DM
+            >>> assert np.isclose(DM.random([0]), 1.0)
         """
         return math.sum(self._probabilities)
 
     @property
     def purity(self) -> float:
-        "Computes the putiry (:math:`tr(rho^2)) of this DM."
+        r"""Computes the putiry (:math:`tr(rho^2)) of this DM.
+
+        Example:
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import DM, Vacuum
+            >>> assert np.isclose(Vacuum([0]).dm().purity, 1.0)
+        """
         return self.L2_norm
 
     @property
@@ -116,6 +143,9 @@ class DM(State):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
+        r"""
+        Initializes a density
+        """
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
@@ -139,15 +169,27 @@ class DM(State):
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
-        which parametrize the s-parametrized phase space function
-        :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
-
+        which parametrize the Wigner function.
 
         Args:
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
             name: The name of this state.
-            s: The phase space parameter, defaults to 0 (Wigner).
+            atol_purity: Should be set to None.
+
+        Returns:
+            A ``DM`` object from its phase space representation.
+
+        .. details::
+            The Wigner function is considered as
+            :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
+
+        Example:
+            .. code-block::
+                >>> import numpy as np
+                >>> from mrmustard.lab_dev import DM, Vacuum
+                >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
+                >>> rho == Vacuum([0]).dm()
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)
@@ -162,12 +204,21 @@ class DM(State):
     @classmethod
     def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
-        Samples a random density matrix. The final state has zero displacement.
+        Samples a random density matrix with no displacement.
 
         Args:
             modes: the modes where the state is defined over
             m: is the number modes to be considered for tracing out from a random pure state (Ket)
             if not specified, m is considered to be len(modes)
+            max_r: maximum squeezing chosen for the generation of the random state.
+
+        Returns:
+            A ``DM``.
+
+        .. detail::
+            Using a random Gaussian unitary, :math:`U`, on :math:`len(modes)+m`, the code outputs
+            :math:`\mathrm{tr}_{m}(U|0\rangle)`. The random unitary :math:`U` is chosen with maximum
+            squeezing determined by `max_r`.
         """
         if m is None:
             m = len(modes)
@@ -255,6 +306,9 @@ class DM(State):
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
 
+        Returns:
+            Expectation value as a float.
+
         Raise:
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
@@ -289,21 +343,22 @@ class DM(State):
         self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
     ) -> ComplexTensor:
         r"""
-                Returns an array representation of this component in the Fock basis with the given shape.
-                If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-                available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
 
-                Args:
-                    shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                        it is broadcasted to all the dimensions. If not given, it is estimated.
-                    batched: Whether the returned representation is batched or not. If ``False`` (default)
-                        it will squeeze the batch dimension if it is 1.
-                    standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
-                    of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
-                    standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
-                Returns:
-                    array: The Fock representation of this component.
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+            batched: Whether the returned representation is batched or not. If ``False`` (default)
+                it will squeeze the batch dimension if it is 1.
+            standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
+            of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+            standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+
+        Returns:
+            array: The Fock representation of this component.
         """
         array = super().fock_array(shape or self.auto_shape(), batched)
         if standard_order:

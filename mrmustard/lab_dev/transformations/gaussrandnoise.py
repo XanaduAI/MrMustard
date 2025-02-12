@@ -48,7 +48,7 @@ class GaussRandNoise(Channel):
         Y: The Y matrix of the Gaussian random noise
         Y_train: whether the Y matrix is a trainable variable
 
-    ..details::
+    .. details::
         The Bargmann representation of the channel is computed via the formulas provided in the paper:
         https://arxiv.org/pdf/2209.06069
 

@@ -57,7 +57,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
 
-    ..details:
+    .. details::
         The covariance matrix :math: `V` and vector of means :math: `r` are parametrized as
         ..math:
 

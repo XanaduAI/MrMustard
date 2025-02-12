@@ -40,7 +40,7 @@ class PhaseNoise(Channel):
         modes: The modes the channel is applied to
         phase_stdev: The standard deviation of the random phase noise.
 
-    ..details::
+    .. details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
     """
 
