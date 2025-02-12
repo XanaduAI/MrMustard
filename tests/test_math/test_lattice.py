@@ -51,8 +51,8 @@ def test_binomial_vs_binomialDict():
     local_cutoffs = (10, 10)
     global_cutoff = 15
 
-    G, _ = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
-    D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+    G, _ = binomial(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
+    D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
     for idx in D.keys():
         assert np.isclose(D[idx], G[idx])

@@ -227,7 +227,7 @@ def test_dm_to_ket(state, kwargs):
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1, atol=1e-4)
     # check kets are equivalent
-    assert np.allclose(ket, state.fock_array(cutoff).conj(), atol=1e-4)
+    assert np.allclose(ket, math.conj(state.fock_array(cutoff)), atol=1e-4)
 
     dm_reconstructed = fock_utils.ket_to_dm(ket)
     # check ket leads to same dm
