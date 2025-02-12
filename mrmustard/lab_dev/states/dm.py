@@ -143,9 +143,6 @@ class DM(State):
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
     ) -> State:
-        r"""
-        Initializes a density
-        """
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)

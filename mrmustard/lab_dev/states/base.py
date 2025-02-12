@@ -250,6 +250,17 @@ class State(CircuitComponent):
 
         Returns:
             A state.
+
+        Example:
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+
+            >>> A = np.array([[0,.5], [.5,0]])
+            >>> b = np.array([2-1j,2+1j])
+            >>> c = 1
+            >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
+            >>> assert isinstance(psi, Ket)
         """
 
     @classmethod
