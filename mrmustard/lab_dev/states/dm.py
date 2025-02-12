@@ -262,6 +262,11 @@ class DM(State):
             max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
             max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Vacuum
+            >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
         """
         # experimental:
         if self.ansatz.batch_size == 1:
@@ -292,6 +297,11 @@ class DM(State):
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
+
+        Example:
+        .. code-block:
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
         return self
 
@@ -317,6 +327,19 @@ class DM(State):
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
+
+        Example:
+            In the example below, we consider a thermal state and compute its expectation value against
+            the parity operator, which is equivalent to `Rgate([0], np.pi)`.
+
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Rgate, GDM
+            >>> beta = 1
+            >>> symplectic = np.eye(2)
+            >>> rho = GDM([0], beta, symplectic)
+            >>> answer = (1-np.exp(-beta))/(1+np.exp(-beta))
+            >>> assert np.isclose(rho.expectation(Rgate([0], np.pi)), answer)
         """
 
         op_type, msg = _validate_operator(operator)
@@ -362,6 +385,12 @@ class DM(State):
 
         Returns:
             array: The Fock representation of this component.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert np.isclose(Vacuum([0]).dm().fock_array(), array([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape(), batched)
         if standard_order:
@@ -381,6 +410,12 @@ class DM(State):
 
         Returns:
             The Fock distribution.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert np.isclose(Vacuum([0]).dm().fock_distribution(2), array([1, 0]))
         """
         fock_array = self.fock_array(cutoff)
         return math.astensor(
@@ -462,6 +497,12 @@ class DM(State):
 
         Returns a ``DM`` when the wires of the resulting components are compatible with
         those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import CircuitComponent, DM, TraceOut
+            >>> isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
+            >>> isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
         """
 
         result = super().__rshift__(other)
