@@ -103,7 +103,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
-            >>> assert np.isclose(DM.random([0]), 1.0)
+            >>> assert np.isclose(DM.random([0]).probability, 1.0)
         """
         return math.sum(self._probabilities)
 
