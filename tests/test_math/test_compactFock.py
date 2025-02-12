@@ -7,8 +7,8 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from mrmustard import math
-from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
-from mrmustard.physics import fidelity, normalize
+from mrmustard.lab_dev import Ggate, SqueezedVacuum, DM, Vacuum
+from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
@@ -92,12 +92,13 @@ def test_compactFock_diagonal_gradients():
     """
     skip_np()
 
-    G = Ggate(num_modes=1, symplectic_trainable=True)
+    G = Ggate([0], symplectic_trainable=True)
 
     def cost_fn():
         n1 = 2  # number of detected photons
-        state_opt = Vacuum(1) >> G
-        A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
+        state_opt = Vacuum([0]) >> G
+        cov, means, _ = [x[0] for x in state_opt.phase_space(s=0)]
+        A, B, G0 = wigner_to_bargmann_rho(cov, means)
         probs = math.hermite_renormalized_diagonal(
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1]
         )
@@ -117,17 +118,20 @@ def test_compactFock_1leftover_gradients():
     """
     skip_np()
 
-    G = Ggate(num_modes=2, symplectic_trainable=True)
+    G = Ggate([0, 1], symplectic_trainable=True)
 
     def cost_fn():
         n2 = 2  # number of detected photons
-        state_opt = Vacuum(2) >> G
-        A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
+        state_opt = Vacuum([0, 1]) >> G
+        cov, means, _ = [x[0] for x in state_opt.phase_space(s=0)]
+        A, B, G0 = wigner_to_bargmann_rho(cov, means)
         marginal = math.hermite_renormalized_1leftoverMode(
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[2, n2 + 1]
         )
-        conditional_state = normalize(State(dm=marginal[..., n2]))
-        return -fidelity(conditional_state, SqueezedVacuum(r=1))
+        conditional_state = DM.from_ansatz(
+            modes=[0], ansatz=ArrayAnsatz(marginal[..., n2])
+        ).normalize()
+        return -math.abs((conditional_state >> SqueezedVacuum([0], r=1).dual))
 
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=5)
