@@ -183,11 +183,11 @@ class DM(State):
             :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
         Example:
-            .. code-block::
-                >>> import numpy as np
-                >>> from mrmustard.lab_dev import DM, Vacuum
-                >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
-                >>> rho == Vacuum([0]).dm()
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import DM, Vacuum
+            >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
+            >>> assert rho == Vacuum([0]).dm()
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)
@@ -217,6 +217,11 @@ class DM(State):
             Using a random Gaussian unitary, :math:`U`, on :math:`len(modes)+m`, the code outputs
             :math:`\mathrm{tr}_{m}(U|0\rangle)`. The random unitary :math:`U` is chosen with maximum
             squeezing determined by `max_r`.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import DM
+            >>> assert isinstance(DM.random([0,1]), DM)
         """
         if m is None:
             m = len(modes)
