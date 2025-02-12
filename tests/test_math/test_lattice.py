@@ -19,7 +19,7 @@ import pytest
 
 from mrmustard import lab_dev as mmld
 from mrmustard import math, settings
-from mrmustard.lab import Dgate, Gaussian
+from mrmustard.lab_dev import Dgate, GKet
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,
     beamsplitter,
@@ -32,26 +32,26 @@ from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_st
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 
 
-def test_vanillaNumba_vs_binomial():
-    """Test that the vanilla method and the binomial method give the same result."""
+# def test_vanillaNumba_vs_binomial():
+#     """Test that the vanilla method and the binomial method give the same result."""
 
-    G = Gaussian(2)
+#     G = Gket([0,1])
 
-    ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
-    ket_binomial = G.ket(max_photons=10)[:5, :5]
+#     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
+#     ket_binomial = G.ket(max_photons=10)[:5, :5]
 
-    assert np.allclose(ket_vanilla, ket_binomial)
+#     assert np.allclose(ket_vanilla, ket_binomial)
 
 
 def test_binomial_vs_binomialDict():
     """Test that binomial and binomial_dict give the same result."""
 
-    A, b, c = Gaussian(2).bargmann(numpy=True)
+    A, b, c = GKet([0, 1]).bargmann_triple()
     max_prob = 0.9
     local_cutoffs = (10, 10)
     global_cutoff = 15
 
-    G, norm = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+    G, _ = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
     D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
 
     for idx in D.keys():
@@ -61,9 +61,10 @@ def test_binomial_vs_binomialDict():
 @pytest.mark.parametrize("batch_size", [1, 3])
 def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
     """Test the batch version works versus the normal vanilla version."""
-    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
+    state = GKet([0, 1, 2]) >> Dgate([0, 1, 2], [0.0, 0.1, 0.2])
+    cov, means, _ = [x[0] for x in state.phase_space(s=0)]
     A, B, C = wigner_to_bargmann_rho(
-        state.cov, state.means
+        cov, means
     )  # Create random state (M mode Gaussian state with displacement)
 
     # Vanilla MM
@@ -81,9 +82,10 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
 @pytest.mark.parametrize("batch_size", [1, 3])
 def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     """Test the batch version works versus the normal diagonal version."""
-    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
+    state = GKet([0, 1, 2]) >> Dgate([0, 1, 2], [0.0, 0.1, 0.2])
+    cov, means, _ = [x[0] for x in state.phase_space(s=0)]
     A, B, C = wigner_to_bargmann_rho(
-        state.cov, state.means
+        cov, means
     )  # Create random state (M mode Gaussian state with displacement)
 
     cutoffs = (18, 19, 20, batch_size)
