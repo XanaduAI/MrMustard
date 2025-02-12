@@ -100,6 +100,7 @@ class DM(State):
         as a convex combination of states.
 
         Example:
+        .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
             >>> assert np.isclose(DM.random([0]), 1.0)
