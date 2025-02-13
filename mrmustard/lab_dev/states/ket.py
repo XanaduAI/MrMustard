@@ -33,6 +33,7 @@ from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     ComplexTensor,
+    RealTensor,
     RealVector,
     Scalar,
     Batch,
@@ -343,7 +344,7 @@ class Ket(State):
 
         return result
 
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
+    def fock_distribution(self, cutoff: int) -> RealTensor:
         r"""
         The Fock distribution of the state up to some cutoff.
 
