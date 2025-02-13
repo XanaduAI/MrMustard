@@ -435,7 +435,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
-            >>> assert np.isclose(Vacuum([0]).dm().fock_distribution(2), np.array([1, 0]))
+            >>> assert np.allclose(Vacuum([0]).dm().fock_distribution(2), np.array([1, 0]))
         """
         fock_array = self.fock_array(cutoff)
         return math.astensor(
