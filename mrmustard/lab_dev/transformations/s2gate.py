@@ -64,8 +64,8 @@ class S2gate(Unitary):
             A = \begin{bmatrix}
                     O & e^{i\phi}\tanh(r) & \sech(r) & 0 \\
                     e^{i\phi}\tanh(r) & 0 & 0 & \sech(r) \\
-                    \sech(r) & & 0 & 0 e^{i\phi}\tanh(r) \\
-                    O & \sech(r) & e^{i\phi}\tanh(r) & 0
+                    \sech(r) & & 0 & 0 -e^{i\phi}\tanh(r) \\
+                    O & \sech(r) & -e^{i\phi}\tanh(r) & 0
                 \end{bmatrix} \text{, }
             b = O_{4} \text{, and }
             c = \sech(r)
