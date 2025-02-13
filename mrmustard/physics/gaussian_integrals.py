@@ -20,8 +20,6 @@ from typing import Sequence
 import numpy as np
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
-#if math.backend.name == 'jax':
-import jax
 
 
 def real_gaussian_integral(
@@ -302,7 +300,7 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
 
     return A, b, c
 
-def true_branch(m, M, bM, det_M, c, D, R, bR):
+def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     r"""
     True branch of the complex gaussian_integral_1 function.
     Executed if the matrix M is invertible.
@@ -333,7 +331,7 @@ def true_branch(m, M, bM, det_M, c, D, R, bR):
     b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
     return math.cast(A_post, 'complex128'), math.cast(b_post, 'complex128'), math.cast(c_post, 'complex128')
 
-def false_branch(m, M, bM, det_M, c, D, R, bR):
+def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     r"""
     False branch of the complex gaussian_integral_1 function. 
     Exectued if the matrix M is singular.
@@ -441,7 +439,7 @@ def complex_gaussian_integral_1(
     det_nonzero = math.abs(det_M) > 1e-12
 
     # return infinity if M is singular; otherwise, return the post-integration parameters
-    A_post, b_post, c_post = math.conditional(det_nonzero, true_branch, false_branch, m, M, bM, det_M, c, D, R, bR)
+    A_post, b_post, c_post = math.conditional(det_nonzero, true_branch_complex_gaussian_integral_1, false_branch_complex_gaussian_integral_1, m, M, bM, det_M, c, D, R, bR)
 
     if not batched:
         return A_post[0], b_post[0], c_post[0]
