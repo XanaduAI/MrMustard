@@ -427,7 +427,7 @@ class DM(State):
             array = math.transpose(array, perm=axes)
         return array
 
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
+    def fock_distribution(self, cutoff: int) -> RealTensor:
         r"""
         Returns the Fock distribution of the state up to some cutoff.
 
@@ -445,7 +445,10 @@ class DM(State):
         """
         fock_array = self.fock_array(cutoff)
         return math.astensor(
-            [fock_array[ns * 2] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+            [
+                math.real(fock_array[ns * 2])
+                for ns in product(list(range(cutoff)), repeat=self.n_modes)
+            ]
         )
 
     def normalize(self) -> DM:
