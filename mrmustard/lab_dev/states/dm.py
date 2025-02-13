@@ -31,7 +31,13 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import ComplexTensor, RealVector, ComplexMatrix, ComplexVector
+from mrmustard.utils.typing import (
+    ComplexTensor,
+    RealTensor,
+    RealVector,
+    ComplexMatrix,
+    ComplexVector,
+)
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
@@ -459,7 +465,7 @@ class DM(State):
         """
         return self / self.probability
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> RealTensor:
         r"""
         The (discretized) quadrature distribution of the State.
 
@@ -474,7 +480,7 @@ class DM(State):
         .. code-block::
             >>> from mrmustard.lab_dev import DM
             >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
-            >>> assert all((dist.real) >= 0)
+            >>> assert all(dist >= 0)
         """
         quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:

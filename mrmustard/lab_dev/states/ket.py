@@ -359,7 +359,7 @@ class Ket(State):
             >>> from mrmustard.lab_dev import Ket
             >>> psi = Ket.random([0])
             >>> dist = psi.fock_distribution(20)
-            >>> assert all(dist.real >= 0)
+            >>> assert all(dist >= 0)
         """
         fock_array = self.fock_array(cutoff)
         return (
@@ -374,11 +374,22 @@ class Ket(State):
 
     def normalize(self) -> Ket:
         r"""
-        Returns a rescaled version of the state such that its probability is 1
+        Scales the state so that it has unit L2 norm.
+
+        Returns:
+            A ``DM``.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard import Ket
+            >>> psi = Ket.random([0,1]) * 2.0
+            >>> assert np.isclose(psi.probability , 2.0)
+            >>> assert np.isclose(psi.normalize().probability, 1.0)
         """
         return self / math.sqrt(self.probability)
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> RealTensor:
         r"""
         The (discretized) quadrature distribution of the Ket.
 
@@ -388,6 +399,12 @@ class Ket(State):
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
             The quadrature distribution.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> dist = Ket.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
+            >>> assert all(dist >= 0)
         """
         quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
@@ -433,16 +450,32 @@ class Ket(State):
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing. Given this is a ``Ket`` object which
-        has only ket wires at the output, in expressions like ``ket >> channel`` where ``channel``
-        has wires on the ket and bra sides the adjoint of ket is automatically added, effectively
-        calling ``ket.adjoint @ (ket @ channel)`` and the method returns a new ``DM``.
-        In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
-        not needed and the method returns a new ``Ket``.
+        adding the adjoints when they are missing.
 
-        Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
-        and a (batched) scalar if there are no wires left, for convenience.
+        Args:
+            other: the ``CircuitCompunent`` object that we want to contract the state with.
+
+        Returns:
+            A ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
+            with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
+            and a (batched) scalar if there are no wires left, for convenience.
+
+        Note:
+            Given this is a ``Ket`` object which
+            has only ket wires at the output, in expressions like ``ket >> channel`` where ``channel``
+            has wires on the ket and bra sides the adjoint of ket is automatically added, effectively
+            calling ``ket.adjoint @ (ket @ channel)`` and the method returns a new ``DM``.
+            In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
+            not needed and the method returns a new ``Ket``.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket, DM, Attenuator, Dgate
+            >>> psi = Ket.random([0,1])
+            >>> U = Dgate([0], x=1, y=0)
+            >>> channel = Attenuator([0], .5)
+            >>> assert isisntance(psi >> U, Ket)
+            >>> assert isinstance(psi >> channel, DM)
         """
 
         result = super().__rshift__(other)
