@@ -349,8 +349,16 @@ class Ket(State):
 
         Args:
             cutoff: The photon cutoff.
+
         Returns:
             The Fock distribution.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> psi = Ket.random([0])
+            >>> dist = psi.fock_distribution(20)
+            >>> assert all(dist.real >= 0)
         """
         fock_array = self.fock_array(cutoff)
         return (
