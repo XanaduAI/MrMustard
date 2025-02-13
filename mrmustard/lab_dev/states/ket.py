@@ -394,7 +394,7 @@ class Ket(State):
 
             >>> psi = Ket.random([0,1]) * 2.0
 
-            >>> assert np.isclose(psi.probability , 2.0)
+            >>> assert np.isclose(psi.probability , 4.0)
             >>> assert np.isclose(psi.normalize().probability, 1.0)
         """
         return self / math.sqrt(self.probability)
