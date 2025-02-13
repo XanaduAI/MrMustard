@@ -60,6 +60,18 @@ class Ket(State):
     def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
+
+        Returns:
+            A boolean variable.
+
+        Raises:
+            ValueError: if the state is batched (i.e., has batch dimension greater than 1).
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> psi = Ket.random([0])
+            >>> assert psi.is_physical
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -75,11 +87,34 @@ class Ket(State):
 
     @property
     def probability(self) -> float:
-        r"""Probability of this Ket (L2 norm squared)."""
+        r"""
+        Probability of this Ket (L2 norm squared).
+
+        Returns:
+            A float number.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Ket
+            >>> psi = Ket.random([0])
+            >>> assert np.isclose(psi.probability, 1.0)
+        """
         return self.L2_norm
 
     @property
     def purity(self) -> float:
+        r"""
+        The purity of the state.
+
+        Returns:
+            Always 1.0 as a ``Ket`` object is pure.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> assert Ket.random([0]).purity == 1.0
+        """
         return 1.0
 
     @property
@@ -138,7 +173,19 @@ class Ket(State):
         Args:
             modes: The modes of the state.
             max_r: Maximum squeezing parameter over which we make random choices.
-        Output is a Ket
+
+        Returns:
+            A ``Ket`` object.
+
+        .. details::
+            The output is a random Gaussian unitary :math:`U` over :math:`modes` with
+            zero displacement and maximum squeezing `max_r` applied to vacuum state over `modes`,
+            i.e., :math:`U|0^{modes}\rangle`.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> assert isinstance(Ket.random([0,1]), Ket)
         """
 
         m = len(modes)
@@ -175,13 +222,24 @@ class Ket(State):
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
-        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``manual_shape``.
 
         Args:
             max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Returns:
+            array: The Fock representation of this component.
+
+        Note:
+            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+            non-None values in ``manual_shape``.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Vacuum, Ket
+            >>> assert np.allclose(Vacuum([0]).fock_array(), np.array([1]))
         """
         # experimental:
         if self.ansatz.batch_size == 1:
@@ -211,6 +269,14 @@ class Ket(State):
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``Ket``.
+
+        Returns:
+            A ``DM``.
+
+        Example:
+        .. code-block:
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
         dm = self @ self.adjoint
         ret = DM(dm.representation, self.name)
@@ -263,7 +329,8 @@ class Ket(State):
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
-        Returns the Fock distribution of the state up to some cutoff.
+        The Fock distribution of the state up to some cutoff.
+
         Args:
             cutoff: The photon cutoff.
         Returns:

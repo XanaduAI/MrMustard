@@ -35,12 +35,6 @@ class DisplacedSqueezed(Ket):
     If ``x``, ``y``, ``r``, and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`
     or `N`. If their length is equal to `1`, all the modes share the same parameters.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
-
-        >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
 
     Args:
         modes: The modes of the coherent state.
@@ -61,6 +55,16 @@ class DisplacedSqueezed(Ket):
         The covariance matrix :math: `V` and vector of means :math: `r` are parametrized as
         ..math:
 
+    Returns:
+        A ``Ket``.
+
+    Example:
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
+
+        >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
+        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
     """
 
     short_name = "DSq"

@@ -259,9 +259,17 @@ class DM(State):
         non-None values in ``manual_shape``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
+            max_prob: The maximum probability mass to capture in the shape (default in
+            ``settings.AUTOSHAPE_PROBABILITY``).
             max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Returns:
+            A ``tuple`` demonstrating the Fock cutoffs along each axis.
+
+        Raises:
+            Warning: if the item is batched. In that case, the `auto_shape` will only output the
+            shape computed for the first element in the batch.
 
         Example:
         .. code-block::
@@ -297,6 +305,9 @@ class DM(State):
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
+
+        Returns:
+            A ``DM``.
 
         Example:
         .. code-block:
@@ -372,7 +383,6 @@ class DM(State):
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
-        The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
@@ -386,11 +396,21 @@ class DM(State):
         Returns:
             array: The Fock representation of this component.
 
+        Note:
+            The ``standard_order`` boolean argument lets one choose the standard convention for the
+            index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
+            returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
+            side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's
+            convention is that the bra index comes before the ket index. In other words, for a single
+            mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default)
+            is the transpose of the standard density matrix. For multiple modes, the same applies to each
+            pair of indices of each mode.
+
         Example:
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
-            >>> assert np.isclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
+            >>> assert np.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape(), batched)
         if standard_order:
@@ -424,7 +444,18 @@ class DM(State):
 
     def normalize(self) -> DM:
         r"""
-        Returns a rescaled version of the state such that its probability is 1.
+        Normalizes the state so that it has unit trace.
+
+        Returns:
+            A ``DM``.
+
+        Example:
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import DM
+            >>> rho = DM.random([0,1]) * 2
+            >>> assert np.isclose(rho.probability, 2.0)
+            >>> assert np.isclose(rho.normalize().probability, 1.0)
         """
         return self / self.probability
 
@@ -497,12 +528,19 @@ class DM(State):
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing. Given this is a ``DM`` object which
-        has both ket and bra wires at the output, expressions like ``dm >> u`` where
-        ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
+        adding the adjoints when they are missing.
 
-        Returns a ``DM`` when the wires of the resulting components are compatible with
-        those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+        Args:
+            other: the ``CircuitComponent`` we want to contract with.
+
+        Returns:
+            A ``DM`` when the wires of the resulting components are compatible with
+            those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+
+        Note:
+            Given this is a ``DM`` object which
+            has both ket and bra wires at the output, expressions like ``dm >> u`` where
+            ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
 
         Example:
         .. code-block::

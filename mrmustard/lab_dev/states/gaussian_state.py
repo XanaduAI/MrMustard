@@ -47,11 +47,20 @@ class GKet(Ket):
 
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
+    Returns:
+        A ``Ket``.
+
     .. details::
         For a given Gaussian unitary U (that is determined by its symplectic
         representation), produces the state
         ..math:
             |\psi\rangle = U |0\rangle
+
+    Example:
+    .. code-block::
+        >>> from mrmustard.lab_dev import GKet, Ket
+        >>> psi = Gket([0])
+        >>> assert isinstance(psi, Ket)
     """
 
     short_name = "Gk"
@@ -99,12 +108,6 @@ class GDM(DM):
     The `N`-mode mixed state described by a Gaussian gate that acts on a given
     thermal state.
 
-    .. details::
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), and a set of temperatures, produces the state
-        ..math:
-            \rho = U (\bigotimes_i \rho_t(\beta_i))
-        where rho_t are thermal states with temperatures determined by beta.
 
     Args:
         modes: the modes over which the state is defined.
@@ -118,6 +121,22 @@ class GDM(DM):
         is chosen.
 
         symplectic_trainable: determines if the symplectic matrix can be trained.
+
+    Returns:
+    A ``DM``.
+
+    .. details::
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), and a set of temperatures, produces the state
+        ..math:
+            \rho = U (\bigotimes_i \rho_t(\beta_i))
+        where rho_t are thermal states with temperatures determined by beta.
+
+    Example:
+    .. code-block::
+        >>> from mrmustard.lab_dev import GDM, DM
+        >>> rho = GDM([0])
+        >>> assert isinstance(rho, DM)
     """
 
     short_name = "Gd"
