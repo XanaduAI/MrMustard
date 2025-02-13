@@ -42,11 +42,13 @@ class TestPNRSampler:
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
 
         coh_state = Coherent([0, 1], x=[0.5, 1])
-        exp_probs = math.astensor([
-            (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
-            for n0 in range(10)
-            for n1 in range(10)
-        ])
+        exp_probs = math.astensor(
+            [
+                (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
+                for n0 in range(10)
+                for n1 in range(10)
+            ]
+        )
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
     def test_sample(self):
@@ -74,7 +76,6 @@ class TestHomodyneSampler:
     r"""
     Tests ``HomodyneSampler`` objects.
     """
-
 
     def test_sample_mean_and_std_vacuum(self):
         r"""
@@ -126,7 +127,7 @@ class TestHomodyneSampler:
         assert math.allclose(
             meas_result.mean(axis=0), settings.HBAR * math.real(alpha), atol=std_10 + tol
         )
-        
+
     def test_init(self):
         sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
         assert sampler.povms is None

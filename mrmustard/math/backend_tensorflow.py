@@ -207,8 +207,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
-    
-    def conditional(self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args) -> tf.Tensor:
+
+    def conditional(
+        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+    ) -> tf.Tensor:
         if tf.reduce_all(cond):
             return true_fn(*args)
         else:

@@ -120,14 +120,14 @@ def join_Abc_real(
 
     A1_idx_idx = math.gather(math.gather(A1, idx1, axis=-1), idx1, axis=-2)
     b1_idx = math.gather(b1, idx1, axis=-1)
-    if not_idx1.size>0:
+    if not_idx1.size > 0:
         A1_idx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), idx1, axis=-2)
         A1_notidx_idx = math.gather(math.gather(A1, idx1, axis=-1), not_idx1, axis=-2)
         A1_notidx_notidx = math.gather(math.gather(A1, not_idx1, axis=-1), not_idx1, axis=-2)
         b1_notidx = math.gather(b1, not_idx1, axis=-1)
     A2_idx_idx = math.gather(math.gather(A2, idx2, axis=-1), idx2, axis=-2)
     b2_idx = math.gather(b2, idx2, axis=-1)
-    if not_idx2.size>0:
+    if not_idx2.size > 0:
         A2_idx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), idx2, axis=-2)
         A2_notidx_idx = math.gather(math.gather(A2, idx2, axis=-1), not_idx2, axis=-2)
         A2_notidx_notidx = math.gather(math.gather(A2, not_idx2, axis=-1), not_idx2, axis=-2)
@@ -300,6 +300,7 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
 
     return A, b, c
 
+
 def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     r"""
     True branch of the complex gaussian_integral_1 function.
@@ -329,11 +330,16 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
 
     A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
     b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
-    return math.cast(A_post, 'complex128'), math.cast(b_post, 'complex128'), math.cast(c_post, 'complex128')
+    return (
+        math.cast(A_post, "complex128"),
+        math.cast(b_post, "complex128"),
+        math.cast(c_post, "complex128"),
+    )
+
 
 def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     r"""
-    False branch of the complex gaussian_integral_1 function. 
+    False branch of the complex gaussian_integral_1 function.
     Exectued if the matrix M is singular.
 
     Args:
@@ -350,6 +356,7 @@ def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
         The post-integration parameters
     """
     return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(c)
+
 
 def complex_gaussian_integral_1(
     Abc: tuple,
@@ -439,7 +446,19 @@ def complex_gaussian_integral_1(
     det_nonzero = math.abs(det_M) > 1e-12
 
     # return infinity if M is singular; otherwise, return the post-integration parameters
-    A_post, b_post, c_post = math.conditional(det_nonzero, true_branch_complex_gaussian_integral_1, false_branch_complex_gaussian_integral_1, m, M, bM, det_M, c, D, R, bR)
+    A_post, b_post, c_post = math.conditional(
+        det_nonzero,
+        true_branch_complex_gaussian_integral_1,
+        false_branch_complex_gaussian_integral_1,
+        m,
+        M,
+        bM,
+        det_M,
+        c,
+        D,
+        R,
+        bR,
+    )
 
     if not batched:
         return A_post[0], b_post[0], c_post[0]

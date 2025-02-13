@@ -47,9 +47,7 @@ class TestAmplifier:
         rep1 = Amplifier(modes=[0], gain=1.1).ansatz
         g1 = 0.95346258
         g2 = 0.09090909
-        assert np.allclose(
-            rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
-        )
+        assert np.allclose(rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]])
         assert np.allclose(rep1.b, np.zeros((1, 4)))
         assert np.allclose(rep1.c, [0.90909090])
 

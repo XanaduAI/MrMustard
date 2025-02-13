@@ -337,7 +337,10 @@ class CircuitComponent:
             # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.sum(
-                math.astensor([quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays]), axis=0
+                math.astensor(
+                    [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays]
+                ),
+                axis=0,
             )
             return quad_basis
 

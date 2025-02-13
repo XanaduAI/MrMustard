@@ -36,7 +36,8 @@ from ..utils.typing import (
 )
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
-#from .backend_jax import BackendJax
+
+# from .backend_jax import BackendJax
 
 __all__ = [
     "BackendManager",
@@ -174,7 +175,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Whether the backend is jitted.
         """
         return self._backend.JIT_FLAG
-    
+
     @JIT_FLAG.setter
     def JIT_FLAG(self, value: bool) -> None:
         r"""
@@ -276,7 +277,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
-    
+
     def argwhere(self, array: Tensor) -> Tensor:
         r"""Returns the indices of the elements that are True.
 
@@ -1302,7 +1303,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of zeros.
         """
         return self._apply("zeros", (shape, dtype))
-    
+
     def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
         r"""Exectures ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
 
@@ -1310,15 +1311,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             cond: The condition to check
             true_fn: The function to execute if ``cond`` is ``True``
             false_fn: The function to execute if ``cond`` is ``False``
-            
+
         Returns:
             The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
         """
         return self._apply("conditional", (cond, true_fn, false_fn, *args))
 
     def infinity_like(self, array: Tensor) -> Tensor:
-        r"""Returns an array of infinities with the same shape as ``array``.
-        """
+        r"""Returns an array of infinities with the same shape as ``array``."""
         return self._apply("infinity_like", (array,))
 
     def zeros_like(self, array: Tensor) -> Tensor:

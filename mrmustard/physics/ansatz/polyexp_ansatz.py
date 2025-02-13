@@ -497,11 +497,11 @@ class PolyExpAnsatz(Ansatz):
         z_not_none = np.argwhere(zi != None).reshape(-1)
         beta_indices = np.arange(len(zi), Ai.shape[-1])
         new_indices = np.concatenate([z_none, beta_indices], axis=0)
-        
-        new_indices = math.astensor(new_indices, dtype='int32')
-        z_none = math.astensor(z_none, dtype='int32')
-        z_not_none = math.astensor(z_not_none, dtype='int32')
-        beta_indices = math.astensor(beta_indices, dtype='int32')
+
+        new_indices = math.astensor(new_indices, dtype="int32")
+        z_none = math.astensor(z_none, dtype="int32")
+        z_not_none = math.astensor(z_not_none, dtype="int32")
+        beta_indices = math.astensor(beta_indices, dtype="int32")
 
         # new A
         new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
@@ -517,9 +517,7 @@ class PolyExpAnsatz(Ansatz):
             math.gather(math.gather(Ai, beta_indices, axis=0), z_not_none, axis=1),
             gamma,
         )
-        new_b = math.gather(bi, new_indices, axis=0) + math.concat(
-            (b_alpha, b_beta), axis=-1
-        )
+        new_b = math.gather(bi, new_indices, axis=0) + math.concat((b_alpha, b_beta), axis=-1)
 
         # new c
         A_part = math.einsum(

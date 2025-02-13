@@ -352,9 +352,13 @@ class XPTensor(ABC):
             inmodes = [m for m in inmodes if m in other.inmodes]
 
         if final is not None:
-            final = math.gather(final, math.astensor([outmodes.index(o) for o in sorted(outmodes)]), axis=0)
+            final = math.gather(
+                final, math.astensor([outmodes.index(o) for o in sorted(outmodes)]), axis=0
+            )
             if other.isMatrix:
-                final = math.gather(final, math.astensor([inmodes.index(i) for i in sorted(inmodes)]), axis=1)
+                final = math.gather(
+                    final, math.astensor([inmodes.index(i) for i in sorted(inmodes)]), axis=1
+                )
         return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:

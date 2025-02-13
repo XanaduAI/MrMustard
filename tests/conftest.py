@@ -21,6 +21,7 @@ from hypothesis import settings as hyp_settings
 
 from mrmustard import math
 import jax
+
 jax.config.update("jax_enable_x64", True)
 
 print("pytest.conf -----------------------")
