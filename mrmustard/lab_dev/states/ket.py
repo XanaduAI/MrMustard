@@ -287,21 +287,37 @@ class Ket(State):
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
-        Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
-        where :math:`|\psi\rangle` is the vector representing this state.
-
-        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
-        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
-        unitary-like wires (input and output wires on the ket side).
-
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Returns:
+            Expectation value as a complex number.
 
         Raise:
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
+
+        Note:
+        .. details::
+            Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
+            where :math:`|\psi\rangle` is the vector representing this state.
+
+            The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+            the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+            unitary-like wires (input and output wires on the ket side).
+
+        Example:
+            In the example below, we compute the expectation value of the rotation gate on Fock
+            state :math:`|1\rangle`. We can readlity check that the result is the phase in the rotation.
+        .. code-block::
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import Number, Rgate
+            >>> psi = Number([0], 1)
+            >>> theta = np.random.random()
+            >>> answer = np.exp(1j*theta)
+            >>> assert np.isclose(psi.expectation(Rgate([0], theta)), answer)
         """
 
         op_type, msg = _validate_operator(operator)

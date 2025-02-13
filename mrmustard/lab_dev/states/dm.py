@@ -331,7 +331,7 @@ class DM(State):
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
 
         Returns:
-            Expectation value as a float.
+            Expectation value as a complex number.
 
         Raise:
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
