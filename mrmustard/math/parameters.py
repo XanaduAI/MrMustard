@@ -106,7 +106,6 @@ class Constant:
         else:
             self._value = math.new_constant(value, name, dtype)
         self._name = name
-        self.trainable = False
 
     @property
     def name(self) -> str:
@@ -158,7 +157,7 @@ class Variable:
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
-        self.trainable = True
+
     def _get_value(self, value, bounds, name, dtype=None):
         r"""
         Returns a variable from given ``value``, ``bounds``, and ``name``.
