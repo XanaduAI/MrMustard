@@ -438,6 +438,12 @@ class DM(State):
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
             The quadrature distribution.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev imporrt DM
+            >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
+            >>> assert all((a.real) > 0)
         """
         quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
@@ -501,8 +507,8 @@ class DM(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import CircuitComponent, DM, TraceOut
-            >>> isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
-            >>> isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
+            >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
+            >>> assert isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
         """
 
         result = super().__rshift__(other)
