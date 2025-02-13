@@ -98,7 +98,7 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
         cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
-        A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
+        A, B, C = [math.astensor(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
         diag = math.hermite_renormalized_diagonal(
             A, B, C, cutoffs=tuple([settings.AUTOCUTOFF_MAX_CUTOFF])
         )

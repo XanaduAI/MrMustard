@@ -54,10 +54,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
+    int64 = tf.int64
     float32 = tf.float32
     float64 = tf.float64
     complex64 = tf.complex64
     complex128 = tf.complex128
+    JIT_FLAG = False
 
     def __init__(self):
         tf.experimental.numpy.experimental_enable_numpy_behavior()
@@ -203,8 +205,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
-        indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+        indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
+    
+    def conditional(self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args) -> tf.Tensor:
+        if tf.reduce_all(cond):
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)

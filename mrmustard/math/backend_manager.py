@@ -36,7 +36,7 @@ from ..utils.typing import (
 )
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
-from .backend_jax import BackendJax
+#from .backend_jax import BackendJax
 
 __all__ = [
     "BackendManager",
@@ -130,6 +130,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         for name in [
             "int32",
+            "int64",
             "float32",
             "float64",
             "complex64",
@@ -166,6 +167,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         The name of the backend in use.
         """
         return self._backend.name
+
+    @property
+    def JIT_FLAG(self) -> bool:
+        r"""
+        Whether the backend is jitted.
+        """
+        return self._backend.JIT_FLAG
+    
+    @JIT_FLAG.setter
+    def JIT_FLAG(self, value: bool) -> None:
+        r"""
+        Sets the JIT flag for the backend.
+        """
+        self._backend.JIT_FLAG = value
 
     def change_backend(self, name: str) -> None:
         r"""
@@ -204,12 +219,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # ~~~~~~~
     # Below are the methods supported by the various backends.
 
-    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
-        r"""
-        Whether two arrays are equal within tolerance.
-        """
-        return self._apply("allclose", (array1, array2, atol))
-
     def abs(self, array: Tensor) -> Tensor:
         r"""The absolute value of array.
 
@@ -238,6 +247,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Raises:
             ValueError: If the shape of the two arrays do not match.
         """
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
         return self._apply("allclose", (array1, array2, atol))
 
     def any(self, array: Tensor) -> bool:
@@ -1576,7 +1587,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return b_full
 
         N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=int)
+        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
         return self.update_tensor(b_full, indices[:, None], b_rows)
@@ -1609,7 +1620,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=int)
+        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
         updates = self.matvec(mat, self.gather(vec, indices, axis=0))
         return self.update_tensor(vec, indices[:, None], updates)
 

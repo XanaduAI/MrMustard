@@ -54,10 +54,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     """
 
     int32 = np.int32
+    int64 = np.int64
     float32 = np.float32
     float64 = np.float64
     complex64 = np.complex64
     complex128 = np.complex128
+    JIT_FLAG = False
 
     def __init__(self):
         super().__init__(name="numpy")

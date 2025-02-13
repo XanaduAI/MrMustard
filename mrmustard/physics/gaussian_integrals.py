@@ -423,9 +423,9 @@ def complex_gaussian_integral_1(
             return A[0], b[0], c[0]
         return A, b, c
 
-    not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx], dtype='int')
+    not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx], dtype=math.int64)
     # order matters here; idx should be made a tensor after doing all the list comprehensions and boolean operations.
-    idx = math.astensor(idx, dtype='int')
+    idx = math.astensor(idx, dtype=math.int64)
     eye = math.eye(m, dtype=A.dtype)
 
     eye = math.eye(m, dtype=A.dtype)
