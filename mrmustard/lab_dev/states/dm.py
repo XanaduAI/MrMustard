@@ -415,7 +415,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
-            >>> assert np.isclose(Vacuum([0]).dm().fock_distribution(2), array([1, 0]))
+            >>> assert np.isclose(Vacuum([0]).dm().fock_distribution(2), np.array([1, 0]))
         """
         fock_array = self.fock_array(cutoff)
         return math.astensor(
@@ -441,7 +441,7 @@ class DM(State):
 
         Example:
         .. code-block::
-            >>> from mrmustard.lab_dev imporrt DM
+            >>> from mrmustard.lab_dev import DM
             >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
             >>> assert all((a.real) > 0)
         """
