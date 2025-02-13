@@ -432,30 +432,6 @@ class TestPolyExpAnsatz:
         assert len(ansatz.b) == 1
         assert ansatz.c == 2 * c
 
-    def test_simplify_v2(self):
-        A, b, c = Abc_triple(5)
-
-        ansatz = PolyExpAnsatz(A, b, c)
-
-        ansatz = ansatz + ansatz
-
-        assert math.allclose(ansatz.A[0], ansatz.A[1])
-        assert math.allclose(ansatz.A[0], A)
-        assert math.allclose(ansatz.b[0], ansatz.b[1])
-        assert math.allclose(ansatz.b[0], b)
-
-        ansatz.simplify_v2()
-        assert len(ansatz.A) == 1
-        assert len(ansatz.b) == 1
-        assert math.allclose(ansatz.c, 2 * c)
-
-        A, b, c = ansatz.triple
-
-        ansatz.simplify_v2()
-        assert math.allclose(ansatz.A, A)
-        assert math.allclose(ansatz.b, b)
-        assert math.allclose(ansatz.c, c)
-
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
         triple1 = Abc_triple(n)

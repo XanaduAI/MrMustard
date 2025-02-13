@@ -109,7 +109,7 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
-        self._batch_size = A.shape[0] if A is not None else None
+        self._batch_size = self._A.shape[0] if A is not None else None
 
     def _generate_ansatz(self):
         r"""
@@ -366,7 +366,7 @@ class PolyExpAnsatz(Ansatz):
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
             else:
-                self.c = math.update_add_tensor(self.c, [[d0]], [self.c[d]])
+                self._c = math.update_add_tensor(self.c, [[d0]], [self.c[d]])
         return to_keep
 
     def to_dict(self) -> dict[str, ArrayLike]:
@@ -537,6 +537,8 @@ class PolyExpAnsatz(Ansatz):
         the shapes fit. Example: If the shape of ``c1`` is (1,3,4,5) and the shape of ``c2`` is (10,5,4,3) then the
         shape of the combined object will be (11,5,4,5).
         """
+        if not isinstance(other, PolyExpAnsatz):
+            raise TypeError(f"Cannot add PolyExpAnsatz and {other.__class__}.")
         if self.num_CV_vars != other.num_CV_vars:
             raise ValueError(
                 f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
