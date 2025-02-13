@@ -286,6 +286,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return tf.fill(array.shape, np.inf)
+
     @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
