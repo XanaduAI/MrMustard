@@ -59,7 +59,7 @@ class GKet(Ket):
     Example:
     .. code-block::
         >>> from mrmustard.lab_dev import GKet, Ket
-        >>> psi = Gket([0])
+        >>> psi = GKet([0])
         >>> assert isinstance(psi, Ket)
     """
 
