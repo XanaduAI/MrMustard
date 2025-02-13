@@ -381,7 +381,7 @@ class Ket(State):
         Example:
         .. code-block::
             >>> import numpy as np
-            >>> from mrmustard import Ket
+            >>> from mrmustard.lab_dev import Ket
             >>> psi = Ket.random([0,1]) * 2.0
             >>> assert np.isclose(psi.probability , 2.0)
             >>> assert np.isclose(psi.normalize().probability, 1.0)
