@@ -304,7 +304,6 @@ class CircuitComponent:
             object_to_convert = self.to_bargmann()
 
         QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
-        #raise ValueError('stop here')
         return QQQQ
 
     def quadrature_triple(
