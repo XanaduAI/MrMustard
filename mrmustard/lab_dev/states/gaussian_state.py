@@ -135,7 +135,7 @@ class GDM(DM):
     Example:
     .. code-block::
         >>> from mrmustard.lab_dev import GDM, DM
-        >>> rho = GDM([0])
+        >>> rho = GDM([0], beta = 1.0)
         >>> assert isinstance(rho, DM)
     """
 
