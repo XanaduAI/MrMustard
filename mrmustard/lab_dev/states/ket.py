@@ -363,7 +363,10 @@ class Ket(State):
         fock_array = self.fock_array(cutoff)
         return (
             math.astensor(
-                [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+                [
+                    math.real(fock_array[ns])
+                    for ns in product(list(range(cutoff)), repeat=self.n_modes)
+                ]
             )
             ** 2
         )
