@@ -390,7 +390,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
-            >>> assert np.isclose(Vacuum([0]).dm().fock_array(), array([[1]]))
+            >>> assert np.isclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape(), batched)
         if standard_order:
