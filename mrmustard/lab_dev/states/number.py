@@ -33,13 +33,6 @@ class Number(Ket):
     r"""
     The `N`-mode number state.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import Number
-        >>> from mrmustard.physics.ansatz import ArrayAnsatz
-
-        >>> state = Number(modes=[0, 1], n=[10, 20])
-        >>> assert isinstance(state.ansatz, ArrayAnsatz)
 
     Args:
         modes: The modes of the number state.
@@ -59,6 +52,15 @@ class Number(Ket):
 
         where :math:`\ket{n_j}` is the eigenstate of the number operator on mode `j` with eigenvalue
         :math:`n_j`.
+
+    Example:
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Number
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+
+        >>> state = Number(modes=[0, 1], n=[10, 20])
+        >>> assert isinstance(state.ansatz, ArrayAnsatz)
 
     """
 

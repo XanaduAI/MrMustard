@@ -109,6 +109,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
+
             >>> assert np.isclose(DM.random([0]).probability, 1.0)
         """
         return math.sum(self._probabilities)
@@ -120,6 +121,7 @@ class DM(State):
         Example:
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM, Vacuum
+
             >>> assert np.isclose(Vacuum([0]).dm().purity, 1.0)
         """
         return self.L2_norm
@@ -192,7 +194,9 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM, Vacuum
+
             >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
+
             >>> assert rho == Vacuum([0]).dm()
         """
         cov, means, coeff = triple
@@ -352,10 +356,12 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Rgate, GDM
+
             >>> beta = 1
             >>> symplectic = np.eye(2)
             >>> rho = GDM([0], beta, symplectic)
             >>> answer = (1-np.exp(-beta))/(1+np.exp(-beta))
+
             >>> assert np.isclose(rho.expectation(Rgate([0], np.pi)), answer)
         """
 
@@ -416,6 +422,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
+
             >>> assert np.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape(), batched)
@@ -441,6 +448,7 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
+
             >>> assert np.allclose(Vacuum([0]).dm().fock_distribution(2), np.array([1, 0]))
         """
         fock_array = self.fock_array(cutoff)
@@ -462,7 +470,9 @@ class DM(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
+
             >>> rho = DM.random([0,1]) * 2
+
             >>> assert np.isclose(rho.probability, 2.0)
             >>> assert np.isclose(rho.normalize().probability, 1.0)
         """
@@ -482,6 +492,7 @@ class DM(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import DM
+
             >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
             >>> assert all(dist >= 0)
         """
@@ -554,6 +565,7 @@ class DM(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import CircuitComponent, DM, TraceOut
+
             >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
             >>> assert isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
         """

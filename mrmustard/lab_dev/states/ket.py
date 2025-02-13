@@ -70,7 +70,9 @@ class Ket(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import Ket
+
             >>> psi = Ket.random([0])
+
             >>> assert psi.is_physical
         """
         batch_dim = self.ansatz.batch_size
@@ -97,7 +99,9 @@ class Ket(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Ket
+
             >>> psi = Ket.random([0])
+
             >>> assert np.isclose(psi.probability, 1.0)
         """
         return self.L2_norm
@@ -239,6 +243,7 @@ class Ket(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, Ket
+
             >>> assert np.allclose(Vacuum([0]).fock_array(), np.array([1]))
         """
         # experimental:
@@ -314,9 +319,11 @@ class Ket(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Number, Rgate
+
             >>> psi = Number([0], 1)
             >>> theta = np.random.random()
             >>> answer = np.exp(1j*theta)
+
             >>> assert np.isclose(psi.expectation(Rgate([0], theta)), answer)
         """
 
@@ -356,8 +363,10 @@ class Ket(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import Ket
+
             >>> psi = Ket.random([0])
             >>> dist = psi.fock_distribution(20)
+
             >>> assert all(dist >= 0)
         """
         fock_array = self.fock_array(cutoff)
@@ -382,7 +391,9 @@ class Ket(State):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Ket
+
             >>> psi = Ket.random([0,1]) * 2.0
+
             >>> assert np.isclose(psi.probability , 2.0)
             >>> assert np.isclose(psi.normalize().probability, 1.0)
         """
@@ -402,7 +413,9 @@ class Ket(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import Ket
+
             >>> dist = Ket.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
+
             >>> assert all(dist >= 0)
         """
         quad = np.array(quad)
@@ -470,9 +483,11 @@ class Ket(State):
         Example:
         .. code-block::
             >>> from mrmustard.lab_dev import Ket, DM, Attenuator, Dgate
+
             >>> psi = Ket.random([0,1])
             >>> U = Dgate([0], x=1, y=0)
             >>> channel = Attenuator([0], .5)
+
             >>> assert isisntance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """

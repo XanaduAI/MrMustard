@@ -24,17 +24,28 @@ from ..utils import make_parameter
 class Sauron(Ket):
     r"""
     The `n`-th Sauron state is an approximation of the `n`-th Fock states using
-    a ring of `n+1` coherent states. The reference to the Lord of the Rings comes from
-    the approximation becoming perfect in the limit for the radius of the ring going
-    to zero where vacuum (= darkness) is.
-    The formula for the Sauron state as a superposition of coherent states on a ring
-    is given in https://arxiv.org/abs/2305.17099:
-    .. math::
-        |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
+    a ring of `n+1` coherent states.
+
     Args:
         modes: The modes of the Sauron state.
         n: The Fock state that is approximated.
         epsilon: The radius of the ring of coherent states, default is 0.1.
+
+    Notes:
+        The reference to the Lord of the Rings comes from
+        the approximation becoming perfect in the limit for the radius of the ring going
+        to zero where vacuum (= darkness) is.
+        The formula for the Sauron state as a superposition of coherent states on a ring
+        is given in https://arxiv.org/abs/2305.17099:
+        .. math::
+            |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
+
+    Example:
+    .. code-block::
+        >>> from mrmustard.lab_dev import Sauron
+
+        >>> psi = Sauron([0], 1)
+        >>> assert psi.fock_distribution(2)[1] > 0.999
     """
 
     def __init__(self, modes: Sequence[int], n: int, epsilon: float = 0.1):

@@ -261,6 +261,7 @@ class State(CircuitComponent):
             >>> b = np.array([2-1j,2+1j])
             >>> c = 1
             >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
+
             >>> assert isinstance(psi, Ket)
         """
 
@@ -304,6 +305,7 @@ class State(CircuitComponent):
         .. code-block::
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Ket, Vacuum
+
             >>> assert Ket.from_phase_space([0], (np.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 

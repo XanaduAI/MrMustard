@@ -59,7 +59,9 @@ class GKet(Ket):
     Example:
     .. code-block::
         >>> from mrmustard.lab_dev import GKet, Ket
+
         >>> psi = GKet([0])
+
         >>> assert isinstance(psi, Ket)
     """
 
@@ -135,7 +137,9 @@ class GDM(DM):
     Example:
     .. code-block::
         >>> from mrmustard.lab_dev import GDM, DM
+
         >>> rho = GDM([0], beta = 1.0)
+
         >>> assert isinstance(rho, DM)
     """
 
