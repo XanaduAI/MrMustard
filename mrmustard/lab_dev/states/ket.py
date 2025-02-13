@@ -488,7 +488,7 @@ class Ket(State):
             >>> U = Dgate([0], x=1, y=0)
             >>> channel = Attenuator([0], .5)
 
-            >>> assert isisntance(psi >> U, Ket)
+            >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """
 
