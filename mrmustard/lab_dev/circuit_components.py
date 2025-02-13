@@ -303,11 +303,6 @@ class CircuitComponent:
         if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
-        #print('BtoQ_ib', BtoQ_ib.shape, type(BtoQ_ib))
-        #print('BtoQ_ik', BtoQ_ik.shape, type(BtoQ_ik))
-        #print('object_to_convert', object_to_convert.shape, type(object_to_convert))
-        #print('BtoQ_ok', BtoQ_ok.shape, type(BtoQ_ok))
-        #print('BtoQ_ob', BtoQ_ob.shape, type(BtoQ_ob))
         QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
         #raise ValueError('stop here')
         return QQQQ
