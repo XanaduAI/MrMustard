@@ -443,7 +443,7 @@ class DM(State):
         .. code-block::
             >>> from mrmustard.lab_dev import DM
             >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
-            >>> assert all((a.real) > 0)
+            >>> assert all((dist.real) >= 0)
         """
         quad = np.array(quad)
         if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
