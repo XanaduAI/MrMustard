@@ -46,6 +46,7 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal_batch,
 )
 
+np.set_printoptions(legacy="1.25")
 
 # pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):  # pragma: no cover
@@ -333,11 +334,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def ones_like(self, array: np.ndarray) -> np.ndarray:
         return np.ones(array.shape, dtype=array.dtype)
-    
+
     def infinity_like(self, array: np.ndarray) -> np.ndarray:
         return np.full_like(array.shape, np.inf, dtype=array.dtype)
-    
-    def conditional(self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args) -> np.ndarray:
+
+    def conditional(
+        self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args
+    ) -> np.ndarray:
         if cond.all():
             return true_fn(*args)
         else:
@@ -361,7 +364,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     @staticmethod
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
-    
+
     def argwhere(self, array: np.ndarray) -> np.ndarray:
         return np.argwhere(array)
 

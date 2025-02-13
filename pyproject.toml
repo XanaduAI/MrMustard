@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mrmustard"
-version = "0.7.3"
+version = "1.0.0-dev"
 description = "Differentiable quantum Gaussian circuits"
 authors = [
     {name= "Xanadu", email= "filippo@xanadu.ai"},
@@ -33,7 +33,7 @@ classifiers = [
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "grpcio == 1.60.0",
-    "numpy >=1.23.5, <2",
+    "numpy >=2.0.0, <3",
     "scipy >=1.8.0, <2",
     "numba >=0.59, <1",
     "thewalrus >=0.19.0,<1",
@@ -69,7 +69,7 @@ dev = [
 
 doc = [
     "sphinx>=7.0.1,<8",
-    "docutils>=0.20.1,<1",
+    "docutils>=0.20.1,<0.21",
     "m2r2>=0.3.3.post2,<1",
     "sphinx-autodoc-typehints>=1.23.3,<2",
     "sphinx-copybutton>=0.5.2,<1",

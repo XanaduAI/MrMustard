@@ -526,9 +526,9 @@ def twomode_squeezing_gate_Abc(
     tanhr = math.diag(math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
     sechr = math.diag(1 / math.cosh(r))
 
-    A_block1 = math.block([[O, -tanhr], [-tanhr, O]])
+    A_block1 = math.block([[O, tanhr], [tanhr, O]])
 
-    A_block2 = math.block([[O, math.conj(tanhr)], [math.conj(tanhr), O]])
+    A_block2 = math.block([[O, -math.conj(tanhr)], [-math.conj(tanhr), O]])
 
     A_block3 = math.block([[sechr, O], [O, sechr]])
 
@@ -587,7 +587,6 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
             if math.real(e) > 1 or math.real(e) < 0:
                 msg = "Transmissivity must be a float in the interval ``[0, 1]``"
                 raise ValueError(msg)
-
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))

@@ -52,10 +52,10 @@ class TestS2gate:
 
         A_exp = [
             [
-                [0, -tanhr, sechr, 0],
-                [-tanhr, 0, 0, sechr],
-                [sechr, 0, 0, np.conj(tanhr)],
-                [0, sechr, np.conj(tanhr), 0],
+                [0, tanhr, sechr, 0],
+                [tanhr, 0, 0, sechr],
+                [sechr, 0, 0, -np.conj(tanhr)],
+                [0, sechr, -np.conj(tanhr), 0],
             ]
         ]
         assert np.allclose(rep1.A, A_exp)
@@ -77,7 +77,7 @@ class TestS2gate:
         assert gate3.parameters.phi.value == 2
 
     def test_operation(self):
-        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=1, phi=0.5)).ansatz
+        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=-1, phi=0.5)).ansatz
         rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).ansatz
 
         assert np.allclose(rep1.A, rep2.A)
