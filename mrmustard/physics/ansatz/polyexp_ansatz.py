@@ -137,7 +137,7 @@ class PolyExpAnsatz(Ansatz):
                 num_derived_vars = 0
             self._A = math.atleast_3d(A)
             self._b = math.atleast_2d(b)
-            self._c = math.atleast_2d(c)
+            self._c = math.atleast_nd(c, num_derived_vars + 1)
             self.num_derived_vars = num_derived_vars
             self._batch_size = self._A.shape[0]
 
@@ -446,7 +446,8 @@ class PolyExpAnsatz(Ansatz):
         d = np.prod(self.shape_derived_vars)
         c = math.reshape(self.c, (self.batch_size, d))
         poly = math.reshape(poly, (self.batch_size, -1, d))
-        return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
+        # return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
+        return math.einsum("ik,il,inl->in", exp_sum, c, poly)
 
     def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""

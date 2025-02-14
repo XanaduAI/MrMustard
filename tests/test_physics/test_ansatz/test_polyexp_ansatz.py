@@ -123,25 +123,23 @@ class TestPolyExpAnsatz:
         A, b, c = Abc_triple(5)
         ansatz = PolyExpAnsatz(A, b, c)
 
-        assert np.allclose(ansatz(z=math.zeros_like(b)), c)
+        assert np.allclose(ansatz(*math.zeros_like(b)), c)
 
         A, b, _ = Abc_triple(4)
         c = np.random.random(size=(1, 3, 3, 3))
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
         z = np.random.uniform(-10, 10, size=(7, 2))
-        with pytest.raises(
-            Exception, match="The sum of the dimension of the argument and polynomial"
-        ):
-            ansatz(z)
+        with pytest.raises(Exception, match="The ansatz was called with"):
+            ansatz(*z)
 
         A = np.array([[0, 1], [1, 0]])
         b = np.zeros(2)
-        c = c = np.zeros(10, dtype=complex).reshape(1, -1)
+        c = np.zeros(10, dtype=complex).reshape(1, -1)
         c[0, -1] = 1
-        obj1 = PolyExpAnsatz(A, b, c)
+        obj1 = PolyExpAnsatz(A, b, c, num_derived_vars=1)
 
         nine_factorial = np.prod(np.arange(1, 9))
-        assert np.allclose(obj1(np.array([[0.1]])), 0.1**9 / np.sqrt(nine_factorial))
+        assert np.allclose(obj1(np.array([0.1])), 0.1**9 / np.sqrt(nine_factorial))
 
     def test_call_none(self):
         A1, b1, _ = Abc_triple(7)
