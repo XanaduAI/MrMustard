@@ -731,4 +731,53 @@ class PolyExpAnsatz(Ansatz):
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
+
+        if self.num_CV_vars != other.num_CV_vars:
+            raise TypeError(
+                "The number of CV variables of the two ansatze must be the same. "
+                f"Got {self.num_CV_vars} and {other.num_CV_vars}."
+            )
+        # outer product along batch via tile and repeat to get all pairs
+        A1 = math.tile(self.A, (other.A.shape[0], 1, 1))
+        b1 = math.tile(self.b, (other.b.shape[0], 1))
+        A2 = math.repeat(other.A, self.A.shape[0], axis=0)
+        b2 = math.repeat(other.b, self.b.shape[0], axis=0)
+
+        batch_size = self.batch_size * other.batch_size
+        n = self.num_CV_vars  # alpha
+        m1 = self.num_derived_vars  # beta1
+        m2 = other.num_derived_vars  # beta2
+        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
+        newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
+
+        newA[:, :n, :n] = A1[:, :n, :n] - A2[:, :n, :n]
+        newb[:, :n] = b1[:, :n] - b2[:, :n]
+
+        if m1 > 0:
+            newA[:, :n, n:m1] = A1[:, :n, -m1:]
+            newA[:, n:m1, :n] = A1[:, -m1:, :n]
+            newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
+            newb[:, n:m1] = b1[:, -m1:]
+
+        if m2 > 0:
+            newA[:, :n, -m2:] = A2[:, :n, -m2:]
+            newA[:, -m2:, :n] = A2[:, -m2:, :n]
+            newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
+            newb[:, -m2:] = b2[:, -m2:]
+
+        self_c = math.reshape(
+            self.c,
+            (self.batch_size, int(math.prod(self.shape_derived_vars))),
+        )
+        other_c = 1 / math.reshape(
+            other.c,
+            (other.batch_size, int(math.prod(other.shape_derived_vars))),
+        )
+        newc = math.einsum("ik,lk->ilk", self_c, other_c)
+        newc = math.reshape(
+            newc,
+            (batch_size,) + self.shape_derived_vars + other.shape_derived_vars,
+        )
+
+        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
