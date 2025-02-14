@@ -386,7 +386,7 @@ class TestPolyExpAnsatz:
     def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4)
         c = np.array([[1, 2, 3]])
-        ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=1)
 
         poly_dim = ansatz.num_derived_vars
         poly_shape = ansatz.shape_derived_vars
@@ -395,11 +395,11 @@ class TestPolyExpAnsatz:
 
         A1, b1, _ = Abc_triple(4)
         c1 = np.array([[1, 2, 3]])
-        ansatz1 = PolyExpAnsatz(A1, b1, c1)
+        ansatz1 = PolyExpAnsatz(A1, b1, c1, num_derived_vars=1)
 
         A2, b2, _ = Abc_triple(4)
         c2 = np.array([[1, 2, 3]])
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2, num_derived_vars=1)
 
         ansatz3 = ansatz1 * ansatz2
 

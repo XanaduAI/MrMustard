@@ -715,7 +715,7 @@ class PolyExpAnsatz(Ansatz):
             other.c,
             (other.batch_size, int(math.prod(other.shape_derived_vars))),
         )
-        newc = math.einsum("ik,lk->ilk", self_c, other_c)
+        newc = math.einsum("ij,kl->ijl", self_c, other_c)
         newc = math.reshape(
             newc,
             (batch_size,) + self.shape_derived_vars + other.shape_derived_vars,
@@ -774,7 +774,7 @@ class PolyExpAnsatz(Ansatz):
             other.c,
             (other.batch_size, int(math.prod(other.shape_derived_vars))),
         )
-        newc = math.einsum("ik,lk->ilk", self_c, other_c)
+        newc = math.einsum("ij,kl->ijl", self_c, other_c)
         newc = math.reshape(
             newc,
             (batch_size,) + self.shape_derived_vars + other.shape_derived_vars,
