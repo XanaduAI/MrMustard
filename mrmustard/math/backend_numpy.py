@@ -109,17 +109,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
-        if n == 1:
-            return self.atleast_1d(array, dtype)
-        elif n == 2:
-            return self.atleast_2d(array, dtype)
-        elif n == 3:
-            return self.atleast_3d(array, dtype)
-        elif n > 3:
-            array = self.atleast_3d(array, dtype)
-            return array.__getitem__((None,) * (n - 3) + (Ellipsis,))
-        else:
-            raise ValueError(f"Cannot at least {n} dimensions")
+        return np.array(array, ndmin=n, dtype=dtype)
 
     def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]

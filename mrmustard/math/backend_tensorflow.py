@@ -107,17 +107,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return array
 
     def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
-        if n == 1:
-            return self.atleast_1d(array, dtype)
-        elif n == 2:
-            return self.atleast_2d(array, dtype)
-        elif n == 3:
-            return self.atleast_3d(array, dtype)
-        else:
-            array = self.atleast_3d(array, dtype)
-            while len(array.shape) < n:
-                array = self.expand_dims(array, 0)
-            return array
+        return tf.experimental.numpy.array(array, ndmin=n, dtype=dtype)
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)

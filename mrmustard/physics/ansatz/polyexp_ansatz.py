@@ -103,7 +103,7 @@ class PolyExpAnsatz(Ansatz):
         super().__init__()
         self._A = math.atleast_3d(math.astensor(A)) if A is not None else None
         self._b = math.atleast_2d(math.astensor(b)) if b is not None else None
-        self._c = math.atleast_2d(math.astensor(c)) if c is not None else None
+        self._c = math.atleast_nd(math.astensor(c), num_derived_vars + 1) if c is not None else None
         self.num_derived_vars = num_derived_vars
         self.name = name
         self._simplified = False
@@ -213,7 +213,7 @@ class PolyExpAnsatz(Ansatz):
         The shape of the derived variables (i.e. the polynomial of derivatives).
         Encoded in ``c`` as the axes between the batch size (first axis) and the discrete variables.
         """
-        return self.c.shape[-self.num_derived_vars :]
+        return self.c.shape[-self.num_derived_vars :] if self.num_derived_vars > 0 else ()
 
     @property
     def triple(
@@ -686,30 +686,36 @@ class PolyExpAnsatz(Ansatz):
         b2 = math.repeat(other.b, self.b.shape[0], axis=0)
 
         batch_size = self.batch_size * other.batch_size
-        n = self.num_vars  # alpha
+        n = self.num_CV_vars  # alpha
         m1 = self.num_derived_vars  # beta1
         m2 = other.num_derived_vars  # beta2
         newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
         newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
+
         newA[:, :n, :n] = A1[:, :n, :n] + A2[:, :n, :n]
-        newA[:, :n, n:m1] = A1[:, :n, -m1:]
-        newA[:, n:m1, :n] = A1[:, -m1:, :n]
-        newA[:, :n, -m2:] = A2[:, :n, -m2:]
-        newA[:, -m2:, :n] = A2[:, -m2:, :n]
-        newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
-        newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
         newb[:, :n] = b1[:, :n] + b2[:, :n]
-        newb[:, n:m1] = b1[:, -m1:]
-        newb[:, -m2:] = b2[:, -m2:]
+
+        if m1 > 0:
+            newA[:, :n, n:m1] = A1[:, :n, -m1:]
+            newA[:, n:m1, :n] = A1[:, -m1:, :n]
+            newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
+            newb[:, n:m1] = b1[:, -m1:]
+
+        if m2 > 0:
+            newA[:, :n, -m2:] = A2[:, :n, -m2:]
+            newA[:, -m2:, :n] = A2[:, -m2:, :n]
+            newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
+            newb[:, -m2:] = b2[:, -m2:]
+
         self_c = math.reshape(
             self.c,
-            (self.batch_size, math.prod(self.shape_derived_vars)),
+            (self.batch_size, int(math.prod(self.shape_derived_vars))),
         )
         other_c = math.reshape(
             other.c,
-            (other.batch_size, math.prod(other.shape_derived_vars)),
+            (other.batch_size, int(math.prod(other.shape_derived_vars))),
         )
-        newc = math.einsum("ijk,lmk->iljmk", self_c, other_c)
+        newc = math.einsum("ik,lk->ilk", self_c, other_c)
         newc = math.reshape(
             newc,
             (batch_size,) + self.shape_derived_vars + other.shape_derived_vars,
