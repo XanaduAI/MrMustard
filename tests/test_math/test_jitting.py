@@ -67,10 +67,10 @@ def test_jit_circuit_with_parameters():
     att = Attenuator(modes=(0, 1, 2), transmissivity=0.5, transmissivity_trainable=True)
 
     def evaluate_parameters(params):
-        BS_01.parameters.all_parameters["theta"].value = params[2]
-        BS_01.parameters.all_parameters["phi"].value = params[3]
-        BS_12.parameters.all_parameters["theta"].value = params[4]
-        BS_12.parameters.all_parameters["phi"].value = params[5]
+        BS_01.parameters.all_parameters["theta"].value = params[0]
+        BS_01.parameters.all_parameters["phi"].value = params[1]
+        BS_12.parameters.all_parameters["theta"].value = params[2]
+        BS_12.parameters.all_parameters["phi"].value = params[3]
         state_out = initial_state >> BS_01 >> BS_12 >> att
         output_fock_state = state_out.fock_array(shape=(20, 5, 5, 20, 5, 5))
         marginal = output_fock_state[:, 4, 4, :, 4, 4]
@@ -80,18 +80,18 @@ def test_jit_circuit_with_parameters():
     start_time = time.time()
     for k in range(100):
         rng = jax.random.PRNGKey(k)
-        params = jax.random.uniform(rng, (7,), minval=0.1, maxval=0.8)
+        params = jax.random.uniform(rng, (4,), minval=0.1, maxval=0.8)
         _ = unjitted_evaluate_parameters(params)
     end_time = time.time()
     unjitted_routine_time = end_time - start_time
 
     math.JIT_FLAG = True  # turns off checks on parameter values
     jitted_evaluate_parameters = jax.jit(evaluate_parameters)
-    _ = jitted_evaluate_parameters(jnp.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
+    _ = jitted_evaluate_parameters(jnp.array([0.5, 0.5, 0.5, 0.5]))
     start_time = time.time()
     for k in range(100):
         rng = jax.random.PRNGKey(k)
-        params = jax.random.uniform(rng, (7,), minval=0.1, maxval=0.8)
+        params = jax.random.uniform(rng, (4,), minval=0.1, maxval=0.8)
         _ = jitted_evaluate_parameters(params)
     end_time = time.time()
     jitted_routine_time = end_time - start_time
