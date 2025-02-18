@@ -21,9 +21,9 @@ from typing import Callable, Sequence
 from functools import partial
 
 import jax
-import numpy as np
 import jax.numpy as jnp
 import jax.scipy as jsp
+import numpy as np
 
 from ..utils.settings import settings
 from .autocast import Autocast
@@ -40,78 +40,6 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
-
-
-def identify_shape_hermite_multidimensional_diagonal(B, cutoffs):
-    r"""Identify the shapes of the output of hermite_multidimensional_diagonal.
-
-    Args:
-        B: The B vector.
-        cutoffs: The cutoffs of the modes.
-
-    Returns:
-        The shapes of the output of hermite_multidimensional_diagonal.
-        Returns a tuple of size (5,)
-    """
-    M = len(cutoffs)
-    return_shapes = []
-    if B.ndim == 1:
-        return_shapes.append(cutoffs)
-        return_shapes.append((M,))
-        if M == 1:
-            return_shapes.append((1, 1, 1))
-            return_shapes.append((1, 1, 1))
-        else:
-            return_shapes.append((1, 1, M))
-            return_shapes.append((1, 1, M))
-        return_shapes.append((2 * M,))
-
-    elif B.ndim == 2:
-        batch_length = B.shape[1]
-        return_shapes.append(cutoffs + (batch_length,))
-        return_shapes.append((M,) + cutoffs + (batch_length,))
-        if M == 1:
-            return_shapes.append((1, 1, 1) + (batch_length,))
-            return_shapes.append((1, 1, 1) + (batch_length,))
-        else:
-            return_shapes.append((M, M - 1) + cutoffs + (batch_length,))
-            return_shapes.append((M, M - 1) + cutoffs + (batch_length,))
-        return_shapes.append((2 * M,) + cutoffs + (batch_length,))
-
-    return tuple(return_shapes)
-
-
-def identify_shape_hermite_multidimensional_1leftoverMode(cutoffs: tuple[int]):
-    r"""Identify the shapes of the output of hermite_multidimensional_1leftoverMode.
-
-    Args:
-        cutoffs: The cutoffs of the modes.
-    """
-    r"""Identify the shapes of the output of hermite_multidimensional_1leftoverMode.
-
-    Args:
-        cutoffs: The cutoffs of the modes.
-
-    Returns:
-        The shapes of the output of hermite_multidimensional_1leftoverMode.
-        Returns a tuple of size (5,) containing the shapes of arr0, arr2, arr1010, arr1001, arr1
-    """
-    M = len(cutoffs)
-    cutoff_leftoverMode = cutoffs[0]
-    cutoffs_tail = cutoffs[1:]
-
-    return_shapes = []
-    return_shapes.append((cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail)
-    return_shapes.append((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail)
-    if M == 2:
-        return_shapes.append((1, 1, 1, 1, 1))
-        return_shapes.append((1, 1, 1, 1, 1))
-    else:
-        shape = (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail
-        return_shapes.append(shape)
-        return_shapes.append(shape)
-    return_shapes.append((cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail)
-    return tuple(return_shapes)
 
 
 # pylint: disable=too-many-public-methods
@@ -186,7 +114,7 @@ class BackendJax(BackendBase):
     def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if isinstance(array, tuple):
             raise ValueError("Tuple input is not supported for atleast_3d.")
-        array = self.atleast_2d(self.atleast_1d(array))
+        array = self.atleast_2d(self.atleast_1d(array, dtype))
         if len(array.shape) == 2:
             array = array[None, ...]
         return array
