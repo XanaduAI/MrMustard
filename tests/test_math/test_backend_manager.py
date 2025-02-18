@@ -455,6 +455,7 @@ class TestBackendManager:
         assert not math.is_trainable(arr1)
         assert not math.is_trainable(arr2)
         assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
+        assert not (math.is_trainable(arr4)) is (math.backend_name == "jax")
 
     def test_lgamma(self):
         r"""

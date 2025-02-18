@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import settings
 from mrmustard.lab_dev.states import Coherent
 
 

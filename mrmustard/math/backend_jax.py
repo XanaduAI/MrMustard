@@ -19,23 +19,31 @@
 from __future__ import annotations
 from typing import Callable, Sequence
 from functools import partial
+import numpy as np
 
 import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # comment this line to run on GPU
+os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
+
 import jax
 
 jax.config.update("jax_default_device", jax.devices("cpu")[0])  # comment this line to run on GPU
 jax.config.update("jax_enable_x64", True)
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # comment this line to run on GPU
-os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
 import jax.numpy as jnp
 import jax.scipy as jsp
-import numpy as np
 
+from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from .lattice import strategies
-
-from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
+from .lattice.strategies import (
+    binomial,
+    vanilla,
+    vanilla_stable,
+    vanilla_stable_batch,
+    vanilla_batch,
+)
+from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -277,14 +285,13 @@ class BackendJax(BackendBase):
         j = jnp.where(k < 0, j - abs(k), j)
         return array.at[..., i, j].set(diag)
 
-    # @partial(jax.jit, static_argnames=['self', 'name', 'dtype', 'bounds'])
     def new_variable(
         self,
         value: jnp.ndarray,
         bounds: tuple[float | None, float | None] | None,
-        name: str,  # pylint: disable=unused-argument
+        name: str,
         dtype="float64",
-    ):
+    ):  # pylint: disable=unused-argument
         value = jnp.array(value, dtype=dtype)
         return value
 
@@ -423,9 +430,7 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: jnp.ndarray) -> bool:
-        if isinstance(tensor, jnp.ndarray):
-            return True
+    def is_trainable(self, tensor: jnp.ndarray) -> bool:  # pylint: disable=unused-argument
         return False
 
     @partial(jax.jit, static_argnames=["self"])
@@ -635,7 +640,10 @@ class BackendJax(BackendBase):
     def hermite_renormalized(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
-        function = partial(strategies.vanilla, shape)
+        if settings.STABLE_FOCK_CONVERSION:
+            function = partial(vanilla_stable, shape)
+        else:
+            function = partial(vanilla, shape)
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
@@ -653,7 +661,10 @@ class BackendJax(BackendBase):
     def hermite_renormalized_batch(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
-        function = partial(strategies.vanilla_batch, tuple(shape))
+        if settings.STABLE_FOCK_CONVERSION:
+            function = partial(vanilla_stable_batch, tuple(shape))
+        else:
+            function = partial(vanilla_batch, tuple(shape))
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct((b.shape[0],) + shape, jnp.complex128),
@@ -675,17 +686,7 @@ class BackendJax(BackendBase):
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
-
-        function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-        poly0 = jax.pure_callback(
-            # only first element is of interest
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
-            jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
-            A,
-            B,
-            C,
-        )
-        return poly0
+        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_diagonal_reorderedAB
@@ -793,7 +794,7 @@ class BackendJax(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        function = partial(strategies.binomial, tuple(shape))
+        function = partial(binomial, tuple(shape))
         G = jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
                 np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
@@ -842,7 +843,7 @@ class BackendJax(BackendBase):
             The renormalized Hermite polynomial.
         """
         function = partial(hermite_multidimensional_1leftoverMode, cutoffs=tuple(cutoffs))
-        poly0, _, _, _, _ = jax.pure_callback(
+        poly0 = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
             jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
             A,

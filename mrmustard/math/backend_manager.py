@@ -378,7 +378,16 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("atleast_3d", (array, dtype))
 
-    def vectorize(self, func, signature):
+    def vectorize(self, func: Callable, signature: tuple[Any, ...]) -> Callable:
+        r"""Vectorizes a function.
+
+        Args:
+            func: The function to vectorize.
+            signature: The signature of the function.
+
+        Returns:
+            The vectorized function.
+        """
         return self._apply("vectorize", (func, signature))
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
