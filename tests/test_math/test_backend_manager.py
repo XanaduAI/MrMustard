@@ -208,6 +208,13 @@ class TestBackendManager:
             exp_shape = arr.shape
         assert res.shape == exp_shape
 
+    def test_JIT_FLAG(self):
+        r"""
+        Tests the ``JIT_FLAG`` property.
+        """
+        # default value of JIT FLAG is False
+        assert math.JIT_FLAG == False
+
     def test_boolean_mask(self):
         r"""
         Tests the ``boolean_mask`` method.

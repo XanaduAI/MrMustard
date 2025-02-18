@@ -105,11 +105,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # whether or not the backend can be changed
     _is_immutable = False
 
-    @property
-    def inf(self):
-        r"""The infinity constant."""
-        return self._backend.inf
-
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
@@ -279,17 +274,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
 
-    def argwhere(self, array: Tensor) -> Tensor:
-        r"""Returns the indices of the elements that are True.
-
-        Args:
-            array: Boolean array.
-
-        Returns:
-            The indices of the elements that are True.
-        """
-        return self._apply("argwhere", (array,))
-
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts an array to a numpy array.
 
@@ -300,17 +284,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The corresponidng numpy array.
         """
         return self._apply("asnumpy", (tensor,))
-
-    def getnan(self, size):
-        r"""Returns a tensor of shape ``size`` with all elements set to ``NaN``.
-
-        Args:
-            size: The shape of the tensor to return.
-
-        Returns:
-            A tensor of shape ``size`` with all elements set to ``NaN``.
-        """
-        return self._apply("getnan", (size,))
 
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         r"""Assigns value to tensor.
@@ -523,7 +496,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The cosine of ``array``.
         """
-        return self._apply("cos", [array])
+        return self._apply("cos", (array,))
 
     def cosh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic cosine of array.

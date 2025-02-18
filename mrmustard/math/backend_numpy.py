@@ -364,9 +364,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
 
-    def argwhere(self, array: np.ndarray) -> np.ndarray:
-        return np.argwhere(array)
-
     @Autocast()
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)

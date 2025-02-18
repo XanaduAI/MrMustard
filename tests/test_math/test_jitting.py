@@ -73,6 +73,7 @@ def test_jit_complete_circuit():
     assert (
         jitted_routine_time < unjitted_routine_time
     ), "Jitting should be make circuit evaluation faster."
+    math.JIT_FLAG = False
 
 
 def test_jit_circuit_with_parameters():
@@ -125,3 +126,4 @@ def test_jit_circuit_with_parameters():
     assert (
         jitted_routine_time < unjitted_routine_time
     ), "Jitting should be make circuit evaluation faster."
+    math.JIT_FLAG = False

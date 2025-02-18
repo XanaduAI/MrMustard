@@ -72,10 +72,6 @@ class BackendJax(BackendBase):
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self"])
-    def argwhere(self, array: jnp.ndarray) -> jnp.ndarray:
-        return jnp.argwhere(array)
-
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
@@ -94,9 +90,6 @@ class BackendJax(BackendBase):
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
-
-    def getnan(self, size):
-        return jnp.full(size, jnp.nan)
 
     @partial(jax.jit, static_argnames=["self"])
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -501,10 +494,6 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["self"])
     def where(self, array: jnp.ndarray, array1: jnp.ndarray, array2: jnp.ndarray):
         return jnp.where(array, array1, array2)
-
-    @property
-    def inf(self):
-        return jnp.inf
 
     @staticmethod
     @jax.jit
