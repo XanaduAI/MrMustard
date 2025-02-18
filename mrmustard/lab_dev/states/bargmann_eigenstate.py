@@ -41,18 +41,20 @@ class BargmannEigenstate(Ket):
         If its length is equal to `1`, all the modes share the same parameters.
         Note that the only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
 
-    .. details::
-        Its ``(A,b,c)`` triple is given by
-        .. math::
-            A = 0 , b = alpha, c = 1.
-
-    Example:
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
 
         >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
         >>> assert state.modes == [1, 2]
+
+    .. details::
+
+        Its ``(A,b,c)`` triple is given by
+
+        .. math::
+            A = 0 , b = \alpha, c = 1.
+
     """
 
     short_name = "Be"
