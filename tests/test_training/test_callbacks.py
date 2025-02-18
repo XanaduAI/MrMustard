@@ -21,12 +21,12 @@ from mrmustard import math, settings
 from mrmustard.lab_dev import BSgate, Circuit, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
-from ..conftest import skip_np
+from ..conftest import skip_np_and_jax
 
 
 def test_tensorboard_callback(tmp_path):
     """Tests tensorboard callbacks on hong-ou-mandel optimization."""
-    skip_np()
+    skip_np_and_jax()
 
     settings.SEED = 42
     i, k = 2, 3

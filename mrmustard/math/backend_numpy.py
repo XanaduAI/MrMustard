@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from math import lgamma as mlgamma
-from typing import Sequence
+from typing import Sequence, Callable
 
 import numpy as np
 import scipy as sp
@@ -28,7 +28,6 @@ from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
-from typing import Callable
 
 from ..utils.settings import settings
 from .autocast import Autocast
@@ -106,7 +105,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.atleast_2d(self.astensor(array, dtype))
 
     def atleast_3d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = self.atleast_2d(self.atleast_1d(array))
+        array = self.atleast_2d(self.atleast_1d(array, dtype))
         if len(array.shape) == 2:
             array = array[None, ...]
         return array

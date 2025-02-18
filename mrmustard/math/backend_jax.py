@@ -1,7 +1,25 @@
+# Copyright 2023 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """This module contains the JAX backend."""
+
+# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
 from __future__ import annotations
 from typing import Callable, Sequence
+from functools import partial
+
 import os
 import jax
 
@@ -9,22 +27,15 @@ jax.config.update("jax_default_device", jax.devices("cpu")[0])  # comment this l
 jax.config.update("jax_enable_x64", True)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # comment this line to run on GPU
 os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
-
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax.experimental import host_callback
 import numpy as np
 
-from ..utils.settings import settings
-from ..utils.typing import Tensor, Trainable
 from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
-from functools import partial
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
-    grad_hermite_multidimensional_1leftoverMode,
-    grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -150,30 +161,28 @@ class BackendJax(BackendBase):
         return jnp.prod(x, axis=axis)
 
     def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
-        return value  # JAX arrays are immutable, so we just return the new value
+        tensor = value
+        return tensor  # JAX arrays are immutable, so we just return the new value
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
-    def vectorize(self, func, signature):
-        return jnp.vectorize(func, signature=signature)
-
     def getnan(self, size):
         return jnp.full(size, jnp.nan)
-
-    # @partial(jax.jit, static_argnames=['self', 'dtype'])
-    def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_1d(array)
-
-    # @partial(jax.jit, static_argnames=['self', 'dtype'])
-    def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_2d(array)
 
     @partial(jax.jit, static_argnames=["self"])
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
-    # @partial(jax.jit, static_argnames=['self', 'dtype'])
+    @partial(jax.jit, static_argnames=["self", "dtype"])
+    def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
+        return jnp.atleast_1d(jnp.array(array, dtype=dtype))
+
+    @partial(jax.jit, static_argnames=["self", "dtype"])
+    def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
+        return jnp.atleast_2d(jnp.array(array, dtype=dtype))
+
+    @partial(jax.jit, static_argnames=["self", "dtype"])
     def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if isinstance(array, tuple):
             raise ValueError("Tuple input is not supported for atleast_3d.")
@@ -296,7 +305,7 @@ class BackendJax(BackendBase):
         array: jnp.ndarray,
         filters: jnp.ndarray,
         padding: str | None = None,
-        data_format="NWC",
+        data_format="NWC",  # pylint: disable=unused-argument
     ) -> jnp.ndarray:
         padding = padding or "VALID"
         return jax.lax.conv(array, filters, (1, 1), padding)
@@ -344,7 +353,7 @@ class BackendJax(BackendBase):
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim == 0:
             return array
-        elif array.ndim == 2 or array.ndim == 1:
+        elif array.ndim in [1, 2]:
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm
@@ -622,10 +631,9 @@ class BackendJax(BackendBase):
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~
-    @staticmethod
-    @partial(jax.custom_vjp, nondiff_argnums=[3])
+    @partial(jax.jit, static_argnames=["self", "shape"])
     def hermite_renormalized(
-        A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+        self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
         function = partial(strategies.vanilla, shape)
         G = jax.pure_callback(
@@ -637,37 +645,23 @@ class BackendJax(BackendBase):
         )
         return G
 
-    @staticmethod
-    def hermite_renormalized_fwd(A, b, c, shape):
-        print(shape, type(shape))
-        print("here in fwd!!")
-        G = BackendJax.hermite_renormalized(A, b, c, shape)
-        return G, (G, c, A, b)
-
-    @staticmethod
-    def hermite_renormalized_bwd(shape, res, g):
-        G, c, A, b = res
-        dLdA, dLdB, dLdC = jax.pure_callback(
-            lambda G, c, g: strategies.vanilla_vjp(
-                np.array(G), np.array(c), np.conj(jax.lax.stop_gradient(g))
-            ),
-            [
-                jax.ShapeDtypeStruct(A.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(b.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(c.shape, jnp.complex128),
-            ],
-            G,
-            c,
-            g,
-        )
-        return (jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC))
-
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_batch
     # ~~~~~~~~~~~~~~~~~
 
-    def hermite_renormalized_batch(self, A, b, c, shape):
-        return strategies.vanilla_batch(tuple(shape), np.array(A), np.array(b), np.array(c))
+    @partial(jax.jit, static_argnames=["self", "shape"])
+    def hermite_renormalized_batch(
+        self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+    ) -> jnp.ndarray:
+        function = partial(strategies.vanilla_batch, tuple(shape))
+        G = jax.pure_callback(
+            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct((b.shape[0],) + shape, jnp.complex128),
+            A,
+            b,
+            c,
+        )
+        return G
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_diagonal
@@ -696,10 +690,9 @@ class BackendJax(BackendBase):
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_diagonal_reorderedAB
     # ~~~~~~~~~~~~~~~~~
-    @jax.custom_vjp
-    @partial(jax.jit, static_argnames=["cutoffs"])
+    @partial(jax.jit, static_argnames=["self", "cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(
-        A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -727,56 +720,9 @@ class BackendJax(BackendBase):
         )
         return poly0
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_diagonal_reorderedAB_fwd(A, B, C, cutoffs):
-        return_shapes = identify_shape_hermite_multidimensional_diagonal(B, cutoffs)
-        return_dtypes = [jax.ShapeDtypeStruct(shape, jnp.complex128) for shape in return_shapes]
-
-        function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-        poly0, poly2, poly1010, poly1001, poly1 = jax.pure_callback(
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C)), return_dtypes, A, B, C
-        )
-        return poly0, (A, B, C, poly0, poly2, poly1010, poly1001, poly1)
-
-    @jax.jit
-    def hermite_renormalized_diagonal_reorderedAB_bwd(res, g):
-        A, B, C, poly0, poly2, poly1010, poly1001, poly1 = res
-        dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
-            lambda A, B, C, g: grad_hermite_multidimensional_diagonal(
-                np.array(A),
-                np.array(B),
-                np.array(C),
-                np.array(poly0),
-                np.array(poly2),
-                np.array(poly1010),
-                np.array(poly1001),
-                np.array(poly1),
-            ),
-            [
-                jax.ShapeDtypeStruct(A.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(B.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(C.shape, jnp.complex128),
-            ],
-            A,
-            B,
-            C,
-            poly0,
-            poly2,
-            poly1010,
-            poly1001,
-            poly1,
-        )
-
-        ax = tuple(range(g.ndim))
-        dLdA = self.sum(g[..., None, None] * self.conj(dpoly_dA), axis=ax)
-        dLdB = self.sum(g[..., None] * self.conj(dpoly_dB), axis=ax)
-        dLdC = self.sum(g * self.conj(dpoly_dC), axis=ax)
-
-        return (dLdA, dLdB, dLdC, None)
-
-    hermite_renormalized_diagonal_reorderedAB.defvjp(
-        hermite_renormalized_diagonal_reorderedAB_fwd, hermite_renormalized_diagonal_reorderedAB_bwd
-    )
+    # ~~~~~~~~~~~~~~~~~
+    # hermite_renormalized_diagonal_batch
+    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["self", "cutoffs"])
     def hermite_renormalized_diagonal_batch(
@@ -786,6 +732,11 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
+    # ~~~~~~~~~~~~~~~~~
+    # hermite_renormalized_diagonal_reorderedAB_batch
+    # ~~~~~~~~~~~~~~~~~
+
+    @partial(jax.jit, static_argnames=["self", "cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -814,9 +765,10 @@ class BackendJax(BackendBase):
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_binomial
     # ~~~~~~~~~~~~~~~~~
-    @jax.custom_vjp
-    @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
+
+    @partial(jax.jit, static_argnames=["self", "shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
+        self,
         A: jnp.ndarray,
         B: jnp.ndarray,
         C: jnp.ndarray,
@@ -855,44 +807,6 @@ class BackendJax(BackendBase):
         )
         return G
 
-    @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
-    def hermite_renormalized_binomial_fwd(A, B, C, shape, max_l2, global_cutoff):
-        function = partial(strategies.binomial, tuple(shape))
-        G = jax.pure_callback(
-            lambda A, B, C, max_l2, global_cutoff: function(
-                np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
-            )[0],
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            B,
-            C,
-            max_l2,
-            global_cutoff,
-        )
-        return G, (G, C, A, B)
-
-    @jax.jit
-    def hermite_renormalized_binomial_bwd(res, g):
-        G, C, A, B = res
-        dLdA, dLdB, dLdC = jax.pure_callback(
-            lambda G, C, g: strategies.vanilla_vjp(
-                np.array(G), np.array(C), np.conj(jax.lax.stop_gradient(g))
-            ),
-            [
-                jax.ShapeDtypeStruct(A.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(B.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(C.shape, jnp.complex128),
-            ],
-            G,
-            C,
-            g,
-        )
-        return (None, jnp.conj(dLdA), jnp.conj(dLdB), jnp.conj(dLdC), None, None)
-
-    hermite_renormalized_binomial.defvjp(
-        hermite_renormalized_binomial_fwd, hermite_renormalized_binomial_bwd
-    )
-
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_1leftoverMode_reorderedAB
     # ~~~~~~~~~~~~~~~~~
@@ -902,7 +816,10 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
-    @jax.custom_vjp
+    # ~~~~~~~~~~~~~~~~~
+    # hermite_renormalized_1leftoverMode_reorderedAB
+    # ~~~~~~~~~~~~~~~~~
+
     @partial(jax.jit, static_argnames=["self", "cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -933,60 +850,3 @@ class BackendJax(BackendBase):
             C,
         )
         return poly0
-
-    @jax.jit
-    def hermite_renormalized_1leftoverMode_reorderedAB_fwd(A, B, C, cutoffs):
-        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=tuple(cutoffs))
-        return_shapes = identify_shape_hermite_multidimensional_1leftoverMode(cutoffs)
-        return_dtypes = [jax.ShapeDtypeStruct(shape, jnp.complex128) for shape in return_shapes]
-
-        poly0, poly2, poly1010, poly1001, poly1 = jax.pure_callback(
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C)), return_dtypes, A, B, C
-        )
-        return poly0, (A, B, C, poly0, poly2, poly1010, poly1001, poly1)
-
-    @jax.jit
-    def hermite_renormalized_1leftoverMode_reorderedAB_bwd(res, g):
-        A, B, C, poly0, poly2, poly1010, poly1001, poly1 = res
-        dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
-            lambda A, B, C, poly0, poly2, poly1010, poly1001, poly1: grad_hermite_multidimensional_1leftoverMode(
-                np.array(A),
-                np.array(B),
-                np.array(C),
-                np.array(poly0),
-                np.array(poly2),
-                np.array(poly1010),
-                np.array(poly1001),
-                np.array(poly1),
-            ),
-            [
-                jax.ShapeDtypeStruct(A.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(B.shape, jnp.complex128),
-                jax.ShapeDtypeStruct(C.shape, jnp.complex128),
-            ],
-            A,
-            B,
-            C,
-            poly0,
-            poly2,
-            poly1010,
-            poly1001,
-            poly1,
-        )
-
-        ax = tuple(range(g.ndim))
-        dLdA = self.sum(g[..., None, None] * self.conj(dpoly_dA), axis=ax)
-        dLdB = self.sum(g[..., None] * self.conj(dpoly_dB), axis=ax)
-        dLdC = self.sum(g * self.conj(dpoly_dC), axis=ax)
-
-        return (dLdA, dLdB, dLdC, None)
-
-    hermite_renormalized_1leftoverMode_reorderedAB.defvjp(
-        hermite_renormalized_1leftoverMode_reorderedAB_fwd,
-        hermite_renormalized_1leftoverMode_reorderedAB_bwd,
-    )
-
-
-BackendJax.hermite_renormalized.defvjp(
-    BackendJax.hermite_renormalized_fwd, BackendJax.hermite_renormalized_bwd
-)

@@ -107,6 +107,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     @property
     def inf(self):
+        r"""The infinity constant."""
         return self._backend.inf
 
     def __init__(self) -> None:
@@ -301,6 +302,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("asnumpy", (tensor,))
 
     def getnan(self, size):
+        r"""Returns a tensor of shape ``size`` with all elements set to ``NaN``.
+
+        Args:
+            size: The shape of the tensor to return.
+
+        Returns:
+            A tensor of shape ``size`` with all elements set to ``NaN``.
+        """
         return self._apply("getnan", (size,))
 
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:

@@ -29,7 +29,6 @@ from mrmustard.utils.typing import (
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
 from .wires import Wires, ReprEnum
-from functools import partial
 
 __all__ = ["Representation"]
 

@@ -19,7 +19,6 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
 from mrmustard.lab_dev.transformations import Sgate
 
 

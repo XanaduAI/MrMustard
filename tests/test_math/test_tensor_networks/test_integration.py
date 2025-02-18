@@ -19,7 +19,7 @@ import pytest
 
 from mrmustard.lab.gates import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
 from mrmustard.math.tensor_networks import connect, contract
-from ...conftest import skip_np
+from ...conftest import skip_np_and_jax
 
 
 class TestTransformations:
@@ -65,7 +65,7 @@ class TestTransformations:
         r"""
         Tests that a sequence of multi-mode unitaries can be contracted correctly.
         """
-        skip_np()
+        skip_np_and_jax()
         cx_tens = CXgate(modes=modes)
         bs_tens = BSgate(0.2, modes=modes)
         cz_tens = CZgate(modes=modes)

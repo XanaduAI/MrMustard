@@ -21,7 +21,7 @@ import pytest
 from mrmustard import math
 from mrmustard.utils.settings import Settings
 
-from ..conftest import skip_np
+from ..conftest import skip_np_and_jax
 
 
 class TestSettings:
@@ -83,7 +83,7 @@ class TestSettings:
 
     def test_complex_warnings(self, caplog):
         """Tests that complex warnings can be correctly activated and deactivated."""
-        skip_np()
+        skip_np_and_jax()
 
         settings = Settings()
 

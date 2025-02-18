@@ -30,7 +30,6 @@ from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_stable_batch
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from ..conftest import skip_np
 
 
 def test_vanillaNumba_vs_binomial():

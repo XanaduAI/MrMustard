@@ -13,7 +13,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
 
-from ..conftest import skip_np
+from ..conftest import skip_np_and_jax
 
 
 @st.composite
@@ -58,7 +58,7 @@ def test_compactFock_1leftover(A_B_G0):
     Test getting Fock amplitudes if all but the first mode
     are detected (math.hermite_renormalized_1leftoverMode).
     """
-    skip_np()
+    skip_np_and_jax()
 
     cutoffs = (5, 5, 5)
 
@@ -89,7 +89,7 @@ def test_compactFock_diagonal_gradients():
     Test getting Fock amplitudes and gradients if all modes
     are detected (math.hermite_renormalized_diagonal).
     """
-    skip_np()
+    skip_np_and_jax()
 
     G = Ggate(num_modes=1, symplectic_trainable=True)
 
@@ -114,7 +114,7 @@ def test_compactFock_1leftover_gradients():
     Test getting Fock amplitudes and if all but the first
     mode are detected (math.hermite_renormalized_1leftoverMode).
     """
-    skip_np()
+    skip_np_and_jax()
 
     G = Ggate(num_modes=2, symplectic_trainable=True)
 

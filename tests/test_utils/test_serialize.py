@@ -47,7 +47,7 @@ from mrmustard.lab_dev.transformations import (
 )
 from mrmustard.utils.serialize import load, save
 
-from ..conftest import skip_np
+from ..conftest import skip_np_and_jax
 
 
 class Deserialize:
@@ -144,7 +144,7 @@ class TestSerialize:
 
     def test_tensorflow_support(self):
         """Test that TensorFlow data is supported."""
-        skip_np()
+        skip_np_and_jax()
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert tf.is_tensor(loaded.array)
@@ -152,7 +152,7 @@ class TestSerialize:
 
     def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
-        skip_np()
+        skip_np_and_jax()
         x = math.astensor([1.1, 2.2])
         path = save(DummyOneNP, name="myname", arrays={"array": x})
         # can be thought of as restarting python and not changing to tensorflow

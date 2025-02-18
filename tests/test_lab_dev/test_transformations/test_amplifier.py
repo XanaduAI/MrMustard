@@ -19,7 +19,6 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
 from mrmustard.lab_dev.states import Coherent
 from mrmustard.lab_dev.transformations import Amplifier, Attenuator
 
