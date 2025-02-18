@@ -556,15 +556,27 @@ class PolyExpAnsatz(Ansatz):
             padded_array2 = math.pad(array2, pad_widths2, "constant")
             return math.concat([padded_array1, padded_array2], axis=0)
 
-        combined_matrices = math.concat([self.A, other.A], axis=0)
-        combined_vectors = math.concat([self.b, other.b], axis=0)
-        combined_arrays = combine_arrays(self.c, other.c)
+        n_derived_vars = max(self.num_derived_vars, other.num_derived_vars)
+        self_pad = max(0, other.num_derived_vars - self.num_derived_vars)
+        other_pad = max(0, self.num_derived_vars - other.num_derived_vars)
+
+        self_A = math.pad(self.A, [(0, 0), (0, self_pad), (0, self_pad)])
+        other_A = math.pad(other.A, [(0, 0), (0, other_pad), (0, other_pad)])
+        self_b = math.pad(self.b, [(0, 0), (0, self_pad)])
+        other_b = math.pad(other.b, [(0, 0), (0, other_pad)])
+
+        combined_matrices = math.concat([self_A, other_A], axis=0)
+        combined_vectors = math.concat([self_b, other_b], axis=0)
+        combined_arrays = combine_arrays(
+            math.atleast_nd(self.c, n_derived_vars + 1),
+            math.atleast_nd(other.c, n_derived_vars + 1),
+        )
 
         return PolyExpAnsatz(
             combined_matrices,
             combined_vectors,
             combined_arrays,
-            self.num_derived_vars,
+            n_derived_vars,
         )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:

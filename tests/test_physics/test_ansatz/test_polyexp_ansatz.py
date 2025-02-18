@@ -91,7 +91,7 @@ class TestPolyExpAnsatz:
         c1 = np.random.random((1,))
         c2 = np.random.random((1, 11))
         ansatz1 = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2, num_derived_vars=1)
         ansatz_sum = ansatz1 + ansatz2
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
