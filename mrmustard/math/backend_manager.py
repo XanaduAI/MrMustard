@@ -293,7 +293,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least one dimension.
         """
-        return self._apply("atleast_1d", (array, dtype))
+        return self._apply("atleast_nd", (array, 1, dtype))
 
     def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least two dimensions.
@@ -306,12 +306,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least two dimensions.
         """
-        return self._apply("atleast_2d", (array, dtype))
+        return self._apply("atleast_nd", (array, 2, dtype))
 
     def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least three dimensions by eventually inserting
-        new axes at the beginning. Note this is not the way atleast_3d works in numpy
-        and tensorflow, where it adds at the beginning and/or end.
+        r"""Returns an array with at least three dimensions.
 
         Args:
             array: The array to convert.
@@ -321,7 +319,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array with at least three dimensions.
         """
-        return self._apply("atleast_3d", (array, dtype))
+        return self._apply("atleast_nd", (array, 3, dtype))
 
     def atleast_nd(self, array: Tensor, n: int, dtype=None) -> Tensor:
         r"""Returns an array with at least n dimensions.

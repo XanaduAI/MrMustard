@@ -96,18 +96,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         array = np.array(array)
         return self.cast(array, dtype=dtype or array.dtype)
 
-    def atleast_1d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return np.atleast_1d(self.astensor(array, dtype))
-
-    def atleast_2d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return np.atleast_2d(self.astensor(array, dtype))
-
-    def atleast_3d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = self.atleast_2d(array, dtype)
-        if len(array.shape) == 2:
-            array = array[None, ...]
-        return array
-
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
 
@@ -416,7 +404,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
             tensor[tuple(i)] = v
         return tensor
@@ -425,7 +413,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_add_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
             tensor[tuple(i)] += v
         return tensor
