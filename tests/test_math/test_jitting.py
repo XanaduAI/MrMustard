@@ -1,5 +1,5 @@
-import jax
 import time
+import jax
 import jax.numpy as jnp
 from mrmustard import math
 from mrmustard.lab_dev import SqueezedVacuum, Attenuator, BSgate
@@ -7,6 +7,9 @@ from ..conftest import skip_np_and_tf
 
 
 def evaluate_circuit(params):
+    r"""
+    Defines and evaluates a sample circuit with the given parameters.
+    """
     params = jnp.asarray(params)
     BS_01 = BSgate(
         modes=(0, 1), theta=params[0], phi=params[1], theta_trainable=False, phi_trainable=False
@@ -67,6 +70,9 @@ def test_jit_circuit_with_parameters():
     att = Attenuator(modes=(0, 1, 2), transmissivity=0.5, transmissivity_trainable=True)
 
     def evaluate_parameters(params):
+        r"""
+        Evaluate pre-defined circuit elements with the given parameters.
+        """
         BS_01.parameters.all_parameters["theta"].value = params[0]
         BS_01.parameters.all_parameters["phi"].value = params[1]
         BS_12.parameters.all_parameters["theta"].value = params[2]
