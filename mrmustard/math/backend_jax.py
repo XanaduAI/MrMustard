@@ -19,17 +19,9 @@
 from __future__ import annotations
 from typing import Callable, Sequence
 from functools import partial
-import numpy as np
-
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # comment this line to run on GPU
-os.environ["JAX_PLATFORM_NAME"] = "cpu"  # comment this line to run on GPU
 
 import jax
-
-jax.config.update("jax_default_device", jax.devices("cpu")[0])  # comment this line to run on GPU
-jax.config.update("jax_enable_x64", True)
+import numpy as np
 import jax.numpy as jnp
 import jax.scipy as jsp
 
@@ -356,7 +348,6 @@ class BackendJax(BackendBase):
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
-    # @partial(jax.jit, static_argnames=['self', 'k'])
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim == 0:
             return array
@@ -441,11 +432,6 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["self"])
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         mat = jnp.linalg.multi_dot(matrices)
-        """
-        mat = matrices[0]
-        for matrix in matrices[1:]:
-            mat = jnp.matmul(mat, matrix)
-        """
         return mat
 
     @partial(jax.jit, static_argnames=["self", "old", "new"])
