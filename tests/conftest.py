@@ -73,17 +73,18 @@ def set_backend(backend):
     math.change_backend(f"{backend}")
 
 
-def skip_np_and_tf():
-    if math.backend_name == "numpy":
-        pytest.skip("numpy")
-    elif math.backend_name == "tensorflow":
+def skip_tf():
+    if math.backend_name == "tensorflow":
         pytest.skip("tensorflow")
 
 
-def skip_np_and_jax():
+def skip_np():
     if math.backend_name == "numpy":
         pytest.skip("numpy")
-    elif math.backend_name == "jax":
+
+
+def skip_jax():
+    if math.backend_name == "jax":
         pytest.skip("jax")
 
 

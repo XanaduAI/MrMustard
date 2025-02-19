@@ -19,7 +19,7 @@ import jax
 import jax.numpy as jnp
 from mrmustard import math
 from mrmustard.lab_dev import SqueezedVacuum, Attenuator, BSgate
-from ..conftest import skip_np_and_tf
+from ..conftest import skip_np, skip_tf
 
 
 def evaluate_circuit(params):
@@ -45,7 +45,8 @@ def evaluate_circuit(params):
 
 def test_jit_complete_circuit():
     r"""Tests if entire circuit with component definitions can be jitted."""
-    skip_np_and_tf()
+    skip_np()
+    skip_tf()
 
     unjitted_evaluate_circuit = evaluate_circuit
     start_time = time.time()
@@ -78,7 +79,8 @@ def test_jit_complete_circuit():
 
 def test_jit_circuit_with_parameters():
     r"""Tests if circuit with pre-defined elements can be jitted."""
-    skip_np_and_tf()
+    skip_np()
+    skip_tf()
 
     initial_state = SqueezedVacuum(
         modes=(0, 1, 2), r=0.5, phi=0.5, r_trainable=True, phi_trainable=True

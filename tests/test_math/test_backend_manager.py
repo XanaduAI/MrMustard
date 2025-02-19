@@ -215,6 +215,14 @@ class TestBackendManager:
         # default value of JIT FLAG is False
         assert math.JIT_FLAG == False
 
+    def test_JIT_FLAG_setter(self):
+        r"""
+        Tests the ``JIT_FLAG`` setter.
+        """
+        math.JIT_FLAG = True
+        assert math.JIT_FLAG == True
+        math.JIT_FLAG = False
+
     def test_boolean_mask(self):
         r"""
         Tests the ``boolean_mask`` method.

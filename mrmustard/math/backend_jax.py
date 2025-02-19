@@ -43,7 +43,7 @@ from .lattice.strategies.compactFock.inputValidation import (
 
 
 # pylint: disable=too-many-public-methods
-class BackendJax(BackendBase):
+class BackendJax(BackendBase):  # pragma: no cover
     """A JAX backend implementation."""
 
     int32 = jnp.int32
