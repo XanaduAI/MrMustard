@@ -298,7 +298,7 @@ class PolyExpAnsatz(Ansatz):
             A_dec.append(A_dec_i)
             b_dec.append(b_dec_i)
             c_dec.append(c_dec_i)
-        return self.__class__(A_dec, b_dec, c_dec, self.num_derived_vars)
+        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
 
     def _decompose_single(self, Ai, bi, ci):
         r"""
@@ -312,7 +312,7 @@ class PolyExpAnsatz(Ansatz):
         b_core = math.concat((math.zeros((n,), dtype=bi.dtype), bi[n:]), axis=-1)
         poly_shape = (math.sum(self.shape_derived_vars),) * n + self.shape_derived_vars
         poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
-        c_prime = math.sum(poly_core, axes=[i for i in range(n, n + m)]) * ci
+        c_prime = math.sum(poly_core, axis=[i for i in range(n, n + m)]) * ci
         block = Ai[:n, :n]
         A_decomp = math.block(
             [[block, math.eye_like(block)], [math.eye_like(block), math.zeros_like(block)]]
@@ -626,9 +626,9 @@ class PolyExpAnsatz(Ansatz):
             The value of the function or a new ansatz.
         """
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
-        if len(evaluated_indices) > self.num_CV_vars:
+        if len(z) > self.num_CV_vars:
             raise ValueError(
-                f"The ansatz was called with {len(evaluated_indices)} variables, "
+                f"The ansatz was called with {len(z)} variables, "
                 f"but it only has {self.num_CV_vars} CV variables."
             )
 
@@ -661,14 +661,10 @@ class PolyExpAnsatz(Ansatz):
                 return math.squeeze(
                     math.reshape(result_flat, (self.batch_size,) + grid_shape)
                 )  # (batch_size, b0, b1, …, b_n)
-            else:
-                raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
         else:
             # Partial evaluation: some CV variables are not provided.
             # In partial evaluation, the provided z's must not have a batch dimension.
             only_z = [math.atleast_1d(zi) for zi in z if zi is not None]
-            if mode not in ("zip", "kron"):
-                raise ValueError(f"Invalid mode: {mode}. Must be 'zip' or 'kron'.")
             # For partial evaluation (i.e. currying) both modes behave the same.
             z_input = math.concat(
                 only_z, axis=-1
