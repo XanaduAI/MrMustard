@@ -37,7 +37,6 @@ from ..utils.typing import (
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 
-# from .backend_jax import BackendJax
 
 __all__ = [
     "BackendManager",

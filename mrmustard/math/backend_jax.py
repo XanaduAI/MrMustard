@@ -24,6 +24,7 @@ import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
+from jax import tree_util
 
 from ..utils.settings import settings
 from .autocast import Autocast
@@ -60,11 +61,18 @@ class BackendJax(BackendBase):  # pragma: no cover
     def __repr__(self) -> str:
         return "BackendJax()"
 
-    @partial(jax.jit, static_argnames=["self"])
+    def _tree_flatten(self):
+        return (), ()
+
+    @classmethod
+    def _tree_unflatten(cls, aux, children):
+        return cls(*children, *aux)
+
+    @jax.jit
     def abs(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.abs(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
@@ -75,35 +83,35 @@ class BackendJax(BackendBase):  # pragma: no cover
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
-    # @partial(jax.jit, static_argnames=['self', 'axes'])
     def block(self, blocks: list[list[jnp.ndarray]], axes=(-2, -1)) -> jnp.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
 
+    @jax.jit
     def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
         tensor = value
-        return tensor  # JAX arrays are immutable, so we just return the new value
+        return tensor
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.atleast_1d(jnp.array(array, dtype=dtype))
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.atleast_2d(jnp.array(array, dtype=dtype))
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if isinstance(array, tuple):
             raise ValueError("Tuple input is not supported for atleast_3d.")
@@ -112,7 +120,7 @@ class BackendJax(BackendBase):  # pragma: no cover
             array = array[None, ...]
         return array
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def block_diag(self, mat1: jnp.ndarray, mat2: jnp.ndarray) -> jnp.ndarray:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
         Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
@@ -131,46 +139,46 @@ class BackendJax(BackendBase):  # pragma: no cover
 
         return constraint
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def cast(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if dtype is None:
             return array
         return jnp.asarray(array, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def concat(self, values: Sequence[jnp.ndarray], axis: int) -> jnp.ndarray:
         try:
             return jnp.concatenate(values, axis)
         except ValueError:
             return jnp.array(values)
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def sort(self, array: jnp.ndarray, axis: int = -1) -> jnp.ndarray:
         return jnp.sort(array, axis)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9) -> bool:
         return jnp.allclose(array1, array2, atol=atol)
 
-    @partial(jax.jit, static_argnames=["self", "a_min", "a_max"])
+    @partial(jax.jit, static_argnames=["a_min", "a_max"])
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
         return jax.lax.lgamma(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
@@ -190,7 +198,7 @@ class BackendJax(BackendBase):  # pragma: no cover
 
         return Generator(probs)
 
-    @partial(jax.jit, static_argnames=["self", "k"])
+    @partial(jax.jit, static_argnames=["k"])
     def set_diag(self, array: jnp.ndarray, diag: jnp.ndarray, k: int) -> jnp.ndarray:
         i = jnp.arange(0, array.shape[-2] - abs(k))
         j = jnp.arange(abs(k), array.shape[-1])
@@ -208,18 +216,18 @@ class BackendJax(BackendBase):  # pragma: no cover
         value = jnp.array(value, dtype=dtype)
         return value
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
         return jnp.tensordot(array1, array2, [[], []])
 
-    @partial(jax.jit, static_argnames=["self", "name", "dtype"])
+    @partial(jax.jit, static_argnames=["name", "dtype"])
     def new_constant(self, value, name: str, dtype=None):  # pylint: disable=unused-argument
         dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return value
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self", "data_format", "padding"])
+    @partial(jax.jit, static_argnames=["data_format", "padding"])
     def convolution(
         self,
         array: jnp.ndarray,
@@ -236,7 +244,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.tile(array, repeats)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
@@ -245,7 +253,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return tensor.at[indices].set(values)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def update_add_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
@@ -253,19 +261,19 @@ class BackendJax(BackendBase):  # pragma: no cover
         return tensor.at[tuple(indices.T)].add(values)
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.matmul(a, b)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def cos(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.cos(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def cosh(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.cosh(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
@@ -292,25 +300,25 @@ class BackendJax(BackendBase):  # pragma: no cover
             )
             return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
 
-    @partial(jax.jit, static_argnames=["self", "k"])
+    @partial(jax.jit, static_argnames=["k"])
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    @partial(jax.jit, static_argnames=["self", "string"])
+    @partial(jax.jit, static_argnames=["string"])
     def einsum(self, string: str, *tensors) -> jnp.ndarray:
         if isinstance(string, str):
             return jnp.einsum(string, *tensors)
         return None
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.exp(array)
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def expand_dims(self, array: jnp.ndarray, axis: int) -> jnp.ndarray:
         return jnp.expand_dims(array, axis)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jsp.linalg.expm(matrix)
 
@@ -318,44 +326,44 @@ class BackendJax(BackendBase):  # pragma: no cover
         dtype = dtype or self.float64
         return jnp.eye(size, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
-    # @partial(jax.jit, static_argnames=['self'])
     def from_backend(self, value) -> bool:
         return isinstance(value, jnp.ndarray)
 
-    @partial(jax.jit, static_argnames=["self", "repeats", "axis"])
+    @partial(jax.jit, static_argnames=["repeats", "axis"])
     def repeat(self, array: jnp.ndarray, repeats: int, axis: int = None) -> jnp.ndarray:
         return jnp.repeat(array, repeats, axis=axis)
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
         return jnp.take(array, indices, axis=axis)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def imag(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.imag(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    @jax.jit
     def is_trainable(self, tensor: jnp.ndarray) -> bool:  # pylint: disable=unused-argument
         return False
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
         return real + 1j * imag
 
     @Autocast()
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         mat = jnp.linalg.multi_dot(matrices)
         return mat
 
-    @partial(jax.jit, static_argnames=["self", "old", "new"])
+    @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
         self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]
     ) -> jnp.ndarray:
@@ -365,11 +373,11 @@ class BackendJax(BackendBase):  # pragma: no cover
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def ones_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.ones_like(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def infinity_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.full_like(array, jnp.inf, dtype="complex128")
 
@@ -387,52 +395,52 @@ class BackendJax(BackendBase):  # pragma: no cover
     ) -> jnp.ndarray:
         return jnp.pad(array, paddings, mode=mode.lower(), constant_values=constant_values)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def pinv(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.pinv(matrix)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def real(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.real(array)
 
     def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
-    @partial(jax.jit, static_argnames=["self", "decimals"])
+    @partial(jax.jit, static_argnames=["decimals"])
     def round(self, array: jnp.ndarray, decimals: int = 0) -> jnp.ndarray:
         return jnp.round(array, decimals)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def sin(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sin(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def sinh(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sinh(array)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def solve(self, matrix: jnp.ndarray, rhs: jnp.ndarray) -> jnp.ndarray:
         if len(rhs.shape) == len(matrix.shape) - 1:
             rhs = jnp.expand_dims(rhs, -1)
             return jnp.linalg.solve(matrix, rhs)[..., 0]
         return jnp.linalg.solve(matrix, rhs)
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def kron(self, tensor1: jnp.ndarray, tensor2: jnp.ndarray):
         return jnp.kron(tensor1, tensor2)
 
     def boolean_mask(self, tensor: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
         return tensor[mask]
 
-    @partial(jax.jit, static_argnames=["self", "axes"])
+    @partial(jax.jit, static_argnames=["axes"])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
         return jnp.sum(array, axis=axes)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def norm(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.norm(array)
 
@@ -461,7 +469,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
         return jnp.tensordot(a, b, axes)
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
@@ -474,15 +482,15 @@ class BackendJax(BackendBase):  # pragma: no cover
         dtype = dtype or self.float64
         return jnp.zeros(shape, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self", "dtype"])
+    @partial(jax.jit, static_argnames=["dtype"])
     def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
         return jnp.zeros_like(array, dtype=dtype)
 
-    @partial(jax.jit, static_argnames=["self", "axis"])
+    @partial(jax.jit, static_argnames=["axis"])
     def squeeze(self, tensor: jnp.ndarray, axis=None):
         return jnp.squeeze(tensor, axis=axis)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def cholesky(self, input: jnp.ndarray):
         return jnp.linalg.cholesky(input)
 
@@ -491,7 +499,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def eigh(tensor: jnp.ndarray) -> tuple:
         return jnp.linalg.eigh(tensor)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def where(self, array: jnp.ndarray, array1: jnp.ndarray, array2: jnp.ndarray):
         return jnp.where(array, array1, array2)
 
@@ -500,12 +508,12 @@ class BackendJax(BackendBase):  # pragma: no cover
     def eigvals(tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.eigvals(tensor)
 
-    @partial(jax.jit, static_argnames=["self"])
+    @jax.jit
     def eqigendecomposition_sqrtm(self, tensor: jnp.ndarray) -> jnp.ndarray:
         eigvals, eigvecs = jnp.linalg.eigh(tensor)
         return eigvecs @ jnp.diag(jnp.sqrt(eigvals)) @ jnp.conj(eigvecs.T)
 
-    @partial(jax.jit, static_argnames=["self", "dtype", "rtol", "atol"])
+    @partial(jax.jit, static_argnames=["dtype", "rtol", "atol"])
     def sqrtm(self, tensor: jnp.ndarray, dtype, rtol=1e-05, atol=1e-08) -> jnp.ndarray:
 
         ret = jax.lax.cond(
@@ -523,7 +531,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def DefaultEuclideanOptimizer(self):
         return jax.experimental.optimizers.adam(learning_rate=0.001)
 
-    # @partial(jax.jit, static_argnames=['self'])
+    @jax.jit
     def reorder_AB_bargmann(
         self, A: jnp.ndarray, B: jnp.ndarray
     ) -> tuple[jnp.ndarray, jnp.ndarray]:
@@ -539,7 +547,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["self", "shape"])
+    @partial(jax.jit, static_argnames=["shape"])
     def hermite_renormalized(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
@@ -560,7 +568,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_batch
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "shape"])
+    @partial(jax.jit, static_argnames=["shape"])
     def hermite_renormalized_batch(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
@@ -581,7 +589,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_diagonal
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -594,7 +602,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_diagonal_reorderedAB
     # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -628,7 +636,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_diagonal_batch
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -640,7 +648,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_diagonal_reorderedAB_batch
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -670,7 +678,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_binomial
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "shape", "max_l2", "global_cutoff"])
+    @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
         self,
         A: jnp.ndarray,
@@ -715,7 +723,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_1leftoverMode_reorderedAB
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
@@ -724,7 +732,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_1leftoverMode_reorderedAB
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["self", "cutoffs"])
+    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
     ) -> jnp.ndarray:
@@ -754,3 +762,8 @@ class BackendJax(BackendBase):  # pragma: no cover
             C,
         )
         return poly0
+
+
+# defining the pytree node for the JaxBackend.
+# This allows to skip specifying `self` in static_argnames.
+tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
