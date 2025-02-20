@@ -50,19 +50,21 @@ class GKet(Ket):
     Returns:
         A ``Ket``.
 
-    .. details::
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), produces the state
-        ..math:
-            |\psi\rangle = U |0\rangle
 
-    Example:
     .. code-block::
+
         >>> from mrmustard.lab_dev import GKet, Ket
 
         >>> psi = GKet([0])
 
         >>> assert isinstance(psi, Ket)
+
+    .. details::
+
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), produces the state
+        ..math:
+            |\psi\rangle = U |0\rangle
     """
 
     short_name = "Gk"
@@ -127,20 +129,22 @@ class GDM(DM):
     Returns:
     A ``DM``.
 
-    .. details::
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), and a set of temperatures, produces the state
-        ..math:
-            \rho = U (\bigotimes_i \rho_t(\beta_i))
-        where rho_t are thermal states with temperatures determined by beta.
 
-    Example:
     .. code-block::
+
         >>> from mrmustard.lab_dev import GDM, DM
 
         >>> rho = GDM([0], beta = 1.0)
 
         >>> assert isinstance(rho, DM)
+
+    .. details::
+
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), and a set of temperatures, produces the state
+        ..math:
+            \rho = U (\bigotimes_i \rho_t(\beta_i))
+        where rho_t are thermal states with temperatures determined by beta.
     """
 
     short_name = "Gd"

@@ -305,7 +305,6 @@ class Ket(State):
                 modes of this state.
 
         Note:
-        .. details::
             Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
             where :math:`|\psi\rangle` is the vector representing this state.
 
@@ -314,9 +313,9 @@ class Ket(State):
             unitary-like wires (input and output wires on the ket side).
 
         Example:
-            In the example below, we compute the expectation value of the rotation gate on Fock
-            state :math:`|1\rangle`. We can readlity check that the result is the phase in the rotation.
+
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Number, Rgate
 
@@ -360,8 +359,8 @@ class Ket(State):
         Returns:
             The Fock distribution.
 
-        Example:
         .. code-block::
+
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0])
@@ -387,8 +386,8 @@ class Ket(State):
         Returns:
             A ``DM``.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Ket
 
@@ -410,8 +409,8 @@ class Ket(State):
         Returns:
             The quadrature distribution.
 
-        Example:
         .. code-block::
+
             >>> from mrmustard.lab_dev import Ket
 
             >>> dist = Ket.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
@@ -480,8 +479,8 @@ class Ket(State):
             In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
             not needed and the method returns a new ``Ket``.
 
-        Example:
         .. code-block::
+
             >>> from mrmustard.lab_dev import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])

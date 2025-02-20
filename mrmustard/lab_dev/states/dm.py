@@ -63,10 +63,10 @@ class DM(State):
         Raises:
             ValueError: if the batch dimension of the state is greater than 1.
 
-        Example:
-            .. code-block::
-                >>> from mrmustard.lab_dev import DM
-                >>> assert DM.random([0]).is_positive
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+            >>> assert DM.random([0]).is_positive
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -92,10 +92,11 @@ class DM(State):
         Raises:
             ValueError: if the batch dimension of the state is greater than 1.
 
-        Example:
-            .. code-block::
-                >>> from mrmustard.lab_dev import DM
-                >>> assert DM.random([0]).is_physical
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+            >>> assert DM.random([0]).is_physical
         """
         return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
@@ -105,8 +106,8 @@ class DM(State):
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
 
@@ -118,7 +119,8 @@ class DM(State):
     def purity(self) -> float:
         r"""Computes the putiry (:math:`tr(rho^2)) of this DM.
 
-        Example:
+        .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM, Vacuum
 
@@ -186,18 +188,20 @@ class DM(State):
         Returns:
             A ``DM`` object from its phase space representation.
 
-        .. details::
-            The Wigner function is considered as
-            :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM, Vacuum
 
             >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
 
             >>> assert rho == Vacuum([0]).dm()
+
+        .. details::
+
+            The Wigner function is considered as
+            :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)
@@ -223,15 +227,17 @@ class DM(State):
         Returns:
             A ``DM``.
 
-        .. detail::
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+            >>> assert isinstance(DM.random([0,1]), DM)
+
+        .. details::
+
             Using a random Gaussian unitary, :math:`U`, on :math:`len(modes)+m`, the code outputs
             :math:`\mathrm{tr}_{m}(U|0\rangle)`. The random unitary :math:`U` is chosen with maximum
             squeezing determined by `max_r`.
-
-        Example:
-        .. code-block::
-            >>> from mrmustard.lab_dev import DM
-            >>> assert isinstance(DM.random([0,1]), DM)
         """
         if m is None:
             m = len(modes)
@@ -281,8 +287,9 @@ class DM(State):
             Warning: if the item is batched. In that case, the `auto_shape` will only output the
             shape computed for the first element in the batch.
 
-        Example:
+
         .. code-block::
+
             >>> from mrmustard.lab_dev import Vacuum
             >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
         """
@@ -319,8 +326,8 @@ class DM(State):
         Returns:
             A ``DM``.
 
-        Example:
         .. code-block:
+
             >>> from mrmustard.lab_dev import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
@@ -349,11 +356,8 @@ class DM(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
 
-        Example:
-            In the example below, we consider a thermal state and compute its expectation value against
-            the parity operator, which is equivalent to `Rgate([0], np.pi)`.
-
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Rgate, GDM
 
@@ -418,8 +422,8 @@ class DM(State):
             is the transpose of the standard density matrix. For multiple modes, the same applies to each
             pair of indices of each mode.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
 
@@ -444,8 +448,8 @@ class DM(State):
         Returns:
             The Fock distribution.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Vacuum, DM
 
@@ -466,8 +470,8 @@ class DM(State):
         Returns:
             A ``DM``.
 
-        Example:
         .. code-block::
+
             >>> import numpy as np
             >>> from mrmustard.lab_dev import DM
 
@@ -489,8 +493,8 @@ class DM(State):
         Returns:
             The quadrature distribution.
 
-        Example:
         .. code-block::
+
             >>> from mrmustard.lab_dev import DM
 
             >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
@@ -562,8 +566,8 @@ class DM(State):
             has both ket and bra wires at the output, expressions like ``dm >> u`` where
             ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
 
-        Example:
         .. code-block::
+
             >>> from mrmustard.lab_dev import CircuitComponent, DM, TraceOut
 
             >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)

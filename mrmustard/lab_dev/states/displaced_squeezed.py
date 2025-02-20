@@ -51,20 +51,21 @@ class DisplacedSqueezed(Ket):
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
 
-    .. details::
-        The covariance matrix :math: `V` and vector of means :math: `r` are parametrized as
-        ..math:
 
     Returns:
         A ``Ket``.
 
-    Example:
     .. code-block::
 
         >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
 
         >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
         >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
+
+    .. details::
+
+        The covariance matrix :math: `V` and vector of means :math: `r` are parametrized as
+        :math:
     """
 
     short_name = "DSq"

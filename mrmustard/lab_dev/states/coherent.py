@@ -64,7 +64,7 @@ class Coherent(Ket):
         ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
 
 
-    Example:
+
     .. code-block::
 
         >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
