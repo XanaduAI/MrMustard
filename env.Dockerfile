@@ -12,20 +12,19 @@ RUN apt-get update \
 # Setup workdir
 WORKDIR /mrmustard
 COPY pyproject.toml .
-COPY poetry.lock .
+COPY uv.lock .
 
-# Upgrade pip and install package manager
-ENV POETRY_HOME=/opt/poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.7.1
-ENV PATH="${POETRY_HOME}/bin:${PATH}"
-RUN poetry config virtualenvs.create false
-RUN python -m pip install --no-cache-dir --upgrade pip
+# Install uv, add to path
+COPY --from=ghcr.io/astral-sh/uv:0.5.29 /uv /uvx /uv_bin/
+ENV PATH="${PATH}:/uv_bin"
 
 # Install all dependencies
-RUN poetry install --no-root --all-extras --with dev,doc
+RUN uv venv -p python${PYTHON_VERSION}
+RUN uv sync --all-extras --group doc
 
 ENV DEBIAN_FRONTEND=dialog
 
 # Add source code, tests and configuration
 COPY . .
-RUN poetry install --only-root --all-extras
+
+CMD ["uv", "run", "python"]

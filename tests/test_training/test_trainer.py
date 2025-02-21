@@ -32,7 +32,7 @@ try:
 except ImportError:
     ray_available = False
 
-from mrmustard.lab_dev import Dgate, GKet, Ggate, Vacuum
+from mrmustard.lab_dev import Dgate, Ggate, GKet, Vacuum
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
