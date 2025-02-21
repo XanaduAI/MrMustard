@@ -55,7 +55,7 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
     return output
 
 
-def get_pivot(k: tuple[int, ...]) -> list[tuple[int, tuple[int, ...]]]:
+def get_pivot(k: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     r"""
     Find the index and pivot for the next recursion step.
 
@@ -63,7 +63,7 @@ def get_pivot(k: tuple[int, ...]) -> list[tuple[int, tuple[int, ...]]]:
         k: Tuple of integers representing current coordinates
 
     Returns:
-        A list containing the index and pivot
+        A tuple containing the index and pivot
     """
     modes = len(k) // 2
     pairs = [(k[2 * m], k[2 * m + 1]) for m in range(modes)]
