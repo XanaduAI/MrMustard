@@ -71,13 +71,13 @@ class ExpAnsatz(Ansatz):
         >>> import numpy as np
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([1.0])
+        >>> c = 1.0
         >>> F = ExpAnsatz(A, b, c)
-        >>> z = np.array([[1.0, 2.0],
-        ...               [3.0, 4.0],
-        ...               [5.0, 6.0]])
-        >>> # calculate the value of the function at the three different z points (batch evaluation).
-        >>> val = F(z)
+        >>> z1 = np.array([1.0, 2.0])
+        >>> z2 = np.array([3.0, 4.0])
+        >>> # calculate the value of the function on a 2x2 grid
+        >>> val = F(z1,z2)
+        >>> assert val.shape == (2,2)
     """
 
     def __init__(
