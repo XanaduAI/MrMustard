@@ -48,7 +48,7 @@ from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
 
-from mrmustard.physics.ansatz.base import Ansatz
+from .base import Ansatz
 
 __all__ = ["ExpAnsatz"]
 
@@ -84,7 +84,7 @@ class ExpAnsatz(Ansatz):
         self,
         A: Batch[ComplexMatrix] | None,
         b: Batch[ComplexVector] | None,
-        c: Batch[ComplexTensor] | None = math.ones([], dtype=math.complex128),
+        c: Batch[ComplexTensor] | None = np.ones([], dtype=np.complex128),
         name: str = "",
     ):
         super().__init__()
