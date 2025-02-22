@@ -32,6 +32,7 @@ from mrmustard.physics.gaussian_integrals import (
 )
 
 from ...random import Abc_triple
+from mrmustard.physics import triples
 
 
 class TestExpAnsatz:
@@ -310,3 +311,20 @@ class TestExpAnsatz:
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
         assert np.allclose(bargmann.c, c)
+
+    def test_init_from_function(self):
+        A, b, c = triples.two_mode_squeezed_vacuum_state_Abc(1.0, 2.0)
+        bargmann = ExpAnsatz.from_function(
+            triples.two_mode_squeezed_vacuum_state_Abc, r=1.0, phi=2.0
+        )
+        assert np.allclose(bargmann.A[0], A)
+        assert np.allclose(bargmann.b[0], b)
+        assert np.allclose(bargmann.c[0], c)
+
+    def test_data_and_scalar(self):
+        A, b, c = triples.two_mode_squeezed_vacuum_state_Abc(1.0, 2.0)
+        ansatz = ExpAnsatz(A, b, c)
+        assert np.allclose(c, ansatz.scalar)
+        assert np.allclose(A, ansatz.data[0])
+        assert np.allclose(b, ansatz.data[1])
+        assert np.allclose(c, ansatz.data[2])
