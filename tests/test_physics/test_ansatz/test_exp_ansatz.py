@@ -24,6 +24,7 @@ from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
+from mrmustard.physics import triples
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.ansatz.exp_ansatz import ExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
@@ -32,7 +33,6 @@ from mrmustard.physics.gaussian_integrals import (
 )
 
 from ...random import Abc_triple
-from mrmustard.physics import triples
 
 
 class TestExpAnsatz:
