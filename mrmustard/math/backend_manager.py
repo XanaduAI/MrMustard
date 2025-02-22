@@ -144,6 +144,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         The backend that is being used.
         """
         self._is_immutable = True
+        print("immutable")
         return self._backend
 
     @property
