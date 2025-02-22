@@ -65,25 +65,19 @@ class ExpAnsatz(Ansatz):
     term in the ansatz, with :math:`z` a vector of continuous complex variables.
     They have shape ``(L, n, n)`` and ``(L, n)``, respectively for ``n`` continuous variables.
 
-    .. code-block::
+    .. code-block:: python
 
         >>> from mrmustard.physics.ansatz import ExpAnsatz
-
-
+        >>> import numpy as np
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
         >>> c = np.array([1.0])
-
         >>> F = ExpAnsatz(A, b, c)
-        >>> z = np.array([[1.0],[2.0],[3.0]])
-
-        >>> # calculate the value of the function at the three different ``z``, since z is batched.
+        >>> z = np.array([[1.0, 2.0],
+        ...               [3.0, 4.0],
+        ...               [5.0, 6.0]])
+        >>> # calculate the value of the function at the three different z points (batch evaluation).
         >>> val = F(z)
-
-    Args:
-        A: A batch of quadratic coefficient :math:`A^{(i)}`.
-        b: A batch of linear coefficients :math:`b^{(i)}`.
-        c: A batch of arrays :math:`c^{(i)}`.
     """
 
     def __init__(
@@ -469,20 +463,20 @@ class ExpAnsatz(Ansatz):
         F(z1, z2, None) or F(z1, None, z3), or F(None, z2, z3). The ``mode`` argument can be used
         to specify how the vectors of arguments are broadcast together. The default is "zip", which
         is to broadcast the vectors pairwise. The alternative is "kron", which is to broadcast the
-        the vectors Kronecker-style. For example, ``F(z1, z2, mode="zip")`` returns the array of values
+        vectors Kronecker-style. For example, ``F(z1, z2, mode="zip")`` returns the array of values
         ``[F(z1[0], z2[0]), F(z1[1], z2[1]), …]``. On the other hand, ``F(z1, z2, mode="kron")``
         returns the Kronecker product of the vectors, i.e. ``[[F(z1[0], z2[0]), F(z1[0], z2[1]), …],
         [F(z1[1], z2[0]), F(z1[1], z2[1]), …], …]``. The 'kron' style is useful if we want to
         pass the points along each axis independently from each other. In `zip` mode the batch
         dimensions of the z vectors must match, while in `kron` mode they can differ, and the result
-        will have a batch dimension equal to the product of the batch dimensions the ansatz, followed
+        will have a batch dimension equal to the product of the batch dimensions of the ansatz, followed
         by the reshaped batch dimensions of the z vectors.
 
         TODO: make the kron version more efficient by avoiding the meshgrid.
 
         Args:
             z: points in C where the function is (partially) evaluated or None if the variable is
-            not evaluated.
+               not evaluated.
             mode: "zip" or "kron"
 
         Returns:
@@ -494,11 +488,8 @@ class ExpAnsatz(Ansatz):
                 f"The ansatz was called with {len(z)} variables, "
                 f"but it only has {self.num_CV_vars} CV variables."
             )
-        print(evaluated_indices)
 
-        if (
-            len(evaluated_indices) == self.num_CV_vars
-        ):  # Full evaluation: all variables have been provided.
+        if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all variables provided.
             if mode == "zip":
                 only_z = [math.atleast_2d(zi) for zi in z]
                 batch_sizes = [zi.shape[0] for zi in only_z]
@@ -526,9 +517,7 @@ class ExpAnsatz(Ansatz):
                 raise ValueError(f"Invalid mode: {mode}")
         else:  # Partial evaluation: some CV variables are not provided.
             only_z = [math.atleast_1d(zi) for zi in z if zi is not None]  # no batch dimension
-            z_input = math.concat(
-                only_z, axis=-1
-            )  # shape (r,) with r the number of evaluated indices.
+            z_input = math.concat(only_z, axis=-1)  # shape (r,) with r evaluated indices.
             return self._partial_eval(z_input, evaluated_indices)
 
     def __eq__(self, other: ExpAnsatz) -> bool:
