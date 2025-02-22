@@ -103,7 +103,7 @@ class TestExpAnsatz:
         assert np.allclose(ansatz(*np.ones((5,))), expected_1)
 
         expected_call = ansatz([1.0], [2.0], [3.0], [4.0], [5.0])
-        expected_eval = ansatz._eval(np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
+        expected_eval = ansatz.eval(np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
         assert np.allclose(expected_call, expected_eval)
 
     def test_partial_eval(self):
@@ -117,7 +117,7 @@ class TestExpAnsatz:
         ansatz = ExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
 
         ansatz_partial_call = ansatz([1.0], None, [2.0], None, None)
-        ansatz_partial_eval = ansatz._partial_eval([1.0, 2.0], (0, 2))
+        ansatz_partial_eval = ansatz.partial_eval([1.0, 2.0], (0, 2))
 
         assert ansatz_partial_call == ansatz_partial_eval
 
