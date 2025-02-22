@@ -300,7 +300,7 @@ class ExpAnsatz(Ansatz):
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
             else:
-                self._c[d0] += self.c[d]
+                self._c = math.update_add_tensor(self._c, [[d0]], [self.c[d]])
         return to_keep
 
     def _order_batch(self):
@@ -355,7 +355,7 @@ class ExpAnsatz(Ansatz):
             The value of the function at the point(s) with the same batch dimensions as ``z``.
             The output has shape (L, *b) where L is the batch size of the ansatz.
         """
-        z = math.atleast_2d(z)
+        z = math.atleast_2d(z, dtype=math.complex128)
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
         if z_dim != self.num_CV_vars:
             raise ValueError(
@@ -396,7 +396,7 @@ class ExpAnsatz(Ansatz):
         # evaluated and remaining indices
         e = indices
         r = [i for i in range(self.num_CV_vars) if i not in indices]
-        z = math.atleast_1d(z)
+        z = math.atleast_1d(z, dtype=math.complex128)
         # new A of shape (batch_size, r, r)
         new_A = math.gather(math.gather(self.A, r, axis=-1), r, axis=-2)
 
