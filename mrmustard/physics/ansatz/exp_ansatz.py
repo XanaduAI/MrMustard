@@ -341,7 +341,7 @@ class ExpAnsatz(Ansatz):
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return self.__class__(A, b, c)
 
-    def _eval(self: ExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
+    def eval(self: ExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
         Evaluates the ansatz at a batch of points ``z`` in C^(*b, n), where ``b`` is the batch shape
         and ``n`` is the number of CV variables.
@@ -371,11 +371,11 @@ class ExpAnsatz(Ansatz):
         )
         return result if self._init_with_batch else math.squeeze(result, 0)
 
-    def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> ExpAnsatz:
+    def partial_eval(self, z: Vector, indices: tuple[int, ...]) -> ExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z0,z1,z2)``, the call
-        ``self._partial_eval(np.array([2.0,3.0]), (0,2))`` returns
+        ``self.partial_eval(np.array([2.0,3.0]), (0,2))`` returns
         ``G(z1) = F(2.0, z1, 3.0)`` as a new ansatz of a single variable.
         The vector ``z`` must have shape (r,), where ``r`` is the number of indices in ``indices``.
         It cannot have batch dimensions.
@@ -390,7 +390,7 @@ class ExpAnsatz(Ansatz):
         if len(indices) == self.num_CV_vars:
             raise ValueError(
                 "Cannot curry a function of the same number of variables as the ansatz. "
-                "Use the _eval or __call__ method instead."
+                "Use the eval or __call__ method instead."
             )
 
         # evaluated and remaining indices
@@ -503,7 +503,7 @@ class ExpAnsatz(Ansatz):
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
                 z_input = math.concat(only_z, axis=0)
-                return self._eval(math.transpose(z_input))
+                return self.eval(math.transpose(z_input))
             elif mode == "kron":
                 z = [math.astensor(zi) for zi in z]
                 only_z = [math.atleast_1d(zi) for zi in z]
@@ -513,7 +513,7 @@ class ExpAnsatz(Ansatz):
                 grid = np.meshgrid(*only_z, indexing="ij")
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_n, n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
-                result_flat = self._eval(z_flat)
+                result_flat = self.eval(z_flat)
                 rest = tuple(s for zi in z for s in zi.shape)
                 result = math.reshape(
                     result_flat, (self.batch_size,) + rest
@@ -524,7 +524,7 @@ class ExpAnsatz(Ansatz):
         else:  # Partial evaluation: some CV variables are not provided.
             only_z = [math.atleast_1d(zi) for zi in z if zi is not None]  # no batch dimension
             z_input = math.concat(only_z, axis=-1)  # shape (r,) with r evaluated indices.
-            return self._partial_eval(z_input, evaluated_indices)
+            return self.partial_eval(z_input, evaluated_indices)
 
     def __eq__(self, other: ExpAnsatz) -> bool:
         if not isinstance(other, ExpAnsatz):
