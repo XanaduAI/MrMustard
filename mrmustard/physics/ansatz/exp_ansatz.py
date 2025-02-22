@@ -28,7 +28,6 @@ from numpy.typing import ArrayLike
 
 from IPython.display import display
 
-from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
@@ -44,7 +43,7 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
 )
 
-from mrmustard import math, settings, widgets
+from mrmustard import math, widgets
 from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
@@ -257,15 +256,15 @@ class ExpAnsatz(Ansatz):
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, mode=mode)
         return ExpAnsatz(A, b, c)
 
-    def reorder(self, order_CV: Sequence[int]):
+    def reorder(self, order: Sequence[int]):
         r"""
         Reorders the CV indices of an (A,b,c) triple.
-        The length of ``order_CV`` must be the number of CV variables.
+        The length of ``order`` must be the number of CV variables.
         """
-        if len(order_CV) != self.num_CV_vars:
-            raise ValueError(f"order_CV must have length {self.num_CV_vars}, got {len(order_CV)}")
-        A = math.gather(math.gather(self.A, order_CV, axis=-1), order_CV, axis=-2)
-        b = math.gather(self.b, order_CV, axis=-1)
+        if len(order) != self.num_CV_vars:
+            raise ValueError(f"order must have length {self.num_CV_vars}, got {len(order)}")
+        A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
+        b = math.gather(self.b, order, axis=-1)
         return self.__class__(A, b, self.c)
 
     def simplify(self) -> None:
