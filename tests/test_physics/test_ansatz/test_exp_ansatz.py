@@ -83,6 +83,16 @@ class TestExpAnsatz:
         assert bargmann.b.shape == (1, 2 * n)
         assert bargmann.c.shape == (1,)
 
+    def test_call(self):
+        A, b, c = Abc_triple(2)
+        ansatz = ExpAnsatz(A, b, c)
+
+        z1 = np.array([1.0, 2.0, 3.0])
+        z2 = np.array([3.0, 4.0, 3.0])
+
+        assert ansatz(z1, z2).shape == (3, 3)
+        assert ansatz(z1, z2, mode="zip").shape == (3,)
+
     def test_eval(self):
         A, b, c = Abc_triple(5)
         ansatz = ExpAnsatz(A, b, c)

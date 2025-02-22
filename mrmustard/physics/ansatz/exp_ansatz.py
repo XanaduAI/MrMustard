@@ -48,7 +48,7 @@ from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
 
-from .base import Ansatz
+from mrmustard.physics.ansatz.base import Ansatz
 
 __all__ = ["ExpAnsatz"]
 
@@ -88,6 +88,7 @@ class ExpAnsatz(Ansatz):
         name: str = "",
     ):
         super().__init__()
+        self._init_with_batch = len(math.astensor(A).shape) > 2 if A is not None else False
         self._A = math.atleast_3d(math.astensor(A)) if A is not None else None
         self._b = math.atleast_2d(math.astensor(b)) if b is not None else None
         self._c = math.atleast_1d(math.astensor(c)) if c is not None else None
@@ -365,9 +366,10 @@ class ExpAnsatz(Ansatz):
         A_part = math.einsum("ka,kb,iab->ik", z, z, self.A)
         b_part = math.einsum("ka,ia->ik", z, self.b)
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, k)
-        return math.reshape(
+        result = math.reshape(
             math.einsum("ik,i->ik", exp_sum, self.c), (self.batch_size,) + z_batch_shape
         )
+        return result if self._init_with_batch else math.squeeze(result, 0)
 
     def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> ExpAnsatz:
         r"""
@@ -456,20 +458,22 @@ class ExpAnsatz(Ansatz):
     ) -> Scalar | ExpAnsatz:
         r"""
         Returns either the value of the ansatz or a new ansatz depending on the arguments.
+
         If an argument is None, the corresponding variable is not evaluated, and the method
         returns a new ansatz with the remaining variables unevaluated.
         For example, if the ansatz is a function of 3 variables F(z1, z2, z3) and we want to
         evaluate it at a point in C^2, we would get a new ansatz with one variable unevaluated:
-        F(z1, z2, None) or F(z1, None, z3), or F(None, z2, z3). The ``mode`` argument can be used
-        to specify how the vectors of arguments are broadcast together. The default is "zip", which
-        is to broadcast the vectors pairwise. The alternative is "kron", which is to broadcast the
-        vectors Kronecker-style. For example, ``F(z1, z2, mode="zip")`` returns the array of values
-        ``[F(z1[0], z2[0]), F(z1[1], z2[1]), …]``. On the other hand, ``F(z1, z2, mode="kron")``
-        returns the Kronecker product of the vectors, i.e. ``[[F(z1[0], z2[0]), F(z1[0], z2[1]), …],
-        [F(z1[1], z2[0]), F(z1[1], z2[1]), …], …]``. The 'kron' style is useful if we want to
-        pass the points along each axis independently from each other. In `zip` mode the batch
-        dimensions of the z vectors must match, while in `kron` mode they can differ, and the result
-        will have a batch dimension equal to the product of the batch dimensions of the ansatz, followed
+        e.g. F(z1, z2, None).
+
+        The ``mode`` argument can be used to specify how the vectors of arguments are broadcast together.
+        The default is "zip", which is to broadcast the vectors pairwise. The alternative is "kron",
+        which is to broadcast the vectors Kronecker-style. For example, if z1 and z2 are vectors,
+        ``F(z1, z2, mode="zip")`` returns the array of values ``[F(z1[0], z2[0]), F(z1[1], z2[1]), …]``.
+        On the other hand, ``F(z1, z2, mode="kron")`` returns the Kronecker product of the vectors,
+        i.e. ``[[F(z1[0], z2[0]), F(z1[0], z2[1]), …], [F(z1[1], z2[0]), F(z1[1], z2[1]), …], …]``.
+        The 'kron' style is useful if we want to pass points along each axis independently from each other.
+        In `zip` mode the batch dimensions of the z vectors must match, while in `kron` mode they can differ,
+        and the result will have a batch dimension equal to the product of the batch dimensions of the ansatz, followed
         by the reshaped batch dimensions of the z vectors.
 
         TODO: make the kron version more efficient by avoiding the meshgrid.
@@ -492,27 +496,29 @@ class ExpAnsatz(Ansatz):
         if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all variables provided.
             if mode == "zip":
                 only_z = [math.atleast_2d(zi) for zi in z]
-                batch_sizes = [zi.shape[0] for zi in only_z]
+                batch_sizes = [zi.shape for zi in only_z]
                 if not all(bs == batch_sizes[0] for bs in batch_sizes):
                     raise ValueError(
                         f"In mode 'zip' all z vectors must have the same batch size, got {batch_sizes}."
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
-                z_input = math.concat(only_z, axis=-1)
-                return self._eval(z_input)
+                z_input = math.concat(only_z, axis=0)
+                return self._eval(math.transpose(z_input))
             elif mode == "kron":
+                z = [math.astensor(zi) for zi in z]
                 only_z = [math.atleast_1d(zi) for zi in z]
                 if any(zi.ndim > 1 for zi in only_z):
-                    raise ValueError("In `kron` mode the z vectors cannot have a batch dimension.")
+                    raise ValueError("No more than one batch dimension is allowed.")
                 # Create a meshgrid from the provided arrays; they may have different batch sizes.
                 grid = np.meshgrid(*only_z, indexing="ij")
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_n, n)
-                grid_shape = z_combined.shape[:-1]  # i.e. (b0, b1, …, b_n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
                 result_flat = self._eval(z_flat)
-                return math.reshape(
-                    result_flat, (self.batch_size,) + grid_shape
+                rest = tuple(s for zi in z for s in zi.shape)
+                result = math.reshape(
+                    result_flat, (self.batch_size,) + rest
                 )  # shape (batch_size, b0, b1, …, b_n)
+                return result if self._init_with_batch else math.squeeze(result, 0)
             else:
                 raise ValueError(f"Invalid mode: {mode}")
         else:  # Partial evaluation: some CV variables are not provided.
