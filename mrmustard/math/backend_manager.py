@@ -1114,6 +1114,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
+    def stack(self, values: Tensor, axis: int = 0) -> Tensor:
+        r"""Stacks a list of tensors along a new axis.
+
+        Args:
+            values: A list of tensors to stack.
+            axis: The axis along which to introduce the new dimension.
+
+        Returns:
+            The stacked tensor.
+        """
+        return self._apply("stack", (values, axis))
+
     def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
         r"""The sum of array.
 

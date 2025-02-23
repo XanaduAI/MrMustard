@@ -394,7 +394,7 @@ class PolyExpAnsatz(Ansatz):
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return self.__class__(A, b, c, self.num_derived_vars)
 
-    def _eval(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
+    def eval(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
         Evaluates the ansatz at a batch of points ``z`` in C^(*b, n), where ``b`` is the batch shape
         and ``n`` is the number of CV variables.
@@ -454,17 +454,18 @@ class PolyExpAnsatz(Ansatz):
         # return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
         return math.einsum("ik,il,inl->in", exp_sum, c, poly)
 
-    def _partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
+    def partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
         Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
         For example, if ``self`` represents the function ``F(z0,z1,z2)``, the call
-        ``self._partial_eval(np.array([2.0,3.0]), (0,2))`` returns
+        ``self.partial_eval(np.array([2.0,3.0]), (0,2))`` returns
         ``G(z1) = F(2.0, z1, 3.0)`` as a new ansatz of a single variable.
-        The vector ``z`` must have shape (r,), where ``r`` is the number of indices in ``indices``.
-        It cannot have batch dimensions.
+        The vector ``z`` must have shape (b,r), where ``r`` is the number of indices in ``indices``.
+        The batch dimension of the resulting ansatz will be the product of batch dimension of ``z``
+        and the batch dimension of the ansatz.
 
         Args:
-            z: vector in ``C^(*b, r)`` where the function is evaluated.
+            z: vector in ``C^(b, r)`` where the function is evaluated.
             indices: indices of the variables of the ansatz to be evaluated.
 
         Returns:
@@ -481,22 +482,27 @@ class PolyExpAnsatz(Ansatz):
         r = [i for i in range(self.num_CV_vars) if i not in indices]
         d = list(range(self.num_CV_vars, self.num_vars))
 
-        # new A of shape (batch_size, r+d, r+d)
+        # new A of shape (batch_size * b, r+d, r+d)
         new_A = math.gather(math.gather(self.A, r + d, axis=-1), r + d, axis=-2)
+        new_A = math.tile(new_A, (z.shape[0], 1, 1))
 
-        # new b of shape (batch_size, r+d)
+        # new b of shape (batch_size * b, r+d)
         A_er = math.gather(math.gather(self.A, e, axis=-1), r, axis=-2)  # shape (batch_size, e, r)
-        b_r = math.einsum("ier,e->ir", A_er, z)  # shape (batch_size, r)
+        b_r = math.einsum("ier,be->ibr", A_er, z)  # shape (batch_size, b, r)
         A_ed = math.gather(math.gather(self.A, e, axis=-1), d, axis=-2)  # shape (batch_size, e, d)
-        b_d = math.einsum("ied,e->id", A_ed, z)  # shape (batch_size, d)
-        new_b = math.gather(self.b, r + d, axis=-1) + math.concat((b_r, b_d), axis=-1)
+        b_d = math.einsum("ied,be->ibd", A_ed, z)  # shape (batch_size, b, d)
+        new_b = math.gather(self.b, r + d, axis=-1)[:, None, :] + math.concat((b_r, b_d), axis=-1)
+        new_b = math.reshape(new_b, (self.batch_size * z.shape[0], -1))
 
-        # new c of shape (batch_size,)
+        # new c of shape (batch_size * b,)
         A_ee = math.gather(math.gather(self.A, e, axis=-1), e, axis=-2)  # shape (batch_size, e, e)
-        A_part = math.einsum("e,f,ief->i", z, z, A_ee)  # shape (batch_size,)
-        b_part = math.einsum("e,ie->i", z, math.gather(self.b, e, axis=-1))  # shape (batch_size,)
-        exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (batch_size,)
-        new_c = math.einsum("i,i...->i...", exp_sum, self.c)
+        A_part = math.einsum("be,bf,ief->ib", z, z, A_ee)  # shape (batch_size, b)
+        b_part = math.einsum(
+            "be,ie->ib", z, math.gather(self.b, e, axis=-1)
+        )  # shape (batch_size, b)
+        exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, b)
+        new_c = math.einsum("ib,i...->ib...", exp_sum, self.c)
+        new_c = math.reshape(new_c, (self.batch_size * z.shape[0], -1))
 
         return PolyExpAnsatz(
             new_A,
@@ -648,7 +654,7 @@ class PolyExpAnsatz(Ansatz):
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
                 z_input = math.concat(only_z, axis=-1)
-                return self._eval(z_input)
+                return self.eval(z_input)
             elif mode == "kron":
                 only_z = [math.atleast_1d(zi) for zi in z]
                 if any(zi.ndim > 1 for zi in only_z):
@@ -660,7 +666,7 @@ class PolyExpAnsatz(Ansatz):
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_{n}, n)
                 grid_shape = z_combined.shape[:-1]  # (b0, b1, …, b_n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
-                result_flat = self._eval(
+                result_flat = self.eval(
                     z_flat
                 )  # returns an array of shape (batch_size, prod(b_i)) but squeezed because of no batch
                 return math.squeeze(
@@ -670,11 +676,11 @@ class PolyExpAnsatz(Ansatz):
             # Partial evaluation: some CV variables are not provided.
             # In partial evaluation, the provided z's must not have a batch dimension.
             only_z = [math.atleast_1d(zi) for zi in z if zi is not None]
-            # For partial evaluation (i.e. currying) both modes behave the same.
+            # For partial evaluation (i.e. currying) it's always zip
             z_input = math.concat(
                 only_z, axis=-1
             )  # z_input will have shape (r,) with r the number of evaluated indices.
-            return self._partial_eval(z_input, evaluated_indices)
+            return self.partial_eval(z_input, evaluated_indices)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
