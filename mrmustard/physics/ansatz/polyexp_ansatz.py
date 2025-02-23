@@ -493,9 +493,18 @@ class PolyExpAnsatz(Ansatz):
         # new b of shape (batch_size * b, r+d)
         A_er = math.gather(math.gather(self.A, e, axis=-1), r, axis=-2)  # shape (batch_size, e, r)
         b_r = math.einsum("ier,be->ibr", A_er, z)  # shape (batch_size, b, r)
-        A_ed = math.gather(math.gather(self.A, e, axis=-1), d, axis=-2)  # shape (batch_size, e, d)
-        b_d = math.einsum("ied,be->ibd", A_ed, z)  # shape (batch_size, b, d)
-        new_b = math.gather(self.b, r + d, axis=-1)[:, None, :] + math.concat((b_r, b_d), axis=-1)
+
+        if len(d) > 0:
+            A_ed = math.gather(
+                math.gather(self.A, e, axis=-1), d, axis=-2
+            )  # shape (batch_size, e, d)
+            b_d = math.einsum("ied,be->ibd", A_ed, z)  # shape (batch_size, b, d)
+            new_b = math.gather(self.b, r + d, axis=-1)[:, None, :] + math.concat(
+                (b_r, b_d), axis=-1
+            )
+        else:
+            new_b = math.gather(self.b, r, axis=-1)[:, None, :] + b_r
+
         new_b = math.reshape(new_b, (self.batch_size * z.shape[0], -1))
 
         # new c of shape (batch_size * b,)
@@ -506,7 +515,12 @@ class PolyExpAnsatz(Ansatz):
         )  # shape (batch_size, b)
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, b)
         new_c = math.einsum("ib,i...->ib...", exp_sum, self.c)
-        new_c = math.reshape(new_c, (self.batch_size * z.shape[0], -1))
+        c_shape = (
+            (self.batch_size * z.shape[0], self.num_derived_vars)
+            if self.num_derived_vars > 0
+            else (self.batch_size * z.shape[0],)
+        )
+        new_c = math.reshape(new_c, c_shape)
 
         return PolyExpAnsatz(
             new_A,
@@ -679,11 +693,9 @@ class PolyExpAnsatz(Ansatz):
         else:
             # Partial evaluation: some CV variables are not provided.
             # In partial evaluation, the provided z's must not have a batch dimension.
-            only_z = [math.atleast_1d(zi) for zi in z if zi is not None]
+            only_z = [math.transpose(math.atleast_2d(zi)) for zi in z if zi is not None]
             # For partial evaluation (i.e. currying) it's always zip
-            z_input = math.concat(
-                only_z, axis=-1
-            )  # z_input will have shape (r,) with r the number of evaluated indices.
+            z_input = math.concat(only_z, axis=1)
             return self.partial_eval(z_input, evaluated_indices)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
