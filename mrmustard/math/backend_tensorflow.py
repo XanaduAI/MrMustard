@@ -94,17 +94,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         dtype = dtype or np.array(array).dtype.name
         return tf.cast(tf.convert_to_tensor(array, dtype_hint=dtype), dtype)
 
-    def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
-
-    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
-
-    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
-        if len(array.shape) == 2:
-            array = self.expand_dims(array, 0)
-        return array
+    def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
+        return tf.experimental.numpy.array(array, ndmin=n, dtype=dtype)
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
