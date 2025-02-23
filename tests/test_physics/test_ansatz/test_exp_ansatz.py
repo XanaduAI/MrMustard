@@ -293,11 +293,11 @@ class TestExpAnsatz:
         assert np.allclose(bargmann.b[0], triple[1][[0, 2, 1]])
 
     def test_simplify(self):
-        A0, b0, c0 = Abc_triple(5)
-        A1, b1, c1 = Abc_triple(5)
+        A0, b0, _ = Abc_triple(5)
+        A1, b1, _ = Abc_triple(5)
 
-        ans0 = ExpAnsatz(A0, b0, c0)
-        ans1 = ExpAnsatz(A1, b1, c1)
+        ans0 = ExpAnsatz(A0, b0, 1.0)
+        ans1 = ExpAnsatz(A1, b1, 2.0)
         ans = ans0 + ans0 + ans1
 
         assert np.allclose(ans.A[0], ans.A[1])
@@ -309,7 +309,7 @@ class TestExpAnsatz:
         ans.simplify()  # test that simplify can be called twice
         assert len(ans.A) == 2
         assert len(ans.b) == 2
-        assert np.allclose(ans.c, np.sort(np.array([2 * c0[0], c1[0]])))
+        assert np.allclose(ans.c, np.sort(np.array([2.0, 2.0])))
 
         ans2 = ans0 + ans1
         ans2.simplify()
