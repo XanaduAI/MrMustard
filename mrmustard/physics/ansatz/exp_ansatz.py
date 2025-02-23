@@ -569,7 +569,7 @@ class ExpAnsatz(Ansatz):
             try:
                 return ExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
-                raise TypeError(f"Cannot multiply ExpAnsatz and {other.__class__}.") from e
+                raise TypeError(f"Cannot divide ExpAnsatz and {other.__class__}.") from e
         raise NotImplementedError("Division of ExpAnsatz is not implemented.")
 
     def _ipython_display_(self):

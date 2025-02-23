@@ -53,6 +53,10 @@ class TestExpAnsatz:
         assert np.allclose(bargmann.b, b)
         assert np.allclose(bargmann.c, c)
 
+        assert bargmann.batch_size == 1
+        assert bargmann.num_CV_vars == b.shape[-1]
+        assert bargmann.num_vars == b.shape[-1]
+
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_add(self, n):
         triple1 = Abc_triple(n)
@@ -147,6 +151,28 @@ class TestExpAnsatz:
         assert np.allclose(res2.A, exp2[0])
         assert np.allclose(res2.b, exp2[1])
         assert np.allclose(res2.c, exp2[2])
+
+    def test_contract_barg_barg_error(self):
+        triple1 = Abc_triple(3)
+        triple2 = Abc_triple(3)
+        bargmann1 = ExpAnsatz(*triple1)
+        bargmann2 = ExpAnsatz(*triple2) + ExpAnsatz(*triple2)
+        with pytest.raises(
+            ValueError, match="the batch size of the two representations must match"
+        ):
+            bargmann1.contract(bargmann2, idx1=0, idx2=0, mode="zip")
+
+    def test_multiply_error(self):
+        triple = Abc_triple(3)
+        bargmann = ExpAnsatz(*triple)
+        with pytest.raises(TypeError, match="Cannot multiply"):
+            bargmann * "string"
+
+    def test_divide_error(self):
+        triple = Abc_triple(3)
+        bargmann = ExpAnsatz(*triple)
+        with pytest.raises(TypeError, match="Cannot divide"):
+            bargmann / "string"
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
@@ -268,10 +294,11 @@ class TestExpAnsatz:
 
     def test_simplify(self):
         A, b, c = Abc_triple(5)
+        A1, b1, c1 = Abc_triple(5)
 
         ansatz = ExpAnsatz(A, b, c)
-
-        ansatz = ansatz + ansatz
+        ansatz1 = ExpAnsatz(A1, b1, c1)
+        ansatz = ansatz + ansatz + ansatz1
 
         assert np.allclose(ansatz.A[0], ansatz.A[1])
         assert np.allclose(ansatz.A[0], A)
@@ -279,16 +306,9 @@ class TestExpAnsatz:
         assert np.allclose(ansatz.b[0], b)
 
         ansatz.simplify()
-        assert len(ansatz.A) == 1
-        assert len(ansatz.b) == 1
-        assert np.allclose(ansatz.c, 2 * c)
-
-        A, b, c = ansatz.triple
-
-        ansatz.simplify()
-        assert np.allclose(ansatz.A, A)
-        assert np.allclose(ansatz.b, b)
-        assert np.allclose(ansatz.c, c)
+        assert len(ansatz.A) == 2
+        assert len(ansatz.b) == 2
+        assert np.allclose(ansatz.c, np.array([2 * c, c1]))
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
@@ -328,3 +348,18 @@ class TestExpAnsatz:
         assert np.allclose(A, ansatz.data[0])
         assert np.allclose(b, ansatz.data[1])
         assert np.allclose(c, ansatz.data[2])
+
+    def test_simplify(self):
+        A, b, c = Abc_triple(5)
+        ansatz = ExpAnsatz([A, A], [b, b], [1.0, 2.0])
+        ansatz.simplify()
+        assert np.allclose(ansatz.A, A)
+        assert np.allclose(ansatz.b, b)
+        assert np.allclose(ansatz.c, 3.0)
+
+    def test_serialize(self):
+        A, b, c = Abc_triple(5)
+        bargmann = ExpAnsatz(A, b, c)
+        data = bargmann.to_dict()
+        bargmann2 = ExpAnsatz.from_dict(data)
+        assert bargmann == bargmann2
