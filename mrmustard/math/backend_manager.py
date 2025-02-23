@@ -322,14 +322,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("atleast_nd", (array, 3, dtype))
 
     def atleast_nd(self, array: Tensor, n: int, dtype=None) -> Tensor:
-        r"""Returns an array with at least n dimensions.
+        r"""Returns an array with at least n dimensions. Note that dimensions are
+        prepended to meet the minimum number of dimensions.
 
         Args:
             array: The array to convert.
             n: The minimum number of dimensions.
             dtype: The data type of the array. If ``None``, the returned array
                 is of the same type as the given one.
-
         Returns:
             The array with at least n dimensions.
         """
