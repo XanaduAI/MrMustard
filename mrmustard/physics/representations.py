@@ -171,7 +171,7 @@ class Representation:
             else:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.ansatz.data
-            bargmann = PolyExpAnsatz(A, b, c)
+            bargmann = PolyExpAnsatz(A, b, c, len(c.shape[1:]))
             for w in self.wires.quantum:
                 w.repr = ReprEnum.BARGMANN
             return Representation(bargmann, self.wires)
@@ -212,6 +212,6 @@ class Representation:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
 
-        rep = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
-        rep = rep.reorder(perm) if perm else rep
-        return Representation(rep, wires_result)
+        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
+        ansatz = ansatz.reorder(perm) if perm else ansatz
+        return Representation(ansatz, wires_result)

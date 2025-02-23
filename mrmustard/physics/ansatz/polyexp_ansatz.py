@@ -43,7 +43,9 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
 )
 
-from mrmustard import math, settings, widgets
+from mrmustard.math.lattice.strategies import vanilla_fully_batched
+
+from mrmustard import math, widgets
 from mrmustard.math.parameters import Variable
 
 from mrmustard.utils.argsort import argsort_gen
@@ -96,7 +98,7 @@ class PolyExpAnsatz(Ansatz):
         self,
         A: Batch[ComplexMatrix] | None,
         b: Batch[ComplexVector] | None,
-        c: Batch[ComplexTensor] | None = math.ones([], dtype=math.complex128),
+        c: Batch[ComplexTensor] | None = np.ones([], dtype=np.complex128),
         num_derived_vars: int = 0,  # i.e. size of y
         name: str = "",
     ):
@@ -111,16 +113,19 @@ class PolyExpAnsatz(Ansatz):
         self._fn_kwargs = {}
         self._batch_size = self._A.shape[0] if A is not None else None
 
-    def _generate_ansatz(self):
-        r"""
-        This method computes and sets the (A, b, c) triple given a function and its kwargs.
-        """
-        if (
+    def _should_regenerate(self):
+        return (
             self._A is None
             or self._b is None
             or self._c is None
             or Variable in {type(param) for param in self._fn_kwargs.values()}
-        ):
+        )
+
+    def _generate_ansatz(self):
+        r"""
+        This method computes and sets the (A, b, c) triple given a function and its kwargs.
+        """
+        if self._should_regenerate():
             params = {}
             for name, param in self._fn_kwargs.items():
                 try:
@@ -272,7 +277,7 @@ class PolyExpAnsatz(Ansatz):
                     f"For mode='zip' the batch size of the two representations must match, got {self.batch_size} and {other.batch_size}."
                 )
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, mode=mode)
-        return PolyExpAnsatz(A, b, c)
+        return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
