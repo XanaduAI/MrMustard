@@ -166,13 +166,13 @@ class TestExpAnsatz:
         triple = Abc_triple(3)
         bargmann = ExpAnsatz(*triple)
         with pytest.raises(TypeError, match="Cannot multiply"):
-            bargmann * "string"
+            bargmann * "string"  # pylint: disable=pointless-statement
 
     def test_divide_error(self):
         triple = Abc_triple(3)
         bargmann = ExpAnsatz(*triple)
         with pytest.raises(TypeError, match="Cannot divide"):
-            bargmann / "string"
+            bargmann / "string"  # pylint: disable=pointless-statement
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
