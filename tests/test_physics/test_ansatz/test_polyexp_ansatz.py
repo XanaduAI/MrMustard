@@ -224,7 +224,7 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(3, 1))
+        z = np.random.uniform(-10, 10, size=(1,))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
         assert np.allclose(decomp_ansatz.b.shape, (2, 2))
@@ -237,8 +237,8 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(3, 2))
-        assert np.allclose(ansatz(z), decomp_ansatz(z))
+        z = np.random.uniform(-10, 10, size=(4,))
+        assert np.allclose(ansatz(z, z), decomp_ansatz(z, z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
