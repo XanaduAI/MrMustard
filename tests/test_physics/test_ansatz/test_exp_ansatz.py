@@ -293,22 +293,27 @@ class TestExpAnsatz:
         assert np.allclose(bargmann.b[0], triple[1][[0, 2, 1]])
 
     def test_simplify(self):
-        A, b, c = Abc_triple(5)
+        A0, b0, c0 = Abc_triple(5)
         A1, b1, c1 = Abc_triple(5)
 
-        ansatz = ExpAnsatz(A, b, c)
-        ansatz1 = ExpAnsatz(A1, b1, c1)
-        ansatz = ansatz + ansatz + ansatz1
+        ans0 = ExpAnsatz(A0, b0, c0)
+        ans1 = ExpAnsatz(A1, b1, c1)
+        ans = ans0 + ans0 + ans1
 
-        assert np.allclose(ansatz.A[0], ansatz.A[1])
-        assert np.allclose(ansatz.A[0], A)
-        assert np.allclose(ansatz.b[0], ansatz.b[1])
-        assert np.allclose(ansatz.b[0], b)
+        assert np.allclose(ans.A[0], ans.A[1])
+        assert np.allclose(ans.A[0], A0)
+        assert np.allclose(ans.b[0], ans.b[1])
+        assert np.allclose(ans.b[0], b0)
 
-        ansatz.simplify()
-        assert len(ansatz.A) == 2
-        assert len(ansatz.b) == 2
-        assert np.allclose(ansatz.c, np.array([2 * c, c1]))
+        ans.simplify()
+        ans.simplify()  # test that simplify can be called twice
+        assert len(ans.A) == 2
+        assert len(ans.b) == 2
+        assert np.allclose(ans.c, np.sort(np.array([2 * c0[0], c1[0]])))
+
+        ans2 = ans0 + ans1
+        ans2.simplify()
+        assert ans0 + ans1 == ans2
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
@@ -349,7 +354,7 @@ class TestExpAnsatz:
         assert np.allclose(b, ansatz.data[1])
         assert np.allclose(c, ansatz.data[2])
 
-    def test_simplify(self):
+    def test_simplify_batched(self):
         A, b, c = Abc_triple(5)
         ansatz = ExpAnsatz([A, A], [b, b], [1.0, 2.0])
         ansatz.simplify()
