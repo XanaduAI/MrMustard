@@ -332,8 +332,12 @@ class PolyExpAnsatz(Ansatz):
         """
         if len(order_CV) != self.num_CV_vars:
             raise ValueError(f"order_CV must have length {self.num_CV_vars}, got {len(order_CV)}")
-        A = math.gather(math.gather(self.A, order_CV, axis=-1), order_CV, axis=-2)
-        b = math.gather(self.b, order_CV, axis=-1)
+        # Add derived variable indices after CV indices
+        order = list(order_CV) + list(
+            range(self.num_CV_vars, self.num_CV_vars + self.num_derived_vars)
+        )
+        A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
+        b = math.gather(self.b, order, axis=-1)
         return self.__class__(A, b, self.c, self.num_derived_vars)
 
     def simplify(self) -> None:
