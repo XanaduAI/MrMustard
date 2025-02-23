@@ -355,7 +355,7 @@ class TestExpAnsatz:
         assert np.allclose(c, ansatz.data[2])
 
     def test_simplify_batched(self):
-        A, b, c = Abc_triple(5)
+        A, b, _ = Abc_triple(5)
         ansatz = ExpAnsatz([A, A], [b, b], [1.0, 2.0])
         ansatz.simplify()
         assert np.allclose(ansatz.A, A)
