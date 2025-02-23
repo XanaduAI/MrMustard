@@ -141,39 +141,37 @@ class TestPolyExpAnsatz:
         nine_factorial = np.prod(np.arange(1, 9))
         assert np.allclose(obj1(np.array([0.1])), 0.1**9 / np.sqrt(nine_factorial))
 
-    def test_call_none(self):
-        A1, b1, _ = Abc_triple(7)
-        A2, b2, _ = Abc_triple(7)
-        A3, b3, _ = Abc_triple(7)
+    def test_partial_eval(self):
+        A1, b1, _ = Abc_triple(4)
+        A2, b2, _ = Abc_triple(4)
+        A3, b3, _ = Abc_triple(4)
 
         batch = 3
-        c = np.random.random(size=(batch, 5, 5, 5)) / 1000
+        c = np.random.random(size=(batch, 5, 5)) / 1000
 
-        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c, num_derived_vars=3)
-        z0 = np.array([None, 2, None, 5])
-        z1 = np.array([1, 2, 4, 5])
-        z2 = np.array([1, 4])
-        obj_none = obj(*z0)
-        val1 = obj(*z1)
-        val2 = obj_none(*z2)
-        assert np.allclose(val1, val2)
+        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c, num_derived_vars=2)
+        z0 = [None, 2]
+        z1 = [1]
+        z2 = [1, 2]
+        val_full = obj(*z2)
+        partial = obj(*z0)
+        val_partial = partial(*z1)
+        assert np.allclose(val_partial, val_full)
 
-        # obj1 = PolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5), num_derived_vars=3)
-        # z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
-        # z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
-        # z2 = np.array([[1, 4], [2, 4]])
-        # obj1_none = obj1(z0)
-        # obj1_none0 = PolyExpAnsatz(
-        #     obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5), num_derived_vars=3
-        # )
-        # obj1_none1 = PolyExpAnsatz(
-        #     obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5), num_derived_vars=3
-        # )
-        # val1 = obj1(z1)
-        # val2 = np.array(
-        #     (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
-        # ).reshape(-1)
-        # assert np.allclose(val1, val2)
+        A1, b1, _ = Abc_triple(4)
+        A2, b2, _ = Abc_triple(4)
+
+        batch = 2
+        c = np.random.random(size=(2, 5)) / 1000
+
+        obj = PolyExpAnsatz([A1, A2], [b1, b2], c, num_derived_vars=1)
+        z0 = [None, 2, None]
+        z1 = [1, 3]
+        z2 = [1, 2, 3]
+        val_full = obj(*z2)
+        partial = obj(*z0)
+        val_partial = partial(*z1)
+        assert np.allclose(val_partial, val_full)
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_conj(self, triple):

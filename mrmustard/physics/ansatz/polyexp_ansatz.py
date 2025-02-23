@@ -491,12 +491,12 @@ class PolyExpAnsatz(Ansatz):
         new_A = math.tile(new_A, (z.shape[0], 1, 1))
 
         # new b of shape (batch_size * b, r+d)
-        A_er = math.gather(math.gather(self.A, e, axis=-1), r, axis=-2)  # shape (batch_size, e, r)
+        A_er = math.gather(math.gather(self.A, e, axis=-2), r, axis=-1)  # shape (batch_size, e, r)
         b_r = math.einsum("ier,be->ibr", A_er, z)  # shape (batch_size, b, r)
 
         if len(d) > 0:
             A_ed = math.gather(
-                math.gather(self.A, e, axis=-1), d, axis=-2
+                math.gather(self.A, e, axis=-2), d, axis=-1
             )  # shape (batch_size, e, d)
             b_d = math.einsum("ied,be->ibd", A_ed, z)  # shape (batch_size, b, d)
             new_b = math.gather(self.b, r + d, axis=-1)[:, None, :] + math.concat(
@@ -516,7 +516,7 @@ class PolyExpAnsatz(Ansatz):
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, b)
         new_c = math.einsum("ib,i...->ib...", exp_sum, self.c)
         c_shape = (
-            (self.batch_size * z.shape[0], self.num_derived_vars)
+            (self.batch_size * z.shape[0],) + self.shape_derived_vars
             if self.num_derived_vars > 0
             else (self.batch_size * z.shape[0],)
         )
