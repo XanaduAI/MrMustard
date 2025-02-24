@@ -344,7 +344,7 @@ class Ket(State):
         A = A[-1]
         b = b[-1]
         if c.shape != (1,):
-            ValueError(
+            raise ValueError(
                 f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
             )
 
