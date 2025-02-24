@@ -325,8 +325,9 @@ class Ket(State):
             the remaining state is a core state. Formally, we have
             .. math::
 
-                \psi = U \psi_{\mathrm{core}}
+                \psi = (U\otimes\mathbb I) \psi_{\mathrm{core}}
 
+            where the unitary :math:`U` acts on the given `core_modes` only.
             Core states have favorable properties in the Fock representation
             e.g., being sparse.
 
@@ -338,7 +339,7 @@ class Ket(State):
             >>> assert psi == core >> U
 
             >>> A_c, _, _ = core.ansatz.triple
-            >>> assert A_c[-1][0] == 0
+            >>> assert A_c[-1][0,0] == 0
         """
         A, b, c = self.ansatz.triple
         A = A[-1]
