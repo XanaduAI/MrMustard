@@ -368,12 +368,12 @@ class Ket(State):
         bm = b_reordered[:m_core]
         bn = b_reordered[m_core:]
 
-        gamma_squared = math.eye(m_core) - Am @ math.conj(Am)
+        gamma_squared = math.eye(m_core, dtype=math.complex128) - Am @ math.conj(Am)
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
         gamma = (gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs.T)).T
 
         Au = math.block([[Am, gamma.T], [gamma, -math.conj(Am)]])
-        bu = math.zeros(2 * m_core, dtype=complex)
+        bu = math.zeros(2 * m_core, dtype=math.complex128)
         bu[:m_core] = bm
         bu[m_core:] = -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)
         cu = 1  # to be changed by renormalization
@@ -384,12 +384,12 @@ class Ket(State):
 
         A_core = math.block(
             [
-                [math.zeros((m_core, m_core)), math.inv(gamma.T) @ R.T],
+                [math.zeros((m_core, m_core), dtype=math.complex128), math.inv(gamma.T) @ R.T],
                 [R @ math.inv(gamma), An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T],
             ]
         )
 
-        b_core = math.zeros(m_modes, dtype=complex)
+        b_core = math.zeros(m_modes, dtype=math.complex128)
         b_core[:m_core] = bm
         b_core[m_core:] = bn - R @ math.inv(gamma) @ bu[m_core:]
 
