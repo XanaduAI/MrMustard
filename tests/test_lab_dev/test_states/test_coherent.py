@@ -88,10 +88,8 @@ class TestCoherent:
         lc = state1 + state2 - state3
         assert lc.ansatz.batch_size == 3
 
-        assert (lc @ lc.dual).ansatz.batch_size == 9
-        settings.UNSAFE_ZIP_BATCH = True
-        assert (lc @ lc.dual).ansatz.batch_size == 3  # not 9
-        settings.UNSAFE_ZIP_BATCH = False
+        assert (lc.contract(lc.dual)).ansatz.batch_size == 9
+        assert (lc.contract(lc.dual, mode="zip")).ansatz.batch_size == 3  # not 9
 
     def test_vacuum_shape(self):
         assert Coherent([0], x=0.0, y=0.0).auto_shape() == (1,)
