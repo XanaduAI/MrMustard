@@ -130,7 +130,7 @@ class State(CircuitComponent):
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        return math.sum(math.real(self >> self.dual))
+        return math.sum(self._compute_L2_norm())
 
     @property
     @abstractmethod
@@ -154,8 +154,7 @@ class State(CircuitComponent):
         element-wise along the batch dimension.
         """
         with settings(UNSAFE_ZIP_BATCH=True):
-            rep = self >> self.dual
-        return math.real(rep)
+            return self._compute_L2_norm()
 
     @classmethod
     def from_bargmann(
@@ -592,3 +591,14 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+
+    def _compute_L2_norm(self) -> float:
+        r"""
+        Computes the `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.polynomial_shape[0] > 0:
+            fock_state = self.to_fock()
+            L2_norms = fock_state >> fock_state.dual
+        else:
+            L2_norms = self >> self.dual
+        return math.real(L2_norms)

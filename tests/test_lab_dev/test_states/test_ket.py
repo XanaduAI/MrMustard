@@ -24,10 +24,22 @@ from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import DM, Coherent, DisplacedSqueezed, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
+from mrmustard.lab_dev import (
+    Attenuator,
+    BSgate,
+    CircuitComponent,
+    Coherent,
+    Dgate,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    QuadratureEigenstate,
+    Sgate,
+    SqueezedVacuum,
+    TraceOut,
+    Vacuum,
+)
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
@@ -122,6 +134,27 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state = state.to_fock(5)  # truncated
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
+
+    def test_normalize_poly_dim(self):
+        # https://github.com/XanaduAI/MrMustard/issues/481
+        state = (
+            SqueezedVacuum(modes=[0, 1], r=[0.75, -0.75])
+            >> BSgate(modes=[0, 1], theta=0.9)
+            >> Number(modes=[0], n=20).dual
+        )
+        state = state.normalize()
+        state2 = (
+            (state.on([0]) >> state.on([1]))
+            >> BSgate(modes=[0, 1], theta=np.pi / 4)
+            >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
+        )
+        state3 = (
+            (state2.on([0]) >> state2.on([1]))
+            >> BSgate(modes=[0, 1], theta=np.pi / 4)
+            >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
+        )
+        state3 = state3.normalize()
+        assert state3.purity == 1.0
 
     @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
     def test_to_from_fock(self, modes):
