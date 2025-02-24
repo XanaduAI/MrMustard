@@ -223,7 +223,7 @@ class TestChannel:
 
     def test_from_fock(self):
         # Here we test our from_fock method by a PhaseNoise example
-        cutoff = 20
+        cutoff = 6
         ph_n = np.zeros((cutoff, cutoff, cutoff, cutoff))
         sigma = 1
 

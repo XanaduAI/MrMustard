@@ -65,7 +65,7 @@ class TestBtoPS:
     def test_inverse(self):
         btops = BtoPS([0], 0)
         inv_btops = btops.inverse()
-        assert (btops >> inv_btops).ansatz == (Identity([0]) @ Identity([0]).adjoint).ansatz
+        assert (btops >> inv_btops).ansatz == Identity([0]).contract(Identity([0]).adjoint).ansatz
 
     def test_representation(self):
         ansatz = BtoPS(modes=[0], s=0).ansatz
