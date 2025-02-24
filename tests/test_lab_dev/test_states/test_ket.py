@@ -27,7 +27,7 @@ from mrmustard import math, settings
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from mrmustard.lab_dev.states import DM, Coherent, DisplacedSqueezed, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
+from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate, Identity
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
@@ -448,3 +448,28 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_is_physical(self):
         assert Ket.random([0, 1]).is_physical
+
+    def test_physical_stellar_decomposition(self):
+        r"""
+        Tests the physical stellar decomposition.
+        """
+        # two-mode example:
+        psi = Ket.random([0, 1])
+        core, U = psi.physical_stellar_decomposition([0])
+        assert psi == core >> U
+
+        A_c, _, _ = core.ansatz.triple
+        assert A_c[-1][0, 0] == 0
+
+        assert U >> U.dual == Identity([0])
+
+        # many-mode example:
+        phi = Ket.random(list(range(5)))
+        core, U = phi.physical_stellar_decomposition([0, 2])
+        assert phi == core >> U
+
+        A_c, _, _ = core.ansatz.triple
+        A_c = A_c[-1]
+        A_c_reordered = A_c[[0, 2], :]
+        A_c_reordered = A_c_reordered[:, [0, 2]]
+        assert math.allclose(A_c_reordered, math.zeros((2, 2)))

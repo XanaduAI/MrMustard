@@ -42,6 +42,7 @@ from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
+from ..transformations import Unitary
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -304,6 +305,106 @@ class Ket(State):
             )
 
         return math.abs(self.quadrature(quad, phi)) ** 2
+
+    def physical_stellar_decomposition(self, core_modes: Collection[int]):
+        r"""
+        Applies the physical stellar decomposition.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            psi_core: The core state (`Ket`)
+            U: The Gaussian unitary performing the stellar decomposition.
+
+        Raises:
+            ValueError: if the state is non-Gaussian.
+
+        Note:
+            This method pulls out the unitary ``U`` from the given state on the given modes, so that
+            the remaining state is a core state. Formally, we have
+            .. math::
+
+                \psi = U \psi_{\mathrm{core}}
+
+            Core states have favorable properties in the Fock representation
+            e.g., being sparse.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0,1])
+            >>> core, U = psi.physical_stellar_decomposition([0])
+            >>> assert psi == core >> U
+
+            >>> A_c, _, _ = core.ansatz.triple
+            >>> assert A_c[0] == 0
+        """
+        A, b, c = self.ansatz.triple
+        A = A[-1]
+        b = b[-1]
+        if c.shape != (1,):
+            ValueError(
+                f"The stellar decomposition only applies to Gaussian states."
+                "The given state has a polynomial of size {c.shape}."
+            )
+
+        m_modes = A.shape[-1]
+        remaining_indices = [i for i in range(m_modes) if i not in core_modes]
+        new_order = core_modes + remaining_indices
+
+        A_reordered = A[new_order, :]
+        A_reordered = A_reordered[
+            :, new_order
+        ]  # reordering indices of A so that it has the standard form.
+        b_reordered = b[new_order]  # reordering b accordingly
+
+        m_core = len(core_modes)
+
+        # we pick the blocks according to the naming chosen in the paper
+        Am = A_reordered[:m_core, :m_core]
+        R = A_reordered[m_core:, :m_core]
+        An = A_reordered[m_core:, m_core:]
+        bm = b_reordered[:m_core]
+        bn = b_reordered[m_core:]
+
+        gamma_squared = math.eye(m_core) - Am @ math.conj(Am)
+        gamma_evals, gamma_evecs = math.eigh(gamma_squared)
+        gamma = (gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs.T)).T
+
+        Au = math.block([[Am, gamma.T], [gamma, -math.conj(Am)]])
+        bu = math.zeros(2 * m_core, dtype=complex)
+        bu[:m_core] = bm
+        bu[m_core:] = -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)
+        cu = 1  # to be changed by renormalization
+
+        U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
+        _, _, U_normalization = (U >> U.dual).ansatz.triple
+        U /= math.sqrt(U_normalization[-1])
+
+        A_core = math.block(
+            [
+                [math.zeros((m_core, m_core)), math.inv(gamma.T) @ R.T],
+                [R @ math.inv(gamma), An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T],
+            ]
+        )
+
+        b_core = math.zeros(m_modes, dtype=complex)
+        b_core[:m_core] = bm
+        b_core[m_core:] = bn - R @ math.inv(gamma) @ bu[m_core:]
+
+        inverse_order = [
+            orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])
+        ]  # to invert the order
+
+        A_core = A_core[inverse_order, :]
+        A_core = A_core[:, inverse_order]
+        b_core = b_core[inverse_order]
+        c_core = 1  # to be renormalized
+
+        psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
+
+        return psi_core, U
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
