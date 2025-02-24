@@ -338,15 +338,14 @@ class Ket(State):
             >>> assert psi == core >> U
 
             >>> A_c, _, _ = core.ansatz.triple
-            >>> assert A_c[0] == 0
+            >>> assert A_c[-1][0] == 0
         """
         A, b, c = self.ansatz.triple
         A = A[-1]
         b = b[-1]
         if c.shape != (1,):
             ValueError(
-                f"The stellar decomposition only applies to Gaussian states."
-                "The given state has a polynomial of size {c.shape}."
+                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
             )
 
         m_modes = A.shape[-1]
