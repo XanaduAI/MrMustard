@@ -598,7 +598,7 @@ class State(CircuitComponent):
         """
         if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.polynomial_shape[0] > 0:
             fock_state = self.to_fock()
-            L2_norms = fock_state >> fock_state.dual
+            L2_norm = fock_state >> fock_state.dual
         else:
-            L2_norms = self >> self.dual
-        return math.real(L2_norms)
+            L2_norm = self >> self.dual
+        return math.real(L2_norm)
