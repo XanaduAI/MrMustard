@@ -17,7 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Literal
 
 from warnings import warn
 
@@ -128,6 +128,7 @@ class ArrayAnsatz(Ansatz):
         other: ArrayAnsatz,
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
+        mode: Literal["zip", "kron"] = "kron",
     ) -> ArrayAnsatz:
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
@@ -144,6 +145,10 @@ class ArrayAnsatz(Ansatz):
         # the number of batches in self and other
         n_batches_s = self.array.shape[0]
         n_batches_o = other.array.shape[0]
+        if mode == "zip" and n_batches_s != n_batches_o:
+            raise ValueError(
+                f"Cannot zip arrays with different batch sizes: {n_batches_s} and {n_batches_o}."
+            )
 
         # the shapes each batch in self and other
         shape_s = self.array.shape[1:]
@@ -159,10 +164,24 @@ class ArrayAnsatz(Ansatz):
         reduced_o = other.reduce(new_shape_o)
 
         axes = [list(idx1), list(idx2)]
-        batched_array = []
-        for i in range(n_batches_s):
-            for j in range(n_batches_o):
-                batched_array.append(math.tensordot(reduced_s.array[i], reduced_o.array[j], axes))
+
+        # Choose the contraction mode based on 'mode'
+        if mode == "zip":
+            # Contract corresponding batches, preserving the batch dimension count.
+            batched_array = [
+                math.tensordot(reduced_s.array[i], reduced_o.array[i], axes)
+                for i in range(n_batches_s)
+            ]
+        elif mode == "kron":
+            # Perform the outer product over the batch dimensions.
+            batched_array = [
+                math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
+                for i in range(n_batches_s)
+                for j in range(n_batches_o)
+            ]
+        else:
+            raise ValueError(f"Invalid mode: {mode}. Supported modes are 'zip' and 'kron'.")
+
         return ArrayAnsatz(batched_array, batched=True)
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:

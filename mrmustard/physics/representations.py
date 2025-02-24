@@ -17,7 +17,7 @@ This module contains the class for representations.
 """
 
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, Literal
 from mrmustard import math
 from mrmustard.utils.typing import (
     ComplexTensor,
@@ -122,42 +122,47 @@ class Representation:
             shape: The shape of the returned array. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
             batched: Whether the returned array is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
+                it will sum over the batch dimension.
         Returns:
             array: The Fock array of this representation.
         """
         num_vars = self.ansatz.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
-        try:
+        if isinstance(self.ansatz, PolyExpAnsatz):
             As, bs, cs = self.bargmann_triple(batched=True)
-            if len(shape) != num_vars:
+            if len(shape) != self.ansatz.num_CV_vars:
                 raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
+                    f"Expected Fock shape of length {self.ansatz.num_CV_vars}, got length {len(shape)}"
                 )
             if self.ansatz.num_derived_vars == 0:
                 arrays = [
                     math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
                 ]
             else:
-                arrays = [
-                    math.sum(
-                        math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
-                        axis=math.arange(
-                            num_vars, num_vars + len(c.shape), dtype=math.int32
-                        ).tolist(),
-                    )
-                    for A, b, c in zip(As, bs, cs)
-                ]
-        except AttributeError as e:
+                arrays = []
+                for A, b, c in zip(As, bs, cs):
+                    if c.shape == ():
+                        arrays.append(math.hermite_renormalized(A, b, c, shape=shape))
+                    else:
+                        G = math.hermite_renormalized(A, b, 1, shape=shape + c.shape).reshape(
+                            shape + (-1,)
+                        )
+                        c = c.reshape((-1,))
+                        arrays.append(math.einsum("...i,i->...", G, c))
+
+        else:
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                ) from e
+                )
             arrays = self.ansatz.reduce(shape).array
-        array = math.sum(arrays, axis=0)
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+        # array = math.sum(arrays, axis=0)
+        # arrays = math.expand_dims(array, 0) if batched else array
+        if batched:
+            return arrays
+        else:
+            return math.sum(arrays, axis=0)
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -201,7 +206,7 @@ class Representation:
             return self.ansatz == other.ansatz and self.wires == other.wires
         return False
 
-    def __matmul__(self, other: Representation):
+    def contract(self, other: Representation, mode: Literal["zip", "kron"] = "kron"):
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
 
@@ -212,6 +217,6 @@ class Representation:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
 
-        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
+        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj, mode=mode)
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)

@@ -254,7 +254,7 @@ class PolyExpAnsatz(Ansatz):
             other: The ansatz to contract with.
             idx1: The indices of the first ansatz to contract.
             idx2: The indices of the second ansatz to contract.
-            mode: The mode of contraction. "zip" contracts the batch dimensions, "kron" contracts the CV dimensions.
+            mode: The mode of contraction. "zip" zips the batch dimensions, "kron" does the outer product.
 
         Returns:
             The contracted ansatz.

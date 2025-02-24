@@ -210,8 +210,8 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        dm = self @ self.adjoint
-        ret = DM(dm.representation, self.name)
+        repr = self.representation.contract(self.adjoint.representation)
+        ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 

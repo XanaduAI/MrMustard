@@ -153,9 +153,9 @@ class State(CircuitComponent):
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
         element-wise along the batch dimension.
         """
-        with settings(UNSAFE_ZIP_BATCH=True):
-            rep = self >> self.dual
-        return math.real(rep)
+        return math.real(
+            self.representation.contract(self.dual.representation, mode="zip").ansatz.c
+        )
 
     @classmethod
     def from_bargmann(

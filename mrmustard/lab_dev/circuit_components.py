@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from inspect import signature
 from pydoc import locate
-from typing import Any, Sequence
+from typing import Any, Sequence, Literal
 import numbers
 from functools import cached_property
 
@@ -278,7 +278,7 @@ class CircuitComponent:
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
         QQQQ = CircuitComponent(Representation(PolyExpAnsatz(*triple), wires))
-        BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
+        BBBB = QtoB_ib.contract(QtoB_ik.contract(QQQQ).contract(QtoB_ok)).contract(QtoB_ob)
         return cls._from_attributes(Representation(BBBB.ansatz, wires), name)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
@@ -303,7 +303,9 @@ class CircuitComponent:
         if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
+        QQQQ = BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+            BtoQ_ob
+        )
         return QQQQ
 
     def quadrature_triple(
@@ -318,7 +320,7 @@ class CircuitComponent:
         Returns:
             A,b,c triple of the quadrature representation
         """
-        return self.to_quadrature(phi=phi).ansatz.data
+        return self.to_quadrature(phi=phi).ansatz.triple
 
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
@@ -342,7 +344,7 @@ class CircuitComponent:
             return quad_basis
 
         QQQQ = self.to_quadrature(phi=phi)
-        return QQQQ.ansatz(quad)
+        return math.sum(QQQQ.ansatz.eval(quad), axis=0)
 
     @classmethod
     def _from_attributes(
@@ -576,7 +578,9 @@ class CircuitComponent:
             return self._representation == other._representation
         return False
 
-    def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
+    def contract(
+        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
+    ) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
         It allows for contracting components exactly as specified.
@@ -595,7 +599,7 @@ class CircuitComponent:
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-        result = self._representation @ other._representation
+        result = self._representation.contract(other._representation, mode=mode)
         return CircuitComponent(result, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
@@ -682,11 +686,11 @@ class CircuitComponent:
         other_needs_ket = (s_b and s_k) and (not o_k and o_b)
 
         if only_ket or only_bra or both_sides:
-            ret = self @ other
+            ret = self.contract(other)
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
+            ret = self.adjoint.contract(self.contract(other))
         elif other_needs_bra or other_needs_ket:
-            ret = (self @ other.adjoint) @ other
+            ret = self.contract(other.adjoint).contract(other)
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."

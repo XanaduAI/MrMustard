@@ -157,7 +157,7 @@ class Transformation(CircuitComponent):
                 self.wires.copy(new_ids=True),
             )
         )
-        almost_identity = self @ almost_inverse
+        almost_identity = self.contract(almost_inverse)
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
