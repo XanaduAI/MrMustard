@@ -169,6 +169,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
+    @Autocast()
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if isinstance(string, str):
             return tf.einsum(string, *tensors)

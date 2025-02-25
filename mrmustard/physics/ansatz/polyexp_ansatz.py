@@ -74,16 +74,11 @@ class PolyExpAnsatz(Ansatz):
 
         >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-
         >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
         >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([[1.0, 2.0, 3.0]])
-
+        >>> c = np.array([[1.0]])
         >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
-        >>> z = np.array([[1.0],[2.0],[3.0]])
-
-        >>> # calculate the value of the function at the three different ``z``, since z is batched.
-        >>> val = F(z)
+        >>> val = F(1.0, 2.0)
 
     Args:
         A: A batch of quadratic coefficient :math:`A^{(i)}`.
@@ -730,8 +725,8 @@ class PolyExpAnsatz(Ansatz):
         n = self.num_CV_vars  # alpha
         m1 = self.num_derived_vars  # beta1
         m2 = other.num_derived_vars  # beta2
-        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
-        newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
+        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=self.A.dtype)
+        newb = math.zeros((batch_size, n + m1 + m2), dtype=self.b.dtype)
 
         # First handle the case where both m1 and m2 are 0
         if m1 == 0 and m2 == 0:
@@ -763,11 +758,11 @@ class PolyExpAnsatz(Ansatz):
                     [
                         A1[:, -m1:, :n],
                         A1[:, -m1:, -m1:],
-                        math.zeros((batch_size, m1, m2), dtype=math.complex128),
+                        math.zeros((batch_size, m1, m2), dtype=self.A.dtype),
                     ],
                     [
                         A2[:, -m2:, :n],
-                        math.zeros((batch_size, m2, m1), dtype=math.complex128),
+                        math.zeros((batch_size, m2, m1), dtype=self.A.dtype),
                         A2[:, -m2:, -m2:],
                     ],
                 ]
