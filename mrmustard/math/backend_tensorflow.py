@@ -327,6 +327,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
+    def stack(self, arrays: Sequence[tf.Tensor], axis: int = 0) -> tf.Tensor:
+        return tf.stack(arrays, axis=axis)
+
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)
 

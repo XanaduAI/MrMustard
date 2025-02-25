@@ -382,6 +382,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
+    def stack(self, arrays: Sequence[np.ndarray], axis: int = 0) -> np.ndarray:
+        return np.stack(arrays, axis=axis)
+
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 

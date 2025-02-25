@@ -659,6 +659,16 @@ class TestBackendManager:
         res = math.asnumpy(math.sqrtm(arr))
         assert np.allclose(res, 2 * np.eye(3))
 
+    def test_stack(self):
+        r"""
+        Tests the ``stack`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.stack([arr1, arr2], axis=0))
+        exp = np.stack([arr1, arr2], axis=0)
+        assert np.allclose(res, exp)
+
     def test_sum(self):
         r"""
         Tests the ``sum`` method.
