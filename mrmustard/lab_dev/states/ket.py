@@ -373,9 +373,10 @@ class Ket(State):
         gamma = (gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs.T)).T
 
         Au = math.block([[Am, gamma.T], [gamma, -math.conj(Am)]])
-        bu = math.zeros(2 * m_core, dtype=math.complex128)
-        bu[:m_core] = bm
-        bu[m_core:] = -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)
+        bu = math.block(
+            [bm, -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)],
+            axes=(0, 0),
+        )
         cu = 1  # to be changed by renormalization
 
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
@@ -389,9 +390,7 @@ class Ket(State):
             ]
         )
 
-        b_core = math.zeros(m_modes, dtype=math.complex128)
-        b_core[:m_core] = bm
-        b_core[m_core:] = bn - R @ math.inv(gamma) @ bu[m_core:]
+        b_core = math.block([bm, bn - R @ math.inv(gamma) @ bu[m_core:]], axes=(0, 0))
 
         inverse_order = [
             orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])
