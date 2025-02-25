@@ -461,21 +461,25 @@ def squeezing_gate_Abc(
     return A, b, c
 
 
-def _compute_batch_shape(*args) -> int:
-    # TODO: multiple batch dims
+def _compute_batch_size(*args) -> tuple[int, ...] | None:
+    r"""
+    Compute the final batch size of the input arguments.
+
+    Args:
+        *args: The input arguments.
+
+    Returns:
+        The final batch size of the input arguments.
+    """
     batch_size = None
     for arg in args:
-        if isinstance(arg, Iterable):
+        if arg.shape:
             if batch_size is None:
-                # set batch size
-                if len(arg.shape) == 1:
-                    batch_size = (arg.shape[0],)
+                batch_size = arg
             else:
-                # check if batch size is consistent and if compatible update batch size
-                if len(arg.shape) == 1:
-                    if arg.shape != batch_size:
-                        raise ValueError("All arguments must have the same batch size")
-    return batch_size or (1,)
+                batch_size = batch_size * arg
+    batch_size = batch_size.shape if batch_size is not None else None
+    return batch_size
 
 
 def beamsplitter_gate_Abc(
@@ -500,18 +504,18 @@ def beamsplitter_gate_Abc(
     theta = math.astensor(theta)
     phi = math.astensor(phi)
 
-    batch_shape = _compute_batch_shape(theta, phi)
+    batch_size = _compute_batch_size(theta, phi)
+    batch_shape = batch_size or (1,)
+    batch_dim = len(batch_shape)
 
     theta = np.broadcast_to(theta, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
     O_n = math.zeros(batch_shape + (2, 2), math.complex128)
-
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
-    batch_dim = len(batch_shape)
-    # TODO: implement stack in math
+    # TODO: use math.stack
     V = np.stack(
         [
             np.stack([costheta, -math.exp(math.astensor(-1j) * phi) * sintheta], batch_dim),
@@ -523,13 +527,12 @@ def beamsplitter_gate_Abc(
     perm = tuple(range(len(V.shape)))
     perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
-    # TODO:handle scalar case
     A = math.concat(
         [math.concat([O_n, V], -1), math.concat([math.transpose(V, perm), O_n], -1)], -2
     )
     b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
     c = math.ones(batch_shape, math.complex128)
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def twomode_squeezing_gate_Abc(
