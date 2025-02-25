@@ -27,7 +27,6 @@ __all__ = [
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
-    "vanilla_fully_batched",
     "autoshape_numba",
 ]
 
