@@ -299,11 +299,11 @@ def XY_of_channel(A: ComplexMatrix):
     math.error_if(
         X,
         math.norm(math.imag(X)) > settings.ATOL,
-        "Invalid input for the A matrix of channel, caused imaginary X matrix.",
+        "Invalid input for the A matrix of channel, caused by an imaginary X matrix.",
     )
     math.error_if(
         Y,
         math.norm(math.imag(Y)) > settings.ATOL,
-        "Invalid input for the A matrix of channel, caused imaginary Y matrix.",
+        "Invalid input for the A matrix of channel, caused by an imaginary Y matrix.",
     )
     return math.real(X), math.real(Y)

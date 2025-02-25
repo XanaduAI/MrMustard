@@ -162,7 +162,7 @@ class Representation:
         else:
             array = math.sum(arrays, axis=0)
             arrays = math.expand_dims(array, 0)
-            return arrays
+            return math.expand_dims(math.sum(arrays, axis=0), 0)
 
     def to_bargmann(self) -> Representation:
         r"""
