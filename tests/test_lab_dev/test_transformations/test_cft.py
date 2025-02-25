@@ -44,14 +44,10 @@ class TestCFT:
         dm = math.sum(state.to_fock(100).dm().ansatz.array, axis=0)
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
-
+        vec /= np.sqrt(1 / (2 * settings.HBAR))
         Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).ansatz
-        X, Y = np.meshgrid(
-            vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
-        )  # scaling to take care of HBAR
+        X, Y = np.meshgrid(vec, vec)
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        assert math.allclose(
-            2 / (2 * np.pi * settings.HBAR) * (np.real(Wigner.eval(Z))),
-            (np.real(wigner.T)),
-            atol=1e-6,
-        )  # scaling to take care of HBAR
+        wig = 2 / (2 * np.pi * settings.HBAR) * Wigner.eval(Z)[0].real
+        expected = np.real(wigner.T)
+        assert math.allclose(wig, expected, atol=1e-6)

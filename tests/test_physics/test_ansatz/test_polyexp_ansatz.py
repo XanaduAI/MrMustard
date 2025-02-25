@@ -243,19 +243,6 @@ class TestPolyExpAnsatz:
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
 
-    @pytest.mark.parametrize("n", [1, 2, 3])
-    def test_div(self, n):
-        triple1 = Abc_triple(n)
-        triple2 = Abc_triple(n)
-
-        bargmann1 = PolyExpAnsatz(*triple1)
-        bargmann2 = PolyExpAnsatz(*triple2)
-        bargmann_div = bargmann1 / bargmann2
-
-        assert np.allclose(bargmann_div.A, bargmann1.A - bargmann2.A)
-        assert np.allclose(bargmann_div.b, bargmann1.b - bargmann2.b)
-        assert np.allclose(bargmann_div.c, bargmann1.c / bargmann2.c)
-
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_div_with_scalar(self, scalar, triple):

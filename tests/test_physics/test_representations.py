@@ -63,8 +63,8 @@ class TestRepresentation:
         assert rep.ansatz == ansatz
         assert rep.wires == wires
 
-    def test_matmul_btoq(self, d_gate_rep, btoq_rep):
-        q_dgate = d_gate_rep @ btoq_rep
+    def test_contract_btoq(self, d_gate_rep, btoq_rep):
+        q_dgate = d_gate_rep.contract(btoq_rep)
         for w in q_dgate.wires.input.wires:
             assert w.repr == ReprEnum.BARGMANN
         for w in q_dgate.wires.output.wires:
