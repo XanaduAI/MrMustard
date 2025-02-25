@@ -103,22 +103,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
-    @partial(jax.jit, static_argnames=["dtype"])
-    def atleast_1d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_1d(jnp.array(array, dtype=dtype))
-
-    @partial(jax.jit, static_argnames=["dtype"])
-    def atleast_2d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.atleast_2d(jnp.array(array, dtype=dtype))
-
-    @partial(jax.jit, static_argnames=["dtype"])
-    def atleast_3d(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        if isinstance(array, tuple):
-            raise ValueError("Tuple input is not supported for atleast_3d.")
-        array = self.atleast_2d(self.atleast_1d(array, dtype))
-        if len(array.shape) == 2:
-            array = array[None, ...]
-        return array
+    def atleast_nd(self, array: jnp.ndarray, n: int, dtype=None) -> jnp.ndarray:
+        return jnp.array(array, ndmin=n, dtype=dtype)
 
     @jax.jit
     def block_diag(self, mat1: jnp.ndarray, mat2: jnp.ndarray) -> jnp.ndarray:
@@ -248,7 +234,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         indices = jnp.squeeze(indices, axis=-1)
         return tensor.at[indices].set(values)
 
@@ -257,7 +243,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def update_add_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         return tensor.at[tuple(indices.T)].add(values)
 
     @Autocast()
