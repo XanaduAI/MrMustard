@@ -47,7 +47,7 @@ def pytest_addoption(parser):
     ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
     ``pytest`` defaults to ``pytest --backend=numpy``.
     """
-    parser.addoption("--backend", default="jax", help="``numpy`` or ``tensorflow``.")
+    parser.addoption("--backend", default="numpy", help="``numpy``, ``tensorflow`` or ``jax``.")
 
 
 @pytest.fixture
