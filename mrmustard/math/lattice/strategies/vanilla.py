@@ -17,8 +17,6 @@ from numba import njit, prange
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from mrmustard.math.lattice.neighbors import lower_neighbors
-from mrmustard.math.lattice.pivots import first_available_pivot
 
 __all__ = [
     "vanilla",
