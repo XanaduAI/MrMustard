@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 import numpy as np
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent
 
 
