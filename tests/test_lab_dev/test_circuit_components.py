@@ -210,7 +210,7 @@ class TestCircuitComponent:
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
-        c = np.random.random((1, 5))
+        c = np.random.random((1, 5)) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c, num_derived_vars=1)
         fock_cc = CircuitComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
@@ -376,26 +376,24 @@ class TestCircuitComponent:
 
     @pytest.mark.parametrize("shape", [5, 6])
     def test_rshift_bargmann_and_fock(self, shape):
-        settings.AUTOSHAPE_MAX = shape
-        vac12 = Vacuum([1, 2])
-        d1 = Dgate([1], x=0.4, y=0.1)
-        d2 = Dgate([2], x=0.1, y=0.5)
-        a1 = Attenuator([1], transmissivity=0.9)
-        n12 = Number([1, 2], n=1).dual
+        with settings(AUTOSHAPE_MAX=shape):
+            vac12 = Vacuum([1, 2])
+            d1 = Dgate([1], x=0.4, y=0.1)
+            d2 = Dgate([2], x=0.1, y=0.5)
+            a1 = Attenuator([1], transmissivity=0.9)
+            n12 = Number([1, 2], n=1).dual
 
-        # bargmann >> fock
-        r1 = vac12 >> d1 >> d2 >> a1 >> n12
+            # bargmann >> fock
+            r1 = vac12 >> d1 >> d2 >> a1 >> n12
 
-        # fock >> bargmann
-        r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n12
+            # fock >> bargmann
+            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n12
 
-        # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n12
+            # bargmann >> fock >> bargmann
+            r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n12
 
-        assert np.allclose(r1, r2)
-        assert np.allclose(r1, r3)
-
-        settings.AUTOSHAPE_MAX = 50
+            assert np.allclose(r1, r2)
+            assert np.allclose(r1, r3)
 
     def test_rshift_error(self):
         vac012 = Vacuum([0, 1, 2])

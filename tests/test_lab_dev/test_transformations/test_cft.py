@@ -48,6 +48,6 @@ class TestCFT:
         Wigner = (state >> CFT([0]).inverse() >> BtoPS([0], s=0)).ansatz
         X, Y = np.meshgrid(vec, vec)
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        wig = 2 / (2 * np.pi * settings.HBAR) * Wigner.eval(Z)[0].real
+        wig = math.real(2 / (2 * np.pi * settings.HBAR) * Wigner.eval(Z)[0])
         expected = np.real(wigner.T)
         assert math.allclose(wig, expected, atol=1e-6)

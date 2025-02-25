@@ -132,14 +132,14 @@ class TestPolyExpAnsatz:
         with pytest.raises(Exception, match="The ansatz was called with"):
             ansatz(*z)
 
-        A = np.array([[0, 1], [1, 0]])
-        b = np.zeros(2)
-        c = np.zeros(10, dtype=complex).reshape(1, -1)
+        A = np.array([[0.0, 1.0], [1.0, 0.0]]) + 0.0j
+        b = np.zeros(2) + 0.0j
+        c = np.zeros(10, dtype=complex).reshape(1, -1) + 0.0j
         c[0, -1] = 1
         obj1 = PolyExpAnsatz(A, b, c, num_derived_vars=1)
 
         nine_factorial = np.prod(np.arange(1, 9))
-        assert np.allclose(obj1(np.array([0.1])), 0.1**9 / np.sqrt(nine_factorial))
+        assert np.allclose(obj1(np.array([0.1 + 0.0j])), 0.1**9 / np.sqrt(nine_factorial))
 
     def test_partial_eval(self):
         A1, b1, _ = Abc_triple(4)
@@ -147,12 +147,12 @@ class TestPolyExpAnsatz:
         A3, b3, _ = Abc_triple(4)
 
         batch = 3
-        c = np.random.random(size=(batch, 5, 5)) / 1000
+        c = np.random.random(size=(batch, 5, 5)) / 1000 + 0.0j
 
         obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c, num_derived_vars=2)
-        z0 = [None, 2]
-        z1 = [1]
-        z2 = [1, 2]
+        z0 = [None, 2.0 + 0.0j]
+        z1 = [1.0 + 0.0j]
+        z2 = [1.0 + 0.0j, 2.0 + 0.0j]
         val_full = obj(*z2)
         partial = obj(*z0)
         val_partial = partial(*z1)
@@ -162,12 +162,12 @@ class TestPolyExpAnsatz:
         A2, b2, _ = Abc_triple(4)
 
         batch = 2
-        c = np.random.random(size=(2, 5)) / 1000
+        c = np.random.random(size=(2, 5)) / 1000 + 0.0j
 
         obj = PolyExpAnsatz([A1, A2], [b1, b2], c, num_derived_vars=1)
-        z0 = [None, 2, None]
-        z1 = [1, 3]
-        z2 = [1, 2, 3]
+        z0 = [None, 2.0 + 0.0j, None]
+        z1 = [1.0 + 0.0j, 3.0 + 0.0j]
+        z2 = [1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j]
         val_full = obj(*z2)
         partial = obj(*z0)
         val_partial = partial(*z1)
@@ -200,15 +200,15 @@ class TestPolyExpAnsatz:
 
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4)
-        c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
+        c = np.random.uniform(-10, 10, size=(1, 3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(1,))
+        z = np.random.uniform(-10, 10, size=(1,)) + 0.0j
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
-        c2 = np.random.uniform(-10, 10, size=(1, 4))
+        c2 = np.random.uniform(-10, 10, size=(1, 4)) + 0.0j
         ansatz2 = PolyExpAnsatz(A, b, c2, num_derived_vars=1)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
         assert np.allclose(decomp_ansatz2.A, ansatz2.A)
@@ -218,26 +218,26 @@ class TestPolyExpAnsatz:
         In this test the batch dimension of both ``z`` and ``Abc`` is tested.
         """
         A1, b1, _ = Abc_triple(4)
-        c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        c1 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
         A2, b2, _ = Abc_triple(4)
-        c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        c2 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(1,))
+        z = np.random.uniform(-10, 10, size=(1,)) + 0.0j
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
         assert np.allclose(decomp_ansatz.b.shape, (2, 2))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9))
 
         A1, b1, _ = Abc_triple(5)
-        c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        c1 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
         A2, b2, _ = Abc_triple(5)
-        c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
+        c2 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(4,))
+        z = np.random.uniform(-10, 10, size=(4,)) + 0.0j
         assert np.allclose(ansatz(z, z), decomp_ansatz(z, z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))

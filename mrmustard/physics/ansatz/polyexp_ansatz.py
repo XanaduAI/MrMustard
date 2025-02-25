@@ -420,6 +420,8 @@ class PolyExpAnsatz(Ansatz):
             The output has shape (L, *b) where L is the batch size of the ansatz.
         """
         z = math.atleast_2d(z)
+        z = math.cast(z, dtype=self.A.dtype)
+
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
         if z_dim != self.num_CV_vars:
             raise ValueError(
@@ -734,20 +736,46 @@ class PolyExpAnsatz(Ansatz):
         newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
         newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
 
-        newA[:, :n, :n] = A1[:, :n, :n] + A2[:, :n, :n]
-        newb[:, :n] = b1[:, :n] + b2[:, :n]
-
-        if m1 > 0:
-            newA[:, :n, n:m1] = A1[:, :n, -m1:]
-            newA[:, n:m1, :n] = A1[:, -m1:, :n]
-            newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
-            newb[:, n:m1] = b1[:, -m1:]
-
-        if m2 > 0:
-            newA[:, :n, -m2:] = A2[:, :n, -m2:]
-            newA[:, -m2:, :n] = A2[:, -m2:, :n]
-            newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
-            newb[:, -m2:] = b2[:, -m2:]
+        # First handle the case where both m1 and m2 are 0
+        if m1 == 0 and m2 == 0:
+            newA = A1[:, :n, :n] + A2[:, :n, :n]
+            newb = b1[:, :n] + b2[:, :n]
+        elif m1 > 0 and m2 == 0:
+            # Only first ansatz has derived variables
+            newA = math.block(
+                [
+                    [A1[:, :n, :n] + A2[:, :n, :n], A1[:, :n, -m1:]],
+                    [A1[:, -m1:, :n], A1[:, -m1:, -m1:]],
+                ]
+            )
+            newb = math.concat([b1[:, :n] + b2[:, :n], b1[:, -m1:]], axis=1)
+        elif m1 == 0 and m2 > 0:
+            # Only second ansatz has derived variables
+            newA = math.block(
+                [
+                    [A1[:, :n, :n] + A2[:, :n, :n], A2[:, :n, -m2:]],
+                    [A2[:, -m2:, :n], A2[:, -m2:, -m2:]],
+                ]
+            )
+            newb = math.concat([b1[:, :n] + b2[:, :n], b2[:, -m2:]], axis=1)
+        else:
+            # Both ansatze have derived variables
+            newA = math.block(
+                [
+                    [A1[:, :n, :n] + A2[:, :n, :n], A1[:, :n, -m1:], A2[:, :n, -m2:]],
+                    [
+                        A1[:, -m1:, :n],
+                        A1[:, -m1:, -m1:],
+                        math.zeros((batch_size, m1, m2), dtype=math.complex128),
+                    ],
+                    [
+                        A2[:, -m2:, :n],
+                        math.zeros((batch_size, m2, m1), dtype=math.complex128),
+                        A2[:, -m2:, -m2:],
+                    ],
+                ]
+            )
+            newb = math.concat([b1[:, :n] + b2[:, :n], b1[:, -m1:], b2[:, -m2:]], axis=1)
 
         self_c = math.reshape(
             self.c,
