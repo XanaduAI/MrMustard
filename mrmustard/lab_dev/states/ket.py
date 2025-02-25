@@ -268,12 +268,7 @@ class Ket(State):
             The Fock distribution.
         """
         fock_array = self.fock_array(cutoff)
-        return (
-            math.astensor(
-                [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
-            )
-            ** 2
-        )
+        return math.reshape(math.abs(fock_array) ** 2, (-1,))
 
     def normalize(self) -> Ket:
         r"""
