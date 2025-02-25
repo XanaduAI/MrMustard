@@ -208,6 +208,24 @@ class TestBackendManager:
             exp_shape = arr.shape
         assert res.shape == exp_shape
 
+    @pytest.mark.parametrize("t", types)
+    @pytest.mark.parametrize("l", [l1, l3, l5])
+    @pytest.mark.parametrize("n", [1, 2, 3])
+    def test_atleast_nd(self, t, l, n):
+        r"""
+        Tests the ``atleast_nd`` method.
+        """
+        dtype = getattr(math, t, None)
+        arr = np.array(l)
+
+        res = math.asnumpy(math.atleast_nd(arr, n, dtype=dtype))
+
+        if arr.ndim < n:
+            exp_shape = (1,) * (n - arr.ndim) + arr.shape
+        else:
+            exp_shape = arr.shape
+        assert res.shape == exp_shape
+
     def test_boolean_mask(self):
         r"""
         Tests the ``boolean_mask`` method.
