@@ -211,6 +211,13 @@ class Representation:
         return False
 
     def contract(self, other: Representation, mode: Literal["zip", "kron"] = "kron"):
+        r"""
+        Contracts two representations.
+
+        Args:
+            other: The other representation to contract with.
+            mode: "zip" the batch dimensions or "kron" the batch dimensions.
+        """
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
 

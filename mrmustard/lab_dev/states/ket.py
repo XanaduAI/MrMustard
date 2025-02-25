@@ -19,7 +19,6 @@ This module contains the defintion of the ket class ``Ket``.
 from __future__ import annotations
 
 from typing import Collection
-from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display

@@ -43,8 +43,6 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
 )
 
-from mrmustard.math.lattice.strategies import vanilla_fully_batched
-
 from mrmustard import math, widgets
 from mrmustard.math.parameters import Variable
 
@@ -313,7 +311,6 @@ class PolyExpAnsatz(Ansatz):
         Decomposes a single batch element of the ansatz.
         """
         n = self.num_CV_vars
-        m = self.num_derived_vars
         A_core = math.block(
             [[math.zeros((n, n), dtype=Ai.dtype), Ai[:n, n:]], [Ai[n:, :n], Ai[n:, n:]]]
         )
@@ -331,15 +328,15 @@ class PolyExpAnsatz(Ansatz):
         b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
         return A_decomp, b_decomp, c_prime
 
-    def reorder(self, order_CV: Sequence[int]):
+    def reorder(self, order: Sequence[int]):
         r"""
         Reorders the CV indices of an (A,b,c) triple.
-        The length of ``order_CV`` must be the number of CV variables.
+        The length of ``order`` must be the number of CV variables.
         """
-        if len(order_CV) != self.num_CV_vars:
-            raise ValueError(f"order_CV must have length {self.num_CV_vars}, got {len(order_CV)}")
+        if len(order) != self.num_CV_vars:
+            raise ValueError(f"order must have length {self.num_CV_vars}, got {len(order)}")
         # Add derived variable indices after CV indices
-        order = list(order_CV) + list(
+        order = list(order) + list(
             range(self.num_CV_vars, self.num_CV_vars + self.num_derived_vars)
         )
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)

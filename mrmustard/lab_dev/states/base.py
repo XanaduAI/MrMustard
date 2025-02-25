@@ -35,7 +35,7 @@ from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,

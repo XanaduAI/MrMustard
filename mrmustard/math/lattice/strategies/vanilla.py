@@ -230,40 +230,6 @@ def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # p
 
 
 @njit
-def vanilla_fully_batched(shape: tuple[int, ...], A, b, c) -> np.ndarray:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy for batched ``Abc``, with batched dimension on the
-    first index. In this version all three arguments have a batch dimension.
-
-    Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
-
-    Args:
-        shape (tuple[int, ...]): shape of the output tensor without the batch dimension
-        A (np.ndarray): A batched matrix of the Fock-Bargmann representation, the batch is on the first index
-        b (np.ndarray): batched b vector of the Fock-Bargmann representation, the batch is on the first index
-        c (complex): batched vacuum amplitudes, the batch is on the first index
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
-    """
-    # init output tensor (assumes all shapes are the same)
-    G = np.zeros((A.shape[0],) + shape, dtype=np.complex128)
-
-    # initialize path iterator and write vacuum amplitude
-    path = np.ndindex(shape)
-    G[(slice(None),) + next(path)] = c
-
-    # iterate over the rest of the indices
-    for index in path:
-        i, pivot = first_available_pivot(index)
-        val = b[:, i] * G[(slice(None),) + pivot]
-        for j, neighbor in lower_neighbors(pivot):
-            val += A[:, i, j] * G[(slice(None),) + neighbor] * np.sqrt(pivot[j])
-        G[(slice(None),) + index] = val / np.sqrt(index[i])
-
-    return G
-
-
-@njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
     first index.
