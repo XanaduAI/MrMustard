@@ -220,6 +220,17 @@ class HomodyneSampler(Sampler):
         return self._validate_probs(probs, atol)
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
+        r"""
+        Returns an array of samples given a state.
+
+        Args:
+            state: The state to sample.
+            n_samples: The number of samples to generate.
+            seed: An optional seed for random sampling.
+
+        Returns:
+            An array of samples such that the shape is ``(n_samples, n_modes)``.
+        """
         initial_mode = state.modes[0]
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
@@ -231,9 +242,10 @@ class HomodyneSampler(Sampler):
         )
         ret = []
         for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
-            quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
-            quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
-            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(quad)
+            # Use partial_eval to evaluate the ansatz at the first mode only
+            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz.partial_eval(
+                np.array([[unique_sample]]), (0,)
+            )
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob

@@ -280,7 +280,7 @@ class DM(State):
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
-            result = (self @ operator) >> TraceOut(self.modes)
+            result = (self.contract(operator)) >> TraceOut(self.modes)
 
         return result
 
@@ -324,9 +324,7 @@ class DM(State):
             The Fock distribution.
         """
         fock_array = self.fock_array(cutoff)
-        return math.astensor(
-            [fock_array[ns * 2] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
-        )
+        return math.reshape(math.diag_part(fock_array), (-1,))
 
     def normalize(self) -> DM:
         r"""

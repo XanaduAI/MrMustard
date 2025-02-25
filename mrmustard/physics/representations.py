@@ -126,14 +126,18 @@ class Representation:
         Returns:
             array: The Fock array of this representation.
         """
-        num_vars = self.ansatz.num_vars
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         if isinstance(self.ansatz, PolyExpAnsatz):
             As, bs, cs = self.bargmann_triple(batched=True)
-            if len(shape) != self.ansatz.num_CV_vars:
+            if len(shape) != num_vars:
                 raise ValueError(
-                    f"Expected Fock shape of length {self.ansatz.num_CV_vars}, got length {len(shape)}"
+                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             if self.ansatz.num_derived_vars == 0:
                 arrays = [

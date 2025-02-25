@@ -254,9 +254,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
-        res_k01 = dm @ k01.dual @ k01.dual.adjoint
+        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut([1])
+        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut([0])
+        res_k01 = dm.contract(k01.dual).contract(k01.dual.adjoint)
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
@@ -267,8 +267,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (dm01 @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (dm01 @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (dm01.contract(dm0.dual)) >> TraceOut([1])
+        res_dm1 = (dm01.contract(dm1.dual)) >> TraceOut([0])
         res_dm01 = dm01 >> dm01.dual
 
         assert math.allclose(dm01.expectation(dm0), res_dm0)
@@ -281,9 +281,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         u1 = Dgate([1], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = (dm @ u0) >> TraceOut([0, 1])
-        res_u1 = (dm @ u1) >> TraceOut([0, 1])
-        res_u01 = (dm @ u01) >> TraceOut([0, 1])
+        res_u0 = (dm.contract(u0)) >> TraceOut([0, 1])
+        res_u1 = (dm.contract(u1)) >> TraceOut([0, 1])
+        res_u01 = (dm.contract(u01)) >> TraceOut([0, 1])
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
@@ -297,9 +297,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         k1 = Coherent([1], x=1, y=3).to_fock(10)
         k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
-        res_k01 = dm @ k01.dual >> k01.dual.adjoint
+        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut([1])
+        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut([0])
+        res_k01 = dm.contract(k01.dual) >> k01.dual.adjoint
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
@@ -309,8 +309,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         dm1 = Coherent([1], x=1, y=3).to_fock(10).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10).dm()
 
-        res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (dm.contract(dm0.dual)) >> TraceOut([1])
+        res_dm1 = (dm.contract(dm1.dual)) >> TraceOut([0])
         res_dm01 = dm >> dm01.dual
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
@@ -321,9 +321,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         u1 = Dgate([1], x=0.2).to_fock(10)
         u01 = Dgate([0, 1], x=[0.3, 0.4]).to_fock(10)
 
-        res_u0 = (dm @ u0) >> TraceOut([0, 1])
-        res_u1 = (dm @ u1) >> TraceOut([0, 1])
-        res_u01 = (dm @ u01) >> TraceOut([0, 1])
+        res_u0 = (dm.contract(u0)) >> TraceOut([0, 1])
+        res_u1 = (dm.contract(u1)) >> TraceOut([0, 1])
+        res_u01 = (dm.contract(u01)) >> TraceOut([0, 1])
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)

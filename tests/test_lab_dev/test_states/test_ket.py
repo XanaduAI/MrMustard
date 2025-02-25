@@ -193,8 +193,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm = ket.dm()
 
         assert dm.name == ket.name
-        assert dm.ansatz == (ket @ ket.adjoint).ansatz
-        assert dm.wires == (ket @ ket.adjoint).wires
+        assert dm.ansatz == (ket.contract(ket.adjoint)).ansatz
+        assert dm.wires == (ket.contract(ket.adjoint)).wires
 
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
     def test_quadrature_single_mode_ket(self, phi):
@@ -250,9 +250,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         k1 = Coherent([1], x=1, y=3)
         k01 = Coherent([0, 1], x=1, y=[2, 3])
 
-        res_k0 = (ket @ k0.dual) >> TraceOut([1])
-        res_k1 = (ket @ k1.dual) >> TraceOut([0])
-        res_k01 = ket @ k01.dual
+        res_k0 = (ket.contract(k0.dual)) >> TraceOut([1])
+        res_k1 = (ket.contract(k1.dual)) >> TraceOut([0])
+        res_k01 = ket.contract(k01.dual)
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
@@ -262,9 +262,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm1 = Coherent([1], x=1, y=3).dm()
         dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
-        res_dm01 = ket @ ket.adjoint @ dm01.dual
+        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut([1])
+        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut([0])
+        res_dm01 = ket.contract(ket.adjoint).contract(dm01.dual)
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -274,9 +274,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = ket @ u0 >> ket.dual
-        res_u1 = ket @ u1 >> ket.dual
-        res_u01 = ket @ u01 >> ket.dual
+        res_u0 = (ket.contract(u0)) >> ket.dual
+        res_u1 = (ket.contract(u1)) >> ket.dual
+        res_u01 = (ket.contract(u01)) >> ket.dual
 
         assert math.allclose(ket.expectation(u0), res_u0)
         assert math.allclose(ket.expectation(u1), res_u1)
@@ -291,8 +291,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         k1 = Coherent([1], x=1, y=3).to_fock(10)
         k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
 
-        res_k0 = (ket @ k0.dual) >> TraceOut([1])
-        res_k1 = (ket @ k1.dual) >> TraceOut([0])
+        res_k0 = (ket.contract(k0.dual)) >> TraceOut([1])
+        res_k1 = (ket.contract(k1.dual)) >> TraceOut([0])
         res_k01 = (ket >> k01.dual) ** 2
 
         assert math.allclose(ket.expectation(k0), res_k0)
@@ -303,9 +303,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm1 = Coherent([1], x=1, y=0.3).dm().to_fock(10)
         dm01 = Coherent([0, 1], x=1, y=[0.2, 0.3]).dm().to_fock(10)
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
-        res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).ansatz.array
+        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut([1])
+        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut([0])
+        res_dm01 = (ket.contract(ket.adjoint).contract(dm01.dual)).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
@@ -315,9 +315,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         u1 = Dgate([0], x=0.2)
         u01 = Dgate([0, 1], x=[0.3, 0.4])
 
-        res_u0 = (ket @ u0 @ ket.dual).to_fock(10).ansatz.array
-        res_u1 = (ket @ u1 @ ket.dual).to_fock(10).ansatz.array
-        res_u01 = (ket @ u01 @ ket.dual).to_fock(10).ansatz.array
+        res_u0 = (ket.contract(u0).contract(ket.dual)).to_fock(10).ansatz.array
+        res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
+        res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(u0), res_u0[0])
         assert math.allclose(ket.expectation(u1), res_u1[0])
@@ -409,9 +409,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_unsafe_batch_zipping(self):
         cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
         displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
-        settings.UNSAFE_ZIP_BATCH = True
-        better_cat = cat >> displacements
-        settings.UNSAFE_ZIP_BATCH = False
+        better_cat = cat.contract(displacements, mode="zip")
         assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])

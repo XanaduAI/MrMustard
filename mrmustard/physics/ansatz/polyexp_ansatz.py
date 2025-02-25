@@ -175,7 +175,10 @@ class PolyExpAnsatz(Ansatz):
         r"""
         The scalar part of the ansatz.
         """
-        return self.c
+        if self.num_derived_vars == 0:
+            return self.c
+        else:
+            return self.eval([])
 
     @property
     def batch_size(self) -> int:
@@ -422,7 +425,7 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        z = math.reshape(z, (-1, z_dim))  # shape (k, num_CV_vars)
+        z = math.reshape(z, (np.prod(z_batch_shape), z_dim))  # shape (k, num_CV_vars)
 
         exp_sum = self._compute_exp_part(z)  # shape (batch_size, k)
         if self.num_derived_vars == 0:  # purely gaussian
@@ -624,7 +627,7 @@ class PolyExpAnsatz(Ansatz):
             The tensor product of this PolyExpAnsatz and other.
         """
         As, bs, cs = join_Abc(self.triple, other.triple, mode="kron")
-        return PolyExpAnsatz(As, bs, cs)
+        return PolyExpAnsatz(As, bs, cs, self.num_derived_vars + other.num_derived_vars)
 
     def __call__(
         self, *z: Vector | None, mode: Literal["zip", "kron"] = "kron"
@@ -709,7 +712,7 @@ class PolyExpAnsatz(Ansatz):
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c * other)
+                return PolyExpAnsatz(self.A, self.b, self.c * other, self.num_derived_vars)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -768,55 +771,6 @@ class PolyExpAnsatz(Ansatz):
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c / other)
+                return PolyExpAnsatz(self.A, self.b, self.c / other, self.num_derived_vars)
             except Exception as e:
-                raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
-
-        if self.num_CV_vars != other.num_CV_vars:
-            raise TypeError(
-                "The number of CV variables of the two ansatze must be the same. "
-                f"Got {self.num_CV_vars} and {other.num_CV_vars}."
-            )
-        # outer product along batch via tile and repeat to get all pairs
-        A1 = math.tile(self.A, (other.A.shape[0], 1, 1))
-        b1 = math.tile(self.b, (other.b.shape[0], 1))
-        A2 = math.repeat(other.A, self.A.shape[0], axis=0)
-        b2 = math.repeat(other.b, self.b.shape[0], axis=0)
-
-        batch_size = self.batch_size * other.batch_size
-        n = self.num_CV_vars  # alpha
-        m1 = self.num_derived_vars  # beta1
-        m2 = other.num_derived_vars  # beta2
-        newA = math.zeros((batch_size, n + m1 + m2, n + m1 + m2), dtype=math.complex128)
-        newb = math.zeros((batch_size, n + m1 + m2), dtype=math.complex128)
-
-        newA[:, :n, :n] = A1[:, :n, :n] - A2[:, :n, :n]
-        newb[:, :n] = b1[:, :n] - b2[:, :n]
-
-        if m1 > 0:
-            newA[:, :n, n:m1] = A1[:, :n, -m1:]
-            newA[:, n:m1, :n] = A1[:, -m1:, :n]
-            newA[:, n:m1, n:m1] = A1[:, -m1:, -m1:]
-            newb[:, n:m1] = b1[:, -m1:]
-
-        if m2 > 0:
-            newA[:, :n, -m2:] = A2[:, :n, -m2:]
-            newA[:, -m2:, :n] = A2[:, -m2:, :n]
-            newA[:, -m2:, -m2:] = A2[:, -m2:, -m2:]
-            newb[:, -m2:] = b2[:, -m2:]
-
-        self_c = math.reshape(
-            self.c,
-            (self.batch_size, int(math.prod(self.shape_derived_vars))),
-        )
-        other_c = 1 / math.reshape(
-            other.c,
-            (other.batch_size, int(math.prod(other.shape_derived_vars))),
-        )
-        newc = math.einsum("ij,kl->ijl", self_c, other_c)
-        newc = math.reshape(
-            newc,
-            (batch_size,) + self.shape_derived_vars + other.shape_derived_vars,
-        )
-
-        return PolyExpAnsatz(A=newA, b=newb, c=newc, num_derived_vars=m1 + m2)
+                raise TypeError(f"Cannot divide PolyExpAnsatz and {other.__class__}.") from e

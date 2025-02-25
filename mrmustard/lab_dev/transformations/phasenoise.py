@@ -73,7 +73,7 @@ class PhaseNoise(Channel):
         """
 
         if not other.wires.bra or not other.wires.ket:
-            other = other @ other.adjoint
+            other = other.contract(other.adjoint)
         array = math.asnumpy(other.fock_array())
         mode_indices = np.indices(array.shape)
         for mode in self.modes:
