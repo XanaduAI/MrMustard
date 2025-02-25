@@ -68,9 +68,6 @@ def test_jit_complete_circuit():
     end_time = time.time()
     jitted_routine_time = end_time - start_time
 
-    print(f"Jitted routine time: {jitted_routine_time}")
-    print(f"Unjitted routine time: {unjitted_routine_time}")
-
     assert (
         jitted_routine_time < unjitted_routine_time
     ), "Jitting should be make circuit evaluation faster."
@@ -121,9 +118,6 @@ def test_jit_circuit_with_parameters():
         _ = jitted_evaluate_parameters(params)
     end_time = time.time()
     jitted_routine_time = end_time - start_time
-
-    print(f"Jitted routine time: {jitted_routine_time}")
-    print(f"Unjitted routine time: {unjitted_routine_time}")
 
     assert (
         jitted_routine_time < unjitted_routine_time

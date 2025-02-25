@@ -43,7 +43,7 @@ class TestRgate:
 
     def test_representation(self):
         rep1 = Rgate(modes=[0], theta=0.1).ansatz
-        assert np.allclose(
+        assert math.allclose(
             rep1.A,
             [
                 [
@@ -52,11 +52,11 @@ class TestRgate:
                 ]
             ],
         )
-        assert np.allclose(rep1.b, np.zeros((1, 2)))
-        assert np.allclose(rep1.c, [1.0 + 0.0j])
+        assert math.allclose(rep1.b, np.zeros((1, 2)))
+        assert math.allclose(rep1.c, [1.0 + 0.0j])
 
         rep2 = Rgate(modes=[0, 1], theta=[0.1, 0.3]).ansatz
-        assert np.allclose(
+        assert math.allclose(
             rep2.A,
             [
                 [
@@ -67,11 +67,11 @@ class TestRgate:
                 ]
             ],
         )
-        assert np.allclose(rep2.b, np.zeros((1, 4)))
-        assert np.allclose(rep2.c, [1.0 + 0.0j])
+        assert math.allclose(rep2.b, np.zeros((1, 4)))
+        assert math.allclose(rep2.c, [1.0 + 0.0j])
 
         rep3 = Rgate(modes=[1], theta=0.1).ansatz
-        assert np.allclose(
+        assert math.allclose(
             rep3.A,
             [
                 [
@@ -80,8 +80,8 @@ class TestRgate:
                 ]
             ],
         )
-        assert np.allclose(rep3.b, np.zeros((1, 2)))
-        assert np.allclose(rep3.c, [1.0 + 0.0j])
+        assert math.allclose(rep3.b, np.zeros((1, 2)))
+        assert math.allclose(rep3.c, [1.0 + 0.0j])
 
     def test_trainable_parameters(self):
         gate1 = Rgate([0], 1)

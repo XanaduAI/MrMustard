@@ -46,9 +46,11 @@ class TestAmplifier:
         rep1 = Amplifier(modes=[0], gain=1.1).ansatz
         g1 = 0.95346258
         g2 = 0.09090909
-        assert np.allclose(rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]])
-        assert np.allclose(rep1.b, np.zeros((1, 4)))
-        assert np.allclose(rep1.c, [0.90909090])
+        assert math.allclose(
+            rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
+        )
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [0.90909090])
 
     def test_trainable_parameters(self):
         gate1 = Amplifier([0], 1.2)
@@ -69,7 +71,7 @@ class TestAmplifier:
         att_channel = Attenuator(modes=[0], transmissivity=0.7)
         operation = amp_channel >> att_channel
 
-        assert np.allclose(
+        assert math.allclose(
             operation.ansatz.A,
             [
                 [
@@ -80,19 +82,19 @@ class TestAmplifier:
                 ]
             ],
         )
-        assert np.allclose(operation.ansatz.b, np.zeros((1, 4)))
-        assert np.allclose(operation.ansatz.c, [0.74074074 + 0.0j])
+        assert math.allclose(operation.ansatz.b, np.zeros((1, 4)))
+        assert math.allclose(operation.ansatz.c, [0.74074074 + 0.0j])
 
     def test_circuit_identity(self):
         amp_channel = Amplifier(modes=[0], gain=2)
         att_channel = Attenuator(modes=[0], transmissivity=0.5)
         input_state = Coherent(modes=[0], x=0.5, y=0.7)
 
-        assert np.allclose(
+        assert math.allclose(
             (input_state >> amp_channel).ansatz.A,
             (input_state >> att_channel.dual).ansatz.A,
         )
-        assert np.allclose(
+        assert math.allclose(
             (input_state >> amp_channel).ansatz.b,
             (input_state >> att_channel.dual).ansatz.b,
         )

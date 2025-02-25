@@ -53,9 +53,9 @@ class TestBSgate:
                 [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
             ]
         ]
-        assert np.allclose(rep1.A, A_exp)
-        assert np.allclose(rep1.b, np.zeros((1, 4)))
-        assert np.allclose(rep1.c, [1])
+        assert math.allclose(rep1.A, A_exp)
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [1])
 
         rep2 = BSgate([0, 1], 0.1).ansatz
         A_exp = [
@@ -66,9 +66,9 @@ class TestBSgate:
                 [-9.98334166e-02, 9.95004165e-01, 0, 0],
             ]
         ]
-        assert np.allclose(rep2.A, A_exp)
-        assert np.allclose(rep2.b, np.zeros((1, 4)))
-        assert np.allclose(rep2.c, [1])
+        assert math.allclose(rep2.A, A_exp)
+        assert math.allclose(rep2.b, np.zeros((1, 4)))
+        assert math.allclose(rep2.c, [1])
 
     def test_trainable_parameters(self):
         gate1 = BSgate([0, 1], 1, 1)

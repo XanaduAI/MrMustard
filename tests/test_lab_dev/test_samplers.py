@@ -69,7 +69,7 @@ class TestPNRSampler:
             count[idx] += 1
         probs = count / n_samples
 
-        assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
+        assert math.allclose(probs, sampler.probabilities(state), atol=1e-2)
 
 
 class TestHomodyneSampler:
@@ -91,8 +91,8 @@ class TestHomodyneSampler:
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)
-        assert np.allclose(meas_result.mean(axis=0), [0.0, 0.0], atol=std_10 + tol)
-        assert np.allclose(meas_result.std(axis=0), [1.0, 1.0], atol=std_10 + tol)
+        assert math.allclose(meas_result.mean(axis=0), [0.0, 0.0], atol=std_10 + tol)
+        assert math.allclose(meas_result.std(axis=0), [1.0, 1.0], atol=std_10 + tol)
 
     def test_probabilties(self):
         sampler = HomodyneSampler()
@@ -132,7 +132,7 @@ class TestHomodyneSampler:
         sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
         assert sampler.povms is None
         assert sampler._phi == 0.5
-        assert np.allclose(sampler.meas_outcomes, np.linspace(-5, 5, 100))
+        assert math.allclose(sampler.meas_outcomes, np.linspace(-5, 5, 100))
 
     def test_povm_error(self):
         sampler = HomodyneSampler()

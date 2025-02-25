@@ -49,7 +49,7 @@ def test_compactFock_diagonal(A_B_G0):
         ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
     G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
-    assert np.allclose(ref_diag, G_diag)
+    assert math.allclose(ref_diag, G_diag)
 
 
 @given(random_ABC(M=3))
@@ -82,7 +82,7 @@ def test_compactFock_1leftover(A_B_G0):
         ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
             tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
         ]
-    assert np.allclose(ref_leftover, G_leftover)
+    assert math.allclose(ref_leftover, G_leftover)
 
 
 def test_compactFock_diagonal_gradients():

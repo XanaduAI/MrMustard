@@ -1210,18 +1210,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("trace", (array, dtype))
 
-    def where(self, array: Tensor, array1: Tensor, array2: Tensor):
+    def where(self, condition: Tensor, x: Tensor, y: Tensor):
         r"""Conditional return
 
         Args:
-            array: The array/variable to condition on
-            array1: The array to return if ``array`` is ``True``
-            array2: The array to return if ``array`` is ``False``
+            condition: The condition to check
+            x: The array to return if ``condition`` is ``True``
+            y: The array to return if ``condition`` is ``False``
 
         Returns:
-            The array1 if ``array`` is ``True``, otherwise array2
+            The ``x`` if ``condition`` is ``True``, otherwise ``y``
         """
-        return self._apply("where", (array, array1, array2))
+        return self._apply("where", (condition, x, y))
 
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         r"""The transposed arrays.
@@ -1295,20 +1295,27 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("zeros", (shape, dtype))
 
     def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
-        r"""Exectures ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+        r"""Executes ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
 
         Args:
             cond: The condition to check
             true_fn: The function to execute if ``cond`` is ``True``
             false_fn: The function to execute if ``cond`` is ``False``
-
+            *args: The arguments to pass to ``true_fn`` and ``false_fn``
         Returns:
             The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
         """
         return self._apply("conditional", (cond, true_fn, false_fn, *args))
 
     def infinity_like(self, array: Tensor) -> Tensor:
-        r"""Returns an array of infinities with the same shape as ``array``."""
+        r"""Returns an array of infinities with the same shape as ``array``.
+
+        Args:
+            array: The array to take the shape of.
+
+        Returns:
+            An array of infinities with the same shape as ``array``.
+        """
         return self._apply("infinity_like", (array,))
 
     def zeros_like(self, array: Tensor) -> Tensor:
