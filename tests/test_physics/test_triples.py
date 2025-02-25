@@ -260,7 +260,7 @@ class TestTriples:
 
     def test_attenuator_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # pylint: disable=import-outside-toplevel
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="must be <= 1"):
                 triples.attenuator_Abc(2)
@@ -308,7 +308,7 @@ class TestTriples:
 
     def test_amplifier_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # pylint: disable=import-outside-toplevel
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="smaller than"):
                 triples.amplifier_Abc(0.1)
