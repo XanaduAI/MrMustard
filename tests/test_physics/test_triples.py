@@ -259,11 +259,21 @@ class TestTriples:
         assert np.allclose(c2, 1.0)
 
     def test_attenuator_Abc_error(self):
-        with pytest.raises(ValueError, match="in the interval"):
-            triples.attenuator_Abc(2)
+        if math.backend_name == "jax":
+            import equinox as eqx
 
-        with pytest.raises(ValueError, match="in the interval"):
-            triples.attenuator_Abc(-2)
+            with pytest.raises(eqx.EquinoxRuntimeError, match="must be <= 1"):
+                triples.attenuator_Abc(2)
+        else:
+            with pytest.raises(ValueError, match="must be <= 1"):
+                triples.attenuator_Abc(2)
+
+        if math.backend_name == "jax":
+            with pytest.raises(eqx.EquinoxRuntimeError, match="must be >= 0"):
+                triples.attenuator_Abc(-2)
+        else:
+            with pytest.raises(ValueError, match="must be >= 0"):
+                triples.attenuator_Abc(-2)
 
     def test_amplifier_Abc(self):
         A1, b1, c1 = triples.amplifier_Abc(2)
@@ -297,8 +307,14 @@ class TestTriples:
         assert np.allclose(c2, 0.5)
 
     def test_amplifier_Abc_error(self):
-        with pytest.raises(ValueError, match="smaller than"):
-            triples.amplifier_Abc(0.1)
+        if math.backend_name == "jax":
+            import equinox as eqx
+
+            with pytest.raises(eqx.EquinoxRuntimeError, match="smaller than"):
+                triples.amplifier_Abc(0.1)
+        else:
+            with pytest.raises(ValueError, match="smaller than"):
+                triples.amplifier_Abc(0.1)
 
     def test_fock_damping_Abc(self):
         A1, b1, c1 = triples.fock_damping_Abc(0.5)

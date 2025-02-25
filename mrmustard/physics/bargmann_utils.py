@@ -296,8 +296,14 @@ def XY_of_channel(A: ComplexMatrix):
         - math.eye(n) / 2
     )
     Y = sigma - X @ X.T / 2
-    if math.norm(math.imag(X)) > settings.ATOL or math.norm(math.imag(Y)) > settings.ATOL:
-        raise ValueError(
-            "Invalid input for the A matrix of channel, caused imaginary X and/or Y matrices."
-        )
+    math.error_if(
+        X,
+        math.norm(math.imag(X)) > settings.ATOL,
+        "Invalid input for the A matrix of channel, caused imaginary X matrix.",
+    )
+    math.error_if(
+        Y,
+        math.norm(math.imag(Y)) > settings.ATOL,
+        "Invalid input for the A matrix of channel, caused imaginary Y matrix.",
+    )
     return math.real(X), math.real(Y)

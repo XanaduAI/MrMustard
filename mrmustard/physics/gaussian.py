@@ -450,8 +450,8 @@ def loss_XYd(transmissivity: Scalar | Vector, nbar: Scalar | Vector) -> tuple[Ma
         Tuple[Matrix, Matrix, None]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         loss channel
     """
-    if math.any(transmissivity < 0) or math.any(transmissivity > 1):
-        raise ValueError("transmissivity must be between 0 and 1")
+    math.error_if(transmissivity, math.any(transmissivity < 0), "transmissivity must be >= 0")
+    math.error_if(transmissivity, math.any(transmissivity > 1), "transmissivity must be <= 1")
     x = math.sqrt(transmissivity)
     X = math.diag(math.concat([x, x], axis=0))
     y = (1 - transmissivity) * (2 * nbar + 1) * settings.HBAR / 2
@@ -480,8 +480,7 @@ def amp_XYd(gain: Scalar | Vector, nbar: Scalar | Vector) -> Matrix:
         Tuple[Matrix, Vector]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         amplifier channel.
     """
-    if math.any(gain < 1):
-        raise ValueError("Gain must be larger than 1")
+    math.error_if(gain, math.any(gain < 1), "Gain must be larger than 1")
     x = math.sqrt(gain)
     X = math.diag(math.concat([x, x], axis=0))
     y = (gain - 1) * (2 * nbar + 1) * settings.HBAR / 2

@@ -59,7 +59,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     float64 = tf.float64
     complex64 = tf.complex64
     complex128 = tf.complex128
-    JIT_FLAG = False
 
     def __init__(self):
         tf.experimental.numpy.experimental_enable_numpy_behavior()
@@ -215,6 +214,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return true_fn(*args)
         else:
             return false_fn(*args)
+
+    def error_if(
+        self, array: tf.Tensor, condition: tf.Tensor, msg: str
+    ):  # pylint: disable=unused-argument
+        if tf.reduce_any(condition):
+            raise ValueError(msg)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)

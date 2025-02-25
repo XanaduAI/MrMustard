@@ -24,6 +24,7 @@ import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
+import equinox as eqx
 from jax import tree_util
 
 from ..utils.settings import settings
@@ -53,7 +54,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     float64 = jnp.float64
     complex64 = jnp.complex64
     complex128 = jnp.complex128
-    JIT_FLAG = False
 
     def __init__(self):
         super().__init__(name="jax")
@@ -384,6 +384,9 @@ class BackendJax(BackendBase):  # pragma: no cover
         self, cond: jnp.ndarray, true_fn: Callable, false_fn: Callable, *args
     ) -> jnp.ndarray:
         return jax.lax.cond(jnp.all(cond), true_fn, false_fn, *args)
+
+    def error_if(self, array: jnp.ndarray, condition: jnp.ndarray, msg: str):
+        eqx.error_if(array, condition, msg)
 
     def pad(
         self,

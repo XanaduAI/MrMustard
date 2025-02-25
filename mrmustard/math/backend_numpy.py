@@ -59,7 +59,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     float64 = np.float64
     complex64 = np.complex64
     complex128 = np.complex128
-    JIT_FLAG = False
 
     def __init__(self):
         super().__init__(name="numpy")
@@ -344,6 +343,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return true_fn(*args)
         else:
             return false_fn(*args)
+
+    def error_if(
+        self, array: np.ndarray, condition: np.ndarray, msg: str
+    ):  # pylint: disable=unused-argument
+        if np.any(condition):
+            raise ValueError(msg)
 
     @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:

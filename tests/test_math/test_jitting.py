@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2025 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ def test_jit_complete_circuit():
     end_time = time.time()
     unjitted_routine_time = end_time - start_time
 
-    math.JIT_FLAG = True  # turns off checks on parameter values
     jitted_evaluate_circuit = jax.jit(evaluate_circuit)
     _ = jitted_evaluate_circuit(jnp.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
     start_time = time.time()
@@ -71,7 +70,6 @@ def test_jit_complete_circuit():
     assert (
         jitted_routine_time < unjitted_routine_time
     ), "Jitting should be make circuit evaluation faster."
-    math.JIT_FLAG = False
 
 
 def test_jit_circuit_with_parameters():
@@ -108,7 +106,6 @@ def test_jit_circuit_with_parameters():
     end_time = time.time()
     unjitted_routine_time = end_time - start_time
 
-    math.JIT_FLAG = True  # turns off checks on parameter values
     jitted_evaluate_parameters = jax.jit(evaluate_parameters)
     _ = jitted_evaluate_parameters(jnp.array([0.5, 0.5, 0.5, 0.5]))
     start_time = time.time()
@@ -122,4 +119,3 @@ def test_jit_circuit_with_parameters():
     assert (
         jitted_routine_time < unjitted_routine_time
     ), "Jitting should be make circuit evaluation faster."
-    math.JIT_FLAG = False

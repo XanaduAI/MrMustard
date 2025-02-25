@@ -164,20 +164,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._backend.name
 
-    @property
-    def JIT_FLAG(self) -> bool:
-        r"""
-        Whether the backend is jitted.
-        """
-        return self._backend.JIT_FLAG
-
-    @JIT_FLAG.setter
-    def JIT_FLAG(self, value: bool) -> None:
-        r"""
-        Sets the JIT flag for the backend.
-        """
-        self._backend.JIT_FLAG = value
-
     def change_backend(self, name: str) -> None:
         r"""
         Changes the backend to a different one.
@@ -1306,6 +1292,21 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
         """
         return self._apply("conditional", (cond, true_fn, false_fn, *args))
+
+    def error_if(self, array: Tensor, condition: Tensor, msg: str):
+        r"""Raises an error if ``condition`` is ``True``.
+
+        Args:
+            array: The array to check
+            condition: The condition to check; should only use array elements in the condition
+                And must be boolean.
+            msg: The message to raise if ``condition`` is ``True``
+
+        Returns:
+            None
+            Raises an error if at least one element of ``cond`` is True.
+        """
+        return self._apply("error_if", (array, condition, msg))
 
     def infinity_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of infinities with the same shape as ``array``.
