@@ -461,9 +461,26 @@ def squeezing_gate_Abc(
     return A, b, c
 
 
+def _compute_batch_shape(*args) -> int:
+    # TODO: multiple batch dims
+    batch_size = None
+    for arg in args:
+        if isinstance(arg, Iterable):
+            if batch_size is None:
+                # set batch size
+                if len(arg.shape) == 1:
+                    batch_size = (arg.shape[0],)
+            else:
+                # check if batch size is consistent and if compatible update batch size
+                if len(arg.shape) == 1:
+                    if arg.shape != batch_size:
+                        raise ValueError("All arguments must have the same batch size")
+    return batch_size or (1,)
+
+
 def beamsplitter_gate_Abc(
-    theta: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    theta: float | Iterable[float], phi: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
 
@@ -480,23 +497,38 @@ def beamsplitter_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the beamsplitter gates.
     """
-    theta, phi = _reshape(theta=theta, phi=phi)
-    n_modes = 2 * len(theta)
+    theta = math.astensor(theta)
+    phi = math.astensor(phi)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    costheta = math.diag(math.cos(theta))
-    sintheta = math.diag(math.sin(theta))
-    V = math.block(
+    batch_shape = _compute_batch_shape(theta, phi)
+
+    theta = np.broadcast_to(theta, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
+
+    O_n = math.zeros(batch_shape + (2, 2), math.complex128)
+
+    costheta = math.cos(theta)
+    sintheta = math.sin(theta)
+
+    batch_dim = len(batch_shape)
+    # TODO: implement stack in math
+    V = np.stack(
         [
-            [costheta, -math.exp(-1j * phi) * sintheta],
-            [math.exp(1j * phi) * sintheta, costheta],
-        ]
+            np.stack([costheta, -math.exp(math.astensor(-1j) * phi) * sintheta], batch_dim),
+            np.stack([math.exp(math.astensor(1j) * phi) * sintheta, costheta], batch_dim),
+        ],
+        batch_dim,
     )
 
-    A = math.block([[O_n, V], [math.transpose(V), O_n]])
-    b = _vacuum_B_vector(n_modes * 2)
-    c = 1.0 + 0j
+    perm = tuple(range(len(V.shape)))
+    perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
+    # TODO:handle scalar case
+    A = math.concat(
+        [math.concat([O_n, V], -1), math.concat([math.transpose(V, perm), O_n], -1)], -2
+    )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    c = math.ones(batch_shape, math.complex128)
     return A, b, c
 
 
