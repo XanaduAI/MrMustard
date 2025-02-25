@@ -33,6 +33,27 @@ from .bargmann_utils import symplectic2Au
 #  ~~~~~~~~~
 
 
+def _compute_batch_size(*args) -> tuple[int, ...] | None:
+    r"""
+    Compute the final batch size of the input arguments.
+
+    Args:
+        *args: The input arguments.
+
+    Returns:
+        The final batch size of the input arguments.
+    """
+    batch_size = None
+    for arg in args:
+        if arg.shape:
+            if batch_size is None:
+                batch_size = arg
+            else:
+                batch_size = batch_size * arg
+    batch_size = batch_size.shape if batch_size is not None else None
+    return batch_size
+
+
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
     r"""
     The X matrix for the order of unitaries.
@@ -109,7 +130,7 @@ def bargmann_eigenstate_Abc(x: Union[float, Iterable[float]]) -> Union[Matrix, V
 
 
 def coherent_state_Abc(
-    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]] = 0
+    x: float | Iterable[float], y: float | Iterable[float] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of pure coherent states.
@@ -128,7 +149,7 @@ def coherent_state_Abc(
         The ``(A, b, c)`` triple of the pure coherent states.
     """
     x, y = list(_reshape(x=x, y=y))
-    n_modes = len(x)
+    n_modes = 1
 
     A = _vacuum_A_matrix(n_modes)
     b = x + 1j * y
@@ -462,8 +483,8 @@ def squeezing_gate_Abc(
 
 
 def beamsplitter_gate_Abc(
-    theta: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    theta: float | Iterable[float], phi: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
 
@@ -480,24 +501,38 @@ def beamsplitter_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the beamsplitter gates.
     """
-    theta, phi = _reshape(theta=theta, phi=phi)
-    n_modes = 2 * len(theta)
+    theta = math.astensor(theta)
+    phi = math.astensor(phi)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    costheta = math.diag(math.cos(theta))
-    sintheta = math.diag(math.sin(theta))
-    V = math.block(
+    batch_size = _compute_batch_size(theta, phi)
+    batch_shape = batch_size or (1,)
+    batch_dim = len(batch_shape)
+
+    theta = np.broadcast_to(theta, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
+
+    O_n = math.zeros(batch_shape + (2, 2), math.complex128)
+    costheta = math.cos(theta)
+    sintheta = math.sin(theta)
+
+    # TODO: use math.stack
+    V = np.stack(
         [
-            [costheta, -math.exp(-1j * phi) * sintheta],
-            [math.exp(1j * phi) * sintheta, costheta],
-        ]
+            np.stack([costheta, -math.exp(math.astensor(-1j) * phi) * sintheta], batch_dim),
+            np.stack([math.exp(math.astensor(1j) * phi) * sintheta, costheta], batch_dim),
+        ],
+        batch_dim,
     )
 
-    A = math.block([[O_n, V], [math.transpose(V), O_n]])
-    b = _vacuum_B_vector(n_modes * 2)
-    c = 1.0 + 0j
+    perm = tuple(range(len(V.shape)))
+    perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
-    return A, b, c
+    A = math.concat(
+        [math.concat([O_n, V], -1), math.concat([math.transpose(V, perm), O_n], -1)], -2
+    )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    c = math.ones(batch_shape, math.complex128)
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def twomode_squeezing_gate_Abc(
