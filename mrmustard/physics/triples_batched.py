@@ -423,30 +423,27 @@ def rotation_gate_Abc(
 
 
 def displacement_gate_Abc(
-    x: Union[float, Iterable[float]], y: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    x: float | Iterable[float], y: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of displacement gates.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``x=[1,2,3]`` and ``y=1`` is equivalent to
-    passing ``x=[1,2,3]`` and ``y=[1,1,1]``.
+    The ``(A, b, c)`` triple of a tensor product of a displacement gate.
 
     Args:
-        x: The real parts of the displacements, in units of :math:`\sqrt{\hbar}`.
-        y: The imaginary parts of the displacements, in units of :math:`\sqrt{\hbar}`.
+        x: The real part of the displacement, in units of :math:`\sqrt{\hbar}`.
+        y: The imaginary part of the displacement, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
-        The ``(A, b, c)`` triple of the displacement gates.
+        The ``(A, b, c)`` triple of the displacement gate.
     """
-    x, y = _reshape(x=x, y=y)
-    n_modes = len(x)
+    batch_size, batch_dim = _compute_batch_size(x, y)
+    batch_shape = batch_size or (1,)
 
-    A = _X_matrix_for_unitary(n_modes)
-    b = math.concat([x + 1j * y, -x + 1j * y], axis=0)
-    c = math.exp(-math.sum(x**2 + y**2) / 2)
+    x = np.broadcast_to(x, batch_shape)
+    y = np.broadcast_to(y, batch_shape)
+
+    A = np.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
+    b = np.stack([x + 1j * y, -x + 1j * y], batch_dim)
+    c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
 
     return A, b, c
 
