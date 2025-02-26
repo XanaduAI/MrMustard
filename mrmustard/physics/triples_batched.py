@@ -371,26 +371,32 @@ def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Sc
 #  ~~~~~~~~~~~~
 
 
-def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, Scalar]:
+def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of thermal states.
-
-    The number of modes depends on the length of the input parameters.
+    The ``(A, b, c)`` triple of a thermal state.
 
     Args:
-        nbar: The average numbers of photons per mode.
+        nbar: The average number of photons.
 
     Returns:
-        The ``(A, b, c)`` triple of the thermal states.
+        The ``(A, b, c)`` triple of the thermal state.
     """
-    nbar = math.atleast_1d(nbar, math.complex128)
-    n_modes = len(nbar)
+    batch_size, batch_dim = _compute_batch_size(nbar)
+    batch_shape = batch_size or (1,)
 
-    A = math.astensor([[0, 1], [1, 0]], math.complex128)
-    A = math.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
-    c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
-    b = _vacuum_B_vector(n_modes * 2)
+    nbar = np.broadcast_to(nbar, batch_shape)
 
+    O = math.zeros(batch_shape, math.complex128)
+
+    A = np.stack(
+        [
+            np.stack([O, (nbar / (nbar + 1))], batch_dim),
+            np.stack([(nbar / (nbar + 1)), O], batch_dim),
+        ],
+        batch_dim,
+    )
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    c = math.cast(1 / (nbar + 1), math.complex128)
     return A, b, c
 
 
