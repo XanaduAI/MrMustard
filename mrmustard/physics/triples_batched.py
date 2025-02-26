@@ -366,7 +366,7 @@ def quadrature_eigenstates_Abc(
     A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
     b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
     c = math.cast(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)), math.complex128)
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 #  ~~~~~~~~~~~~
