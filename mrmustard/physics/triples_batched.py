@@ -100,7 +100,8 @@ def _reshape(**kwargs) -> Generator:
 #  Pure States
 #  ~~~~~~~~~~~
 
-
+# TODO: how to handle batching here?
+# i.e. does it always output batch (1,)?
 def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of vacuum states on ``n_modes``.
@@ -118,72 +119,73 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def bargmann_eigenstate_Abc(x: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def bargmann_eigenstate_Abc(alpha: complex | Iterable[complex]) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The Abc triple of a Bargmann eigenstate.
+
+    Args:
+        alpha: The eigenvalue of the Bargmann eigenstate.
+
+    Returns:
+        The ``(A, b, c)`` triple of the Bargmann eigenstate.
     """
-    x = list(_reshape(x=x))
-    nmodes = len(x[0])
-    A = _vacuum_A_matrix(nmodes)
-    b = x
-    c = 1
-    return A, b, c
+    batch_size, _ = _compute_batch_size(alpha)
+    batch_shape = batch_size or (1,)
+
+    A = np.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
+    b = math.cast(math.reshape(alpha, batch_shape + (1,)), math.complex128)
+    c = math.ones(batch_shape, math.complex128)
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def coherent_state_Abc(
     x: float | Iterable[float], y: float | Iterable[float] = 0
-) -> Union[Matrix, Vector, Scalar]:
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of pure coherent states.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``x=[1,2,3]`` and ``y=1`` is equivalent to passing
-    ``x=[1,2,3]`` and ``y=[1,1,1]``.
+    The ``(A, b, c)`` triple of a pure coherent state.
 
     Args:
-        x: The real parts of the displacements, in units of :math:`\sqrt{\hbar}`.
-        y: The imaginary parts of the displacements, in units of :math:`\sqrt{\hbar}`.
+        x: The real part of the displacement, in units of :math:`\sqrt{\hbar}`.
+        y: The imaginary part of the displacement, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
-        The ``(A, b, c)`` triple of the pure coherent states.
+        The ``(A, b, c)`` triple of the pure coherent state.
     """
-    x, y = list(_reshape(x=x, y=y))
-    n_modes = 1
+    batch_size, _ = _compute_batch_size(x, y)
+    batch_shape = batch_size or (1,)
 
-    A = _vacuum_A_matrix(n_modes)
-    b = x + 1j * y
-    c = math.prod(math.exp(-0.5 * (x**2 + y**2)))
+    x = np.broadcast_to(x, batch_shape)
+    y = np.broadcast_to(y, batch_shape)
 
-    return A, b, c
+    A = np.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
+    b = math.reshape(x + 1j * y, batch_shape + (1,))
+    c = math.cast(math.exp(-0.5 * (x**2 + y**2)), math.complex128)
+
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def squeezed_vacuum_state_Abc(
-    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    r: float | Iterable[float], phi: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of squeezed vacuum states.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+    The ``(A, b, c)`` triple of a squeezed vacuum state.
 
     Args:
         r: The squeezing magnitudes.
         phi: The squeezing angles.
 
     Returns:
-        The ``(A, b, c)`` triple of the squeezed vacuum states.
+        The ``(A, b, c)`` triple of a squeezed vacuum state.
     """
-    r, phi = list(_reshape(r=r, phi=phi))
-    n_modes = len(r)
+    batch_size, _ = _compute_batch_size(r, phi)
+    batch_shape = batch_size or (1,)
 
-    A = math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
-    b = _vacuum_B_vector(n_modes)
-    c = math.prod(1 / math.sqrt(math.cosh(r)))
+    r = np.broadcast_to(r, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
+
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
+    b = math.tile(_vacuum_B_vector(1), batch_shape + (1,))
+    c = 1 / math.sqrt(math.cosh(r))
 
     return A, b, c
 
@@ -426,7 +428,7 @@ def rotation_gate_Abc(
     b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
     c = math.ones(batch_shape, math.complex128)
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def displacement_gate_Abc(
@@ -452,7 +454,7 @@ def displacement_gate_Abc(
     b = np.stack([x + 1j * y, -x + 1j * y], batch_dim)
     c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def squeezing_gate_Abc(
@@ -509,7 +511,7 @@ def beamsplitter_gate_Abc(
     theta = np.broadcast_to(theta, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
-    O_n = math.zeros(batch_shape + (2, 2), math.complex128)
+    O = math.zeros(batch_shape + (2, 2), math.complex128)
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
@@ -524,9 +526,7 @@ def beamsplitter_gate_Abc(
     perm = tuple(range(len(V.shape)))
     perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
-    A = math.concat(
-        [math.concat([O_n, V], -1), math.concat([math.transpose(V, perm), O_n], -1)], -2
-    )
+    A = math.concat([math.concat([O, V], -1), math.concat([math.transpose(V, perm), O], -1)], -2)
     b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
     c = math.ones(batch_shape, math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -576,6 +576,7 @@ def twomode_squeezing_gate_Abc(
 
 
 # TODO: how to handle batching here?
+# i.e. does it always output batch (1,)?
 def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of identity gates.
