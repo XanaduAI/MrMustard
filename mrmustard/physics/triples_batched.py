@@ -187,23 +187,17 @@ def squeezed_vacuum_state_Abc(
     b = math.tile(_vacuum_B_vector(1), batch_shape + (1,))
     c = 1 / math.sqrt(math.cosh(r))
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: Union[float, Iterable[float]],
-    y: Union[float, Iterable[float]] = 0,
-    r: Union[float, Iterable[float]] = 0,
-    phi: Union[float, Iterable[float]] = 0,
-) -> Union[Matrix, Vector, Scalar]:
+    x: float | Iterable[float],
+    y: float | Iterable[float] = 0,
+    r: float | Iterable[float] = 0,
+    phi: float | Iterable[float] = 0,
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of displazed squeezed vacuum states.
-
-    The number of modes depends on the length of the input parameters.
-
-    If some of the input parameters have length ``1``, they are tiled so that their length
-    matches that of the other ones. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent
-    to passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+    The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
 
     Args:
         r: The squeezing magnitudes.
@@ -212,19 +206,28 @@ def displaced_squeezed_vacuum_state_Abc(
         y: The imaginary parts of the displacements, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
-        The ``(A, b, c)`` triple of the squeezed vacuum states.
+        The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    x, y, r, phi = list(_reshape(x=x, y=y, r=r, phi=phi))
+    batch_size, _ = _compute_batch_size(x, y, r, phi)
+    batch_shape = batch_size or (1,)
 
-    A = math.diag(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi))
-    b = (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+    x = np.broadcast_to(x, batch_shape)
+    y = np.broadcast_to(y, batch_shape)
+    r = np.broadcast_to(r, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
+
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
+    b = math.reshape(
+        (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
+        batch_shape + (1,),
+    )
     c = math.exp(
         -0.5 * (x**2 + y**2)
         - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
     )
-    c = math.prod(c / math.sqrt(math.cosh(r)))
+    c = c / math.sqrt(math.cosh(r))
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def two_mode_squeezed_vacuum_state_Abc(
@@ -311,7 +314,10 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     )
 
 
-def sauron_state_Abc(n: int, epsilon: float):
+# TODO: how to handle batching here? In particular linspace :(
+def sauron_state_Abc(
+    n: int | Iterable[int], epsilon: float | Iterable[float]
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
     ring of coherent states.
@@ -339,30 +345,30 @@ def sauron_state_Abc(n: int, epsilon: float):
     return As, bs, cs
 
 
-def quadrature_eigenstates_Abc(x: float, phi: float) -> Union[Matrix, Vector, Scalar]:
+def quadrature_eigenstates_Abc(
+    x: float | Iterable[float], phi: float | Iterable[float]
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of quadrature eigenstates.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``x=[1,2,3]`` and ``phi=1`` is equivalent to
-    passing ``x=[1,2,3]`` and ``phi=[1,1,1]``.
+    The ``(A, b, c)`` triple of a quadrature eigenstate.
 
     Args:
         r: The squeezing magnitudes.
         phi: The squeezing angles.
 
     Returns:
-        The ``(A, b, c)`` triple of the squeezed vacuum states.
+        The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
     hbar = settings.HBAR
-    x, phi = list(_reshape(x=x, phi=phi))
 
-    A = -math.diag(math.exp(1j * 2 * phi))
-    b = x * math.exp(1j * phi) * math.sqrt(2 / hbar)
-    c = math.prod(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)))
+    batch_size, _ = _compute_batch_size(x, phi)
+    batch_shape = batch_size or (1,)
 
+    x = np.broadcast_to(x, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
+
+    A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
+    b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
+    c = math.cast(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)), math.complex128)
     return A, b, c
 
 
