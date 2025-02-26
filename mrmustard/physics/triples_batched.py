@@ -41,17 +41,18 @@ def _compute_batch_size(*args) -> tuple[int, ...] | None:
         *args: The input arguments.
 
     Returns:
-        The final batch size of the input arguments.
+        The final batch size and batch dimension of the input arguments.
     """
     batch_size = None
     for arg in args:
+        arg = math.astensor(arg)
         if arg.shape:
             if batch_size is None:
                 batch_size = arg
             else:
                 batch_size = batch_size * arg
     batch_size = batch_size.shape if batch_size is not None else None
-    return batch_size
+    return batch_size, len(batch_size or (1,))
 
 
 def _X_matrix_for_unitary(n_modes: int) -> Matrix:
@@ -451,64 +452,56 @@ def displacement_gate_Abc(
 
 
 def squeezing_gate_Abc(
-    r: Union[float, Iterable[float]], delta: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    r: float | Iterable[float], delta: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of squeezing gates.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``r=[1,2,3]`` and ``delta=1`` is equivalent to
-    passing ``r=[1,2,3]`` and ``delta=[1,1,1]``.
+    The ``(A, b, c)`` triple of a squeezing gate.
 
     Args:
         r: The squeezing magnitudes.
         delta: The squeezing angles.
 
     Returns:
-        The ``(A, b, c)`` triple of the squeezing gates.
+        The ``(A, b, c)`` triple of the squeezing gate.
     """
-    r, delta = _reshape(r=r, delta=delta)
-    n_modes = len(delta)
+    batch_size, batch_dim = _compute_batch_size(r, delta)
+    batch_shape = batch_size or (1,)
 
-    tanhr = math.diag(math.sinh(r) / math.cosh(r))
-    sechr = math.diag(1 / math.cosh(r))
+    r = np.broadcast_to(r, batch_shape)
+    delta = np.broadcast_to(delta, batch_shape)
 
-    A = math.block([[-math.exp(1j * delta) * tanhr, sechr], [sechr, math.exp(-1j * delta) * tanhr]])
-    b = _vacuum_B_vector(n_modes * 2)
-    c = math.prod(1 / math.sqrt(math.cosh(r)))
+    tanhr = math.sinh(r) / math.cosh(r)
+    sechr = 1 / math.cosh(r)
 
-    return A, b, c
+    A = np.stack(
+        [
+            np.stack([-math.exp(1j * delta) * tanhr, sechr], batch_dim),
+            np.stack([sechr, math.exp(-1j * delta) * tanhr], batch_dim),
+        ],
+        batch_dim,
+    )
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    c = math.cast(1 / math.sqrt(math.cosh(r)), math.complex128)
+
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def beamsplitter_gate_Abc(
     theta: float | Iterable[float], phi: float | Iterable[float] = 0
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of two-mode beamsplitter gates.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``theta=[1,2,3]`` and ``phi=1`` is equivalent to
-    passing ``theta=[1,2,3]`` and ``phi=[1,1,1]``.
+    The ``(A, b, c)`` triple of a tensor product of a two-mode beamsplitter gate.
 
     Args:
         theta: The transmissivity parameters.
         phi: The phase parameters.
 
     Returns:
-        The ``(A, b, c)`` triple of the beamsplitter gates.
+        The ``(A, b, c)`` triple of the beamsplitter gate.
     """
-    theta = math.astensor(theta)
-    phi = math.astensor(phi)
-
-    batch_size = _compute_batch_size(theta, phi)
+    batch_size, batch_dim = _compute_batch_size(theta, phi)
     batch_shape = batch_size or (1,)
-    batch_dim = len(batch_shape)
 
-    # TODO: use math.broadcast_to
     theta = np.broadcast_to(theta, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
@@ -516,7 +509,6 @@ def beamsplitter_gate_Abc(
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
-    # TODO: use math.stack
     V = np.stack(
         [
             np.stack([costheta, -math.exp(math.astensor(-1j) * phi) * sintheta], batch_dim),
@@ -538,35 +530,24 @@ def beamsplitter_gate_Abc(
 
 def twomode_squeezing_gate_Abc(
     r: float | Iterable[float], phi: float | Iterable[float] = 0
-) -> Union[Matrix, Vector, Scalar]:
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of two-mode squeezing gates.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``r=[1,2,3]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3]`` and ``phi=[1,1,1]``.
+    The ``(A, b, c)`` triple of a tensor product of a two-mode squeezing gate.
 
     Args:
         r: The squeezing magnitudes.
         phi: The squeezing phase.
 
     Returns:
-        The ``(A, b, c)`` triple of the two mode squeezing gates.
+        The ``(A, b, c)`` triple of the two mode squeezing gate.
     """
-    r = math.astensor(r)
-    phi = math.astensor(phi)
-
-    batch_size = _compute_batch_size(r, phi)
+    batch_size, batch_dim = _compute_batch_size(r, phi)
     batch_shape = batch_size or (1,)
-    batch_dim = len(batch_shape)
 
     r = np.broadcast_to(r, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
     O = math.zeros(batch_shape, math.complex128)
-
     tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
     sechr = 1 / math.cosh(r)
 
@@ -590,6 +571,7 @@ def twomode_squeezing_gate_Abc(
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
+# TODO: how to handle batching here?
 def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of identity gates.
