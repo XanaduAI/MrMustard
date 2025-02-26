@@ -231,34 +231,32 @@ def displaced_squeezed_vacuum_state_Abc(
 
 
 def two_mode_squeezed_vacuum_state_Abc(
-    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
-) -> Union[Matrix, Vector, Scalar]:
+    r: float | Iterable[float], phi: float | Iterable[float] = 0
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of two mode squeezed vacuum states.
-
-    The number of modes depends on the length of the input parameters.
-
-    If one of the input parameters has length ``1``, it is tiled so that its length matches
-    that of the other one. For example, passing ``r=[1,2,3,4]`` and ``phi=1`` is equivalent to
-    passing ``r=[1,2,3,4]`` and ``phi=[1,1,1,1]``.
+    The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
 
     Args:
         r: The squeezing magnitudes.
         phi: The squeezing angles.
 
     Returns:
-        The ``(A, b, c)`` triple of the squeezed vacuum states.
+        The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    r, phi = list(_reshape(r=r, phi=phi))
-    n_modes = 2 * len(r)
-    O = math.zeros((len(r), len(r)), math.complex128)
-    tanhr = math.diag(-math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
+    batch_size, batch_dim = _compute_batch_size(r, phi)
+    batch_shape = batch_size or (1,)
 
-    A = math.block([[O, tanhr], [tanhr, O]])
-    b = _vacuum_B_vector(n_modes)
-    c = math.prod(1 / math.cosh(r))
+    r = np.broadcast_to(r, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
 
-    return A, b, c
+    O = math.zeros(batch_shape, math.complex128)
+    tanhr = -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
+
+    A = np.stack([np.stack([O, tanhr], batch_dim), np.stack([tanhr, O], batch_dim)], batch_dim)
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    c = math.cast(1 / math.cosh(r), math.complex128)
+
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def gket_state_Abc(symplectic: RealMatrix):
@@ -314,7 +312,6 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     )
 
 
-# TODO: how to handle batching here? In particular linspace :(
 def sauron_state_Abc(
     n: int | Iterable[int], epsilon: float | Iterable[float]
 ) -> tuple[Matrix, Vector, Scalar]:
