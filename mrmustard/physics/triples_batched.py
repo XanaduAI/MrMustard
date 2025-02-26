@@ -76,26 +76,6 @@ def _vacuum_B_vector(n_modes: int) -> Vector:
     return math.zeros((n_modes,), math.complex128)
 
 
-def _reshape(**kwargs) -> Generator:
-    r"""
-    A utility function to reshape parameters.
-    """
-    names = list(kwargs.keys())
-    vars = list(kwargs.values())
-
-    vars = [math.atleast_1d(var, math.complex128) for var in vars]
-    n_modes = max(len(var) for var in vars)
-
-    for i, var in enumerate(vars):
-        if len(var) == 1:
-            var = math.tile(var, (n_modes,))
-        else:
-            if len(var) != n_modes:
-                msg = f"Parameter {names[i]} has an incompatible shape."
-                raise ValueError(msg)
-        yield var
-
-
 #  ~~~~~~~~~~~
 #  Pure States
 #  ~~~~~~~~~~~
