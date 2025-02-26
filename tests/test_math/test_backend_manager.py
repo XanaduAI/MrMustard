@@ -257,6 +257,14 @@ class TestBackendManager:
         assert R.shape == (8, 8)
         assert np.allclose(math.block([[I, O], [O, 1j * I]]), R)
 
+    def test_broadcast_to(self):
+        r"""
+        Tests the ``broadcast_to`` method.
+        """
+        arr = np.array([1, 2, 3])
+        res = math.asnumpy(math.broadcast_to(arr, (3, 3)))
+        assert np.allclose(res, np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
+
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):
         r"""

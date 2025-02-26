@@ -103,6 +103,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
+        return np.broadcast_to(array, shape)
+
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
 

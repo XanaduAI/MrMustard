@@ -109,6 +109,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
+        return tf.broadcast_to(array, shape)
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 
