@@ -143,8 +143,8 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.sort(array, axis)
 
     @jax.jit
-    def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9) -> bool:
-        return jnp.allclose(array1, array2, atol=atol)
+    def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9, rtol=1e-5) -> bool:
+        return jnp.allclose(array1, array2, atol=atol, rtol=rtol)
 
     @partial(jax.jit, static_argnames=["a_min", "a_max"])
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
