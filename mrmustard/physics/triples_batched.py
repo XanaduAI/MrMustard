@@ -398,26 +398,33 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 
 
 def rotation_gate_Abc(
-    theta: Union[float, Iterable[float]],
-) -> Union[Matrix, Vector, Scalar]:
+    theta: float | Iterable[float],
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of of a tensor product of rotation gates.
-
-    The number of modes depends on the length of the input parameters.
+    The ``(A, b, c)`` triple of of a tensor product of a rotation gate.
 
     Args:
         theta: The rotation angles.
 
     Returns:
-        The ``(A, b, c)`` triple of the rotation gates.
+        The ``(A, b, c)`` triple of the rotation gate.
     """
-    theta = math.atleast_1d(theta, math.complex128)
-    n_modes = len(theta)
+    batch_size, batch_dim = _compute_batch_size(theta)
+    batch_shape = batch_size or (1,)
 
-    A = math.astensor([[0, 1], [1, 0]], math.complex128)
-    A = math.kron(A, math.exp(1j * theta) * math.eye(n_modes, math.complex128))
-    b = _vacuum_B_vector(n_modes * 2)
-    c = 1.0 + 0j
+    theta = np.broadcast_to(theta, batch_shape)
+
+    O = math.zeros(batch_shape, math.complex128)
+
+    A = np.stack(
+        [
+            np.stack([O, math.exp(1j * theta)], batch_dim),
+            np.stack([math.exp(1j * theta), O], batch_dim),
+        ],
+        batch_dim,
+    )
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
 
