@@ -508,6 +508,7 @@ def beamsplitter_gate_Abc(
     batch_shape = batch_size or (1,)
     batch_dim = len(batch_shape)
 
+    # TODO: use math.broadcast_to
     theta = np.broadcast_to(theta, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
@@ -536,7 +537,7 @@ def beamsplitter_gate_Abc(
 
 
 def twomode_squeezing_gate_Abc(
-    r: Union[float, Iterable[float]], phi: Union[float, Iterable[float]] = 0
+    r: float | Iterable[float], phi: float | Iterable[float] = 0
 ) -> Union[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of two-mode squeezing gates.
@@ -554,24 +555,39 @@ def twomode_squeezing_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the two mode squeezing gates.
     """
-    r, phi = _reshape(r=r, phi=phi)
-    n_modes = 2 * len(r)
+    r = math.astensor(r)
+    phi = math.astensor(phi)
 
-    O = math.zeros((len(r), len(r)), math.complex128)
-    tanhr = math.diag(math.exp(1j * phi) * math.sinh(r) / math.cosh(r))
-    sechr = math.diag(1 / math.cosh(r))
+    batch_size = _compute_batch_size(r, phi)
+    batch_shape = batch_size or (1,)
+    batch_dim = len(batch_shape)
 
-    A_block1 = math.block([[O, tanhr], [tanhr, O]])
+    r = np.broadcast_to(r, batch_shape)
+    phi = np.broadcast_to(phi, batch_shape)
 
-    A_block2 = math.block([[O, -math.conj(tanhr)], [-math.conj(tanhr), O]])
+    O = math.zeros(batch_shape, math.complex128)
 
-    A_block3 = math.block([[sechr, O], [O, sechr]])
+    tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
+    sechr = 1 / math.cosh(r)
 
-    A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
-    b = _vacuum_B_vector(n_modes * 2)
-    c = math.prod(1 / math.cosh(r))
+    A_block1 = np.stack(
+        [np.stack([O, tanhr], batch_dim), np.stack([tanhr, O], batch_dim)], batch_dim
+    )
+    A_block2 = np.stack(
+        [np.stack([O, -math.conj(tanhr)], batch_dim), np.stack([-math.conj(tanhr), O], batch_dim)],
+        batch_dim,
+    )
+    A_block3 = np.stack(
+        [np.stack([sechr, O], batch_dim), np.stack([O, sechr], batch_dim)], batch_dim
+    )
 
-    return A, b, c
+    A = math.concat(
+        [math.concat([A_block1, A_block3], -1), math.concat([A_block3, A_block2], -1)], -2
+    )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    c = math.cast(1 / math.cosh(r), math.complex128)
+
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
