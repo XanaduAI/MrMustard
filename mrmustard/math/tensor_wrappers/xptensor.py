@@ -486,7 +486,9 @@ class XPTensor(ABC):
             else:
                 raise ValueError("Usage: V[1], V[[1,2,3]] or V[:]")
             rows = [self.outmodes.index(m) for m in modes]
-            return XPVector(math.gather(self.tensor, math.astensor(rows), axis=0), modes)
+            return XPVector(
+                math.gather(self.tensor, math.astensor(rows), axis=0), modes
+            )  # pragma: no cover
 
         _modes = [None, None]
         if isinstance(modes, int):
