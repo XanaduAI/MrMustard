@@ -176,7 +176,7 @@ class Sampler(ABC):
             not math.allclose(prob_sum, 1),
             f"Probabilities sum to {prob_sum} and not 1.0.",
         )
-        return probs / prob_sum
+        return math.real(probs / prob_sum)
 
 
 class PNRSampler(Sampler):
