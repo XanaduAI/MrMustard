@@ -54,6 +54,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
+    int64 = tf.int64
     float32 = tf.float32
     float64 = tf.float64
     complex64 = tf.complex64
@@ -69,12 +70,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
-    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
+    def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         array1 = self.astensor(array1)
         array2 = self.astensor(array2)
         if array1.shape != array2.shape:
             raise ValueError("Cannot compare arrays of different shapes.")
-        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
@@ -194,8 +195,22 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
-        indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+        indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
+
+    def conditional(
+        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+    ) -> tf.Tensor:
+        if tf.reduce_all(cond):
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
+
+    def error_if(
+        self, array: tf.Tensor, condition: tf.Tensor, msg: str
+    ):  # pylint: disable=unused-argument
+        if tf.reduce_any(condition):
+            raise ValueError(msg)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
@@ -266,6 +281,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
+
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return tf.fill(array.shape, np.inf)
 
     @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:

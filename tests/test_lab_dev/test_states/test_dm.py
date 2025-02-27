@@ -135,8 +135,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
         assert math.allclose(coeff, math.atleast_1d(1.0))
-        assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(settings.HBAR * 2))
+        assert math.allclose(cov[0], math.eye(2) * settings.HBAR / 2)
+        assert math.allclose(means[0], math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
 
         # test error
         with pytest.raises(ValueError):
