@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
-
 
 class TestS2gate:
     r"""
@@ -57,9 +57,9 @@ class TestS2gate:
                 [0, sechr, -np.conj(tanhr), 0],
             ]
         ]
-        assert np.allclose(rep1.A, A_exp)
-        assert np.allclose(rep1.b, np.zeros((1, 4)))
-        assert np.allclose(rep1.c, [1 / np.cosh(0.1)])
+        assert math.allclose(rep1.A, A_exp)
+        assert math.allclose(rep1.b, np.zeros((1, 4)))
+        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
 
     def test_trainable_parameters(self):
         gate1 = S2gate([0, 1], 1, 1)
@@ -79,6 +79,6 @@ class TestS2gate:
         rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=-1, phi=0.5)).ansatz
         rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).ansatz
 
-        assert np.allclose(rep1.A, rep2.A)
-        assert np.allclose(rep1.b, rep2.b)
-        assert np.allclose(rep1.c, rep2.c)
+        assert math.allclose(rep1.A, rep2.A)
+        assert math.allclose(rep1.b, rep2.b)
+        assert math.allclose(rep1.c, rep2.c)

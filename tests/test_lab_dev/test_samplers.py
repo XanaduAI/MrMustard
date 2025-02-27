@@ -38,17 +38,15 @@ class TestPNRSampler:
         atol = 1e-4
 
         sampler = PNRSampler(cutoff=10)
-        vac_prob = math.astensor([1.0] + [0.0] * 99)
+        vac_prob = [1.0] + [0.0] * 99
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
 
         coh_state = Coherent([0, 1], x=[0.5, 1])
-        exp_probs = math.astensor(
-            [
-                (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
-                for n0 in range(10)
-                for n1 in range(10)
-            ]
-        )
+        exp_probs = [
+            (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
+            for n0 in range(10)
+            for n1 in range(10)
+        ]
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
     def test_sample(self):
@@ -69,7 +67,7 @@ class TestPNRSampler:
             count[idx] += 1
         probs = count / n_samples
 
-        assert math.allclose(probs, sampler.probabilities(state), atol=1e-2)
+        assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
 
 
 class TestHomodyneSampler:
@@ -77,22 +75,16 @@ class TestHomodyneSampler:
     Tests ``HomodyneSampler`` objects.
     """
 
-    def test_sample_mean_and_std_vacuum(self):
-        r"""
-        Porting test from strawberry fields:
-        https://github.com/XanaduAI/strawberryfields/blob/master/tests/backend/test_homodyne.py#L40
-        """
-        N_MEAS = 300
-        NUM_STDS = 10.0
-        std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        tol = settings.ATOL
+    def test_init(self):
+        sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
+        assert sampler.povms is None
+        assert sampler._phi == 0.5
+        assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
 
-        state = Vacuum([0, 1])
+    def test_povm_error(self):
         sampler = HomodyneSampler()
-
-        meas_result = sampler.sample(state, N_MEAS)
-        assert math.allclose(meas_result.mean(axis=0), [0.0, 0.0], atol=std_10 + tol)
-        assert math.allclose(meas_result.std(axis=0), [1.0, 1.0], atol=std_10 + tol)
+        with pytest.raises(ValueError, match="no POVMs"):
+            sampler._get_povm(0, 0)
 
     def test_probabilties(self):
         sampler = HomodyneSampler()
@@ -128,13 +120,19 @@ class TestHomodyneSampler:
             meas_result.mean(axis=0), settings.HBAR * math.real(alpha), atol=std_10 + tol
         )
 
-    def test_init(self):
-        sampler = HomodyneSampler(phi=0.5, bounds=(-5, 5), num=100)
-        assert sampler.povms is None
-        assert sampler._phi == 0.5
-        assert math.allclose(sampler.meas_outcomes, np.linspace(-5, 5, 100))
+    def test_sample_mean_and_std_vacuum(self):
+        r"""
+        Porting test from strawberry fields:
+        https://github.com/XanaduAI/strawberryfields/blob/master/tests/backend/test_homodyne.py#L40
+        """
+        N_MEAS = 300
+        NUM_STDS = 10.0
+        std_10 = NUM_STDS / np.sqrt(N_MEAS)
+        tol = settings.ATOL
 
-    def test_povm_error(self):
+        state = Vacuum([0, 1])
         sampler = HomodyneSampler()
-        with pytest.raises(ValueError, match="no POVMs"):
-            sampler._get_povm(0, 0)
+
+        meas_result = sampler.sample(state, N_MEAS)
+        assert math.allclose(meas_result.mean(axis=0), [0.0, 0.0], atol=std_10 + tol)
+        assert math.allclose(meas_result.std(axis=0), [1.0, 1.0], atol=std_10 + tol)
