@@ -23,7 +23,7 @@ from typing import Iterable
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix, ComplexMatrix
+from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from .bargmann_utils import symplectic2Au
 

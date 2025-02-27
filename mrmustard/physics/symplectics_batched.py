@@ -183,6 +183,7 @@ def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
     The symplectic matrix of a quadratic phase gate.
 
     Args:
+        n_modes: The number of modes.
         shearing: The shearing parameter.
 
     Returns:
