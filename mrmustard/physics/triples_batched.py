@@ -633,43 +633,41 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
 
 def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of amplifiers.
-
-    The number of modes depends on the length of the input parameters.
+    The ``(A, b, c)`` triple of an amplifier.
 
     Args:
         g: The values of the gains.
 
     Returns:
-        The ``(A, b, c)`` triple of the amplifier channels.
+        The ``(A, b, c)`` triple of the amplifier channel.
 
     Raises:
         ValueError: If ``g`` is smaller than `1`.
     """
-    g = math.atleast_1d(g, math.complex128)
-    n_modes = len(g)
+    batch_size, batch_dim = _compute_batch_size(g)
+    batch_shape = batch_size or (1,)
 
-    for g_val in g:
-        if math.real(g_val) < 1:
-            msg = "Found amplifier with gain ``g`` smaller than `1`."
-            raise ValueError(msg)
+    g = np.broadcast_to(g, batch_shape)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    g1 = math.reshape(math.diag(1 / math.sqrt(g)), (n_modes, n_modes))
-    g2 = math.reshape(math.diag(1 - 1 / g), (n_modes, n_modes))
-    A = math.block(
+    if math.any(math.real(g) < 1):
+        raise ValueError("Found amplifier with gain ``g`` smaller than `1`.")
+
+    O = math.zeros(batch_shape, math.complex128)
+    g1 = 1 / math.sqrt(g)
+    g2 = 1 - 1 / g
+    A = np.stack(
         [
-            [O_n, g1, g2, O_n],
-            [g1, O_n, O_n, O_n],
-            [g2, O_n, O_n, g1],
-            [O_n, O_n, g1, O_n],
-        ]
+            np.stack([O, g1, g2, O], batch_dim),
+            np.stack([g1, O, O, O], batch_dim),
+            np.stack([g2, O, O, g1], batch_dim),
+            np.stack([O, O, g1, O], batch_dim),
+        ],
+        batch_dim,
     )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    c = math.cast(1 / g, math.complex128)
 
-    b = _vacuum_B_vector(n_modes * 4)
-    c = math.prod(1 / g)
-
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def fock_damping_Abc(
@@ -823,6 +821,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     return math.astensor(A), b, c
 
 
+#  TODO: how to handle batching here?
 def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
