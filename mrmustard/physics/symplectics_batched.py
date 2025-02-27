@@ -71,7 +71,7 @@ def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     O_matrix = math.zeros(batch_shape, math.complex128)
     I_matrix = math.ones(batch_shape, math.complex128)
 
-    return np.stack(
+    symplectic = np.stack(
         [
             np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
             np.stack([s, I_matrix, O_matrix, O_matrix], batch_dim),
@@ -80,9 +80,10 @@ def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
         ],
         batch_dim,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
-def czgate_symplectic(s: float) -> Matrix:
+def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled Z gate.
 
@@ -92,7 +93,24 @@ def czgate_symplectic(s: float) -> Matrix:
     Returns:
         The symplectic matrix of a CZ gate.
     """
-    return math.astensor([[1, 0, 0, 0], [0, 1, 0, 0], [0, s, 1, 0], [s, 0, 0, 1]])
+    batch_size, batch_dim = _compute_batch_size(s)
+    batch_shape = batch_size or (1,)
+
+    s = np.broadcast_to(s, batch_shape)
+
+    O_matrix = math.zeros(batch_shape, math.complex128)
+    I_matrix = math.ones(batch_shape, math.complex128)
+
+    symplectic = np.stack(
+        [
+            np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([O_matrix, s, I_matrix, O_matrix], batch_dim),
+            np.stack([s, O_matrix, O_matrix, I_matrix], batch_dim),
+        ],
+        batch_dim,
+    )
+    return symplectic if batch_size else symplectic[0]
 
 
 def interferometer_symplectic(unitary: Matrix) -> Matrix:
@@ -105,9 +123,17 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
     Returns:
         The symplectic matrix of an N-mode interferometer.
     """
-    return math.block(
-        [[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]]
+    batch_size = unitary.shape[:-2]
+    batch_shape = batch_size or (1,)
+    unitary = np.broadcast_to(unitary, batch_shape + unitary.shape[-2:])
+    symplectic = np.concat(
+        [
+            np.concat([math.real(unitary), -math.imag(unitary)], -1),
+            np.concat([math.imag(unitary), math.real(unitary)], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
 def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
@@ -180,6 +206,14 @@ def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
     Returns:
         The symplectic matrix of an N-mode interferometer.
     """
-    return math.block(
-        [[orthogonal, -math.zeros_like(orthogonal)], [math.zeros_like(orthogonal), orthogonal]]
+    batch_size = orthogonal.shape[:-2]
+    batch_shape = batch_size or (1,)
+    orthogonal = np.broadcast_to(orthogonal, batch_shape + orthogonal.shape[-2:])
+    symplectic = np.concat(
+        [
+            np.concat([orthogonal, -math.zeros_like(orthogonal)], -1),
+            np.concat([math.zeros_like(orthogonal), orthogonal], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]

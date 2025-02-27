@@ -703,7 +703,7 @@ def fock_damping_Abc(
     b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
