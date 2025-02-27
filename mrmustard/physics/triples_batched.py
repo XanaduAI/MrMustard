@@ -18,7 +18,7 @@ various states and transformations.
 """
 from __future__ import annotations
 
-from typing import Iterable, Union
+from typing import Iterable
 
 import numpy as np
 
@@ -674,7 +674,7 @@ def fock_damping_Abc(
     beta: float | Iterable[float],
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of a tensor product of Fock dampers.
+    The ``(A, b, c)`` triple of a Fock damper.
 
     Args:
         beta: The damping parameter.
@@ -682,15 +682,17 @@ def fock_damping_Abc(
     Returns:
         The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    beta = math.atleast_1d(beta, math.complex128)
-    n_modes = len(beta)
+    batch_size, batch_dim = _compute_batch_size(beta)
+    batch_shape = batch_size or (1,)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
+    beta = np.broadcast_to(beta, batch_shape)
 
-    A = math.block([[O_n, B_n], [B_n, O_n]])
-    b = _vacuum_B_vector(n_modes * 2)
-    c = 1.0 + 0j
+    O_n = math.zeros(batch_shape, math.complex128)
+    B_n = math.exp(-beta)
+
+    A = np.stack([np.stack([O_n, B_n], batch_dim), np.stack([B_n, O_n], batch_dim)], batch_dim)
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
 
