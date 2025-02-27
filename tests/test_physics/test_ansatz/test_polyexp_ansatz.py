@@ -436,3 +436,103 @@ class TestPolyExpAnsatz:
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
         assert np.allclose(bargmann.c, c)
+
+    def test_batch_evaluation(self):
+        """Test various batch evaluation scenarios for PolyExpAnsatz."""
+        # Create a batched ansatz with batch size 4
+        A = np.random.random((3, 3))
+        A = A + A.T  # Make it symmetric
+        b = np.random.random(3)
+        c = np.random.random()
+        ansatz = PolyExpAnsatz([A, A, A, A], [b, b, b, b], [c, c, c, c], num_derived_vars=0)
+
+        # Test batch size
+        assert ansatz.batch_size == 4
+
+        # Test evaluation at a single point
+        val = ansatz(1.0, 2.0, 3.0)
+        assert val.shape == (4,)
+
+        # Test evaluation at multiple points with 'kron' mode (Cartesian product)
+        vals_kron = ansatz([1.0, 2.0], [0.3, -0.34], [0.4, 0.5, 0.3], batch_mode="kron")
+        assert vals_kron.shape == (4, 2, 2, 3)
+
+        # Test evaluation at multiple points with 'zip' mode (element-wise)
+        vals_zip = ansatz([1.0, 2.0], [0.3, -0.34], [0.4, 0.5], batch_mode="zip")
+        assert vals_zip.shape == (4, 2)
+
+        # Test partial evaluation at a single point
+        new_ansatz = ansatz(1.0, 1.0, None)
+        assert new_ansatz.batch_size == 4
+
+        # Test partial evaluation with batch
+        new_ansatz_batch = ansatz([1.0, 2.0], [1.0, 2.0], None)
+        assert new_ansatz_batch.batch_size == 8  # 4 * 2 = 8
+
+        # Test full control with explicit eval
+        points = np.random.random((7, 2, 5, 3))
+        vals_eval = ansatz.eval(points)
+        assert vals_eval.shape == (4, 7, 2, 5)
+
+    def test_batch_mode_parameter(self):
+        """Test the batch_mode parameter in the __call__ method."""
+        # Create a simple ansatz
+        A = np.random.random((3, 3))
+        A = A + A.T  # Make it symmetric
+        b = np.random.random(3)
+        c = np.random.random()
+        ansatz = PolyExpAnsatz(A, b, c)
+
+        # Test default mode (kron)
+        x = np.array([1.0, 2.0])
+        y = np.array([3.0, 4.0])
+        z = np.array([5.0, 6.0])
+
+        # Default mode is 'kron'
+        result_default = ansatz(x, y, z)
+        result_kron = ansatz(x, y, z, batch_mode="kron")
+        assert np.allclose(result_default, result_kron)
+        assert result_kron.shape == (1, 2, 2, 2)  # (len(x), len(y), len(z))
+
+        # Test 'zip' mode
+        result_zip = ansatz(x, y, z, batch_mode="zip")
+        assert result_zip.shape == (1, 2)  # (batch_size, len(x))
+
+        # Test error with mismatched batch sizes in zip mode
+        x_long = np.array([1.0, 2.0, 3.0])
+        with pytest.raises(ValueError, match="all z vectors must have the same batch size"):
+            ansatz(x_long, y, z, batch_mode="zip")
+
+        # Test error with multi-dimensional arrays in kron mode
+        x_2d = np.array([[1.0, 2.0], [3.0, 4.0]])
+        with pytest.raises(ValueError, match="cannot have a batch dimension"):
+            ansatz(x_2d, y, z, batch_mode="kron")
+
+    def test_eval_method(self):
+        """Test the eval method with various batch shapes."""
+        # Create a batched ansatz
+        A = np.random.random((3, 3))
+        A = A + A.T  # Make it symmetric
+        b = np.random.random(3)
+        c = np.random.random()
+        ansatz = PolyExpAnsatz([A, A, A], [b, b, b], [c, c, c], num_derived_vars=0)
+
+        # Test with 1D batch shape
+        points_1d = np.random.random((5, 3))  # 5 points, 3 variables
+        result_1d = ansatz.eval(points_1d)
+        assert result_1d.shape == (3, 5)  # (batch_size, num_points)
+
+        # Test with 2D batch shape
+        points_2d = np.random.random((4, 6, 3))  # 4x6 grid of points, 3 variables
+        result_2d = ansatz.eval(points_2d)
+        assert result_2d.shape == (3, 4, 6)  # (batch_size, *batch_shape)
+
+        # Test with 3D batch shape
+        points_3d = np.random.random((2, 3, 4, 3))  # 2x3x4 grid of points, 3 variables
+        result_3d = ansatz.eval(points_3d)
+        assert result_3d.shape == (3, 2, 3, 4)  # (batch_size, *batch_shape)
+
+        # Test error with incorrect number of variables
+        points_wrong = np.random.random((5, 4))  # 5 points, 4 variables (should be 3)
+        with pytest.raises(ValueError, match="must equal the number of CV variables"):
+            ansatz.eval(points_wrong)

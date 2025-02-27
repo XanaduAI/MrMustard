@@ -398,18 +398,25 @@ class PolyExpAnsatz(Ansatz):
 
     def eval(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
-        Evaluates the ansatz at a batch of points ``z`` in C^(*b, n), where ``b`` is the batch shape
-        and ``n`` is the number of CV variables.
-        Note that since the ansatz may itself have a batch size `L`, the output will have shape
-        ``(L, *b)``. If the batch size of size `L` is intended as a linear superposition of terms,
-        then the batch of values of the ansatz should be the sum of the returned array along axis 0.
+        Evaluates the ansatz at the given points.
+
+        This method computes the value of the ansatz function at each point in the input batch.
 
         Args:
-            z: Point(s) in C^(*b, n) where the function is evaluated, ``b`` stands for batch shape.
+            z: A batch of points where the function is evaluated. The shape should be (*b, n) where:
+               - *b represents any number of batch dimensions
+               - n is the number of CV variables in the ansatz
 
         Returns:
-            The value of the function at the point(s) with the same batch dimensions as ``z``.
-            The output has shape (L, *b) where L is the batch size of the ansatz.
+            The evaluated function values with shape (L, *b) where:
+               - L is the batch size of the ansatz itself (number of terms in the ansatz)
+               - *b are the same batch dimensions as the input
+
+        Note:
+            If the ansatz batch size L represents a linear superposition of terms (rather than
+            independent functions), you should sum the returned array along axis 0 to get
+            the actual ansatz values. For example, the ansatz of a cat state is a linear superposition
+            of two gaussian terms.
         """
         z = math.atleast_2d(z)
         z = math.cast(z, dtype=self.A.dtype)
@@ -458,28 +465,40 @@ class PolyExpAnsatz(Ansatz):
         # return math.einsum("ik,idD,ikd->ikD", exp_sum, c, poly, optimize=True)
         return math.einsum("ik,il,inl->in", exp_sum, c, poly)
 
-    def partial_eval(self, z: Vector, indices: tuple[int, ...]) -> PolyExpAnsatz:
+    def partial_eval(self, z: ArrayLike, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
-        Returns a new ansatz that corresponds to currying (partially evaluate) the current one.
-        For example, if ``self`` represents the function ``F(z0,z1,z2)``, the call
-        ``self.partial_eval(np.array([2.0,3.0]), (0,2))`` returns
-        ``G(z1) = F(2.0, z1, 3.0)`` as a new ansatz of a single variable.
-        The vector ``z`` must have shape (b,r), where ``r`` is the number of indices in ``indices``.
-        The batch dimension of the resulting ansatz will be the product of batch dimension of ``z``
-        and the batch dimension of the ansatz.
+        Partially evaluates the ansatz by fixing some of its variables to specific values.
+
+        This method creates a new ansatz with fewer variables by substituting the specified
+        variables with their given values. The remaining variables keep their original positions
+        in the function signature.
+
+        Example:
+            If this ansatz represents F(z0,z1,z2), then:
+            ```
+            new_ansatz = self.partial_eval([2.0,3.0], indices=(0,2))
+            ```
+            returns a new ansatz G(z1) = F(2.0, z1, 3.0)
 
         Args:
-            z: vector in ``C^(b, r)`` where the function is evaluated.
-            indices: indices of the variables of the ansatz to be evaluated.
+            z: Values for the variables being fixed. Can be:
+               - Shape (r,): A single set of values for r variables
+               - Shape (b,r): Batch of b different sets of values
+               Where r is the number of indices in `indices`
+            indices: Indices of the variables to be fixed to the values in z
 
         Returns:
-            A new ansatz.
+            A new PolyExpAnsatz with fewer variables. If the original ansatz has batch
+            dimension L and z has batch dimension b, the resulting ansatz will have
+            batch dimension L*b.
         """
         if len(indices) == self.num_CV_vars:
             raise ValueError(
-                "Cannot curry a function of the same number of variables as the ansatz. "
-                "Use the _eval or __call__ method instead."
+                "The number of indices provided is the same as the number of CV variables."
+                "Use the eval() or __call__() method instead."
             )
+        z = math.atleast_2d(z)
+        z = math.cast(z, dtype=self.A.dtype)
 
         # evaluated, remaining and derived indices
         e = indices
@@ -624,32 +643,32 @@ class PolyExpAnsatz(Ansatz):
         return PolyExpAnsatz(As, bs, cs, self.num_derived_vars + other.num_derived_vars)
 
     def __call__(
-        self, *z: Vector | None, mode: Literal["zip", "kron"] = "kron"
-    ) -> Scalar | PolyExpAnsatz:
+        self, *z: Vector | None, batch_mode: Literal["zip", "kron"] = "kron"
+    ) -> Scalar | ArrayLike | PolyExpAnsatz:
         r"""
-        Returns either the value of the ansatz or a new ansatz depending on the arguments.
-        If an argument is None, the corresponding variable is not evaluated, and the method
-        returns a new ansatz with the remaining variables unevaluated.
-        For example, if the ansatz is a function of 3 variables F(z1, z2, z3) and we want to
-        evaluate it at a point in C^2, we would get a new ansatz with one variable unevaluated:
-        F(z1, z2, None) or F(z1, None, z3), or F(None, z2, z3). The ``mode`` argument can be used
-        to specify how the vectors of arguments are broadcast together. The default is "zip", which
-        is to broadcast the vectors pairwise. The alternative is "kron", which is to broadcast the
-        the vectors Kronecker-style. For example, ``F(z1, z2, mode="zip")`` returns the array of values
-        ``[F(z1[0], z2[0]), F(z1[1], z2[1]), …]``. On the other hand, ``F(z1, z2, mode="kron")``
-        returns the Kronecker product of the vectors, i.e. ``[[F(z1[0], z2[0]), F(z1[0], z2[1]), …],
-        [F(z1[1], z2[0]), F(z1[1], z2[1]), …], …]``. The 'kron' style is useful if we want to
-        pass the points along each axis independently from each other. In `zip` mode the batch
-        dimensions of the z vectors must match, while in `kron` mode they can differ, and the result
-        will have a batch dimension equal to the product of the batch dimensions the ansatz, followed
-        by the reshaped batch dimensions of the z vectors.
+        Evaluates the ansatz at given points or returns a partially evaluated ansatz.
+
+        This method has two modes of operation:
+
+        1. Partial evaluation: If any argument is None, returns a new ansatz with the specified
+           variables evaluated at the provided points. For example, if F(z1, z2, z3) is called as
+           F(z1, None, z3), it returns a new ansatz G(z2) with z1 and z3 fixed at the given values.
+
+        2. Full evaluation: If all arguments are provided, returns the value of the ansatz at those points.
+           The evaluation supports two batch modes:
+           - "zip": Evaluates the ansatz element-wise from each input array.
+             All inputs must have the same batch dimension.
+           - "kron": Evaluates the ansatz on the Cartesian product of all input arrays.
+             Input arrays can have different batch dimensions.
+
+        The return shape depends on the batch size of the ansatz and the batch dimensions of the inputs.
 
         TODO: make the kron version more efficient by avoiding the meshgrid.
 
         Args:
             z: points in C where the function is (partially) evaluated or None if the variable is
             not evaluated.
-            mode: "zip" or "kron"
+            batch_mode: "zip" or "kron"
 
         Returns:
             The value of the function or a new ansatz.
@@ -663,36 +682,31 @@ class PolyExpAnsatz(Ansatz):
 
         # Full evaluation: all continuous variables have been provided.
         if len(evaluated_indices) == self.num_CV_vars:
-            if mode == "zip":
-                only_z = [math.atleast_2d(zi) for zi in z]
+            if batch_mode == "zip":
+                only_z = [math.atleast_1d(zi) for zi in z]
                 batch_sizes = [zi.shape[0] for zi in only_z]
                 if not all(bs == batch_sizes[0] for bs in batch_sizes):
                     raise ValueError(
                         f"In mode 'zip' all z vectors must have the same batch size, got {batch_sizes}."
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
-                z_input = math.concat(only_z, axis=-1)
+                z_input = math.transpose(math.stack(only_z, axis=0))
                 return self.eval(z_input)
-            elif mode == "kron":
+            elif batch_mode == "kron":
                 only_z = [math.atleast_1d(zi) for zi in z]
                 if any(zi.ndim > 1 for zi in only_z):
-                    raise ValueError(
-                        "In `kron` mode the z vectors must not have a batch dimension."
-                    )
+                    raise ValueError("In `kron` mode the z vectors cannot have a batch dimension.")
                 # Create a meshgrid from the provided arrays; they may have different batch sizes.
                 grid = np.meshgrid(*only_z, indexing="ij")
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_{n}, n)
                 grid_shape = z_combined.shape[:-1]  # (b0, b1, …, b_n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
-                result_flat = self.eval(
-                    z_flat
-                )  # returns an array of shape (batch_size, prod(b_i)) but squeezed because of no batch
-                return math.squeeze(
-                    math.reshape(result_flat, (self.batch_size,) + grid_shape)
+                result_flat = self.eval(z_flat)  # returns an array of shape (batch_size, prod(b_i))
+                return math.reshape(
+                    result_flat, (self.batch_size,) + grid_shape
                 )  # (batch_size, b0, b1, …, b_n)
         else:
             # Partial evaluation: some CV variables are not provided.
-            # In partial evaluation, the provided z's must not have a batch dimension.
             only_z = [math.transpose(math.atleast_2d(zi)) for zi in z if zi is not None]
             # For partial evaluation (i.e. currying) it's always zip
             z_input = math.concat(only_z, axis=1)
