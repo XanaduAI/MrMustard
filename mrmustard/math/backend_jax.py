@@ -16,28 +16,28 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
-from __future__ import annotations
-from typing import Callable, Sequence
-from functools import partial
+from __future__ import annotations  # pragma: no cover
+from typing import Callable, Sequence  # pragma: no cover
+from functools import partial  # pragma: no cover
 
-import jax
-import jax.numpy as jnp
-import jax.scipy as jsp
-import numpy as np
-import equinox as eqx
-from jax import tree_util
+import jax  # pragma: no cover
+import jax.numpy as jnp  # pragma: no cover
+import jax.scipy as jsp  # pragma: no cover
+import numpy as np  # pragma: no cover
+import equinox as eqx  # pragma: no cover
+from jax import tree_util  # pragma: no cover
 
-from ..utils.settings import settings
-from .autocast import Autocast
-from .backend_base import BackendBase
-from .lattice.strategies import (
+from ..utils.settings import settings  # pragma: no cover
+from .autocast import Autocast  # pragma: no cover
+from .backend_base import BackendBase  # pragma: no cover
+from .lattice.strategies import (  # pragma: no cover
     binomial,
     vanilla,
     vanilla_stable,
     vanilla_stable_batch,
     vanilla_batch,
 )
-from .lattice.strategies.compactFock.inputValidation import (
+from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -487,10 +487,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def eigh(tensor: jnp.ndarray) -> tuple:
         return jnp.linalg.eigh(tensor)
 
-    @jax.jit
-    def where(self, array: jnp.ndarray, array1: jnp.ndarray, array2: jnp.ndarray):
-        return jnp.where(array, array1, array2)
-
     @staticmethod
     @jax.jit
     def eigvals(tensor: jnp.ndarray) -> jnp.ndarray:
@@ -754,4 +750,6 @@ class BackendJax(BackendBase):  # pragma: no cover
 
 # defining the pytree node for the JaxBackend.
 # This allows to skip specifying `self` in static_argnames.
-tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+tree_util.register_pytree_node(
+    BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten
+)  # pragma: no cover

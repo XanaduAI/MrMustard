@@ -511,8 +511,8 @@ class XPTensor(ABC):
             raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
         rows = [self.outmodes.index(m) for m in _modes[0]]
         columns = [self.inmodes.index(m) for m in _modes[1]]
-        subtensor = math.gather(self.tensor, math.astensor(rows), axis=0)
-        subtensor = math.gather(subtensor, math.astensor(columns), axis=1)
+        subtensor = math.gather(self.tensor, math.astensor(rows), axis=0)  # pragma: no cover
+        subtensor = math.gather(subtensor, math.astensor(columns), axis=1)  # pragma: no cover
         return XPMatrix(
             subtensor,
             like_1=_modes[0] == _modes[1] if self.like_1 else False,

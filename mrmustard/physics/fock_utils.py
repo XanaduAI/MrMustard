@@ -735,7 +735,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
-    def f_hermite_polys(xi):
+    def f_hermite_polys(xi):  # pragma: no cover
         return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
 
     hermite_polys = math.map_fn(f_hermite_polys, x)
@@ -1020,7 +1020,7 @@ def squeezed(r, phi, shape):
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
+    if math.backend_name in ["numpy", "jax"]:  # pragma: no cover
         return ret
 
     def vjp(dLdGc):

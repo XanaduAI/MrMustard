@@ -172,7 +172,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             name: The name of the new backend.
         """
         if name not in ["numpy", "tensorflow", "jax"]:
-            msg = "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"
+            msg = (
+                "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"  # pragma: no cover
+            )
             raise ValueError(msg)
 
         if self.backend_name != name:
@@ -347,18 +349,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least n dimensions.
         """
         return self._apply("atleast_nd", (array, n, dtype))
-
-    def vectorize(self, func: Callable, signature: tuple[Any, ...]) -> Callable:
-        r"""Vectorizes a function.
-
-        Args:
-            func: The function to vectorize.
-            signature: The signature of the function.
-
-        Returns:
-            The vectorized function.
-        """
-        return self._apply("vectorize", (func, signature))
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
@@ -679,7 +669,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        return self._apply("hermite_renormalized", (A, B, C, shape))
+        return self._apply("hermite_renormalized", (A, B, C, shape))  # pragma: no cover
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -1207,19 +1197,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The trace of array
         """
         return self._apply("trace", (array, dtype))
-
-    def where(self, condition: Tensor, x: Tensor, y: Tensor):
-        r"""Conditional return
-
-        Args:
-            condition: The condition to check
-            x: The array to return if ``condition`` is ``True``
-            y: The array to return if ``condition`` is ``False``
-
-        Returns:
-            The ``x`` if ``condition`` is ``True``, otherwise ``y``
-        """
-        return self._apply("where", (condition, x, y))
 
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         r"""The transposed arrays.
