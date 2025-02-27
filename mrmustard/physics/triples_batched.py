@@ -82,7 +82,7 @@ def _vacuum_B_vector(n_modes: int) -> Vector:
 
 # TODO: how to handle batching here?
 # i.e. does it always output batch (1,)?
-def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def vacuum_state_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of vacuum states on ``n_modes``.
 
@@ -380,7 +380,7 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
     )
     b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / (nbar + 1), math.complex128)
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -566,7 +566,7 @@ def twomode_squeezing_gate_Abc(
 
 # TODO: how to handle batching here?
 # i.e. does it always output batch (1,)?
-def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def identity_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of identity gates.
 
@@ -591,49 +591,47 @@ def identity_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
 # ~~~~~~~~~~
 
 
-def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     r"""
-    The ``(A, b, c)`` triple of of a tensor product of atternuators.
-
-    The number of modes depends on the length of the input parameters.
+    The ``(A, b, c)`` triple of an attenuator.
 
     Args:
         eta: The values of the transmissivities.
 
     Returns:
-        The ``(A, b, c)`` triple of the attenuator channels.
+        The ``(A, b, c)`` triple of the attenuator channel.
 
     Raises:
         ValueError: If ``eta`` is larger than `1` or smaller than `0`.
     """
-    eta = math.atleast_1d(eta, math.complex128)
-    n_modes = len(eta)
+    batch_size, batch_dim = _compute_batch_size(eta)
+    batch_shape = batch_size or (1,)
 
-    for e in eta:
-        if math.real(e) > 1 or math.real(e) < 0:
-            msg = "Transmissivity must be a float in the interval ``[0, 1]``"
-            raise ValueError(msg)
+    eta = np.broadcast_to(eta, batch_shape)
 
-    O_n = math.zeros((n_modes, n_modes), math.complex128)
-    eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
-    eta2 = math.eye(n_modes, math.complex128) - math.reshape(math.diag(eta), (n_modes, n_modes))
+    if math.any(math.real(eta) > 1) or math.any(math.real(eta) < 0):
+        raise ValueError("Transmissivity must be a float in the interval ``[0, 1]``.")
 
-    A = math.block(
+    O = math.zeros(batch_shape, math.complex128)
+    eta1 = math.sqrt(eta)
+    eta2 = 1 - eta
+
+    A = np.stack(
         [
-            [O_n, eta1, O_n, O_n],
-            [eta1, O_n, O_n, eta2],
-            [O_n, O_n, O_n, eta1],
-            [O_n, eta2, eta1, O_n],
-        ]
+            np.stack([O, eta1, O, O], batch_dim),
+            np.stack([eta1, O, O, eta2], batch_dim),
+            np.stack([O, O, O, eta1], batch_dim),
+            np.stack([O, eta2, eta1, O], batch_dim),
+        ],
+        batch_dim,
     )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    c = math.ones(batch_shape, math.complex128)
 
-    b = _vacuum_B_vector(n_modes * 4)
-    c = 1.0 + 0j
-
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
-def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Scalar]:
+def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of amplifiers.
 
@@ -675,8 +673,8 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
 
 
 def fock_damping_Abc(
-    beta: Union[float, Iterable[float]],
-) -> Union[Matrix, Vector, Scalar]:
+    beta: float | Iterable[float],
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of Fock dampers.
 
@@ -699,7 +697,7 @@ def fock_damping_Abc(
     return A, b, c
 
 
-def gaussian_random_noise_Abc(Y: RealMatrix) -> Union[Matrix, Vector, Scalar]:
+def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The triple (A, b, c) for the gaussian random noise channel.
 
@@ -785,7 +783,7 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
     :math:
@@ -852,7 +850,7 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
 # ~~~~~~~~~~~~~~~~
 
 
-def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
+def attenuator_kraus_Abc(eta: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
     The last index is the "bond" index which should be summed/integrated over.
@@ -874,7 +872,9 @@ def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def XY_to_channel_Abc(X: RealMatrix, Y: RealMatrix, d: Vector | None = None) -> ComplexMatrix:
+def XY_to_channel_Abc(
+    X: RealMatrix, Y: RealMatrix, d: Vector | None = None
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The method to compute the A matrix of a channel based on its X, Y, and d.
     Args:
