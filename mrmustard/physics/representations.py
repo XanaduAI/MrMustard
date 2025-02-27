@@ -133,7 +133,8 @@ class Representation:
         )
         if isinstance(shape, int):
             shape = (shape,) * num_vars
-        if isinstance(self.ansatz, PolyExpAnsatz):
+        shape = tuple(shape)
+        try:
             As, bs, cs = self.bargmann_triple(batched=True)
             if len(shape) != num_vars:
                 raise ValueError(
@@ -155,18 +156,16 @@ class Representation:
                         c = c.reshape((-1,))
                         arrays.append(math.einsum("...i,i->...", G, c))
 
-        else:
+        except AttributeError:
             if len(shape) != num_vars:
                 raise ValueError(
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 )
             arrays = self.ansatz.reduce(shape).array
-        # array = math.sum(arrays, axis=0)
-        # arrays = math.expand_dims(array, 0) if batched else array
-        if batched:
-            return arrays
-        else:
-            return math.sum(arrays, axis=0)
+        arrays = math.astensor(arrays)
+        array = math.sum(arrays, axis=0)
+        arrays = math.expand_dims(array, 0) if batched else array
+        return arrays
 
     def to_bargmann(self) -> Representation:
         r"""

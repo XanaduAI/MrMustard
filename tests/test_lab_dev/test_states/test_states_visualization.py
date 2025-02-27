@@ -20,7 +20,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent
 
