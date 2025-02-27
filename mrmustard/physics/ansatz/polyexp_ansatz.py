@@ -657,11 +657,21 @@ class PolyExpAnsatz(Ansatz):
         2. Full evaluation: If all arguments are provided, returns the value of the ansatz at those points.
            The evaluation supports two batch modes:
            - "zip": Evaluates the ansatz element-wise from each input array.
-             All inputs must have the same batch dimension.
+             All inputs must have the same batch dimension (e.g., if z1.shape=(10,) and z2.shape=(10,),
+             the result will have shape (batch_size, 10) where batch_size is the ansatz's batch size).
+             This mode pairs corresponding elements from each input array.
            - "kron": Evaluates the ansatz on the Cartesian product of all input arrays.
-             Input arrays can have different batch dimensions.
+             Input arrays can have different batch dimensions (e.g., if z1.shape=(10,) and z2.shape=(20,),
+             the result will have shape (batch_size, 10, 20) where batch_size is the ansatz's batch size).
+             This mode computes all possible combinations of input values.
 
-        The return shape depends on the batch size of the ansatz and the batch dimensions of the inputs.
+        The return shape depends on:
+        - The batch_size of the ansatz itself (first dimension of the result)
+        - The batch dimensions of the inputs:
+          - In "zip" mode: A single dimension equal to the common batch size of all inputs
+          - In "kron" mode: One dimension per input, with sizes matching each input's batch size
+
+        For scalar inputs (no batch dimension), the corresponding dimensions are squeezed from the output.
 
         TODO: make the kron version more efficient by avoiding the meshgrid.
 
@@ -682,6 +692,9 @@ class PolyExpAnsatz(Ansatz):
 
         # Full evaluation: all continuous variables have been provided.
         if len(evaluated_indices) == self.num_CV_vars:
+            scalars = tuple(
+                [i + 1 for i, v in enumerate(z) if v is not None and np.array(v).ndim == 0]
+            )
             if batch_mode == "zip":
                 only_z = [math.atleast_1d(zi) for zi in z]
                 batch_sizes = [zi.shape[0] for zi in only_z]
@@ -691,19 +704,21 @@ class PolyExpAnsatz(Ansatz):
                     )
                 # Concatenate along the last axis to form an array of shape (batch, n)
                 z_input = math.transpose(math.stack(only_z, axis=0))
-                return self.eval(z_input)
+                return math.squeeze(self.eval(z_input), axis=scalars)
             elif batch_mode == "kron":
                 only_z = [math.atleast_1d(zi) for zi in z]
                 if any(zi.ndim > 1 for zi in only_z):
-                    raise ValueError("In `kron` mode the z vectors cannot have a batch dimension.")
+                    raise ValueError(
+                        "The z values can have at most one dimension. Use `eval` for more control."
+                    )
                 # Create a meshgrid from the provided arrays; they may have different batch sizes.
                 grid = np.meshgrid(*only_z, indexing="ij")
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_{n}, n)
                 grid_shape = z_combined.shape[:-1]  # (b0, b1, …, b_n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
                 result_flat = self.eval(z_flat)  # returns an array of shape (batch_size, prod(b_i))
-                return math.reshape(
-                    result_flat, (self.batch_size,) + grid_shape
+                return math.squeeze(
+                    math.reshape(result_flat, (self.batch_size,) + grid_shape), axis=scalars
                 )  # (batch_size, b0, b1, …, b_n)
         else:
             # Partial evaluation: some CV variables are not provided.
