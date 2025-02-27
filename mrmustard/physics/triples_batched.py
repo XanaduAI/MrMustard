@@ -229,10 +229,12 @@ def two_mode_squeezed_vacuum_state_Abc(
     r = np.broadcast_to(r, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
     tanhr = -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
 
-    A = np.stack([np.stack([O, tanhr], batch_dim), np.stack([tanhr, O], batch_dim)], batch_dim)
+    A = np.stack(
+        [np.stack([O_matrix, tanhr], batch_dim), np.stack([tanhr, O_matrix], batch_dim)], batch_dim
+    )
     b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
@@ -369,12 +371,12 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
 
     nbar = np.broadcast_to(nbar, batch_shape)
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
 
     A = np.stack(
         [
-            np.stack([O, (nbar / (nbar + 1))], batch_dim),
-            np.stack([(nbar / (nbar + 1)), O], batch_dim),
+            np.stack([O_matrix, (nbar / (nbar + 1))], batch_dim),
+            np.stack([(nbar / (nbar + 1)), O_matrix], batch_dim),
         ],
         batch_dim,
     )
@@ -405,16 +407,16 @@ def rotation_gate_Abc(
 
     theta = np.broadcast_to(theta, batch_shape)
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
 
     A = np.stack(
         [
-            np.stack([O, math.exp(1j * theta)], batch_dim),
-            np.stack([math.exp(1j * theta), O], batch_dim),
+            np.stack([O_matrix, math.exp(1j * theta)], batch_dim),
+            np.stack([math.exp(1j * theta), O_matrix], batch_dim),
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -475,7 +477,7 @@ def squeezing_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / math.sqrt(math.cosh(r)), math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -500,7 +502,7 @@ def beamsplitter_gate_Abc(
     theta = np.broadcast_to(theta, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
-    O = math.zeros(batch_shape + (2, 2), math.complex128)
+    O_matrix = math.zeros(batch_shape + (2, 2), math.complex128)
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
@@ -515,8 +517,10 @@ def beamsplitter_gate_Abc(
     perm = tuple(range(len(V.shape)))
     perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
-    A = math.concat([math.concat([O, V], -1), math.concat([math.transpose(V, perm), O], -1)], -2)
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    A = math.concat(
+        [math.concat([O_matrix, V], -1), math.concat([math.transpose(V, perm), O_matrix], -1)], -2
+    )
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
@@ -540,25 +544,28 @@ def twomode_squeezing_gate_Abc(
     r = np.broadcast_to(r, batch_shape)
     phi = np.broadcast_to(phi, batch_shape)
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
     tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
     sechr = 1 / math.cosh(r)
 
     A_block1 = np.stack(
-        [np.stack([O, tanhr], batch_dim), np.stack([tanhr, O], batch_dim)], batch_dim
+        [np.stack([O_matrix, tanhr], batch_dim), np.stack([tanhr, O_matrix], batch_dim)], batch_dim
     )
     A_block2 = np.stack(
-        [np.stack([O, -math.conj(tanhr)], batch_dim), np.stack([-math.conj(tanhr), O], batch_dim)],
+        [
+            np.stack([O_matrix, -math.conj(tanhr)], batch_dim),
+            np.stack([-math.conj(tanhr), O_matrix], batch_dim),
+        ],
         batch_dim,
     )
     A_block3 = np.stack(
-        [np.stack([sechr, O], batch_dim), np.stack([O, sechr], batch_dim)], batch_dim
+        [np.stack([sechr, O_matrix], batch_dim), np.stack([O_matrix, sechr], batch_dim)], batch_dim
     )
 
     A = math.concat(
         [math.concat([A_block1, A_block3], -1), math.concat([A_block3, A_block2], -1)], -2
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -612,20 +619,20 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
     if math.any(math.real(eta) > 1) or math.any(math.real(eta) < 0):
         raise ValueError("Transmissivity must be a float in the interval ``[0, 1]``.")
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
     eta1 = math.sqrt(eta)
     eta2 = 1 - eta
 
     A = np.stack(
         [
-            np.stack([O, eta1, O, O], batch_dim),
-            np.stack([eta1, O, O, eta2], batch_dim),
-            np.stack([O, O, O, eta1], batch_dim),
-            np.stack([O, eta2, eta1, O], batch_dim),
+            np.stack([O_matrix, eta1, O_matrix, O_matrix], batch_dim),
+            np.stack([eta1, O_matrix, O_matrix, eta2], batch_dim),
+            np.stack([O_matrix, O_matrix, O_matrix, eta1], batch_dim),
+            np.stack([O_matrix, eta2, eta1, O_matrix], batch_dim),
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -652,19 +659,19 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     if math.any(math.real(g) < 1):
         raise ValueError("Found amplifier with gain ``g`` smaller than `1`.")
 
-    O = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
     g1 = 1 / math.sqrt(g)
     g2 = 1 - 1 / g
     A = np.stack(
         [
-            np.stack([O, g1, g2, O], batch_dim),
-            np.stack([g1, O, O, O], batch_dim),
-            np.stack([g2, O, O, g1], batch_dim),
-            np.stack([O, O, g1, O], batch_dim),
+            np.stack([O_matrix, g1, g2, O_matrix], batch_dim),
+            np.stack([g1, O_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([g2, O_matrix, O_matrix, g1], batch_dim),
+            np.stack([O_matrix, O_matrix, g1, O_matrix], batch_dim),
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (1,))
+    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / g, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -687,11 +694,13 @@ def fock_damping_Abc(
 
     beta = np.broadcast_to(beta, batch_shape)
 
-    O_n = math.zeros(batch_shape, math.complex128)
+    O_matrix = math.zeros(batch_shape, math.complex128)
     B_n = math.exp(-beta)
 
-    A = np.stack([np.stack([O_n, B_n], batch_dim), np.stack([B_n, O_n], batch_dim)], batch_dim)
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (1,))
+    A = np.stack(
+        [np.stack([O_matrix, B_n], batch_dim), np.stack([B_n, O_matrix], batch_dim)], batch_dim
+    )
+    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
