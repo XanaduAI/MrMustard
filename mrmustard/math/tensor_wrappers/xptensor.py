@@ -293,10 +293,10 @@ class XPTensor(ABC):
         copied_cols = None
         if len(contracted) > 0:
             subtensor1 = math.gather(
-                self.tensor, [self.inmodes.index(m) for m in contracted], axis=1
+                self.tensor, math.astensor([self.inmodes.index(m) for m in contracted]), axis=1
             )
             subtensor2 = math.gather(
-                other.tensor, [other.outmodes.index(m) for m in contracted], axis=0
+                other.tensor, math.astensor([other.outmodes.index(m) for m in contracted]), axis=0
             )
             if other.isMatrix:
                 bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 2)))
@@ -306,12 +306,14 @@ class XPTensor(ABC):
         if self.like_1 and len(uncontracted_other) > 0:
             copied_rows = math.gather(
                 other.tensor,
-                [other.outmodes.index(m) for m in uncontracted_other],
+                math.astensor([other.outmodes.index(m) for m in uncontracted_other]),
                 axis=0,
             )
         if other.like_1 and len(uncontracted_self) > 0:
             copied_cols = math.gather(
-                self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1
+                self.tensor,
+                math.astensor([self.inmodes.index(m) for m in uncontracted_self]),
+                axis=1,
             )
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
@@ -350,9 +352,13 @@ class XPTensor(ABC):
             inmodes = [m for m in inmodes if m in other.inmodes]
 
         if final is not None:
-            final = math.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
+            final = math.gather(
+                final, math.astensor([outmodes.index(o) for o in sorted(outmodes)]), axis=0
+            )
             if other.isMatrix:
-                final = math.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
+                final = math.gather(
+                    final, math.astensor([inmodes.index(i) for i in sorted(inmodes)]), axis=1
+                )
         return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:
@@ -480,7 +486,9 @@ class XPTensor(ABC):
             else:
                 raise ValueError("Usage: V[1], V[[1,2,3]] or V[:]")
             rows = [self.outmodes.index(m) for m in modes]
-            return XPVector(math.gather(self.tensor, rows, axis=0), modes)
+            return XPVector(
+                math.gather(self.tensor, math.astensor(rows), axis=0), modes
+            )  # pragma: no cover
 
         _modes = [None, None]
         if isinstance(modes, int):
@@ -505,8 +513,8 @@ class XPTensor(ABC):
             raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
         rows = [self.outmodes.index(m) for m in _modes[0]]
         columns = [self.inmodes.index(m) for m in _modes[1]]
-        subtensor = math.gather(self.tensor, rows, axis=0)
-        subtensor = math.gather(subtensor, columns, axis=1)
+        subtensor = math.gather(self.tensor, math.astensor(rows), axis=0)  # pragma: no cover
+        subtensor = math.gather(subtensor, math.astensor(columns), axis=1)  # pragma: no cover
         return XPMatrix(
             subtensor,
             like_1=_modes[0] == _modes[1] if self.like_1 else False,

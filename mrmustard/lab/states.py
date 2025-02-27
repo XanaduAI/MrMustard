@@ -403,10 +403,12 @@ class Gaussian(State):
             symplectic = math.random_symplectic(num_modes=num_modes)
         if eigenvalues is None:
             eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
-        if math.any(math.atleast_1d(eigenvalues) < settings.HBAR / 2):
-            raise ValueError(
-                f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
-            )
+        math.error_if(
+            eigenvalues,
+            math.atleast_1d(eigenvalues) < settings.HBAR / 2,
+            f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2",
+        )
+
         self._modes = modes
         self._normalize = normalize
 

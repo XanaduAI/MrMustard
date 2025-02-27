@@ -13,7 +13,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 
 @st.composite
@@ -38,7 +38,7 @@ def test_compactFock_diagonal(A_B_G0):
 
     # Vanilla MM
     G_ref = math.hermite_renormalized(
-        math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
+        math.conj(-A), math.conj(B), math.conj(G0), shape=cutoffs * 2
     )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
     G_ref = math.asnumpy(G_ref)
 
@@ -48,9 +48,8 @@ def test_compactFock_diagonal(A_B_G0):
         inds_expanded = list(inds) + list(inds)  # a,b,c,a,b,c
         ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
-    # New MM
     G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
-    assert np.allclose(ref_diag, G_diag)
+    assert math.allclose(ref_diag, G_diag)
 
 
 @given(random_ABC(M=3))
@@ -60,6 +59,7 @@ def test_compactFock_1leftover(A_B_G0):
     are detected (math.hermite_renormalized_1leftoverMode).
     """
     skip_np()
+    skip_jax()
 
     cutoffs = (5, 5, 5)
 
@@ -82,7 +82,7 @@ def test_compactFock_1leftover(A_B_G0):
         ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
             tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
         ]
-    assert np.allclose(ref_leftover, G_leftover)
+    assert math.allclose(ref_leftover, G_leftover)
 
 
 def test_compactFock_diagonal_gradients():
@@ -91,6 +91,7 @@ def test_compactFock_diagonal_gradients():
     are detected (math.hermite_renormalized_diagonal).
     """
     skip_np()
+    skip_jax()
 
     G = Ggate(num_modes=1, symplectic_trainable=True)
 
@@ -116,6 +117,7 @@ def test_compactFock_1leftover_gradients():
     mode are detected (math.hermite_renormalized_1leftoverMode).
     """
     skip_np()
+    skip_jax()
 
     G = Ggate(num_modes=2, symplectic_trainable=True)
 

@@ -27,7 +27,6 @@ from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix, ComplexMa
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from .bargmann_utils import symplectic2Au
 
-
 #  ~~~~~~~~~
 #  Utilities
 #  ~~~~~~~~~
@@ -364,7 +363,7 @@ def thermal_state_Abc(nbar: Union[int, Iterable[int]]) -> Union[Matrix, Vector, 
 
     A = math.astensor([[0, 1], [1, 0]], math.complex128)
     A = math.kron((nbar / (nbar + 1)) * math.eye(n_modes, math.complex128), A)
-    c = math.prod([1 / (_nbar + 1) for _nbar in nbar])
+    c = math.prod(math.astensor([1 / (_nbar + 1) for _nbar in nbar]))
     b = _vacuum_B_vector(n_modes * 2)
 
     return A, b, c
@@ -582,10 +581,8 @@ def attenuator_Abc(eta: Union[float, Iterable[float]]) -> Union[Matrix, Vector, 
     eta = math.atleast_1d(eta, math.complex128)
     n_modes = len(eta)
 
-    for e in eta:
-        if math.real(e) > 1 or math.real(e) < 0:
-            msg = "Transmissivity must be a float in the interval ``[0, 1]``"
-            raise ValueError(msg)
+    math.error_if(eta, math.real(eta) > 1, f"Transmissivity is {eta}, must be <= 1")
+    math.error_if(eta, math.real(eta) < 0, f"Transmissivity is {eta}, must be >= 0")
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     eta1 = math.reshape(math.diag(math.sqrt(eta)), (n_modes, n_modes))
@@ -625,9 +622,9 @@ def amplifier_Abc(g: Union[float, Iterable[float]]) -> Union[Matrix, Vector, Sca
     n_modes = len(g)
 
     for g_val in g:
-        if math.real(g_val) < 1:
-            msg = "Found amplifier with gain ``g`` smaller than `1`."
-            raise ValueError(msg)
+        math.error_if(
+            g_val, math.real(g_val) < 1, "Found amplifier with gain ``g`` smaller than `1`."
+        )
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
     g1 = math.reshape(math.diag(1 / math.sqrt(g)), (n_modes, n_modes))
@@ -663,7 +660,7 @@ def fock_damping_Abc(
     n_modes = len(beta)
 
     O_n = math.zeros((n_modes, n_modes), math.complex128)
-    B_n = math.diag(math.astensor([math.exp(-beta)])).reshape((n_modes, n_modes))
+    B_n = math.diag(math.astensor(math.exp(-beta))).reshape((n_modes, n_modes))
 
     A = math.block([[O_n, B_n], [B_n, O_n]])
     b = _vacuum_B_vector(n_modes * 2)
