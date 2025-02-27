@@ -702,28 +702,30 @@ class PolyExpAnsatz(Ansatz):
                     raise ValueError(
                         f"In mode 'zip' all z vectors must have the same batch size, got {batch_sizes}."
                     )
-                # Concatenate along the last axis to form an array of shape (batch, n)
-                z_input = math.transpose(math.stack(only_z, axis=0))
-                return math.squeeze(self.eval(z_input), axis=scalars)
+                z_input = math.transpose(math.stack(only_z, axis=0))  # shape (batch, n)
+                output = self.eval(z_input)
+                if len(scalars) > 0:
+                    return math.squeeze(output, axis=scalars)
+                else:
+                    return output
             elif batch_mode == "kron":
                 only_z = [math.atleast_1d(zi) for zi in z]
                 if any(zi.ndim > 1 for zi in only_z):
                     raise ValueError(
                         "The z values can have at most one dimension. Use `eval` for more control."
                     )
-                # Create a meshgrid from the provided arrays; they may have different batch sizes.
                 grid = np.meshgrid(*only_z, indexing="ij")
                 z_combined = math.astensor(np.stack(grid, axis=-1))  # shape (b0, b1, …, b_{n}, n)
                 grid_shape = z_combined.shape[:-1]  # (b0, b1, …, b_n)
                 z_flat = math.reshape(z_combined, (-1, self.num_CV_vars))  # shape (prod(b_i), n)
                 result_flat = self.eval(z_flat)  # returns an array of shape (batch_size, prod(b_i))
-                return math.squeeze(
-                    math.reshape(result_flat, (self.batch_size,) + grid_shape), axis=scalars
-                )  # (batch_size, b0, b1, …, b_n)
-        else:
-            # Partial evaluation: some CV variables are not provided.
+                output = math.reshape(result_flat, (self.batch_size,) + grid_shape)
+                if len(scalars) > 0:
+                    return math.squeeze(output, axis=scalars)
+                else:
+                    return output
+        else:  # Partial evaluation: some CV variables are not provided.
             only_z = [math.transpose(math.atleast_2d(zi)) for zi in z if zi is not None]
-            # For partial evaluation (i.e. currying) it's always zip
             z_input = math.concat(only_z, axis=1)
             return self.partial_eval(z_input, evaluated_indices)
 

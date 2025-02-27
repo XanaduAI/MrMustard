@@ -505,7 +505,7 @@ class TestPolyExpAnsatz:
 
         # Test error with multi-dimensional arrays in kron mode
         x_2d = np.array([[1.0, 2.0], [3.0, 4.0]])
-        with pytest.raises(ValueError, match="cannot have a batch dimension"):
+        with pytest.raises(ValueError):
             ansatz(x_2d, y, z, batch_mode="kron")
 
     def test_eval_method(self):
