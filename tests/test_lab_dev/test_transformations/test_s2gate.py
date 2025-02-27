@@ -23,6 +23,7 @@ from mrmustard import math
 from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
 
+
 class TestS2gate:
     r"""
     Tests for the ``S2gate`` class.
