@@ -157,12 +157,9 @@ class Representation:
                 ) from e
             arrays = self.ansatz.reduce(shape).array
         arrays = math.astensor(arrays)
-        if not batched:
-            return arrays[0]
-        else:
-            array = math.sum(arrays, axis=0)
-            arrays = math.expand_dims(array, 0)
-            return math.expand_dims(math.sum(arrays, axis=0), 0)
+        array = math.sum(arrays, axis=0)
+        arrays = math.expand_dims(array, 0) if batched else array
+        return arrays
 
     def to_bargmann(self) -> Representation:
         r"""
