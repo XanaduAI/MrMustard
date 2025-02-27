@@ -92,7 +92,7 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
 
     # replicate the B
-    B_batched = np.stack((B,) * batch_size, axis=1)
+    B_batched = math.astensor(np.stack((B,) * batch_size, axis=1))
 
     G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
 

@@ -170,8 +170,11 @@ class Sampler(ABC):
         """
         atol = atol or settings.ATOL
         prob_sum = math.sum(probs)
-        if not math.allclose(prob_sum, 1, atol):
-            raise ValueError(f"Probabilities sum to {prob_sum} and not 1.0.")
+        math.error_if(
+            prob_sum,
+            not math.allclose(prob_sum, 1),
+            f"Probabilities sum to {prob_sum} and not 1.0.",
+        )
         return math.real(probs / prob_sum)
 
 

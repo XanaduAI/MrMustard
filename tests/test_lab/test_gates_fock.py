@@ -53,7 +53,7 @@ from tests.random import (
     two_mode_unitary_gate,
 )
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
@@ -177,6 +177,7 @@ def test_parallel_displacement(x1, x2, y1, y2):
 def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     skip_np()
+    skip_jax()
 
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")

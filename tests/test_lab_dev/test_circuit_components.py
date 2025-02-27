@@ -604,5 +604,7 @@ class TestCircuitComponent:
         if math.backend_name == "tensorflow":
             assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
         else:
-            with pytest.raises(NotImplementedError, match="not implemented for backend ``numpy``"):
+            with pytest.raises(
+                NotImplementedError, match="not implemented for backend ``(numpy|jax)``"
+            ):
                 opt.minimize(cost, by_optimizing=[circuit], max_steps=5)

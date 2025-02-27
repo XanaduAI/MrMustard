@@ -346,7 +346,7 @@ class PolyExpAnsatz(Ansatz):
                     self.c = math.update_add_tensor(self.c, [[i]], [self.c[j]])
                     indices_to_check.remove(j)
                     removed.append(j)
-        to_keep = [i for i in range(self.batch_size) if i not in removed]
+        to_keep = math.astensor([i for i in range(self.batch_size) if i not in removed])
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
         self.c = math.gather(self.c, to_keep, axis=0)
@@ -368,6 +368,7 @@ class PolyExpAnsatz(Ansatz):
                 to_keep.append(d)
                 d0 = d
                 mat, vec = self.A[d0], self.b[d0]
+        to_keep = math.astensor(to_keep)
         self.A = math.gather(self.A, to_keep, axis=0)
         self.b = math.gather(self.b, to_keep, axis=0)
         self.c = math.gather(self.c, to_keep, axis=0)
@@ -435,12 +436,12 @@ class PolyExpAnsatz(Ansatz):
                 ]
             )  # (b_abc,b_arg,poly)
             poly = math.moveaxis(poly, 0, 1)  # (b_arg,b_abc,poly)
+            res = math.sum(
+                poly * self.c,
+                axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
+            )
             val = math.sum(
-                exp_sum
-                * math.sum(
-                    poly * self.c,
-                    axis=math.arange(2, 2 + dim_beta, dtype=math.int32).tolist(),
-                ),
+                exp_sum * res,
                 axis=-1,
             )  # (b_arg)
         return val
@@ -497,6 +498,11 @@ class PolyExpAnsatz(Ansatz):
         beta_indices = np.arange(len(zi), Ai.shape[-1])
         new_indices = np.concatenate([z_none, beta_indices], axis=0)
 
+        new_indices = math.astensor(new_indices, dtype="int32")
+        z_none = math.astensor(z_none, dtype="int32")
+        z_not_none = math.astensor(z_not_none, dtype="int32")
+        beta_indices = math.astensor(beta_indices, dtype="int32")
+
         # new A
         new_A = math.gather(math.gather(Ai, new_indices, axis=0), new_indices, axis=1)
 
@@ -545,7 +551,7 @@ class PolyExpAnsatz(Ansatz):
             A_bar,
             b_bar,
             complex(1),
-            (math.sum(shape_beta),) * dim_alpha + shape_beta,
+            (np.sum(shape_beta),) * dim_alpha + shape_beta,
         )
         c_decomp = math.sum(
             poly_bar * ci,
@@ -617,7 +623,7 @@ class PolyExpAnsatz(Ansatz):
             )
             for i in range(self.batch_size)
         ]
-        sorted_indices = argsort_gen(generators)
+        sorted_indices = math.astensor(argsort_gen(generators))
         self.A = math.gather(self.A, sorted_indices, axis=0)
         self.b = math.gather(self.b, sorted_indices, axis=0)
         self.c = math.gather(self.c, sorted_indices, axis=0)
