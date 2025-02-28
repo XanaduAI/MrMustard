@@ -18,11 +18,42 @@ various states and transformations.
 """
 from __future__ import annotations
 
+from typing import Iterable
+
+import numpy as np
+
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
 
 
-def cxgate_symplectic(s: float) -> Matrix:
+#  ~~~~~~~~~
+#  Utilities
+#  ~~~~~~~~~
+
+
+def _compute_batch_size(*args) -> tuple[int, ...] | None:
+    r"""
+    Compute the final batch size of the input arguments.
+
+    Args:
+        *args: The input arguments.
+
+    Returns:
+        The final batch size and batch dimension of the input arguments.
+    """
+    batch_size = None
+    for arg in args:
+        arg = math.astensor(arg)
+        if arg.shape:
+            if batch_size is None:
+                batch_size = arg
+            else:
+                batch_size = batch_size * arg
+    batch_size = batch_size.shape if batch_size is not None else None
+    return batch_size, len(batch_size or (1,))
+
+
+def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled X gate.
 
@@ -32,12 +63,27 @@ def cxgate_symplectic(s: float) -> Matrix:
     Returns:
         The symplectic matrix of a CX gate.
     """
-    return math.astensor(
-        [[1, 0, 0, 0], [s, 1, 0, 0], [0, 0, 1, -s], [0, 0, 0, 1]], dtype="complex128"
+    batch_size, batch_dim = _compute_batch_size(s)
+    batch_shape = batch_size or (1,)
+
+    s = np.broadcast_to(s, batch_shape)
+
+    O_matrix = math.zeros(batch_shape, math.complex128)
+    I_matrix = math.ones(batch_shape, math.complex128)
+
+    symplectic = np.stack(
+        [
+            np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([s, I_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([O_matrix, O_matrix, I_matrix, -s], batch_dim),
+            np.stack([O_matrix, O_matrix, O_matrix, I_matrix], batch_dim),
+        ],
+        batch_dim,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
-def czgate_symplectic(s: float) -> Matrix:
+def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled Z gate.
 
@@ -47,7 +93,24 @@ def czgate_symplectic(s: float) -> Matrix:
     Returns:
         The symplectic matrix of a CZ gate.
     """
-    return math.astensor([[1, 0, 0, 0], [0, 1, 0, 0], [0, s, 1, 0], [s, 0, 0, 1]])
+    batch_size, batch_dim = _compute_batch_size(s)
+    batch_shape = batch_size or (1,)
+
+    s = np.broadcast_to(s, batch_shape)
+
+    O_matrix = math.zeros(batch_shape, math.complex128)
+    I_matrix = math.ones(batch_shape, math.complex128)
+
+    symplectic = np.stack(
+        [
+            np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
+            np.stack([O_matrix, s, I_matrix, O_matrix], batch_dim),
+            np.stack([s, O_matrix, O_matrix, I_matrix], batch_dim),
+        ],
+        batch_dim,
+    )
+    return symplectic if batch_size else symplectic[0]
 
 
 def interferometer_symplectic(unitary: Matrix) -> Matrix:
@@ -60,12 +123,22 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
     Returns:
         The symplectic matrix of an N-mode interferometer.
     """
-    return math.block(
-        [[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]]
+    batch_size = unitary.shape[:-2]
+    batch_shape = batch_size or (1,)
+    unitary = np.broadcast_to(unitary, batch_shape + unitary.shape[-2:])
+    symplectic = np.concat(
+        [
+            np.concat([math.real(unitary), -math.imag(unitary)], -1),
+            np.concat([math.imag(unitary), math.real(unitary)], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
-def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
+def mzgate_symplectic(
+    phi_a: float | Iterable[float], phi_b: float | Iterable[float], internal: bool
+) -> Matrix:
     r"""
     The symplectic matrix of a Mach-Zehnder gate.
 
@@ -81,48 +154,69 @@ def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
     Returns:
         The symplectic matrix of a Mach-Zehnder gate.
     """
-    ca = math.cos(complex(phi_a))
-    sa = math.sin(complex(phi_a))
-    cb = math.cos(complex(phi_b))
-    sb = math.sin(complex(phi_b))
-    cp = math.cos(complex(phi_a + phi_b))
-    sp = math.sin(complex(phi_a + phi_b))
+    batch_size, batch_dim = _compute_batch_size(phi_a, phi_b)
+    batch_shape = batch_size or (1,)
+
+    phi_a = np.broadcast_to(phi_a, batch_shape)
+    phi_b = np.broadcast_to(phi_b, batch_shape)
+
+    ca = math.cos(phi_a)
+    sa = math.sin(phi_a)
+    cb = math.cos(phi_b)
+    sb = math.sin(phi_b)
+    cp = math.cos(phi_a + phi_b)
+    sp = math.sin(phi_a + phi_b)
     if internal:
-        return 0.5 * math.astensor(
+        symplectic = np.stack(
             [
-                [ca - cb, -sa - sb, sb - sa, -ca - cb],
-                [-sa - sb, cb - ca, -ca - cb, sa - sb],
-                [sa - sb, ca + cb, ca - cb, -sa - sb],
-                [ca + cb, sb - sa, -sa - sb, cb - ca],
-            ]
+                np.stack([ca - cb, -sa - sb, sb - sa, -ca - cb], batch_dim),
+                np.stack([-sa - sb, cb - ca, -ca - cb, sa - sb], batch_dim),
+                np.stack([sa - sb, ca + cb, ca - cb, -sa - sb], batch_dim),
+                np.stack([ca + cb, sb - sa, -sa - sb, cb - ca], batch_dim),
+            ],
+            batch_dim,
         )
     else:
-        return 0.5 * math.astensor(
+        symplectic = np.stack(
             [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
+                np.stack([cp - ca, -sb, sa - sp, -1 - cb], batch_dim),
+                np.stack([-sa - sp, 1 - cb, -ca - cp, sb], batch_dim),
+                np.stack([sp - sa, 1 + cb, cp - ca, -sb], batch_dim),
+                np.stack([cp + ca, -sb, -sa - sp, 1 - cb], batch_dim),
+            ],
+            batch_dim,
         )
+    symplectic = math.cast(0.5 * symplectic, math.complex128)
+    return symplectic if batch_size else symplectic[0]
 
 
-def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
+def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a quadratic phase gate.
 
     Args:
+        n_modes: The number of modes.
         shearing: The shearing parameter.
 
     Returns:
         The symplectic matrix of a phase gate.
     """
-    return math.block(
+    batch_size, _ = _compute_batch_size(shearing)
+    batch_shape = batch_size or (1,)
+
+    shearing = np.broadcast_to(shearing, batch_shape)
+
+    I_matrix = np.broadcast_to(math.eye(n_modes), batch_shape + (n_modes, n_modes))
+    O_matrix = math.zeros(batch_shape + (n_modes, n_modes))
+
+    symplectic = np.concat(
         [
-            [math.eye(n_modes), math.zeros((n_modes, n_modes))],
-            [math.eye(n_modes) * shearing, math.eye(n_modes)],
-        ]
+            np.concat([I_matrix, O_matrix], -1),
+            np.concat([math.eye(n_modes) * shearing[..., None, None], I_matrix], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
 def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
@@ -135,6 +229,14 @@ def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
     Returns:
         The symplectic matrix of an N-mode interferometer.
     """
-    return math.block(
-        [[orthogonal, -math.zeros_like(orthogonal)], [math.zeros_like(orthogonal), orthogonal]]
+    batch_size = orthogonal.shape[:-2]
+    batch_shape = batch_size or (1,)
+    orthogonal = np.broadcast_to(orthogonal, batch_shape + orthogonal.shape[-2:])
+    symplectic = np.concat(
+        [
+            np.concat([orthogonal, -math.zeros_like(orthogonal)], -1),
+            np.concat([math.zeros_like(orthogonal), orthogonal], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]
