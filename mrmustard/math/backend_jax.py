@@ -87,6 +87,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
         return jnp.broadcast_to(array, shape)
 
