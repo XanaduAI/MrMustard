@@ -758,7 +758,9 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     return A, b, c
 
 
-def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector, Scalar]:
+def bargmann_to_quadrature_Abc(
+    n_modes: int, phi: float | Iterable[float]
+) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
@@ -772,19 +774,30 @@ def bargmann_to_quadrature_Abc(n_modes: int, phi: float) -> tuple[Matrix, Vector
     Returns:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
+    batch_size, batch_dim = _compute_batch_size(phi)
+    batch_shape = batch_size or (1,)
+
+    phi = np.broadcast_to(phi, batch_shape)
+
     hbar = settings.HBAR
-    Id = np.eye(n_modes, dtype=np.complex128)
-    e = np.exp(-1j * phi + 1j * np.pi / 2)
-    A = np.kron(
-        [
-            [-1 / hbar, -1j * e * np.sqrt(2 / hbar)],
-            [-1j * e * np.sqrt(2 / hbar), e * e],
-        ],
+    Id = math.eye(n_modes, dtype=math.complex128)
+    e = math.exp(-1j * phi + 1j * np.pi / 2)
+    A = math.kron(
+        np.stack(
+            [
+                np.stack(
+                    [np.broadcast_to(-1 / hbar, batch_shape), -1j * e * np.sqrt(2 / hbar)],
+                    batch_dim,
+                ),
+                np.stack([-1j * e * np.sqrt(2 / hbar), e * e], batch_dim),
+            ],
+            batch_dim,
+        ),
         Id,
     )
-    b = _vacuum_B_vector(2 * n_modes)
-    c = (1.0 + 0j) / (np.pi * hbar) ** (0.25 * n_modes)
-    return A, b, c
+    b = math.tile(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
+    c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
