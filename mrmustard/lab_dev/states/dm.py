@@ -36,6 +36,7 @@ from mrmustard.utils.typing import ComplexTensor, RealVector
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
+from ..transformations import Map
 
 from ..utils import shape_check
 
@@ -358,6 +359,117 @@ class DM(State):
 
         quad = math.tile(quad, (1, 2))
         return self.quadrature(quad, phi)
+
+    def stellar_decomposition(self, core_modes: Collection[int]):
+        r"""
+        Computes the formal stellar decomposition for the DM.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            dm_core: The core state (`DM`)
+            phi: The Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
+
+        Raises:
+            ValueError: if the state is non-Gaussian.
+
+        Note:
+            This method pulls out the map ``phi`` from the given state on the given modes, so that
+            the remaining state is a core state. Formally, we have
+            .. math::
+
+                \rho = (\phi\otimes\mathcal I) \rho_{\mathrm{core}}
+
+            where the map :math:`phi` acts on the given `core_modes` only.
+            Core states have favorable properties in the Fock representation
+            e.g., being sparse.
+        """
+        A, b, c = self.ansatz.triple
+        A = A[-1]
+        b = b[-1]
+        if c.shape != (1,):
+            raise ValueError(
+                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
+            )
+
+        m_modes = A.shape[-1] // 2
+
+        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
+        core_bra_indices = [
+            (i - m_modes) if i >= m_modes else i for i in (mode_to_idx[j] for j in core_modes)
+        ]
+        core_ket_indices = [(i + m_modes) for i in core_bra_indices]
+        core_indices = core_bra_indices + core_ket_indices
+        remaining_indices = [i for i in range(2 * m_modes) if i not in core_indices]
+        new_order = core_indices + remaining_indices
+
+        A_reordered = A[new_order, :]
+        A_reordered = A_reordered[
+            :, new_order
+        ]  # reordering indices of A so that it has the standard form.
+        b_reordered = b[new_order]
+
+        core_size = 2 * len(core_modes)
+        Am = A_reordered[:core_size, :core_size]
+        An = A_reordered[core_size:, core_size:]
+        R = A_reordered[:core_size, core_size:]
+        bm = b_reordered[:core_size]
+        bn = b[core_size:]
+
+        # core state's Abc
+        A_core = math.block(
+            [[math.zeros((core_size, core_size), dtype=math.complex128), R], [R.T, An]]
+        )
+        b_core = math.block([math.zeros(core_size, dtype=math.complex128), bn], axes=(0, 0))
+        c_core = c
+
+        inverse_order = [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
+
+        A_core = A_core[inverse_order, :]
+        A_core = A_core[:, inverse_order]
+        b_core = b_core[inverse_order]
+        core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
+
+        # the transformation's Abc
+        A_T = math.block(
+            [
+                [
+                    Am[: core_size // 2, : core_size // 2],
+                    math.eye(core_size // 2, dtype=math.complex128),
+                    Am[: core_size // 2, core_size // 2 :],
+                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
+                ],
+                [
+                    math.eye(core_size // 2, dtype=math.complex128),
+                    math.zeros((core_size // 2, 3 * core_size // 2), dtype=math.complex128),
+                ],
+                [
+                    Am[core_size // 2 :, : core_size // 2],
+                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
+                    Am[core_size // 2 :, core_size // 2 :],
+                    math.eye(core_size // 2, dtype=math.complex128),
+                ],
+                [
+                    math.zeros((core_size // 2, core_size), dtype=math.complex128),
+                    math.eye(core_size // 2, dtype=math.complex128),
+                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
+                ],
+            ]
+        )
+
+        b_T = math.block(
+            [
+                bm[: core_size // 2],
+                math.zeros(core_size // 2, dtype=math.complex128),
+                bm[core_size // 2 :],
+                math.zeros(core_size // 2, dtype=math.complex128),
+            ],
+            axes=(0, 0, 0, 0),
+        )
+        c_T = 1
+        phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
+        return core, phi
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

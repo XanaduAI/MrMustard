@@ -350,8 +350,13 @@ class Ket(State):
             )
 
         m_modes = A.shape[-1]
-        remaining_indices = [i for i in range(m_modes) if i not in core_modes]
-        new_order = core_modes + remaining_indices
+
+        # bringing A to the ordering of our interest
+        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
+        core_indices = [mode_to_idx[i] for i in core_modes]
+
+        remaining_indices = [i for i in range(m_modes) if i not in core_indices]
+        new_order = core_indices + remaining_indices
 
         A_reordered = A[new_order, :]
         A_reordered = A_reordered[

@@ -473,3 +473,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         A_c_reordered = A_c[[0, 2], :]
         A_c_reordered = A_c_reordered[:, [0, 2]]
         assert math.allclose(A_c_reordered, math.zeros((2, 2)))
+
+        # weird ordering example:
+        xi = Ket.random([1, 4, 6])
+        core, U = xi.physical_stellar_decomposition([1])
+
+        assert xi == core >> U
+
+        Ac, _, _ = core.ansatz.triple
+        Ac = Ac[-1]
+        assert Ac[0, 0] == 0

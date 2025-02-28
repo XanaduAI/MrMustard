@@ -404,3 +404,22 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
         )
+
+    def test_stellar_decomposition(self):
+        rho = DM.random([0, 1])
+        sigma, phi = rho.stellar_decomposition([0])
+
+        assert sigma.modes == [0, 1]
+        assert phi.modes == [0]
+
+        # testing the validness of contraction equality
+        test_A, test_b, test_c = (sigma >> phi).ansatz.triple
+        A, b, c = rho.ansatz.triple
+
+        assert math.allclose(A, test_A)
+        assert math.allclose(b, test_b)
+        assert math.allclose(c, test_c)
+
+        # testing the core conditions on sigma
+        As, _, _ = sigma.ansatz.triple
+        assert As[-1][0, 0] == 0 and As[-1][0, 2] == 0 and As[-1][2, 2] == 0
