@@ -106,6 +106,49 @@ class PolyExpAnsatz(Ansatz):
         self._fn_kwargs = {}
         self._batch_size = self._A.shape[0] if A is not None else None
 
+    def __repr__(self) -> str:
+        r"""Returns a string representation of the PolyExpAnsatz object."""
+        self._generate_ansatz()  # Ensure parameters are generated if needed
+
+        # Get basic information
+        batch_size = self.batch_size
+        num_cv = self.num_CV_vars
+        num_derived = self.num_derived_vars
+        total_vars = self.num_vars
+
+        # Format shape information
+        A_shape = f"{self.A.shape}" if self._A is not None else "None"
+        b_shape = f"{self.b.shape}" if self._b is not None else "None"
+        c_shape = f"{self.c.shape}" if self._c is not None else "None"
+
+        # Create a descriptive name
+        display_name = f'"{self.name}"' if self.name else "unnamed"
+
+        # Build the representation string
+        repr_str = [
+            f"PolyExpAnsatz({display_name})",
+            f"  Batch size: {batch_size}",
+            f"  Variables: {num_cv} CV + {num_derived} derived = {total_vars} total",
+            f"  Parameter shapes:",
+            f"    A: {A_shape}",
+            f"    b: {b_shape}",
+            f"    c: {c_shape}",
+        ]
+
+        # Add information about simplification status
+        if self._simplified:
+            repr_str.append("  Status: simplified")
+
+        # Add information about function generation if applicable
+        if self._fn is not None:
+            fn_name = getattr(self._fn, "__name__", str(self._fn))
+            repr_str.append(f"  Generated from: {fn_name}")
+            if self._fn_kwargs:
+                param_str = ", ".join(f"{k}={v}" for k, v in self._fn_kwargs.items())
+                repr_str.append(f"  Parameters: {param_str}")
+
+        return "\n".join(repr_str)
+
     def _should_regenerate(self):
         return (
             self._A is None
@@ -497,6 +540,7 @@ class PolyExpAnsatz(Ansatz):
                 "The number of indices provided is the same as the number of CV variables."
                 "Use the eval() or __call__() method instead."
             )
+
         z = math.atleast_2d(z)
         z = math.cast(z, dtype=self.A.dtype)
 
