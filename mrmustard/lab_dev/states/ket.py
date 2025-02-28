@@ -120,9 +120,11 @@ class Ket(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
-            if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
-                raise ValueError(msg)
+            math.error_if(
+                p,
+                p < 1.0 - atol_purity,
+                f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity}).",
+            )
         return Ket.from_ansatz(
             modes,
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),

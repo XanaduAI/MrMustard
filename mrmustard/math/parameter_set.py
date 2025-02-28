@@ -15,6 +15,7 @@
 """This module contains the classes to describe sets of parameters."""
 
 from typing import Any, Sequence, Union
+import numpy as np
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -144,7 +145,9 @@ class ParameterSet:
         for name in self.names:
             param = self.constants.get(name) or self.variables.get(name)
             if len(param.value.shape) == 0:  # don't show arrays
-                string = str(math.asnumpy(math.round(param.value, decimals)))
+                # conversion to numpy is necessary to ensure consistent string formatting
+                # across backends
+                string = str(np.round(math.asnumpy(param.value), decimals))
             else:
                 string = f"{name}"
             strings.append(string)
@@ -189,7 +192,7 @@ class ParameterSet:
         """
         if isinstance(items, int):
             items = list([items])
-        items = list(items)
+        items = math.astensor(items)
 
         ret = ParameterSet()
 

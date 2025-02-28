@@ -89,7 +89,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
+            self.is_hilbert_vector = math.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -270,7 +270,7 @@ class State:  # pylint: disable=too-many-public-methods
 
     def ket(
         self,
-        cutoffs: list[int] | None = None,
+        cutoffs: tuple[int] | None = None,
         max_prob: float = 1.0,
         max_photons: int | None = None,
     ) -> ComplexTensor | None:
@@ -293,7 +293,7 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = tuple(c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs))
 
         if self.is_gaussian:
             self._ket = fock_utils.wigner_to_fock_state(
@@ -340,7 +340,7 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             if self.is_gaussian:
                 self._dm = fock_utils.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
+                    self.cov, self.means, shape=tuple(cutoffs + cutoffs), return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]

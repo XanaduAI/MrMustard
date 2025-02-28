@@ -37,6 +37,7 @@ from ..utils.typing import (
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 
+
 __all__ = [
     "BackendManager",
 ]
@@ -70,12 +71,21 @@ module_np, loader_np = lazy_import(module_name_np)
 module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
+# lazy import for jax
+module_name_jax = "mrmustard.math.backend_jax"
+module_jax, loader_jax = lazy_import(module_name_jax)
+
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
     "tensorflow": {
         "module": module_tf,
         "loader": loader_tf,
         "object": "BackendTensorflow",
+    },
+    "jax": {
+        "module": module_jax,
+        "loader": loader_jax,
+        "object": "BackendJax",
     },
 }
 
@@ -116,6 +126,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         for name in [
             "int32",
+            "int64",
             "float32",
             "float64",
             "complex64",
@@ -160,8 +171,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Args:
             name: The name of the new backend.
         """
-        if name not in ["numpy", "tensorflow"]:
-            msg = "Backend must be either ``numpy`` or ``tensorflow``"
+        if name not in ["numpy", "tensorflow", "jax"]:
+            msg = (
+                "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"  # pragma: no cover
+            )
             raise ValueError(msg)
 
         if self.backend_name != name:
@@ -201,7 +214,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("abs", (array,))
 
-    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
+    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9, rtol=1e-5) -> bool:
         r"""
         Whether two arrays are equal within tolerance.
 
@@ -218,7 +231,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Raises:
             ValueError: If the shape of the two arrays do not match.
         """
-        return self._apply("allclose", (array1, array2, atol))
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
+        return self._apply("allclose", (array1, array2, atol, rtol))
 
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
@@ -639,6 +654,22 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 axis,
             ),
         )
+
+    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
+
+        Args:
+            A: The A matrix.
+            B: The b vector.
+            C: The c scalar.
+            shape: The shape of the final tensor.
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized", (A, B, C, shape))  # pragma: no cover
 
     def hermite_renormalized_batch(
         self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
@@ -1141,7 +1172,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensordot product of ``a`` and ``b``
         """
-        return self._apply("tensordot", (a, b, axes))
+        return self._apply("tensordot", (a, b, tuple(axes)))
 
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         r"""The tiled array.
@@ -1238,6 +1269,45 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("zeros", (shape, dtype))
 
+    def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
+        r"""Executes ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+
+        Args:
+            cond: The condition to check
+            true_fn: The function to execute if ``cond`` is ``True``
+            false_fn: The function to execute if ``cond`` is ``False``
+            *args: The arguments to pass to ``true_fn`` and ``false_fn``
+        Returns:
+            The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+        """
+        return self._apply("conditional", (cond, true_fn, false_fn, *args))
+
+    def error_if(self, array: Tensor, condition: Tensor, msg: str):
+        r"""Raises an error if ``condition`` is ``True``.
+
+        Args:
+            array: The array to check
+            condition: The condition to check; should only use array elements in the condition
+                And must be boolean.
+            msg: The message to raise if ``condition`` is ``True``
+
+        Returns:
+            None
+            Raises an error if at least one element of ``cond`` is True.
+        """
+        return self._apply("error_if", (array, condition, msg))
+
+    def infinity_like(self, array: Tensor) -> Tensor:
+        r"""Returns an array of infinities with the same shape as ``array``.
+
+        Args:
+            array: The array to take the shape of.
+
+        Returns:
+            An array of infinities with the same shape as ``array``.
+        """
+        return self._apply("infinity_like", (array,))
+
     def zeros_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of zeros with the same shape and ``dtype`` as ``array``.
 
@@ -1320,7 +1390,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
 
         def wrapper(*args, **kwargs):
-            if self.backend_name == "numpy":
+            if self.backend_name in ["numpy", "jax"]:
                 return func(*args, **kwargs)
             else:
                 from tensorflow import (  # pylint: disable=import-outside-toplevel
@@ -1504,7 +1574,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return b_full
 
         N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
+        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
         return self.update_tensor(b_full, indices[:, None], b_rows)
@@ -1537,7 +1607,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
+        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
         updates = self.matvec(mat, self.gather(vec, indices, axis=0))
         return self.update_tensor(vec, indices[:, None], updates)
 

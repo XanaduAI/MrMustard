@@ -38,7 +38,7 @@ from mrmustard.lab import (
 )
 from tests.random import none_or_
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 hbar = settings.HBAR
 
@@ -54,6 +54,7 @@ class TestPNRDetector:
     def test_detector_coherent_state(self, alpha, eta, dc):
         """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
         skip_np()
+        skip_jax()
 
         detector = PNRDetector(efficiency=eta, dark_counts=dc, modes=[0])
         ps = Coherent(x=alpha.real, y=alpha.imag) << detector
@@ -69,6 +70,7 @@ class TestPNRDetector:
     def test_detector_squeezed_state(self, r, phi, eta, dc):
         """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
         skip_np()
+        skip_jax()
 
         S = Sgate(r=r, phi=phi)
         ps = Vacuum(1) >> S >> PNRDetector(efficiency=eta, dark_counts=dc)
@@ -91,6 +93,7 @@ class TestPNRDetector:
     def test_detector_two_mode_squeezed_state(self, r, phi, eta_s, eta_i, dc_s, dc_i):
         """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
         skip_np()
+        skip_jax()
 
         pnr = PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
         ps = Vacuum(2) >> S2gate(r=r, phi=phi) >> pnr
@@ -117,6 +120,7 @@ class TestPNRDetector:
     def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
         skip_np()
+        skip_jax()
 
         n_mean = 1.0
         n_measured = 1
@@ -137,6 +141,7 @@ class TestPNRDetector:
     def test_loss_probs(self, eta):
         "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
         skip_np()
+        skip_jax()
 
         ideal_detector = PNRDetector(efficiency=1.0, dark_counts=0.0)
         lossy_detector = PNRDetector(efficiency=eta, dark_counts=0.0)

@@ -24,29 +24,32 @@ from thewalrus.symplectic import is_symplectic
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 
 def is_unitary(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is unitary"""
     skip_np()
+    skip_jax()
 
     M_dagger = np.transpose(M.conj())
-    return np.allclose(M @ M_dagger, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
+    return math.allclose(M @ M_dagger, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
 def is_orthogonal(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is orthogonal"""
     skip_np()
+    skip_jax()
 
     M_T = np.transpose(M)
-    return np.allclose(M @ M_T, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
+    return math.allclose(M @ M_T, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
 @given(n=st.integers(2, 4))
 def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
     skip_np()
+    skip_jax()
 
     S = math.new_variable(random_symplectic(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
@@ -66,6 +69,7 @@ def test_update_symplectic(n):
 def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
     skip_np()
+    skip_jax()
 
     U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
@@ -86,6 +90,7 @@ def test_update_unitary(n):
 def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
     skip_np()
+    skip_jax()
 
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
