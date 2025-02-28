@@ -860,7 +860,7 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
 # ~~~~~~~~~~~~~~~~
 
 
-def attenuator_kraus_Abc(eta: float) -> tuple[Matrix, Vector, Scalar]:
+def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
     The last index is the "bond" index which should be summed/integrated over.
@@ -871,15 +871,27 @@ def attenuator_kraus_Abc(eta: float) -> tuple[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
     """
+    batch_size, batch_dim = _compute_batch_size(eta)
+    batch_shape = batch_size or (1,)
+
+    eta = np.broadcast_to(eta, batch_shape)
+
     costheta = math.sqrt(eta)
     sintheta = math.sqrt(1 - eta)
 
-    A = math.astensor(
-        [[0, costheta, 0], [costheta, 0, -sintheta], [0, -sintheta, 0]], math.complex128
+    O_matrix = math.zeros(batch_shape, math.complex128)
+
+    A = np.stack(
+        [
+            np.stack([O_matrix, costheta, O_matrix], batch_dim),
+            np.stack([costheta, O_matrix, -sintheta], batch_dim),
+            np.stack([O_matrix, -sintheta, O_matrix], batch_dim),
+        ],
+        batch_dim,
     )
-    b = _vacuum_B_vector(3)
-    c = 1.0 + 0j
-    return A, b, c
+    b = math.tile(_vacuum_B_vector(3), batch_shape + (3,))
+    c = math.ones(batch_shape, math.complex128)
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def XY_to_channel_Abc(
