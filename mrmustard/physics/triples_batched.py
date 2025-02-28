@@ -834,11 +834,36 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    A = math.block(
+    batch_size, batch_dim = _compute_batch_size(s)
+    batch_shape = batch_size or (1,)
+    batch_slice = (slice(None),) * batch_dim
+
+    s = np.broadcast_to(s, batch_shape)
+
+    A = math.concat(
         [
-            [(s - 1) / 2 * math.Xmat(num_modes=n_modes), -math.Zmat(num_modes=n_modes)],
-            [-math.Zmat(num_modes=n_modes), math.Xmat(num_modes=n_modes)],
-        ]
+            np.concat(
+                [
+                    (s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes),
+                    np.broadcast_to(
+                        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
+                    ),
+                ],
+                -1,
+            ),
+            np.concat(
+                [
+                    np.broadcast_to(
+                        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
+                    ),
+                    np.broadcast_to(
+                        math.Xmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
+                    ),
+                ],
+                -1,
+            ),
+        ],
+        -2,
     )
     order_list = math.arange(4 * n_modes)  # [0,3,1,2]
     order_list = list(
@@ -854,10 +879,10 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
         )
     )
 
-    A = math.astensor(math.asnumpy(A)[order_list, :][:, order_list])
-    b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0
-    return math.astensor(A), b, c
+    A = math.astensor(math.asnumpy(A)[*batch_slice, order_list, :][*batch_slice, :, order_list])
+    b = math.tile(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
+    c = math.ones(batch_shape, math.complex128)
+    return A, b, c
 
 
 #  TODO: how to handle batching here?
