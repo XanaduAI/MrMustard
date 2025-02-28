@@ -266,9 +266,9 @@ class TestBackendManager:
         r"""
         Tests the ``broadcast_to`` method.
         """
-        arr = np.array([1, 2, 3])
+        arr = math.astensor([1, 2, 3])
         res = math.asnumpy(math.broadcast_to(arr, (3, 3)))
-        assert np.allclose(res, np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
+        assert math.allclose(res, math.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
 
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):

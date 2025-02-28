@@ -87,6 +87,10 @@ class BackendJax(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    @jax.jit
+    def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
+        return jnp.broadcast_to(array, shape)
+
     @partial(jax.jit, static_argnames=["axis"])
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
@@ -416,6 +420,10 @@ class BackendJax(BackendBase):  # pragma: no cover
     @partial(jax.jit, static_argnames=["dtype"])
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
+
+    @jax.jit
+    def stack(self, arrays: Sequence[jnp.ndarray], axis: int = 0) -> jnp.ndarray:
+        return jnp.stack(arrays, axis=axis)
 
     @jax.jit
     def kron(self, tensor1: jnp.ndarray, tensor2: jnp.ndarray):
