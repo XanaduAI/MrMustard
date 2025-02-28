@@ -20,7 +20,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
+from mrmustard.utils.typing import RealMatrix, ComplexMatrix, Matrix, Vector, Scalar
 
 
 def bargmann_Abc_to_phasespace_cov_means(
@@ -217,33 +217,42 @@ def au2Symplectic(A):
     return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
 
 
-def symplectic2Au(S):
+def symplectic2Au(symplectic: RealMatrix) -> ComplexMatrix:
     r"""
     The inverse of au2Symplectic i.e., returns symplectic, given Au
 
-    S: symplectic in XXPP order
+    symplectic: symplectic in XXPP order
     """
-    m = S.shape[-1]
+    batch_size = symplectic.shape[:-2]
+    batch_shape = batch_size or (1,)
+    batch_dim = len(batch_shape)
+
+    symplectic = np.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
+
+    m = symplectic.shape[-1]
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     R = math.rotmat(m)
-    S = R @ S @ math.dagger(R)
+    S = R @ symplectic @ math.dagger(R)
     # identifying blocks of S
-    S_1 = S[:m, :m]
-    S_2 = S[:m, m:]
+    batch_slice = (slice(None, None, None),) * batch_dim
 
-    # TODO: broadcasting/batch stuff consider a batch dimension
+    S_1 = S[*batch_slice, :m, :m]
+    S_2 = S[*batch_slice, :m, m:]
+
+    perm = tuple(range(len(S_1.shape)))
+    perm = perm[:batch_dim] + perm[batch_dim:][::-1]
 
     # the formula to apply comes here
     A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-    A_2 = math.conj(math.inv(math.transpose(S_1)))
-    A_3 = math.transpose(A_2)
+    A_2 = math.conj(math.inv(math.transpose(S_1, perm)))
+    A_3 = math.transpose(A_2, perm)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
-    A = math.block([[A_1, A_2], [A_3, A_4]])
+    A = math.concat([math.concat([A_1, A_2], -1), math.concat([A_3, A_4], -1)], -2)
 
-    return A
+    return A if batch_size else A[0]
 
 
 def XY_of_channel(A: ComplexMatrix):
