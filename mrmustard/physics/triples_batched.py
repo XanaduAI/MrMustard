@@ -251,13 +251,28 @@ def gket_state_Abc(symplectic: RealMatrix):
     Returns:
         The ``(A,b,c)`` triple of the Gket state.
     """
+    batch_size = symplectic.shape[:-2]
+    batch_shape = batch_size or (1,)
+    batch_dim = len(batch_size)
 
+    symplectic = np.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
     m = symplectic.shape[-1] // 2  # num of modes
 
-    A = symplectic2Au(symplectic)
-    b = math.zeros(m, dtype=A.dtype)
-    c = ((-1) ** m * math.det(A[m:, m:] @ math.conj(A[m:, m:]) - math.eye_like(A[m:, m:]))) ** 0.25
-    return A[:m, :m], b, c
+    batch_slice = (slice(None, None, None),) * batch_dim
+
+    Au = symplectic2Au(symplectic)
+
+    A = Au[*batch_slice, :m, :m]
+    b = math.zeros(batch_shape + (m,), dtype=A.dtype)
+    c = (
+        (-1) ** m
+        * math.det(
+            Au[*batch_slice, m:, m:] @ math.conj(Au[*batch_slice, m:, m:])
+            - math.eye_like(Au[*batch_slice, m:, m:])
+        )
+    ) ** 0.25
+
+    return A[*batch_slice, :m, :m], b, c
 
 
 def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
