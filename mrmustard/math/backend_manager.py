@@ -1167,6 +1167,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The stacked array
         """
+        arrays = self.astensor(arrays)
         return self._apply("stack", (arrays, axis))
 
     def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):

@@ -421,7 +421,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.sqrt(self.cast(x, dtype))
 
-    def stack(self, arrays: Sequence[jnp.ndarray], axis: int = 0) -> jnp.ndarray:
+    @partial(jax.jit, static_argnames=["axis"])
+    def stack(self, arrays: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
         return jnp.stack(arrays, axis=axis)
 
     @jax.jit
