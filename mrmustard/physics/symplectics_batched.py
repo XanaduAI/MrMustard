@@ -136,7 +136,9 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
     return symplectic if batch_size else symplectic[0]
 
 
-def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
+def mzgate_symplectic(
+    phi_a: float | Iterable[float], phi_b: float | Iterable[float], internal: bool
+) -> Matrix:
     r"""
     The symplectic matrix of a Mach-Zehnder gate.
 
@@ -152,30 +154,40 @@ def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
     Returns:
         The symplectic matrix of a Mach-Zehnder gate.
     """
-    ca = math.cos(complex(phi_a))
-    sa = math.sin(complex(phi_a))
-    cb = math.cos(complex(phi_b))
-    sb = math.sin(complex(phi_b))
-    cp = math.cos(complex(phi_a + phi_b))
-    sp = math.sin(complex(phi_a + phi_b))
+    batch_size, batch_dim = _compute_batch_size(phi_a, phi_b)
+    batch_shape = batch_size or (1,)
+
+    phi_a = np.broadcast_to(phi_a, batch_shape)
+    phi_b = np.broadcast_to(phi_b, batch_shape)
+
+    ca = math.cos(phi_a)
+    sa = math.sin(phi_a)
+    cb = math.cos(phi_b)
+    sb = math.sin(phi_b)
+    cp = math.cos(phi_a + phi_b)
+    sp = math.sin(phi_a + phi_b)
     if internal:
-        return 0.5 * math.astensor(
+        symplectic = np.stack(
             [
-                [ca - cb, -sa - sb, sb - sa, -ca - cb],
-                [-sa - sb, cb - ca, -ca - cb, sa - sb],
-                [sa - sb, ca + cb, ca - cb, -sa - sb],
-                [ca + cb, sb - sa, -sa - sb, cb - ca],
-            ]
+                np.stack([ca - cb, -sa - sb, sb - sa, -ca - cb], batch_dim),
+                np.stack([-sa - sb, cb - ca, -ca - cb, sa - sb], batch_dim),
+                np.stack([sa - sb, ca + cb, ca - cb, -sa - sb], batch_dim),
+                np.stack([ca + cb, sb - sa, -sa - sb, cb - ca], batch_dim),
+            ],
+            batch_dim,
         )
     else:
-        return 0.5 * math.astensor(
+        symplectic = np.stack(
             [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
+                np.stack([cp - ca, -sb, sa - sp, -1 - cb], batch_dim),
+                np.stack([-sa - sp, 1 - cb, -ca - cp, sb], batch_dim),
+                np.stack([sp - sa, 1 + cb, cp - ca, -sb], batch_dim),
+                np.stack([cp + ca, -sb, -sa - sp, 1 - cb], batch_dim),
+            ],
+            batch_dim,
         )
+    symplectic = math.cast(0.5 * symplectic, math.complex128)
+    return symplectic if batch_size else symplectic[0]
 
 
 def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
