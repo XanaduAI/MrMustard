@@ -272,7 +272,7 @@ def gket_state_Abc(symplectic: RealMatrix):
         )
     ) ** 0.25
 
-    return A[*batch_slice, :m, :m], b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):

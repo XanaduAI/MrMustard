@@ -190,7 +190,7 @@ def mzgate_symplectic(
     return symplectic if batch_size else symplectic[0]
 
 
-def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
+def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a quadratic phase gate.
 
@@ -201,12 +201,20 @@ def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
     Returns:
         The symplectic matrix of a phase gate.
     """
-    return math.block(
+    batch_size, _ = _compute_batch_size(shearing)
+    batch_shape = batch_size or (1,)
+
+    I_matrix = np.broadcast_to(math.eye(n_modes), batch_shape + (n_modes, n_modes))
+    O_matrix = math.zeros(batch_shape + (n_modes, n_modes))
+
+    symplectic = np.concat(
         [
-            [math.eye(n_modes), math.zeros((n_modes, n_modes))],
-            [math.eye(n_modes) * shearing, math.eye(n_modes)],
-        ]
+            np.concat([I_matrix, O_matrix], -1),
+            np.concat([math.eye(n_modes) * shearing[..., None, None], I_matrix], -1),
+        ],
+        -2,
     )
+    return symplectic if batch_size else symplectic[0]
 
 
 def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
