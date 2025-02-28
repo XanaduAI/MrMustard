@@ -880,7 +880,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     )
 
     A = math.astensor(math.asnumpy(A)[*batch_slice, order_list, :][*batch_slice, :, order_list])
-    b = math.tile(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
+    b = np.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
     c = math.ones(batch_shape, math.complex128)
     return A, b, c
 
