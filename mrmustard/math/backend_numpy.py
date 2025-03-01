@@ -104,6 +104,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
+        return np.broadcast_to(array, shape)
+
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
 
@@ -399,6 +402,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
+
+    def stack(self, arrays: np.ndarray, axis: int = 0) -> np.ndarray:
+        return np.stack(arrays, axis=axis)
 
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)

@@ -110,6 +110,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
+        return tf.broadcast_to(array, shape)
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 
@@ -344,6 +347,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
+
+    def stack(self, arrays: tf.Tensor, axis: int = 0) -> tf.Tensor:
+        return tf.stack(arrays, axis=axis)
 
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)

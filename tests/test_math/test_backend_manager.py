@@ -262,6 +262,14 @@ class TestBackendManager:
         assert R.shape == (8, 8)
         assert math.allclose(math.block([[I, O], [O, 1j * I]]), R)
 
+    def test_broadcast_to(self):
+        r"""
+        Tests the ``broadcast_to`` method.
+        """
+        arr = math.astensor([1, 2, 3])
+        res = math.broadcast_to(arr, (3, 3))
+        assert math.allclose(res, math.astensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
+
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):
         r"""
@@ -673,6 +681,16 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sqrtm(arr))
         assert math.allclose(res, 2 * np.eye(3))
+
+    def test_stack(self):
+        r"""
+        Tests the ``stack`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.stack([arr1, arr2], axis=0))
+        exp = np.stack([arr1, arr2], axis=0)
+        assert np.allclose(res, exp)
 
     def test_sum(self):
         r"""
