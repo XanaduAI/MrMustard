@@ -275,6 +275,7 @@ def gket_state_Abc(symplectic: RealMatrix):
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
+# TODO: update after complex_gaussian_integral_2 is updated
 def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     r"""
     The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
@@ -309,9 +310,8 @@ def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     )
 
 
-def sauron_state_Abc(
-    n: int | Iterable[int], epsilon: float | Iterable[float]
-) -> tuple[Matrix, Vector, Scalar]:
+# TODO: update after complex_gaussian_integral_2 is updated
+def sauron_state_Abc(n: int, epsilon: float) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
     ring of coherent states.
@@ -586,8 +586,6 @@ def twomode_squeezing_gate_Abc(
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
-# TODO: how to handle batching here?
-# i.e. does it always output batch (1,)?
 def identity_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of identity gates.
@@ -890,7 +888,6 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
-#  TODO: how to handle batching here?
 def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
