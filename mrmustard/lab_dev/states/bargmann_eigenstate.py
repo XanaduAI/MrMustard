@@ -36,7 +36,7 @@ class BargmannEigenstate(Ket):
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
 
-        >>> state = BargmannEigenstate([1, 2], 0.1 + 0.5j)
+        >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
         >>> assert state.modes == [1, 2]
 
     Args:
@@ -54,9 +54,9 @@ class BargmannEigenstate(Ket):
     def __init__(
         self,
         modes: Sequence[int],
-        alpha: complex | Sequence[complex] = 0.0,
+        alpha: float | Sequence[float] = 0.0,
         alpha_trainable: bool = False,
-        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
+        alpha_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="BargmannEigenstate")
 
