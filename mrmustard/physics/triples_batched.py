@@ -629,8 +629,8 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
 
     eta = np.broadcast_to(eta, batch_shape)
 
-    if math.any(math.real(eta) > 1) or math.any(math.real(eta) < 0):
-        raise ValueError("Transmissivity must be a float in the interval ``[0, 1]``.")
+    math.error_if(eta, math.any(math.real(eta) > 1), "Found transmissivity greater than `1`.")
+    math.error_if(eta, math.any(math.real(eta) < 0), "Found transmissivity less than `0`.")
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     eta1 = math.sqrt(eta)
@@ -669,8 +669,9 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
 
     g = np.broadcast_to(g, batch_shape)
 
-    if math.any(math.real(g) < 1):
-        raise ValueError("Found amplifier with gain ``g`` smaller than `1`.")
+    math.error_if(
+        g, math.any(math.real(g) < 1), "Found amplifier with gain ``g`` smaller than `1`."
+    )
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     g1 = 1 / math.sqrt(g)
