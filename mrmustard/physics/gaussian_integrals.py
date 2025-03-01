@@ -336,9 +336,6 @@ def complex_gaussian_integral_1(
             f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
         )
     A, b, c = Abc
-    print("A", A.shape)
-    print("b", b.shape)
-    print("c", c.shape)
     c = math.astensor(c)
     # assuming c is batched accordingly
     batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
@@ -358,8 +355,6 @@ def complex_gaussian_integral_1(
     n = n_plus_N - N  # number of z variables
     m = len(idx_z)  # number of pairs to integrate over
     idx = tuple(idx_z) + tuple(idx_zconj)
-    print("idx", idx)
-    print("n", n)
     if any(i >= n for i in idx):
         raise ValueError(
             f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}"
