@@ -109,7 +109,7 @@ class TestHomodyneSampler:
         N_MEAS = 300
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        alpha = [1.0 + 1.0j, 1.0 + 1.0j]
+        alpha = math.astensor([1.0 + 1.0j, 1.0 + 1.0j])
         tol = settings.ATOL
 
         state = Coherent([0, 1], x=math.real(alpha), y=math.imag(alpha))
