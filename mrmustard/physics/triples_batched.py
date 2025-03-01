@@ -731,6 +731,11 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the Gaussian random noise channel.
     """
+    batch_size, _ = Y.shape[:-2]
+    batch_shape = batch_size or (1,)
+
+    Y = np.broadcast_to(Y, batch_shape + Y.shape[-2:])
+
     m = Y.shape[-1] // 2
     xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
     xi_inv = math.inv(xi)
@@ -767,10 +772,10 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     )
 
     A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
-    b = math.zeros(4 * m)
+    b = math.zeros(batch_shape + (4 * m,))
     c = 1 / math.sqrt(math.det(xi))
 
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 def bargmann_to_quadrature_Abc(
@@ -882,7 +887,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     A = math.astensor(math.asnumpy(A)[*batch_slice, order_list, :][*batch_slice, :, order_list])
     b = np.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
     c = math.ones(batch_shape, math.complex128)
-    return A, b, c
+    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
 
 #  TODO: how to handle batching here?
