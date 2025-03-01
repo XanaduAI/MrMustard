@@ -253,7 +253,6 @@ def gket_state_Abc(symplectic: RealMatrix):
     """
     batch_size = symplectic.shape[:-2]
     batch_shape = batch_size or (1,)
-    batch_dim = len(batch_size)
 
     symplectic = np.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
     m = symplectic.shape[-1] // 2  # num of modes
@@ -833,7 +832,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    batch_size, batch_dim = _compute_batch_size(s)
+    batch_size, _ = _compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
     s = np.broadcast_to(s, batch_shape)
