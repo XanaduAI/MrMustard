@@ -258,18 +258,13 @@ def gket_state_Abc(symplectic: RealMatrix):
     symplectic = np.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
     m = symplectic.shape[-1] // 2  # num of modes
 
-    batch_slice = (slice(None, None, None),) * batch_dim
-
     Au = symplectic2Au(symplectic)
 
-    A = Au[*batch_slice, :m, :m]
+    A = Au[..., :m, :m]
     b = math.zeros(batch_shape + (m,), dtype=A.dtype)
     c = (
         (-1) ** m
-        * math.det(
-            Au[*batch_slice, m:, m:] @ math.conj(Au[*batch_slice, m:, m:])
-            - math.eye_like(Au[*batch_slice, m:, m:])
-        )
+        * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
     ) ** 0.25
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -840,7 +835,6 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     """
     batch_size, batch_dim = _compute_batch_size(s)
     batch_shape = batch_size or (1,)
-    batch_slice = (slice(None),) * batch_dim
 
     s = np.broadcast_to(s, batch_shape)
 
@@ -883,7 +877,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
         )
     )
 
-    A = math.astensor(math.asnumpy(A)[*batch_slice, order_list, :][*batch_slice, :, order_list])
+    A = math.astensor(math.asnumpy(A)[..., order_list, :][..., :, order_list])
     b = np.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
     c = math.ones(batch_shape, math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]

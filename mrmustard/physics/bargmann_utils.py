@@ -236,10 +236,9 @@ def symplectic2Au(symplectic: RealMatrix) -> ComplexMatrix:
     R = math.rotmat(m)
     S = R @ symp_batch @ math.dagger(R)
     # identifying blocks of S
-    batch_slice = (slice(None, None, None),) * batch_dim
 
-    S_1 = S[*batch_slice, :m, :m]
-    S_2 = S[*batch_slice, :m, m:]
+    S_1 = S[..., :m, :m]
+    S_2 = S[..., :m, m:]
 
     perm = tuple(range(len(S_1.shape)))
     perm = perm[:batch_dim] + perm[batch_dim:][::-1]
