@@ -227,14 +227,14 @@ def symplectic2Au(symplectic: RealMatrix) -> ComplexMatrix:
     batch_shape = batch_size or (1,)
     batch_dim = len(batch_shape)
 
-    symplectic = np.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
+    symp_batch = math.broadcast_to(symplectic, batch_shape + symplectic.shape[-2:])
 
-    m = symplectic.shape[-1]
+    m = symp_batch.shape[-1]
     m = m // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     R = math.rotmat(m)
-    S = R @ symplectic @ math.dagger(R)
+    S = R @ symp_batch @ math.dagger(R)
     # identifying blocks of S
     batch_slice = (slice(None, None, None),) * batch_dim
 

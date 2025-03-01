@@ -20,8 +20,6 @@ from __future__ import annotations
 
 from typing import Iterable
 
-import numpy as np
-
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
 
@@ -66,17 +64,17 @@ def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     batch_size, batch_dim = _compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
-    s = np.broadcast_to(s, batch_shape)
+    s_batch = math.broadcast_to(math.cast(s, math.complex128), batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     I_matrix = math.ones(batch_shape, math.complex128)
 
-    symplectic = np.stack(
+    symplectic = math.stack(
         [
-            np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
-            np.stack([s, I_matrix, O_matrix, O_matrix], batch_dim),
-            np.stack([O_matrix, O_matrix, I_matrix, -s], batch_dim),
-            np.stack([O_matrix, O_matrix, O_matrix, I_matrix], batch_dim),
+            math.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([s_batch, I_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, O_matrix, I_matrix, -s_batch], batch_dim),
+            math.stack([O_matrix, O_matrix, O_matrix, I_matrix], batch_dim),
         ],
         batch_dim,
     )
@@ -96,17 +94,17 @@ def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     batch_size, batch_dim = _compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
-    s = np.broadcast_to(s, batch_shape)
+    s_batch = math.broadcast_to(math.cast(s, math.complex128), batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     I_matrix = math.ones(batch_shape, math.complex128)
 
-    symplectic = np.stack(
+    symplectic = math.stack(
         [
-            np.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
-            np.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
-            np.stack([O_matrix, s, I_matrix, O_matrix], batch_dim),
-            np.stack([s, O_matrix, O_matrix, I_matrix], batch_dim),
+            math.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, s_batch, I_matrix, O_matrix], batch_dim),
+            math.stack([s_batch, O_matrix, O_matrix, I_matrix], batch_dim),
         ],
         batch_dim,
     )
@@ -125,11 +123,11 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
     """
     batch_size = unitary.shape[:-2]
     batch_shape = batch_size or (1,)
-    unitary = np.broadcast_to(unitary, batch_shape + unitary.shape[-2:])
-    symplectic = np.concat(
+    unitary_batch = math.broadcast_to(unitary, batch_shape + unitary.shape[-2:])
+    symplectic = math.concat(
         [
-            np.concat([math.real(unitary), -math.imag(unitary)], -1),
-            np.concat([math.imag(unitary), math.real(unitary)], -1),
+            math.concat([math.real(unitary_batch), -math.imag(unitary_batch)], -1),
+            math.concat([math.imag(unitary_batch), math.real(unitary_batch)], -1),
         ],
         -2,
     )
@@ -157,32 +155,32 @@ def mzgate_symplectic(
     batch_size, batch_dim = _compute_batch_size(phi_a, phi_b)
     batch_shape = batch_size or (1,)
 
-    phi_a = np.broadcast_to(phi_a, batch_shape)
-    phi_b = np.broadcast_to(phi_b, batch_shape)
+    phi_a_batch = math.broadcast_to(phi_a, batch_shape)
+    phi_b_batch = math.broadcast_to(phi_b, batch_shape)
 
-    ca = math.cos(phi_a)
-    sa = math.sin(phi_a)
-    cb = math.cos(phi_b)
-    sb = math.sin(phi_b)
-    cp = math.cos(phi_a + phi_b)
-    sp = math.sin(phi_a + phi_b)
+    ca = math.cos(phi_a_batch)
+    sa = math.sin(phi_a_batch)
+    cb = math.cos(phi_b_batch)
+    sb = math.sin(phi_b_batch)
+    cp = math.cos(phi_a_batch + phi_b_batch)
+    sp = math.sin(phi_a_batch + phi_b_batch)
     if internal:
-        symplectic = np.stack(
+        symplectic = math.stack(
             [
-                np.stack([ca - cb, -sa - sb, sb - sa, -ca - cb], batch_dim),
-                np.stack([-sa - sb, cb - ca, -ca - cb, sa - sb], batch_dim),
-                np.stack([sa - sb, ca + cb, ca - cb, -sa - sb], batch_dim),
-                np.stack([ca + cb, sb - sa, -sa - sb, cb - ca], batch_dim),
+                math.stack([ca - cb, -sa - sb, sb - sa, -ca - cb], batch_dim),
+                math.stack([-sa - sb, cb - ca, -ca - cb, sa - sb], batch_dim),
+                math.stack([sa - sb, ca + cb, ca - cb, -sa - sb], batch_dim),
+                math.stack([ca + cb, sb - sa, -sa - sb, cb - ca], batch_dim),
             ],
             batch_dim,
         )
     else:
-        symplectic = np.stack(
+        symplectic = math.stack(
             [
-                np.stack([cp - ca, -sb, sa - sp, -1 - cb], batch_dim),
-                np.stack([-sa - sp, 1 - cb, -ca - cp, sb], batch_dim),
-                np.stack([sp - sa, 1 + cb, cp - ca, -sb], batch_dim),
-                np.stack([cp + ca, -sb, -sa - sp, 1 - cb], batch_dim),
+                math.stack([cp - ca, -sb, sa - sp, -1 - cb], batch_dim),
+                math.stack([-sa - sp, 1 - cb, -ca - cp, sb], batch_dim),
+                math.stack([sp - sa, 1 + cb, cp - ca, -sb], batch_dim),
+                math.stack([cp + ca, -sb, -sa - sp, 1 - cb], batch_dim),
             ],
             batch_dim,
         )
@@ -204,15 +202,15 @@ def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
     batch_size, _ = _compute_batch_size(shearing)
     batch_shape = batch_size or (1,)
 
-    shearing = np.broadcast_to(shearing, batch_shape)
+    shearing_batch = math.broadcast_to(shearing, batch_shape)
 
-    I_matrix = np.broadcast_to(math.eye(n_modes), batch_shape + (n_modes, n_modes))
+    I_matrix = math.broadcast_to(math.eye(n_modes), batch_shape + (n_modes, n_modes))
     O_matrix = math.zeros(batch_shape + (n_modes, n_modes))
 
-    symplectic = np.concat(
+    symplectic = math.concat(
         [
-            np.concat([I_matrix, O_matrix], -1),
-            np.concat([math.eye(n_modes) * shearing[..., None, None], I_matrix], -1),
+            math.concat([I_matrix, O_matrix], -1),
+            math.concat([math.eye(n_modes) * shearing_batch[..., None, None], I_matrix], -1),
         ],
         -2,
     )
@@ -231,11 +229,11 @@ def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
     """
     batch_size = orthogonal.shape[:-2]
     batch_shape = batch_size or (1,)
-    orthogonal = np.broadcast_to(orthogonal, batch_shape + orthogonal.shape[-2:])
-    symplectic = np.concat(
+    orthogonal_batch = math.broadcast_to(orthogonal, batch_shape + orthogonal.shape[-2:])
+    symplectic = math.concat(
         [
-            np.concat([orthogonal, -math.zeros_like(orthogonal)], -1),
-            np.concat([math.zeros_like(orthogonal), orthogonal], -1),
+            math.concat([orthogonal_batch, -math.zeros_like(orthogonal_batch)], -1),
+            math.concat([math.zeros_like(orthogonal_batch), orthogonal_batch], -1),
         ],
         -2,
     )
