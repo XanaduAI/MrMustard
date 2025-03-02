@@ -371,18 +371,14 @@ class DM(State):
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
         """
-        if isinstance(modes, int):
-            modes = {modes}
-        modes = set(modes)
-
+        modes = {modes} if isinstance(modes, int) else set(modes)
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
+            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
 
         if self._parameters:
             # if ``self`` has a parameter set it means it is a built-in state,
             # in which case we slice the parameters
-            return self._getitem_builtin(modes)
+            return self._getitem_builtin(tuple(modes))
 
         # if ``self`` has no parameter set it is not a built-in state,
         # in which case we trace the representation

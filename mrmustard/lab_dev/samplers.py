@@ -154,9 +154,12 @@ class Sampler(ABC):
         if isinstance(self.povms, CircuitComponent):
             kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
-            return self.povms.__class__(modes=[mode], **kwargs)
+            try:
+                return self.povms.__class__(modes=(mode,), **kwargs)
+            except TypeError:
+                return self.povms.__class__(mode, **kwargs)
         else:
-            return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
+            return self.povms[self.meas_outcomes.index(meas_outcome)].on(mode)
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
         r"""
@@ -187,7 +190,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number([0], 0))
+        super().__init__(list(range(cutoff)), Number(0, 0))
         self._cutoff = cutoff
         self._outcome_arg = "n"
 

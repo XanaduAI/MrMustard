@@ -525,7 +525,7 @@ class CircuitComponent:
             del ret.manual_shape
         return ret
 
-    def _getitem_builtin(self, modes: set[int]):
+    def _getitem_builtin(self, modes: tuple[int, ...]):
         r"""
         A convenience function to slice built-in circuit components (CCs).
 
@@ -537,7 +537,10 @@ class CircuitComponent:
         """
         items = [i for i, m in enumerate(self.modes) if m in modes]
         kwargs = self.parameters[items].to_dict()
-        return self.__class__(modes=modes, **kwargs)
+        try:
+            return self.__class__(modes=modes, **kwargs)
+        except TypeError:
+            return self.__class__(mode=modes[0], **kwargs)
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""

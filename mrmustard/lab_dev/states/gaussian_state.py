@@ -79,7 +79,7 @@ class GKet(Ket):
             ),
         ).representation
 
-    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+    def _getitem_builtin(self, modes: tuple[int, ...]):
         r"""
         The slicing method for a GDM state.
         """
@@ -151,7 +151,7 @@ class GDM(DM):
             ),
         ).representation
 
-    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+    def _getitem_builtin(self, modes: tuple[int, ...]):
         r"""
         The slicing method for a GDM state.
         """

@@ -319,9 +319,7 @@ class Ket(State):
         Reduced density matrix obtained by tracing out all the modes except those in the given
         ``modes``. Note that the result is returned with modes in increasing order.
         """
-        if isinstance(modes, int):
-            modes = [modes]
-        modes = set(modes)
+        modes = {modes} if isinstance(modes, int) else set(modes)
 
         if not modes.issubset(self.modes):
             raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
@@ -329,7 +327,7 @@ class Ket(State):
         if self._parameters:
             # if ``self`` has a parameter set, it is a built-in state, and we slice the
             # parameters
-            return self._getitem_builtin(modes)
+            return self._getitem_builtin(tuple(modes))
 
         # if ``self`` has no parameter set, it is not a built-in state.
         # we must turn it into a density matrix and slice the representation
