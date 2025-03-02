@@ -32,27 +32,23 @@ class Sgate(Unitary):
     r"""
     The squeezing gate.
 
-    If ``r`` and/or ``phi`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
-    all the modes share the same parameters.
-
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import Sgate
 
-        >>> unitary = Sgate(modes=[1, 2], r=0.1, phi=[0.2, 0.3])
-        >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.parameters.r.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.parameters.phi.value, [0.2, 0.3])
+        >>> unitary = Sgate(modes=1, r=0.1, phi=0.2)
+        >>> assert unitary.modes == (1,)
+        >>> assert unitary.parameters.r.value == 0.1
+        >>> assert unitary.parameters.phi.value == 0.2
 
     Args:
-        modes: The modes this gate is applied to.
-        r: The list of squeezing magnitudes.
-        r_bounds: The bounds for the squeezing magnitudes.
-        r_trainable: Whether r is a trainable variable.
-        phi: The list of squeezing angles.
-        phi_bounds: The bounds for the squeezing angles.
-        phi_trainable: Whether phi is a trainable variable.
+        mode: The mode this gate is applied to.
+        r: The squeezing magnitude.
+        phi: The squeezing angle.
+        r_trainable: Whether ``r`` is trainable.
+        phi_trainable: Whether ``phi`` is trainable.
+        r_bounds: The bounds for ``r``.
+        phi_bounds: The bounds for ``phi``.
 
     .. details::
 
@@ -82,21 +78,20 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
+        mode: int,
+        r: float = 0.0,
+        phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: tuple[float | None, float | None] = (0.0, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Sgate")
-        rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
-        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.squeezing_gate_Abc, r=self.parameters.r, delta=self.parameters.phi
             ),

@@ -18,7 +18,6 @@ The class representing an Interferometer gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard import math
 from mrmustard.math.parameters import update_unitary
 from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -38,17 +37,19 @@ class Interferometer(Unitary):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
 
     Args:
-        modes (optional, Sequence[int]): the list of modes this gate is applied to
-        num_modes (int): the num_modes-mode interferometer
-        unitary (2d array): a valid unitary matrix U. For N modes it must have shape `(N,N)`
-        unitary_trainable (bool): whether unitary is a trainable variable
+        modes: The modes this gate is applied to.
+        unitary: A unitary matrix. For N modes it must have shape `(N,N)`. If ``None``, a random unitary is generated.
+        unitary_trainable: Whether ``unitary`` is trainable.
+
+    Raises:
+        ValueError: If the size of the unitary does not match the number of modes.
     """
 
     short_name = "I"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, ...],
         unitary: ComplexMatrix | None = None,
         unitary_trainable: bool = False,
     ):

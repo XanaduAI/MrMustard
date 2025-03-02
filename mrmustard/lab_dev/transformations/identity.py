@@ -18,8 +18,6 @@ The classes representing an identity gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -31,15 +29,12 @@ class Identity(Unitary):
     r"""
     The identity gate.
 
-    Applied to a single or multiple modes
-
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import Identity
 
-        >>> unitary = Identity(modes=[1, 2])
-        >>> assert unitary.modes == [1, 2]
+        >>> unitary = Identity(modes=(1, 2))
+        >>> assert unitary.modes == (1, 2)
 
     Args:
         modes: The modes this gate is applied to.
@@ -49,7 +44,7 @@ class Identity(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, ...],
     ):
         super().__init__(name="Identity")
         self._representation = self.from_ansatz(

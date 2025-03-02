@@ -44,6 +44,10 @@ class QuadratureEigenstate(Ket):
         mode: The mode of the quadrature eigenstate.
         x: The displacement of the state.
         phi: The angle of the state with `0` being a position eigenstate and `\pi/2` being the momentum eigenstate.
+        x_trainable: Whether `x` is trainable.
+        phi_trainable: Whether `phi` is trainable.
+        x_bounds: The bounds of `x`.
+        phi_bounds: The bounds of `phi`.
 
     .. details::
         Its ``(A,b,c)`` triple is given by

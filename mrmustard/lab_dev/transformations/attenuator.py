@@ -18,12 +18,10 @@ The class representing a noisy attenuator channel.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Attenuator"]
 
@@ -32,23 +30,20 @@ class Attenuator(Channel):
     r"""
     The noisy attenuator channel.
 
-    If ``transmissivity`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
-    all the modes share the same transmissivity.
-
     .. code-block ::
 
-        >>> import numpy as np
+        >>> from mrmustard import math
         >>> from mrmustard.lab_dev import Attenuator
 
-        >>> channel = Attenuator(modes=[1, 2], transmissivity=0.1)
-        >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.parameters.transmissivity.value, [0.1, 0.1])
+        >>> channel = Attenuator(modes=1, transmissivity=0.1)
+        >>> assert channel.modes == (1,)
+        >>> assert channel.parameters.transmissivity.value == 0.1
 
     Args:
-        modes: The modes this gate is applied to.
+        mode: The mode this gate is applied to.
         transmissivity: The transmissivity.
-        transmissivity_trainable: Whether the transmissivity is a trainable variable.
-        transmissivity_bounds: The bounds for the transmissivity.
+        transmissivity_trainable: Whether ``transmissivity`` is trainable.
+        transmissivity_bounds: The bounds for ``transmissivity``.
 
     .. details::
 
@@ -79,25 +74,24 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        transmissivity: float | Sequence[float] | None = 1.0,
+        mode: int,
+        transmissivity: float = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
         super().__init__(name="Att~")
-        (etas,) = list(reshape_params(len(modes), transmissivity=transmissivity))
         self.parameters.add_parameter(
             make_parameter(
                 transmissivity_trainable,
-                etas,
+                transmissivity,
                 "transmissivity",
                 transmissivity_bounds,
                 None,
             )
         )
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
             ),

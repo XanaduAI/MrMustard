@@ -28,7 +28,7 @@ from mrmustard.utils.typing import RealMatrix
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
 from .ket import Ket
 from .dm import DM
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["GKet", "GDM"]
 
@@ -61,10 +61,7 @@ class GKet(Ket):
         symplectic_trainable: bool = False,
     ) -> None:
         super().__init__(name="GKet")
-        m = len(modes)
-
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
-
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
@@ -74,7 +71,6 @@ class GKet(Ket):
                 update_symplectic,
             )
         )
-
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
@@ -116,6 +112,7 @@ class GDM(DM):
 
     short_name = "Gd"
 
+    # TODO: revisit this
     def __init__(
         self,
         modes: tuple[int, ...],
@@ -125,8 +122,7 @@ class GDM(DM):
         symplectic_trainable: bool = False,
     ) -> None:
         super().__init__(name="GDM")
-        m = len(modes)
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
