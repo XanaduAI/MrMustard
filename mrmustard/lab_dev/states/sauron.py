@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states."""
+r"""
+The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states.
+"""
 
-from typing import Sequence
 from mrmustard.lab_dev.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
@@ -31,13 +32,14 @@ class Sauron(Ket):
     is given in https://arxiv.org/abs/2305.17099:
     .. math::
         |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
+
     Args:
         modes: The modes of the Sauron state.
         n: The Fock state that is approximated.
         epsilon: The radius of the ring of coherent states, default is 0.1.
     """
 
-    def __init__(self, modes: Sequence[int], n: int, epsilon: float = 0.1):
+    def __init__(self, modes: tuple[int, ...], n: int, epsilon: float = 0.1):
         super().__init__(name=f"Sauron-{n}")
 
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))

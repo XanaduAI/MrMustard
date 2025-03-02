@@ -18,32 +18,30 @@ The class representing a quadrature eigenstate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from mrmustard.physics.wires import ReprEnum
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["QuadratureEigenstate"]
 
 
 class QuadratureEigenstate(Ket):
     r"""
-    The `N`-mode Quadrature eigenstate.
+    The Quadrature eigenstate in Bargmann representation.
 
     .. code-block ::
 
         >>> from mrmustard.lab_dev import QuadratureEigenstate
 
-        >>> state = QuadratureEigenstate([1, 2], x = 1, phi = 0)
-        >>> assert state.modes == [1, 2]
+        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
+        >>> assert state.modes == (1,)
 
     Args:
-        modes: A list of modes.
+        mode: The mode of the quadrature eigenstate.
         x: The displacement of the state.
         phi: The angle of the state with `0` being a position eigenstate and `\pi/2` being the momentum eigenstate.
 
@@ -56,9 +54,9 @@ class QuadratureEigenstate(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        x: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
+        mode: int,
+        x: float = 0.0,
+        phi: float = 0.0,
         x_trainable: bool = False,
         phi_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),
@@ -66,13 +64,12 @@ class QuadratureEigenstate(Ket):
     ):
         super().__init__(name="QuadratureEigenstate")
 
-        xs, phis = list(reshape_params(len(modes), x=x, phi=phi))
-        self.parameters.add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
         self.manual_shape = (50,)
 
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.quadrature_eigenstates_Abc, x=self.parameters.x, phi=self.parameters.phi
             ),
@@ -81,8 +78,8 @@ class QuadratureEigenstate(Ket):
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params_func = lambda w=w: [
-                self.parameters.x.value[w.index],
-                self.parameters.phi.value[w.index],
+                self.parameters.x.value,
+                self.parameters.phi.value,
             ]
 
     @property

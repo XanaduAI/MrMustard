@@ -41,7 +41,7 @@ class TestPNRSampler:
         vac_prob = [1.0] + [0.0] * 99
         assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
 
-        coh_state = Coherent([0, 1], x=[0.5, 1])
+        coh_state = Coherent(0, x=[0.5]) >> Coherent(1, x=[1])
         exp_probs = [
             (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
             for n0 in range(10)
@@ -109,10 +109,12 @@ class TestHomodyneSampler:
         N_MEAS = 300
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        alpha = math.astensor([1.0 + 1.0j, 1.0 + 1.0j])
+        alpha = 1.0 + 1.0j
         tol = settings.ATOL
 
-        state = Coherent([0, 1], x=math.real(alpha), y=math.imag(alpha))
+        state = Coherent(0, x=math.real(alpha), y=math.imag(alpha)) >> Coherent(
+            1, x=math.real(alpha), y=math.imag(alpha)
+        )
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)

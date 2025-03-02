@@ -166,7 +166,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return sorted(self.wires.modes)
+        return tuple(sorted(self.wires.modes))
 
     @property
     def name(self) -> str:

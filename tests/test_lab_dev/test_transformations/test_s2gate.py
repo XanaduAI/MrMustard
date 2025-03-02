@@ -34,19 +34,15 @@ class TestS2gate:
     phi = [[3], [3, 4], [3, 4]]
 
     def test_init(self):
-        gate = S2gate([0, 1], 2, 1)
+        gate = S2gate((0, 1), 2, 1)
 
         assert gate.name == "S2gate"
-        assert gate.modes == [0, 1]
+        assert gate.modes == (0, 1)
         assert gate.parameters.r.value == 2
         assert gate.parameters.phi.value == 1
 
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Expected a pair"):
-            S2gate([1, 2, 3])
-
     def test_representation(self):
-        rep1 = S2gate([0, 1], 0.1, 0.2).ansatz
+        rep1 = S2gate((0, 1), 0.1, 0.2).ansatz
         tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
         sechr = 1 / np.cosh(0.1)
 
@@ -63,9 +59,9 @@ class TestS2gate:
         assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
 
     def test_trainable_parameters(self):
-        gate1 = S2gate([0, 1], 1, 1)
-        gate2 = S2gate([0, 1], 1, 1, r_trainable=True, r_bounds=(0, 2))
-        gate3 = S2gate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        gate1 = S2gate((0, 1), 1, 1)
+        gate2 = S2gate((0, 1), 1, 1, r_trainable=True, r_bounds=(0, 2))
+        gate3 = S2gate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.r.value = 3
@@ -77,8 +73,8 @@ class TestS2gate:
         assert gate3.parameters.phi.value == 2
 
     def test_operation(self):
-        rep1 = (Vacuum([0]) >> Vacuum([1]) >> S2gate(modes=[0, 1], r=-1, phi=0.5)).ansatz
-        rep2 = (TwoModeSqueezedVacuum(modes=[0, 1], r=1, phi=0.5)).ansatz
+        rep1 = (Vacuum((0, 1)) >> S2gate(modes=(0, 1), r=-1, phi=0.5)).ansatz
+        rep2 = (TwoModeSqueezedVacuum(modes=(0, 1), r=1, phi=0.5)).ansatz
 
         assert math.allclose(rep1.A, rep2.A)
         assert math.allclose(rep1.b, rep2.b)

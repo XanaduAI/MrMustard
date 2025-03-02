@@ -35,11 +35,11 @@ class Vacuum(Ket):
 
         >>> from mrmustard.lab_dev import Vacuum
 
-        >>> state = Vacuum([1, 2])
-        >>> assert state.modes == [1, 2]
+        >>> state = Vacuum((1, 2))
+        >>> assert state.modes == (1, 2)
 
     Args:
-        modes: A list of modes.
+        modes: A tuple of modes.
 
     .. details::
 
@@ -58,9 +58,10 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
     ) -> None:
         super().__init__(name="Vac")
+        modes = (modes,) if isinstance(modes, int) else modes
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),

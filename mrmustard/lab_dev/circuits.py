@@ -46,10 +46,10 @@ class Circuit:
 
         >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
-        >>> vac = Vacuum([0, 1, 2])
-        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-        >>> bs01 = BSgate([0, 1])
-        >>> bs12 = BSgate([1, 2])
+        >>> vac = Vacuum((0,1,2))
+        >>> s01 = Sgate((0, 1), r=0.1) >> Sgate((0, 1), r=0.2)
+        >>> bs01 = BSgate((0, 1))
+        >>> bs12 = BSgate((1, 2))
 
         >>> components = [vac, s01, bs01, bs12]
         >>> circ = Circuit(components)
@@ -61,10 +61,10 @@ class Circuit:
 
         >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
-        >>> vac = Vacuum([0, 1, 2])
-        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-        >>> bs01 = BSgate([0, 1])
-        >>> bs12 = BSgate([1, 2])
+        >>> vac = Vacuum((0,1,2))
+        >>> s01 = Sgate((0, 1), r=0.1) >> Sgate((0, 1), r=0.2)
+        >>> bs01 = BSgate((0, 1))
+        >>> bs12 = BSgate((1, 2))
 
         >>> circ1 = Circuit() >> vac >> s01
         >>> circ2 = Circuit([bs01]) >> bs12
@@ -164,10 +164,10 @@ class Circuit:
 
                 >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
-                >>> vac = Vacuum([0, 1, 2])
-                >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-                >>> bs01 = BSgate([0, 1])
-                >>> bs12 = BSgate([1, 2])
+                >>> vac = Vacuum((0,1,2))
+                >>> s01 = Sgate((0, 1), r=0.1) >> Sgate((0, 1), r=0.2)
+                >>> bs01 = BSgate((0, 1))
+                >>> bs12 = BSgate((1, 2))
 
                 >>> circ = Circuit([vac, s01, bs01, bs12])
 

@@ -45,11 +45,9 @@ class GKet(Ket):
 
     Args:
         modes: the modes over which the state is defined.
-
         symplectic: the symplectic representation of the unitary that acts on
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
     """
@@ -58,7 +56,7 @@ class GKet(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, ...],
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
     ) -> None:
@@ -107,33 +105,28 @@ class GDM(DM):
         where rho_t are thermal states with temperatures determined by beta.
 
     Args:
-        modes: the modes over which the state is defined.
-
-        beta: the set of temperatures determining the thermal states. If only a
-        float is provided for a multi-modes, the same temperature is considered
-        across all modes.
-
-        symplectic: the symplectic representation of the unitary that acts on
+        modes: The modes over which the state is defined.
+        beta: The temperature determining the thermal state.
+        symplectic: The symplectic representation of the unitary that acts on a
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-
-        symplectic_trainable: determines if the symplectic matrix can be trained.
+        beta_trainable: Whether `beta` is trainable.
+        symplectic_trainable: Whether `symplectic` is trainable.
     """
 
     short_name = "Gd"
 
     def __init__(
         self,
-        modes: Sequence[int],
-        beta: float | Sequence[float],
+        modes: tuple[int, ...],
+        beta: float,
         symplectic: RealMatrix = None,
-        symplectic_trainable: bool = False,
         beta_trainable: bool = False,
+        symplectic_trainable: bool = False,
     ) -> None:
         super().__init__(name="GDM")
         m = len(modes)
         symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
-        (betas,) = list(reshape_params(len(modes), betas=beta))
         self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
@@ -146,7 +139,7 @@ class GDM(DM):
         self.parameters.add_parameter(
             make_parameter(
                 beta_trainable,
-                betas,
+                beta,
                 "beta",
                 (0, None),
             )

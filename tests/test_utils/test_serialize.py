@@ -199,7 +199,7 @@ class TestSerialize:
                     [0, 1, 2], x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)
                 ).dual,
                 SqueezedVacuum([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2),
-                TwoModeSqueezedVacuum([0, 1], r=0.3, phi=0.2).dual,
+                TwoModeSqueezedVacuum((0, 1), r=0.3, phi=0.2).dual,
                 Vacuum([2]).dual,
             ],
         )
