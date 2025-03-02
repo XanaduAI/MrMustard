@@ -16,7 +16,6 @@
 The class representing an operation that changes Bargmann into quadrature.
 """
 from __future__ import annotations
-from typing import Sequence
 
 from mrmustard.physics import triples
 
@@ -39,9 +38,10 @@ class BtoQ(Operation):
         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
     """
 
+    # TODO: are we batching the phis?
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, ...],
         phi: float = 0.0,
     ):
         super().__init__(name="BtoQ")

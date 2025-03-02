@@ -17,7 +17,6 @@ The class representing a trace out operation.
 """
 
 from __future__ import annotations
-from typing import Sequence
 
 from mrmustard import math
 from mrmustard.physics import triples
@@ -40,20 +39,20 @@ class TraceOut(CircuitComponent):
     .. code-block::
 
         >>> from mrmustard.lab_dev import *
-        >>> import numpy as np
+        >>> from mrmustard import math
 
         >>> # initialize a multi-mode state
-        >>> state = Coherent([0, 1, 2], x=1)
+        >>> state = Coherent(0, x=1) >> Coherent(1, x=1) >> Coherent(2, x=1)
 
         >>> # trace out some of the modes
-        >>> assert state >> TraceOut([0]) == Coherent([1, 2], x=1).dm()
-        >>> assert state >> TraceOut([1, 2]) == Coherent([0], x=1).dm()
+        >>> assert state >> TraceOut(0) == (Coherent(1, x=1) >> Coherent(2, x=1)).dm()
+        >>> assert state >> TraceOut((1, 2)) == Coherent(0, x=1).dm()
 
         >>> # use the trace out to estimate expectation values of operators
-        >>> op = Dgate([0], x=1)
-        >>> expectation = (state.dm() @ op) >> TraceOut([0, 1, 2])
+        >>> op = Dgate(0, x=1)
+        >>> expectation = (state.dm() @ op) >> TraceOut((0, 1, 2))
 
-        >>> assert np.allclose(expectation, state.expectation(op))
+        >>> assert math.allclose(expectation, state.expectation(op))
 
     Args:
         modes: The modes to trace out.
@@ -61,8 +60,9 @@ class TraceOut(CircuitComponent):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(
             Representation(
                 PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
