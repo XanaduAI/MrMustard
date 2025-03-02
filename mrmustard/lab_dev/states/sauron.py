@@ -34,19 +34,19 @@ class Sauron(Ket):
         |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
 
     Args:
-        modes: The modes of the Sauron state.
+        mode: The mode of the Sauron state.
         n: The Fock state that is approximated.
         epsilon: The radius of the ring of coherent states, default is 0.1.
     """
 
-    def __init__(self, modes: tuple[int, ...], n: int, epsilon: float = 0.1):
+    def __init__(self, mode: int, n: int, epsilon: float = 0.1):
         super().__init__(name=f"Sauron-{n}")
 
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
 
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 triples.sauron_state_Abc,
                 n=self.parameters.n,
