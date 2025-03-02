@@ -90,6 +90,8 @@ class CircuitComponent:
         # handle modes parameter
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
+        elif "mode" in params:
+            serializable["mode"] = tuple(self.wires.modes)[0]
         elif "modes_out" in params and "modes_in" in params:
             serializable["modes_out"] = tuple(self.wires.output.modes)
             serializable["modes_in"] = tuple(self.wires.input.modes)
@@ -425,7 +427,7 @@ class CircuitComponent:
         """
         return self._representation.fock_array(shape or self.auto_shape(), batched)
 
-    def on(self, modes: Sequence[int]) -> CircuitComponent:
+    def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""
         Creates a light copy of this component that acts on the given ``modes`` instead of the
         original modes. It only works if the component's wires are all defined on the same modes.
@@ -444,6 +446,7 @@ class CircuitComponent:
             ValueError: If the component's wires are not all defined on the same modes or if the
             length of the given modes is different from the length of the original modes.
         """
+        modes = (modes,) if isinstance(modes, int) else modes
         ob = self.wires.output.bra.modes
         ib = self.wires.input.bra.modes
         ok = self.wires.output.ket.modes

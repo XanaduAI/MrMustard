@@ -22,28 +22,28 @@ import pytest
 import tensorflow as tf
 
 from mrmustard import __version__, math, settings
-from mrmustard.lab_dev.circuit_components_utils import BtoPS, BtoQ, TraceOut
-from mrmustard.lab_dev.circuits import Circuit
-from mrmustard.lab_dev.states import (
-    Coherent,
-    DisplacedSqueezed,
-    Number,
-    QuadratureEigenstate,
-    SqueezedVacuum,
-    Thermal,
-    TwoModeSqueezedVacuum,
-    Vacuum,
-)
-from mrmustard.lab_dev.transformations import (
+from mrmustard.lab_dev import (
     Amplifier,
     Attenuator,
     BSgate,
+    BtoPS,
+    BtoQ,
+    Circuit,
+    Coherent,
     Dgate,
+    DisplacedSqueezed,
     FockDamping,
     Identity,
+    Number,
+    QuadratureEigenstate,
     Rgate,
     S2gate,
     Sgate,
+    SqueezedVacuum,
+    Thermal,
+    TraceOut,
+    TwoModeSqueezedVacuum,
+    Vacuum,
 )
 from mrmustard.utils.serialize import load, save
 
@@ -177,30 +177,28 @@ class TestSerialize:
         """Test that all circuit components are serializable."""
         circ = Circuit(
             [
-                Coherent([0], x=1.0),
-                Dgate([0], 0.1),
-                BSgate([1, 2], theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
-                Dgate([0], x=1.1, y=2.2),
-                Identity([1, 2]),
-                Rgate([1, 2], theta=0.1),
-                S2gate([0, 1], 1, 1),
-                Sgate([0], 0.1, 0.2, r_trainable=True),
-                FockDamping([0], damping=0.1),
-                BtoQ([0], np.pi / 2),
-                Amplifier([0], gain=4),
-                Attenuator([1, 2], transmissivity=0.1),
-                BtoPS([0], s=1),
-                TraceOut([0, 1]),
-                Thermal([0, 1], nbar=3),
-                Coherent([0, 1], x=[0.3, 0.4], y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)).dual,
-                DisplacedSqueezed([0], 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
-                Number([1], n=[20]),
-                QuadratureEigenstate(
-                    [0, 1, 2], x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)
-                ).dual,
-                SqueezedVacuum([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2),
+                Coherent(0, x=1.0),
+                Dgate(0, 0.1),
+                BSgate((1, 2), theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
+                Dgate(0, x=1.1, y=2.2),
+                Identity((1, 2)),
+                Rgate(1, theta=0.1),
+                S2gate((0, 1), 1, 1),
+                Sgate(0, 0.1, 0.2, r_trainable=True),
+                FockDamping(0, damping=0.1),
+                BtoQ(0, np.pi / 2),
+                Amplifier(0, gain=4),
+                Attenuator(1, transmissivity=0.1),
+                BtoPS(0, s=1),
+                TraceOut((0, 1)),
+                Thermal(0, nbar=3),
+                Coherent(0, x=0.3, y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)).dual,
+                DisplacedSqueezed(0, 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
+                Number(1, n=20),
+                QuadratureEigenstate(2, x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)).dual,
+                SqueezedVacuum(3, r=0.4, phi=0.2),
                 TwoModeSqueezedVacuum((0, 1), r=0.3, phi=0.2).dual,
-                Vacuum([2]).dual,
+                Vacuum(4).dual,
             ],
         )
         path = circ.serialize()
