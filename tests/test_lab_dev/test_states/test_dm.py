@@ -22,10 +22,17 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import DM, Coherent, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate
+from mrmustard.lab_dev import (
+    Attenuator,
+    CircuitComponent,
+    Coherent,
+    Dgate,
+    DM,
+    Ket,
+    Number,
+    TraceOut,
+    Vacuum,
+)
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires

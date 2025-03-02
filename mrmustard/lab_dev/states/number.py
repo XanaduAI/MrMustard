@@ -64,10 +64,12 @@ class Number(Ket):
         n: int,
         cutoff: int | None = None,
     ) -> None:
-        cutoff = n + 1 if cutoff is None else cutoff
+        cutoff = n if cutoff is None else cutoff
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
-        self.parameters.add_parameter(make_parameter(False, cutoff, "cutoff", (None, None)))
+        self.parameters.add_parameter(
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64")
+        )
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=ArrayAnsatz.from_function(
@@ -75,7 +77,7 @@ class Number(Ket):
             ),
         ).representation
         self.short_name = str(int(n))
-        self.manual_shape[0] = int(cutoff) + 1
+        self.manual_shape[0] = cutoff + 1
 
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.FOCK

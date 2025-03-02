@@ -37,7 +37,7 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         with settings(HBAR=2.0):
-            st = Coherent([0], y=1) + Coherent([0], y=-1)
+            st = Coherent(0, y=1) + Coherent(0, y=-1)
             fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
@@ -55,13 +55,9 @@ class TestVisualization:
         assert math.allclose(data["data"][2]["x"], ref_data["data"][2]["x"])
         assert math.allclose(data["data"][2]["y"], ref_data["data"][2]["y"])
 
-    def test_visualize_2d_error(self):
-        with pytest.raises(ValueError):
-            Coherent([0, 1]).visualize_2d(20)
-
     def test_visualize_3d(self):
         with settings(HBAR=2.0):
-            st = Coherent([0], y=1) + Coherent([0], y=-1)
+            st = Coherent(0, y=1) + Coherent(0, y=-1)
             fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
@@ -75,12 +71,8 @@ class TestVisualization:
         assert math.allclose(data["data"][0]["y"], ref_data["data"][0]["y"])
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
-    def test_visualize_3d_error(self):
-        with pytest.raises(ValueError):
-            Coherent([0, 1]).visualize_3d(20)
-
     def test_visualize_dm(self):
-        st = Coherent([0], y=1) + Coherent([0], y=-1)
+        st = Coherent(0, y=1) + Coherent(0, y=-1)
         st.manual_shape[0] = 20
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
@@ -91,7 +83,3 @@ class TestVisualization:
         with open(self.path / "visualize_dm.json") as file:
             ref_data = json.load(file)
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
-
-    def test_visualize_dm_error(self):
-        with pytest.raises(ValueError):
-            Coherent([0, 1]).visualize_dm(20)

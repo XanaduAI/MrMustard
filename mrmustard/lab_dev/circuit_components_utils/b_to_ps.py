@@ -42,9 +42,10 @@ class BtoPS(Map):
     # TODO: are we batching the s?
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         s: float,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoPS")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(

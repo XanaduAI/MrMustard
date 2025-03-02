@@ -24,10 +24,20 @@ from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import DM, Coherent, DisplacedSqueezed, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate, Sgate
+
+from mrmustard.lab_dev import (
+    Attenuator,
+    CircuitComponent,
+    Coherent,
+    Dgate,
+    DisplacedSqueezed,
+    DM,
+    Ket,
+    Number,
+    Sgate,
+    TraceOut,
+    Vacuum,
+)
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
@@ -60,54 +70,52 @@ class TestKet:  # pylint: disable=too-many-public-methods
     coeff = [0.5, 0.3]
 
     @pytest.mark.parametrize("name", [None, "my_ket"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
-        assert list(state.modes) == sorted(modes)
+        assert list(state.modes) == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_manual_shape(self):
-        ket = Coherent([0, 1], x=[1, 2])
+        ket = Coherent(0, x=1)
         assert ket.manual_shape == [None, None]
         ket.manual_shape[0] = 19
         assert ket.manual_shape == [19, None]
 
     def test_auto_shape(self):
-        ket = Coherent([0, 1], x=[1, 2])
+        ket = Coherent(0, x=1)
         assert ket.auto_shape() == (8, 15)
         ket.manual_shape[0] = 19
         assert ket.auto_shape() == (19, 15)
 
-        ket = Coherent([0, 1], x=1) >> Number([1], 10).dual
+        ket = Coherent(0, x=1) >> Number(1, 10).dual
         assert ket.auto_shape() == (settings.AUTOSHAPE_MAX,)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_bargmann(self, modes):
         x = 1
         y = 2
-        xs = [x] * len(modes)
-        ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
         triple_in = state_in.bargmann_triple()  # automatically batched
 
-        assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
-        assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
-        assert np.allclose(triple_in[2], coherent_state_Abc(xs, ys)[2])
+        assert np.allclose(triple_in[0], coherent_state_Abc(x, y)[0])
+        assert np.allclose(triple_in[1], coherent_state_Abc(x, y)[1])
+        assert np.allclose(triple_in[2], coherent_state_Abc(x, y)[2])
 
-        state_out = Ket.from_bargmann(modes, triple_in, "my_ket")
+        state_out = Ket.from_bargmann((modes,), triple_in, "my_ket")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
-        state01 = Coherent([0, 1], 1)
+        state01 = Coherent(0, 1) >> Coherent(1, 2)
         with pytest.raises(ValueError):
             Ket.from_bargmann([0], state01.bargmann_triple(), "my_ket")
 
     def test_bargmann_triple_error(self):
         with pytest.raises(AttributeError):
-            Number([0], n=10).bargmann_triple()
+            Number(0, n=10).bargmann_triple()
 
     @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
     def test_normalize(self, modes, x, y, coeff):

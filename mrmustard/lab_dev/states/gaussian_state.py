@@ -56,10 +56,11 @@ class GKet(Ket):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
     ) -> None:
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="GKet")
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
@@ -115,12 +116,13 @@ class GDM(DM):
     # TODO: revisit this
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         beta: float,
         symplectic: RealMatrix = None,
         beta_trainable: bool = False,
         symplectic_trainable: bool = False,
     ) -> None:
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="GDM")
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(

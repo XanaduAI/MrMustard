@@ -44,8 +44,9 @@ class Identity(Unitary):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Identity")
         self._representation = self.from_ansatz(
             modes_in=modes,

@@ -18,8 +18,7 @@
 
 import pytest
 
-from mrmustard import math
-from mrmustard.lab_dev.states import SqueezedVacuum, TwoModeSqueezedVacuum, Vacuum
+from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import S2gate
 
 

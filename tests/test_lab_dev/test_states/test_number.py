@@ -29,41 +29,30 @@ class TestNumber:
     Tests for the ``Number`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    n = [[3], 4, [5, 6]]
-    cutoffs = [None, 5, [6, 7]]
+    modes = [0, 1, 7]
+    n = [3, 4, 5]
+    cutoffs = [None, 5, 7]
 
     @pytest.mark.parametrize("modes,n,cutoffs", zip(modes, n, cutoffs))
     def test_init(self, modes, n, cutoffs):
         state = Number(modes, n, cutoffs)
 
         assert state.name == "N"
-        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="n"):
-            Number(modes=[0, 1], n=[2, 3, 4])
-
-        with pytest.raises(ValueError, match="cutoffs"):
-            Number(modes=[0, 1], n=[2, 3], cutoffs=[4, 5, 6])
-
-    @pytest.mark.parametrize("n", [2, [2, 3], [4, 4]])
-    @pytest.mark.parametrize("cutoffs", [None, [4, 5], [5, 5]])
+    @pytest.mark.parametrize("n", [2, 3, 4])
+    @pytest.mark.parametrize("cutoffs", [None, 4, 5])
     def test_representation(self, n, cutoffs):
-        rep1 = Number([0, 1], n, cutoffs).ansatz.array
-        exp1 = fock_state((n,) * 2 if isinstance(n, int) else n, cutoffs)
-        assert math.allclose(rep1, math.asnumpy(exp1).reshape(1, *exp1.shape))
+        rep1 = Number(0, n, cutoffs).ansatz.array
+        exp1 = fock_state(n, cutoffs)
+        assert math.allclose(rep1[0], exp1)
 
-        rep2 = Number([0, 1], n, cutoffs).to_fock().ansatz.array
+        rep2 = Number(0, n, cutoffs).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Coherent(modes=[0], x=[0.1, 0.2]).ansatz
 
     def test_wires(self):
         """Test that the wires are correct."""
-        state = Number([0], n=1)
+        state = Number(0, n=1)
         for w in state.representation.wires:
             assert w.repr == ReprEnum.FOCK

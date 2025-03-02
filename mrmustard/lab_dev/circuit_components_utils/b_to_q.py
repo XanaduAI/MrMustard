@@ -41,9 +41,10 @@ class BtoQ(Operation):
     # TODO: are we batching the phis?
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         phi: float = 0.0,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoQ")
         self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
         self._representation = self.from_ansatz(
