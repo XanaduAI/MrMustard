@@ -162,10 +162,10 @@ class Circuit:
 
         .. code-block::
 
-                >>> from mrmustard.lab_dev import BSgate, S2gate, Vacuum, Circuit
+                >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
                 >>> vac = Vacuum((0,1,2))
-                >>> s01 = S2gate((0, 1), r=0.1)
+                >>> s0 = Sgate(0, r=0.1)
                 >>> bs01 = BSgate((0, 1))
                 >>> bs12 = BSgate((1, 2))
 
