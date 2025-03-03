@@ -487,7 +487,7 @@ class CircuitComponent:
         """
         rep = self._representation.to_bargmann()
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
         except TypeError:
             ret = self._from_attributes(rep, self.name)
@@ -517,30 +517,14 @@ class CircuitComponent:
         """
         rep = self._representation.to_fock(shape or self.auto_shape())
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
+            ret._name = self.name
         except TypeError:
             ret = self._from_attributes(rep, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
-
-    def _getitem_builtin(self, modes: tuple[int, ...]):
-        r"""
-        A convenience function to slice built-in circuit components (CCs).
-
-        Built-in CCs come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable CCs.
-        """
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = self.parameters[items].to_dict()
-        try:
-            return self.__class__(modes=modes, **kwargs)
-        except TypeError:
-            return self.__class__(mode=modes[0], **kwargs)
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""

@@ -314,24 +314,12 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Collection[int]) -> State:
-        r"""
-        Reduced density matrix obtained by tracing out all the modes except those in the given
-        ``modes``. Note that the result is returned with modes in increasing order.
-        """
-        modes = {modes} if isinstance(modes, int) else set(modes)
-
-        if not modes.issubset(self.modes):
-            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
-
-        if self._parameters:
-            # if ``self`` has a parameter set, it is a built-in state, and we slice the
-            # parameters
-            return self._getitem_builtin(tuple(modes))
-
-        # if ``self`` has no parameter set, it is not a built-in state.
-        # we must turn it into a density matrix and slice the representation
-        return self.dm()[modes]
+    def __getitem__(self, idx: int | Collection[int]) -> State:
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = set(self.modes) ^ set(idx)
+        return self >> TraceOut(trace_out_modes)
 
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""

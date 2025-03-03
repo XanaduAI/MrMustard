@@ -77,15 +77,6 @@ class GKet(Ket):
             ),
         ).representation
 
-    def _getitem_builtin(self, modes: tuple[int, ...]):
-        r"""
-        The slicing method for a GDM state.
-        """
-
-        remaining_modes = [mode for mode in self.modes if mode not in modes]
-
-        return self >> TraceOut(remaining_modes)
-
 
 class GDM(DM):
     r"""
@@ -148,11 +139,3 @@ class GDM(DM):
                 symplectic=self.parameters.symplectic,
             ),
         ).representation
-
-    def _getitem_builtin(self, modes: tuple[int, ...]):
-        r"""
-        The slicing method for a GDM state.
-        """
-        remaining_modes = [mode for mode in self.modes if mode not in modes]
-
-        return self >> TraceOut(remaining_modes)

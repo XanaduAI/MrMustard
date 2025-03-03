@@ -149,7 +149,7 @@ class Dgate(Unitary):
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
         fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
         fock._original_abc_data = self.ansatz.triple
-        ret = self._getitem_builtin(self.modes)
+        ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},

@@ -366,29 +366,12 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Collection[int]) -> State:
-        r"""
-        Traces out all the modes except those given.
-        The result is returned with modes in increasing order.
-        """
-        modes = {modes} if isinstance(modes, int) else set(modes)
-        if not modes.issubset(self.modes):
-            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
-
-        if self._parameters:
-            # if ``self`` has a parameter set it means it is a built-in state,
-            # in which case we slice the parameters
-            return self._getitem_builtin(tuple(modes))
-
-        # if ``self`` has no parameter set it is not a built-in state,
-        # in which case we trace the representation
-        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
-
-        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
-        ansatz = self.ansatz.trace(idxz, idxz_conj)
-
-        return DM(Representation(ansatz, wires), self.name)
+    def __getitem__(self, idx: int | Collection[int]) -> State:
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = set(self.modes) ^ set(idx)
+        return self >> TraceOut(trace_out_modes)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
