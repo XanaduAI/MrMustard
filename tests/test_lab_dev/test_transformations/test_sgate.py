@@ -28,26 +28,19 @@ class TestSgate:
     Tests for the ``Sgate`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    r = [[1], 1, [1, 2]]
-    phi = [[3], [3, 4], [3, 4]]
+    modes = [0, 1, 7]
+    r = [1, 2, 3]
+    phi = [3, 4, 5]
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     def test_init(self, modes, r, phi):
         gate = Sgate(modes, r, phi)
 
         assert gate.name == "Sgate"
-        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="r"):
-            Sgate(modes=[0, 1], r=[2, 3, 4])
-
-        with pytest.raises(ValueError, match="phi"):
-            Sgate(modes=[0, 1], r=1, phi=[2, 3, 4])
+        assert gate.modes == (modes,)
 
     def test_representation(self):
-        rep1 = Sgate(modes=[0], r=0.1, phi=0.2).ansatz
+        rep1 = Sgate(mode=0, r=0.1, phi=0.2).ansatz
         assert math.allclose(
             rep1.A,
             [
@@ -60,7 +53,7 @@ class TestSgate:
         assert math.allclose(rep1.b, np.zeros((1, 2)))
         assert math.allclose(rep1.c, [0.9975072676192522])
 
-        rep2 = Sgate(modes=[0, 1], r=[0.1, 0.3], phi=0.2).ansatz
+        rep2 = (Sgate(mode=0, r=0.1, phi=0.2) >> Sgate(mode=1, r=0.3, phi=0.2)).ansatz
         assert math.allclose(
             rep2.A,
             [
@@ -75,7 +68,7 @@ class TestSgate:
         assert math.allclose(rep2.b, np.zeros((1, 4)))
         assert math.allclose(rep2.c, [0.9756354961606032])
 
-        rep3 = Sgate(modes=[1], r=0.1).ansatz
+        rep3 = Sgate(mode=1, r=0.1).ansatz
         assert math.allclose(
             rep3.A,
             [
@@ -89,9 +82,9 @@ class TestSgate:
         assert math.allclose(rep3.c, [0.9975072676192522])
 
     def test_trainable_parameters(self):
-        gate1 = Sgate([0], 1, 1)
-        gate2 = Sgate([0], 1, 1, r_trainable=True, r_bounds=(-2, 2))
-        gate3 = Sgate([0], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        gate1 = Sgate(0, 1, 1)
+        gate2 = Sgate(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
+        gate3 = Sgate(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.r.value = 3
@@ -101,7 +94,3 @@ class TestSgate:
 
         gate3.parameters.phi.value = 2
         assert gate3.parameters.phi.value == 2
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Sgate(modes=[0], r=[0.1, 0.2]).ansatz

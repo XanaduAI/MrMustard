@@ -52,10 +52,11 @@ class Ggate(Unitary):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         symplectic: RealMatrix | None = None,
         symplectic_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Ggate")
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))

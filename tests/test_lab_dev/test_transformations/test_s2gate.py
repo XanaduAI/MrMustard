@@ -29,10 +29,6 @@ class TestS2gate:
     Tests for the ``S2gate`` class.
     """
 
-    modes = [[0, 8], [1, 2], [7, 9]]
-    r = [[1], 1, [1, 2]]
-    phi = [[3], [3, 4], [3, 4]]
-
     def test_init(self):
         gate = S2gate((0, 1), 2, 1)
 

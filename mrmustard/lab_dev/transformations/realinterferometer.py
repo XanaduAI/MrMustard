@@ -45,10 +45,11 @@ class RealInterferometer(Unitary):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         orthogonal: RealMatrix | None = None,
         orthogonal_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(

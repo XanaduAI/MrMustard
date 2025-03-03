@@ -32,23 +32,15 @@ class TestCZgate:
 
     def test_init(self):
         "Tests the CZgate initialization."
-        cz = CZgate([0, 1], 0.3)
-        assert cz.modes == [0, 1]
+        cz = CZgate((0, 1), 0.3)
+        assert cz.modes == (0, 1)
         assert cz.name == "CZgate"
         assert cz.parameters.s.value == 0.3
-
-        with pytest.raises(
-            ValueError,
-            match=re.escape(
-                "The number of modes for a CZgate must be 2 (your input has 3 many modes)."
-            ),
-        ):
-            CZgate([0, 1, 2], 0.2)
 
     @pytest.mark.parametrize("s", [0.1, 0.2, 1.5])
     def test_application(self, s):
         "Tests the application of CZgate"
-        psi = Coherent([0], 0, 1) >> Coherent([1], 1, 0) >> CZgate([0, 1], s)
+        psi = Coherent(0, 0, 1) >> Coherent(1, 1, 0) >> CZgate((0, 1), s)
         _, d, _ = psi.phase_space(s=0)
         d_by_hand = math.astensor([0, math.sqrt(complex(2)), (1 + s) * math.sqrt(complex(2)), 0])
         assert math.allclose(d[0], d_by_hand)

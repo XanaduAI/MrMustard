@@ -19,7 +19,7 @@
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.states import Coherent, Number
+from mrmustard.lab_dev.states import Number
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum
 

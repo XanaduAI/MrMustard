@@ -49,10 +49,11 @@ class Interferometer(Unitary):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         unitary: ComplexMatrix | None = None,
         unitary_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         num_modes = len(modes)
         unitary = unitary if unitary is not None else math.random_unitary(num_modes)
         if unitary.shape[-1] != num_modes:

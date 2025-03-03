@@ -62,10 +62,11 @@ class GaussRandNoise(Channel):
 
     def __init__(
         self,
-        modes: tuple[int, ...],
+        modes: int | tuple[int, ...],
         Y: RealMatrix,
         Y_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "

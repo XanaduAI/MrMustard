@@ -18,12 +18,11 @@ The class representing a squeezing gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Sgate"]
 
