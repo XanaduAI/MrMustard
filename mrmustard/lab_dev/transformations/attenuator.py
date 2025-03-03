@@ -35,7 +35,7 @@ class Attenuator(Channel):
         >>> from mrmustard import math
         >>> from mrmustard.lab_dev import Attenuator
 
-        >>> channel = Attenuator(modes=1, transmissivity=0.1)
+        >>> channel = Attenuator(mode=1, transmissivity=0.1)
         >>> assert channel.modes == (1,)
         >>> assert channel.parameters.transmissivity.value == 0.1
 

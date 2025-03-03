@@ -365,7 +365,7 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
-            >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
+            >>> cat = Coherent(modes=0, x=2.0) + Coherent(modes=0, x=-2.0)
             >>> assert isinstance(cat, Ket)
 
         Args:
@@ -404,8 +404,8 @@ class CircuitComponent:
         .. code-block:: pycon
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
-            >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
+            >>> coh = Coherent(modes=0, x=1.0)
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
@@ -477,7 +477,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
@@ -504,7 +504,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
@@ -582,8 +582,8 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator
-            >>> coh = Coherent([0], 1.0)
-            >>> att = Attenuator([0], 0.5)
+            >>> coh = Coherent(0, 1.0)
+            >>> att = Attenuator(0, 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
@@ -650,8 +650,8 @@ class CircuitComponent:
             >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
-            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
+            >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
+            >>> assert isinstance(Coherent(0, 1.0) >> Coherent(0, 1.0).dual, complex)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
