@@ -30,16 +30,13 @@ from mrmustard.lab_dev import (
     CircuitComponent,
     Coherent,
     Dgate,
-    DisplacedSqueezed,
     DM,
     Ket,
     Number,
     Sgate,
     TraceOut,
-    TwoModeSqueezedVacuum,
     Vacuum,
 )
-from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc

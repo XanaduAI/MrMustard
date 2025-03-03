@@ -16,8 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import re
-
 import pytest
 
 from mrmustard import math
