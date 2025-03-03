@@ -169,7 +169,7 @@ class Circuit:
                 >>> bs01 = BSgate((0, 1))
                 >>> bs12 = BSgate((1, 2))
 
-                >>> circ = Circuit([vac, s01, bs01, bs12])
+                >>> circ = Circuit([vac, s0, bs01, bs12])
 
                 >>> # ``circ`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
