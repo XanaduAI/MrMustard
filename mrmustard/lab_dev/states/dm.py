@@ -366,6 +366,7 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
+    # TODO: rev to ansatz trace
     def __getitem__(self, idx: int | Collection[int]) -> State:
         idx = (idx,) if isinstance(idx, int) else idx
         if not set(idx).issubset(set(self.modes)):

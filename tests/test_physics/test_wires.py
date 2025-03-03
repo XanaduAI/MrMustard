@@ -192,5 +192,5 @@ class TestWiresDisplay:
         skip_jax()
         q = QuadratureEigenstate(mode=0, x=0.0, phi=1.0, phi_trainable=True)
         assert q.representation.wires.output.wires[0].repr_params[1] == 1.0
-        q.parameters.phi.value.assign([2.0])
+        q.parameters.phi.value.assign(2.0)
         assert q.representation.wires.output.wires[0].repr_params[1] == 2.0

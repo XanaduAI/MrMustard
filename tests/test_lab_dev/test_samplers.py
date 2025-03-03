@@ -119,7 +119,9 @@ class TestHomodyneSampler:
 
         meas_result = sampler.sample(state, N_MEAS)
         assert math.allclose(
-            meas_result.mean(axis=0), settings.HBAR * math.real([alpha, alpha]), atol=std_10 + tol
+            meas_result.mean(axis=0),
+            settings.HBAR * math.real(math.astensor([alpha, alpha])),
+            atol=std_10 + tol,
         )
 
     def test_sample_mean_and_std_vacuum(self):
