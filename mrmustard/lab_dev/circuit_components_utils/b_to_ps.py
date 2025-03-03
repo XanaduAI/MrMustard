@@ -39,7 +39,6 @@ class BtoPS(Map):
         s: The `s` parameter of this channel.
     """
 
-    # TODO: are we batching the s?
     def __init__(
         self,
         modes: int | tuple[int, ...],

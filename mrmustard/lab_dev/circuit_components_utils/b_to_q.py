@@ -38,7 +38,6 @@ class BtoQ(Operation):
         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
     """
 
-    # TODO: are we batching the phis?
     def __init__(
         self,
         modes: int | tuple[int, ...],

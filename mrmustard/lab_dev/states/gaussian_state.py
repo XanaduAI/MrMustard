@@ -18,13 +18,18 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
+from typing import Collection
+
 from mrmustard import math
+
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
+
 from .ket import Ket
 from .dm import DM
+from ..circuit_components_utils import TraceOut
 from ..utils import make_parameter
 
 __all__ = ["GKet", "GDM"]
@@ -76,6 +81,16 @@ class GKet(Ket):
             ),
         ).representation
 
+    def __getitem__(self, idx: int | Collection[int]):
+        r"""
+        Override the default __getitem__ method to handle symplectic slicing.
+        """
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = set(self.modes) ^ set(idx)
+        return self >> TraceOut(trace_out_modes)
+
 
 class GDM(DM):
     r"""
@@ -101,7 +116,6 @@ class GDM(DM):
 
     short_name = "Gd"
 
-    # TODO: revisit this
     def __init__(
         self,
         modes: int | tuple[int, ...],
@@ -138,3 +152,13 @@ class GDM(DM):
                 symplectic=self.parameters.symplectic,
             ),
         ).representation
+
+    def __getitem__(self, idx: int | Collection[int]):
+        r"""
+        Override the default __getitem__ method to handle symplectic slicing.
+        """
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = set(self.modes) ^ set(idx)
+        return self >> TraceOut(trace_out_modes)

@@ -314,13 +314,18 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    # TODO: rev to ansatz trace
     def __getitem__(self, idx: int | Collection[int]) -> State:
-        idx = (idx,) if isinstance(idx, int) else idx
-        if not set(idx).issubset(set(self.modes)):
-            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        trace_out_modes = set(self.modes) ^ set(idx)
-        return self >> TraceOut(trace_out_modes)
+        r"""
+        Reduced density matrix obtained by tracing out all the modes except those in
+        ``idx``. Note that the result is returned with modes in increasing order.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A ``DM`` object with the remaining modes.
+        """
+        return self.dm()[idx]
 
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
