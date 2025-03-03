@@ -156,7 +156,7 @@ class Sampler(ABC):
             kwargs[self._outcome_arg] = meas_outcome
             return self.povms.__class__(mode, **kwargs)
         else:
-            return self.povms[self.meas_outcomes.index(meas_outcome)].on(mode)
+            return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
         r"""
