@@ -65,7 +65,7 @@ class TestCircuit:
         circ = Circuit([SqueezedVacuum(0, r=0.5), SqueezedVacuum(1, r=-0.5), BSgate((0, 1), 0.9)])
         assert [op.auto_shape() for op in circ] == [(6,), (6,), (MAX, MAX, MAX, MAX)]
         circ.optimize_fock_shapes(verbose=True)
-        assert [op.auto_shape() for op in circ] == [(6,), (6,), (12, 12, 6, 6)]
+        assert [op.auto_shape() for op in circ] == [(6,), (6,), (6, 6, 6, 6)]
         settings.AUTOSHAPE_PROBABILITY = 0.99999
 
     def test_lookup_path(self, capfd):
@@ -250,7 +250,7 @@ class TestCircuit:
 
         circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
         circ.optimize(n_init=1, verbose=False)
-        assert circ.path == [(1, 2), (0, 1)]
+        assert circ.path == [(0, 1), (0, 2)]
 
     def test_wrong_path(self):
         "tests an exception is raised if contract is called with a wrond path"

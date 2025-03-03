@@ -144,7 +144,7 @@ class GDM(DM):
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.gdm_state_Abc,
-                betas=self.parameters.beta,
+                beta=self.parameters.beta,
                 symplectic=self.parameters.symplectic,
             ),
         ).representation
