@@ -365,7 +365,7 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
-            >>> cat = Coherent(modes=0, x=2.0) + Coherent(modes=0, x=-2.0)
+            >>> cat = Coherent(mode=0, x=2.0) + Coherent(mode=0, x=-2.0)
             >>> assert isinstance(cat, Ket)
 
         Args:
@@ -404,7 +404,7 @@ class CircuitComponent:
         .. code-block:: pycon
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
-            >>> coh = Coherent(modes=0, x=1.0)
+            >>> coh = Coherent(mode=0, x=1.0)
             >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
