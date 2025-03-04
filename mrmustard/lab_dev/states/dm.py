@@ -402,7 +402,7 @@ class DM(State):
         core_ket_indices = [(i + m_modes) for i in core_bra_indices]
         core_indices = core_bra_indices + core_ket_indices
         remaining_indices = [i for i in range(2 * m_modes) if i not in core_indices]
-        new_order = core_indices + remaining_indices
+        new_order = math.astensor(core_indices + remaining_indices)
 
         A_reordered = A[new_order, :]
         A_reordered = A_reordered[
@@ -426,9 +426,10 @@ class DM(State):
 
         inverse_order = [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
 
-        A_core = A_core[inverse_order, :]
-        A_core = A_core[:, inverse_order]
-        b_core = b_core[inverse_order]
+        temp = math.astensor(inverse_order)
+        A_core = A_core[temp, :]
+        A_core = A_core[:, temp]
+        b_core = b_core[temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
 
         # the transformation's Abc
