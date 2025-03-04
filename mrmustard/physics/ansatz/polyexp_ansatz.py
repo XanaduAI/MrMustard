@@ -583,18 +583,18 @@ class PolyExpAnsatz(Ansatz):
         If the ansatz itself has batch shape ``L`` then the result has shape (*b, *L).
         If the ansatz batch shape L (or a subset of its dimensions) represents a linear superposition
         of terms rather than independent functions, one should sum the returned array along those
-        axes to get the actual ansatz values. For example, the ansatz of a cat state is a linear
-        superposition of two gaussian terms.
+        axes to get the actual ansatz values of shape (*b). For example, the ansatz of a cat state
+        is a linear superposition of two gaussian terms, so in this case ``L = (2,)``.
 
         Args:
             z: A batch of points where the function is evaluated. The shape should be (*b, n) where:
                - *b represents any number of batch dimensions (even none).
-               - n is the number of CV variables in the ansatz
+               - n is the number of CV variables in the ansatz.
 
         Returns:
             The evaluated function values with shape (*b, *L) where:
-               - *b are the same batch dimensions as the input
-               - L is the batch shape of the ansatz itself
+               - *b are the same batch dimensions as the input.
+               - L is the batch shape of the ansatz itself.
         """
         # print(z)
         # z = math.atleast_2d(z)
@@ -652,7 +652,7 @@ class PolyExpAnsatz(Ansatz):
         Partially evaluates the ansatz by fixing some of its variables to specific values.
 
         This method creates a new ansatz with fewer variables by substituting the specified
-        variables with their given values. The remaining variables keep their original positions
+        variables with their given values. The remaining variables keep their original order
         in the function signature.
 
         Example:
@@ -660,11 +660,11 @@ class PolyExpAnsatz(Ansatz):
             ```
             new_ansatz = self.partial_eval([2.0,3.0], indices=(0,2))
             ```
-            returns a new ansatz G(z1) = F(2.0, z1, 3.0)
+            returns a new ansatz G(z1) equal to F(2.0, z1, 3.0).
 
         Args:
             z: Values for the variables being fixed. Can be:
-               - Shape (r,): A single list of values for r variables
+               - Shape (r,): A single vector of values for r variables
                - Shape (*b, r): Batch of r values of shape *b
                Where r is the number of indices in `indices`
             indices: Indices of the variables to be fixed to the values in z
@@ -674,10 +674,10 @@ class PolyExpAnsatz(Ansatz):
             dimensions *L and z has batch dimensions *b, the resulting ansatz will have
             batch dimensions (*b, *L).
         """
-        if len(indices) == self.num_CV_vars:
+        if len(indices) >= self.num_CV_vars:
             raise ValueError(
-                "The number of indices provided is the same as the number of CV variables."
-                "Use the eval() or __call__() method instead."
+                "The number of variables and indices must not exceed the number of CV "
+                f"variables {self.num_CV_vars}. Use the eval() or __call__() method instead."
             )
 
         z_batch_shape = z.shape[:-1]
@@ -691,18 +691,14 @@ class PolyExpAnsatz(Ansatz):
         f = len(r) + len(d)  # leftover core dimensions (CV + derived)
 
         new_A = math.gather(math.gather(self._A_vectorized, r + d, axis=-1), r + d, axis=-2)
-        new_A = math.repeat(new_A, z_batch_size, axis=0)  # can reshape to (*b, *L, r+d, r+d)
+        new_A = math.repeat(new_A, z_batch_size, axis=0)  # can now reshape to (*b, *L, r+d, r+d)
         new_A = math.reshape(new_A, z_batch_shape + self.batch_shape + (f, f))
 
-        A_er = math.gather(
-            math.gather(self._A_vectorized, e, axis=-2), r, axis=-1
-        )  # shape (vec(L), e, r)
+        A_er = math.gather(math.gather(self._A_vectorized, e, axis=-2), r, axis=-1)
         b_r = math.einsum("ier,be->bir", A_er, z)  # shape (vec(b), vec(L), r)
 
         if len(d) > 0:
-            A_ed = math.gather(
-                math.gather(self._A_vectorized, e, axis=-2), d, axis=-1
-            )  # shape (vec(L), e, d)
+            A_ed = math.gather(math.gather(self._A_vectorized, e, axis=-2), d, axis=-1)
             b_d = math.einsum("ied,be->bid", A_ed, z)  # shape (vec(b), vec(L), d)
             new_b = math.gather(self._b_vectorized, r + d, axis=-1)[None, :, :] + math.concat(
                 (b_r, b_d), axis=-1
@@ -713,13 +709,9 @@ class PolyExpAnsatz(Ansatz):
         new_b = math.reshape(new_b, z_batch_shape + self.batch_shape + (f,))
 
         # new c of shape (batch_size * b,)
-        A_ee = math.gather(
-            math.gather(self._A_vectorized, e, axis=-1), e, axis=-2
-        )  # shape (vec(L), e, e)
+        A_ee = math.gather(math.gather(self._A_vectorized, e, axis=-1), e, axis=-2)
         A_part = math.einsum("be,bf,ief->bi", z, z, A_ee)  # shape (vec(b), vec(L))
-        b_part = math.einsum(
-            "be,ie->bi", z, math.gather(self._b_vectorized, e, axis=-1)
-        )  # shape (vec(b), vec(L))
+        b_part = math.einsum("be,ie->bi", z, math.gather(self._b_vectorized, e, axis=-1))
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (vec(b), vec(L))
         new_c = math.einsum("bi,i...->bi...", exp_sum, self.c)
         c_shape = (
@@ -747,14 +739,15 @@ class PolyExpAnsatz(Ansatz):
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
-        Adds two PolyExp ansatze with same core dimensions together.
-        This means concatenating them in the last batch dimension. In the case where ``c`` on self
-        and other have different shapes it will add padding zeros to make the shapes fit.
-        As a convoluted but compelte example: If ``c1`` has batch shape (4,4,1) and core shape
-        (3,4,5) and ``c2`` has batch shape (4,4,10) and core shape (5,4,3) then the combined object
-        will have batch shape (4,4,11) and core shape (5,4,5). Note we stack on the last batch
-        dimension, and padded the other dimensions. If the batch shapes are incompatible it will
-        raise an error.
+        Adds two PolyExp ansatze together. They must have the same number of CV and derived
+        variables, and [what about the batch shape?]
+
+        In the case where ``c`` on self and other have different shapes it will get padded to make
+        the shapes fit. As a convoluted but complete example: If ``c1`` has batch shape (4,4,1) and
+        core shape (3,4,5) and ``c2`` has batch shape (4,4,10) and core shape (5,4,3) then the
+        combined object will have batch shape (4,4,11) and core shape (5,4,5). Note we stack on the
+        last batch dimension, and padded the other dimensions. If the batch shapes are incompatible
+        it will raise an error.
         """
         if not isinstance(other, PolyExpAnsatz):
             raise TypeError(f"Cannot add PolyExpAnsatz and {other.__class__}.")
