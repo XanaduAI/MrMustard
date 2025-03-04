@@ -20,6 +20,9 @@ from hypothesis import Verbosity
 from hypothesis import settings as hyp_settings
 
 from mrmustard import math
+import jax
+
+jax.config.update("jax_enable_x64", True)
 
 print("pytest.conf -----------------------")
 
@@ -44,7 +47,7 @@ def pytest_addoption(parser):
     ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
     ``pytest`` defaults to ``pytest --backend=numpy``.
     """
-    parser.addoption("--backend", default="numpy", help="``numpy`` or ``tensorflow``.")
+    parser.addoption("--backend", default="numpy", help="``numpy``, ``tensorflow`` or ``jax``.")
 
 
 @pytest.fixture
@@ -70,9 +73,19 @@ def set_backend(backend):
     math.change_backend(f"{backend}")
 
 
+def skip_tf():
+    if math.backend_name == "tensorflow":
+        pytest.skip("tensorflow")
+
+
 def skip_np():
     if math.backend_name == "numpy":
         pytest.skip("numpy")
+
+
+def skip_jax():
+    if math.backend_name == "jax":
+        pytest.skip("jax")
 
 
 def pytest_configure(config):

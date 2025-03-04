@@ -129,6 +129,7 @@ class Representation:
         num_vars = self.ansatz.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
+        shape = tuple(shape)
         try:
             As, bs, cs = self.bargmann_triple(batched=True)
             if len(shape) != num_vars:
@@ -155,6 +156,7 @@ class Representation:
                     f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
                 ) from e
             arrays = self.ansatz.reduce(shape).array
+        arrays = math.astensor(arrays)
         array = math.sum(arrays, axis=0)
         arrays = math.expand_dims(array, 0) if batched else array
         return arrays
