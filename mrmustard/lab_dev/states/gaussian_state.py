@@ -86,7 +86,7 @@ class GKet(Ket):
         Override the default __getitem__ method to handle symplectic slicing.
         """
         idx = (idx,) if isinstance(idx, int) else idx
-        if not set(idx).issubset(set(self.modes)):
+        if not set(idx).issubset(self.modes):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         trace_out_modes = set(self.modes) ^ set(idx)
         return self >> TraceOut(trace_out_modes)
