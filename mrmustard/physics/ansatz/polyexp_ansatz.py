@@ -98,9 +98,9 @@ class PolyExpAnsatz(Ansatz):
     ):
         super().__init__()
         # TODO: consider not using a batch dimension by default
-        self._A = math.atleast_3d(math.astensor(A)) if A is not None else None
-        self._b = math.atleast_2d(math.astensor(b)) if b is not None else None
-        self._c = math.atleast_nd(math.astensor(c), num_derived_vars + 1) if c is not None else None
+        self._A = math.astensor(A) if A is not None else None
+        self._b = math.astensor(b) if b is not None else None
+        self._c = math.astensor(c) if c is not None else None
         self.num_derived_vars = num_derived_vars
         self.name = name
         self._simplified = False
@@ -173,15 +173,11 @@ class PolyExpAnsatz(Ansatz):
 
             data = self._fn(**params)
             if len(data) == 4:
-                A, b, c, num_derived_vars = data
+                self._A, self._b, self._c, self.num_derived_vars = data
             else:
-                A, b, c = data
-                c = math.astensor(c)
-                num_derived_vars = 0
-            self._A = math.atleast_3d(A)
-            self._b = math.atleast_2d(b)
-            self._c = math.atleast_nd(c, num_derived_vars + 1)
-            self.num_derived_vars = num_derived_vars
+                self._A, self._b, self._c = data
+                self._c = math.astensor(self._c)
+                self.num_derived_vars = 0
             self._batch_shape = self._A.shape[:-2]
 
     @property
@@ -251,7 +247,7 @@ class PolyExpAnsatz(Ansatz):
         if self.num_derived_vars == 0:
             return self.c
         else:
-            return self.eval([])
+            return self.eval(math.zeros_like(self.b))
 
     @property
     def batch_size(self) -> int:
@@ -313,8 +309,10 @@ class PolyExpAnsatz(Ansatz):
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
-        r"""Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated, i.e.
-        the function is not called until the A,b,c attributes are accessed (even internally)."""
+        r"""
+        Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated,
+        i.e. the function is not called until the A,b,c attributes are accessed (even internally).
+        """
         ansatz = cls(None, None, None, None)
         ansatz._fn = fn
         ansatz._fn_kwargs = kwargs
@@ -466,7 +464,7 @@ class PolyExpAnsatz(Ansatz):
         b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
         return A_decomp, b_decomp, c_prime
 
-    def reorder_CV(self, order: Sequence[int]):
+    def reorder(self, order: Sequence[int]):
         r"""
         Reorders the CV indices of an (A,b,c) triple.
         The length of ``order`` must equal the number of CV variables.
@@ -579,12 +577,9 @@ class PolyExpAnsatz(Ansatz):
 
     def eval(self: PolyExpAnsatz, z: Batch[Vector]) -> Batch[ComplexTensor]:
         r"""
-        Evaluates the ansatz at the given batch of points in C^(*b, n).
-        If the ansatz itself has batch shape ``L`` then the result has shape (*b, *L).
-        If the ansatz batch shape L (or a subset of its dimensions) represents a linear superposition
-        of terms rather than independent functions, one should sum the returned array along those
-        axes to get the actual ansatz values of shape (*b). For example, the ansatz of a cat state
-        is a linear superposition of two gaussian terms, so in this case ``L = (2,)``.
+        Evaluates the ansatz at the given batch of points in C^(*b, n) where `n` is the number of
+        CV variables in the ansatz. If the ansatz itself has batch shape ``L`` then the result has
+        shape (*b, *L).
 
         Args:
             z: A batch of points where the function is evaluated. The shape should be (*b, n) where:
@@ -596,22 +591,22 @@ class PolyExpAnsatz(Ansatz):
                - *b are the same batch dimensions as the input.
                - L is the batch shape of the ansatz itself.
         """
-        # print(z)
-        # z = math.atleast_2d(z)
-        # z = math.cast(z, dtype=self.A.dtype)
-
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
         if z_dim != self.num_CV_vars:
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        z = math.reshape(z, (np.prod(z_batch_shape), z_dim))  # shape (k, num_CV_vars)
+        z_vectorized = math.reshape(
+            z, (int(np.prod(z_batch_shape)), z_dim)
+        )  # shape (k, num_CV_vars)
 
-        exp_sum = self._compute_exp_part(z)  # shape (batch_size, k)
+        exp_sum = self._compute_exp_part(z_vectorized)  # shape (batch_size, k)
         if self.num_derived_vars == 0:  # purely gaussian
-            ret = math.einsum("ik,i...->ik...", exp_sum, self.c)
+            ret = math.einsum("ik,i...->ik...", exp_sum, self._c_vectorized)
         else:
-            poly = self._compute_polynomial_part(z)  # shape (batch_size, k, *derived_shape)
+            poly = self._compute_polynomial_part(
+                z_vectorized
+            )  # shape (batch_size, k, *derived_shape)
             ret = self._combine_exp_and_poly(exp_sum, poly)
         ret = math.transpose(ret, list(range(1, len(ret.shape))) + [0])
         return math.reshape(ret, z_batch_shape + self.batch_shape)
@@ -679,10 +674,9 @@ class PolyExpAnsatz(Ansatz):
                 "The number of variables and indices must not exceed the number of CV "
                 f"variables {self.num_CV_vars}. Use the eval() or __call__() method instead."
             )
-
-        z_batch_shape = z.shape[:-1]
-        z_batch_size = np.prod(z_batch_shape)
-        z = math.reshape(z, (z_batch_size, -1))
+        z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
+        z_batch_size = int(np.prod(z_batch_shape))
+        z_vectorized = math.reshape(z, (z_batch_size, z_dim))
 
         # evaluated, remaining and derived indices
         e = indices
@@ -695,11 +689,11 @@ class PolyExpAnsatz(Ansatz):
         new_A = math.reshape(new_A, z_batch_shape + self.batch_shape + (f, f))
 
         A_er = math.gather(math.gather(self._A_vectorized, e, axis=-2), r, axis=-1)
-        b_r = math.einsum("ier,be->bir", A_er, z)  # shape (vec(b), vec(L), r)
+        b_r = math.einsum("ier,be->bir", A_er, z_vectorized)  # shape (vec(b), vec(L), r)
 
         if len(d) > 0:
             A_ed = math.gather(math.gather(self._A_vectorized, e, axis=-2), d, axis=-1)
-            b_d = math.einsum("ied,be->bid", A_ed, z)  # shape (vec(b), vec(L), d)
+            b_d = math.einsum("ied,be->bid", A_ed, z_vectorized)  # shape (vec(b), vec(L), d)
             new_b = math.gather(self._b_vectorized, r + d, axis=-1)[None, :, :] + math.concat(
                 (b_r, b_d), axis=-1
             )
@@ -710,14 +704,13 @@ class PolyExpAnsatz(Ansatz):
 
         # new c of shape (batch_size * b,)
         A_ee = math.gather(math.gather(self._A_vectorized, e, axis=-1), e, axis=-2)
-        A_part = math.einsum("be,bf,ief->bi", z, z, A_ee)  # shape (vec(b), vec(L))
-        b_part = math.einsum("be,ie->bi", z, math.gather(self._b_vectorized, e, axis=-1))
+        A_part = math.einsum(
+            "be,bf,ief->bi", z_vectorized, z_vectorized, A_ee
+        )  # shape (vec(b), vec(L))
+        b_part = math.einsum("be,ie->bi", z_vectorized, math.gather(self._b_vectorized, e, axis=-1))
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (vec(b), vec(L))
-        new_c = math.einsum("bi,i...->bi...", exp_sum, self.c)
-        c_shape = (
-            z_batch_shape + self.shape_derived_vars if self.num_derived_vars > 0 else z_batch_shape
-        )
-        new_c = math.reshape(new_c, c_shape)
+        new_c = math.einsum("bi,i...->bi...", exp_sum, self._c_vectorized)
+        new_c = math.reshape(new_c, z_batch_shape + self.shape_derived_vars)
 
         return PolyExpAnsatz(
             new_A,
@@ -739,49 +732,46 @@ class PolyExpAnsatz(Ansatz):
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
-        Adds two PolyExp ansatze together. They must have the same number of CV and derived
-        variables, and [what about the batch shape?]
-
-        In the case where ``c`` on self and other have different shapes it will get padded to make
-        the shapes fit. As a convoluted but complete example: If ``c1`` has batch shape (4,4,1) and
-        core shape (3,4,5) and ``c2`` has batch shape (4,4,10) and core shape (5,4,3) then the
-        combined object will have batch shape (4,4,11) and core shape (5,4,5). Note we stack on the
-        last batch dimension, and padded the other dimensions. If the batch shapes are incompatible
-        it will raise an error.
+        Adds two PolyExp ansatze together. This is equivalent to stacking their respective triples
+        along a batch dimension, which is to be interpreted to mean a linear superposition.
+        In order to use the __add__ method, the ansatze must have the same number of CV variables,
+        and zero or one batch dimensions. The reason for this restriction on the number of batch
+        dimensions is that if there are multiple batch dimensions, it is not clear which one is used
+        as meaning "linear superposition". In that case, the stacking of the triples should be done
+        by the user.
         """
-        if not isinstance(other, PolyExpAnsatz):
-            raise TypeError(f"Cannot add PolyExpAnsatz and {other.__class__}.")
-        if self.batch_shape[:-1] != other.batch_shape[:-1]:
-            raise ValueError(
-                f"Batch shapes must be stackable on the last dimension. Got {self.batch_shape} and {other.batch_shape}."
-            )
         if self.num_CV_vars != other.num_CV_vars:
             raise ValueError(
                 f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
             )
+        if self.batch_dims > 1 or other.batch_dims > 1:
+            raise ValueError(
+                f"The batch dimensions must be 0 or 1. Got {self.batch_dims} and {other.batch_dims}."
+            )
+        A_self = self.A if self.batch_dims == 0 else math.expand_dims(self.A, axis=0)
+        b_self = self.b if self.batch_dims == 0 else math.expand_dims(self.b, axis=0)
+        c_self = self.c if self.batch_dims == 0 else math.expand_dims(self.c, axis=0)
+        A_other = other.A if other.batch_dims == 0 else math.expand_dims(other.A, axis=0)
+        b_other = other.b if other.batch_dims == 0 else math.expand_dims(other.b, axis=0)
+        c_other = other.c if other.batch_dims == 0 else math.expand_dims(other.c, axis=0)
 
-        def combine_arrays(array1, array2):
-            """Combine arrays, padding with zeros if shapes differ in non-derived dimensions."""
-            shape1 = array1.shape[self.batch_dims :]
-            shape2 = array2.shape[self.batch_dims :]
+        def pad_and_combine_arrays(array1, array2):
+            shape1 = array1.shape[1:]
+            shape2 = array2.shape[1:]
             max_shapes = tuple(map(max, zip(shape1, shape2)))
-            pad_widths1 = [(0, 0)] * (self.batch_dims) + [
-                (0, t - s) for t, s in zip(max_shapes, shape1)
-            ]
-            pad_widths2 = [(0, 0)] * (self.batch_dims) + [
-                (0, t - s) for t, s in zip(max_shapes, shape2)
-            ]
+            pad_widths1 = [(0, 0)] + [(0, m - s) for m, s in zip(max_shapes, shape1)]
+            pad_widths2 = [(0, 0)] + [(0, m - s) for m, s in zip(max_shapes, shape2)]
             padded_array1 = math.pad(array1, pad_widths1, "constant")
             padded_array2 = math.pad(array2, pad_widths2, "constant")
-            return math.concat([padded_array1, padded_array2], axis=self.batch_dims)
+            return math.concat([padded_array1, padded_array2], axis=0)
 
         n_derived_vars = max(self.num_derived_vars, other.num_derived_vars)
 
-        combined_matrices = math.concat([self.A, other.A], axis=self.batch_dims)
-        combined_vectors = math.concat([self.b, other.b], axis=self.batch_dims)
-        combined_arrays = combine_arrays(
-            math.atleast_nd(self.c, n_derived_vars),
-            math.atleast_nd(other.c, n_derived_vars),
+        combined_matrices = pad_and_combine_arrays(A_self, A_other)
+        combined_vectors = pad_and_combine_arrays(b_self, b_other)
+        combined_arrays = pad_and_combine_arrays(
+            math.atleast_nd(c_self, n_derived_vars + 1),
+            math.atleast_nd(c_other, n_derived_vars + 1),
         )
 
         return PolyExpAnsatz(
@@ -794,8 +784,8 @@ class PolyExpAnsatz(Ansatz):
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
         Tensor product of this PolyExpAnsatz with another. Equivalent to :math:`H(a,b) = F(a) * G(b)`.
-        As it distributes over addition on both self and other, the batch size of the result is the
-        product of the batch size of this ansatz and the other one.
+        As it distributes over addition on both self and other, the batch shape of the result is the
+        outer product of the batch shapes of this ansatz and the other one. Use with moderation.
 
         Args:
             other: Another PolyExpAnsatz.
@@ -841,17 +831,17 @@ class PolyExpAnsatz(Ansatz):
             )
 
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
-        only_z = [math.atleast_1d(zi) for zi in z if zi is not None]
+        only_z = [math.astensor(zi) for zi in z if zi is not None]
 
         if batch_string is None:  # Generate default batch string if none provided
-            batch_string = self._outer_product_batch_str(*[len(zi.shape) - 1 for zi in only_z])
+            batch_string = self._outer_product_batch_str(*[len(zi.shape) for zi in only_z])
 
-        if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation
-            reshaped_z = self._reshape_args_to_batch_string(only_z, batch_string)
-
-            return self.eval(reshaped_z)
+        reshaped_z = self._reshape_args_to_batch_string(only_z, batch_string)
+        broadcasted_z = np.broadcast_arrays(*reshaped_z)
+        combined_z = math.stack(broadcasted_z, axis=-1)
+        if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
+            return self.eval(combined_z)
         else:  # Partial evaluation: some CV variables are not provided
-            combined_z = self._combine_args_with_batch_string(only_z, batch_string)
             return self.partial_eval(combined_z, tuple(evaluated_indices))
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
