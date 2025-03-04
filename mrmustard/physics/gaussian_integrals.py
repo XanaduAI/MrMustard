@@ -179,118 +179,223 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     return A, b, c
 
 
-def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
+def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
     r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
-    It supports a batch dimension, e.g. ``A1.shape = (batch, n1, n1)``,
-    ``b1.shape = (batch, n1)``, ``c1.shape = (batch, *d1)`` or no batch dimension:
+    It supports arbitrary batch dimensions using an einsum-like string notation.
+    For example:
+    - "i,j->ij" is like a "kron" mode (Kronecker product of batch dimensions)
+    - "i,i->i" is like a "zip" mode (parallel processing of same-sized batches)
+    - "i,j->ij", "ij,ik->ijk", "i,->i" are all valid batch dimension specifications
+
+    The string only refers to the batch dimensions. The core (non-batch) dimensions are handled
+    as before: the A matrices and b vectors are joined, and the shape of c is the
+    concatenation of the shapes of c1 and c2 (batch excluded).
+
+    It supports varying batch dimensions, e.g. ``A1.shape = (batch1, n1, n1)``,
+    ``b1.shape = (batch1, n1)``, ``c1.shape = (batch1, *d1)`` or no batch dimension:
     ``A1.shape = (n1, n1)``, ``b1.shape = (n1)``, ``c1.shape = (*d1)``.
     The number of non-batch dimensions in ``ci`` (i.e. ``len(di)``) corresponds to the number
-    of rows and columns of ``Ai`` and ``bi`` that are kept last. So for instance, if ``d1 = (4, 3)``
-    and ``d2=(7,)``, then the last 2 rows and columns of ``A1`` and ``b1`` and the last 1 row and
-    column of ``A2`` and ``b2`` are kept last in the joined ``A`` and ``b``.
-    The shape of ``c`` is the concatenation of the shapes of ``c1`` and ``c2`` (batch excluded).
-    If inputs are not batched, the output has a batch dimension of size 1 added to it.
+    of rows and columns of ``Ai`` and ``bi`` that are kept last (derived variables).
+    So for instance, if ``d1 = (4, 3)`` and ``d2=(7,)``, then the last 2 rows and columns of
+    ``A1`` and ``b1`` and the last 1 row and column of ``A2`` and ``b2`` are kept last in the
+    joined ``A`` and ``b``. If inputs are not batched, the output has a batch dimension of size 1
+    added to it.
 
     Arguments:
         Abc1: the first ``(A,b,c)`` triple
         Abc2: the second ``(A,b,c)`` triple
-        mode: how to treat the batch of the two ``(A,b,c)`` triples. Either ``kron`` for the Kronecker product or ``zip`` for parallel.
+        batch_string: an einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled
 
     Returns:
         The joined ``(A,b,c)`` triple
     """
-
     # 0. unpack and prepare inputs
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    A1 = math.atleast_3d(A1, dtype=math.complex128)
-    A2 = math.atleast_3d(A2, dtype=math.complex128)
-    b1 = math.atleast_2d(b1, dtype=math.complex128)
-    b2 = math.atleast_2d(b2, dtype=math.complex128)
-    c1 = math.atleast_1d(c1, dtype=math.complex128)
-    c2 = math.atleast_1d(c2, dtype=math.complex128)
+    # A1 = math.atleast_3d(A1, dtype=math.complex128)
+    # A2 = math.atleast_3d(A2, dtype=math.complex128)
+    # b1 = math.atleast_2d(b1, dtype=math.complex128)
+    # b2 = math.atleast_2d(b2, dtype=math.complex128)
+    c1 = math.astensor(c1, dtype=math.complex128)
+    c2 = math.astensor(c2, dtype=math.complex128)
 
-    # 1. input validation
-    (batch1, nA1, mA1) = A1.shape
-    (batch2, nA2, mA2) = A2.shape
-    (batch1_b, nb1) = b1.shape
-    (batch2_b, nb2) = b2.shape
-    (batch1_c, *poly_shape1) = c1.shape
-    (batch2_c, *poly_shape2) = c2.shape
-
-    if not batch1 == batch1_b == batch1_c:
-        raise ValueError(f"Batch sizes of Abc1 must match: got ({batch1}, {batch1_b}, {batch1_c})")
-    if not batch2 == batch2_b == batch2_c:
-        raise ValueError(f"Batch sizes of Abc2 must match: got ({batch2}, {batch2_b}, {batch2_c})")
-    if mode == "zip" and batch1 != batch2:
+    # 1. Parse the batch string
+    if "->" not in batch_string:
         raise ValueError(
-            f"All batch sizes must match when mode='zip': got ({batch1}, {batch1_b}, {batch1_c})"
-            f" and ({batch2}, {batch2_b}, {batch2_c})"
+            f"Invalid batch string format: {batch_string}. Expected format: 'in1,in2->out'"
         )
-    if not nA1 == mA1 == nb1:
-        raise ValueError("A1 must be square and b1 must be compatible with A1.")
 
-    if not nA2 == mA2 == nb2:
-        raise ValueError("A2 must be square and b2 must be compatible with A2.")
+    input_str, output_str = batch_string.split("->")
+    input_parts = input_str.split(",")
+    if len(input_parts) != 2:
+        raise ValueError(f"Expected 2 input parts in batch string, got {len(input_parts)}")
 
-    # 2. get shapes and sizes
+    in1, in2 = input_parts
 
+    # 2. Get dimensions and validate
+    batch1_A = A1.shape[:-2]
+    batch2_A = A2.shape[:-2]
+    nA1, mA1 = A1.shape[-2:]
+    nA2, mA2 = A2.shape[-2:]
+    batch1_b = b1.shape[:-1]
+    batch2_b = b2.shape[:-1]
+    nb1 = b1.shape[-1]
+    nb2 = b2.shape[-1]
+    batch1_c = c1.shape[: len(batch1_A)]
+    batch2_c = c2.shape[: len(batch2_A)]
+    poly_shape1 = c1.shape[len(batch1_A) :]
+    poly_shape2 = c2.shape[len(batch2_A) :]
+
+    # Check if batch dimensions match the provided string
+    if len(in1) != len(batch1_A):
+        raise ValueError(
+            f"Batch dimensions in first input ({len(batch1_A)}) don't match the provided string '{in1}'"
+        )
+    if len(in2) != len(batch2_A):
+        raise ValueError(
+            f"Batch dimensions in second input ({len(batch2_A)}) don't match the provided string '{in2}'"
+        )
+
+    # Check the batch dimensions across the two triples are the same
+    if batch1_A != batch1_b or batch1_A != batch1_c or batch1_b != batch1_c:
+        raise ValueError(
+            f"Batch dmensions of the first triple ({batch1_A}, {batch1_b}, {batch1_c}) are inconsistent"
+        )
+    if batch2_A != batch2_b or batch2_A != batch2_c or batch2_b != batch2_c:
+        raise ValueError(
+            f"Batch dmensions of the second triple ({batch2_A}, {batch2_b}, {batch2_c}) are inconsistent"
+        )
+
+    # 3. Get shapes and sizes
     m1 = len(poly_shape1)
     m2 = len(poly_shape2)
     n1 = nA1 - m1
     n2 = nA2 - m2
 
-    # 3. join triples
+    # Step 0: Flatten the non-batch dimensions of c1 and c2
+    c1_flat_shape = batch1_c + (-1,)
+    c2_flat_shape = batch2_c + (-1,)
+    c1_flat = math.reshape(c1, c1_flat_shape)
+    c2_flat = math.reshape(c2, c2_flat_shape)
 
-    c1 = math.reshape(c1, (batch1, -1))
-    c2 = math.reshape(c2, (batch2, -1))
+    # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
+    broadcast_dims = {}
+    for i, dim in enumerate(in1):
+        broadcast_dims[dim] = batch1_A[i]
+    for i, dim in enumerate(in2):
+        if dim in broadcast_dims and broadcast_dims[dim] != batch2_A[i]:
+            raise ValueError(
+                f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch2_A[i]}"
+            )
+        broadcast_dims[dim] = batch2_A[i]
 
-    if mode == "kron":
-        A1 = math.repeat(A1, batch2, axis=0)
-        A2 = math.tile(A2, (batch1, 1, 1))
-        A1Z = math.concat([A1, math.zeros((batch1 * batch2, nA1, nA2), dtype=A1.dtype)], axis=-1)
-        ZA2 = math.concat([math.zeros((batch1 * batch2, nA2, nA1), dtype=A2.dtype), A2], axis=-1)
-        b1 = math.repeat(b1, batch2, axis=0)
-        b2 = math.tile(b2, (batch1, 1))
-        c = math.reshape(
-            math.einsum("ba,dc->bdac", c1, c2),
-            [batch1 * batch2] + poly_shape1 + poly_shape2,
-        )
-    elif mode == "zip":
-        A1Z = math.concat([A1, math.zeros((batch1, nA1, nA2), dtype=A1.dtype)], axis=-1)
-        ZA2 = math.concat([math.zeros((batch1, nA2, nA1), dtype=A2.dtype), A2], axis=-1)
-        c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
+    output_shape = []
+    for dim in output_str:
+        if dim not in broadcast_dims:
+            raise ValueError(f"Output dimension {dim} not found in inputs")
+        output_shape.append(broadcast_dims[dim])
+
+    # Create broadcast shapes
+    broadcast_shape1 = []
+    broadcast_shape2 = []
+
+    for dim in output_str:
+        if dim in in1:
+            idx = in1.index(dim)
+            broadcast_shape1.append(batch1_A[idx])
+        else:
+            broadcast_shape1.append(1)
+
+        if dim in in2:
+            idx = in2.index(dim)
+            broadcast_shape2.append(batch2_A[idx])
+        else:
+            broadcast_shape2.append(1)
+
+    # Broadcast A, b, c to the output batch shape
+    A1_new_shape = tuple(broadcast_shape1) + (nA1, mA1)
+    A2_new_shape = tuple(broadcast_shape2) + (nA2, mA2)
+    b1_new_shape = tuple(broadcast_shape1) + (nb1,)
+    b2_new_shape = tuple(broadcast_shape2) + (nb2,)
+    c1_new_shape = tuple(broadcast_shape1) + (c1_flat.shape[-1],)
+    c2_new_shape = tuple(broadcast_shape2) + (c2_flat.shape[-1],)
+
+    # Reshape to add broadcasting dimensions
+    A1_reshaped = math.reshape(A1, A1_new_shape)
+    A2_reshaped = math.reshape(A2, A2_new_shape)
+    b1_reshaped = math.reshape(b1, b1_new_shape)
+    b2_reshaped = math.reshape(b2, b2_new_shape)
+    c1_reshaped = math.reshape(c1_flat, c1_new_shape)
+    c2_reshaped = math.reshape(c2_flat, c2_new_shape)
+
+    # Create full output shape for broadcasting
+    output_batch_shape = tuple(output_shape)
+    A1_broadcast_shape = output_batch_shape + (nA1, mA1)
+    A2_broadcast_shape = output_batch_shape + (nA2, mA2)
+    b1_broadcast_shape = output_batch_shape + (nb1,)
+    b2_broadcast_shape = output_batch_shape + (nb2,)
+    c1_broadcast_shape = output_batch_shape + (c1_flat.shape[-1],)
+    c2_broadcast_shape = output_batch_shape + (c2_flat.shape[-1],)
+
+    # Step 2: Broadcast tensors to the output shape
+    A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape)
+    A2_broadcasted = math.broadcast_to(A2_reshaped, A2_broadcast_shape)
+    b1_broadcasted = math.broadcast_to(b1_reshaped, b1_broadcast_shape)
+    b2_broadcasted = math.broadcast_to(b2_reshaped, b2_broadcast_shape)
+    c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape)
+    c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape)
+
+    # Step 3: Join A1 and A2
+    A1Z = math.concat(
+        [A1_broadcasted, math.zeros(output_batch_shape + (nA1, nA2), dtype=A1.dtype)], axis=-1
+    )
+    ZA2 = math.concat(
+        [math.zeros(output_batch_shape + (nA2, nA1), dtype=A2.dtype), A2_broadcasted], axis=-1
+    )
 
     A = math.concat([A1Z, ZA2], axis=-2)
+
+    # Reorder the rows and columns to group core and derived variables
     A = math.concat(
         [
-            A[:, :n1, :],
-            A[:, nA1 : nA1 + n2, :],
-            A[:, n1:nA1, :],
-            A[:, nA1 + n2 :, :],
+            A[..., :n1, :],
+            A[..., nA1 : nA1 + n2, :],
+            A[..., n1:nA1, :],
+            A[..., nA1 + n2 :, :],
         ],
         axis=-2,
     )
+
     A = math.concat(
         [
-            A[:, :, :n1],
-            A[:, :, nA1 : nA1 + n2],
-            A[:, :, n1:nA1],
-            A[:, :, nA1 + n2 :],
+            A[..., :, :n1],
+            A[..., :, nA1 : nA1 + n2],
+            A[..., :, n1:nA1],
+            A[..., :, nA1 + n2 :],
         ],
         axis=-1,
     )
-    b = math.concat([b1, b2], axis=-1)
+
+    # Step 4: Concatenate b1 and b2
+    b = math.concat([b1_broadcasted, b2_broadcasted], axis=-1)
     b = math.concat(
         [
-            b[:, :n1],
-            b[:, nA1 : nA1 + n2],
-            b[:, n1:nA1],
-            b[:, nA1 + n2 :],
+            b[..., :n1],
+            b[..., nA1 : nA1 + n2],
+            b[..., n1:nA1],
+            b[..., nA1 + n2 :],
         ],
         axis=-1,
     )
+
+    # Step 5 & 6: Compute outer product of the last dimensions of c1 and c2
+    c1_expanded = c1_broadcasted[..., :, None]
+    c2_expanded = c2_broadcasted[..., None, :]
+    c = c1_expanded * c2_expanded
+    # Reshape c to the desired output shape
+    c_shape = output_batch_shape + poly_shape1 + poly_shape2
+    c = math.reshape(c, c_shape)
 
     return A, b, c
 
@@ -401,8 +506,8 @@ def complex_gaussian_integral_2(
     Abc2: tuple,
     idx1: Sequence[int],
     idx2: Sequence[int],
+    batch_string: str,
     measure: float = -1,
-    mode: str = "kron",
 ) -> tuple:
     r"""Computes the complex Gaussian integral
 
@@ -428,7 +533,8 @@ def complex_gaussian_integral_2(
         idx1: the tuple of indices of the :math:`z` variables of the first function to integrate over
         idx2: the tuple of indices of the :math:`z^*` variables of the second function to integrate over
         measure: the exponent of the measure (default is -1: Bargmann measure)
-        mode: how to treat the batch of the two ``(A,b,c)`` triples. Either ``kron`` for the Kronecker product or ``zip`` for parallel processing.
+        batch_string: an einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled.
+                    Default is "i,j->ij" (equivalent to the old "kron" mode). Use "i,i->i" for the old "zip" mode.
 
     Returns:
         The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
@@ -436,9 +542,19 @@ def complex_gaussian_integral_2(
     Raises:
         ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
+    # Step 0: Join the Abc parameters and reshape to have a single batch dimension
+    A_, b_, c_ = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    batch_shape = A_.shape[:-2]
+    A_ = math.reshape(A_, batch_shape + (A_.shape[-2], A_.shape[-1]))
+    b_ = math.reshape(b_, batch_shape + (b_.shape[-1],))
+    c_ = math.reshape(c_, batch_shape + c_.shape[len(batch_shape) :])
+
     A1, _, c1 = Abc1
-    A_, b_, c_ = join_Abc(Abc1, Abc2, mode=mode)
-    n1_plus_N1 = A1.shape[-1]
-    N1 = len(math.atleast_1d(c1).shape[1:])
-    idx2 = tuple(i + n1_plus_N1 - N1 for i in idx2)  # have to skip the first n1 variables now
-    return complex_gaussian_integral_1((A_, b_, c_), idx1, idx2, measure)
+    core_plus_derived = math.atleast_3d(A1).shape[-1]
+    derived = len(math.atleast_1d(c1).shape[len(A1.shape) - 2 :])
+    idx2 = tuple(i + core_plus_derived - derived for i in idx2)
+    A_out, b_out, c_out = complex_gaussian_integral_1((A_, b_, c_), idx1, idx2, measure)
+    A_out = math.reshape(A_out, batch_shape + (A_out.shape[-2], A_out.shape[-1]))
+    b_out = math.reshape(b_out, batch_shape + (b_out.shape[-1],))
+    c_out = math.reshape(c_out, batch_shape + c_out.shape[len(batch_shape) :])
+    return A_out, b_out, c_out

@@ -678,3 +678,15 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         _tensor[key] = value
 
         return _tensor
+
+    def broadcast_to(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
+        """Broadcast a tensor to a new shape.
+
+        Args:
+            array: Input tensor to broadcast.
+            shape: Target shape to broadcast to.
+
+        Returns:
+            The broadcasted tensor.
+        """
+        return np.broadcast_to(array, shape)

@@ -1651,3 +1651,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
         return 0.5 * (Z - self.conj(self.transpose(Z)))
+
+    def broadcast_to(self, array: Tensor, shape: Sequence[int]) -> Tensor:
+        """Broadcast a tensor to a new shape.
+
+        Args:
+            array: Input tensor to broadcast.
+            shape: Target shape to broadcast to.
+
+        Returns:
+            The broadcasted tensor.
+        """
+        return self._apply("broadcast_to", (array, shape))

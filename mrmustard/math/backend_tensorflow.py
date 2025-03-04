@@ -704,3 +704,15 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return dL_dtensor, dL_dvalue
 
         return _tensor, grad
+
+    def broadcast_to(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
+        """Broadcast a tensor to a new shape.
+
+        Args:
+            array: Input tensor to broadcast.
+            shape: Target shape to broadcast to.
+
+        Returns:
+            The broadcasted tensor.
+        """
+        return tf.broadcast_to(array, shape)
