@@ -18,7 +18,7 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Collection
+from typing import Collection, Sequence
 from itertools import product
 import warnings
 import numpy as np
@@ -314,7 +314,7 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __getitem__(self, idx: int | Collection[int]) -> State:
+    def __getitem__(self, idx: int | Sequence[int]) -> State:
         r"""
         Reduced density matrix obtained by tracing out all the modes except those in
         ``idx``. Note that the result is returned with modes in increasing order.

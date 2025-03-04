@@ -62,11 +62,11 @@ class TestGDM:
     def test_init(self):
         "Tests the initialization"
 
-        rho = GDM((0, 1), 0.2)
+        rho = GDM((0, 1), [0.2, 0.3])
 
         assert rho.modes == (0, 1)
         assert rho.name == "GDM"
-        assert math.allclose(rho.parameters.beta.value, 0.2)
+        assert math.allclose(rho.parameters.beta.value, math.astensor([0.2, 0.3]))
         assert rho.parameters.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
@@ -76,5 +76,5 @@ class TestGDM:
         rho = GDM(0, 0.2)
         assert rho == rho[0]
 
-        sigma = GDM((0, 1), 0.5)
+        sigma = GDM((0, 1), [0.5, 0.4])
         assert isinstance(sigma[0], DM)

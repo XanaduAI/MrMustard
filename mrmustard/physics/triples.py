@@ -252,19 +252,19 @@ def gket_state_Abc(symplectic: RealMatrix):
     return A[:m, :m], b, c
 
 
-def gdm_state_Abc(beta: float, symplectic: RealMatrix):
+def gdm_state_Abc(betas: Vector, symplectic: RealMatrix):
     r"""
     The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
 
     Args:
-        beta: the beta corresponding to the temperature of the initial thermal state
+        betas: the list of betas corresponding to the temperatures of the initial thermal state
         symplectic: the symplectic matrix of the Gaussian
 
     Returns:
         The ``(A,b,c)`` triple of the resulting Gaussian DM state.
     """
-    m = symplectic.shape[-1] // 2  # num of modes
-    beta = math.repeat(beta, m)  # temporary workaround until triples batched are in
+    betas = math.atleast_1d(betas)  # makes it work
+    m = len(betas)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
         [
@@ -273,9 +273,9 @@ def gdm_state_Abc(beta: float, symplectic: RealMatrix):
         ]
     )
 
-    D = math.diag(math.exp(-beta))
+    D = math.diag(math.exp(-betas))
     A_fd = math.block([[math.zeros((m, m)), D], [D, math.zeros((m, m))]])
-    c_fd = math.prod((1 - math.exp(-beta)))
+    c_fd = math.prod((1 - math.exp(-betas)))
     t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(c_fd))
     c_u = (
         (-1) ** m * math.det(Au[m:, m:] @ math.conj(Au[m:, m:]) - math.eye_like(Au[m:, m:]))

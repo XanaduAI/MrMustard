@@ -18,7 +18,7 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
-from typing import Collection
+from typing import Sequence
 
 from mrmustard import math
 
@@ -30,7 +30,7 @@ from mrmustard.utils.typing import RealMatrix
 from .ket import Ket
 from .dm import DM
 from ..circuit_components_utils import TraceOut
-from ..utils import make_parameter
+from ..utils import make_parameter, reshape_params
 
 __all__ = ["GKet", "GDM"]
 
@@ -81,14 +81,20 @@ class GKet(Ket):
             ),
         ).representation
 
-    def __getitem__(self, idx: int | Collection[int]):
+    def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
         Override the default __getitem__ method to handle symplectic slicing.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new GKet with the modes indexed by `idx`.
         """
         idx = (idx,) if isinstance(idx, int) else idx
         if not set(idx).issubset(self.modes):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        trace_out_modes = set(self.modes) ^ set(idx)
+        trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
         return self >> TraceOut(trace_out_modes)
 
 
@@ -106,7 +112,9 @@ class GDM(DM):
 
     Args:
         modes: The modes over which the state is defined.
-        beta: The temperature determining the thermal state.
+        beta: the set of temperatures determining the thermal states. If only a
+        float is provided for a multi-mode state, the same temperature is considered
+        across all modes.
         symplectic: The symplectic representation of the unitary that acts on a
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
@@ -119,7 +127,7 @@ class GDM(DM):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        beta: float,
+        beta: float | Sequence[float],
         symplectic: RealMatrix = None,
         beta_trainable: bool = False,
         symplectic_trainable: bool = False,
@@ -127,6 +135,7 @@ class GDM(DM):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="GDM")
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
+        (betas,) = list(reshape_params(len(modes), betas=beta))
         self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
@@ -139,7 +148,7 @@ class GDM(DM):
         self.parameters.add_parameter(
             make_parameter(
                 beta_trainable,
-                beta,
+                betas,
                 "beta",
                 (0, None),
             )
@@ -148,17 +157,23 @@ class GDM(DM):
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.gdm_state_Abc,
-                beta=self.parameters.beta,
+                betas=self.parameters.beta,
                 symplectic=self.parameters.symplectic,
             ),
         ).representation
 
-    def __getitem__(self, idx: int | Collection[int]):
+    def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""
         Override the default __getitem__ method to handle symplectic slicing.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new GDM with the modes indexed by `idx`.
         """
         idx = (idx,) if isinstance(idx, int) else idx
         if not set(idx).issubset(set(self.modes)):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        trace_out_modes = set(self.modes) ^ set(idx)
+        trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
         return self >> TraceOut(trace_out_modes)

@@ -366,10 +366,20 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, idx: int | Collection[int]) -> State:
+    def __getitem__(self, idx: int | Sequence[int]) -> State:
+        r"""
+        Traces out all the modes except those given.
+        The result is returned with modes in increasing order.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new DM with the modes indexed by `idx`.
+        """
         idx = (idx,) if isinstance(idx, int) else idx
         modes = set(idx)
-        if not modes.issubset(set(self.modes)):
+        if not modes.issubset(self.modes):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
