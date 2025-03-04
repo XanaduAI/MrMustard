@@ -663,9 +663,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         Returns:
             The conditional density matrix of mode 0.
         """
-        output_cutoffs = cutoffs[0]
-        pnr_cutoffs = cutoffs[1:]
-        return fast_diagonal(A, b, c, output_cutoffs, pnr_cutoffs).transpose(
+        output_cutoff, pnr_cutoffs = cutoffs[0], cutoffs[1:]
+        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 

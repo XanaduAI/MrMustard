@@ -20,15 +20,28 @@ from itertools import product
 from functools import lru_cache
 import numpy as np
 from mrmustard.math.lattice.strategies.vanilla import vanilla_stable
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
 __all__ = ["fast_diagonal"]
 
 SQRT = np.sqrt(np.arange(10000))
 
 
-def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
+def fast_diagonal(
+    A: ComplexMatrix, b: ComplexVector, c: complex, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
+) -> ComplexMatrix:
     r"""
     Computes an array of conditional density matrices using the fast diagonal strategy.
+
+    Args:
+        A: A complex matrix of shape (2 * n_modes, 2 * n_modes)
+        b: A complex vector of shape (2 * n_modes)
+        c: A complex scalar
+        output_cutoff: The cutoff for the output density matrices
+        pnr_cutoffs: A tuple of integers representing the cutoffs for the PNR terms
+
+    Returns:
+        An array of conditional density matrices of shape (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs)
     """
     output_shape = (output_cutoff + 1, output_cutoff + 1)
     L = len(pnr_cutoffs) + 1  # total number of modes
@@ -48,7 +61,7 @@ def fast_diagonal(A, b, c, output_cutoff: int, pnr_cutoffs: tuple[int, ...]):
             i, pivot = get_pivot(w)
             buffer_0[w] = single_step(A, b, buffer_1, buffer_2, i, pivot)
         if weight % 2 == 0:
-            for partition in generate_partitions(weight // 2, tuple(p - 1 for p in pnr_cutoffs)):
+            for partition in generate_partitions(weight // 2, tuple(pnr_cutoffs)):
                 output[partition] = buffer_0[tuple(i for p in partition for i in (p, p))]
     return output
 
