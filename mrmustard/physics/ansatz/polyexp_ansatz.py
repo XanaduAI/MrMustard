@@ -59,33 +59,51 @@ class PolyExpAnsatz(Ansatz):
 
         :math:`F^{(i)}(z) = \sum_k c^{(i)}_{k} \partial_y^k \textrm{exp}(\frac{1}{2}(z,y)^T A^{(i)} (z,y) + (z,y)^T b^{(i)})|_{y=0}`
 
-    with ``k`` a multi-index. The ``i`` multi-index is a batch index of shape ``L`` that can be used
-    for linear superposition or batching purposes. The ``c^{(i)}_k`` tensors are contracted with the
-    array of derivatives :math:`\partial_y^k` to form polynomials of derivatives.
-    The matrices :math:`A^{(i)}` and vectors :math:`b^{(i)}` are the parameters of the exponential
-    terms in the ansatz, with :math:`z\in\mathbb{C}^{n}` and :math:`y\in\mathbb{C}^{m}`.
-    ``A`` and b`` have shape ``(*L, n+m, n+m)`` and ``(*L, n+m)``, respectivly.
+    with ``k`` and ``i`` multi-indices. The ``i`` multi-index is a batch index of shape ``L`` that
+    can be used for linear superposition or batching purposes. Each of the ``c^{(i)}_k`` tensors are
+    contracted with the array of derivatives :math:`\partial_y^k` to form polynomials of derivatives.
     The tensors :math:`c^{(i)}_{k}` contain the coefficients of the polynomial of derivatives and
     have shape ``(*L, *derived)``, where ``*derived`` is the shape of the derived variables, which
-    implies ``len(c.shape[1:]) = m``.
+    implies ``len(c.shape[1:]) = m``. The matrices :math:`A^{(i)}` and vectors :math:`b^{(i)}` are
+    the parameters of the exponential terms in the ansatz, with :math:`z\in\mathbb{C}^{n}` and
+    :math:`y\in\mathbb{C}^{m}`. ``A`` and b`` have shape ``(*L, n+m, n+m)`` and ``(*L, n+m)``,
+    respectivly.
 
     .. code-block::
 
         >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+        >>> import numpy as np
 
-        >>> A = np.array([[1.0, 0.0], [0.0, 1.0]])
-        >>> b = np.array([1.0, 1.0])
-        >>> c = np.array([1.0])
+        >>> A = np.random.random((3,3))  # no batch
+        >>> b = np.random.random((3,))
+        >>> c = np.random.random()
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=0)
+        >>> assert F(1.0, 2.0, 3.0).shape == ()
+
+        >>> A = np.random.random((10,3,3))  # batch of 10
+        >>> b = np.random.random((10,3))
+        >>> c = np.random.random((10,))
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=0)
+        >>> assert F(1.0, 2.0, 3.0).shape == (10,)
+
+        >>> A = np.random.random((10,3,3))  # batch of 10
+        >>> b = np.random.random((10,3))
+        >>> c = np.random.random((10,7))
         >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
-        >>> val = F(1.0, 2.0)
+        >>> assert F(1.0, 2.0).shape == (10,)  # two CV variables, one derived
+
+        >>> A = np.random.random((10,3,3))  # batch of 10
+        >>> b = np.random.random((10,3))
+        >>> c = np.random.random((10,7,5))
+        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=2)
+        >>> assert F(1.0).shape == (10,)  # one CV variable, two derived
+        >>> assert F([1.0, 2.0, 3.0]).shape == (3,10)  # batch of 3 inputs
 
     Args:
         A: A batch of quadratic coefficient :math:`A^{(i)}`.
         b: A batch of linear coefficients :math:`b^{(i)}`.
         c: A batch of arrays :math:`c^{(i)}`.
         num_derived_vars: The number of variables :math:`y` that are derived by the polynomial of derivatives.
-
-    TODO: infer num_derived_vars from the shape of c
     """
 
     def __init__(
@@ -93,11 +111,10 @@ class PolyExpAnsatz(Ansatz):
         A: Batch[ComplexMatrix] | None,
         b: Batch[ComplexVector] | None,
         c: Batch[ComplexTensor] | None,
-        num_derived_vars: int = 0,  # i.e. size of y
+        num_derived_vars: int = 0,  # TODO: infer from shape of c
         name: str = "",
     ):
         super().__init__()
-        # TODO: consider not using a batch dimension by default
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
@@ -112,29 +129,18 @@ class PolyExpAnsatz(Ansatz):
         r"""Returns a string representation of the PolyExpAnsatz object."""
         self._generate_ansatz()  # Ensure parameters are generated if needed
 
-        # Get basic information
-        batch_size = self.batch_size
-        num_cv = self.num_CV_vars
-        num_derived = self.num_derived_vars
-        total_vars = self.num_vars
-
-        # Format shape information
-        A_shape = f"{self.A.shape}" if self._A is not None else "None"
-        b_shape = f"{self.b.shape}" if self._b is not None else "None"
-        c_shape = f"{self.c.shape}" if self._c is not None else "None"
-
         # Create a descriptive name
         display_name = f'"{self.name}"' if self.name else "unnamed"
 
         # Build the representation string
         repr_str = [
             f"PolyExpAnsatz({display_name})",
-            f"  Batch size: {batch_size}",
-            f"  Variables: {num_cv} CV + {num_derived} derived = {total_vars} total",
+            f"  Batch shape: {self.batch_shape}",
+            f"  Variables: {self.num_CV_vars} CV + {self.num_derived_vars} derived = {self.num_vars} total",
             f"  Parameter shapes:",
-            f"    A: {A_shape}",
-            f"    b: {b_shape}",
-            f"    c: {c_shape}",
+            f"    A: {self.A.shape}",
+            f"    b: {self.b.shape}",
+            f"    c: {self.c.shape}",
         ]
 
         # Add information about simplification status
