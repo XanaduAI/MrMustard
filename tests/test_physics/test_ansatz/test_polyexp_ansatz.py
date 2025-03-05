@@ -223,27 +223,23 @@ class TestPolyExpAnsatz:
         """
         In this test the batch dimension of both ``z`` and ``Abc`` is tested.
         """
-        A1, b1, _ = Abc_triple(4, (1,))
-        c1 = np.random.uniform(-1, 1, size=(1, 3, 3, 3)) + 0.0j
-        A2, b2, _ = Abc_triple(4, (1,))
-        c2 = np.random.uniform(-1, 1, size=(1, 3, 3, 3)) + 0.0j
-        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
+        A, b, _ = Abc_triple(4, (2,))
+        c = np.random.random((2, 3, 3, 3))
+        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(1,)) + 0.0j
+        z = np.random.random((1,))
         assert np.allclose(ansatz(z), decomp_ansatz(z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
         assert np.allclose(decomp_ansatz.b.shape, (2, 2))
         assert np.allclose(decomp_ansatz.c.shape, (2, 9))
 
-        A1, b1, _ = Abc_triple(5)
-        c1 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
-        A2, b2, _ = Abc_triple(5)
-        c2 = np.random.uniform(-10, 10, size=(3, 3, 3)) + 0.0j
-        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2], num_derived_vars=3)
+        A, b, _ = Abc_triple(5, (2,))
+        c = np.random.random((2, 3, 3, 3))
+        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(4,)) + 0.0j
+        z = np.random.random((4,))
         assert np.allclose(ansatz(z, z), decomp_ansatz(z, z))
         assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
         assert np.allclose(decomp_ansatz.b.shape, (2, 4))

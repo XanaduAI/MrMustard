@@ -447,16 +447,16 @@ class PolyExpAnsatz(Ansatz):
             A_dec.append(A_dec_i)
             b_dec.append(b_dec_i)
             c_dec.append(c_dec_i)
-        print("A_dec", A_dec)
-        print("b_dec", b_dec)
-        print("c_dec", c_dec)
         A_dec = math.reshape(
-            math.concat(A_dec, axis=0), self._batch_shape + (self.num_CV_vars, self.num_CV_vars)
+            math.concat(A_dec, axis=0),
+            self._batch_shape + (2 * self.num_CV_vars, 2 * self.num_CV_vars),
         )
-        b_dec = math.reshape(math.concat(b_dec, axis=0), self._batch_shape + (self.num_CV_vars,))
+        b_dec = math.reshape(
+            math.concat(b_dec, axis=0), self._batch_shape + (2 * self.num_CV_vars,)
+        )
         c_dec = math.reshape(
             math.concat(c_dec, axis=0),
-            self._batch_shape + self.shape_derived_vars + self.shape_derived_vars,
+            self._batch_shape + (sum(self.shape_derived_vars),) * self.num_CV_vars,
         )
         return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
 

@@ -88,11 +88,11 @@ def fock(rep):
 def bargmann(rep, batch_idx=None):
     """Create a widget to display a Bargmann representation."""
     if batch_idx is None:
-        return _batch_widget(rep, rep.A.shape[0], bargmann)
+        return _batch_widget(rep, rep._A_vectorized.shape[0], bargmann)
 
-    A = rep.A[batch_idx]
-    b = rep.b[batch_idx]
-    c = rep.c[batch_idx]
+    A = rep._A_vectorized[batch_idx]
+    b = rep._b_vectorized[batch_idx]
+    c = rep._c_vectorized[batch_idx]
 
     def get_abc_str(A, b, c, round_val):
         if round_val >= 0:
