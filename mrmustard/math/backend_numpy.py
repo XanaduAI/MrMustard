@@ -680,13 +680,24 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return _tensor
 
     def broadcast_to(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
-        """Broadcast a tensor to a new shape.
+        """Broadcast an array to a new shape.
 
         Args:
-            array: Input tensor to broadcast.
-            shape: Target shape to broadcast to.
+            array: The array to broadcast.
+            shape: The shape to broadcast to.
 
         Returns:
-            The broadcasted tensor.
+            The broadcasted array.
         """
         return np.broadcast_to(array, shape)
+
+    def broadcast_arrays(self, *arrays) -> list[np.ndarray]:
+        """Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        return np.broadcast_arrays(*arrays)

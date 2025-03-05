@@ -328,6 +328,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
+    @Autocast()
     def stack(self, values: Sequence[tf.Tensor], axis: int = 0) -> tf.Tensor:
         return tf.stack(values, axis=axis)
 
@@ -716,3 +717,26 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             The broadcasted tensor.
         """
         return tf.broadcast_to(array, shape)
+
+    def broadcast_arrays(self, *arrays) -> list[tf.Tensor]:
+        """Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
+        # We need to implement it manually
+        if not arrays:
+            return []
+
+        # Get the broadcasted shape
+        shapes = [tf.shape(arr) for arr in arrays]
+        broadcasted_shape = shapes[0]
+        for shape in shapes[1:]:
+            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
+
+        # Broadcast each array to the common shape
+        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]

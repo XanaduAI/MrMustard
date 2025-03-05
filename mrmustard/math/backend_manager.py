@@ -1653,7 +1653,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return 0.5 * (Z - self.conj(self.transpose(Z)))
 
     def broadcast_to(self, array: Tensor, shape: Sequence[int]) -> Tensor:
-        """Broadcast a tensor to a new shape.
+        r"""
+        Broadcast a tensor to a new shape.
 
         Args:
             array: Input tensor to broadcast.
@@ -1663,3 +1664,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The broadcasted tensor.
         """
         return self._apply("broadcast_to", (array, shape))
+
+    def broadcast_arrays(self, *arrays) -> list[Tensor]:
+        r"""
+        Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        return self._apply("broadcast_arrays", arrays)
