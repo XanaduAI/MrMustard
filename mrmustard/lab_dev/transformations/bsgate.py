@@ -18,8 +18,6 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -32,29 +30,23 @@ class BSgate(Unitary):
     r"""
     The beam splitter gate.
 
-    It applies to a single pair of modes.
-
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import BSgate
 
-        >>> unitary = BSgate(modes=[1, 2], theta=0.1)
-        >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.parameters.theta.value, 0.1)
-        >>> assert np.allclose(unitary.parameters.phi.value, 0.0)
+        >>> unitary = BSgate(modes=(1, 2), theta=0.1)
+        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.parameters.theta.value == 0.1
+        >>> assert unitary.parameters.phi.value == 0.0
 
     Args:
-        modes: The modes this gate is applied to.
+        modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
-        theta_bounds: The bounds for the transmissivity angle.
-        theta_trainable: Whether theta is a trainable variable.
         phi: The phase angle.
-        phi_bounds: The bounds for the phase angle.
-        phi_trainable: Whether phi is a trainable variable.
-
-    Raises:
-        ValueError: If ``modes`` is not a pair of modes.
+        theta_trainable: Whether ``theta`` is a trainable variable.
+        phi_trainable: Whether ``phi`` is a trainable variable.
+        theta_bounds: The bounds for ``theta``.
+        phi_bounds: The bounds for ``phi``.
 
     .. details::
 
@@ -90,7 +82,7 @@ class BSgate(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         theta: float = 0.0,
         phi: float = 0.0,
         theta_trainable: bool = False,
@@ -98,9 +90,6 @@ class BSgate(Unitary):
         theta_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        if len(modes) != 2:
-            raise ValueError(f"Expected a pair of modes, found {modes}.")
-
         super().__init__(name="BSgate")
         self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))

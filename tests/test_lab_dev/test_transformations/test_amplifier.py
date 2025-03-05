@@ -29,22 +29,18 @@ class TestAmplifier:
     Tests for the ``Amplifier`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    gain = [[1.1], 1.1, [1.1, 1.2]]
+    modes = [0, 1, 7]
+    gain = [1.1, 1.2, 1.3]
 
     @pytest.mark.parametrize("modes,gain", zip(modes, gain))
     def test_init(self, modes, gain):
         gate = Amplifier(modes, gain)
 
         assert gate.name == "Amp~"
-        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="gain"):
-            Amplifier(modes=[0, 1], gain=[1.2, 1.3, 1.4])
+        assert gate.modes == (modes,)
 
     def test_representation(self):
-        rep1 = Amplifier(modes=[0], gain=1.1).ansatz
+        rep1 = Amplifier(mode=0, gain=1.1).ansatz
         g1 = 0.95346258
         g2 = 0.09090909
         assert math.allclose(
@@ -54,8 +50,8 @@ class TestAmplifier:
         assert math.allclose(rep1.c, [0.90909090])
 
     def test_trainable_parameters(self):
-        gate1 = Amplifier([0], 1.2)
-        gate2 = Amplifier([0], 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
+        gate1 = Amplifier(0, 1.2)
+        gate2 = Amplifier(0, 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
 
         with pytest.raises(AttributeError):
             gate1.parameters.gain.value = 1.7
@@ -63,13 +59,9 @@ class TestAmplifier:
         gate2.parameters.gain.value = 1.5
         assert gate2.parameters.gain.value == 1.5
 
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Amplifier(modes=[0], gain=[1.1, 1.2]).ansatz
-
     def test_operation(self):
-        amp_channel = Amplifier(modes=[0], gain=1.5)
-        att_channel = Attenuator(modes=[0], transmissivity=0.7)
+        amp_channel = Amplifier(mode=0, gain=1.5)
+        att_channel = Attenuator(mode=0, transmissivity=0.7)
         operation = amp_channel >> att_channel
 
         assert math.allclose(
@@ -87,9 +79,9 @@ class TestAmplifier:
         assert math.allclose(operation.ansatz.c, [0.74074074 + 0.0j])
 
     def test_circuit_identity(self):
-        amp_channel = Amplifier(modes=[0], gain=2)
-        att_channel = Attenuator(modes=[0], transmissivity=0.5)
-        input_state = Coherent(modes=[0], x=0.5, y=0.7)
+        amp_channel = Amplifier(mode=0, gain=2)
+        att_channel = Attenuator(mode=0, transmissivity=0.5)
+        input_state = Coherent(mode=0, x=0.5, y=0.7)
 
         assert math.allclose(
             (input_state >> amp_channel).ansatz.A,
@@ -103,10 +95,10 @@ class TestAmplifier:
     @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
     def test_swap_with_attenuator(self, n):
         def Amp(gain):
-            return Amplifier([0], gain)
+            return Amplifier(mode=0, gain=gain)
 
         def Att(transmissivity):
-            return Attenuator([0], transmissivity)
+            return Attenuator(mode=0, transmissivity=transmissivity)
 
         assert Amp((n + 1) / n) >> Att(n / (n + 1)) == Att((n + 1) / (n + 2)) >> Amp(
             (n + 2) / (n + 1)

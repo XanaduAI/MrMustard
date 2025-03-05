@@ -18,12 +18,10 @@ The class representing a two-mode squeezed vacuum state.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["TwoModeSqueezedVacuum"]
 
@@ -32,20 +30,18 @@ class TwoModeSqueezedVacuum(Ket):
     r"""
     The two-mode squeezed vacuum state.
 
-    If ``r`` and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`.
-
     .. code-block::
 
         >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate, Vacuum
 
-        >>> state = TwoModeSqueezedVacuum(modes=[0, 1], r=0.3, phi=0.2)
-        >>> assert state == Vacuum([0, 1]) >> S2gate([0, 1], r=-0.3, phi=0.2)
+        >>> state = TwoModeSqueezedVacuum(modes=(0, 1), r=0.3, phi=0.2)
+        >>> assert state == Vacuum((0,1)) >> S2gate((0, 1), r=-0.3, phi=0.2)
 
 
     Args:
-        modes: The modes of the coherent state.
+        modes: The modes of the two-mode squeezed vacuum state.
         r: The squeezing magnitude.
-        phi: The squeezing angles.
+        phi: The squeezing angle.
         r_trainable: Whether `r` is trainable.
         phi_trainable: Whether `phi` is trainable.
         r_bounds: The bounds of `r`.
@@ -54,7 +50,7 @@ class TwoModeSqueezedVacuum(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         r: float = 0.0,
         phi: float = 0.0,
         r_trainable: bool = False,
@@ -63,9 +59,8 @@ class TwoModeSqueezedVacuum(Ket):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="TwoModeSqueezedVacuum")
-        rs, phis = list(reshape_params(int(len(modes) / 2), r=r, phi=phi))
-        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
