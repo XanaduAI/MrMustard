@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from mrmustard.lab_dev.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
+from mrmustard.physics import triples_batched
 from ..utils import make_parameter
 
 
@@ -49,7 +49,7 @@ class Sauron(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                triples.sauron_state_Abc,
+                triples_batched.sauron_state_Abc,
                 n=self.parameters.n,
                 epsilon=self.parameters.epsilon,
             ),

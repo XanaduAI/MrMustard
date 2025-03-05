@@ -80,8 +80,7 @@ def _vacuum_B_vector(n_modes: int) -> Vector:
 #  Pure States
 #  ~~~~~~~~~~~
 
-# TODO: how to handle batching here?
-# i.e. does it always output batch (1,)?
+
 def vacuum_state_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of vacuum states on ``n_modes``.
@@ -389,7 +388,7 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / (nbar + 1), math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
