@@ -18,42 +18,37 @@ The class representing a displaced squeezed state.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["DisplacedSqueezed"]
 
 
 class DisplacedSqueezed(Ket):
     r"""
-    The `N`-mode displaced squeezed vacuum state.
-
-    If ``x``, ``y``, ``r``, and/or ``phi`` are ``Sequence``\s, their length must be equal to `1`
-    or `N`. If their length is equal to `1`, all the modes share the same parameters.
+    The displaced squeezed state in Bargmann representation.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
 
-        >>> state = DisplacedSqueezed(modes=[0, 1, 2], x=1, phi=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], phi=0.2) >> Dgate([0, 1, 2], x=1)
+        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
+        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
 
     Args:
-        modes: The modes of the coherent state.
-        x: The displacements along the `x` axis, which represents position axis in phase space.
-        y: The displacements along the `y` axis.
+        mode: The mode of the displaced squeezed state.
+        x: The displacement along the `x` axis, which represents the position axis in phase space.
+        y: The displacement along the `y` axis, which represents the momentum axis in phase space.
         r: The squeezing magnitude.
-        phi: The squeezing angles.
+        phi: The squeezing angle.
         x_trainable: Whether `x` is a trainable variable.
         y_trainable: Whether `y` is a trainable variable.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        x_bounds: The bounds for the displacement along the `x` axis.
-        y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
+        r_trainable: Whether `r` is a trainable variable.
+        phi_trainable: Whether `phi` is a trainable variable.
+        x_bounds: The bounds of `x`.
+        y_bounds: The bounds of `y`.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
     """
@@ -62,11 +57,11 @@ class DisplacedSqueezed(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
+        mode: int,
+        x: float = 0.0,
+        y: float = 0.0,
+        r: float = 0.0,
+        phi: float = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         r_trainable: bool = False,
@@ -77,16 +72,13 @@ class DisplacedSqueezed(Ket):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="DisplacedSqueezed")
-
-        params = reshape_params(len(modes), x=x, y=y, r=r, phi=phi)
-        xs, ys, rs, phis = list(params)
-        self.parameters.add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
-        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displaced_squeezed_vacuum_state_Abc,
                 x=self.parameters.x,

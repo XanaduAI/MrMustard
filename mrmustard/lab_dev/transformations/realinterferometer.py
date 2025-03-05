@@ -18,7 +18,6 @@ The class representing a RealInterferometer gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal
 from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -37,19 +36,20 @@ class RealInterferometer(Unitary):
     Does not mix q's and p's.
 
     Args:
-        orthogonal (2d array, optional): a real unitary (orthogonal) matrix. For N modes it must have shape `(N,N)`.
-            If set to `None` a random real unitary (orthogonal) matrix is used.
-        orthogonal_trainable (bool): whether orthogonal is a trainable variable
+        modes: The modes this gate is applied to.
+        orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`. If ``None``, a random orthogonal is generated.
+        orthogonal_trainable: Whether ``orthogonal`` is trainable.
     """
 
     short_name = "RI"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         orthogonal: RealMatrix | None = None,
         orthogonal_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(

@@ -17,7 +17,6 @@ The class representing an operation that changes Bargmann into phase space.
 """
 
 from __future__ import annotations
-from typing import Sequence
 
 from mrmustard.physics import triples
 
@@ -30,20 +29,22 @@ __all__ = ["BtoPS"]
 
 
 class BtoPS(Map):
-    r"""The `s`-parametrized ``Dgate`` as a ``Map``.
+    r"""
+    The `s`-parametrized ``Dgate`` as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 
     Args:
-        num_modes: The number of modes of this channel.
+        modes: The modes of this channel.
         s: The `s` parameter of this channel.
     """
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         s: float,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoPS")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(

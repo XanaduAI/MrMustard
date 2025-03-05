@@ -44,7 +44,7 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
+def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
     r"""
     The Fock array of a tensor product of one-mode ``Number`` states.
 
@@ -59,10 +59,13 @@ def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> 
         The Fock array of a tensor product of one-mode ``Number`` states.
     """
     n = math.atleast_1d(n)
+
     if cutoffs is None:
         cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
+    else:
+        cutoffs = math.atleast_1d(cutoffs)
 
     if len(cutoffs) != len(n):
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
