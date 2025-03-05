@@ -30,16 +30,16 @@ class TestPgate:
 
     def test_init(self):
         "Tests the Pgate initialization."
-        up = Pgate([0, 1], 0.3)
-        assert up.modes == [0, 1]
+        up = Pgate(0, 0.3)
+        assert up.modes == (0,)
         assert up.name == "Pgate"
         assert up.parameters.shearing.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.5, 1])
     def test_application(self, s):
         "Tests if Pgate is being applied correctly."
-        up = Pgate([0], s)
-        rho = Vacuum([0]) >> up
+        up = Pgate(0, s)
+        rho = Vacuum(0) >> up
         cov, _, _ = rho.phase_space(s=0)
         temp = math.astensor([[1, 0], [s, 1]], dtype="complex128")
         assert math.allclose(cov[0], temp @ math.eye(2) @ temp.T / 2)

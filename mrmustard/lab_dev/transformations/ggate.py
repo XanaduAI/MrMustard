@@ -18,7 +18,6 @@ The class representing a generic gaussian gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.utils.typing import RealMatrix
@@ -39,23 +38,25 @@ class Ggate(Unitary):
         >>> from mrmustard import math
         >>> from mrmustard.lab_dev import Ggate, Vacuum, Identity, Ket
 
-        >>> U = Ggate(modes=[0], symplectic=math.random_symplectic(1))
-        >>> assert isinstance(Vacuum([0]) >> U, Ket)
-        >>> assert U >> U.dual == Identity([0])
+        >>> U = Ggate(modes=0, symplectic=math.random_symplectic(1))
+        >>> assert isinstance(Vacuum(0) >> U, Ket)
+        >>> assert U >> U.dual == Identity(0)
 
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
+        symplectic_trainable: Whether ``symplectic`` is trainable.
     """
 
     short_name = "G"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         symplectic: RealMatrix | None = None,
         symplectic_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Ggate")
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))

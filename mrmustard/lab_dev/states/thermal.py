@@ -18,33 +18,28 @@ The class representing a thermal state.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .dm import DM
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Thermal"]
 
 
 class Thermal(DM):
     r"""
-    The `N`-mode thermal state.
-
-    If ``nbar`` is a ``Sequence``, its length must be equal to `1` or `N`. If its length is equal to `1`,
-    all the modes share the same ``nbar``.
+    The thermal state in Bargmann representation.
 
     .. code-block ::
 
         >>> from mrmustard.lab_dev import Vacuum
 
-        >>> state = Thermal([1, 2], nbar=3)
-        >>> assert state.modes == [1, 2]
+        >>> state = Thermal(1, nbar=3)
+        >>> assert state.modes == (1,)
 
     Args:
-        modes: A list of modes.
-        nbar: The expected number of photons in each mode.
+        mode: The mode of the thermal state.
+        nbar: The expected number of photons.
         nbar_trainable: Whether ``nbar`` is trainable.
         nbar_bounds: The bounds of ``nbar``.
     """
@@ -53,16 +48,15 @@ class Thermal(DM):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        nbar: int | Sequence[int] = 0,
+        mode: int,
+        nbar: int = 0,
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         super().__init__(name="Thermal")
-        (nbars,) = list(reshape_params(len(modes), nbar=nbar))
-        self.parameters.add_parameter(make_parameter(nbar_trainable, nbars, "nbar", nbar_bounds))
+        self.parameters.add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
             ),

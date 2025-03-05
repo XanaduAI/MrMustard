@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -28,19 +27,19 @@ class TestFockDamping:
     Tests for the ``FockDamping`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    damping = [[0.1], 0.1, [0.1, 0.2]]
+    modes = [0, 1, 7]
+    damping = [0.1, 0.2, 0.3]
 
     @pytest.mark.parametrize("modes,damping", zip(modes, damping))
     def test_init(self, modes, damping):
         gate = FockDamping(modes, damping)
 
         assert gate.name == "FockDamping"
-        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-        assert np.allclose(gate.parameters.damping.value, damping)
+        assert gate.modes == (modes,)
+        assert math.allclose(gate.parameters.damping.value, damping)
 
     def test_representation(self):
-        rep1 = FockDamping(modes=[0], damping=0.1).ansatz
+        rep1 = FockDamping(mode=0, damping=0.1).ansatz
         e = math.exp(-0.1)
         assert math.allclose(
             rep1.A,
@@ -58,8 +57,8 @@ class TestFockDamping:
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):
-        gate1 = FockDamping([0], 0.1)
-        gate2 = FockDamping([0], 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
+        gate1 = FockDamping(0, 0.1)
+        gate2 = FockDamping(0, 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.damping.value = 0.3
@@ -67,13 +66,9 @@ class TestFockDamping:
         gate2.parameters.damping.value = 0.2
         assert gate2.parameters.damping.value == 0.2
 
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            FockDamping(modes=[0], damping=[0.1, 0.2]).ansatz
-
     def test_identity(self):
-        rep1 = FockDamping(modes=[0, 1], damping=0.0).ansatz
-        rep2 = Identity(modes=[0, 1]).ansatz
+        rep1 = FockDamping(mode=0, damping=0.0).ansatz
+        rep2 = Identity(modes=0).ansatz
 
         assert math.allclose(rep1.A, rep2.A)
         assert math.allclose(rep1.b, rep2.b)

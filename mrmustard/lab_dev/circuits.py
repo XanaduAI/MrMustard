@@ -44,12 +44,12 @@ class Circuit:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+        >>> from mrmustard.lab_dev import BSgate, S2gate, Vacuum, Circuit
 
-        >>> vac = Vacuum([0, 1, 2])
-        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-        >>> bs01 = BSgate([0, 1])
-        >>> bs12 = BSgate([1, 2])
+        >>> vac = Vacuum((0,1,2))
+        >>> s01 = S2gate((0, 1), r=0.1) >> S2gate((0, 1), r=0.2)
+        >>> bs01 = BSgate((0, 1))
+        >>> bs12 = BSgate((1, 2))
 
         >>> components = [vac, s01, bs01, bs12]
         >>> circ = Circuit(components)
@@ -59,12 +59,12 @@ class Circuit:
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
+        >>> from mrmustard.lab_dev import BSgate, S2gate, Vacuum, Circuit
 
-        >>> vac = Vacuum([0, 1, 2])
-        >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-        >>> bs01 = BSgate([0, 1])
-        >>> bs12 = BSgate([1, 2])
+        >>> vac = Vacuum((0,1,2))
+        >>> s01 = S2gate((0, 1), r=0.1) >> S2gate((0, 1), r=0.2)
+        >>> bs01 = BSgate((0, 1))
+        >>> bs12 = BSgate((1, 2))
 
         >>> circ1 = Circuit() >> vac >> s01
         >>> circ2 = Circuit([bs01]) >> bs12
@@ -164,12 +164,12 @@ class Circuit:
 
                 >>> from mrmustard.lab_dev import BSgate, Sgate, Vacuum, Circuit
 
-                >>> vac = Vacuum([0, 1, 2])
-                >>> s01 = Sgate([0, 1], r=[0.1, 0.2])
-                >>> bs01 = BSgate([0, 1])
-                >>> bs12 = BSgate([1, 2])
+                >>> vac = Vacuum((0,1,2))
+                >>> s0 = Sgate(0, r=0.1)
+                >>> bs01 = BSgate((0, 1))
+                >>> bs12 = BSgate((1, 2))
 
-                >>> circ = Circuit([vac, s01, bs01, bs12])
+                >>> circ = Circuit([vac, s0, bs01, bs12])
 
                 >>> # ``circ`` has no path: all the components are available, and indexed
                 >>> # as they appear in the list of components
@@ -183,7 +183,6 @@ class Circuit:
                 <BLANKLINE>
                 → index: 1
                 mode 0:   ──S(0.1,0.0)
-                mode 1:   ──S(0.2,0.0)
                 <BLANKLINE>
                 <BLANKLINE>
                 → index: 2
@@ -205,7 +204,7 @@ class Circuit:
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
-                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 1:     ◖Vac◗────────────
                 mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
@@ -225,7 +224,7 @@ class Circuit:
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)
-                mode 1:     ◖Vac◗──S(0.2,0.0)
+                mode 1:     ◖Vac◗────────────
                 mode 2:     ◖Vac◗────────────
                 <BLANKLINE>
                 <BLANKLINE>
@@ -241,7 +240,7 @@ class Circuit:
                 <BLANKLINE>
                 → index: 0
                 mode 0:     ◖Vac◗──S(0.1,0.0)──╭•────────────────────────
-                mode 1:     ◖Vac◗──S(0.2,0.0)──╰BS(0.0,0.0)──╭•──────────
+                mode 1:     ◖Vac◗──────────────╰BS(0.0,0.0)──╭•──────────
                 mode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)
                 <BLANKLINE>
                 <BLANKLINE>

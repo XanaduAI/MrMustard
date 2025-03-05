@@ -18,7 +18,6 @@ The class representing a quadratic phase gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -29,12 +28,8 @@ __all__ = ["Pgate"]
 
 
 class Pgate(Unitary):
-    r"""Quadratic phase gate.
-
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
-    is a single float, the parallel instances of the gate share that parameter. To apply
-    mode-specific values use a list of floats. One can optionally set bounds for each parameter,
-    which the optimizer will respect.
+    r"""
+    Quadratic phase gate.
 
     .. math::
 
@@ -43,18 +38,18 @@ class Pgate(Unitary):
     Reference: https://strawberryfields.ai/photonics/conventions/gates.html
 
     Args:
-        modes (Sequence[int]): the list of modes this gate is applied to
-        shearing (float or Squence[float]): the list of shearing parameters
-        shearing_bounds (float, float): bounds for the shearing parameters
-        shearing_trainable bool: whether shearing is a trainable variable
+        modes: The modes this gate is applied to.
+        shearing: The shearing parameter.
+        shearing_trainable: Whether ``shearing`` is trainable.
+        shearing_bounds: The bounds for ``shearing``.
     """
 
     short_name = "P"
 
     def __init__(
         self,
-        modes: Sequence[int],
-        shearing: float | Sequence[float] = 0.0,
+        mode: int,
+        shearing: float = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
@@ -63,13 +58,12 @@ class Pgate(Unitary):
             make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
         )
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=lambda n_modes, shearing: Unitary.from_symplectic(
-                    modes, symplectics.pgate_symplectic(n_modes, shearing)
+                fn=lambda shearing: Unitary.from_symplectic(
+                    (mode,), symplectics.pgate_symplectic(1, shearing)
                 ).bargmann_triple(),
-                n_modes=len(modes),
                 shearing=self.parameters.shearing,
             ),
         ).representation

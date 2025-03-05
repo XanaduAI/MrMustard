@@ -210,7 +210,9 @@ class Unitary(Operation):
         Returns the symplectic matrix that corresponds to this unitary
         """
         batch_size = self.ansatz.batch_size
-        return [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
+        return math.astensor(
+            [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
+        )
 
     @classmethod
     def from_ansatz(

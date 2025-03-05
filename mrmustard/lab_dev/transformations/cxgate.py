@@ -18,7 +18,6 @@ The class representing a controlled-X gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -29,10 +28,8 @@ __all__ = ["CXgate"]
 
 
 class CXgate(Unitary):
-    r"""Controlled X gate.
-
-    It applies to a single pair of modes. One can optionally set bounds for each parameter, which
-    the optimizer will respect.
+    r"""
+    Controlled X gate.
 
     .. math::
 
@@ -42,25 +39,21 @@ class CXgate(Unitary):
 
 
     Args:
-        modes (optional, Sequance[int]): the list of modes this gate is applied to
-        s (float): control parameter
-        s_bounds (float, float): bounds for the control angle
-        s_trainable (bool): whether s is a trainable variable
+        modes: The pair of modes of the controlled-X gate.
+        s: The control parameter.
+        s_trainable: Whether ``s`` is trainable.
+        s_bounds: The bounds for ``s``.
     """
 
     short_name = "CX"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         s: float = 0.0,
         s_trainable: bool = False,
         s_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        if len(modes) != 2:
-            raise ValueError(
-                f"The number of modes for a CXgate must be 2 (your input has {len(modes)} many modes)."
-            )
         super().__init__(name="CXgate")
         self.parameters.add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
 

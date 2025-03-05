@@ -90,11 +90,11 @@ class Sampler(ABC):
         Returns:
             An array of samples such that the shape is ``(n_samples, n_modes)``.
         """
+        if len(state.modes) == 1:
+            return self.sample_prob_dist(state, n_samples, seed)[0]
+
         initial_mode = state.modes[0]
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
-
-        if len(state.modes) == 1:
-            return initial_samples
 
         unique_samples, idxs, counts = np.unique(
             initial_samples, return_index=True, return_counts=True
@@ -154,7 +154,7 @@ class Sampler(ABC):
         if isinstance(self.povms, CircuitComponent):
             kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
-            return self.povms.__class__(modes=[mode], **kwargs)
+            return self.povms.__class__(mode, **kwargs)
         else:
             return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
@@ -169,13 +169,14 @@ class Sampler(ABC):
             atol: The absolute tolerance to validate with.
         """
         atol = atol or settings.ATOL
+        probs = math.abs(probs)
         prob_sum = math.sum(probs)
         math.error_if(
             prob_sum,
             not math.allclose(prob_sum, 1),
             f"Probabilities sum to {prob_sum} and not 1.0.",
         )
-        return math.real(probs / prob_sum)
+        return probs / prob_sum
 
 
 class PNRSampler(Sampler):
@@ -187,7 +188,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number([0], 0))
+        super().__init__(list(range(cutoff)), Number(0, 0, cutoff))
         self._cutoff = cutoff
         self._outcome_arg = "n"
 
@@ -234,11 +235,11 @@ class HomodyneSampler(Sampler):
         Returns:
             An array of samples such that the shape is ``(n_samples, n_modes)``.
         """
+        if len(state.modes) == 1:
+            return self.sample_prob_dist(state, n_samples, seed)[0]
+
         initial_mode = state.modes[0]
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
-
-        if len(state.modes) == 1:
-            return initial_samples
 
         unique_samples, idxs, counts = np.unique(
             initial_samples, return_index=True, return_counts=True

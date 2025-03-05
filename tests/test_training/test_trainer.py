@@ -48,7 +48,7 @@ def wrappers():
         math.change_backend("tensorflow")
 
         circ = Ggate((0,), symplectic_trainable=True) >> Dgate(
-            (0,), x=x, x_trainable=True, y_trainable=True
+            0, x=x, x_trainable=True, y_trainable=True
         )
         return (
             [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
@@ -59,8 +59,8 @@ def wrappers():
 
         math.change_backend("tensorflow")
 
-        target = GKet((0,)) >> Dgate((0,), -0.1, y_targ)
-        s = Vacuum((0,)) >> circ
+        target = GKet(0) >> Dgate(0, -0.1, y_targ)
+        s = Vacuum(0) >> circ
         return -math.abs((s >> target.dual) ** 2)
 
     return make_circ, cost_fn
@@ -146,7 +146,7 @@ class TestTrainer:
     @pytest.mark.parametrize(
         "metric_fns",
         [
-            lambda c: (Vacuum((0,)) >> c >> c >> c).fock_array((5,)),
+            lambda c: (Vacuum(0) >> c >> c >> c).fock_array((5,)),
         ],
     )
     def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
