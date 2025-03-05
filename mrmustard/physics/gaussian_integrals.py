@@ -575,7 +575,7 @@ def complex_gaussian_integral_2(
     Abc2: tuple,
     idx1: Sequence[int],
     idx2: Sequence[int],
-    batch_string: str,
+    batch_string: str | None = None,
     measure: float = -1,
 ) -> tuple:
     r"""Computes the complex Gaussian integral
@@ -612,6 +612,11 @@ def complex_gaussian_integral_2(
         ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
     # Step 0: Join the Abc parameters and reshape to have a single batch dimension
+    if batch_string is None:
+        str1 = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) - 2)])
+        str2 = "".join([chr(i) for i in range(97, 97 + len(Abc2[0].shape) - 2)])
+        out = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) + len(Abc2[0].shape) - 4)])
+        batch_string = f"{str1},{str2}->{out}"
     A_, b_, c_ = join_Abc(Abc1, Abc2, batch_string=batch_string)
     batch_shape = A_.shape[:-2]
     A_ = math.reshape(A_, batch_shape + (A_.shape[-2], A_.shape[-1]))

@@ -447,6 +447,9 @@ class PolyExpAnsatz(Ansatz):
             A_dec.append(A_dec_i)
             b_dec.append(b_dec_i)
             c_dec.append(c_dec_i)
+        print("A_dec", A_dec)
+        print("b_dec", b_dec)
+        print("c_dec", c_dec)
         A_dec = math.reshape(
             math.concat(A_dec, axis=0), self._batch_shape + (self.num_CV_vars, self.num_CV_vars)
         )
@@ -589,6 +592,54 @@ class PolyExpAnsatz(Ansatz):
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
         return self.__class__(A, b, c, self.num_derived_vars)
 
+    def eval(
+        self, *z: Vector | None, batch_string: str | None = None
+    ) -> Scalar | ArrayLike | PolyExpAnsatz:
+        r"""
+        Evaluates the ansatz at given points or returns a partially evaluated ansatz.
+        This method supports passing an einsum-style batch string to specify how the batch dimensions
+        of the arguments should be handled. For example, for two arguments, "i,j->ij" means to take
+        the outer product  of the batch dimensions. The batch dimensions of the ansatz itself are not
+        part of the batch string and are placed after the output batch dimensions in the output.
+
+        1. Partial evaluation: If any argument is None, it returns a new ansatz with those arguments
+           unevaluated. For example, if F(z1, z2, z3) is called as F(1.0, None, 3.0), it returns a
+           new ansatz G(z2) with z1 and z3 fixed at 1.0 and 3.0.
+
+        2. Full evaluation: If all arguments are provided, it returns the value of the ansatz at
+        those points.
+
+        The returned shape depends on the batch shape of the ansatz itself and the batch dimensions of
+        the inputs and the batch string.
+
+        Args:
+            z: points in C where the function is (partially) evaluated or None if the variable is
+            not evaluated.
+            batch_string: like einsum string for batch dimensions of the inputs, e.g. "i,j->ij"
+
+        Returns:
+            The value of the ansatz or a new ansatz if partial evaluation is performed.
+        """
+        if len(z) > self.num_CV_vars:
+            raise ValueError(
+                f"The ansatz was called with {len(z)} variables, "
+                f"but it only has {self.num_CV_vars} CV variables."
+            )
+
+        evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
+        only_z = [math.astensor(zi) for zi in z if zi is not None]
+
+        if batch_string is None:  # Generate default batch string if none provided
+            batch_string = self._outer_product_batch_str(*[len(zi.shape) for zi in only_z])
+
+        reshaped_z = self._reshape_args_to_batch_string(only_z, batch_string)
+        broadcasted_z = math.broadcast_arrays(*reshaped_z)
+        if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
+            return self(*broadcasted_z)
+        else:  # Partial evaluation: some CV variables are not provided
+            combined_z = math.stack(broadcasted_z, axis=-1)
+            return self._partial_eval(combined_z, tuple(evaluated_indices))
+
     def __call__(self: PolyExpAnsatz, *z_inputs: ArrayLike | None) -> Batch[ComplexTensor]:
         r"""
         Evaluates the ansatz at the given batch of points. Each point can have arbitray batch dimensions,
@@ -609,8 +660,7 @@ class PolyExpAnsatz(Ansatz):
         z_only = [arr for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
         z = math.stack(broadcasted_z, axis=-1)
-        partial = len(z_only) < self.num_CV_vars
-        if partial:
+        if len(z_only) < self.num_CV_vars:
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
@@ -618,10 +668,7 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        z_vectorized = math.reshape(
-            z, (int(np.prod(z_batch_shape)), z_dim)
-        )  # shape (k, num_CV_vars)
-
+        z_vectorized = math.reshape(z, (int(np.prod(z_batch_shape)), z_dim))  # (k, num_CV_vars)
         exp_sum = self._compute_exp_part(z_vectorized)  # shape (batch_size, k)
         if self.num_derived_vars == 0:  # purely gaussian
             ret = math.einsum("ik,i...->ik...", exp_sum, self._c_vectorized)
@@ -634,14 +681,21 @@ class PolyExpAnsatz(Ansatz):
         return math.reshape(ret, z_batch_shape + self.batch_shape)
 
     def _compute_exp_part(self, z: Batch[Vector]) -> Batch[Scalar]:
-        r"""Computes the exponential part of the ansatz evaluation. Needed in ``_eval``."""
+        r"""
+        Computes the exponential part of the ansatz evaluation. Needed in ``__call__``.
+        The exponential part is given by:
+        .. math::
+            \exp\left(\frac{1}{2} z^T A z + b^T z\right)
+        where :math:`A` is the matrix of the quadratic part of the ansatz and :math:`b` is the vector of the linear part
+        that correspond to the vector of given CV variables.
+        """
         n = self.num_CV_vars
         A_part = math.einsum("ka,kb,iab->ik", z, z, self._A_vectorized[:, :n, :n])
         b_part = math.einsum("ka,ia->ik", z, self._b_vectorized[:, :n])
         return math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, k)
 
     def _compute_polynomial_part(self, z: Batch[Vector]) -> Batch[Scalar]:
-        r"""Computes the polynomial part of the ansatz evaluation. Needed in ``_eval``."""
+        r"""Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``."""
         n = self.num_CV_vars
         b_poly = (
             math.einsum("iab,ka->ikb", self._A_vectorized[:, :n, n:], z)
@@ -658,11 +712,11 @@ class PolyExpAnsatz(Ansatz):
     def _combine_exp_and_poly(
         self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor]
     ) -> Batch[ComplexTensor]:
-        r"""Combines exponential and polynomial parts using einsum. Needed in ``_eval``."""
+        r"""Combines exponential and polynomial parts using einsum. Needed in ``__call__``."""
         d = np.prod(self.shape_derived_vars)
         c = math.reshape(self._c_vectorized, (self.batch_size, d))
         poly = math.reshape(poly, (self.batch_size, -1, d))
-        return math.einsum("ik,il,inl->in", exp_sum, c, poly)
+        return math.einsum("ik,id,ikd->ik", exp_sum, c, poly)
 
     def _partial_eval(self, z: ArrayLike, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
@@ -707,9 +761,8 @@ class PolyExpAnsatz(Ansatz):
         f = len(r) + len(d)  # leftover core dimensions (CV + derived)
 
         new_A = math.gather(math.gather(self._A_vectorized, r + d, axis=-1), r + d, axis=-2)
-        new_A = math.repeat(new_A, z_batch_size, axis=0)  # can now reshape to (*b, *L, r+d, r+d)
+        new_A = math.tile(new_A, (z_batch_size, 1, 1))  # can now reshape to (*b, *L, r+d, r+d)
         new_A = math.reshape(new_A, z_batch_shape + self.batch_shape + (f, f))
-
         A_er = math.gather(math.gather(self._A_vectorized, e, axis=-2), r, axis=-1)
         b_r = math.einsum("ier,be->bir", A_er, z_vectorized)  # shape (vec(b), vec(L), r)
 
@@ -770,12 +823,12 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The batch dimensions must be 0 or 1. Got {self.batch_dims} and {other.batch_dims}."
             )
-        A_self = self.A if self.batch_dims == 0 else math.expand_dims(self.A, axis=0)
-        b_self = self.b if self.batch_dims == 0 else math.expand_dims(self.b, axis=0)
-        c_self = self.c if self.batch_dims == 0 else math.expand_dims(self.c, axis=0)
-        A_other = other.A if other.batch_dims == 0 else math.expand_dims(other.A, axis=0)
-        b_other = other.b if other.batch_dims == 0 else math.expand_dims(other.b, axis=0)
-        c_other = other.c if other.batch_dims == 0 else math.expand_dims(other.c, axis=0)
+        A_self = self.A if self.batch_dims == 1 else math.expand_dims(self.A, axis=0)
+        b_self = self.b if self.batch_dims == 1 else math.expand_dims(self.b, axis=0)
+        c_self = self.c if self.batch_dims == 1 else math.expand_dims(self.c, axis=0)
+        A_other = other.A if other.batch_dims == 1 else math.expand_dims(other.A, axis=0)
+        b_other = other.b if other.batch_dims == 1 else math.expand_dims(other.b, axis=0)
+        c_other = other.c if other.batch_dims == 1 else math.expand_dims(other.c, axis=0)
 
         def pad_arrays(array1, array2):
             shape1 = array1.shape[1:]
@@ -793,7 +846,7 @@ class PolyExpAnsatz(Ansatz):
 
         def pad_and_combine_Ab(Ab1, Ab2):
             padded_Ab1, padded_Ab2 = pad_arrays(Ab1, Ab2)
-            return math.stack([padded_Ab1, padded_Ab2], axis=0)
+            return math.concat([padded_Ab1, padded_Ab2], axis=0)
 
         n_derived_vars = max(self.num_derived_vars, other.num_derived_vars)
 
@@ -823,56 +876,12 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The tensor product of this PolyExpAnsatz and other.
         """
-        As, bs, cs = join_Abc(self.triple, other.triple, self._outer_product_batch_str(other))
+        As, bs, cs = join_Abc(
+            self.triple,
+            other.triple,
+            self._outer_product_batch_str(self.batch_dims, other.batch_dims),
+        )
         return PolyExpAnsatz(As, bs, cs, self.num_derived_vars + other.num_derived_vars)
-
-    def eval(
-        self, *z: Vector | None, batch_string: str | None = None
-    ) -> Scalar | ArrayLike | PolyExpAnsatz:
-        r"""
-        Evaluates the ansatz at given points or returns a partially evaluated ansatz.
-        This method supports passing an einsum-style batch string to specify how the batch dimensions
-        of the arguments should be handled. For example, for two arguments, "i,j->ij" means to take
-        the outer product  of the batch dimensions. The batch dimensions of the ansatz itself are not
-        part of the batch string and are placed after the output batch dimensions in the output.
-
-        1. Partial evaluation: If any argument is None, it returns a new ansatz with those arguments
-           unevaluated. For example, if F(z1, z2, z3) is called as F(1.0, None, 3.0), it returns a
-           new ansatz G(z2) with z1 and z3 fixed at 1.0 and 3.0.
-
-        2. Full evaluation: If all arguments are provided, it returns the value of the ansatz at
-        those points.
-
-        The returned shape depends on the batch shape of the ansatz itself and the batch dimensions of
-        the inputs and the batch string.
-
-        Args:
-            z: points in C where the function is (partially) evaluated or None if the variable is
-            not evaluated.
-            batch_string: like einsum string for batch dimensions of the inputs, e.g. "i,j->ij"
-
-        Returns:
-            The value of the ansatz or a new ansatz if partial evaluation is performed.
-        """
-        if len(z) > self.num_CV_vars:
-            raise ValueError(
-                f"The ansatz was called with {len(z)} variables, "
-                f"but it only has {self.num_CV_vars} CV variables."
-            )
-
-        evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
-        only_z = [math.astensor(zi) for zi in z if zi is not None]
-
-        if batch_string is None:  # Generate default batch string if none provided
-            batch_string = self._outer_product_batch_str(*[len(zi.shape) for zi in only_z])
-
-        reshaped_z = self._reshape_args_to_batch_string(only_z, batch_string)
-        broadcasted_z = math.broadcast_arrays(*reshaped_z)
-        if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
-            return self(*broadcasted_z)
-        else:  # Partial evaluation: some CV variables are not provided
-            combined_z = math.stack(broadcasted_z, axis=-1)
-            return self._partial_eval(combined_z, tuple(evaluated_indices))
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
