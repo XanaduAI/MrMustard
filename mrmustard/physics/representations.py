@@ -105,8 +105,12 @@ class Representation:
         """
         try:
             A, b, c = self.ansatz.triple
-            if not batched and self.ansatz.batch_size == 1:
-                return A[0], b[0], c[0]
+            if not batched:
+                return (
+                    math.atleast_2d(math.squeeze(A)),
+                    math.atleast_1d(math.squeeze(b)),
+                    math.squeeze(c),
+                )
             else:
                 return A, b, c
         except AttributeError as e:
@@ -229,12 +233,14 @@ class Representation:
 
         if mode == "zip":
             eins_str = self_ansatz._zip_batch_strings(
-                self_ansatz.batch_shape, other_ansatz.batch_shape
+                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
             )
         elif mode == "kron":
-            eins_str = self_ansatz._outer_product_batch_str(*self_ansatz.batch_shape)
+            eins_str = self_ansatz._outer_product_batch_str(
+                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
+            )
         else:
             eins_str = mode
-        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj, mode=eins_str)
+        ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)

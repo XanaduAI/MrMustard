@@ -342,7 +342,7 @@ class PolyExpAnsatz(Ansatz):
         Creates a batch string for zipping over the batch dimensions.
         """
         if len(set(ndims)) != 1:
-            raise ValueError(f"All shapes must be the same, got {ndims}")
+            raise ValueError(f"Arrays must have the same number of batch dimensions, got {ndims}")
         str_ = "".join([chr(97 + i) for i in range(ndims[0])])
         return ",".join([str_] * len(ndims)) + "->" + str_
 
