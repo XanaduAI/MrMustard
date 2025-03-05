@@ -337,6 +337,16 @@ class PolyExpAnsatz(Ansatz):
         return ",".join(strs) + "->" + "".join(strs)
 
     @staticmethod
+    def _zip_batch_strings(*ndims: int) -> str:
+        r"""
+        Creates a batch string for zipping over the batch dimensions.
+        """
+        if len(set(ndims)) != 1:
+            raise ValueError(f"All shapes must be the same, got {ndims}")
+        str_ = "".join([chr(97 + i) for i in range(ndims[0])])
+        return ",".join([str_] * len(ndims)) + "->" + str_
+
+    @staticmethod
     def _reshape_args_to_batch_string(
         args: list[ArrayLike], batch_string: str
     ) -> tuple[list[ArrayLike], tuple[int, ...]]:

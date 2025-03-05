@@ -210,13 +210,13 @@ class Representation:
             return self.ansatz == other.ansatz and self.wires == other.wires
         return False
 
-    def contract(self, other: Representation, mode: Literal["zip", "kron"] = "kron"):
+    def contract(self, other: Representation, mode: str = "kron"):
         r"""
         Contracts two representations.
 
         Args:
             other: The other representation to contract with.
-            mode: "zip" the batch dimensions or "kron" the batch dimensions.
+            mode: "zip" the batch dimensions, "kron" the batch dimensions or pass a custom einsum string.
         """
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
@@ -228,6 +228,14 @@ class Representation:
             self_ansatz = self.to_bargmann().ansatz
             other_ansatz = other.to_bargmann().ansatz
 
-        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj, mode=mode)
+        if mode == "zip":
+            eins_str = self_ansatz._zip_batch_strings(
+                self_ansatz.batch_shape, other_ansatz.batch_shape
+            )
+        elif mode == "kron":
+            eins_str = self_ansatz._outer_product_batch_str(*self_ansatz.batch_shape)
+        else:
+            eins_str = mode
+        ansatz = self_ansatz.contract(other_ansatz, idx_z, idx_zconj, mode=eins_str)
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)
