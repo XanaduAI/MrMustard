@@ -207,13 +207,11 @@ class Representation:
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
 
-        if type(self.ansatz) is type(other.ansatz):
-            self_ansatz = self.ansatz
-            other_ansatz = other.ansatz
-        else:
-            self_ansatz = self.to_bargmann().ansatz
-            other_ansatz = other.to_bargmann().ansatz
+        if type(self.ansatz) is not type(other.ansatz):
+            raise ValueError(
+                f"Cannot contract ansatz of type {type(self.ansatz)} with ansatz of type {type(other.ansatz)}."
+            )
 
-        rep = self_ansatz.contract(other_ansatz, idx_z, idx_zconj)
+        rep = self.ansatz.contract(other.ansatz, idx_z, idx_zconj)
         rep = rep.reorder(perm) if perm else rep
         return Representation(rep, wires_result)

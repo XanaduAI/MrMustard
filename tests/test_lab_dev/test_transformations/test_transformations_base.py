@@ -232,8 +232,9 @@ class TestChannel:
                 ph_n[m, m, n, n] = math.exp(-0.5 * (m - n) ** 2 * sigma**2)
 
         phi = Channel.from_fock([0], [0], ph_n)
-        psi = Coherent([0], 2) >> phi
 
-        assert psi.to_fock((cutoff, cutoff)) == (
-            Coherent([0], 2) >> PhaseNoise([0], sigma)
-        ).to_fock((cutoff, cutoff))
+        coh = Coherent([0], 2)
+        coh.manual_shape = (cutoff, cutoff, cutoff, cutoff)
+        psi = coh >> phi
+
+        assert psi == (Coherent([0], 2) >> PhaseNoise([0], sigma)).to_fock((cutoff, cutoff))

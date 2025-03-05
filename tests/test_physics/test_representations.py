@@ -71,6 +71,12 @@ class TestRepresentation:
             assert w.repr == ReprEnum.QUADRATURE
             assert w.repr_params_func() == [0.2]
 
+    def test_matmul_diff_reps(self, d_gate_rep):
+        fock_rep = d_gate_rep.to_fock(shape=(4, 6))
+        bargmann_rep = fock_rep.to_bargmann()
+        with pytest.raises(ValueError, match="Cannot contract ansatz"):
+            fock_rep @ bargmann_rep
+
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         d_barg = d_fock.to_bargmann()
