@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics import triples_batched
 from ..utils import make_parameter
 
 __all__ = ["Rgate"]
@@ -59,6 +59,6 @@ class Rgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
+                fn=triples_batched.rotation_gate_Abc, theta=self.parameters.theta
             ),
         ).representation

@@ -163,7 +163,7 @@ def squeezed_vacuum_state_Abc(
     phi = math.broadcast_to(phi, batch_shape)
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
-    b = math.tile(_vacuum_B_vector(1), batch_shape + (1,))
+    b = math.broadcast_to(_vacuum_B_vector(1), batch_shape + (1,))
     c = 1 / math.sqrt(math.cosh(r))
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -425,7 +425,7 @@ def rotation_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -486,7 +486,7 @@ def squeezing_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / math.sqrt(math.cosh(r)), math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -529,7 +529,7 @@ def beamsplitter_gate_Abc(
     A = math.concat(
         [math.concat([O_matrix, V], -1), math.concat([math.transpose(V, perm), O_matrix], -1)], -2
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
@@ -576,7 +576,7 @@ def twomode_squeezing_gate_Abc(
     A = math.concat(
         [math.concat([A_block1, A_block3], -1), math.concat([A_block3, A_block2], -1)], -2
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -641,7 +641,7 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -681,7 +681,7 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / g, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -710,7 +710,7 @@ def fock_damping_Abc(
     A = math.stack(
         [math.stack([O_matrix, B_n], batch_dim), math.stack([B_n, O_matrix], batch_dim)], batch_dim
     )
-    b = math.tile(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
@@ -726,7 +726,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the Gaussian random noise channel.
     """
-    batch_size, _ = Y.shape[:-2]
+    batch_size = Y.shape[:-2]
     batch_shape = batch_size or (1,)
 
     Y = math.broadcast_to(Y, batch_shape + Y.shape[-2:])
@@ -810,7 +810,7 @@ def bargmann_to_quadrature_Abc(
         ),
         Id,
     )
-    b = math.tile(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
+    b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
     c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 
@@ -940,7 +940,7 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
         ],
         batch_dim,
     )
-    b = math.tile(_vacuum_B_vector(3), batch_shape + (3,))
+    b = math.broadcast_to(_vacuum_B_vector(3), batch_shape + (3,))
     c = math.ones(batch_shape, math.complex128)
     return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
 

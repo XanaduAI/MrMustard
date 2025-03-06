@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics import triples_batched
 from ..utils import make_parameter
 
 __all__ = ["BSgate"]
@@ -97,7 +97,7 @@ class BSgate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.beamsplitter_gate_Abc,
+                fn=triples_batched.beamsplitter_gate_Abc,
                 theta=self.parameters.theta,
                 phi=self.parameters.phi,
             ),

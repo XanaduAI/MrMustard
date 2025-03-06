@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics import triples_batched
 from ..utils import make_parameter
 
 __all__ = ["Amplifier"]
@@ -92,5 +92,7 @@ class Amplifier(Channel):
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples_batched.amplifier_Abc, g=self.parameters.gain
+            ),
         ).representation

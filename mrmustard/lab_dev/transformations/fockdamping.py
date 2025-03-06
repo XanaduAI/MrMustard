@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Operation
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics import triples_batched
 from ..utils import make_parameter
 
 __all__ = ["FockDamping"]
@@ -82,6 +82,6 @@ class FockDamping(Operation):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.fock_damping_Abc, beta=self.parameters.damping
+                fn=triples_batched.fock_damping_Abc, beta=self.parameters.damping
             ),
         ).representation

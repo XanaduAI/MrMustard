@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
+from ...physics import triples_batched
 from ..utils import make_parameter
 
 __all__ = ["S2gate"]
@@ -81,6 +81,8 @@ class S2gate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.twomode_squeezing_gate_Abc, r=self.parameters.r, phi=self.parameters.phi
+                fn=triples_batched.twomode_squeezing_gate_Abc,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
             ),
         ).representation

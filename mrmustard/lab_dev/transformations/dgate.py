@@ -27,7 +27,7 @@ from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples, fock_utils
+from ...physics import triples_batched, fock_utils
 from ..utils import make_parameter
 
 
@@ -98,7 +98,7 @@ class Dgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples_batched.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
             ),
         ).representation
 
