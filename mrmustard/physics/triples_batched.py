@@ -133,8 +133,8 @@ def coherent_state_Abc(
     batch_size, _ = _compute_batch_size(x, y)
     batch_shape = batch_size or (1,)
 
-    x = math.broadcast_to(x, batch_shape)
-    y = math.broadcast_to(y, batch_shape)
+    x = math.broadcast_to(x, batch_shape, dtype=math.complex128)
+    y = math.broadcast_to(y, batch_shape, dtype=math.complex128)
 
     A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
     b = math.reshape(x + 1j * y, batch_shape + (1,))
@@ -159,8 +159,8 @@ def squeezed_vacuum_state_Abc(
     batch_size, _ = _compute_batch_size(r, phi)
     batch_shape = batch_size or (1,)
 
-    r = math.broadcast_to(r, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
     b = math.broadcast_to(_vacuum_B_vector(1), batch_shape + (1,))
@@ -190,10 +190,10 @@ def displaced_squeezed_vacuum_state_Abc(
     batch_size, _ = _compute_batch_size(x, y, r, phi)
     batch_shape = batch_size or (1,)
 
-    x = math.broadcast_to(x, batch_shape)
-    y = math.broadcast_to(y, batch_shape)
-    r = math.broadcast_to(r, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    x = math.broadcast_to(x, batch_shape, dtype=math.complex128)
+    y = math.broadcast_to(y, batch_shape, dtype=math.complex128)
+    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
     b = math.reshape(
@@ -225,8 +225,8 @@ def two_mode_squeezed_vacuum_state_Abc(
     batch_size, batch_dim = _compute_batch_size(r, phi)
     batch_shape = batch_size or (1,)
 
-    r = math.broadcast_to(r, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     tanhr = -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
@@ -351,8 +351,8 @@ def quadrature_eigenstates_Abc(
     batch_size, _ = _compute_batch_size(x, phi)
     batch_shape = batch_size or (1,)
 
-    x = math.broadcast_to(x, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    x = math.broadcast_to(x, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
     b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
@@ -378,7 +378,7 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
     batch_size, batch_dim = _compute_batch_size(nbar)
     batch_shape = batch_size or (1,)
 
-    nbar = math.broadcast_to(nbar, batch_shape)
+    nbar = math.broadcast_to(nbar, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
 
@@ -414,7 +414,7 @@ def rotation_gate_Abc(
     batch_size, batch_dim = _compute_batch_size(theta)
     batch_shape = batch_size or (1,)
 
-    theta = math.broadcast_to(theta, batch_shape)
+    theta = math.broadcast_to(theta, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
 
@@ -447,8 +447,8 @@ def displacement_gate_Abc(
     batch_size, batch_dim = _compute_batch_size(x, y)
     batch_shape = batch_size or (1,)
 
-    x = math.broadcast_to(x, batch_shape)
-    y = math.broadcast_to(y, batch_shape)
+    x = math.broadcast_to(x, batch_shape, dtype=math.complex128)
+    y = math.broadcast_to(y, batch_shape, dtype=math.complex128)
 
     A = math.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
     b = math.stack([x + 1j * y, -x + 1j * y], batch_dim)
@@ -473,8 +473,8 @@ def squeezing_gate_Abc(
     batch_size, batch_dim = _compute_batch_size(r, delta)
     batch_shape = batch_size or (1,)
 
-    r = math.broadcast_to(r, batch_shape)
-    delta = math.broadcast_to(delta, batch_shape)
+    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
+    delta = math.broadcast_to(delta, batch_shape, dtype=math.complex128)
 
     tanhr = math.sinh(r) / math.cosh(r)
     sechr = 1 / math.cosh(r)
@@ -508,8 +508,8 @@ def beamsplitter_gate_Abc(
     batch_size, batch_dim = _compute_batch_size(theta, phi)
     batch_shape = batch_size or (1,)
 
-    theta = math.broadcast_to(theta, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    theta = math.broadcast_to(theta, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape + (2, 2), math.complex128)
     costheta = math.cos(theta)
@@ -550,8 +550,8 @@ def twomode_squeezing_gate_Abc(
     batch_size, batch_dim = _compute_batch_size(r, phi)
     batch_shape = batch_size or (1,)
 
-    r = math.broadcast_to(r, batch_shape)
-    phi = math.broadcast_to(phi, batch_shape)
+    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
@@ -623,7 +623,7 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
     batch_size, batch_dim = _compute_batch_size(eta)
     batch_shape = batch_size or (1,)
 
-    eta = math.broadcast_to(eta, batch_shape)
+    eta = math.broadcast_to(eta, batch_shape, dtype=math.complex128)
 
     math.error_if(eta, math.any(math.real(eta) > 1), "Found transmissivity greater than `1`.")
     math.error_if(eta, math.any(math.real(eta) < 0), "Found transmissivity less than `0`.")
@@ -663,7 +663,7 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     batch_size, batch_dim = _compute_batch_size(g)
     batch_shape = batch_size or (1,)
 
-    g = math.broadcast_to(g, batch_shape)
+    g = math.broadcast_to(g, batch_shape, dtype=math.complex128)
 
     math.error_if(
         g, math.any(math.real(g) < 1), "Found amplifier with gain ``g`` smaller than `1`."
@@ -702,7 +702,7 @@ def fock_damping_Abc(
     batch_size, batch_dim = _compute_batch_size(beta)
     batch_shape = batch_size or (1,)
 
-    beta = math.broadcast_to(beta, batch_shape)
+    beta = math.broadcast_to(beta, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     B_n = math.exp(-beta)
@@ -729,7 +729,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     batch_size = Y.shape[:-2]
     batch_shape = batch_size or (1,)
 
-    Y = math.broadcast_to(Y, batch_shape + Y.shape[-2:])
+    Y = math.broadcast_to(Y, batch_shape + Y.shape[-2:], dtype=math.complex128)
 
     m = Y.shape[-1] // 2
     xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
@@ -792,7 +792,7 @@ def bargmann_to_quadrature_Abc(
     batch_size, batch_dim = _compute_batch_size(phi)
     batch_shape = batch_size or (1,)
 
-    phi = math.broadcast_to(phi, batch_shape)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     hbar = settings.HBAR
     Id = math.eye(n_modes, dtype=math.complex128)
@@ -837,7 +837,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     batch_size, _ = _compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
-    s = math.broadcast_to(s, batch_shape)
+    s = math.broadcast_to(s, batch_shape, dtype=math.complex128)
 
     A = math.concat(
         [
@@ -925,7 +925,7 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
     batch_size, batch_dim = _compute_batch_size(eta)
     batch_shape = batch_size or (1,)
 
-    eta = math.broadcast_to(eta, batch_shape)
+    eta = math.broadcast_to(eta, batch_shape, dtype=math.complex128)
 
     costheta = math.sqrt(eta)
     sintheta = math.sqrt(1 - eta)

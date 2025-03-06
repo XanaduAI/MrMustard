@@ -29,18 +29,23 @@ class TestTriples:
     """
 
     def test_incompatible_shapes(self):
-        match = "could not be broadcast"
+        if math.backend_name == "jax":
+            error = TypeError
+            match = "incompatible shapes for broadcasting"
+        else:
+            error = ValueError
+            match = "could not be broadcast"
 
-        with pytest.raises(ValueError, match=match):
+        with pytest.raises(error, match=match):
             triples_batched.coherent_state_Abc([1, 2], [3, 4, 5])
 
-        with pytest.raises(ValueError, match=match):
+        with pytest.raises(error, match=match):
             triples_batched.coherent_state_Abc([1, 2], [3, 4, 5])
 
-        with pytest.raises(ValueError, match=match):
+        with pytest.raises(error, match=match):
             triples_batched.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
-        with pytest.raises(ValueError, match=match):
+        with pytest.raises(error, match=match):
             triples_batched.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6, 7)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
