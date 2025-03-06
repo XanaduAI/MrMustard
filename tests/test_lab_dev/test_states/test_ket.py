@@ -127,25 +127,26 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_normalize_poly_dim(self):
         # https://github.com/XanaduAI/MrMustard/issues/481
-        state = (
-            SqueezedVacuum(mode=0, r=0.75)
-            >> SqueezedVacuum(mode=1, r=-0.75)
-            >> BSgate(modes=(0, 1), theta=0.9)
-            >> Number(mode=0, n=20).dual
-        )
-        state = state.normalize()
-        state2 = (
-            (state.on(0) >> state.on(1))
-            >> BSgate(modes=(0, 1), theta=np.pi / 4)
-            >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
-        )
-        state3 = (
-            (state2.on(0) >> state2.on(1))
-            >> BSgate(modes=(0, 1), theta=np.pi / 4)
-            >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
-        )
-        state3 = state3.normalize().to_bargmann()
-        assert state3.purity == 1.0
+        with settings(AUTOSHAPE_PROBABILITY=0.99999999):
+            state = (
+                SqueezedVacuum(mode=0, r=0.75)
+                >> SqueezedVacuum(mode=1, r=-0.75)
+                >> BSgate(modes=(0, 1), theta=0.9)
+                >> Number(mode=0, n=20).dual
+            )
+            state = state.normalize()
+            state2 = (
+                (state.on(0) >> state.on(1))
+                >> BSgate(modes=(0, 1), theta=np.pi / 4)
+                >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
+            )
+            state3 = (
+                (state2.on(0) >> state2.on(1))
+                >> BSgate(modes=(0, 1), theta=np.pi / 4)
+                >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
+            )
+            state3 = state3.normalize().to_bargmann()
+            assert math.allclose(state3.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_fock(self, modes):
