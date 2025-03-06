@@ -19,7 +19,7 @@ The class representing a trace out operation.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
@@ -65,7 +65,7 @@ class TraceOut(CircuitComponent):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(
             Representation(
-                PolyExpAnsatz.from_function(fn=triples_batched.identity_Abc, n_modes=len(modes)),
+                PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
                 Wires(set(), set(modes), set(), set(modes)),
             ),
             name="Tr",

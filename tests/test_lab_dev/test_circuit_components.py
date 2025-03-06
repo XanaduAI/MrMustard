@@ -45,7 +45,7 @@ from mrmustard.lab_dev import (
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.triples_batched import displacement_gate_Abc
+from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
 

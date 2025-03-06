@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples_batched
+from ...physics import triples
 from ..utils import make_parameter
 
 __all__ = ["Sgate"]
@@ -92,7 +92,7 @@ class Sgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.squeezing_gate_Abc,
+                fn=triples.squeezing_gate_Abc,
                 r=self.parameters.r,
                 delta=self.parameters.phi,
             ),

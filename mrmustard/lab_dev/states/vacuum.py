@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Collection
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from .ket import Ket
 
 __all__ = ["Vacuum"]
@@ -64,9 +64,7 @@ class Vacuum(Ket):
         modes = (modes,) if isinstance(modes, int) else modes
         self._representation = self.from_ansatz(
             modes=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.vacuum_state_Abc, n_modes=len(modes)
-            ),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
         ).representation
 
         for i in range(len(modes)):

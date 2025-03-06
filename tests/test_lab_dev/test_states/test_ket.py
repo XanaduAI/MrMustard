@@ -39,7 +39,7 @@ from mrmustard.lab_dev import (
 )
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.triples_batched import coherent_state_Abc
+from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
 

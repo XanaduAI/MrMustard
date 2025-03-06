@@ -19,7 +19,7 @@ The class representing a Bargmann eigenstate.
 from __future__ import annotations
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from .ket import Ket
 from ..utils import make_parameter
 
@@ -62,6 +62,6 @@ class BargmannEigenstate(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.bargmann_eigenstate_Abc, alpha=self.parameters.alpha
+                fn=triples.bargmann_eigenstate_Abc, alpha=self.parameters.alpha
             ),
         ).representation

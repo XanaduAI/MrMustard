@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from mrmustard.lab_dev.transformations.base import Map
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 
 __all__ = ["CFT"]
 
@@ -49,6 +49,6 @@ class CFT(Map):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.complex_fourier_transform_Abc, n_modes=len(modes)
+                fn=triples.complex_fourier_transform_Abc, n_modes=len(modes)
             ),
         ).representation

@@ -19,7 +19,7 @@ The class representing a two-mode squeezed vacuum state.
 from __future__ import annotations
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from .ket import Ket
 from ..utils import make_parameter
 
@@ -64,7 +64,7 @@ class TwoModeSqueezedVacuum(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.two_mode_squeezed_vacuum_state_Abc,
+                fn=triples.two_mode_squeezed_vacuum_state_Abc,
                 r=self.parameters.r,
                 phi=self.parameters.phi,
             ),

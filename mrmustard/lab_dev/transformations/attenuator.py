@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples_batched
+from ...physics import triples
 from ..utils import make_parameter
 
 __all__ = ["Attenuator"]
@@ -93,6 +93,6 @@ class Attenuator(Channel):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.attenuator_Abc, eta=self.parameters.transmissivity
+                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
             ),
         ).representation

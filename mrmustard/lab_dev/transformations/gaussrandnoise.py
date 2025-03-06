@@ -22,7 +22,7 @@ from mrmustard.utils.typing import RealMatrix
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Channel
-from ...physics import triples_batched
+from ...physics import triples
 from ..utils import make_parameter
 
 __all__ = ["GaussRandNoise"]
@@ -88,6 +88,6 @@ class GaussRandNoise(Channel):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.gaussian_random_noise_Abc, Y=self.parameters.Y
+                fn=triples.gaussian_random_noise_Abc, Y=self.parameters.Y
             ),
         ).representation

@@ -17,7 +17,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.physics import triples, triples_batched
+from mrmustard.physics import triples, triples
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
@@ -94,8 +94,8 @@ def test_real_gaussian_integral():
 
 def test_join_Abc_real():
     """Tests the ``join_Abc_real`` method."""
-    A1, b1, c1 = triples_batched.vacuum_state_Abc(1)
-    A2, b2, c2 = triples_batched.displacement_gate_Abc(x=0.1, y=0.3)
+    A1, b1, c1 = triples.vacuum_state_Abc(1)
+    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
 
     idx1 = [0]
     idx2 = [0]
@@ -206,7 +206,7 @@ def test_reorder_abc():
 
 def test_complex_gaussian_integral_2_not_batched():
     """Tests the ``complex_gaussian_integral_2`` method for non-batched inputs."""
-    A1, b1, c1 = triples_batched.vacuum_state_Abc(2)
+    A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
 
@@ -218,13 +218,13 @@ def test_complex_gaussian_integral_2_not_batched():
 
 def test_complex_gaussian_integral_2_batched():
     """tests that the ``complex_gaussian_integral_2`` method works for batched inputs."""
-    A1, b1, c1 = triples_batched.vacuum_state_Abc(1)
-    A2a, b2a, c2a = triples_batched.squeezing_gate_Abc(r=0.1, delta=0.3)
-    A2b, b2b, c2b = triples_batched.squeezing_gate_Abc(r=0.2, delta=0.4)
-    A2c, b2c, c2c = triples_batched.squeezing_gate_Abc(r=0.3, delta=0.5)
-    A3a, b3a, c3a = triples_batched.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
-    A3b, b3b, c3b = triples_batched.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
-    A3c, b3c, c3c = triples_batched.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
+    A1, b1, c1 = triples.vacuum_state_Abc(1)
+    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, delta=0.3)
+    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, delta=0.4)
+    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, delta=0.5)
+    A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
+    A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
+    A3c, b3c, c3c = triples.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
     A1 = math.astensor([A1, A1, A1])
     A2 = math.astensor([A2a, A2b, A2c])
     A3 = math.astensor([A3a, A3b, A3c])
@@ -243,17 +243,17 @@ def test_complex_gaussian_integral_2_batched():
 
 def test_complex_gaussian_integral_1_not_batched():
     """Tests the ``complex_gaussian_integral_1`` method for non-batched inputs."""
-    A, b, c = triples_batched.thermal_state_Abc(nbar=0.5)
-    Ar, br, cr = triples_batched.vacuum_state_Abc(0)
+    A, b, c = triples.thermal_state_Abc(nbar=0.5)
+    Ar, br, cr = triples.vacuum_state_Abc(0)
 
     res = complex_gaussian_integral_1((A, b, c), [0], [1])
     assert math.allclose(res[0], Ar)
     assert math.allclose(res[1], br)
     assert math.allclose(res[2], cr)
 
-    A1, b1, c1 = triples_batched.vacuum_state_Abc(2)
-    A2, b2, c2 = triples_batched.displacement_gate_Abc(x=0.1, y=0.3)
-    A3, b3, c3 = triples_batched.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
+    A1, b1, c1 = triples.vacuum_state_Abc(2)
+    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
 
@@ -265,13 +265,13 @@ def test_complex_gaussian_integral_1_not_batched():
 
 def test_complex_gaussian_integral_1_batched():
     """tests that the ``complex_gaussian_integral_2`` method works for batched inputs."""
-    A1, b1, c1 = triples_batched.vacuum_state_Abc(1)
-    A2a, b2a, c2a = triples_batched.squeezing_gate_Abc(r=0.1, delta=0.3)
-    A2b, b2b, c2b = triples_batched.squeezing_gate_Abc(r=0.2, delta=0.4)
-    A2c, b2c, c2c = triples_batched.squeezing_gate_Abc(r=0.3, delta=0.5)
-    A3a, b3a, c3a = triples_batched.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
-    A3b, b3b, c3b = triples_batched.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
-    A3c, b3c, c3c = triples_batched.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
+    A1, b1, c1 = triples.vacuum_state_Abc(1)
+    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, delta=0.3)
+    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, delta=0.4)
+    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, delta=0.5)
+    A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
+    A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
+    A3c, b3c, c3c = triples.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
     A1 = math.astensor([A1, A1, A1])
     A2 = math.astensor([A2a, A2b, A2c])
     A3 = math.astensor([A3a, A3b, A3c])

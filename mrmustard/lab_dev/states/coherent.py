@@ -19,7 +19,7 @@ The class representing a coherent state.
 from __future__ import annotations
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from .ket import Ket
 from ..utils import make_parameter
 
@@ -79,6 +79,6 @@ class Coherent(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
             ),
         ).representation

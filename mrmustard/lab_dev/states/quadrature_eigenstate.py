@@ -21,7 +21,7 @@ from __future__ import annotations
 import numpy as np
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from mrmustard.physics.wires import ReprEnum
 from .ket import Ket
 from ..utils import make_parameter
@@ -75,7 +75,7 @@ class QuadratureEigenstate(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.quadrature_eigenstates_Abc,
+                fn=triples.quadrature_eigenstates_Abc,
                 x=self.parameters.x,
                 phi=self.parameters.phi,
             ),

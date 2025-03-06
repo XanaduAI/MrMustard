@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples_batched
+from ...physics import triples
 
 __all__ = ["Identity"]
 
@@ -51,5 +51,5 @@ class Identity(Unitary):
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples_batched.identity_Abc, n_modes=len(modes)),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
         ).representation

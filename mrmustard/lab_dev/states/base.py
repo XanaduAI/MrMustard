@@ -171,7 +171,7 @@ class State(CircuitComponent):
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-            >>> from mrmustard.physics.triples_batched import coherent_state_Abc
+            >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.ket import Ket
 
             >>> modes = (0, 1)
@@ -211,7 +211,7 @@ class State(CircuitComponent):
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
-            >>> from mrmustard.physics.triples_batched import coherent_state_Abc
+            >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> array = Coherent(mode=0, x=0.1).to_fock().ansatz.array

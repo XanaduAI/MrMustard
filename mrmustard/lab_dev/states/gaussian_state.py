@@ -24,7 +24,7 @@ from mrmustard import math
 
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples_batched
+from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
 
 from .ket import Ket
@@ -77,7 +77,7 @@ class GKet(Ket):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.gket_state_Abc, symplectic=self.parameters.symplectic
+                fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
             ),
         ).representation
 
@@ -156,7 +156,7 @@ class GDM(DM):
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples_batched.gdm_state_Abc,
+                fn=triples.gdm_state_Abc,
                 betas=self.parameters.beta,
                 symplectic=self.parameters.symplectic,
             ),

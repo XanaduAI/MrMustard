@@ -20,7 +20,7 @@ import pytest
 
 from mrmustard.lab_dev.states import Thermal
 from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.triples_batched import thermal_state_Abc
+from mrmustard.physics.triples import thermal_state_Abc
 
 
 class TestThermal:
