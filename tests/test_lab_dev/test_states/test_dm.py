@@ -22,10 +22,17 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev.circuit_components import CircuitComponent
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import DM, Coherent, Ket, Number, Vacuum
-from mrmustard.lab_dev.transformations import Attenuator, Dgate
+from mrmustard.lab_dev import (
+    Attenuator,
+    CircuitComponent,
+    Coherent,
+    Dgate,
+    DM,
+    Ket,
+    Number,
+    TraceOut,
+    Vacuum,
+)
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
@@ -49,11 +56,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
     Tests for the ``DM`` class.
     """
 
-    modes = [[[0]], [[0]]]
-    x = [[1], [1, -1]]
-    y = [[1], [1, -1]]
-    coeff = [0.5, 0.3]
-
     @pytest.mark.parametrize("name", [None, "my_dm"])
     @pytest.mark.parametrize("modes", [{0}, {0, 1}, {2, 3, 19}])
     def test_init(self, name, modes):
@@ -64,75 +66,73 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_manual_shape(self):
-        dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.manual_shape == [None, None, None, None]
+        dm = Coherent(0, x=1).dm()
+        assert dm.manual_shape == [None, None]
         dm.manual_shape[0] = 19
-        assert dm.manual_shape == [19, None, None, None]
+        assert dm.manual_shape == [19, None]
 
     def test_auto_shape(self):
-        dm = Coherent([0, 1], x=[1, 2]).dm()
-        assert dm.auto_shape() == (8, 15, 8, 15)
-        dm.manual_shape[0] = 1
-        assert dm.auto_shape() == (1, 15, 8, 15)
-
-        dm = Coherent([0, 1], x=1).dm() >> Number([1], 10).dual
+        dm = Coherent(0, x=1).dm()
         assert dm.auto_shape() == (8, 8)
+        dm.manual_shape[0] = 1
+        assert dm.auto_shape() == (1, 8)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+        dm = Coherent(0, x=1).dm() >> Number(1, 10).dual
+        assert dm.auto_shape() == (8, 11, 8, 11)
+
+    @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_bargmann(self, modes):
-        state_in = Coherent(modes, 1, 2) >> Attenuator([modes[0]], 0.7)
+        state_in = Coherent(modes, 1, 2) >> Attenuator(modes, 0.7)
         triple_in = state_in.bargmann_triple()
 
-        state_out = DM.from_bargmann(modes, triple_in, "my_dm")
+        state_out = DM.from_bargmann((modes,), triple_in, "my_dm")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
-        state01 = Coherent([0, 1], 1).dm()
+        state01 = (Coherent(0, 1) >> Coherent(1, 1)).dm()
         with pytest.raises(ValueError):
             DM.from_bargmann(
-                [0],
+                (0,),
                 state01.bargmann_triple(),
                 "my_dm",
             )
 
     def test_from_fock_error(self):
-        state01 = Coherent([0, 1], 1).dm()
+        state01 = (Coherent(0, 1) >> Coherent(1, 1)).dm()
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock([0], state01.fock_array(5), "my_dm", True)
+            DM.from_fock((0,), state01.fock_array(5), "my_dm", True)
 
     def test_bargmann_triple_error(self):
-        fock = Number([0], n=10).dm()
+        fock = Number(0, n=10).dm()
         with pytest.raises(AttributeError):
             fock.bargmann_triple()
 
-    @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
-    def test_normalize(self, modes, x, y, coeff):
-        state = Coherent(modes[0], x[0], y[0]).dm()
-        for i in range(1, len(modes)):
-            state += Coherent(modes[i], x[i], y[i]).dm()
+    @pytest.mark.parametrize("coeff", [0.5, 0.3])
+    def test_normalize(self, coeff):
+        state = Coherent(0, 1, 1).dm() + Coherent(0, -1, -1).dm()
         state *= coeff
         # Bargmann
         normalized = state.normalize()
-        assert np.isclose(normalized.probability, 1.0)
+        assert math.allclose(normalized.probability, 1.0)
         # Fock
         state = state.to_fock(5)  # truncated
         normalized = state.normalize()
-        assert np.isclose(normalized.probability, 1.0)
+        assert math.allclose(normalized.probability, 1.0)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_fock(self, modes):
-        state_in = Coherent(modes, x=1, y=2) >> Attenuator([modes[0]], 0.8)
+        state_in = Coherent(modes, x=1, y=2) >> Attenuator(modes, 0.8)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5, batched=True)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = DM.from_fock(modes, array_in, "my_dm", True)
+        state_out = DM.from_fock((modes,), array_in, "my_dm", True)
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):
-        state0 = Coherent([0], x=1, y=2) >> Attenuator([0], 1.0)
+        state0 = Coherent(0, x=1, y=2) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
         assert math.allclose(coeff, math.atleast_1d(1.0))
         assert math.allclose(cov[0], math.eye(2) * settings.HBAR / 2)
@@ -140,15 +140,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         # test error
         with pytest.raises(ValueError):
-            DM.from_phase_space([0, 1], (cov, means, 1.0))
+            DM.from_phase_space((0, 1), (cov, means, 1.0))
 
         cov = vacuum_cov(1)
         means = np.array([1, 2]) * np.sqrt(settings.HBAR * 2 * 0.8)
         state1 = DM.from_phase_space([0], (cov, means, 1.0))
-        assert state1 == Coherent([0], 1, 2) >> Attenuator([0], 0.8)
+        assert state1 == Coherent(0, 1, 2) >> Attenuator(0, 0.8)
 
     def test_to_from_quadrature(self):
-        modes = [0]
+        modes = (0,)
         A0 = np.array([[0, 0], [0, 0]])
         b0 = np.array([0.1 - 0.2j, 0.1 + 0.2j])
         c0 = 0.951229424500714  # z, z^*
@@ -162,38 +162,38 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.allclose(ctest2, c0)
 
     def test_L2_norms(self):
-        state = Coherent([0], x=1).dm() + Coherent([0], x=-1).dm()  # incoherent
+        state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()  # incoherent
         assert len(state._L2_norms) == 2
 
     def test_L2_norm(self):
-        state = Coherent([0], x=1).dm()
+        state = Coherent(0, x=1).dm()
         assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
-        state1 = Coherent([0], x=1).dm()
+        state1 = Coherent(0, x=1).dm()
         assert math.allclose(state1.probability, 1)
         assert math.allclose(state1.to_fock(20).probability, 1)
 
-        state2 = Coherent([0], x=1).dm() / 3 + 2 * Coherent([0], x=-1).dm() / 3
+        state2 = Coherent(0, x=1).dm() / 3 + 2 * Coherent(0, x=-1).dm() / 3
         assert math.allclose(state2.probability, 1)
         assert math.allclose(state2.to_fock(20).probability, 1)
 
-        state3 = Number([0], n=1, cutoffs=2).dm() / 2 + Number([0], n=2).dm() / 2
+        state3 = Number(0, n=1, cutoff=2).dm() / 2 + Number(0, n=2).dm() / 2
         assert math.allclose(state3.probability, 1)
 
     def test_probability_from_ket(self):
-        ket_state = Vacuum([0, 1]) >> Number([0], n=1).dual
+        ket_state = Vacuum((0, 1)) >> Number(0, n=1).dual
         dm_state = ket_state.dm()
         assert dm_state.probability == ket_state.probability
 
     def test_purity(self):
-        state = Coherent([0], 1, 2).dm()
+        state = Coherent(mode=0, x=1, y=2).dm()
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
     def test_quadrature_single_mode_dm(self):
         x, y = 1, 2
-        state = Coherent(modes=[0], x=x, y=y).dm()
+        state = Coherent(mode=0, x=x, y=y).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q, q + 1]))
         ket = coherent_state_quad(q + 1, x, y)
@@ -205,7 +205,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_quadrature_multimode_dm(self):
         x, y = 1, 2
-        state = Coherent(modes=[0, 1], x=x, y=y).dm()
+        state = (Coherent(mode=0, x=x, y=y) >> Coherent(mode=1, x=x, y=y)).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.tile(math.astensor(list(product(q, repeat=2))), (1, 2))
         ket = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
@@ -227,7 +227,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_quadrature_multivariable_dm(self):
         x, y = 1, 2
-        state = Coherent(modes=[0, 1], x=x, y=y).dm()
+        state = Coherent(mode=0, x=x, y=y).dm() >> Coherent(mode=1, x=x, y=y).dm()
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         quad = np.array([[qa, qb] for qa in q1 for qb in q2])
@@ -236,7 +236,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        state = (Coherent(modes=[0], x=x1, y=y1) + Coherent(modes=[0], x=x2, y=y2)).dm()
+        state = (Coherent(mode=0, x=x1, y=y1) + Coherent(mode=0, x=x2, y=y2)).dm()
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q, q + 1]))
         ket = coherent_state_quad(q + 1, x1, y1) + coherent_state_quad(q + 1, x2, y2)
@@ -247,15 +247,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3])
+        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
         dm = ket.dm()
 
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
+        k0 = Coherent(0, x=1, y=2)
+        k1 = Coherent(1, x=1, y=3)
+        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut(1)
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut(0)
         res_k01 = dm @ k01.dual @ k01.dual.adjoint
 
         assert math.allclose(dm.expectation(k0), res_k0)
@@ -263,12 +263,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
 
     def test_expectation_bargmann_dm(self):
-        dm0 = Coherent([0], x=1, y=2).dm()
-        dm1 = Coherent([1], x=1, y=3).dm()
-        dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
+        dm0 = Coherent(0, x=1, y=2).dm()
+        dm1 = Coherent(1, x=1, y=3).dm()
+        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 
-        res_dm0 = (dm01 @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (dm01 @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (dm01 @ dm0.dual) >> TraceOut(1)
+        res_dm1 = (dm01 @ dm1.dual) >> TraceOut(0)
         res_dm01 = dm01 >> dm01.dual
 
         assert math.allclose(dm01.expectation(dm0), res_dm0)
@@ -276,63 +276,63 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm01.expectation(dm01), res_dm01)
 
     def test_expectation_bargmann_u(self):
-        dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
-        u0 = Dgate([0], x=0.1)
-        u1 = Dgate([1], x=0.2)
-        u01 = Dgate([0, 1], x=[0.3, 0.4])
+        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        u0 = Dgate(0, x=0.1)
+        u1 = Dgate(1, x=0.2)
+        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
-        res_u0 = (dm @ u0) >> TraceOut([0, 1])
-        res_u1 = (dm @ u1) >> TraceOut([0, 1])
-        res_u01 = (dm @ u01) >> TraceOut([0, 1])
+        res_u0 = (dm @ u0) >> TraceOut((0, 1))
+        res_u1 = (dm @ u1) >> TraceOut((0, 1))
+        res_u01 = (dm @ u01) >> TraceOut((0, 1))
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
         assert math.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
         dm = ket.dm()
 
-        k0 = Coherent([0], x=1, y=2).to_fock(10)
-        k1 = Coherent([1], x=1, y=3).to_fock(10)
-        k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+        k0 = Coherent(0, x=1, y=2).to_fock(10)
+        k1 = Coherent(1, x=1, y=3).to_fock(10)
+        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
-        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut([1])
-        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut([0])
+        res_k0 = (dm @ k0.dual @ k0.dual.adjoint) >> TraceOut(1)
+        res_k1 = (dm @ k1.dual @ k1.dual.adjoint) >> TraceOut(0)
         res_k01 = dm @ k01.dual >> k01.dual.adjoint
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
         assert math.allclose(dm.expectation(k01), res_k01)
 
-        dm0 = Coherent([0], x=1, y=2).to_fock(10).dm()
-        dm1 = Coherent([1], x=1, y=3).to_fock(10).dm()
-        dm01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10).dm()
+        dm0 = Coherent(0, x=1, y=2).to_fock(10).dm()
+        dm1 = Coherent(1, x=1, y=3).to_fock(10).dm()
+        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10).dm()
 
-        res_dm0 = (dm @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (dm @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (dm @ dm0.dual) >> TraceOut(1)
+        res_dm1 = (dm @ dm1.dual) >> TraceOut(0)
         res_dm01 = dm >> dm01.dual
 
         assert math.allclose(dm.expectation(dm0), res_dm0)
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
 
-        u0 = Dgate([0], x=0.1).to_fock(10)
-        u1 = Dgate([1], x=0.2).to_fock(10)
-        u01 = Dgate([0, 1], x=[0.3, 0.4]).to_fock(10)
+        u0 = Dgate(0, x=0.1).to_fock(10)
+        u1 = Dgate(1, x=0.2).to_fock(10)
+        u01 = (Dgate(0, x=0.3) >> Dgate(1, x=0.4)).to_fock(10)
 
-        res_u0 = (dm @ u0) >> TraceOut([0, 1])
-        res_u1 = (dm @ u1) >> TraceOut([0, 1])
-        res_u01 = (dm @ u01) >> TraceOut([0, 1])
+        res_u0 = (dm @ u0) >> TraceOut((0, 1))
+        res_u1 = (dm @ u1) >> TraceOut((0, 1))
+        res_u01 = (dm @ u01) >> TraceOut((0, 1))
 
         assert math.allclose(dm.expectation(u0), res_u0)
         assert math.allclose(dm.expectation(u1), res_u1)
         assert math.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_error(self):
-        dm = Coherent([0, 1], x=1, y=[2, 3]).dm()
+        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 
-        op1 = Attenuator([0])
+        op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
@@ -340,15 +340,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
-        op3 = Dgate([2])
+        op3 = Dgate(2)
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
     def test_rshift(self):
-        ket = Coherent([0, 1], 1)
-        unitary = Dgate([0], 1)
+        ket = Coherent(0, 1) >> Coherent(1, 1)
+        unitary = Dgate(0, 1)
         u_component = CircuitComponent(unitary.representation, unitary.name)
-        channel = Attenuator([1], 1)
+        channel = Attenuator(1, 1)
         ch_component = CircuitComponent(channel.representation, channel.name)
 
         dm = ket >> channel
@@ -361,10 +361,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert isinstance(dm >> ch_component, CircuitComponent)
 
         # measurements
-        assert isinstance(dm >> Coherent([0], 1).dual, DM)
-        assert isinstance(dm >> Coherent([0], 1).dm().dual, DM)
+        assert isinstance(dm >> Coherent(0, 1).dual, DM)
+        assert isinstance(dm >> Coherent(0, 1).dm().dual, DM)
 
-    @pytest.mark.parametrize("modes", [[5], [1, 2]])
+    @pytest.mark.parametrize("modes", [(5,), (1, 2)])
     def test_random(self, modes):
         m = len(modes)
         dm = DM.random(modes)
@@ -378,17 +378,16 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
-    @pytest.mark.parametrize("modes", [[2, 9], [0, 1, 2, 3, 4]])
-    def test_is_positive(self, modes):
-        assert (Ket.random(modes) >> Attenuator(modes)).is_positive
-        A = np.zeros([2 * len(modes), 2 * len(modes)])
+    def test_is_positive(self):
+        assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
+        A = np.zeros((4, 4))
         A[0, -1] = 1.0
         rho = DM.from_bargmann(
-            modes, [A, [complex(0)] * 2 * len(modes), [complex(1)]]
+            (2, 9), [A, [complex(0)] * 4, [complex(1)]]
         )  # this test fails at the hermitian check
         assert not rho.is_positive
 
-    @pytest.mark.parametrize("modes", [range(10), [0, 1]])
+    @pytest.mark.parametrize("modes", [tuple(range(10)), (0, 1)])
     def test_is_physical(self, modes):
         rho = DM.random(modes)
         assert rho.is_physical
@@ -397,8 +396,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert Ket.random(modes).dm().is_physical
 
     def test_fock_array_ordering(self):
-        rho = Number([0], 0) + 1j * Number([0], 1)
-        rho = (Number([0], 0) + 1j * Number([0], 1)).dm()
+        rho = Number(0, 0) + 1j * Number(0, 1)
+        rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
         rho_fock = rho.fock_array(standard_order=True)
 
         assert math.allclose(

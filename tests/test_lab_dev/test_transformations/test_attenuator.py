@@ -28,39 +28,29 @@ class TestAttenuator:
     Tests for the ``Attenuator`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    transmissivity = [[0.1], 0.1, [0.1, 0.2]]
+    modes = [0, 1, 7]
+    transmissivity = [0.1, 0.2, 0.3]
 
     @pytest.mark.parametrize("modes,transmissivity", zip(modes, transmissivity))
     def test_init(self, modes, transmissivity):
         gate = Attenuator(modes, transmissivity)
 
         assert gate.name == "Att~"
-        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="transmissivity"):
-            Attenuator(modes=[0, 1], transmissivity=[0.2, 0.3, 0.4])
+        assert gate.modes == (modes,)
 
     def test_representation(self):
-        rep1 = Attenuator(modes=[0], transmissivity=0.1).ansatz
+        rep1 = Attenuator(mode=0, transmissivity=0.1).ansatz
         e = 0.31622777
         assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1.0])
 
     def test_trainable_parameters(self):
-        gate1 = Attenuator([0], 0.1)
-        gate2 = Attenuator(
-            [0], 0.1, transmissivity_trainable=True, transmissivity_bounds=(-0.2, 0.2)
-        )
+        gate1 = Attenuator(0, 0.1)
+        gate2 = Attenuator(0, 0.1, transmissivity_trainable=True, transmissivity_bounds=(-0.2, 0.2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.transmissivity.value = 0.3
 
         gate2.parameters.transmissivity.value = 0.2
         assert gate2.parameters.transmissivity.value == 0.2
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Attenuator(modes=[0], transmissivity=[0.1, 0.2]).ansatz

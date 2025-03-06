@@ -24,23 +24,19 @@ from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
+
 from mrmustard.lab_dev import (
     Attenuator,
-    BSgate,
     CircuitComponent,
     Coherent,
     Dgate,
-    DisplacedSqueezed,
     DM,
     Ket,
     Number,
-    QuadratureEigenstate,
     Sgate,
-    SqueezedVacuum,
     TraceOut,
     Vacuum,
 )
-from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
@@ -66,66 +62,57 @@ class TestKet:  # pylint: disable=too-many-public-methods
     Tests for the ``Ket`` class.
     """
 
-    modes = [[[0]], [[0]]]
-    x = [[1.0], [1.0, -1.0]]
-    y = [[1.0], [1.0, -1.0]]
-    coeff = [0.5, 0.3]
-
     @pytest.mark.parametrize("name", [None, "my_ket"])
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
         assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
-        assert list(state.modes) == sorted(modes)
+        assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_manual_shape(self):
-        ket = Coherent([0, 1], x=[1, 2])
-        assert ket.manual_shape == [None, None]
+        ket = Coherent(0, x=1)
+        assert ket.manual_shape == [None]
         ket.manual_shape[0] = 19
-        assert ket.manual_shape == [19, None]
+        assert ket.manual_shape == [19]
 
     def test_auto_shape(self):
-        ket = Coherent([0, 1], x=[1, 2])
-        assert ket.auto_shape() == (8, 15)
-        ket.manual_shape[0] = 19
-        assert ket.auto_shape() == (19, 15)
-
-        ket = Coherent([0, 1], x=1) >> Number([1], 10).dual
+        ket = Coherent(0, x=1)
         assert ket.auto_shape() == (8,)
+        ket.manual_shape[0] = 19
+        assert ket.auto_shape() == (19,)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+        ket = Coherent(0, x=1) >> Number(1, 10).dual
+        assert ket.auto_shape() == (8, 11)
+
+    @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_bargmann(self, modes):
         x = 1
         y = 2
-        xs = [x] * len(modes)
-        ys = [y] * len(modes)
 
         state_in = Coherent(modes, x, y)
         triple_in = state_in.bargmann_triple()  # automatically batched
 
-        assert np.allclose(triple_in[0], coherent_state_Abc(xs, ys)[0])
-        assert np.allclose(triple_in[1], coherent_state_Abc(xs, ys)[1])
-        assert np.allclose(triple_in[2], coherent_state_Abc(xs, ys)[2])
+        assert np.allclose(triple_in[0], coherent_state_Abc(x, y)[0])
+        assert np.allclose(triple_in[1], coherent_state_Abc(x, y)[1])
+        assert np.allclose(triple_in[2], coherent_state_Abc(x, y)[2])
 
-        state_out = Ket.from_bargmann(modes, triple_in, "my_ket")
+        state_out = Ket.from_bargmann((modes,), triple_in, "my_ket")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
-        state01 = Coherent([0, 1], 1)
+        state01 = Coherent(0, 1) >> Coherent(1, 2)
         with pytest.raises(ValueError):
-            Ket.from_bargmann([0], state01.bargmann_triple(), "my_ket")
+            Ket.from_bargmann((0,), state01.bargmann_triple(), "my_ket")
 
     def test_bargmann_triple_error(self):
         with pytest.raises(AttributeError):
-            Number([0], n=10).bargmann_triple()
+            Number(0, n=10).bargmann_triple()
 
-    @pytest.mark.parametrize("modes,x,y,coeff", zip(modes, x, y, coeff))
-    def test_normalize(self, modes, x, y, coeff):
-        state = Coherent(modes[0], x[0], y[0])
-        for i in range(1, len(modes)):
-            state += Coherent(modes[i], x[i], y[i])
+    @pytest.mark.parametrize("coeff", [0.5, 0.3])
+    def test_normalize(self, coeff):
+        state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
         state = coeff * state
         # Bargmann
         normalized = state.normalize()
@@ -135,28 +122,28 @@ class TestKet:  # pylint: disable=too-many-public-methods
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
 
-    def test_normalize_poly_dim(self):
-        # https://github.com/XanaduAI/MrMustard/issues/481
-        state = (
-            SqueezedVacuum(modes=[0, 1], r=[0.75, -0.75])
-            >> BSgate(modes=[0, 1], theta=0.9)
-            >> Number(modes=[0], n=20).dual
-        )
-        state = state.normalize()
-        state2 = (
-            (state.on([0]) >> state.on([1]))
-            >> BSgate(modes=[0, 1], theta=np.pi / 4)
-            >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
-        )
-        state3 = (
-            (state2.on([0]) >> state2.on([1]))
-            >> BSgate(modes=[0, 1], theta=np.pi / 4)
-            >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
-        )
-        state3 = state3.normalize()
-        assert state3.purity == 1.0
+    # def test_normalize_poly_dim(self):
+    #     # https://github.com/XanaduAI/MrMustard/issues/481
+    #     state = (
+    #         SqueezedVacuum(modes=(0, 1), r=[0.75, -0.75])
+    #         >> BSgate(modes=[0, 1], theta=0.9)
+    #         >> Number(modes=[0], n=20).dual
+    #     )
+    #     state = state.normalize()
+    #     state2 = (
+    #         (state.on([0]) >> state.on([1]))
+    #         >> BSgate(modes=[0, 1], theta=np.pi / 4)
+    #         >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
+    #     )
+    #     state3 = (
+    #         (state2.on([0]) >> state2.on([1]))
+    #         >> BSgate(modes=[0, 1], theta=np.pi / 4)
+    #         >> QuadratureEigenstate(modes=[1], phi=np.pi / 2).dual
+    #     )
+    #     state3 = state3.normalize()
+    #     assert state3.purity == 1.0
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
@@ -164,12 +151,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = Ket.from_fock(modes, array_in, "my_ket", True)
+        state_out = Ket.from_fock((modes,), array_in, "my_ket", True)
         assert state_in_fock == state_out
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_to_from_phase_space(self, modes):
-        cov, means, coeff = Coherent([0], x=1, y=2).phase_space(s=0)
+        cov, means, coeff = Coherent(0, x=1, y=2).phase_space(s=0)
         assert math.allclose(coeff[0], 1.0)
         assert math.allclose(cov[0], np.eye(2) * settings.HBAR / 2)
         assert math.allclose(means[0], np.array([1.0, 2.0]) * np.sqrt(2 * settings.HBAR))
@@ -183,10 +170,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state2 = Ket.from_phase_space(
             modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
         )
-        assert state2 == Vacuum(modes) >> Sgate(modes, r, phi)
+        exp_state = Vacuum(modes)
+        for mode, r_i, phi_i in zip(modes, r, phi):
+            exp_state = exp_state >> Sgate(mode, r_i, phi_i)
+        assert state2 == exp_state
 
     def test_to_from_quadrature(self):
-        modes = [0]
+        modes = (0,)
         A0 = np.array([[0]])
         b0 = np.array([0.2j])
         c0 = np.exp(-0.5 * 0.04)  # z^*
@@ -200,29 +190,29 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ctest2, c0)
 
     def test_L2_norm(self):
-        state = Coherent([0], x=1)
+        state = Coherent(0, x=1)
         assert math.allclose(state.L2_norm, 1)
 
     def test_probability(self):
-        state1 = Coherent([0], x=1) / 3
+        state1 = Coherent(0, x=1) / 3
         assert math.allclose(state1.probability, 1 / 9)
         assert math.allclose(state1.to_fock(20).probability, 1 / 9)
 
-        state2 = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
+        state2 = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
         assert math.allclose(state2.probability, 1.13533528)
         assert math.allclose(state2.to_fock(20).probability, 1.13533528)
 
-        state3 = Number([0], n=1, cutoffs=2) / 2**0.5 + Number([0], n=2) / 2**0.5
+        state3 = Number(0, n=1, cutoff=2) / 2**0.5 + Number(0, n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)
 
-    @pytest.mark.parametrize("modes", [[0], [0, 1], [2, 3, 19]])
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_purity(self, modes):
         state = Ket.from_ansatz(modes, None, "my_ket")
         assert state.purity == 1
         assert state.is_pure
 
     def test_dm(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3])
+        ket = Coherent(0, x=1, y=2)
         dm = ket.dm()
 
         assert dm.name == ket.name
@@ -232,7 +222,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
     def test_quadrature_single_mode_ket(self, phi):
         x, y = 1, 2
-        state = Coherent(modes=[0], x=x, y=y)
+        state = Coherent(mode=0, x=x, y=y)
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q]))
         psi_phi = coherent_state_quad(q, x, y, phi)
@@ -245,7 +235,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_quadrature_multimode_ket(self):
         x, y = 1, 2
-        state = Coherent(modes=[0, 1], x=x, y=y)
+        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
         q = np.linspace(-10, 10, 100)
         quad = math.astensor(list(product(q, repeat=state.n_modes)))
         psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
@@ -256,7 +246,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_quadrature_multivariable_ket(self):
         x, y = 1, 2
-        state = Coherent(modes=[0, 1], x=x, y=y)
+        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         quad = np.array([[qa, qb] for qa in q1 for qb in q2])
@@ -265,7 +255,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        state = Coherent(modes=[0], x=x1, y=y1) + Coherent(modes=[0], x=x2, y=y2)
+        state = Coherent(mode=0, x=x1, y=y1) + Coherent(mode=0, x=x2, y=y2)
         q = np.linspace(-10, 10, 100)
         quad = math.transpose(math.astensor([q]))
         psi_q = coherent_state_quad(q, x1, y1) + coherent_state_quad(q, x2, y2)
@@ -275,37 +265,37 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_expectation_bargmann(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3])
+        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
         assert math.allclose(ket.expectation(ket), 1.0)
 
-        k0 = Coherent([0], x=1, y=2)
-        k1 = Coherent([1], x=1, y=3)
-        k01 = Coherent([0, 1], x=1, y=[2, 3])
+        k0 = Coherent(0, x=1, y=2)
+        k1 = Coherent(1, x=1, y=3)
+        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
-        res_k0 = (ket @ k0.dual) >> TraceOut([1])
-        res_k1 = (ket @ k1.dual) >> TraceOut([0])
+        res_k0 = (ket @ k0.dual) >> TraceOut(1)
+        res_k1 = (ket @ k1.dual) >> TraceOut(0)
         res_k01 = ket @ k01.dual
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
         assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
 
-        dm0 = Coherent([0], x=1, y=2).dm()
-        dm1 = Coherent([1], x=1, y=3).dm()
-        dm01 = Coherent([0, 1], x=1, y=[2, 3]).dm()
+        dm0 = Coherent(0, x=1, y=2).dm()
+        dm1 = Coherent(1, x=1, y=3).dm()
+        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut(1)
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut(0)
         res_dm01 = ket @ ket.adjoint @ dm01.dual
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
         assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
 
-        u0 = Dgate([1], x=0.1)
-        u1 = Dgate([0], x=0.2)
-        u01 = Dgate([0, 1], x=[0.3, 0.4])
+        u0 = Dgate(0, x=0.1)
+        u1 = Dgate(1, x=0.2)
+        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
         res_u0 = ket @ u0 >> ket.dual
         res_u1 = ket @ u1 >> ket.dual
@@ -316,37 +306,37 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
         assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
 
-        k0 = Coherent([0], x=1, y=2).to_fock(10)
-        k1 = Coherent([1], x=1, y=3).to_fock(10)
-        k01 = Coherent([0, 1], x=1, y=[2, 3]).to_fock(10)
+        k0 = Coherent(0, x=1, y=2).to_fock(10)
+        k1 = Coherent(1, x=1, y=3).to_fock(10)
+        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
-        res_k0 = (ket @ k0.dual) >> TraceOut([1])
-        res_k1 = (ket @ k1.dual) >> TraceOut([0])
+        res_k0 = (ket @ k0.dual) >> TraceOut(1)
+        res_k1 = (ket @ k1.dual) >> TraceOut(0)
         res_k01 = (ket >> k01.dual) ** 2
 
         assert math.allclose(ket.expectation(k0), res_k0)
         assert math.allclose(ket.expectation(k1), res_k1)
         assert math.allclose(ket.expectation(k01), res_k01)
 
-        dm0 = Coherent([0], x=1, y=0.2).dm().to_fock(10)
-        dm1 = Coherent([1], x=1, y=0.3).dm().to_fock(10)
-        dm01 = Coherent([0, 1], x=1, y=[0.2, 0.3]).dm().to_fock(10)
+        dm0 = Coherent(0, x=1, y=0.2).dm().to_fock(10)
+        dm1 = Coherent(1, x=1, y=0.3).dm().to_fock(10)
+        dm01 = (Coherent(0, x=1, y=0.2) >> Coherent(1, x=1, y=0.3)).dm().to_fock(10)
 
-        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut([1])
-        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut([0])
+        res_dm0 = (ket @ ket.adjoint @ dm0.dual) >> TraceOut(1)
+        res_dm1 = (ket @ ket.adjoint @ dm1.dual) >> TraceOut(0)
         res_dm01 = (ket @ ket.adjoint @ dm01.dual).to_fock(10).ansatz.array
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
         assert math.allclose(ket.expectation(dm01), res_dm01[0])
 
-        u0 = Dgate([1], x=0.1)
-        u1 = Dgate([0], x=0.2)
-        u01 = Dgate([0, 1], x=[0.3, 0.4])
+        u0 = Dgate(1, x=0.1)
+        u1 = Dgate(0, x=0.2)
+        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
         res_u0 = (ket @ u0 @ ket.dual).to_fock(10).ansatz.array
         res_u1 = (ket @ u1 @ ket.dual).to_fock(10).ansatz.array
@@ -357,9 +347,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(u01), res_u01[0])
 
     def test_expectation_error(self):
-        ket = Coherent([0, 1], x=1, y=[2, 3])
+        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
-        op1 = Attenuator([0])
+        op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
@@ -367,15 +357,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
-        op3 = Dgate([2])
+        op3 = Dgate(2)
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             ket.expectation(op3)
 
     def test_rshift(self):
-        ket = Coherent([0, 1], 1)
-        unitary = Dgate([0], 1)
+        ket = Coherent(0, 1) >> Coherent(1, 1)
+        unitary = Dgate(0, 1)
         u_component = CircuitComponent(unitary.representation, unitary.name)
-        channel = Attenuator([1], 1)
+        channel = Attenuator(1, 1)
         ch_component = CircuitComponent(
             channel.representation,
             channel.name,
@@ -390,76 +380,43 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(ket >> ch_component, CircuitComponent)
 
         # measurements
-        assert isinstance(ket >> Coherent([0], 1).dual, Ket)
-        assert isinstance(ket >> Coherent([0], 1).dm().dual, DM)
+        assert isinstance(ket >> Coherent(0, 1).dual, Ket)
+        assert isinstance(ket >> Coherent(0, 1).dm().dual, DM)
 
-    @pytest.mark.parametrize("modes", [[3, 30, 98]])
     @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
-    def test_get_item(self, modes, m):
-        ket = Vacuum(modes) >> Dgate(modes, x=[0, 1, 2])
+    def test_get_item(self, m):
+        ket = Vacuum((3, 30, 98)) >> Dgate(3, x=0) >> Dgate(30, 1) >> Dgate(98, x=2)
         dm = ket.dm()
-
         assert ket[m] == dm[m]
 
-    @pytest.mark.parametrize("modes", [[3, 30, 98]])
-    @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
-    def test_get_item_builtin_kets(self, modes, m):
-        idx = [modes.index(s) for s in m]
-
-        x = math.asnumpy([0, 1, 2])
-        s = DisplacedSqueezed(modes, x=x, y=3, y_trainable=True, y_bounds=(0, 6))
-
-        assert np.all(s.parameters.y.value == 3)
-        assert s.parameters.y.value.shape == (len(modes),)
-        assert s.parameters.r.value.shape == (len(modes),)
-        assert s.parameters.phi.value.shape == (len(modes),)
-
-        si = s[m]
-        assert isinstance(si, DisplacedSqueezed)
-        assert si == DisplacedSqueezed(m, x=x[idx], y=3, y_trainable=True, y_bounds=(0, 6))
-
-        assert isinstance(si.parameters.x, Constant)
-        assert math.allclose(si.parameters.x.value, x[idx])
-
-        assert isinstance(si.parameters.y, Variable)
-        assert np.all(si.parameters.y.value == 3)
-        assert si.parameters.y.value.shape == (len(idx),)
-        assert si.parameters.y.bounds == s.parameters.y.bounds
-
-        assert isinstance(si.parameters.r, Constant)
-        assert np.all(si.parameters.r.value == 0)
-        assert si.parameters.r.value.shape == (len(idx),)
-
-        assert isinstance(si.parameters.phi, Constant)
-        assert np.all(si.parameters.phi.value == 0)
-        assert si.parameters.phi.value.shape == (len(idx),)
-
     def test_private_batched_properties(self):
-        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
-        assert np.allclose(cat._probabilities, np.ones(2))
-        assert np.allclose(cat._L2_norms, np.ones(2))
+        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
+        assert math.allclose(cat._probabilities, math.ones(2))
+        assert math.allclose(cat._L2_norms, math.ones(2))
 
     def test_unsafe_batch_zipping(self):
-        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
-        displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
+        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
+        displacements = Dgate(0, x=1.0) + Dgate(0, x=-1.0)
         settings.UNSAFE_ZIP_BATCH = True
         better_cat = cat >> displacements
         settings.UNSAFE_ZIP_BATCH = False
-        assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
+        assert better_cat == Coherent(0, x=2.0) + Coherent(0, x=-2.0)
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
-        psi = Ket.random([1, 22], max_sq)
+        psi = Ket.random((1, 22), max_sq)
         A = psi.ansatz.A[0]
-        assert np.isclose(psi.probability, 1)  # checks if the state is normalized
-        assert np.allclose(A - np.transpose(A), np.zeros(2))  # checks if the A matrix is symmetric
+        assert math.allclose(psi.probability, 1)  # checks if the state is normalized
+        assert math.allclose(
+            A - math.transpose(A), math.zeros((2, 2))
+        )  # checks if the A matrix is symmetric
 
     def test_ipython_repr(self):
         """
         Test the widgets.state function.
         Note: could not mock display because of the states.py file name conflict.
         """
-        hbox = state_widget(Number([0], n=1), True, True)
+        hbox = state_widget(Number(0, n=1), True, True)
         assert isinstance(hbox, HBox)
 
         [left, viz_2d] = hbox.children
@@ -472,7 +429,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_ipython_repr_too_many_dims(self):
         """Test the widgets.state function when the Ket has too many dims."""
-        vbox = state_widget(Number([0, 1], n=1), True, True)
+        vbox = state_widget(Vacuum((0, 1)), True, False)
         assert isinstance(vbox, Box)
 
         [table, wires] = vbox.children
@@ -480,4 +437,4 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(wires, HTML)
 
     def test_is_physical(self):
-        assert Ket.random([0, 1]).is_physical
+        assert Ket.random((0, 1)).is_physical

@@ -173,7 +173,7 @@ class State(CircuitComponent):
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.ket import Ket
 
-            >>> modes = [0, 1]
+            >>> modes = (0, 1)
             >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
 
             >>> coh = Ket.from_bargmann(modes, triple)
@@ -213,11 +213,10 @@ class State(CircuitComponent):
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev import Coherent, Ket
 
-            >>> modes = [0]
-            >>> array = Coherent(modes, x=0.1).to_fock().ansatz.array
-            >>> coh = Ket.from_fock(modes, array, batched=True)
+            >>> array = Coherent(mode=0, x=0.1).to_fock().ansatz.array
+            >>> coh = Ket.from_fock((0,), array, batched=True)
 
-            >>> assert coh.modes == modes
+            >>> assert coh.modes == (0,)
             >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
             >>> assert isinstance(coh, Ket)
 
@@ -362,7 +361,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.lab_dev import Coherent
 
-            >>> state = Coherent([0], x=1) / 2**0.5 + Coherent([0], x=-1) / 2**0.5
+            >>> state = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
             >>> # state.visualize_2d()
 
         Args:

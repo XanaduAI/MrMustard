@@ -31,24 +31,24 @@ class TestMZgate:
 
     def test_init(self):
         "Tests the initialization of an MZgate object"
-        mz = MZgate([0, 1], 0.1, 0.2, internal=True)
-        assert mz.modes == [0, 1]
+        mz = MZgate((0, 1), 0.1, 0.2, internal=True)
+        assert mz.modes == (0, 1)
         assert mz.parameters.phi_a.value == 0.1
         assert mz.parameters.phi_b.value == 0.2
         assert mz.name == "MZgate"
 
-        mz = MZgate([1, 2])
+        mz = MZgate((1, 2))
         assert mz.parameters.phi_a.value == 0
         assert mz.parameters.phi_b.value == 0
 
     @pytest.mark.parametrize("phi_a", [0, np.random.random(), np.pi / 2])
     def test_application(self, phi_a):
         "Tests the correctness of the application of an MZgate."
-        rho = Vacuum([0]) >> Coherent([1], 1) >> MZgate([0, 1], phi_a, 0)
-        assert rho[0] == Coherent([0], x=0, y=1).dm()
+        rho = Vacuum(0) >> Coherent(1, 1) >> MZgate((0, 1), phi_a, 0)
+        assert rho[0] == Coherent(0, x=0, y=1).dm()
 
-        rho = Coherent([0], 1) >> Vacuum([1]) >> MZgate([0, 1], phi_a, phi_a, internal=True)
+        rho = Coherent(0, 1) >> Vacuum(1) >> MZgate((0, 1), phi_a, phi_a, internal=True)
         assert (
             rho[1].ansatz
-            == Coherent([1], x=-math.sin(complex(phi_a)), y=math.cos(complex(phi_a))).dm().ansatz
+            == Coherent(1, x=-math.sin(complex(phi_a)), y=math.cos(complex(phi_a))).dm().ansatz
         )

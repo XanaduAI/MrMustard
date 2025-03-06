@@ -18,7 +18,7 @@ The class repesenting a vacuum state.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Collection
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
@@ -35,11 +35,11 @@ class Vacuum(Ket):
 
         >>> from mrmustard.lab_dev import Vacuum
 
-        >>> state = Vacuum([1, 2])
-        >>> assert state.modes == [1, 2]
+        >>> state = Vacuum((1, 2))
+        >>> assert state.modes == (1, 2)
 
     Args:
-        modes: A list of modes.
+        modes: A tuple of modes.
 
     .. details::
 
@@ -58,9 +58,10 @@ class Vacuum(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
     ) -> None:
         super().__init__(name="Vac")
+        modes = (modes,) if isinstance(modes, int) else modes
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
@@ -68,3 +69,9 @@ class Vacuum(Ket):
 
         for i in range(len(modes)):
             self.manual_shape[i] = 1
+
+    def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        return Vacuum(idx)

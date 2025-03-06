@@ -27,25 +27,25 @@ class TestGgate:
 
     def test_init(self):
         "Tests the init of Ggate"
-        Eye = Ggate(modes=[0], symplectic=math.eye(2))
+        Eye = Ggate(modes=0, symplectic=math.eye(2))
         assert isinstance(Eye, Ggate)
         assert Eye.name == "Ggate"
         assert math.allclose(Eye.symplectic, math.eye(2))
 
     def test_ggate_is_unitary_1mode(self):
         """Test that the Ggate applied to its dual is the identity."""
-        G = Ggate(modes=[0], symplectic=math.random_symplectic(1))
-        assert G >> G.dual == Identity([0])
-        assert G.dual >> G == Identity([0])
+        G = Ggate(modes=0, symplectic=math.random_symplectic(1))
+        assert G >> G.dual == Identity(0)
+        assert G.dual >> G == Identity(0)
 
     def test_ggate_is_unitary_2mode(self):
         """Test that the Ggate applied to its dual is the identity."""
-        G = Ggate(modes=[0, 1], symplectic=math.random_symplectic(2))
-        assert G >> G.dual == Identity([0, 1])
-        assert G.dual >> G == Identity([0, 1])
+        G = Ggate(modes=(0, 1), symplectic=math.random_symplectic(2))
+        assert G >> G.dual == Identity((0, 1))
+        assert G.dual >> G == Identity((0, 1))
 
     def test_ggate_is_unitary_3mode(self):
         """Test that the Ggate applied to its dual is the identity."""
-        G = Ggate(modes=[0, 1, 2], symplectic=math.random_symplectic(3))
-        assert G >> G.dual == Identity([0, 1, 2])
-        assert G.dual >> G == Identity([0, 1, 2])
+        G = Ggate(modes=(0, 1, 2), symplectic=math.random_symplectic(3))
+        assert G >> G.dual == Identity((0, 1, 2))
+        assert G.dual >> G == Identity((0, 1, 2))
