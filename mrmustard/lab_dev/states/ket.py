@@ -189,7 +189,11 @@ class Ket(State):
             except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        ansatz._A_vectorized[0],
+                        ansatz._b_vectorized[0],
+                        ansatz._c_vectorized[0],
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),

@@ -150,18 +150,19 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Batched transformations are not supported.")
 
         # compute the inverse
-        A, b, _ = self.dual.ansatz.conj.triple  # apply X(.)X
+        A = math.conj(self.ansatz._A_vectorized[0])
+        b = math.conj(self.ansatz._b_vectorized[0])
         almost_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
+                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 + 0j),
                 self.wires.copy(new_ids=True),
             )
         )
         almost_identity = self.contract(almost_inverse)
-        invert_this_c = almost_identity.ansatz.c
+        invert_this_c = almost_identity.ansatz._c_vectorized[0]
         actual_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
+                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 / invert_this_c),
                 self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",

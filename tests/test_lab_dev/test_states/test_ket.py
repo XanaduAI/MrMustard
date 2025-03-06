@@ -126,11 +126,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock_array(5, batched=True)
+        array_in = state_in.fock_array(5)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = Ket.from_fock((modes,), array_in, "my_ket", True)
+        state_out = Ket.from_fock((modes,), array_in, "my_ket")
         assert state_in_fock == state_out
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
@@ -162,7 +162,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         state0 = Ket.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature_triple()
-        state1 = Ket.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        state1 = Ket.from_quadrature(modes, (Atest, btest, ctest))
         Atest2, btest2, ctest2 = state1.bargmann_triple()
         assert math.allclose(Atest2, A0)
         assert math.allclose(btest2, b0)

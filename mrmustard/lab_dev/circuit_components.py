@@ -159,7 +159,7 @@ class CircuitComponent:
         in the `.wires` attribute.
         """
         try:  # to read it from array ansatz
-            return list(self.ansatz.array.shape[1:])
+            return list(self.ansatz.array.shape[self.ansatz.batch_dims :])
         except AttributeError:  # bargmann
             return [None] * len(self.wires)
 
@@ -413,7 +413,7 @@ class CircuitComponent:
         """
         return self._representation.bargmann_triple(batched)
 
-    def fock_array(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -427,7 +427,7 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        return self._representation.fock_array(shape or self.auto_shape(), batched)
+        return self._representation.fock_array(shape or self.auto_shape())
 
     def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""

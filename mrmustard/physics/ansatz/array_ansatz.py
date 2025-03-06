@@ -56,11 +56,18 @@ class ArrayAnsatz(Ansatz):
     correct batch shape if ``batched`` is set to ``False``.
     """
 
-    def __init__(self, array: Batch[Tensor], batched=False):
+    def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
         super().__init__()
-        self._array = array if batched else math.astensor([array])
-        self._backend_array = False
+        self.batch_dims = batch_dims
+        self._batch_shape = array.shape[:batch_dims] if array is not None else None
+        self._array = array
         self._original_abc_data = None
+
+    @property
+    def batch_shape(self) -> tuple[int, ...] | None:
+        if self._batch_shape is None:
+            self._batch_shape = self.array.shape[: self.batch_dims]
+        return self._batch_shape
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -68,23 +75,42 @@ class ArrayAnsatz(Ansatz):
         The array of this ansatz.
         """
         self._generate_ansatz()
-        if not self._backend_array:
-            self._array = math.astensor(self._array)
-            self._backend_array = True
         return self._array
 
     @array.setter
     def array(self, value):
+        if not math.from_backend(value):
+            value = math.astensor(value)
+        self._batch_shape = value.shape[: self.batch_dims]
         self._array = value
-        self._backend_array = False
+
+    def _generate_ansatz(self):
+        r"""
+        Computes and sets the array given a function and its kwargs.
+        """
+        if self._should_regenerate():
+            params = {}
+            for name, param in self._kwargs.items():
+                try:
+                    params[name] = param.value
+                except AttributeError:
+                    params[name] = param
+            self.array = self._fn(**params)
+
+    def _should_regenerate(self):
+        r"""
+        Determines if the ansatz needs to be regenerated based on its current state
+        and parameter types.
+        """
+        return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
 
     @property
     def batch_size(self):
-        return self.array.shape[0]
+        return int(np.prod(self.batch_shape))
 
     @property
     def conj(self):
-        return ArrayAnsatz(math.conj(self.array), batched=True)
+        return ArrayAnsatz(math.conj(self.array), self.batch_dims)
 
     @property
     def data(self) -> Batch[Tensor]:
@@ -92,16 +118,15 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def num_vars(self) -> int:
-        return len(self.array.shape) - 1
+        return len(self.array.shape) - self.batch_dims
 
     @property
     def scalar(self) -> Scalar:
         r"""
         The scalar part of the ansatz.
         I.e. the vacuum component of the Fock array, whatever it may be.
-        Given that the first axis of the array is the batch axis, this is the first element of the array.
         """
-        return self.array[(slice(None),) + (0,) * self.num_vars]
+        return self.array[(slice(None),) * self.batch_dims + (0,) * self.num_vars]
 
     @property
     def triple(self) -> tuple:
@@ -114,11 +139,11 @@ class ArrayAnsatz(Ansatz):
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
-        return cls(data["array"], batched=True)
+        return cls(data["array"], batch_dims=data["batch_dims"])
 
     @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> ArrayAnsatz:
-        ret = cls(None, True)
+    def from_function(cls, fn: Callable, batch_dims: int = 0, **kwargs: Any) -> ArrayAnsatz:
+        ret = cls(None, batch_dims=batch_dims)
         ret._fn = fn
         ret._kwargs = kwargs
         return ret
@@ -126,10 +151,28 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
+        batch_str: str = "",
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
-        mode: Literal["zip", "kron"] = "kron",
     ) -> ArrayAnsatz:
+        r"""
+        Contracts two ansatze across the specified variables and batch dimensions.
+        Variables are indexed by integers, while for batch dimensions the string has the same
+        syntax as in ``np.einsum``.
+
+        Args:
+            other: The other ArrayAnsatz to contract with.
+            batch_str: The batch dimensions to contract over with the same syntax as in ``np.einsum``.
+                If not indicated, the batch dimensions are taken in outer product.
+            idx1: The variables of the first ansatz to contract.
+            idx2: The variables of the second ansatz to contract.
+
+        Returns:
+            The contracted ansatz.
+        """
+        if batch_str == "":
+            batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
+
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
@@ -142,47 +185,30 @@ class ArrayAnsatz(Ansatz):
                     f"Index {j} out of bounds for representation with {other.num_vars} variables."
                 )
 
-        # the number of batches in self and other
-        n_batches_s = self.array.shape[0]
-        n_batches_o = other.array.shape[0]
-        if mode == "zip" and n_batches_s != n_batches_o:
-            raise ValueError(
-                f"Cannot zip arrays with different batch sizes: {n_batches_s} and {n_batches_o}."
-            )
+        # Parse batch string
+        input_str, output_str = batch_str.split("->")
+        input_parts = input_str.split(",")
+        if len(input_parts) != 2:
+            raise ValueError("Batch string must have exactly two input parts")
 
-        # the shapes each batch in self and other
-        shape_s = self.array.shape[1:]
-        shape_o = other.array.shape[1:]
+        # Start variable indices after batch indices
+        start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
+        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(self.num_vars)]
+        var_idx2 = [chr(i + ord("a") + start_idx + self.num_vars) for i in range(other.num_vars)]
 
-        new_shape_s = list(shape_s)
-        new_shape_o = list(shape_o)
-        for s, o in zip(idx1, idx2):
-            new_shape_s[s] = min(shape_s[s], shape_o[o])
-            new_shape_o[o] = min(shape_s[s], shape_o[o])
+        # Replace contracted indices in second array with corresponding indices from first
+        for i, j in zip(idx1, idx2):
+            var_idx2[j] = var_idx1[i]
 
-        reduced_s = self.reduce(new_shape_s)
-        reduced_o = other.reduce(new_shape_o)
+        # Combine batch and variable indices for einsum
+        einsum_str = (
+            f"{input_parts[0]}{''.join(var_idx1)},"  # first array indices
+            f"{input_parts[1]}{''.join(var_idx2)}->"  # second array indices
+            f"{output_str}{''.join(sorted(set(var_idx1 + var_idx2)))}"  # output indices
+        )
 
-        axes = [list(idx1), list(idx2)]
-
-        # Choose the contraction mode based on 'mode'
-        if mode == "zip":
-            # Contract corresponding batches, preserving the batch dimension count.
-            batched_array = [
-                math.tensordot(reduced_s.array[i], reduced_o.array[i], axes)
-                for i in range(n_batches_s)
-            ]
-        elif mode == "kron":
-            # Perform the outer product over the batch dimensions.
-            batched_array = [
-                math.tensordot(reduced_s.array[i], reduced_o.array[j], axes)
-                for i in range(n_batches_s)
-                for j in range(n_batches_o)
-            ]
-        else:
-            raise ValueError(f"Invalid mode: {mode}. Supported modes are 'zip' and 'kron'.")
-
-        return ArrayAnsatz(batched_array, batched=True)
+        result = math.einsum(einsum_str, self.array, other.array)
+        return ArrayAnsatz(result, batch_dims=len(output_str))
 
     def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -210,7 +236,7 @@ class ArrayAnsatz(Ansatz):
         Args:
             shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
-        if shape == self.array.shape[1:]:
+        if shape == self.batch_shape:
             return self
         length = self.num_vars
         shape = (shape,) * length if isinstance(shape, int) else shape
@@ -219,21 +245,22 @@ class ArrayAnsatz(Ansatz):
             msg += f"given shape has length {len(shape)}."
             raise ValueError(msg)
 
-        if any(s > t for s, t in zip(shape, self.array.shape[1:])):
+        if any(s > t for s, t in zip(shape, self.batch_shape)):
             warn(
                 "Warning: the fock array is being padded with zeros. If possible, slice the arrays this one will contract with instead."
             )
             padded = math.pad(
                 self.array,
-                [(0, 0)] + [(0, s - t) for s, t in zip(shape, self.array.shape[1:])],
+                [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.batch_shape)],
             )
             return ArrayAnsatz(padded, batched=True)
 
-        ret = self.array[(slice(0, None),) + tuple(slice(0, s) for s in shape)]
-        return ArrayAnsatz(array=ret, batched=True)
+        ret = self.array[(slice(0, None),) * self.batch_dims + tuple(slice(0, s) for s in shape)]
+        return ArrayAnsatz(ret, batched=True)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
-        return ArrayAnsatz(math.transpose(self.array, [0] + [i + 1 for i in order]), batched=True)
+        order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
+        return ArrayAnsatz(math.transpose(self.array, order), self.batch_dims)
 
     def sum_batch(self) -> ArrayAnsatz:
         r"""
@@ -242,7 +269,7 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=0), 0), batched=True)
+        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=0), 0), self.batch_dims)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data}
@@ -251,32 +278,20 @@ class ArrayAnsatz(Ansatz):
         if len(idx_z) != len(idx_zconj) or not set(idx_z).isdisjoint(idx_zconj):
             raise ValueError("The idxs must be of equal length and disjoint.")
         order = (
-            [0]
-            + [i + 1 for i in range(len(self.array.shape) - 1) if i not in idx_z + idx_zconj]
-            + [i + 1 for i in idx_z]
-            + [i + 1 for i in idx_zconj]
+            list(range(self.batch_dims))
+            + [
+                i + self.batch_dims
+                for i in range(len(self.array.shape) - 1)
+                if i not in idx_z + idx_zconj
+            ]
+            + [i + self.batch_dims for i in idx_z]
+            + [i + self.batch_dims for i in idx_zconj]
         )
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idx_zconj) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
-        return ArrayAnsatz([trace] if trace.shape == () else trace, batched=True)
-
-    def _generate_ansatz(self):
-        names = list(self._kwargs.keys())
-        vars = list(self._kwargs.values())
-
-        params = {}
-        param_types = []
-        for name, param in zip(names, vars):
-            try:
-                params[name] = param.value
-                param_types.append(type(param))
-            except AttributeError:  # pragma: no cover
-                params[name] = param
-
-        if self._array is None or Variable in param_types:
-            self.array = [self._fn(**params)]
+        return ArrayAnsatz(trace, self.batch_dims)
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
@@ -351,11 +366,11 @@ class ArrayAnsatz(Ansatz):
                     new_array = [
                         a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
                     ]
-                return ArrayAnsatz(array=new_array, batched=True)
+                return ArrayAnsatz(new_array, self.batch_dims)
             except Exception as e:
                 raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
         else:
-            ret = ArrayAnsatz(array=self.array / other, batched=True)
+            ret = ArrayAnsatz(self.array / other, self.batch_dims)
             ret._original_abc_data = (
                 tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
                 if self._original_abc_data is not None

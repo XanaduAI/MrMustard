@@ -96,37 +96,29 @@ class Representation:
         r"""
         The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right).
 
-        If ``batched`` is ``False`` (default), it removes the batch dimension if it is of size 1.
-
-        Args:
-            batched: Whether to return the triple batched.
+        If batched is ``True``, the elements of the triple are ensured to have at least one batch dimension.
         """
         try:
             A, b, c = self.ansatz.triple
-            if not batched:
-                return (
-                    math.atleast_2d(math.squeeze(A)),
-                    math.atleast_1d(math.squeeze(b)),
-                    math.squeeze(c),
-                )
-            else:
-                return A, b, c
+            if batched:
+                A = math.atleast_3d(A)
+                b = math.atleast_2d(b)
+                c = math.atleast_1d(c)
+            return A, b, c
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock_array(self, shape: int | Sequence[int], batched=False) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
 
         Args:
-            shape: The shape of the returned array. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned array is batched or not. If ``False`` (default)
-                it will sum over the batch dimension.
+            shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
+            given as an ``int``, it is broadcast to all the dimensions. If not given, it is estimated.
         Returns:
             array: The Fock array of this representation.
         """
@@ -138,38 +130,21 @@ class Representation:
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         shape = tuple(shape)
+        if len(shape) != num_vars:
+            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
-            As, bs, cs = self.bargmann_triple(batched=True)
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
-            if self.ansatz.num_derived_vars == 0:
-                arrays = [
-                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
-                ]
-            else:
-                arrays = []
-                for A, b, c in zip(As, bs, cs):
-                    if c.shape == ():
-                        arrays.append(math.hermite_renormalized(A, b, c, shape=shape))
-                    else:
-                        G = math.hermite_renormalized(A, b, 1, shape=shape + c.shape).reshape(
-                            shape + (-1,)
-                        )
-                        c = c.reshape((-1,))
-                        arrays.append(math.einsum("...i,i->...", G, c))
-
+            As = self.ansatz._A_vectorized
+            bs = self.ansatz._b_vectorized
+            cs = self.ansatz._c_vectorized
+            arrays = []
+            for A, b, c in zip(As, bs, cs):
+                G = math.hermite_renormalized(A, b, 1, shape=shape + c.shape)
+                G = math.reshape(G, shape + (-1,))
+                c = math.reshape(c, (-1,))
+                arrays.append(math.einsum("...i,i->...", G, c))
         except AttributeError:
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                )
             arrays = self.ansatz.reduce(shape).array
-        arrays = math.astensor(arrays)
-        array = math.sum(arrays, axis=0)
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+        return math.reshape(arrays, self.ansatz.batch_shape + shape)
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -183,7 +158,7 @@ class Representation:
             else:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.ansatz.data
-            bargmann = PolyExpAnsatz(A, b, c, len(c.shape[1:]))
+            bargmann = PolyExpAnsatz(A, b, c, len(c.shape[self.ansatz.batch_dims :]))
             for w in self.wires.quantum:
                 w.repr = ReprEnum.BARGMANN
             return Representation(bargmann, self.wires)
@@ -197,7 +172,7 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=len(self.ansatz.batch_shape))
         try:
             if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple

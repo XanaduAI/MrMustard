@@ -202,7 +202,7 @@ class State(CircuitComponent):
         modes: Sequence[int],
         array: ComplexTensor,
         name: str | None = None,
-        batched: bool = False,
+        batch_dims: int = 0,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an array parametrizing the
@@ -215,17 +215,17 @@ class State(CircuitComponent):
             >>> from mrmustard.lab_dev import Coherent, Ket
 
             >>> array = Coherent(mode=0, x=0.1).to_fock().ansatz.array
-            >>> coh = Ket.from_fock((0,), array, batched=True)
+            >>> coh = Ket.from_fock((0,), array, batch_dims=0)
 
             >>> assert coh.modes == (0,)
-            >>> assert coh.ansatz == ArrayAnsatz(array, batched=True)
+            >>> assert coh.ansatz == ArrayAnsatz(array, batch_dims=0)
             >>> assert isinstance(coh, Ket)
 
         Args:
             modes: The modes of this state.
             array: The Fock array.
             name: The name of this state.
-            batched: Whether the given array is batched.
+            batch_dims: The number of batch dimensions in the given array.
 
         Returns:
             A state.
@@ -234,7 +234,7 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
         """
-        return cls.from_ansatz(modes, ArrayAnsatz(array, batched), name)
+        return cls.from_ansatz(modes, ArrayAnsatz(array, batch_dims=batch_dims), name)
 
     @classmethod
     @abstractmethod

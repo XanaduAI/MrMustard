@@ -32,6 +32,8 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
+from mrmustard import math
+
 __all__ = ["Ansatz"]
 
 
@@ -242,3 +244,62 @@ class Ansatz(ABC):
         Returns:
             The division of this ansatz and other.
         """
+
+    @staticmethod
+    def _outer_product_batch_str(*ndims: int) -> str:
+        r"""
+        Creates the einsum string for the outer product of the given tuple of dimensions.
+        E.g. for (2,1,3) it returns ab,c,def->abcdef
+        """
+        strs = []
+        offset = 0
+        for ndim in ndims:
+            strs.append("".join([chr(97 + i + offset) for i in range(ndim)]))
+            offset += ndim
+        return ",".join(strs) + "->" + "".join(strs)
+
+    @staticmethod
+    def _zip_batch_strings(*ndims: int) -> str:
+        r"""
+        Creates a batch string for zipping over the batch dimensions.
+        """
+        if len(set(ndims)) != 1:
+            raise ValueError(f"Arrays must have the same number of batch dimensions, got {ndims}")
+        str_ = "".join([chr(97 + i) for i in range(ndims[0])])
+        return ",".join([str_] * len(ndims)) + "->" + str_
+
+    @staticmethod
+    def _reshape_args_to_batch_string(
+        args: list[ArrayLike], batch_string: str
+    ) -> tuple[list[ArrayLike], tuple[int, ...]]:
+        r"""
+        Reshapes arguments to match the batch string by inserting singleton dimensions where needed
+        so that they are broadcastable.
+        E.g. given two arrays of shape (2,7) and (3,7) and string ab,cb->abc, it reshapes them to
+        shape (2,7,1) and (1,7,3).
+        """
+        # Parse the batch string
+        input_specs, output_spec = batch_string.split("->")
+        input_specs = input_specs.split(",")
+        if len(input_specs) != len(args):
+            raise ValueError(
+                f"Number of input specifications ({len(input_specs)}) does not match number of arguments ({len(args)})"
+            )
+
+        args = [math.astensor(arg) for arg in args]
+
+        # Determine the size of each dimension in the output
+        dim_sizes = {}
+        for arg, spec in zip(args, input_specs):
+            for dim, label in zip(arg.shape, spec):
+                if label in dim_sizes and dim_sizes[label] != dim:
+                    raise ValueError(
+                        f"Dimension {label} has inconsistent sizes: got {dim_sizes[label]} and {dim}"
+                    )
+                dim_sizes[label] = dim
+
+        reshaped = []
+        for arg, spec in zip(args, input_specs):
+            new_shape = [dim_sizes[label] if label in spec else 1 for label in output_spec]
+            reshaped.append(math.reshape(arg, new_shape))
+        return reshaped

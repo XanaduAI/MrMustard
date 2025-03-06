@@ -619,9 +619,9 @@ def complex_gaussian_integral_2(
         batch_string = f"{str1},{str2}->{out}"
     A_, b_, c_ = join_Abc(Abc1, Abc2, batch_string=batch_string)
     batch_shape = A_.shape[:-2]
-    A_ = math.reshape(A_, batch_shape + (A_.shape[-2], A_.shape[-1]))
-    b_ = math.reshape(b_, batch_shape + (b_.shape[-1],))
-    c_ = math.reshape(c_, batch_shape + c_.shape[len(batch_shape) :])
+    A_ = math.reshape(A_, (-1, A_.shape[-2], A_.shape[-1]))
+    b_ = math.reshape(b_, (-1, b_.shape[-1]))
+    c_ = math.reshape(c_, (-1,) + c_.shape[len(batch_shape) :])
 
     A1, _, c1 = Abc1
     core_plus_derived = math.atleast_3d(A1).shape[-1]
