@@ -22,33 +22,7 @@ from typing import Iterable
 
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
-
-
-#  ~~~~~~~~~
-#  Utilities
-#  ~~~~~~~~~
-
-
-def _compute_batch_size(*args) -> tuple[int, ...] | None:
-    r"""
-    Compute the final batch size of the input arguments.
-
-    Args:
-        *args: The input arguments.
-
-    Returns:
-        The final batch size and batch dimension of the input arguments.
-    """
-    batch_size = None
-    for arg in args:
-        arg = math.astensor(arg)
-        if arg.shape:
-            if batch_size is None:
-                batch_size = arg
-            else:
-                batch_size = batch_size * arg
-    batch_size = batch_size.shape if batch_size is not None else None
-    return batch_size, len(batch_size or (1,))
+from .utils import compute_batch_size
 
 
 def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
@@ -61,7 +35,7 @@ def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     Returns:
         The symplectic matrix of a CX gate.
     """
-    batch_size, batch_dim = _compute_batch_size(s)
+    batch_size, batch_dim = compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
     s_batch = math.broadcast_to(math.cast(s, math.complex128), batch_shape)
@@ -91,7 +65,7 @@ def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     Returns:
         The symplectic matrix of a CZ gate.
     """
-    batch_size, batch_dim = _compute_batch_size(s)
+    batch_size, batch_dim = compute_batch_size(s)
     batch_shape = batch_size or (1,)
 
     s_batch = math.broadcast_to(math.cast(s, math.complex128), batch_shape)
@@ -152,7 +126,7 @@ def mzgate_symplectic(
     Returns:
         The symplectic matrix of a Mach-Zehnder gate.
     """
-    batch_size, batch_dim = _compute_batch_size(phi_a, phi_b)
+    batch_size, batch_dim = compute_batch_size(phi_a, phi_b)
     batch_shape = batch_size or (1,)
 
     phi_a_batch = math.broadcast_to(phi_a, batch_shape)
@@ -199,7 +173,7 @@ def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
     Returns:
         The symplectic matrix of a phase gate.
     """
-    batch_size, _ = _compute_batch_size(shearing)
+    batch_size, _ = compute_batch_size(shearing)
     batch_shape = batch_size or (1,)
 
     shearing_batch = math.broadcast_to(shearing, batch_shape)
