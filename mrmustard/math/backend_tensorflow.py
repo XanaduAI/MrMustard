@@ -71,6 +71,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.abs(array)
 
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
+        if array1.shape != array2.shape:  # override tensorflow handling to match numpy
+            raise ValueError(
+                f"operands could not be broadcast together with shapes {array1.shape} {array2.shape}"
+            )
         return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: tf.Tensor) -> tf.Tensor:
