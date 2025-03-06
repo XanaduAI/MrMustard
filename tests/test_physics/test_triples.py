@@ -22,7 +22,7 @@ from mrmustard.physics import triples_batched
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
-# pylint: disable = missing-function-docstring
+# pylint: disable = missing-function-docstring, import-outside-toplevel
 class TestTriples:
     r"""
     Tests the Bargmann triples.
@@ -33,9 +33,10 @@ class TestTriples:
             error = TypeError
             match = "incompatible shapes for broadcasting"
         elif math.backend_name == "tensorflow":
+
             from tensorflow.errors import (
                 InvalidArgumentError,
-            )  # pylint: disable=import-outside-toplevel
+            )
 
             error = InvalidArgumentError
             match = "Incompatible shape"
@@ -290,7 +291,7 @@ class TestTriples:
 
     def test_attenuator_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx  # pylint: disable=import-outside-toplevel
+            import equinox as eqx
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="greater than `1`"):
                 triples_batched.attenuator_Abc(2)
@@ -337,7 +338,7 @@ class TestTriples:
 
     def test_amplifier_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx  # pylint: disable=import-outside-toplevel
+            import equinox as eqx
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="smaller than"):
                 triples_batched.amplifier_Abc(0.1)
