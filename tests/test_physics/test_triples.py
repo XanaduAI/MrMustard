@@ -32,6 +32,13 @@ class TestTriples:
         if math.backend_name == "jax":
             error = TypeError
             match = "incompatible shapes for broadcasting"
+        elif math.backend_name == "tensorflow":
+            from tensorflow.errors import (
+                InvalidArgumentError,
+            )  # pylint: disable=import-outside-toplevel
+
+            error = InvalidArgumentError
+            match = "Incompatible shape"
         else:
             error = ValueError
             match = "could not be broadcast"
@@ -402,14 +409,17 @@ class TestTriples:
 
         A, b, c = triples_batched.XY_to_channel_Abc(X, Y)
 
-        A_by_hand = math.block(
+        A_by_hand = math.concat(
             [
-                [0, math.sqrt(eta), 0, 0],
-                [math.sqrt(eta), 0, 0, 1 - eta],
-                [0, 0, 0, math.sqrt(eta)],
-                [0, 1 - eta, math.sqrt(eta), 0],
-            ]
+                math.astensor([[0, math.sqrt(eta), 0, 0]]),
+                math.astensor([[math.sqrt(eta), 0, 0, 1 - eta]]),
+                math.astensor([[0, 0, 0, math.sqrt(eta)]]),
+                math.astensor([[0, 1 - eta, math.sqrt(eta), 0]]),
+            ],
+            axis=-2,
         )
-        assert math.allclose(A, A_by_hand)
+        assert math.allclose(
+            A, A_by_hand, atol=1e-8
+        )  # TODO: remove atol when tensorflow is removed
         assert math.allclose(b, math.zeros((4, 1)))
         assert math.allclose(c, 1.0)
