@@ -90,7 +90,7 @@ class TestBackendManager:
         arr2 = math.astensor([[1, 2], [1, 2]])
 
         if math.backend_name != "jax":
-            with pytest.raises(ValueError, match="cannot broadcast"):
+            with pytest.raises(ValueError, match="could not be broadcast"):
                 math.allclose(arr1, arr2)
         else:
             with pytest.raises(ValueError, match="Incompatible shapes"):
