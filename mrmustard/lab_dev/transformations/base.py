@@ -33,7 +33,7 @@ from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
-from mrmustard.physics.triples import XY_to_channel_Abc
+from mrmustard.physics.triples_batched import XY_to_channel_Abc
 from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
 from ..circuit_components import CircuitComponent
 
