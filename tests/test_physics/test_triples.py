@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.physics import triples, triples_batched
+from mrmustard.physics import triples_batched
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
@@ -210,20 +210,25 @@ class TestTriples:
         assert math.allclose(b1, math.zeros((4)))
         assert math.allclose(c1, 1)
 
-        A2, b2, c2 = triples.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
-        O_4 = math.zeros((4, 4))
-        V = np.array(
+        A2, b2, c2 = triples_batched.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
+        A = [
             [
-                [0.99500417, 0, -0.0978434 + 0.01983384j, 0],
-                [0, 0.99500417, 0, -0.0978434 + 0.01983384j],
-                [0.0978434 + 0.01983384j, 0, 0.99500417, 0],
-                [0, 0.0978434 + 0.01983384j, 0, 0.99500417],
-            ]
-        )
-        A_exp = np.block([[O_4, V], [V.T, O_4]])
-        assert math.allclose(A2, A_exp)
-        assert math.allclose(b2, math.zeros((8)))
-        assert math.allclose(c2, 1)
+                [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
+                [0, 0, 0.0978434 + 0.01983384j, 0.99500417],
+                [0.99500417, 0.0978434 + 0.01983384j, 0, 0],
+                [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
+            ],
+            [
+                [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
+                [0, 0, 0.0978434 + 0.01983384j, 0.99500417],
+                [0.99500417, 0.0978434 + 0.01983384j, 0, 0],
+                [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
+            ],
+        ]
+
+        assert math.allclose(A2, A)
+        assert math.allclose(b2, math.zeros((2, 4)))
+        assert math.allclose(c2, math.ones(2))
 
         A3, b3, c3 = triples_batched.beamsplitter_gate_Abc(0.1)
         A_exp = [
