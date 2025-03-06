@@ -89,7 +89,7 @@ class TestBackendManager:
         arr1 = math.astensor([1, 2, 3])
         arr2 = math.astensor([[1, 2], [1, 2]])
 
-        if math.backend_name != "jax":
+        if math.backend_name == "numpy":
             with pytest.raises(ValueError, match="could not be broadcast"):
                 math.allclose(arr1, arr2)
         else:
