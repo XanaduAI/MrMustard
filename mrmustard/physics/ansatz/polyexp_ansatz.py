@@ -263,7 +263,7 @@ class PolyExpAnsatz(Ansatz):
     def batch_size(self) -> int:
         if self._batch_shape is None:
             return 1
-        return int(math.prod(self._batch_shape))
+        return int(np.prod(self._batch_shape))
 
     @property
     def conj(self):
@@ -473,7 +473,7 @@ class PolyExpAnsatz(Ansatz):
             [[math.zeros((n, n), dtype=Ai.dtype), Ai[:n, n:]], [Ai[n:, :n], Ai[n:, n:]]]
         )
         b_core = math.concat((math.zeros((n,), dtype=bi.dtype), bi[n:]), axis=-1)
-        pulled_out_input_shape = (math.sum(self.shape_derived_vars),) * n
+        pulled_out_input_shape = (np.sum(self.shape_derived_vars),) * n
         poly_shape = pulled_out_input_shape + self.shape_derived_vars
         poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape).reshape(
             pulled_out_input_shape + (-1,)

@@ -325,7 +325,7 @@ class BackendJax(BackendBase):  # pragma: no cover
 
     @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
-        return jnp.take(array, indices, axis=axis)
+        return jnp.take(array, jnp.asarray(indices), axis=axis)
 
     @jax.jit
     def imag(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -746,6 +746,44 @@ class BackendJax(BackendBase):  # pragma: no cover
             C,
         )
         return poly0
+
+    @jax.jit
+    def broadcast_arrays(self, *arrays: jnp.ndarray) -> tuple[jnp.ndarray, ...]:
+        """Broadcasts arrays to a common shape.
+
+        Args:
+            *arrays: Arrays to broadcast together.
+
+        Returns:
+            A tuple of broadcasted arrays.
+        """
+        return jnp.broadcast_arrays(*arrays)
+
+    @partial(jax.jit, static_argnames=["axis"])
+    def stack(self, arrays: Sequence[jnp.ndarray], axis: int = 0) -> jnp.ndarray:
+        """Stacks arrays along a new axis.
+
+        Args:
+            arrays: Sequence of arrays to stack.
+            axis: The axis along which to stack the arrays. Default is 0.
+
+        Returns:
+            A new array formed by stacking the input arrays along the specified axis.
+        """
+        return jnp.stack(arrays, axis=axis)
+
+    @partial(jax.jit, static_argnames=["shape"])
+    def broadcast_to(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
+        """Broadcasts an array to a specified shape.
+
+        Args:
+            array: Array to broadcast.
+            shape: The shape to broadcast to.
+
+        Returns:
+            The broadcasted array.
+        """
+        return jnp.broadcast_to(array, shape)
 
 
 # defining the pytree node for the JaxBackend.

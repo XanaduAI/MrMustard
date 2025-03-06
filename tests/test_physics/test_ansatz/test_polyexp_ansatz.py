@@ -138,10 +138,10 @@ class TestPolyExpAnsatz:
         b = np.zeros(2) + 0.0j
         c = np.zeros(10, dtype=complex).reshape(1, -1) + 0.0j
         c[0, -1] = 1
-        obj1 = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        ans = PolyExpAnsatz(A, b, c, num_derived_vars=1)
 
         nine_factorial = np.prod(np.arange(1, 9))
-        assert np.allclose(obj1(np.array([0.1 + 0.0j])), 0.1**9 / np.sqrt(nine_factorial))
+        assert np.allclose(ans(np.array([0.1 + 0.0j])), 0.1**9 / np.sqrt(nine_factorial))
 
     def test_partial_eval(self):
         A1, b1, _ = Abc_triple(4)
