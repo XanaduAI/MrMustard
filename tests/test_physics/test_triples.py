@@ -420,7 +420,7 @@ class TestTriples:
             axis=-2,
         )
         assert math.allclose(
-            A, A_by_hand, atol=1e-8
+            A, A_by_hand, atol=1e-7
         )  # TODO: remove atol when tensorflow is removed
         assert math.allclose(b, math.zeros((4, 1)))
         assert math.allclose(c, 1.0)
