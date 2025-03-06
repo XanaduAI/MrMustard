@@ -258,9 +258,9 @@ def test_complex_gaussian_integral_1_not_batched():
     Ar, br, cr = triples_batched.vacuum_state_Abc(0)
 
     res = complex_gaussian_integral_1((A, b, c), [0, 2, 4], [1, 3, 5])
-    assert np.allclose(res[0], Ar)
-    assert np.allclose(res[1], br)
-    assert np.allclose(res[2], cr)
+    assert math.allclose(res[0], Ar)
+    assert math.allclose(res[1], br)
+    assert math.allclose(res[2], cr)
 
     A1, b1, c1 = triples_batched.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
@@ -269,9 +269,9 @@ def test_complex_gaussian_integral_1_not_batched():
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [4, 5])
-    assert np.allclose(res[0], A3)
-    assert np.allclose(res[1], b3)
-    assert np.allclose(res[2], c3)
+    assert math.allclose(res[0], A3)
+    assert math.allclose(res[1], b3)
+    assert math.allclose(res[2], c3)
 
 
 def test_complex_gaussian_integral_1_batched():
