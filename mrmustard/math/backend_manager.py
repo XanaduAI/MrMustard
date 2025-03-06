@@ -397,6 +397,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The broadcasted array.
         """
+        array = self.astensor(array)
         return self._apply("broadcast_to", (array, shape))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
