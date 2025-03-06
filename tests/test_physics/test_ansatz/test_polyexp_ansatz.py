@@ -39,14 +39,10 @@ class TestPolyExpAnsatz:
     Tests the polyexp ansatz.
     """
 
-    Abc_n1 = Abc_triple(1)
-    Abc_n2 = Abc_triple(2)
-    Abc_n3 = Abc_triple(3)
-
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
-    def test_init_non_batched(self, triple):
-        A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple)
+    @pytest.mark.parametrize("n", [1, 2, 3])
+    def test_init_non_batched(self, n):
+        A, b, c = Abc_triple(n)
+        bargmann = PolyExpAnsatz(A, b, c)
 
         assert np.allclose(bargmann.A, A)
         assert np.allclose(bargmann.b, b)
@@ -132,7 +128,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(ansatz(*math.zeros_like(b)), c)
 
         A, b, _ = Abc_triple(4)
-        c = np.random.random(size=(1, 3, 3, 3))
+        c = np.random.random(size=(1, 3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
         z = np.random.uniform(-10, 10, size=(7, 2))
         with pytest.raises(Exception):
@@ -179,10 +175,10 @@ class TestPolyExpAnsatz:
         val_partial = partial(*z1)
         assert np.allclose(val_partial, val_full)
 
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_conj(self, triple):
-        A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple).conj
+        A, b, c = Abc_triple(triple)
+        bargmann = PolyExpAnsatz(A, b, c).conj
 
         assert np.allclose(bargmann.A, math.conj(A))
         assert np.allclose(bargmann.b, math.conj(b))
@@ -246,9 +242,9 @@ class TestPolyExpAnsatz:
         assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_div_with_scalar(self, scalar, triple):
-        bargmann1 = PolyExpAnsatz(*triple)
+        bargmann1 = PolyExpAnsatz(*Abc_triple(triple))
         bargmann_div = bargmann1 / scalar
 
         assert np.allclose(bargmann1.A, bargmann_div.A)
@@ -331,9 +327,9 @@ class TestPolyExpAnsatz:
         assert captured.out.rstrip() == repr(rep)
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_mul_with_scalar(self, scalar, triple):
-        bargmann1 = PolyExpAnsatz(*triple)
+        bargmann1 = PolyExpAnsatz(*Abc_triple(triple))
         bargmann_mul = bargmann1 * scalar
 
         assert np.allclose(bargmann1.A, bargmann_mul.A)
@@ -561,14 +557,14 @@ class TestPolyExpAnsatz:
         F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
 
         # Partial evaluation with scalar input
-        z0 = np.array(0.5)
+        z0 = np.array(0.5 + 0.0j)
         partial_F = F(z0, None)
 
         # Verify partial_F is still a PolyExpAnsatz
         assert isinstance(partial_F, PolyExpAnsatz)
 
         # Complete the evaluation
-        z1 = 0.3
+        z1 = 0.3 + 0.0j
         result = partial_F(z1)
 
         # Verify the result matches direct evaluation
@@ -583,14 +579,14 @@ class TestPolyExpAnsatz:
         F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
 
         # Partial evaluation with scalar input
-        z0 = np.array([0.5, 0.6])
+        z0 = np.array([0.5, 0.6]) + 0.0j
         partial_F = F(z0, None)
 
         # Verify partial_F is still a PolyExpAnsatz
         assert isinstance(partial_F, PolyExpAnsatz)
 
         # Complete the evaluation
-        z1 = 0.3
+        z1 = 0.3 + 0.0j
         result = partial_F(z1)
 
         # Verify the result matches direct evaluation

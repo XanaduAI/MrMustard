@@ -20,8 +20,9 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, Sequence
 import itertools
+from functools import cached_property
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -170,6 +171,9 @@ class PolyExpAnsatz(Ansatz):
         This method computes and sets the (A, b, c) triple given a function and its kwargs.
         """
         if self._should_regenerate():
+            self._A_vectorized.cache_clear()
+            self._b_vectorized.cache_clear()
+            self._c_vectorized.cache_clear()
             params = {}
             for name, param in self._fn_kwargs.items():
                 try:
@@ -200,21 +204,21 @@ class PolyExpAnsatz(Ansatz):
         """
         return len(self.batch_shape)
 
-    @property
+    @cached_property
     def _A_vectorized(self) -> Batch[ComplexMatrix]:
         r"""
         A view of self.A with the batch dimension flattened.
         """
         return math.reshape(self.A, (-1, self.num_vars, self.num_vars))
 
-    @property
+    @cached_property
     def _b_vectorized(self) -> Batch[ComplexVector]:
         r"""
         A view of self.b with the batch dimension flattened.
         """
         return math.reshape(self.b, (-1, self.num_vars))
 
-    @property
+    @cached_property
     def _c_vectorized(self) -> Batch[ComplexTensor]:
         r"""
         A view of self.c with the batch dimension flattened.
@@ -532,6 +536,7 @@ class PolyExpAnsatz(Ansatz):
         self._order_batch()
         to_keep = [d0 := 0]
         mat, vec = self._A_vectorized[d0], self._b_vectorized[d0]
+        _c = math.astensor(self._c_vectorized)
 
         for d in range(1, self.batch_size):
             if not (
@@ -544,7 +549,9 @@ class PolyExpAnsatz(Ansatz):
             else:
                 d0r = np.unravel_index(d0, self.batch_shape)
                 dr = np.unravel_index(d, self.batch_shape)
-                self._c = math.update_add_tensor(self.c, [[d0r]], [self.c[dr]])
+                self._c_vectorized = math.update_add_tensor(
+                    self._c_vectorized, [d0r], [self._c_vectorized[dr]]
+                )
         return to_keep
 
     def _order_batch(self):

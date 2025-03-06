@@ -280,8 +280,8 @@ def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
     n2 = nA2 - m2
 
     # Step 0: Flatten the non-batch dimensions of c1 and c2
-    c1_flat_shape = batch1_c + (-1,)
-    c2_flat_shape = batch2_c + (-1,)
+    c1_flat_shape = batch1_c + (int(np.prod(poly_shape1)),)
+    c2_flat_shape = batch2_c + (int(np.prod(poly_shape2)),)
     c1_flat = math.reshape(c1, c1_flat_shape)
     c2_flat = math.reshape(c2, c2_flat_shape)
 
