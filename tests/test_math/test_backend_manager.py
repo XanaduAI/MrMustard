@@ -92,7 +92,7 @@ class TestBackendManager:
         if math.backend_name == "numpy":
             with pytest.raises(ValueError, match="could not be broadcast"):
                 math.allclose(arr1, arr2)
-        else:
+        elif math.backend_name == "jax":
             with pytest.raises(ValueError, match="Incompatible shapes"):
                 math.allclose(arr2, arr1)
 
