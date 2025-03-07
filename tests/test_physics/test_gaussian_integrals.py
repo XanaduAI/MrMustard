@@ -17,7 +17,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.physics import triples, triples
+from mrmustard.physics import triples
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
