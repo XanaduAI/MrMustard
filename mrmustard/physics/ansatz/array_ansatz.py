@@ -49,10 +49,7 @@ class ArrayAnsatz(Ansatz):
 
     Args:
         array: A (potentially) batched array.
-        batched: Whether the array input has a batch dimension.
-
-    Note: The args can be passed non-batched, as they will be automatically broadcasted to the
-    correct batch shape if ``batched`` is set to ``False``.
+        batch_dims: The number of batch dimensions.
     """
 
     def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
@@ -77,7 +74,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def core_dims(self) -> int:
-        return self.core_dims
+        return len(self.core_shape)
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -183,10 +180,10 @@ class ArrayAnsatz(Ansatz):
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
-            if i >= self.num_vars:
-                raise IndexError(f"Valid indices are 0 to {self.num_vars-1}. Got {i}.")
-            if j >= other.num_vars:
-                raise IndexError(f"Valid indices are 0 to {other.num_vars-1}. Got {j}.")
+            if i >= self.core_dims:
+                raise IndexError(f"Valid indices are 0 to {self.core_dims-1}. Got {i}.")
+            if j >= other.core_dims:
+                raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
 
         # Parse batch string
         input_str, output_str = batch_str.split("->")
@@ -196,8 +193,8 @@ class ArrayAnsatz(Ansatz):
 
         # Start variable indices after batch indices
         start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
-        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(self.num_vars)]
-        var_idx2 = [chr(i + ord("a") + start_idx + self.num_vars) for i in range(other.num_vars)]
+        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(self.core_dims)]
+        var_idx2 = [chr(i + ord("a") + start_idx + self.core_dims) for i in range(other.core_dims)]
 
         # Replace contracted indices in second array with corresponding indices from first
         for i, j in zip(idx1, idx2):
@@ -205,11 +202,11 @@ class ArrayAnsatz(Ansatz):
 
         # Combine batch and variable indices for einsum
         einsum_str = (
-            f"{input_parts[0]}{''.join(var_idx1)},"  # first array indices
-            f"{input_parts[1]}{''.join(var_idx2)}->"  # second array indices
-            f"{output_str}{''.join(sorted(set(var_idx1 + var_idx2)))}"  # output indices
+            f"{input_parts[0]}{''.join(var_idx1)},"
+            f"{input_parts[1]}{''.join(var_idx2)}->"
+            f"{output_str}{''.join([i for i in var_idx1 + var_idx2 if i not in set(var_idx1) & set(var_idx2)])}"
         )
-
+        print(einsum_str)
         result = math.einsum(einsum_str, self.array, other.array)
         return ArrayAnsatz(result, batch_dims=len(output_str))
 
@@ -281,8 +278,8 @@ class ArrayAnsatz(Ansatz):
             + [self.batch_dims + i for i in idx_zconj]
         )
         new_array = math.transpose(self.array, order)
-        n = np.prod(new_array.shape[-self.core_dims :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * self.core_dims] + (n, n))
+        n = np.prod(new_array.shape[-len(idx_z) :])
+        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
@@ -293,23 +290,26 @@ class ArrayAnsatz(Ansatz):
         display(w)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        if self.batch_shape != other.batch_shape:
-            raise ValueError("Batch shapes must match.")
+        r"""
+        Adds two ArrayAnsatze together. In order to use the __add__ method, the ansatze must have
+        the same batch dimensions. The shape of the core arrays must be such that one can be reduced
+        to the other. Other will be reduced to the shape of self. If you want the opposite use other + self.
+        """
+        if self.batch_dims != other.batch_dims:
+            raise ValueError("Batch dimensions must match.")
         if self.core_shape != other.core_shape:
-            other = other.reduce(self.core_shape)  # if you want the opposite use other + self
-        return ArrayAnsatz(array=other.array + self.array, batched=True)
+            other = other.reduce(self.core_shape)
+        return ArrayAnsatz(array=self.array + other.array, batch_dims=self.batch_dims)
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         if self.batch_shape != other.batch_shape:
             raise ValueError("Batch shapes must match.")
-        batch_size = np.prod(self.batch_shape)
+        batch_size = int(np.prod(self.batch_shape))
         self_reshaped = math.reshape(self.array, (batch_size, -1))
         other_reshaped = math.reshape(other.array, (batch_size, -1))
-        new = math.einsum("ab,cd->acbd", self_reshaped, other_reshaped)
-        new = math.reshape(
-            new, self.batch_shape + other.batch_shape + self.core_shape + other.core_shape
-        )
-        return ArrayAnsatz(array=new, batched=True)
+        new = math.einsum("ab,ac -> abc", self_reshaped, other_reshaped)
+        new = math.reshape(new, self.batch_shape + self.core_shape + other.core_shape)
+        return ArrayAnsatz(array=new, batch_dims=self.batch_dims)
 
     def __call__(self, _: Any):
         raise AttributeError("Cannot call an ArrayAnsatz.")
@@ -321,10 +321,10 @@ class ArrayAnsatz(Ansatz):
         return np.allclose(self.array[(...,) + slices], other.array[(...,) + slices], atol=1e-10)
 
     def __mul__(self, other: Scalar) -> ArrayAnsatz:
-        return ArrayAnsatz(array=self.array * other, batched=True)
+        return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 
     def __neg__(self) -> ArrayAnsatz:
-        return ArrayAnsatz(array=-self.array, batched=True)
+        return ArrayAnsatz(array=-self.array, batch_dims=self.batch_dims)
 
     def __truediv__(self, other: Scalar) -> ArrayAnsatz:
-        return ArrayAnsatz(array=self.array / other, batched=True)
+        return ArrayAnsatz(array=self.array / other, batch_dims=self.batch_dims)

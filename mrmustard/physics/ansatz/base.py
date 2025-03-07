@@ -70,13 +70,6 @@ class Ansatz(ABC):
 
     @property
     @abstractmethod
-    def num_vars(self) -> int:
-        r"""
-        The number of variables in the ansatz.
-        """
-
-    @property
-    @abstractmethod
     def scalar(self) -> Scalar:
         r"""
         The scalar part of the ansatz.
