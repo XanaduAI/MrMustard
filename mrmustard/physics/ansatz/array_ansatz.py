@@ -17,8 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence, Literal
-
+from typing import Any, Callable, Sequence
 from warnings import warn
 
 import numpy as np
@@ -60,6 +59,7 @@ class ArrayAnsatz(Ansatz):
         super().__init__()
         self.batch_dims = batch_dims
         self._batch_shape = array.shape[:batch_dims] if array is not None else None
+        self._core_shape = array.shape[batch_dims:] if array is not None else None
         self._array = array
         self._original_abc_data = None
 
@@ -68,6 +68,16 @@ class ArrayAnsatz(Ansatz):
         if self._batch_shape is None:
             self._batch_shape = self.array.shape[: self.batch_dims]
         return self._batch_shape
+
+    @property
+    def core_shape(self) -> tuple[int, ...] | None:
+        if self._core_shape is None:
+            self._core_shape = self.array.shape[self.batch_dims :]
+        return self._core_shape
+
+    @property
+    def core_dims(self) -> int:
+        return self.core_dims
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -117,16 +127,12 @@ class ArrayAnsatz(Ansatz):
         return self.array
 
     @property
-    def num_vars(self) -> int:
-        return len(self.array.shape) - self.batch_dims
-
-    @property
-    def scalar(self) -> Scalar:
+    def scalar(self) -> Scalar | ArrayLike:
         r"""
         The scalar part of the ansatz.
         I.e. the vacuum component of the Fock array, whatever it may be.
         """
-        return self.array[(slice(None),) * self.batch_dims + (0,) * self.num_vars]
+        return self.array[(...,) + (0,) * self.core_dims]
 
     @property
     def triple(self) -> tuple:
@@ -177,13 +183,9 @@ class ArrayAnsatz(Ansatz):
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
             if i >= self.num_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for representation with {self.num_vars} variables."
-                )
+                raise IndexError(f"Valid indices are 0 to {self.num_vars-1}. Got {i}.")
             if j >= other.num_vars:
-                raise IndexError(
-                    f"Index {j} out of bounds for representation with {other.num_vars} variables."
-                )
+                raise IndexError(f"Valid indices are 0 to {other.num_vars-1}. Got {j}.")
 
         # Parse batch string
         input_str, output_str = batch_str.split("->")
@@ -210,9 +212,9 @@ class ArrayAnsatz(Ansatz):
         result = math.einsum(einsum_str, self.array, other.array)
         return ArrayAnsatz(result, batch_dims=len(output_str))
 
-    def reduce(self, shape: int | Sequence[int]) -> ArrayAnsatz:
+    def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
         r"""
-        Returns a new ``ArrayAnsatz`` with a sliced array.
+        Returns a new ``ArrayAnsatz`` with a sliced core shape.
 
         .. code-block::
 
@@ -222,10 +224,10 @@ class ArrayAnsatz(Ansatz):
             >>> array1 = math.arange(27).reshape((3, 3, 3))
             >>> fock1 = ArrayAnsatz(array1)
 
-            >>> fock2 = fock1.reduce(3)
+            >>> fock2 = fock1.reduce((3, 3, 3))
             >>> assert fock1 == fock2
 
-            >>> fock3 = fock1.reduce(2)
+            >>> fock3 = fock1.reduce((2, 2, 2))
             >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
             >>> assert fock3 == ArrayAnsatz(array3)
 
@@ -236,27 +238,20 @@ class ArrayAnsatz(Ansatz):
         Args:
             shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
-        if shape == self.batch_shape:
+        if shape == self.core_shape:
             return self
-        length = self.num_vars
-        shape = (shape,) * length if isinstance(shape, int) else shape
-        if len(shape) != length:
-            msg = f"Expected shape of length {length}, "
-            msg += f"given shape has length {len(shape)}."
-            raise ValueError(msg)
+        if len(shape) != self.core_dims:
+            raise ValueError(f"Expected shape of length {self.core_dims}, got {len(shape)}.")
 
-        if any(s > t for s, t in zip(shape, self.batch_shape)):
-            warn(
-                "Warning: the fock array is being padded with zeros. If possible, slice the arrays this one will contract with instead."
-            )
+        if any(s > t for s, t in zip(shape, self.core_shape)):
+            warn("Warning: the fock array is being padded with zeros. Is this really necessary?")
             padded = math.pad(
                 self.array,
-                [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.batch_shape)],
+                [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.core_shape)],
             )
-            return ArrayAnsatz(padded, batched=True)
+            return ArrayAnsatz(padded, self.batch_dims)
 
-        ret = self.array[(slice(0, None),) * self.batch_dims + tuple(slice(0, s) for s in shape)]
-        return ArrayAnsatz(ret, batched=True)
+        return ArrayAnsatz(self.array[(...,) + tuple(slice(0, s) for s in shape)], self.batch_dims)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
@@ -264,32 +259,29 @@ class ArrayAnsatz(Ansatz):
 
     def sum_batch(self) -> ArrayAnsatz:
         r"""
-        Sums over the batch dimension of the array. Turns an object with any batch size to a batch size of 1.
+        Sums over the batch dimension of the array.
+        Turns an array with any batch size to just the core shape.
 
         Returns:
             The collapsed ArrayAnsatz object.
         """
-        return ArrayAnsatz(math.expand_dims(math.sum(self.array, axis=0), 0), self.batch_dims)
+        return ArrayAnsatz(math.sum(self.array, axis=list(range(self.batch_dims))), self.batch_dims)
 
     def to_dict(self) -> dict[str, ArrayLike]:
-        return {"array": self.data}
+        return {"array": self.data, "batch_dims": self.batch_dims}
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> ArrayAnsatz:
         if len(idx_z) != len(idx_zconj) or not set(idx_z).isdisjoint(idx_zconj):
             raise ValueError("The idxs must be of equal length and disjoint.")
         order = (
             list(range(self.batch_dims))
-            + [
-                i + self.batch_dims
-                for i in range(len(self.array.shape) - 1)
-                if i not in idx_z + idx_zconj
-            ]
-            + [i + self.batch_dims for i in idx_z]
-            + [i + self.batch_dims for i in idx_zconj]
+            + [self.batch_dims + i for i in range(self.core_dims) if i not in idx_z + idx_zconj]
+            + [self.batch_dims + i for i in idx_z]
+            + [self.batch_dims + i for i in idx_zconj]
         )
         new_array = math.transpose(self.array, order)
-        n = np.prod(new_array.shape[-len(idx_zconj) :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
+        n = np.prod(new_array.shape[-self.core_dims :])
+        new_array = math.reshape(new_array, new_array.shape[: -2 * self.core_dims] + (n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
@@ -300,80 +292,38 @@ class ArrayAnsatz(Ansatz):
         display(w)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        try:
-            diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
-            if diff < 0:
-                new_array = [
-                    a + b for a in self.reduce(other.array.shape[1:]).array for b in other.array
-                ]
-            else:
-                new_array = [
-                    a + b for a in self.array for b in other.reduce(self.array.shape[1:]).array
-                ]
-            return ArrayAnsatz(array=new_array, batched=True)
-        except Exception as e:
-            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+        if self.batch_shape != other.batch_shape:
+            raise ValueError("Batch shapes must match.")
+        if self.core_shape != other.core_shape:
+            other = other.reduce(self.core_shape)  # if you want the opposite use other + self
+        return ArrayAnsatz(array=other.array + self.array, batched=True)
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        new_array = [math.outer(a, b) for a in self.array for b in other.array]
-        return ArrayAnsatz(array=new_array, batched=True)
+        if self.batch_shape != other.batch_shape:
+            raise ValueError("Batch shapes must match.")
+        batch_size = np.prod(self.batch_shape)
+        self_reshaped = math.reshape(self.array, (batch_size, -1))
+        other_reshaped = math.reshape(other.array, (batch_size, -1))
+        new = math.einsum("ab,cd->acbd", self_reshaped, other_reshaped)
+        new = math.reshape(
+            new, self.batch_shape + other.batch_shape + self.core_shape + other.core_shape
+        )
+        return ArrayAnsatz(array=new, batched=True)
 
-    def __call__(self, z: Batch[Vector]) -> Scalar:
-        raise AttributeError("Cannot call this ArrayAnsatz.")
+    def __call__(self, _: Any):
+        raise AttributeError("Cannot call an ArrayAnsatz.")
 
     def __eq__(self, other: Ansatz) -> bool:
-        slices = (slice(0, None),) + tuple(
-            slice(0, min(si, oi)) for si, oi in zip(self.array.shape[1:], other.array.shape[1:])
-        )
-        return np.allclose(self.array[slices], other.array[slices], atol=1e-10)
+        if self.batch_shape != other.batch_shape:
+            return False
+        slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
+        return np.allclose(self.array[(...,) + slices], other.array[(...,) + slices], atol=1e-10)
 
-    def __mul__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
-        if isinstance(other, ArrayAnsatz):
-            try:
-                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
-                if diff < 0:
-                    new_array = [
-                        a * b for a in self.reduce(other.array.shape[1:]).array for b in other.array
-                    ]
-                else:
-                    new_array = [
-                        a * b for a in self.array for b in other.reduce(self.array.shape[1:]).array
-                    ]
-                return ArrayAnsatz(array=new_array, batched=True)
-            except Exception as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-        else:
-            ret = ArrayAnsatz(array=self.array * other, batched=True)
-            ret._original_abc_data = (
-                tuple(i * j for i, j in zip(self._original_abc_data, (1, 1, other)))
-                if self._original_abc_data is not None
-                else None
-            )
-            return ret
+    def __mul__(self, other: Scalar) -> ArrayAnsatz:
+        return ArrayAnsatz(array=self.array * other, batched=True)
 
     def __neg__(self) -> ArrayAnsatz:
         return ArrayAnsatz(array=-self.array, batched=True)
 
-    def __truediv__(self, other: Scalar | ArrayAnsatz) -> ArrayAnsatz:
-        if isinstance(other, ArrayAnsatz):
-            try:
-                diff = sum(self.array.shape[1:]) - sum(other.array.shape[1:])
-                if diff < 0:
-                    new_array = [
-                        a / b for a in self.reduce(other.array.shape[1:]).array for b in other.array
-                    ]
-                else:
-                    new_array = [
-                        a / b for a in self.array for b in other.reduce(self.array.shape[1:]).array
-                    ]
-                return ArrayAnsatz(new_array, self.batch_dims)
-            except Exception as e:
-                raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.") from e
-        else:
-            ret = ArrayAnsatz(self.array / other, self.batch_dims)
-            ret._original_abc_data = (
-                tuple(i / j for i, j in zip(self._original_abc_data, (1, 1, other)))
-                if self._original_abc_data is not None
-                else None
-            )
-            return ret
+    def __truediv__(self, other: Scalar) -> ArrayAnsatz:
+        return ArrayAnsatz(array=self.array / other, batched=True)
