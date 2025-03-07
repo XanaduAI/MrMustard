@@ -283,7 +283,7 @@ class Ket(State):
         """
         return self / math.sqrt(self.probability)
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+    def quadrature_distribution(self, quad: Batch[RealVector], phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature distribution of the Ket.
 
@@ -294,17 +294,6 @@ class Ket(State):
         Returns:
             The quadrature distribution.
         """
-        quad = np.array(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
-                -1, len(self.modes)
-            )
-
         return math.abs(self.quadrature(quad, phi)) ** 2
 
     def _ipython_display_(self):  # pragma: no cover

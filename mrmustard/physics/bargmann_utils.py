@@ -64,8 +64,8 @@ def bargmann_Abc_to_phasespace_cov_means(
         for bvec in b
     ]
     if not batched:
-        return math.astensor(cov), math.astensor(mean), coeff
-    return math.squeeze(cov, 0), math.squeeze(mean, 0), math.squeeze(coeff, 0)
+        return math.squeeze(cov, 0), math.squeeze(mean, 0), math.squeeze(coeff, 0)
+    return math.astensor(cov), math.astensor(mean), coeff
 
 
 def cayley(X, c):

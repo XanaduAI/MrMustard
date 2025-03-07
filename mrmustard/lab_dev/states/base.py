@@ -340,7 +340,7 @@ class State(CircuitComponent):
 
         new_state = self >> BtoPS(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(
-            *new_state.bargmann_triple(batched=True), batched=True
+            *new_state.bargmann_triple(batched=False), batched=False
         )
 
     def visualize_2d(

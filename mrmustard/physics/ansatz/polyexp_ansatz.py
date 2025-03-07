@@ -486,8 +486,7 @@ class PolyExpAnsatz(Ansatz):
 
         for d in range(1, self.batch_size):
             if not (
-                np.array_equal(mat, self._A_vectorized[d])
-                and np.array_equal(vec, self._b_vectorized[d])
+                np.allclose(mat, self._A_vectorized[d]) and np.allclose(vec, self._b_vectorized[d])
             ):
                 to_keep.append(d)
                 d0 = d
@@ -750,7 +749,7 @@ class PolyExpAnsatz(Ansatz):
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
         other.simplify()
-        return np.array_equal(self.b, other.b) and np.array_equal(self.A, other.A)
+        return np.allclose(self.b, other.b) and np.allclose(self.A, other.A)
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
@@ -839,7 +838,7 @@ class PolyExpAnsatz(Ansatz):
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
             return False
-        return self._equal_no_array(other) and np.array_equal(self.c, other.c)
+        return self._equal_no_array(other) and np.allclose(self.c, other.c)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number

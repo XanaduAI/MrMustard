@@ -327,9 +327,12 @@ class CircuitComponent:
     def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
+        This method considers the same basis in all the wires. For more fine-grained control,
+        use the BtoQ transformation or a combination of transformations.
+
         Args:
             quad: discretized quadrature points to evaluate over in the
-                quadrature representation
+                quadrature representation. One vector of points per wire.
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
@@ -337,19 +340,18 @@ class CircuitComponent:
         """
 
         if isinstance(self.ansatz, ArrayAnsatz):
-            fock_arrays = self.ansatz.array
-            # Find where all the bras and kets are so they can be conjugated appropriately
+            fock_arrays = (
+                self.ansatz.array
+            )  # TODO: this is assumed to have a single batch dimension
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
-            quad_basis = math.sum(
-                math.astensor(
-                    [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays]
-                ),
-                axis=0,
+            quad_basis = math.astensor(
+                [
+                    quadrature_basis(array, math.astensor(quad), conjugates, phi)
+                    for array in fock_arrays
+                ]
             )
             return quad_basis
-
-        QQQQ = self.to_quadrature(phi=phi)
-        return math.sum(QQQQ.ansatz.eval(quad), axis=0)
+        return self.to_quadrature(phi=phi).ansatz.eval(*quad)
 
     @classmethod
     def _from_attributes(

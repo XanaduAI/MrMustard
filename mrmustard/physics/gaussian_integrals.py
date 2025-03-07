@@ -506,11 +506,11 @@ def complex_gaussian_integral_1(
     A, b, c = Abc
     c = math.astensor(c)
     # assuming c is batched accordingly
-    batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) > 0
+    batched = len(A.shape) == 3 and len(b.shape) == 2
     if not batched:
         A = math.atleast_3d(A)
         b = math.atleast_2d(b)
-        c = math.atleast_1d(c)
+        c = math.expand_dims(c, 0)
     if not A.shape[0] == b.shape[0] == c.shape[0]:
         raise ValueError(
             f"Batch size mismatch: got {A.shape[0]} for A, {b.shape[0]} for b and {c.shape[0]} for c."
@@ -611,23 +611,34 @@ def complex_gaussian_integral_2(
     Raises:
         ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
-    # Step 0: Join the Abc parameters and reshape to have a single batch dimension
+
     if batch_string is None:
         str1 = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) - 2)])
         str2 = "".join([chr(i) for i in range(97, 97 + len(Abc2[0].shape) - 2)])
         out = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) + len(Abc2[0].shape) - 4)])
         batch_string = f"{str1},{str2}->{out}"
-    A_, b_, c_ = join_Abc(Abc1, Abc2, batch_string=batch_string)
-    batch_shape = A_.shape[:-2]
-    A_ = math.reshape(A_, (-1, A_.shape[-2], A_.shape[-1]))
-    b_ = math.reshape(b_, (-1, b_.shape[-1]))
-    c_ = math.reshape(c_, (-1,) + c_.shape[len(batch_shape) :])
 
+    # Join the Abc parameters
+    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+
+    # vectorize the batch dimensions
+    batch_shape = A.shape[:-2]
+    A_core_shape = A.shape[-2:]
+    b_core_shape = b.shape[-1:]
+    c_core_shape = c.shape[len(batch_shape) :]
+    A = math.reshape(A, (-1,) * bool(batch_shape) + A_core_shape)
+    b = math.reshape(b, (-1,) * bool(batch_shape) + b_core_shape)
+    c = math.reshape(c, (-1,) * bool(batch_shape) + c_core_shape)
+
+    # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1
-    core_plus_derived = math.atleast_3d(A1).shape[-1]
-    derived = len(math.atleast_1d(c1).shape[len(A1.shape) - 2 :])
-    idx2 = tuple(i + core_plus_derived - derived for i in idx2)
-    A_out, b_out, c_out = complex_gaussian_integral_1((A_, b_, c_), idx1, idx2, measure)
+    batch_dims_1 = len(math.atleast_3d(A1).shape) - 2
+    derived_1 = len(math.atleast_1d(c1).shape[batch_dims_1:])
+    core_1 = A1.shape[-1] - derived_1
+    idx2 = tuple(i + core_1 for i in idx2)
+
+    # compute the integral and reshape the output batch dimensions
+    A_out, b_out, c_out = complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
     A_out = math.reshape(A_out, batch_shape + (A_out.shape[-2], A_out.shape[-1]))
     b_out = math.reshape(b_out, batch_shape + (b_out.shape[-1],))
     c_out = math.reshape(c_out, batch_shape + c_out.shape[len(batch_shape) :])
