@@ -147,7 +147,7 @@ class Dgate(Unitary):
         return arrays
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape, batched=False), batch_dims=0)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(

@@ -89,7 +89,7 @@ class Transformation(CircuitComponent):
         modes_out: Sequence[int],
         modes_in: Sequence[int],
         array: ComplexTensor,
-        batched: bool = False,
+        batch_dims: int = 0,
         name: str | None = None,
     ) -> Transformation:
         r"""
@@ -99,13 +99,13 @@ class Transformation(CircuitComponent):
             modes_out: The output modes of this transformation.
             modes_in: The input modes of this transformation.
             array: The fock array of this transformation.
-            batched: Whether the fock array is batched.
+            batch_dims: The number of batch dimensions in the given array.
             name: The name of this transformation.
 
         Returns:
             A transformation in the Fock representation.
         """
-        return cls.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
+        return cls.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batch_dims), name)
 
     @classmethod
     def from_quadrature(
