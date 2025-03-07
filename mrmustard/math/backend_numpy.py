@@ -70,10 +70,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.abs(array)
 
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
-        array1 = self.asnumpy(array1)
-        array2 = self.asnumpy(array2)
-        if array1.shape != array2.shape:
-            raise ValueError("Cannot compare arrays of different shapes.")
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: np.ndarray) -> np.ndarray:
@@ -103,6 +99,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
+
+    def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
+        return np.broadcast_to(array, shape)
 
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
@@ -400,8 +399,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
-    def stack(self, values: list[np.ndarray], axis: int = 0) -> np.ndarray:
-        return np.stack(values, axis=axis)
+    def stack(self, arrays: np.ndarray, axis: int = 0) -> np.ndarray:
+        return np.stack(arrays, axis=axis)
 
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
