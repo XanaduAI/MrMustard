@@ -266,36 +266,34 @@ def join_Abc(Abc1: tuple, Abc2: tuple, mode: str = "kron") -> tuple:
     elif mode == "zip":
         A1Z = math.concat([A1, math.zeros((batch1, nA1, nA2), dtype=A1.dtype)], axis=-1)
         ZA2 = math.concat([math.zeros((batch1, nA2, nA1), dtype=A2.dtype), A2], axis=-1)
-        c = math.reshape(
-            math.einsum("...a,...c->...ac", c1, c2), [batch1] + poly_shape1 + poly_shape2
-        )
+        c = math.reshape(math.einsum("ba,bc->bac", c1, c2), [batch1] + poly_shape1 + poly_shape2)
 
     A = math.concat([A1Z, ZA2], axis=-2)
     A = math.concat(
         [
-            A[..., :n1, :],
-            A[..., nA1 : nA1 + n2, :],
-            A[..., n1:nA1, :],
-            A[..., nA1 + n2 :, :],
+            A[:, :n1, :],
+            A[:, nA1 : nA1 + n2, :],
+            A[:, n1:nA1, :],
+            A[:, nA1 + n2 :, :],
         ],
         axis=-2,
     )
     A = math.concat(
         [
-            A[..., :, :n1],
-            A[..., :, nA1 : nA1 + n2],
-            A[..., :, n1:nA1],
-            A[..., :, nA1 + n2 :],
+            A[:, :, :n1],
+            A[:, :, nA1 : nA1 + n2],
+            A[:, :, n1:nA1],
+            A[:, :, nA1 + n2 :],
         ],
         axis=-1,
     )
     b = math.concat([b1, b2], axis=-1)
     b = math.concat(
         [
-            b[..., :n1],
-            b[..., nA1 : nA1 + n2],
-            b[..., n1:nA1],
-            b[..., nA1 + n2 :],
+            b[:, :n1],
+            b[:, nA1 : nA1 + n2],
+            b[:, n1:nA1],
+            b[:, nA1 + n2 :],
         ],
         axis=-1,
     )
