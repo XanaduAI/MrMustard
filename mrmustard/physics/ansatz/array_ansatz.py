@@ -92,6 +92,7 @@ class ArrayAnsatz(Ansatz):
         if not math.from_backend(value):
             value = math.astensor(value)
         self._batch_shape = value.shape[: self.batch_dims]
+        self._core_shape = value.shape[self.batch_dims :]
         self._array = value
 
     def _generate_ansatz(self):
