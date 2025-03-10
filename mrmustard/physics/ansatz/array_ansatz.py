@@ -155,9 +155,9 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
-        batch_str: str = "",
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
+        batch_str: str = "",
     ) -> ArrayAnsatz:
         r"""
         Contracts two ansatze across the specified variables and batch dimensions.

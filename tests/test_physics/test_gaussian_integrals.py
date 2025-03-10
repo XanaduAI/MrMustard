@@ -136,7 +136,7 @@ def test_join_Abc_nonbatched():
     b2 = np.array([12, 13])
     c2 = np.array(10)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
     assert np.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
     assert np.allclose(b, np.array([5, 6, 12, 13]))
@@ -153,7 +153,7 @@ def test_join_Abc_batched_zip():
     b2 = np.array([[12, 13], [14, 15]])
     c2 = np.array([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
     assert np.allclose(
         A,
@@ -178,7 +178,7 @@ def test_join_Abc_batched_kron():
     b2 = np.array([[12, 13], [14, 15]])
     c2 = np.array([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="kron")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
     assert np.allclose(
         A,
@@ -246,7 +246,7 @@ def test_complex_gaussian_integral_2_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], mode="zip")
+    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], batch_string="i,i->i")
     assert np.allclose(res[0], A3)
     assert np.allclose(res[1], b3)
     assert np.allclose(res[2], c3)
@@ -266,7 +266,7 @@ def test_complex_gaussian_integral_1_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [4, 5])
     assert np.allclose(res[0], A3)
@@ -293,7 +293,7 @@ def test_complex_gaussian_integral_1_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
     assert np.allclose(res1[0], A3)
     assert np.allclose(res1[1], b3)

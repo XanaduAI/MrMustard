@@ -335,9 +335,9 @@ class PolyExpAnsatz(Ansatz):
     def contract(
         self,
         other: PolyExpAnsatz,
-        batch_str: str = "",
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
+        batch_str: str = "",
     ) -> PolyExpAnsatz:
         r"""
         Contracts two ansatze across the specified CV variables and batch dimensions.

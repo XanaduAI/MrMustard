@@ -219,12 +219,12 @@ def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
     # 0. unpack and prepare inputs
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    # A1 = math.atleast_3d(A1, dtype=math.complex128)
-    # A2 = math.atleast_3d(A2, dtype=math.complex128)
-    # b1 = math.atleast_2d(b1, dtype=math.complex128)
-    # b2 = math.atleast_2d(b2, dtype=math.complex128)
-    c1 = math.astensor(c1, dtype=math.complex128)
-    c2 = math.astensor(c2, dtype=math.complex128)
+    A1 = math.atleast_3d(A1, dtype=math.complex128)
+    A2 = math.atleast_3d(A2, dtype=math.complex128)
+    b1 = math.atleast_2d(b1, dtype=math.complex128)
+    b2 = math.atleast_2d(b2, dtype=math.complex128)
+    c1 = math.atleast_1d(c1, dtype=math.complex128)
+    c2 = math.atleast_1d(c2, dtype=math.complex128)
 
     # 1. Parse the batch string
     if "->" not in batch_string:
