@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Collection, Sequence
 import warnings
-import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets

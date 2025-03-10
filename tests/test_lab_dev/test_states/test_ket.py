@@ -374,10 +374,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(cat._L2_norms, math.ones(2))
 
     def test_unsafe_batch_zipping(self):
-        cat = Coherent([0], x=1.0) + Coherent([0], x=-1.0)  # used as a batch
-        displacements = Dgate([0], x=1.0) + Dgate([0], x=-1.0)
+        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
+        displacements = Dgate(0, x=1.0) + Dgate(0, x=-1.0)
         better_cat = cat.contract(displacements, mode="zip")
-        assert better_cat == Coherent([0], x=2.0) + Coherent([0], x=-2.0)
+        assert better_cat == Coherent(0, x=2.0) + Coherent(0, x=-2.0)
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):

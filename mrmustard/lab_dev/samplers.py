@@ -224,17 +224,6 @@ class HomodyneSampler(Sampler):
         return self._validate_probs(probs, atol)
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
-        r"""
-        Returns an array of samples given a state.
-
-        Args:
-            state: The state to sample.
-            n_samples: The number of samples to generate.
-            seed: An optional seed for random sampling.
-
-        Returns:
-            An array of samples such that the shape is ``(n_samples, n_modes)``.
-        """
         if len(state.modes) == 1:
             return self.sample_prob_dist(state, n_samples, seed)[0]
 

@@ -387,19 +387,19 @@ class TestCircuitComponent:
             n2 = Number(2, n=1).dual
 
             # bargmann >> fock
-            r1 = vac12 >> d1 >> d2 >> a1 >> n12
+            r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
             # bargmann >> fock
-            r1 = vac12 >> d1 >> d2 >> a1 >> n12
+            r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
             # bargmann >> fock
             r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
             # fock >> bargmann
-            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n12
+            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n1 > n2
 
             # bargmann >> fock >> bargmann
-            r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n12
+            r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n1 >> n2
 
             assert np.allclose(r1, r2)
             assert np.allclose(r1, r3)

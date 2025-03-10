@@ -17,7 +17,7 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
 from __future__ import annotations  # pragma: no cover
-from typing import Callable, Sequence, List  # pragma: no cover
+from typing import Callable, Sequence  # pragma: no cover
 from functools import partial  # pragma: no cover
 
 import jax  # pragma: no cover
@@ -754,9 +754,6 @@ class BackendJax(BackendBase):  # pragma: no cover
             C,
         )
         return poly0
-
-    def broadcast_arrays(self, *arrays: jnp.ndarray) -> List[jnp.ndarray]:
-        return jnp.broadcast_arrays(*arrays)
 
 
 # defining the pytree node for the JaxBackend.
