@@ -104,6 +104,7 @@ class PolyExpAnsatz(Ansatz):
         A: A batch of quadratic coefficient :math:`A^{(i)}`.
         b: A batch of linear coefficients :math:`b^{(i)}`.
         c: A batch of arrays :math:`c^{(i)}`.
+        name:
     """
 
     def __init__(
@@ -114,9 +115,9 @@ class PolyExpAnsatz(Ansatz):
         name: str = "",
     ):
         super().__init__()
-        self._A = math.astensor(A) if A is not None else None
-        self._b = math.astensor(b) if b is not None else None
-        self._c = math.astensor(c) if c is not None else None
+        self._A = math.atleast_3d(A) if A is not None else None
+        self._b = math.atleast_2d(b) if b is not None else None
+        self._c = math.atleast_1d(c) if c is not None else None
         self.name = name
         self._simplified = False
         self._fn = None
@@ -181,8 +182,10 @@ class PolyExpAnsatz(Ansatz):
                     params[name] = param
 
             data = self._fn(**params)
-            self._A, self._b, self._c = data
-            self._c = math.astensor(self._c)
+            A, b, c = data
+            self._A = math.atleast_3d(A)
+            self._b = math.atleast_2d(b)
+            self._c = math.atleast_1d(c)
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
