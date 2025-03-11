@@ -576,7 +576,8 @@ def complex_gaussian_integral_2(
     batch_string: str | None = None,
     measure: float = -1,
 ) -> tuple:
-    r"""Computes the complex Gaussian integral
+    r"""
+    Computes the complex Gaussian integral
 
     :math:`\int_{C^m} F_1(z,\beta_1)F_2(z,\beta_2) d\mu(z)`,
 
@@ -620,9 +621,9 @@ def complex_gaussian_integral_2(
     c2 = math.atleast_1d(c2, dtype=math.complex128)
 
     if batch_string is None:
-        str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape) - 2)])
-        str2 = "".join([chr(i) for i in range(97 + len(str1), 97 + len(str1) + len(A2.shape) - 2)])
-        out = "".join([chr(i) for i in range(97, 97 + len(A1.shape) + len(A2.shape) - 4)])
+        str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]))])
+        str2 = "".join([chr(i) for i in range(97 + len(str1), 97 + len(str1) + len(A2.shape[:-2]))])
+        out = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]) + len(A2.shape[:-2]))])
         batch_string = f"{str1},{str2}->{out}"
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)

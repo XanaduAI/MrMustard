@@ -349,8 +349,13 @@ class TestTriples:
 
     @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])
     def test_attenuator_kraus_Abc(self, eta):
-        B = PolyExpAnsatz(*triples.attenuator_kraus_Abc(eta))
-        Att = PolyExpAnsatz(*triples.attenuator_Abc(eta))
+        # TODO: revisit this once PolyExpAnsatz auto batches the (A,b,c)
+        A_kraus, b_kraus, c_kraus = triples.attenuator_kraus_Abc(eta)
+        B = PolyExpAnsatz(
+            math.atleast_3d(A_kraus), math.atleast_2d(b_kraus), math.atleast_1d(c_kraus)
+        )
+        A, b, c = triples.attenuator_Abc(eta)
+        Att = PolyExpAnsatz(math.atleast_3d(A), math.atleast_2d(b), math.atleast_1d(c))
         assert B.contract(B, 2, 2) == Att
 
     def test_gaussian_random_noise_Abc(self):
