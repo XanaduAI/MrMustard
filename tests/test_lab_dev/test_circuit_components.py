@@ -209,7 +209,7 @@ class TestCircuitComponent:
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = np.random.random((1, 5)) + 0.0j
-        polyexp = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
         ).to_fock(shape=(10, 10))
@@ -577,7 +577,6 @@ class TestCircuitComponent:
             "A": ansatz.A,
             "b": ansatz.b,
             "c": ansatz.c,
-            "num_derived_vars": ansatz.num_derived_vars,
         }
 
     def test_serialize_fail_when_no_modes_input(self):

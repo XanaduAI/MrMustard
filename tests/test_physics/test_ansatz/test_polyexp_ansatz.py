@@ -66,8 +66,8 @@ class TestPolyExpAnsatz:
         A2, b2, _ = Abc_triple(5)
         c2 = np.random.random(size=(2, 2))
 
-        bargmann3 = PolyExpAnsatz(A1, b1, c1, num_derived_vars=2)
-        bargmann4 = PolyExpAnsatz(A2, b2, c2, num_derived_vars=2)
+        bargmann3 = PolyExpAnsatz(A1, b1, c1)
+        bargmann4 = PolyExpAnsatz(A2, b2, c2)
 
         bargmann_add2 = bargmann3 + bargmann4
 
@@ -87,7 +87,7 @@ class TestPolyExpAnsatz:
         c1 = np.random.random((1,))
         c2 = np.random.random((1, 11))
         ansatz1 = PolyExpAnsatz(A1, b1, c1)
-        ansatz2 = PolyExpAnsatz(A2, b2, c2, num_derived_vars=1)
+        ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz_sum = ansatz1 + ansatz2
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
@@ -129,16 +129,16 @@ class TestPolyExpAnsatz:
 
         A, b, _ = Abc_triple(4)
         c = np.random.random(size=(1, 3, 3, 3)) + 0.0j
-        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
+        ansatz = PolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
         with pytest.raises(Exception):
             ansatz(*z)
 
-        A = np.array([[0.0, 1.0], [1.0, 0.0]]) + 0.0j
-        b = np.zeros(2) + 0.0j
+        A = math.astensor([np.array([[0.0, 1.0], [1.0, 0.0]]) + 0.0j])
+        b = math.astensor([np.zeros(2) + 0.0j])
         c = np.zeros(10, dtype=complex).reshape(1, -1) + 0.0j
-        c[0, -1] = 1
-        ans = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        c[..., -1] = 1
+        ans = PolyExpAnsatz(A, b, c)
 
         nine_factorial = np.prod(np.arange(1, 9))
         assert np.allclose(ans(np.array([0.1 + 0.0j])), 0.1**9 / np.sqrt(nine_factorial))
@@ -151,7 +151,7 @@ class TestPolyExpAnsatz:
         batch = 3
         c = np.random.random(size=(batch, 5, 5)) / 1000 + 0.0j
 
-        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c, num_derived_vars=2)
+        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
         z0 = [None, 2.0 + 0.0j]
         z1 = [1.0 + 0.0j]
         z2 = [1.0 + 0.0j, 2.0 + 0.0j]
@@ -166,7 +166,7 @@ class TestPolyExpAnsatz:
         batch = 2
         c = np.random.random(size=(2, 5)) / 1000 + 0.0j
 
-        obj = PolyExpAnsatz([A1, A2], [b1, b2], c, num_derived_vars=1)
+        obj = PolyExpAnsatz([A1, A2], [b1, b2], c)
         z0 = [None, 2.0 + 0.0j, None]
         z1 = [1.0 + 0.0j, 3.0 + 0.0j]
         z2 = [1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j]
@@ -203,7 +203,7 @@ class TestPolyExpAnsatz:
     def test_decompose_ansatz(self):
         A, b, _ = Abc_triple(4, (1,))
         c = np.random.uniform(-1, 1, size=(1, 3, 3, 3)) + 0.0j
-        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.uniform(-1, 1, size=(1,)) + 0.0j
@@ -211,7 +211,7 @@ class TestPolyExpAnsatz:
         assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
 
         c2 = np.random.uniform(-1, 1, size=(1, 4)) + 0.0j
-        ansatz2 = PolyExpAnsatz(A, b, c2, num_derived_vars=1)
+        ansatz2 = PolyExpAnsatz(A, b, c2)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
         assert np.allclose(decomp_ansatz2.A, ansatz2.A)
 
@@ -221,7 +221,7 @@ class TestPolyExpAnsatz:
         """
         A, b, _ = Abc_triple(4, (2,))
         c = np.random.random((2, 3, 3, 3))
-        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.random((1,))
@@ -232,7 +232,7 @@ class TestPolyExpAnsatz:
 
         A, b, _ = Abc_triple(5, (2,))
         c = np.random.random((2, 3, 3, 3))
-        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=3)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
         z = np.random.random((4,))
@@ -354,7 +354,7 @@ class TestPolyExpAnsatz:
     def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4, (1,))
         c = np.random.random((1, 3))
-        ansatz = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        ansatz = PolyExpAnsatz(A, b, c)
 
         poly_dim = ansatz.num_derived_vars
         poly_shape = ansatz.shape_derived_vars
@@ -412,7 +412,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((3, 3))
         b = np.random.random(3)
         c = np.random.random(())
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=0, name="F")
+        F = PolyExpAnsatz(A, b, c, name="F")
 
         # Scalar inputs
         z0, z1, z2 = 0.4, 0.5, 0.2
@@ -433,7 +433,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((3, 3))
         b = np.random.random(3)
         c = np.random.random(())
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=0, name="F")
+        F = PolyExpAnsatz(A, b, c, name="F")
 
         # Batched inputs with different shapes
         z0 = np.array([0.4, 0.2])
@@ -454,7 +454,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((4, 7, 3, 3))
         b = np.random.random((4, 7, 3))
         c = np.random.random((4, 7))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=0, name="batched")
+        F = PolyExpAnsatz(A, b, c, name="batched")
 
         # Scalar inputs
         z0, z1, z2 = 0.4, 0.5, 0.2
@@ -476,7 +476,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((4, 7, 3, 3))
         b = np.random.random((4, 7, 3))
         c = np.random.random((4, 7))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=0, name="batched")
+        F = PolyExpAnsatz(A, b, c, name="batched")
 
         # Batched inputs
         z1 = np.array([0.4, 0.2])
@@ -497,7 +497,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((4, 7, 3, 3))
         b = np.random.random((4, 7, 3))
         c = np.random.random((4, 7, 5))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
 
         # Scalar inputs (only 2 inputs needed for 2 CV + 1 derived = 3 total variables)
         z0, z1 = 0.4, 0.5
@@ -519,7 +519,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((4, 7, 3, 3))
         b = np.random.random((4, 7, 3))
         c = np.random.random((4, 7, 5))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
 
         # Batched inputs
         z0 = np.array([0.5, 0.9])
@@ -539,7 +539,7 @@ class TestPolyExpAnsatz:
         A = np.random.random((4, 7, 3, 3))
         b = np.random.random((4, 7, 3))
         c = np.random.random((4, 7, 5))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
 
         # Inputs with singleton dimensions
         z0 = np.array([0.4, 0.2])[:, None]  # Shape (2, 1)
@@ -554,7 +554,7 @@ class TestPolyExpAnsatz:
         # Create ansatz with derived variables
         A, b, c = Abc_triple(3, (4, 7))
         c = np.random.random((4, 7, 5))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
 
         # Partial evaluation with scalar input
         z0 = np.array(0.5 + 0.0j)
@@ -576,7 +576,7 @@ class TestPolyExpAnsatz:
         # Create ansatz with derived variables
         A, b, c = Abc_triple(3, (4, 7))
         c = np.random.random((4, 7, 5))
-        F = PolyExpAnsatz(A, b, c, num_derived_vars=1, name="derived+batched")
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
 
         # Partial evaluation with scalar input
         z0 = np.array([0.5, 0.6]) + 0.0j

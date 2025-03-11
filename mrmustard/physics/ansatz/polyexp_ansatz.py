@@ -78,25 +78,25 @@ class PolyExpAnsatz(Ansatz):
         >>> A = np.random.random((3,3))  # no batch
         >>> b = np.random.random((3,))
         >>> c = np.random.random()
-        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=0)
+        >>> F = PolyExpAnsatz(A, b, c)
         >>> assert F(1.0, 2.0, 3.0).shape == ()
 
         >>> A = np.random.random((10,3,3))  # batch of 10
         >>> b = np.random.random((10,3))
         >>> c = np.random.random((10,))
-        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=0)
+        >>> F = PolyExpAnsatz(A, b, c)
         >>> assert F(1.0, 2.0, 3.0).shape == (10,)
 
         >>> A = np.random.random((10,3,3))  # batch of 10
         >>> b = np.random.random((10,3))
         >>> c = np.random.random((10,7))
-        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=1)
+        >>> F = PolyExpAnsatz(A, b, c)
         >>> assert F(1.0, 2.0).shape == (10,)  # two CV variables, one derived
 
         >>> A = np.random.random((10,3,3))  # batch of 10
         >>> b = np.random.random((10,3))
         >>> c = np.random.random((10,7,5))
-        >>> F = PolyExpAnsatz(A, b, c, num_derived_vars=2)
+        >>> F = PolyExpAnsatz(A, b, c)
         >>> assert F(1.0).shape == (10,)  # one CV variable, two derived
         >>> assert F([1.0, 2.0, 3.0]).shape == (3,10)  # batch of 3 inputs
 
@@ -104,7 +104,6 @@ class PolyExpAnsatz(Ansatz):
         A: A batch of quadratic coefficient :math:`A^{(i)}`.
         b: A batch of linear coefficients :math:`b^{(i)}`.
         c: A batch of arrays :math:`c^{(i)}`.
-        num_derived_vars: The number of variables :math:`y` that are derived by the polynomial of derivatives.
     """
 
     def __init__(
@@ -112,14 +111,12 @@ class PolyExpAnsatz(Ansatz):
         A: Batch[ComplexMatrix] | None,
         b: Batch[ComplexVector] | None,
         c: Batch[ComplexTensor] | None,
-        num_derived_vars: int = 0,  # TODO: infer from shape of c
         name: str = "",
     ):
         super().__init__()
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
-        self.num_derived_vars = num_derived_vars
         self.name = name
         self._simplified = False
         self._fn = None
@@ -138,7 +135,7 @@ class PolyExpAnsatz(Ansatz):
             f"PolyExpAnsatz({display_name})",
             f"  Batch shape: {self.batch_shape}",
             f"  Variables: {self.num_CV_vars} CV + {self.num_derived_vars} derived = {self.num_vars} total",
-            f"  Parameter shapes:",
+            "  Parameter shapes:",
             f"    A: {self.A.shape}",
             f"    b: {self.b.shape}",
             f"    c: {self.c.shape}",
@@ -185,12 +182,8 @@ class PolyExpAnsatz(Ansatz):
                     params[name] = param
 
             data = self._fn(**params)
-            if len(data) == 4:
-                self._A, self._b, self._c, self.num_derived_vars = data
-            else:
-                self._A, self._b, self._c = data
-                self._c = math.astensor(self._c)
-                self.num_derived_vars = 0
+            self._A, self._b, self._c = data
+            self._c = math.astensor(self._c)
             self._batch_shape = self._A.shape[:-2]
 
     @property
@@ -272,16 +265,14 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        return PolyExpAnsatz(
-            math.conj(self.A), math.conj(self.b), math.conj(self.c), self.num_derived_vars
-        )
+        return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
 
     @property
     def data(
         self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor], int]:
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
-        return self.triple, self.num_derived_vars
+        return self.triple
 
     @property
     def num_CV_vars(self) -> int:
@@ -290,6 +281,13 @@ class PolyExpAnsatz(Ansatz):
         This is the number of continuous variables of the Ansatz function itself.
         """
         return self.A.shape[-1] - self.num_derived_vars
+
+    @property
+    def num_derived_vars(self) -> int:
+        r"""
+        The number of derived variables that are derived by the polynomial of derivatives.
+        """
+        return len(self.c.shape[self.batch_dims :])
 
     @property
     def num_vars(self):
@@ -319,7 +317,7 @@ class PolyExpAnsatz(Ansatz):
 
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""Returns a dictionary representation of the ansatz. For serialization purposes."""
-        return {"A": self.A, "b": self.b, "c": self.c, "num_derived_vars": self.num_derived_vars}
+        return {"A": self.A, "b": self.b, "c": self.c}
 
     @classmethod
     def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
@@ -369,7 +367,7 @@ class PolyExpAnsatz(Ansatz):
                 )
 
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
-        return PolyExpAnsatz(A, b, c, self.num_derived_vars + other.num_derived_vars)
+        return PolyExpAnsatz(A, b, c)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -446,7 +444,7 @@ class PolyExpAnsatz(Ansatz):
         )
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
-        return self.__class__(A, b, self.c, self.num_derived_vars)
+        return PolyExpAnsatz(A, b, self.c)
 
     def simplify(self) -> None:
         r"""
@@ -542,7 +540,7 @@ class PolyExpAnsatz(Ansatz):
                 f"All indices must be between 0 and {self.num_CV_vars-1}. Got {idx_z} and {idx_zconj}."
             )
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
-        return self.__class__(A, b, c, self.num_derived_vars)
+        return PolyExpAnsatz(A, b, c)
 
     def eval(
         self, *z: Vector | None, batch_string: str | None = None
@@ -743,7 +741,6 @@ class PolyExpAnsatz(Ansatz):
             new_A,
             new_b,
             new_c,
-            self.num_derived_vars,
         )
 
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
@@ -813,7 +810,6 @@ class PolyExpAnsatz(Ansatz):
             combined_matrices,
             combined_vectors,
             combined_arrays,
-            n_derived_vars,
         )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -833,7 +829,7 @@ class PolyExpAnsatz(Ansatz):
             other.triple,
             self._outer_product_batch_str(self.batch_dims, other.batch_dims),
         )
-        return PolyExpAnsatz(As, bs, cs, self.num_derived_vars + other.num_derived_vars)
+        return PolyExpAnsatz(As, bs, cs)
 
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
@@ -843,7 +839,7 @@ class PolyExpAnsatz(Ansatz):
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c * other, self.num_derived_vars)
+                return PolyExpAnsatz(self.A, self.b, self.c * other)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -853,12 +849,12 @@ class PolyExpAnsatz(Ansatz):
             )
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c, self.num_derived_vars)
+        return PolyExpAnsatz(self.A, self.b, -self.c)
 
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c / other, self.num_derived_vars)
+                return PolyExpAnsatz(self.A, self.b, self.c / other)
             except Exception as e:
                 raise TypeError(f"Cannot divide PolyExpAnsatz and {other.__class__}.") from e
         else:
