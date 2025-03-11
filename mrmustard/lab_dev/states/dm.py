@@ -36,7 +36,7 @@ from mrmustard.utils.typing import ComplexTensor, RealVector
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Map
+from ..transformations import Map, Channel
 
 from ..utils import shape_check
 
@@ -470,6 +470,115 @@ class DM(State):
         )
         c_T = 1
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
+        return core, phi
+
+    def physical_stellar_decomposition(self, core_modes: Collection[int]):
+        r"""
+        Applies the physical stellar decomposition, pulling put a channel from a pure state.
+
+        Args:
+            core_modes: the core modes defining the core variables.
+
+        Returns:
+            core: The core state (`Ket`)
+            phi: The channel acting on the core modes (`Map`)
+
+        Raises:
+            ValueError: if the given state is non-Gaussian
+            ValueError: if the number of core modes is not half the total number of modes.
+        """
+        from .ket import Ket
+
+        A, b, c = self.ansatz.triple
+        A = A[-1]
+        b = b[-1]
+        if c.shape != (1,):
+            raise ValueError(
+                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
+            )
+
+        m_modes = A.shape[-1] // 2
+
+        if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
+            raise ValueError(
+                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work."
+            )
+
+        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
+        core_bra_indices = [
+            (i - m_modes) if i >= m_modes else i for i in (mode_to_idx[j] for j in core_modes)
+        ]
+        core_ket_indices = [(i + m_modes) for i in core_bra_indices]
+        core_indices = core_bra_indices + core_ket_indices
+        remaining_indices = [i for i in range(2 * m_modes) if i not in core_indices]
+        new_order = math.astensor(core_indices + remaining_indices)
+
+        A_reordered = A[new_order, :]
+        A_reordered = A_reordered[
+            :, new_order
+        ]  # reordering indices of A so that it has the standard form.
+
+        num_core_modes = len(core_modes)
+        core_size = 2 * num_core_modes
+
+        Am = A_reordered[:core_size, :core_size]
+        An = A_reordered[core_size:, core_size:]
+        R = A_reordered[:core_size, core_size:]
+
+        # computing the core state:
+        reduced_A = An - R.T @ math.inv(Am - math.Xmat(num_core_modes)) @ R
+        r_squared = reduced_A[:num_core_modes, num_core_modes:]
+        r_evals, r_evecs = math.eigh(r_squared)
+        r_core = (r_evecs * math.sqrt(r_evals) @ math.conj(r_evecs.T)).T
+        a_core = reduced_A[num_core_modes:, num_core_modes:]
+        A_core = math.block(
+            [
+                [math.zeros((num_core_modes, num_core_modes), dtype=math.complex128), r_core.T],
+                [r_core, a_core],
+            ]
+        )
+        b_core = math.zeros(len(core_modes), dtype=math.complex128)
+        c_core = 1  # to be renormalized
+
+        core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core))
+
+        Aphi_out = Am
+        Gamma_phi = (
+            math.inv(
+                math.block(
+                    [
+                        [
+                            math.conj(r_core),
+                            math.zeros((num_core_modes, num_core_modes), dtype=math.complex128),
+                        ],
+                        [
+                            math.zeros((num_core_modes, num_core_modes), dtype=math.complex128),
+                            r_core,
+                        ],
+                    ]
+                )
+            )
+            @ R
+        )
+
+        Aphi_in = Gamma_phi.T @ math.inv(
+            Aphi_out - math.Xmat(num_core_modes)
+        ) @ Gamma_phi + math.Xmat(num_core_modes)
+
+        Aphi = math.block([[Aphi_out, Gamma_phi], [Gamma_phi, Aphi_in]])
+        type_wise_order = (
+            list(range(num_core_modes))
+            + list(range(2 * num_core_modes, 3 * num_core_modes))
+            + list(range(num_core_modes, 2 * num_core_modes))
+            + list(range(3 * num_core_modes, 4 * num_core_modes))
+        )
+
+        Aphi = Aphi[type_wise_order, :]
+        Aphi = Aphi[:, type_wise_order]
+        bphi = math.zeros(4 * num_core_modes, dtype=math.complex128)
+        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
+        renorm = (core >> phi).probability
+        phi = phi / renorm
         return core, phi
 
     def _ipython_display_(self):  # pragma: no cover

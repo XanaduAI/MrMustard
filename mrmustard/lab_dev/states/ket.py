@@ -42,7 +42,7 @@ from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary
+from ..transformations import Unitary, Operation
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -358,7 +358,7 @@ class Ket(State):
         core_indices = [mode_to_idx[i] for i in core_modes]
 
         remaining_indices = [i for i in range(m_modes) if i not in core_indices]
-        new_order = core_indices + remaining_indices
+        new_order = math.astensor(core_indices + remaining_indices)
 
         A_reordered = A[new_order, :]
         A_reordered = A_reordered[
@@ -399,9 +399,9 @@ class Ket(State):
 
         b_core = math.block([bm, bn - R @ math.inv(gamma) @ bu[m_core:]], axes=(0, 0))
 
-        inverse_order = [
-            orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])
-        ]  # to invert the order
+        inverse_order = math.astensor(
+            [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
+        )  # to invert the order
 
         A_core = A_core[inverse_order, :]
         A_core = A_core[:, inverse_order]
@@ -411,6 +411,91 @@ class Ket(State):
         psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         return psi_core, U
+
+    def formal_stellar_decomposition(self, core_modes: Collection[int]):
+        r"""
+        Applies the physical stellar decomposition.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            S: The core state (`Ket`)
+            T: The Gaussian `Operation` performing the stellar decomposition.
+
+        Raises:
+            ValueError: if the state is non-Gaussian.
+
+        Note:
+            This method pulls out the unitary ``U`` from the given state on the given modes, so that
+            the remaining state is a core state. Formally, we have
+            .. math::
+
+                \psi = (T\otimes\mathbb I) S_{\mathrm{core}}
+
+            where the operator :math:`T` acts on the given `core_modes` only.
+            Core states have favorable properties in the Fock representation
+            e.g., being sparse."""
+
+        A, b, c = self.ansatz.triple
+        A = A[-1]
+        b = b[-1]
+        if c.shape != (1,):
+            raise ValueError(
+                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
+            )
+
+        m_modes = A.shape[-1]
+
+        # bringing A to the ordering of our interest
+        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
+        core_indices = [mode_to_idx[i] for i in core_modes]
+
+        remaining_indices = [i for i in range(m_modes) if i not in core_indices]
+        new_order = math.astensor(core_indices + remaining_indices)
+
+        A_reordered = A[new_order, :]
+        A_reordered = A_reordered[
+            :, new_order
+        ]  # reordering indices of A so that it has the standard form.
+        b_reordered = b[new_order]  # reordering b accordingly
+
+        m_core = len(core_modes)
+
+        # we pick the blocks according to the naming chosen in the paper
+        Am = A_reordered[:m_core, :m_core]
+        R = A_reordered[m_core:, :m_core]
+        An = A_reordered[m_core:, m_core:]
+        bm = b_reordered[:m_core]
+        bn = b_reordered[m_core:]
+
+        As = math.block([[math.zeros((m_core, m_core), dtype=math.complex128), R.T], [R, An]])
+        bs = math.block([math.zeros(m_core, dtype=math.complex128), bn], axes=(0, 0))
+        cs = c[-1]
+
+        inverse_order = math.astensor(
+            [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
+        )  # to invert the order
+
+        As = As[inverse_order, :]
+        As = As[:, inverse_order]
+        bs = bs[inverse_order]
+        s = Ket.from_bargmann(self.modes, (As, bs, cs))
+
+        At = math.block(
+            [
+                [Am, math.eye(m_core, dtype=math.complex128)],
+                [
+                    math.eye(m_core, dtype=math.complex128),
+                    math.zeros((m_core, m_core), dtype=math.complex128),
+                ],
+            ]
+        )
+        bt = math.block([bm, math.zeros(m_core, dtype=math.complex128)])
+        ct = 1
+        t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
+
+        return s, t
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
