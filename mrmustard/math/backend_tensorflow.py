@@ -109,6 +109,21 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[tf.Tensor]) -> list[tf.Tensor]:
+        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
+        # We need to implement it manually
+        if not arrays:
+            return []
+
+        # Get the broadcasted shape
+        shapes = [tf.shape(arr) for arr in arrays]
+        broadcasted_shape = shapes[0]
+        for shape in shapes[1:]:
+            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
+
+        # Broadcast each array to the common shape
+        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 
@@ -721,38 +736,3 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return dL_dtensor, dL_dvalue
 
         return _tensor, grad
-
-    def broadcast_to(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
-        """Broadcast a tensor to a new shape.
-
-        Args:
-            array: Input tensor to broadcast.
-            shape: Target shape to broadcast to.
-
-        Returns:
-            The broadcasted tensor.
-        """
-        return tf.broadcast_to(array, shape)
-
-    def broadcast_arrays(self, *arrays) -> list[tf.Tensor]:
-        """Broadcast arrays to a common shape.
-
-        Args:
-            *arrays: The arrays to broadcast.
-
-        Returns:
-            A list of broadcasted arrays.
-        """
-        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
-        # We need to implement it manually
-        if not arrays:
-            return []
-
-        # Get the broadcasted shape
-        shapes = [tf.shape(arr) for arr in arrays]
-        broadcasted_shape = shapes[0]
-        for shape in shapes[1:]:
-            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
-
-        # Broadcast each array to the common shape
-        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]

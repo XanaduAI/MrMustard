@@ -103,6 +103,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[np.ndarray]) -> list[np.ndarray]:
+        return np.broadcast_arrays(*arrays)
+
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
 
@@ -695,26 +698,3 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         _tensor[key] = value
 
         return _tensor
-
-    def broadcast_to(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
-        """Broadcast an array to a new shape.
-
-        Args:
-            array: The array to broadcast.
-            shape: The shape to broadcast to.
-
-        Returns:
-            The broadcasted array.
-        """
-        return np.broadcast_to(array, shape)
-
-    def broadcast_arrays(self, *arrays) -> list[np.ndarray]:
-        """Broadcast arrays to a common shape.
-
-        Args:
-            *arrays: The arrays to broadcast.
-
-        Returns:
-            A list of broadcasted arrays.
-        """
-        return np.broadcast_arrays(*arrays)

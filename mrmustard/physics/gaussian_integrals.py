@@ -19,7 +19,7 @@ This module contains gaussian integral functions and related helper functions.
 from typing import Sequence
 import numpy as np
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, ComplexTensor
 
 
 def real_gaussian_integral(
@@ -185,8 +185,13 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
     return A, b, c
 
 
-def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
-    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
+def join_Abc(
+    Abc1: tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]],
+    Abc2: tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]],
+    batch_string: str,
+) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+    r"""
+    Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
     It supports arbitrary batch dimensions using an einsum-like string notation.
     For example:
@@ -195,18 +200,16 @@ def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
     - "i,j->ij", "ij,ik->ijk", "i,->i" are all valid batch dimension specifications
 
     The string only refers to the batch dimensions. The core (non-batch) dimensions are handled
-    as before: the A matrices and b vectors are joined, and the shape of c is the
+    as follows: the A matrices and b vectors are joined, and the shape of c is the
     concatenation of the shapes of c1 and c2 (batch excluded).
 
-    It supports varying batch dimensions, e.g. ``A1.shape = (batch1, n1, n1)``,
-    ``b1.shape = (batch1, n1)``, ``c1.shape = (batch1, *d1)`` or no batch dimension:
-    ``A1.shape = (n1, n1)``, ``b1.shape = (n1)``, ``c1.shape = (*d1)``.
+    Input parameters are expected to have arbitrary batch dimensions, e.g. ``A1.shape = (batch1, n1, n1)``,
+    ``b1.shape = (batch1, n1)``, ``c1.shape = (batch1, *d1)``.
     The number of non-batch dimensions in ``ci`` (i.e. ``len(di)``) corresponds to the number
     of rows and columns of ``Ai`` and ``bi`` that are kept last (derived variables).
-    So for instance, if ``d1 = (4, 3)`` and ``d2=(7,)``, then the last 2 rows and columns of
+    For instance, if ``d1 = (4, 3)`` and ``d2=(7,)``, then the last 2 rows and columns of
     ``A1`` and ``b1`` and the last 1 row and column of ``A2`` and ``b2`` are kept last in the
-    joined ``A`` and ``b``. If inputs are not batched, the output has a batch dimension of size 1
-    added to it.
+    joined ``A`` and ``b``.
 
     Arguments:
         Abc1: the first ``(A,b,c)`` triple
@@ -219,12 +222,6 @@ def join_Abc(Abc1: tuple, Abc2: tuple, batch_string: str) -> tuple:
     # 0. unpack and prepare inputs
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    A1 = math.atleast_3d(A1, dtype=math.complex128)
-    A2 = math.atleast_3d(A2, dtype=math.complex128)
-    b1 = math.atleast_2d(b1, dtype=math.complex128)
-    b2 = math.atleast_2d(b2, dtype=math.complex128)
-    c1 = math.atleast_1d(c1, dtype=math.complex128)
-    c2 = math.atleast_1d(c2, dtype=math.complex128)
 
     # 1. Parse the batch string
     if "->" not in batch_string:
@@ -503,6 +500,7 @@ def complex_gaussian_integral_1(
         raise ValueError(
             f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
         )
+
     A, b, c = Abc
     c = math.astensor(c)
     # assuming c is batched accordingly
@@ -611,24 +609,32 @@ def complex_gaussian_integral_2(
     Raises:
         ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    A1 = math.atleast_3d(A1, dtype=math.complex128)
+    A2 = math.atleast_3d(A2, dtype=math.complex128)
+    b1 = math.atleast_2d(b1, dtype=math.complex128)
+    b2 = math.atleast_2d(b2, dtype=math.complex128)
+    c1 = math.atleast_1d(c1, dtype=math.complex128)
+    c2 = math.atleast_1d(c2, dtype=math.complex128)
 
     if batch_string is None:
-        str1 = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) - 2)])
-        str2 = "".join([chr(i) for i in range(97, 97 + len(Abc2[0].shape) - 2)])
-        out = "".join([chr(i) for i in range(97, 97 + len(Abc1[0].shape) + len(Abc2[0].shape) - 4)])
+        str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape) - 2)])
+        str2 = "".join([chr(i) for i in range(97 + len(str1), 97 + len(str1) + len(A2.shape) - 2)])
+        out = "".join([chr(i) for i in range(97, 97 + len(A1.shape) + len(A2.shape) - 4)])
         batch_string = f"{str1},{str2}->{out}"
 
-    # Join the Abc parameters
-    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
 
     # vectorize the batch dimensions
     batch_shape = A.shape[:-2]
     A_core_shape = A.shape[-2:]
     b_core_shape = b.shape[-1:]
     c_core_shape = c.shape[len(batch_shape) :]
-    A = math.reshape(A, (-1,) * bool(batch_shape) + A_core_shape)
-    b = math.reshape(b, (-1,) * bool(batch_shape) + b_core_shape)
-    c = math.reshape(c, (-1,) * bool(batch_shape) + c_core_shape)
+    A = math.reshape(A, (-1,) + A_core_shape)
+    b = math.reshape(b, (-1,) + b_core_shape)
+    c = math.reshape(c, (-1,) + c_core_shape)
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1

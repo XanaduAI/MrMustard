@@ -126,23 +126,6 @@ def test_join_Abc_real():
     assert math.allclose(joined_Abc2[2], math.outer(c1, c2))
 
 
-def test_join_Abc_nonbatched():
-    """Tests the ``join_Abc`` method for non-batched inputs."""
-    A1 = np.array([[1, 2], [3, 4]])
-    b1 = np.array([5, 6])
-    c1 = np.array(7)
-
-    A2 = np.array([[8, 9], [10, 11]])
-    b2 = np.array([12, 13])
-    c2 = np.array(10)
-
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
-
-    assert np.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
-    assert np.allclose(b, np.array([5, 6, 12, 13]))
-    assert np.allclose(c, 70)
-
-
 def test_join_Abc_batched_zip():
     """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
     A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
@@ -266,7 +249,11 @@ def test_complex_gaussian_integral_1_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
+    A, b, c = join_Abc(
+        (math.atleast_3d(A1), math.atleast_2d(b1), math.atleast_1d(c1)),
+        (math.atleast_3d(A2), math.atleast_2d(b2), math.atleast_1d(c2)),
+        batch_string="i,i->i",
+    )
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [4, 5])
     assert np.allclose(res[0], A3)
