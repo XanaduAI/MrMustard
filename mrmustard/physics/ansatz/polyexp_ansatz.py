@@ -121,7 +121,6 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
-        self._batch_shape = self._A.shape[:-2] if A is not None else None
 
     def __repr__(self) -> str:  # TODO: update to show batch shape
         r"""Returns a string representation of the PolyExpAnsatz object."""
@@ -184,16 +183,13 @@ class PolyExpAnsatz(Ansatz):
             data = self._fn(**params)
             self._A, self._b, self._c = data
             self._c = math.astensor(self._c)
-            self._batch_shape = self._A.shape[:-2]
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
         r"""
         The shape of the batch of parameters.
         """
-        if self._batch_shape is None:
-            self._batch_shape = self.A.shape[:-2]
-        return self._batch_shape
+        return self.A.shape[:-2]
 
     @property
     def batch_dims(self) -> tuple[int, ...]:
@@ -259,9 +255,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        if self._batch_shape is None:
-            return 1
-        return int(np.prod(self._batch_shape))
+        return int(math.prod(self.batch_shape))
 
     @property
     def conj(self):
@@ -397,14 +391,12 @@ class PolyExpAnsatz(Ansatz):
             c_dec.append(c_dec_i)
         A_dec = math.reshape(
             math.concat(A_dec, axis=0),
-            self._batch_shape + (2 * self.num_CV_vars, 2 * self.num_CV_vars),
+            self.batch_shape + (2 * self.num_CV_vars, 2 * self.num_CV_vars),
         )
-        b_dec = math.reshape(
-            math.concat(b_dec, axis=0), self._batch_shape + (2 * self.num_CV_vars,)
-        )
+        b_dec = math.reshape(math.concat(b_dec, axis=0), self.batch_shape + (2 * self.num_CV_vars,))
         c_dec = math.reshape(
             math.concat(c_dec, axis=0),
-            self._batch_shape + (sum(self.shape_derived_vars),) * self.num_CV_vars,
+            self.batch_shape + (sum(self.shape_derived_vars),) * self.num_CV_vars,
         )
         return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
 
@@ -466,7 +458,6 @@ class PolyExpAnsatz(Ansatz):
         self._A = math.reshape(_A, (len(to_keep),) + (self.num_vars, self.num_vars))
         self._b = math.reshape(_b, (len(to_keep),) + (self.num_vars,))
         self._c = math.reshape(_c, (len(to_keep),) + self.shape_derived_vars)
-        self._batch_shape = (len(to_keep),)
         self._simplified = True
 
     def _find_unique_terms_sorted(self) -> list[int]:
@@ -516,10 +507,10 @@ class PolyExpAnsatz(Ansatz):
         _A = math.gather(self._A_vectorized, sorted_indices, axis=0)
         _b = math.gather(self._b_vectorized, sorted_indices, axis=0)
         _c = math.gather(self._c_vectorized, sorted_indices, axis=0)
-        self._A = math.reshape(_A, self._batch_shape + (self.num_vars, self.num_vars))
-        self._b = math.reshape(_b, self._batch_shape + (self.num_vars,))
+        self._A = math.reshape(_A, self.batch_shape + (self.num_vars, self.num_vars))
+        self._b = math.reshape(_b, self.batch_shape + (self.num_vars,))
         self._c = math.reshape(
-            _c, self._batch_shape + self.shape_derived_vars + self.shape_derived_vars
+            _c, self.batch_shape + self.shape_derived_vars + self.shape_derived_vars
         )
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]):
