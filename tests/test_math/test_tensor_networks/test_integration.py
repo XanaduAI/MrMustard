@@ -17,7 +17,7 @@
 import numpy as np
 import pytest
 
-from mrmustard.lab.gates import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
+from mrmustard.lab_dev.transformations import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
 from mrmustard.math.tensor_networks import connect, contract
 from ...conftest import skip_np, skip_jax
 
@@ -34,9 +34,9 @@ class TestTransformations:
         r"""
         Tests that a sequence of one-mode unitaries can be contracted correctly.
         """
-        s_tens = Sgate(0.1, modes=modes)
-        r_tens = Rgate(0.2, modes=modes)
-        d_tens = Dgate(0.3, modes=modes)
+        s_tens = Sgate(modes, r=0.1)
+        r_tens = Rgate(modes, theta=0.2)
+        d_tens = Dgate(modes, x=0.3)
 
         for mode in modes:
             connect(s_tens.output.ket[mode], r_tens.input.ket[mode], dim)
@@ -67,10 +67,10 @@ class TestTransformations:
         """
         skip_np()
         skip_jax()
-        cx_tens = CXgate(modes=modes)
-        bs_tens = BSgate(0.2, modes=modes)
-        cz_tens = CZgate(modes=modes)
-        mz_tens = MZgate(0.3, modes=modes)
+        cx_tens = CXgate(modes)
+        bs_tens = BSgate(modes, 0.2)
+        cz_tens = CZgate(modes)
+        mz_tens = MZgate(modes, 0.3)
 
         for mode in modes:
             connect(cx_tens.output.ket[mode], bs_tens.input.ket[mode], dim)
