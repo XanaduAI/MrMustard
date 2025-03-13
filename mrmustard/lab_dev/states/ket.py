@@ -491,7 +491,7 @@ class Ket(State):
                 ],
             ]
         )
-        bt = math.block([bm, math.zeros(m_core, dtype=math.complex128)])
+        bt = math.block([bm, math.zeros(m_core, dtype=math.complex128)], axes=(0, 0))
         ct = 1
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 

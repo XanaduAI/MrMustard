@@ -423,3 +423,13 @@ class TestDM:  # pylint:disable=too-many-public-methods
         # testing the core conditions on sigma
         As, _, _ = sigma.ansatz.triple
         assert As[-1][0, 0] == 0 and As[-1][0, 2] == 0 and As[-1][2, 2] == 0
+
+    def test_physical_stellar_decomposition(self):
+        rho = DM.random([0, 1])
+        core, phi = rho.physical_stellar_decomposition([0, 1])
+
+        assert rho == core >> phi
+
+        A, _, _ = core.ansatz.triple
+        A = A[-1]
+        assert math.allclose(A[1:, 1:], math.zeros((2, 2), dtype=math.complex128))

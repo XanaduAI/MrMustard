@@ -483,3 +483,19 @@ class TestKet:  # pylint: disable=too-many-public-methods
         Ac, _, _ = core.ansatz.triple
         Ac = Ac[-1]
         assert Ac[0, 0] == 0
+
+    def test_formal_stellar_decomposition(self):
+        psi = Ket.random([0, 1, 2])
+        core1, phi1 = psi.formal_stellar_decomposition([1])
+        core12, phi12 = psi.formal_stellar_decomposition([1, 2])
+
+        A1, _, _ = phi1.ansatz.triple
+        A1 = A1[-1]
+        assert math.allclose(A1[1, 1], 0.0)
+
+        A12, _, _ = phi12.ansatz.triple
+        A12 = A12[-1]
+        assert math.allclose(A1[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
+
+        assert psi == core1 >> phi1
+        assert psi == core12 >> phi12
