@@ -28,30 +28,18 @@ class TestThermal:
     Tests for the ``Thermal`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    nbar = [[3], 4, [5, 6]]
+    modes = [0, 1, 7]
+    nbar = [3, 4, 5]
 
     @pytest.mark.parametrize("modes,nbar", zip(modes, nbar))
     def test_init(self, modes, nbar):
         state = Thermal(modes, nbar)
 
         assert state.name == "Thermal"
-        assert state.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert state.modes == (modes,)
 
-    def test_get_item(self):
-        state = Thermal([0, 1], 3)
-        assert state[0] == Thermal([0], 3)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="nbar"):
-            Thermal(modes=[0, 1], nbar=[2, 3, 4])
-
-    @pytest.mark.parametrize("nbar", [1, [2, 3], [4, 4]])
+    @pytest.mark.parametrize("nbar", nbar)
     def test_representation(self, nbar):
-        rep = Thermal([0, 1], nbar).ansatz
-        exp = PolyExpAnsatz(*thermal_state_Abc([nbar, nbar] if isinstance(nbar, int) else nbar))
+        rep = Thermal(0, nbar).ansatz
+        exp = PolyExpAnsatz(*thermal_state_Abc(nbar))
         assert rep == exp
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Thermal(modes=[0], nbar=[0.1, 0.2]).ansatz

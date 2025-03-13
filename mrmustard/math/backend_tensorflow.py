@@ -54,6 +54,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
+    int64 = tf.int64
     float32 = tf.float32
     float64 = tf.float64
     complex64 = tf.complex64
@@ -69,12 +70,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
-    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
-        array1 = self.astensor(array1)
-        array2 = self.astensor(array2)
-        if array1.shape != array2.shape:
-            raise ValueError("Cannot compare arrays of different shapes.")
-        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+    def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
@@ -94,17 +91,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         dtype = dtype or np.array(array).dtype.name
         return tf.cast(tf.convert_to_tensor(array, dtype_hint=dtype), dtype)
 
-    def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
-
-    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
-
-    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
-        if len(array.shape) == 2:
-            array = self.expand_dims(array, 0)
-        return array
+    def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
+        return tf.experimental.numpy.array(array, ndmin=n, dtype=dtype)
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
@@ -117,6 +105,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def block(self, blocks: list[list[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
+
+    def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
+        return tf.broadcast_to(array, shape)
 
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
@@ -203,8 +194,22 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
-        indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+        indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
+
+    def conditional(
+        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+    ) -> tf.Tensor:
+        if tf.reduce_all(cond):
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
+
+    def error_if(
+        self, array: tf.Tensor, condition: tf.Tensor, msg: str
+    ):  # pylint: disable=unused-argument
+        if tf.reduce_any(condition):
+            raise ValueError(msg)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
@@ -276,6 +281,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return tf.fill(array.shape, np.inf)
+
     @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
@@ -335,6 +343,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
+
+    def stack(self, arrays: tf.Tensor, axis: int = 0) -> tf.Tensor:
+        return tf.stack(arrays, axis=axis)
 
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)

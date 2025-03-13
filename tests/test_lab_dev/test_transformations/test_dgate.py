@@ -29,52 +29,40 @@ class TestDgate:
     Tests for the ``Dgate`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
-    x = [[1], 1, [1, 2]]
-    y = [[3], [3, 4], [3, 4]]
+    modes = [0, 1, 7]
+    x = [1, 2, 3]
+    y = [4, 5, 6]
 
     @pytest.mark.parametrize("modes,x,y", zip(modes, x, y))
     def test_init(self, modes, x, y):
         gate = Dgate(modes, x, y)
 
         assert gate.name == "Dgate"
-        assert gate.modes == [modes] if not isinstance(modes, list) else sorted(modes)
-
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="x"):
-            Dgate(modes=[0, 1], x=[2, 3, 4])
-
-        with pytest.raises(ValueError, match="y"):
-            Dgate(modes=[0, 1], x=1, y=[2, 3, 4])
+        assert gate.modes == (modes,)
 
     def test_to_fock_method(self):
         # test stable Dgate in fock basis
-        state = SqueezedVacuum([0], r=1.0)
+        state = SqueezedVacuum(0, r=1.0)
         # displacement gate in fock representation for large displacement
-        dgate = Dgate([0], x=10.0).to_fock(150)
+        dgate = Dgate(0, x=10.0).to_fock(150)
         assert (state.to_fock() >> dgate).probability < 1
         assert np.all(math.abs(dgate.fock_array(150)) < 1)
 
     def test_representation(self):
-        rep1 = Dgate(modes=[0], x=0.1, y=0.1).ansatz
+        rep1 = Dgate(mode=0, x=0.1, y=0.1).ansatz
         assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
         assert math.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
         assert math.allclose(rep1.c, [0.990049833749168])
 
-        rep2 = Dgate(modes=[0, 1], x=[0.1, 0.2], y=0.1).ansatz
-        assert math.allclose(rep2.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.1j, 0.2 + 0.1j, -0.1 + 0.1j, -0.2 + 0.1j]])
-        assert math.allclose(rep2.c, [0.9656054162575665])
-
-        rep3 = Dgate(modes=[1, 8], x=[0.1, 0.2]).ansatz
-        assert math.allclose(rep3.A, [[[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]])
-        assert math.allclose(rep3.b, [[0.1, 0.2, -0.1, -0.2]])
-        assert math.allclose(rep3.c, [0.9753099120283327])
+        rep2 = Dgate(mode=2, x=0.1, y=0.2).ansatz
+        assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
+        assert math.allclose(rep2.b, [[0.1 + 0.2j, -0.1 + 0.2j]])
+        assert math.allclose(rep2.c, [0.97530991 + 0.0j])
 
     def test_trainable_parameters(self):
-        gate1 = Dgate([0], 1, 1)
-        gate2 = Dgate([0], 1, 1, x_trainable=True, x_bounds=(-2, 2))
-        gate3 = Dgate([0], 1, 1, y_trainable=True, y_bounds=(-2, 2))
+        gate1 = Dgate(0, 1, 1)
+        gate2 = Dgate(0, 1, 1, x_trainable=True, x_bounds=(-2, 2))
+        gate3 = Dgate(0, 1, 1, y_trainable=True, y_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.x.value = 3
@@ -88,7 +76,3 @@ class TestDgate:
         gate_fock = gate3.to_fock()
         assert isinstance(gate_fock.ansatz, ArrayAnsatz)
         assert gate_fock.parameters.y.value == 2
-
-    def test_representation_error(self):
-        with pytest.raises(ValueError):
-            Dgate(modes=[0], x=[0.1, 0.2]).ansatz

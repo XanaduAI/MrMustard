@@ -43,7 +43,7 @@ from mrmustard.physics.gaussian import number_means, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 
 class TestOptimizer:
@@ -55,6 +55,7 @@ class TestOptimizer:
     def test_S2gate_coincidence_prob(self, n):
         """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 40
         rng = tf.random.get_global_generator()
@@ -93,6 +94,7 @@ class TestOptimizer:
         which lacks a square root in the right hand side.
         """
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -102,7 +104,6 @@ class TestOptimizer:
         cutoff = 1 + i + k
 
         state = TwoModeSqueezedVacuum((0, 1), r=r, phi_trainable=True)
-        state2 = TwoModeSqueezedVacuum((2, 3), r=r, phi_trainable=True)
         bs = BSgate(
             (1, 2),
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
@@ -110,7 +111,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        circ = Circuit([state, state2, bs])
+        circ = Circuit([state, state.on((2, 3)), bs])
 
         def cost_fn():
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
@@ -129,6 +130,7 @@ class TestOptimizer:
     def test_learning_two_mode_squeezing(self):
         """Finding the optimal beamsplitter transmission to make a pair of single photons"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -136,9 +138,9 @@ class TestOptimizer:
 
         state_in = Vacuum((0, 1))
         s_gate = Sgate(
-            (0, 1),
-            r=abs(settings.rng.normal(size=2)),
-            phi=settings.rng.normal(size=2),
+            0,
+            r=abs(settings.rng.normal()),
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
@@ -149,7 +151,7 @@ class TestOptimizer:
             theta_trainable=True,
             phi_trainable=True,
         )
-        circ = Circuit([state_in, s_gate, bs_gate])
+        circ = Circuit([state_in, s_gate, s_gate.on(1), bs_gate])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -163,6 +165,7 @@ class TestOptimizer:
     def test_learning_two_mode_Ggate(self):
         """Finding the optimal Ggate to make a pair of single photons"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -182,6 +185,7 @@ class TestOptimizer:
     def test_learning_two_mode_Interferometer(self):
         """Finding the optimal Interferometer to make a pair of single photons"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 4
         rng = tf.random.get_global_generator()
@@ -189,14 +193,14 @@ class TestOptimizer:
 
         state_in = Vacuum((0, 1))
         s_gate = Sgate(
-            (0, 1),
-            r=settings.rng.normal(size=2) ** 2,
-            phi=settings.rng.normal(size=2),
+            0,
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
         interferometer = Interferometer((0, 1), unitary_trainable=True)
-        circ = Circuit([state_in, s_gate, interferometer])
+        circ = Circuit([state_in, s_gate, s_gate.on(1), interferometer])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -210,22 +214,30 @@ class TestOptimizer:
     def test_learning_two_mode_RealInterferometer(self):
         """Finding the optimal Interferometer to make a pair of single photons"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 2
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
         state_in = Vacuum((0, 1))
-        s_gate = Sgate(
-            (0, 1),
-            r=settings.rng.normal(size=2) ** 2,
-            phi=settings.rng.normal(size=2),
+        s_gate0 = Sgate(
+            0,
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        s_gate1 = Sgate(
+            1,
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
             r_trainable=True,
             phi_trainable=True,
         )
         r_inter = RealInterferometer((0, 1), orthogonal_trainable=True)
 
-        circ = Circuit([state_in, s_gate, r_inter])
+        circ = Circuit([state_in, s_gate0, s_gate1, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
@@ -239,6 +251,7 @@ class TestOptimizer:
     def test_learning_four_mode_Interferometer(self):
         """Finding the optimal Interferometer to make a NOON state with N=2"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 4
         rng = tf.random.get_global_generator()
@@ -284,13 +297,13 @@ class TestOptimizer:
 
         state_in = Vacuum((0, 1, 2, 3))
         s_gate = Sgate(
-            (0, 1, 2, 3),
-            r=settings.rng.normal(loc=np.arcsinh(1.0), scale=0.01, size=4),
+            0,
+            r=settings.rng.normal(loc=np.arcsinh(1.0), scale=0.01),
             r_trainable=True,
         )
         interferometer = Interferometer((0, 1, 2, 3), unitary=perturbed_U, unitary_trainable=True)
 
-        circ = Circuit([state_in, s_gate, interferometer])
+        circ = Circuit([state_in, s_gate, s_gate.on(1), s_gate.on(2), s_gate.on(3), interferometer])
 
         def cost_fn():
             amps = circ.contract().fock_array((3, 3, 3, 3))
@@ -303,6 +316,7 @@ class TestOptimizer:
     def test_learning_four_mode_RealInterferometer(self):
         """Finding the optimal Interferometer to make a NOON state with N=2"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 6
         rng = tf.random.get_global_generator()
@@ -316,7 +330,6 @@ class TestOptimizer:
                 [0.5, -0.5, -0.5, -0.5],
             ]
         )
-        solution_S = (np.arcsinh(1.0), np.array([0.0, np.pi / 2, -np.pi, -np.pi / 2]))
         pertubed = (
             RealInterferometer((0, 1, 2, 3), orthogonal=solution_O)
             >> BSgate((0, 1), settings.rng.normal(scale=0.01))
@@ -327,10 +340,31 @@ class TestOptimizer:
         perturbed_O = pertubed.symplectic[0][:4, :4]
 
         state_in = Vacuum((0, 1, 2, 3))
-        s_gate = Sgate(
-            (0, 1, 2, 3),
-            r=solution_S[0] + settings.rng.normal(scale=0.01, size=4),
-            phi=solution_S[1] + settings.rng.normal(scale=0.01, size=4),
+        s_gate0 = Sgate(
+            0,
+            r=np.arcsinh(1.0) + settings.rng.normal(scale=0.01),
+            phi=settings.rng.normal(scale=0.01),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        s_gate1 = Sgate(
+            1,
+            r=np.arcsinh(1.0) + settings.rng.normal(scale=0.01),
+            phi=(np.pi / 2) + settings.rng.normal(scale=0.01),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        s_gate2 = Sgate(
+            2,
+            r=np.arcsinh(1.0) + settings.rng.normal(scale=0.01),
+            phi=-np.pi + settings.rng.normal(scale=0.01),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        s_gate3 = Sgate(
+            3,
+            r=np.arcsinh(1.0) + settings.rng.normal(scale=0.01),
+            phi=(-np.pi / 2) + settings.rng.normal(scale=0.01),
             r_trainable=True,
             phi_trainable=True,
         )
@@ -338,7 +372,7 @@ class TestOptimizer:
             (0, 1, 2, 3), orthogonal=perturbed_O, orthogonal_trainable=True
         )
 
-        circ = Circuit([state_in, s_gate, r_inter])
+        circ = Circuit([state_in, s_gate0, s_gate1, s_gate2, s_gate3, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2, 3, 3))
@@ -354,6 +388,7 @@ class TestOptimizer:
         see https://www.pnas.org/content/117/52/33107/tab-article-info
         """
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -380,6 +415,7 @@ class TestOptimizer:
     def test_parameter_passthrough(self):
         """Same as the test above, but with param passthrough"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -407,6 +443,7 @@ class TestOptimizer:
         """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
         and mean photon number as a thermal state"""
         skip_np()
+        skip_jax()
 
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -445,6 +482,7 @@ class TestOptimizer:
     def test_opt_backend_param(self):
         """Test the optimization of a backend parameter defined outside a gate."""
         skip_np()
+        skip_jax()
 
         # rotated displaced squeezed state
         settings.SEED = 42
@@ -452,15 +490,15 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         rotation_angle = np.pi / 2
-        target_state = SqueezedVacuum((0,), r=1.0, phi=rotation_angle)
+        target_state = SqueezedVacuum(0, r=1.0, phi=rotation_angle)
 
         # angle of rotation gate
         r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
         # trainable squeezing
-        S = Sgate((0,), r=0.1, phi=0, r_trainable=True, phi_trainable=False)
+        S = Sgate(0, r=0.1, phi=0, r_trainable=True, phi_trainable=False)
 
         def cost_fn_sympl():
-            state_out = Vacuum((0,)) >> S >> Rgate((0,), theta=r_angle)
+            state_out = Vacuum(0) >> S >> Rgate(0, theta=r_angle)
             return 1 - math.abs((state_out >> target_state.dual) ** 2)
 
         opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
@@ -471,16 +509,17 @@ class TestOptimizer:
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
         skip_np()
+        skip_jax()
 
         settings.SEED = 24
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        dgate = Dgate((0,), x_trainable=True, y_trainable=True)
-        target_state = DisplacedSqueezed((0,), r=0.0, x=0.1, y=0.2).fock_array((40,))
+        dgate = Dgate(0, x_trainable=True, y_trainable=True)
+        target_state = DisplacedSqueezed(0, r=0.0, x=0.1, y=0.2).fock_array((40,))
 
         def cost_fn():
-            state_out = Vacuum((0,)) >> dgate
+            state_out = Vacuum(0) >> dgate
             return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
 
         opt = Optimizer()
@@ -492,16 +531,17 @@ class TestOptimizer:
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
         skip_np()
+        skip_jax()
 
         settings.SEED = 25
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        sgate = Sgate((0,), r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
-        target_state = SqueezedVacuum((0,), r=0.1, phi=0.2).fock_array((40,))
+        sgate = Sgate(0, r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
+        target_state = SqueezedVacuum(0, r=0.1, phi=0.2).fock_array((40,))
 
         def cost_fn():
-            state_out = Vacuum((0,)) >> sgate
+            state_out = Vacuum(0) >> sgate
 
             return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
 
@@ -514,6 +554,7 @@ class TestOptimizer:
     def test_bsgate_optimization(self):
         """Test that Sgate is optimized correctly."""
         skip_np()
+        skip_jax()
 
         settings.SEED = 25
         rng = tf.random.get_global_generator()
@@ -540,12 +581,13 @@ class TestOptimizer:
     def test_squeezing_grad_from_fock(self):
         """Test that the gradient of a squeezing gate is computed from the fock representation."""
         skip_np()
+        skip_jax()
 
-        squeezing = Sgate((0,), r=1.0, r_trainable=True)
+        squeezing = Sgate(0, r=1.0, r_trainable=True)
         og_r = math.asnumpy(squeezing.parameters.r.value)
 
         def cost_fn():
-            return -((Number((0,), 2) >> squeezing >> Vacuum((0,)).dual) ** 2)
+            return -((Number(0, 2) >> squeezing >> Vacuum(0).dual) ** 2)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
@@ -555,13 +597,14 @@ class TestOptimizer:
     def test_displacement_grad_from_fock(self):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
         skip_np()
+        skip_jax()
 
-        disp = Dgate((0,), x=1.0, y=0.5, x_trainable=True, y_trainable=True)
+        disp = Dgate(0, x=1.0, y=0.5, x_trainable=True, y_trainable=True)
         og_x = math.asnumpy(disp.parameters.x.value)
         og_y = math.asnumpy(disp.parameters.y.value)
 
         def cost_fn():
-            return -((Number((0,), 2) >> disp >> Vacuum((0,)).dual) ** 2)
+            return -((Number(0, 2) >> disp >> Vacuum(0).dual) ** 2)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
@@ -571,19 +614,14 @@ class TestOptimizer:
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
         skip_np()
+        skip_jax()
 
-        sq = SqueezedVacuum((0,), r=1.0, r_trainable=True)
+        sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
         og_r = math.asnumpy(sq.parameters.r.value)
 
         def cost_fn():
             return -(
-                (
-                    sq
-                    >> Number((1,), 1)
-                    >> BSgate((0, 1), 0.5)
-                    >> (Vacuum((0,)) >> Number((1,), 1)).dual
-                )
-                ** 2
+                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
             )
 
         opt = Optimizer(euclidean_lr=0.05)

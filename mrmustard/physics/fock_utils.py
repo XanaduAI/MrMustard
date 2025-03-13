@@ -44,7 +44,7 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
+def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
     r"""
     The Fock array of a tensor product of one-mode ``Number`` states.
 
@@ -59,10 +59,13 @@ def fock_state(n: Sequence[int], cutoffs: int | Sequence[int] | None = None) -> 
         The Fock array of a tensor product of one-mode ``Number`` states.
     """
     n = math.atleast_1d(n)
+
     if cutoffs is None:
         cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
+    else:
+        cutoffs = math.atleast_1d(cutoffs)
 
     if len(cutoffs) != len(n):
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
@@ -98,8 +101,10 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
         cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
-        A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
-        diag = math.hermite_renormalized_diagonal(A, B, C, cutoffs=[settings.AUTOCUTOFF_MAX_CUTOFF])
+        A, B, C = [math.astensor(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
+        diag = math.hermite_renormalized_diagonal(
+            A, B, C, cutoffs=tuple([settings.AUTOCUTOFF_MAX_CUTOFF])
+        )
         # find at what index in the cumsum the probability is more than 0.99
         for i, val in enumerate(np.cumsum(diag)):
             if val > probability:
@@ -153,7 +158,7 @@ def wigner_to_fock_state(
             max_photons = sum(shape) - len(shape)
         if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
             return math.hermite_renormalized_binomial(
-                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
+                A, B, C, shape=tuple(shape), max_l2=max_prob, global_cutoff=max_photons + 1
             )
         return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
@@ -733,8 +738,8 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
-    def f_hermite_polys(xi):
-        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, [cutoff])
+    def f_hermite_polys(xi):  # pragma: no cover
+        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
 
     hermite_polys = math.map_fn(f_hermite_polys, x)
 
@@ -942,7 +947,7 @@ def displacement(x, y, shape, tol=1e-15):
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def grad(dL_dDc):
@@ -976,7 +981,7 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
 
     ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def vjp(dLdGc):
@@ -997,7 +1002,7 @@ def squeezer(r, phi, shape):
     sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:
         return ret
 
     def vjp(dLdGc):
@@ -1018,7 +1023,7 @@ def squeezed(r, phi, shape):
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
-    if math.backend_name == "numpy":
+    if math.backend_name in ["numpy", "jax"]:  # pragma: no cover
         return ret
 
     def vjp(dLdGc):

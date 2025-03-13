@@ -19,6 +19,7 @@ Unit tests for the :class:`BackendManager`.
 import numpy as np
 import pytest
 import tensorflow as tf
+from jax import numpy as jnp
 
 from mrmustard import math
 
@@ -65,16 +66,16 @@ class TestBackendManager:
         """
         arr = np.array(l)
         res = math.asnumpy(math.abs(np.array(l)))
-        assert np.allclose(res, np.abs(arr))
+        assert math.allclose(res, np.abs(arr))
 
     def test_allclose(self):
         r"""
         Tests the ``allclose`` method.
         """
-        arr1 = [1, 2, 3]
-        arr2 = [1, 2, 3]
-        arr3 = [1.01, 2, 3]
-        arr4 = [2, 3, 1]
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([1, 2, 3])
+        arr3 = math.astensor([1.01, 2, 3])
+        arr4 = math.astensor([2, 3, 1])
 
         assert math.allclose(arr1, arr2)
         assert not math.allclose(arr1, arr3)
@@ -85,11 +86,15 @@ class TestBackendManager:
         r"""
         Tests the error of ``allclose`` method.
         """
-        arr1 = [1, 2, 3]
-        arr2 = [[1, 2, 3]]
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([[1, 2], [1, 2]])
 
-        with pytest.raises(ValueError, match="Cannot compare"):
-            math.allclose(arr1, arr2)
+        if math.backend_name == "numpy":
+            with pytest.raises(ValueError, match="could not be broadcast"):
+                math.allclose(arr1, arr2)
+        elif math.backend_name == "jax":
+            with pytest.raises(ValueError, match="Incompatible shapes"):
+                math.allclose(arr2, arr1)
 
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
@@ -97,7 +102,7 @@ class TestBackendManager:
         Tests the ``any`` method.
         """
         arr = np.array(l)
-        assert np.allclose(math.asnumpy(math.any(arr)), np.any(arr))
+        assert math.allclose(math.asnumpy(math.any(arr)), np.any(arr))
 
     @pytest.mark.parametrize("t", ["float32", "float64"])
     def test_arange(self, t):
@@ -111,7 +116,7 @@ class TestBackendManager:
         np_params = (3, 20, 0.5, np_dtype)
 
         res = math.asnumpy(math.arange(*params))
-        assert np.allclose(res, np.arange(*np_params))
+        assert math.allclose(res, np.arange(*np_params))
 
     @pytest.mark.parametrize("l", lists)
     def test_asnumpy(self, l):
@@ -120,7 +125,7 @@ class TestBackendManager:
         """
         arr = math.astensor(np.array(l), dtype=np.array(l).dtype)
         res = math.asnumpy(arr)
-        assert np.allclose(res, np.array(l))
+        assert math.allclose(res, np.array(l))
 
     def test_assign(self):
         r"""
@@ -129,7 +134,7 @@ class TestBackendManager:
         arr = math.new_variable(np.eye(3), (None, None), "")
         value = math.astensor(2 * np.eye(3))
         arr = math.asnumpy(math.assign(arr, value))
-        assert np.allclose(arr, value)
+        assert math.allclose(arr, value)
 
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
@@ -142,11 +147,11 @@ class TestBackendManager:
         res = math.astensor(arr, dtype)
 
         if math.backend_name == "numpy":
-            assert np.allclose(res, arr.astype(dtype or np.float64))
+            assert math.allclose(res, arr.astype(dtype or np.float64))
         else:
             exp = tf.convert_to_tensor(arr, dtype=dtype or tf.float64)
             exp = exp.numpy()
-            assert np.allclose(res, exp)
+            assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
@@ -164,7 +169,7 @@ class TestBackendManager:
             np_dtype = getattr(np, t, None)
             exp = exp.astype(np_dtype)
 
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
@@ -182,7 +187,7 @@ class TestBackendManager:
             np_dtype = getattr(np, t, None)
             exp = exp.astype(np_dtype)
 
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3, l5])
@@ -203,15 +208,33 @@ class TestBackendManager:
             exp_shape = arr.shape
         assert res.shape == exp_shape
 
+    @pytest.mark.parametrize("t", types)
+    @pytest.mark.parametrize("l", [l1, l3, l5])
+    @pytest.mark.parametrize("n", [1, 2, 3])
+    def test_atleast_nd(self, t, l, n):
+        r"""
+        Tests the ``atleast_nd`` method.
+        """
+        dtype = getattr(math, t, None)
+        arr = np.array(l)
+
+        res = math.asnumpy(math.atleast_nd(arr, n, dtype=dtype))
+
+        if arr.ndim < n:
+            exp_shape = (1,) * (n - arr.ndim) + arr.shape
+        else:
+            exp_shape = arr.shape
+        assert res.shape == exp_shape
+
     def test_boolean_mask(self):
         r"""
         Tests the ``boolean_mask`` method.
         """
-        arr = np.array([1, 2, 3, 4])
-        mask = [True, False, True, True]
-        res = math.asnumpy(math.boolean_mask(arr, mask))
-        exp = np.array([1, 3, 4])
-        assert np.allclose(res, exp)
+        arr = math.astensor([1, 2, 3, 4])
+        mask = math.astensor([True, False, True, True])
+        res = math.boolean_mask(arr, mask)
+        exp = math.astensor([1, 3, 4])
+        assert math.allclose(res, exp)
 
     def test_block(self):
         r"""
@@ -237,7 +260,15 @@ class TestBackendManager:
         O = math.zeros(shape=(4, 4), dtype=math.complex128)
         R = math.block_diag(I, 1j * I)
         assert R.shape == (8, 8)
-        assert np.allclose(math.block([[I, O], [O, 1j * I]]), R)
+        assert math.allclose(math.block([[I, O], [O, 1j * I]]), R)
+
+    def test_broadcast_to(self):
+        r"""
+        Tests the ``broadcast_to`` method.
+        """
+        arr = math.astensor([1, 2, 3])
+        res = math.broadcast_to(arr, (3, 3))
+        assert math.allclose(res, math.astensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
 
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):
@@ -250,17 +281,17 @@ class TestBackendManager:
         arr = np.array([[1, 2], [3, 4]])
         res = math.asnumpy(math.cast(arr, dtype))
         exp = arr.astype(np_dtype or np.float64)
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("l", [l1, l3])
     def test_clip(self, l):
         r"""
         Tests the ``clip`` method.
         """
-        arr = np.array(l)
+        arr = math.astensor(l)
         params = (arr, 0, 3)
-        res = math.asnumpy(math.clip(*params))
-        assert np.allclose(res, np.clip(*params))
+        res = math.astensor(math.clip(*params))
+        assert math.allclose(res, math.clip(*params))
 
     @pytest.mark.parametrize("axis", [0, 1])
     def test_concat(self, axis):
@@ -271,7 +302,7 @@ class TestBackendManager:
         arr2 = np.array([[5, 6], [7, 8]])
         params = ((arr1, arr2), axis)
         res = math.asnumpy(math.concat(*params))
-        assert np.allclose(res, np.concatenate(*params))
+        assert math.allclose(res, np.concatenate(*params))
 
     @pytest.mark.parametrize("l", lists)
     def test_conj(self, l):
@@ -280,7 +311,7 @@ class TestBackendManager:
         """
         arr = np.array(l)
         res = math.asnumpy(math.conj(arr))
-        assert np.allclose(res, np.conj(arr))
+        assert math.allclose(res, np.conj(arr))
 
     @pytest.mark.parametrize("l", lists)
     def test_cos(self, l):
@@ -288,7 +319,7 @@ class TestBackendManager:
         Tests the ``cos`` method.
         """
         arr = np.array(l)
-        assert np.allclose(math.asnumpy(math.cos(arr)), np.cos(arr))
+        assert math.allclose(math.asnumpy(math.cos(arr)), np.cos(arr))
 
     @pytest.mark.parametrize("l", lists)
     def test_cosh(self, l):
@@ -296,14 +327,14 @@ class TestBackendManager:
         Tests the ``cosh`` method.
         """
         arr = np.array(l)
-        assert np.allclose(math.asnumpy(math.cosh(arr)), np.cosh(arr))
+        assert math.allclose(math.asnumpy(math.cosh(arr)), np.cosh(arr))
 
     def test_det(self):
         r"""
         Tests the ``det`` method.
         """
         arr = np.array([[1.0, 2.0], [3.0, 4.0]])
-        assert np.allclose(math.det(arr), -2.0)
+        assert math.allclose(math.det(arr), -2.0)
 
     def test_diag(self):
         r"""
@@ -317,7 +348,7 @@ class TestBackendManager:
         res = math.asnumpy(res)
         exp = np.array([[1.0, 2.0, 3.0], [0.0, 1.0, 2.0], [0.0, 0.0, 1.0]])
 
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     def test_diag_part(self):
         r"""
@@ -327,15 +358,15 @@ class TestBackendManager:
 
         dp1 = math.asnumpy(math.diag_part(arr, 0))
         exp1 = np.array([[0], [3], [6]])
-        assert np.allclose(dp1, exp1)
+        assert math.allclose(dp1, exp1)
 
         dp2 = math.asnumpy(math.diag_part(arr, 1))
         exp2 = np.array([[1], [4], [7]])
-        assert np.allclose(dp2, exp2)
+        assert math.allclose(dp2, exp2)
 
         dp3 = math.asnumpy(math.diag_part(arr, 2))
         exp3 = np.array([[2], [5], [8]])
-        assert np.allclose(dp3, exp3)
+        assert math.allclose(dp3, exp3)
 
     def test_eigvals(self):
         r"""
@@ -347,7 +378,7 @@ class TestBackendManager:
 
         ev.sort()
         exp.sort()
-        assert np.allclose(ev, exp)
+        assert math.allclose(ev, exp)
 
     def test_eigh(self):
         r"""
@@ -358,8 +389,8 @@ class TestBackendManager:
         arr[2, 2] = 3
         vals, vecs = math.eigh(arr)
 
-        assert np.allclose(math.asnumpy(vals), np.array([1.0, 2.0, 3.0]))
-        assert np.allclose(math.asnumpy(vecs), np.eye(3))
+        assert math.allclose(math.asnumpy(vals), np.array([1.0, 2.0, 3.0]))
+        assert math.allclose(math.asnumpy(vecs), np.eye(3))
 
     def test_exp(self):
         r"""
@@ -372,7 +403,7 @@ class TestBackendManager:
         exp = np.array(
             [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
         )
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     def test_eye(self):
         r"""
@@ -380,7 +411,7 @@ class TestBackendManager:
         """
         res = math.asnumpy(math.eye(3))
         exp = np.eye(3)
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     def test_eye_like(self):
         r"""
@@ -388,7 +419,7 @@ class TestBackendManager:
         """
         res = math.asnumpy(math.eye_like(math.zeros((3, 3))))
         exp = np.eye(3)
-        assert np.allclose(res, exp)
+        assert math.allclose(res, exp)
 
     def test_from_backend(self):
         r"""
@@ -399,10 +430,13 @@ class TestBackendManager:
 
         v2 = np.array(v1)
         v3 = tf.constant(v1)
+        v4 = jnp.array(v1)
         if math.backend_name == "numpy":
-            assert math.from_backend(v2) and not math.from_backend(v3)
-        else:
-            assert math.from_backend(v3) and not math.from_backend(v2)
+            assert math.from_backend(v2) and not math.from_backend(v3) and not math.from_backend(v4)
+        elif math.backend_name == "tensorflow":
+            assert math.from_backend(v3) and not math.from_backend(v2) and not math.from_backend(v4)
+        elif math.backend_name == "jax":
+            assert math.from_backend(v4) and not math.from_backend(v2) and not math.from_backend(v3)
 
     def test_gather(self):
         r"""
@@ -412,20 +446,20 @@ class TestBackendManager:
 
         res1 = math.asnumpy(math.gather(arr, 2, 1))
         exp1 = np.array([2, 5, 8])
-        assert np.allclose(res1, exp1)
+        assert math.allclose(res1, exp1)
 
         res2 = math.asnumpy(math.gather(arr, 2, 0))
         exp2 = np.array([6, 7, 8])
-        assert np.allclose(res2, exp2)
+        assert math.allclose(res2, exp2)
 
     def test_imag(self):
         r"""
         Tests the ``imag`` method.
         """
         arr = np.eye(3) + 2j * np.eye(3)
-        assert np.allclose(math.asnumpy(math.imag(arr)), 2 * np.eye(3))
+        assert math.allclose(math.asnumpy(math.imag(arr)), 2 * np.eye(3))
 
-        assert np.allclose(math.asnumpy(math.imag(np.eye(3))), 0 * np.eye(3))
+        assert math.allclose(math.asnumpy(math.imag(np.eye(3))), 0 * np.eye(3))
 
     def test_inv(self):
         r"""
@@ -433,7 +467,7 @@ class TestBackendManager:
         """
         arr = np.array([[1.0, 0], [0, 1j]])
         inv = math.inv(arr)
-        assert np.allclose(math.asnumpy(arr @ inv), np.eye(2))
+        assert math.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
     def test_is_trainable(self):
         r"""
@@ -442,24 +476,27 @@ class TestBackendManager:
         arr1 = np.array([1, 2])
         arr2 = tf.constant(arr1)
         arr3 = tf.Variable(arr1)
+        arr4 = jnp.array(arr1)
 
         assert not math.is_trainable(arr1)
         assert not math.is_trainable(arr2)
         assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
+        if math.backend_name == "jax":
+            assert not math.is_trainable(arr4)
 
     def test_lgamma(self):
         r"""
         Tests the ``lgamma`` method.
         """
         arr = np.array([1.0, 2.0, 3.0, 4.0])
-        assert np.allclose(math.asnumpy(math.lgamma(arr)), math.lgamma(arr))
+        assert math.allclose(math.asnumpy(math.lgamma(arr)), math.lgamma(arr))
 
     def test_log(self):
         r"""
         Tests the ``log`` method.
         """
         arr = np.array([1.0, 2.0, 3.0, 4.0])
-        assert np.allclose(math.asnumpy(math.log(arr)), np.log(arr))
+        assert math.allclose(math.asnumpy(math.log(arr)), np.log(arr))
 
     def test_make_complex(self):
         r"""
@@ -476,7 +513,7 @@ class TestBackendManager:
         arr1 = np.eye(3)
         arr2 = 2 * np.eye(3)
         res = math.asnumpy(math.maximum(arr1, arr2))
-        assert np.allclose(res, arr2)
+        assert math.allclose(res, arr2)
 
     def test_minimum(self):
         r"""
@@ -485,7 +522,7 @@ class TestBackendManager:
         arr1 = np.eye(3)
         arr2 = 2 * np.eye(3)
         res = math.asnumpy(math.minimum(arr1, arr2))
-        assert np.allclose(res, arr1)
+        assert math.allclose(res, arr1)
 
     def test_moveaxis(self):
         r"""
@@ -494,11 +531,11 @@ class TestBackendManager:
         arr1 = np.random.random(size=(1, 2, 3))
         arr2 = np.random.random(size=(2, 1, 3))
         arr2_moved = math.moveaxis(arr2, 0, 1)
-        assert np.allclose(arr1.shape, arr2_moved.shape)
+        assert math.allclose(arr1.shape, arr2_moved.shape)
 
         arr1_moved1 = math.moveaxis(arr1, 0, 1)
         arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
-        assert np.allclose(arr1, arr1_moved2)
+        assert math.allclose(arr1, arr1_moved2)
 
     @pytest.mark.parametrize("t", types)
     def test_new_variable(self, t):
@@ -510,12 +547,16 @@ class TestBackendManager:
         res = math.new_variable(arr, (0, 1), "my_var", dtype)
 
         if math.backend_name == "numpy":
-            assert np.allclose(res, arr)
+            assert math.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
-        else:
+        elif math.backend_name == "tensorflow":
             assert isinstance(res, tf.Variable)
-            assert np.allclose(math.asnumpy(res), arr)
+            assert math.allclose(math.asnumpy(res), arr)
+            assert res.dtype == dtype or math.float64
+        elif math.backend_name == "jax":
+            assert isinstance(res, jnp.ndarray)
+            assert math.allclose(res, arr)
             assert res.dtype == dtype or math.float64
 
     @pytest.mark.parametrize("t", types)
@@ -528,11 +569,11 @@ class TestBackendManager:
         res = math.new_constant(arr, "my_const", dtype)
 
         if math.backend_name == "numpy":
-            assert np.allclose(res, arr)
+            assert math.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
         else:
-            assert np.allclose(math.asnumpy(res), arr)
+            assert math.allclose(math.asnumpy(res), arr)
 
     def test_ones(self):
         r"""
@@ -540,7 +581,7 @@ class TestBackendManager:
         """
         arr = np.ones(3)
         res = math.asnumpy(math.ones(3))
-        assert np.allclose(res, arr)
+        assert math.allclose(res, arr)
 
     def test_ones_like(self):
         r"""
@@ -548,14 +589,14 @@ class TestBackendManager:
         """
         arr = np.ones(3)
         res = math.asnumpy(math.ones_like(arr))
-        assert np.allclose(res, arr)
+        assert math.allclose(res, arr)
 
     def test_pow(self):
         r"""
         Tests the ``pow`` method.
         """
         arr = np.array([1.0, 2.0, 3.0, 4.0])
-        assert np.allclose(math.asnumpy(math.pow(arr, 2)), math.pow(arr, 2))
+        assert math.allclose(math.asnumpy(math.pow(arr, 2)), math.pow(arr, 2))
 
     def test_kron(self):
         r"""
@@ -564,24 +605,24 @@ class TestBackendManager:
         t1 = math.astensor([[0, 1], [1, 0]])
         t2 = math.eye(2)
         kron = [[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]]
-        assert np.allclose(math.kron(t1, t2), kron)
+        assert math.allclose(math.kron(t1, t2), kron)
 
     def test_prod(self):
         r"""
         Tests the ``prod`` method.
         """
-        assert np.allclose(math.prod([1]), 1)
-        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=0), [6, 6])
-        assert np.allclose(math.prod([[2, 2], [3, 3]], axis=1), [4, 9])
+        assert math.allclose(math.prod(math.astensor([1])), 1)
+        assert math.allclose(math.prod(math.astensor([[2, 2], [3, 3]]), axis=0), [6, 6])
+        assert math.allclose(math.prod(math.astensor([[2, 2], [3, 3]]), axis=1), [4, 9])
 
     def test_real(self):
         r"""
         Tests the ``real`` method.
         """
         arr = np.eye(3) + 2j * np.eye(3)
-        assert np.allclose(math.asnumpy(math.real(arr)), np.eye(3))
+        assert math.allclose(math.asnumpy(math.real(arr)), np.eye(3))
 
-        assert np.allclose(math.asnumpy(math.real(np.eye(3))), np.eye(3))
+        assert math.allclose(math.asnumpy(math.real(np.eye(3))), np.eye(3))
 
     def test_reshape(self):
         r"""
@@ -598,7 +639,7 @@ class TestBackendManager:
         """
         arr = np.zeros(shape=(3, 3))
         diag = np.ones(shape=(3,))
-        assert np.allclose(math.asnumpy(math.set_diag(arr, diag, 0)), np.eye(3))
+        assert math.allclose(math.asnumpy(math.set_diag(arr, diag, 0)), np.eye(3))
 
     @pytest.mark.parametrize("l", lists)
     def test_sin(self, l):
@@ -606,7 +647,7 @@ class TestBackendManager:
         Tests the ``sin`` method.
         """
         arr = np.array(l)
-        assert np.allclose(math.asnumpy(math.sin(arr)), np.sin(arr))
+        assert math.allclose(math.asnumpy(math.sin(arr)), np.sin(arr))
 
     @pytest.mark.parametrize("l", lists)
     def test_sinh(self, l):
@@ -614,7 +655,7 @@ class TestBackendManager:
         Tests the ``sinh`` method.
         """
         arr = np.array(l)
-        assert np.allclose(math.asnumpy(math.sinh(arr)), np.sinh(arr))
+        assert math.allclose(math.asnumpy(math.sinh(arr)), np.sinh(arr))
 
     def test_solve(self):
         r"""
@@ -623,7 +664,7 @@ class TestBackendManager:
         arr = np.eye(3)
         vec = np.array([1.0, 2.0, 3.0])
         res = math.asnumpy(math.solve(arr, vec))
-        assert np.allclose(arr @ res, vec)
+        assert math.allclose(arr @ res, vec)
 
     def test_sqrt(self):
         r"""
@@ -631,7 +672,7 @@ class TestBackendManager:
         """
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sqrt(arr))
-        assert np.allclose(res, 2 * np.eye(3))
+        assert math.allclose(res, 2 * np.eye(3))
 
     def test_sqrtm(self):
         r"""
@@ -639,7 +680,17 @@ class TestBackendManager:
         """
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sqrtm(arr))
-        assert np.allclose(res, 2 * np.eye(3))
+        assert math.allclose(res, 2 * np.eye(3))
+
+    def test_stack(self):
+        r"""
+        Tests the ``stack`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.stack([arr1, arr2], axis=0))
+        exp = np.stack([arr1, arr2], axis=0)
+        assert np.allclose(res, exp)
 
     def test_sum(self):
         r"""
@@ -647,7 +698,7 @@ class TestBackendManager:
         """
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sum(arr))
-        assert np.allclose(res, 12)
+        assert math.allclose(res, 12)
 
     def test_categorical(self):
         r"""

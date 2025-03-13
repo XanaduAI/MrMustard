@@ -18,7 +18,7 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Collection
+from typing import Collection, Sequence
 from itertools import product
 import warnings
 import numpy as np
@@ -119,9 +119,11 @@ class Ket(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
-            if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
-                raise ValueError(msg)
+            math.error_if(
+                p,
+                p < 1.0 - atol_purity,
+                f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity}).",
+            )
         return Ket.from_ansatz(
             modes,
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
@@ -312,26 +314,18 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Collection[int]) -> State:
+    def __getitem__(self, idx: int | Sequence[int]) -> State:
         r"""
-        Reduced density matrix obtained by tracing out all the modes except those in the given
-        ``modes``. Note that the result is returned with modes in increasing order.
+        Reduced density matrix obtained by tracing out all the modes except those in
+        ``idx``. Note that the result is returned with modes in increasing order.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A ``DM`` object with the remaining modes.
         """
-        if isinstance(modes, int):
-            modes = [modes]
-        modes = set(modes)
-
-        if not modes.issubset(self.modes):
-            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
-
-        if self._parameters:
-            # if ``self`` has a parameter set, it is a built-in state, and we slice the
-            # parameters
-            return self._getitem_builtin(modes)
-
-        # if ``self`` has no parameter set, it is not a built-in state.
-        # we must turn it into a density matrix and slice the representation
-        return self.dm()[modes]
+        return self.dm()[idx]
 
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""

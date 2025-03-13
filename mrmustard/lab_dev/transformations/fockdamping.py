@@ -18,12 +18,10 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Operation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["FockDamping"]
 
@@ -32,26 +30,22 @@ class FockDamping(Operation):
     r"""
     The Fock damping operator.
 
-    If ``damping`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
-    all the modes share the same damping.
-
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import FockDamping, Coherent
 
-        >>> operator = FockDamping(modes=[0], damping=0.1)
-        >>> input_state = Coherent(modes=[0], x=1, y=0.5)
+        >>> operator = FockDamping(mode=0, damping=0.1)
+        >>> input_state = Coherent(mode=0, x=1, y=0.5)
         >>> output_state = input_state >> operator
-        >>> assert operator.modes == [0]
-        >>> assert np.allclose(operator.parameters.damping.value, [0.1, 0.1])
+        >>> assert operator.modes == (0,)
+        >>> assert operator.parameters.damping.value == 0.1
         >>> assert output_state.L2_norm < 1
 
     Args:
-        modes: The modes this gate is applied to.
+        mode: The mode this gate is applied to.
         damping: The damping parameter.
-        damping_trainable: Whether the damping is a trainable variable.
-        damping_bounds: The bounds for the damping.
+        damping_trainable: Whether ``damping`` is trainable.
+        damping_bounds: The bounds for ``damping``.
 
     .. details::
 
@@ -69,25 +63,24 @@ class FockDamping(Operation):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        damping: float | Sequence[float] | None = 0.0,
+        mode: int,
+        damping: float = 0.0,
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(name="FockDamping")
-        (betas,) = list(reshape_params(len(modes), damping=damping))
         self.parameters.add_parameter(
             make_parameter(
                 damping_trainable,
-                betas,
+                damping,
                 "damping",
                 damping_bounds,
                 None,
             )
         )
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.fock_damping_Abc, beta=self.parameters.damping
             ),

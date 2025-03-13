@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from math import lgamma as mlgamma
-from typing import Sequence
+from typing import Sequence, Callable
 
 import numpy as np
 import scipy as sp
@@ -54,6 +54,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     """
 
     int32 = np.int32
+    int64 = np.int64
     float32 = np.float32
     float64 = np.float64
     complex64 = np.complex64
@@ -68,12 +69,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
 
-    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
-        array1 = self.asnumpy(array1)
-        array2 = self.asnumpy(array2)
-        if array1.shape != array2.shape:
-            raise ValueError("Cannot compare arrays of different shapes.")
-        return np.allclose(array1, array2, atol=atol)
+    def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
+        return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
@@ -96,21 +93,15 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         array = np.array(array)
         return self.cast(array, dtype=dtype or array.dtype)
 
-    def atleast_1d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return np.atleast_1d(self.astensor(array, dtype))
-
-    def atleast_2d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        return np.atleast_2d(self.astensor(array, dtype))
-
-    def atleast_3d(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = self.atleast_2d(self.atleast_1d(array))
-        if len(array.shape) == 2:
-            array = array[None, ...]
-        return array
+    def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
+        return np.array(array, ndmin=n, dtype=dtype)
 
     def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
+
+    def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
+        return np.broadcast_to(array, shape)
 
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
@@ -332,6 +323,23 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def ones_like(self, array: np.ndarray) -> np.ndarray:
         return np.ones(array.shape, dtype=array.dtype)
 
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return np.full_like(array.shape, np.inf, dtype=array.dtype)
+
+    def conditional(
+        self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args
+    ) -> np.ndarray:
+        if cond.all():
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
+
+    def error_if(
+        self, array: np.ndarray, condition: np.ndarray, msg: str
+    ):  # pylint: disable=unused-argument
+        if np.any(condition):
+            raise ValueError(msg)
+
     @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
         return np.tensordot(array1, array2, [[], []])
@@ -391,6 +399,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
         return np.sqrt(self.cast(x, dtype))
 
+    def stack(self, arrays: np.ndarray, axis: int = 0) -> np.ndarray:
+        return np.stack(arrays, axis=axis)
+
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
@@ -413,7 +424,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
             tensor[tuple(i)] = v
         return tensor
@@ -422,7 +433,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def update_add_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_2d(indices)
+        indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
             tensor[tuple(i)] += v
         return tensor

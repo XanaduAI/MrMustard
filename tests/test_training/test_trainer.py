@@ -36,7 +36,7 @@ from mrmustard.lab_dev import Dgate, Ggate, GKet, Vacuum
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
-from ..conftest import skip_np
+from ..conftest import skip_np, skip_jax
 
 
 def wrappers():
@@ -48,7 +48,7 @@ def wrappers():
         math.change_backend("tensorflow")
 
         circ = Ggate((0,), symplectic_trainable=True) >> Dgate(
-            (0,), x=x, x_trainable=True, y_trainable=True
+            0, x=x, x_trainable=True, y_trainable=True
         )
         return (
             [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
@@ -59,8 +59,8 @@ def wrappers():
 
         math.change_backend("tensorflow")
 
-        target = GKet((0,)) >> Dgate((0,), -0.1, y_targ)
-        s = Vacuum((0,)) >> circ
+        target = GKet(0) >> Dgate(0, -0.1, y_targ)
+        s = Vacuum(0) >> circ
         return -math.abs((s >> target.dual) ** 2)
 
     return make_circ, cost_fn
@@ -78,6 +78,7 @@ class TestTrainer:
     def test_circ_cost(self, tasks, seed):  # pylint: disable=redefined-outer-name
         """Test distributed cost calculations."""
         skip_np()
+        skip_jax()
 
         has_seed = isinstance(seed, int)
         _, cost_fn = wrappers()
@@ -112,6 +113,7 @@ class TestTrainer:
     def test_circ_optimize(self, tasks, return_type):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
         skip_np()
+        skip_jax()
 
         max_steps = 15
         make_circ, cost_fn = wrappers()
@@ -144,12 +146,13 @@ class TestTrainer:
     @pytest.mark.parametrize(
         "metric_fns",
         [
-            lambda c: (Vacuum((0,)) >> c >> c >> c).fock_array((5,)),
+            lambda c: (Vacuum(0) >> c >> c >> c).fock_array((5,)),
         ],
     )
     def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
         skip_np()
+        skip_jax()
 
         make_circ, cost_fn = wrappers()
 
@@ -188,6 +191,7 @@ class TestTrainer:
     def test_update_pop(self):
         """Test for coverage."""
         skip_np()
+        skip_jax()
 
         d = {"a": 3, "b": "foo"}
         kwargs = {"b": "bar", "c": 22}
@@ -198,6 +202,7 @@ class TestTrainer:
     def test_no_ray(self, monkeypatch):
         """Tests ray import error"""
         skip_np()
+        skip_jax()
 
         monkeypatch.setitem(sys.modules, "ray", None)
         with pytest.raises(ImportError, match="Failed to import `ray`"):
@@ -209,6 +214,7 @@ class TestTrainer:
     def test_invalid_tasks(self):
         """Tests unexpected tasks arg"""
         skip_np()
+        skip_jax()
 
         with pytest.raises(
             ValueError, match="`tasks` is expected to be of type int, list, or dict."
@@ -221,6 +227,7 @@ class TestTrainer:
     def test_warn_unused_kwargs(self):  # pylint: disable=redefined-outer-name
         """Test warning of unused kwargs"""
         skip_np()
+        skip_jax()
 
         _, cost_fn = wrappers()
         with pytest.warns(UserWarning, match="Unused kwargs:"):
@@ -234,6 +241,7 @@ class TestTrainer:
     def test_no_pbar(self):  # pylint: disable=redefined-outer-name
         """Test turning off pregress bar"""
         skip_np()
+        skip_jax()
 
         _, cost_fn = wrappers()
         results = map_trainer(
@@ -248,6 +256,7 @@ class TestTrainer:
     def test_unblock(self, tasks):  # pylint: disable=redefined-outer-name
         """Test unblock async mode"""
         skip_np()
+        skip_jax()
 
         _, cost_fn = wrappers()
         result_getter = map_trainer(

@@ -30,7 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "grpcio == 1.60.0",
     "numpy >=2.0.0, <3",
@@ -47,7 +47,10 @@ dependencies = [
     "tensorflow >=2.15.0, <2.19.0",
     "tensorflow-probability[tf] >=0.22.0,<1.0",
     "tensorflow-intel>=2.15.0, <3; sys_platform == 'win32'",
+    "tensorflow-io-gcs-filesystem <0.32.0; (sys_platform == 'win32' and python_version < '3.12')",
+    "tensorflow-io-gcs-filesystem >= 0.23.1; (sys_platform != 'win32' and python_version < '3.12')",
     "semantic-version >=2.10.0, <3",
+    "equinox>=0.11.10",
 ]
 
 [project.optional-dependencies]
