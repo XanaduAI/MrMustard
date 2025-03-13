@@ -27,7 +27,7 @@ class TestTransformations:
     Tests that transformations can be contracted by tensor networks.
     """
 
-    @pytest.mark.parametrize("modes", [[0], [1, 2], [3, 4, 5, 6]])
+    @pytest.mark.parametrize("modes", [(0), (1, 2), (3, 4, 5, 6)])
     @pytest.mark.parametrize("dim", [3, 4])
     @pytest.mark.parametrize("default_dim", [2, 5])
     def test_sequence_one_mode_unitaries(self, modes, dim, default_dim):
