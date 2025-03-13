@@ -368,7 +368,7 @@ class DM(State):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            dm_core: The core state (`DM`)
+            core: The core state (`DM`)
             phi: The Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
 
         Raises:
@@ -384,6 +384,13 @@ class DM(State):
             where the map :math:`phi` acts on the given `core_modes` only.
             Core states have favorable properties in the Fock representation
             e.g., being sparse.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import DM
+
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.formal
+            >>> assert rho == core >> phi
         """
         A, b, c = self.ansatz.triple
         A = A[-1]
@@ -486,6 +493,21 @@ class DM(State):
         Raises:
             ValueError: if the given state is non-Gaussian
             ValueError: if the number of core modes is not half the total number of modes.
+
+        Note:
+            This method writes a given `DM` as a pure state (`Ket`) followed by a `Channel` acting
+            on `core_modes`.
+            The pure state output has the core property, and therefore, has favorable Fock representation.
+            For the method to work, we need the number of core modes to be half of the number of total modes.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import DM
+
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.physical_stellar_decomposition([0])
+
+            >>> assert isinstance(core, Ket)
+            >>> assert rho == core >> phi
         """
         from .ket import Ket
 

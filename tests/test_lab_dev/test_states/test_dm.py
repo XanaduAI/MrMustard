@@ -429,6 +429,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         core, phi = rho.physical_stellar_decomposition([0, 1])
 
         assert rho == core >> phi
+        assert core.is_physical
+        assert isinstance(core, Ket)
 
         A, _, _ = core.ansatz.triple
         A = A[-1]
