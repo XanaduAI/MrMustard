@@ -537,7 +537,7 @@ class DM(State):
                 [r_core, a_core],
             ]
         )
-        b_core = math.zeros(len(core_modes), dtype=math.complex128)
+        b_core = math.zeros(self.n_modes, dtype=math.complex128)
         c_core = 1  # to be renormalized
 
         core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core))
@@ -577,8 +577,8 @@ class DM(State):
         Aphi = Aphi[:, type_wise_order]
         bphi = math.zeros(4 * num_core_modes, dtype=math.complex128)
         phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
-        renorm = (core >> phi).probability
-        phi = phi / renorm
+        # renorm = (core >> phi).probability
+        # phi = phi / renorm
         return core, phi
 
     def _ipython_display_(self):  # pragma: no cover
