@@ -186,10 +186,10 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
 
 
 def join_Abc(
-    Abc1: tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]],
-    Abc2: tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]],
-    batch_string: str,
-) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+    Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    batch_string: str | None = None,
+) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
 
@@ -214,84 +214,83 @@ def join_Abc(
     Arguments:
         Abc1: the first ``(A,b,c)`` triple
         Abc2: the second ``(A,b,c)`` triple
-        batch_string: an einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled
+        batch_string: an (optional) einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled
 
     Returns:
         The joined ``(A,b,c)`` triple
     """
-    # 0. unpack and prepare inputs
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
-    # 1. Parse the batch string
+    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
+    batch_dim1, batch_dim2 = len(batch1), len(batch2)
+
+    # TODO: maybe we should assume that the batch dimensions are the same in these methods and have validation higher in the stack
+    #      this allows us to avoid batch dim checks everywhere
+    if batch1 != b1.shape[:batch_dim1] or (len(c1.shape) != 0 and batch1 != c1.shape[:batch_dim1]):
+        raise ValueError(
+            f"Batch dimensions of the first triple ({batch1}, {b1.shape[:batch_dim1]}, {c1.shape[:batch_dim1]}) are inconsistent."
+        )
+    if batch2 != b2.shape[:batch_dim2] or (len(c2.shape) != 0 and batch2 != c2.shape[:batch_dim2]):
+        raise ValueError(
+            f"Batch dimensions of the second triple ({batch2}, {b2.shape[:batch_dim2]}, {c2.shape[:batch_dim2]}) are inconsistent."
+        )
+
+    if batch_string is None:
+        str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]))])
+        str2 = "".join([chr(i) for i in range(97 + len(str1), 97 + len(str1) + len(A2.shape[:-2]))])
+        out = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]) + len(A2.shape[:-2]))])
+        batch_string = f"{str1},{str2}->{out}"
+
     if "->" not in batch_string:
         raise ValueError(
-            f"Invalid batch string format: {batch_string}. Expected format: 'in1,in2->out'"
+            f"Invalid batch string format: {batch_string}. Expected format: 'in1,in2->out.'"
         )
 
     input_str, output_str = batch_string.split("->")
     input_parts = input_str.split(",")
     if len(input_parts) != 2:
-        raise ValueError(f"Expected 2 input parts in batch string, got {len(input_parts)}")
+        raise ValueError(f"Expected 2 input parts in batch string, got {len(input_parts)}.")
 
     in1, in2 = input_parts
 
-    # 2. Get dimensions and validate
-    batch1_A = A1.shape[:-2]
-    batch2_A = A2.shape[:-2]
+    if len(in1) != len(batch1):
+        raise ValueError(
+            f"Batch dimensions in first input ({batch_dim1}) don't match the provided string '{in1}'."
+        )
+    if len(in2) != len(batch2):
+        raise ValueError(
+            f"Batch dimensions in second input ({batch_dim2}) don't match the provided string '{in2}'."
+        )
+
     nA1, mA1 = A1.shape[-2:]
     nA2, mA2 = A2.shape[-2:]
-    batch1_b = b1.shape[:-1]
-    batch2_b = b2.shape[:-1]
+
     nb1 = b1.shape[-1]
     nb2 = b2.shape[-1]
-    batch1_c = c1.shape[: len(batch1_A)]
-    batch2_c = c2.shape[: len(batch2_A)]
-    poly_shape1 = c1.shape[len(batch1_A) :]
-    poly_shape2 = c2.shape[len(batch2_A) :]
 
-    # Check if batch dimensions match the provided string
-    if len(in1) != len(batch1_A):
-        raise ValueError(
-            f"Batch dimensions in first input ({len(batch1_A)}) don't match the provided string '{in1}'"
-        )
-    if len(in2) != len(batch2_A):
-        raise ValueError(
-            f"Batch dimensions in second input ({len(batch2_A)}) don't match the provided string '{in2}'"
-        )
+    poly_shape1 = c1.shape[batch_dim1:] if len(c1.shape) >= 1 else ()
+    poly_shape2 = c2.shape[batch_dim2:] if len(c2.shape) >= 1 else ()
 
-    # Check the batch dimensions across the two triples are the same
-    if batch1_A != batch1_b or batch1_A != batch1_c or batch1_b != batch1_c:
-        raise ValueError(
-            f"Batch dmensions of the first triple ({batch1_A}, {batch1_b}, {batch1_c}) are inconsistent"
-        )
-    if batch2_A != batch2_b or batch2_A != batch2_c or batch2_b != batch2_c:
-        raise ValueError(
-            f"Batch dmensions of the second triple ({batch2_A}, {batch2_b}, {batch2_c}) are inconsistent"
-        )
-
-    # 3. Get shapes and sizes
     m1 = len(poly_shape1)
     m2 = len(poly_shape2)
     n1 = nA1 - m1
     n2 = nA2 - m2
 
     # Step 0: Flatten the non-batch dimensions of c1 and c2
-    c1_flat_shape = batch1_c + (int(np.prod(poly_shape1)),)
-    c2_flat_shape = batch2_c + (int(np.prod(poly_shape2)),)
+    c1_flat_shape = batch1 + (int(np.prod(poly_shape1)),)
+    c2_flat_shape = batch2 + (int(np.prod(poly_shape2)),)
     c1_flat = math.reshape(c1, c1_flat_shape)
     c2_flat = math.reshape(c2, c2_flat_shape)
 
     # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
     broadcast_dims = {}
-    for i, dim in enumerate(in1):
-        broadcast_dims[dim] = batch1_A[i]
-    for i, dim in enumerate(in2):
-        if dim in broadcast_dims and broadcast_dims[dim] != batch2_A[i]:
-            raise ValueError(
-                f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch2_A[i]}"
-            )
-        broadcast_dims[dim] = batch2_A[i]
+    for dim, batch in zip(in1, batch1):
+        broadcast_dims[dim] = batch
+    for dim, batch in zip(in2, batch2):
+        if dim in broadcast_dims and broadcast_dims[dim] != batch:
+            raise ValueError(f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch}")
+        broadcast_dims[dim] = batch
 
     output_shape = []
     for dim in output_str:
@@ -306,13 +305,13 @@ def join_Abc(
     for dim in output_str:
         if dim in in1:
             idx = in1.index(dim)
-            broadcast_shape1.append(batch1_A[idx])
+            broadcast_shape1.append(batch1[idx])
         else:
             broadcast_shape1.append(1)
 
         if dim in in2:
             idx = in2.index(dim)
-            broadcast_shape2.append(batch2_A[idx])
+            broadcast_shape2.append(batch2[idx])
         else:
             broadcast_shape2.append(1)
 
@@ -502,22 +501,28 @@ def complex_gaussian_integral_1(
         )
 
     A, b, c = Abc
-    c = math.astensor(c)
-    # assuming c is batched accordingly
-    batched = len(A.shape) == 3 and len(b.shape) == 2
+
+    batched = A.shape[:-2] != ()
+
     if not batched:
         A = math.atleast_3d(A)
         b = math.atleast_2d(b)
-        c = math.expand_dims(c, 0)
-    if not A.shape[0] == b.shape[0] == c.shape[0]:
+        c = math.atleast_1d(c)
+
+    batch_shape = A.shape[:-2]
+    batch_dim = len(batch_shape)
+
+    if batch_shape != b.shape[:batch_dim] or (
+        len(c.shape) != 0 and batch_shape != c.shape[:batch_dim]
+    ):
         raise ValueError(
-            f"Batch size mismatch: got {A.shape[0]} for A, {b.shape[0]} for b and {c.shape[0]} for c."
+            f"Batch dimensions of the triple ({batch_shape}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent."
         )
 
-    (_, n_plus_N, _) = A.shape
+    n_plus_N = A.shape[-1]
     if b.shape[-1] != A.shape[-1]:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
-    N = len(c.shape[1:])  # number of beta variables
+    N = len(c.shape[batch_dim:])  # number of beta variables
     n = n_plus_N - N  # number of z variables
     m = len(idx_z)  # number of pairs to integrate over
     idx = tuple(idx_z) + tuple(idx_zconj)
@@ -562,7 +567,6 @@ def complex_gaussian_integral_1(
         R,
         bR,
     )
-
     if not batched:
         return A_post[0], b_post[0], c_post[0]
     return A_post, b_post, c_post
@@ -601,7 +605,7 @@ def complex_gaussian_integral_2(
         idx1: the tuple of indices of the :math:`z` variables of the first function to integrate over
         idx2: the tuple of indices of the :math:`z^*` variables of the second function to integrate over
         measure: the exponent of the measure (default is -1: Bargmann measure)
-        batch_string: an einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled.
+        batch_string: an (optional)einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled.
                     Default is "i,j->ij" (equivalent to the old "kron" mode). Use "i,i->i" for the old "zip" mode.
 
     Returns:
@@ -613,34 +617,13 @@ def complex_gaussian_integral_2(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
-    A1 = math.atleast_3d(A1, dtype=math.complex128)
-    A2 = math.atleast_3d(A2, dtype=math.complex128)
-    b1 = math.atleast_2d(b1, dtype=math.complex128)
-    b2 = math.atleast_2d(b2, dtype=math.complex128)
-    c1 = math.atleast_1d(c1, dtype=math.complex128)
-    c2 = math.atleast_1d(c2, dtype=math.complex128)
-
-    if batch_string is None:
-        str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]))])
-        str2 = "".join([chr(i) for i in range(97 + len(str1), 97 + len(str1) + len(A2.shape[:-2]))])
-        out = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]) + len(A2.shape[:-2]))])
-        batch_string = f"{str1},{str2}->{out}"
-
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
-
     # vectorize the batch dimensions
     batch_shape = A.shape[:-2]
-    A_core_shape = A.shape[-2:]
-    b_core_shape = b.shape[-1:]
-    c_core_shape = c.shape[len(batch_shape) :]
-    A = math.reshape(A, (-1,) + A_core_shape)
-    b = math.reshape(b, (-1,) + b_core_shape)
-    c = math.reshape(c, (-1,) + c_core_shape)
 
     # offset idx2 to account for the core variables of the first triple
-    A1, _, c1 = Abc1
-    batch_dims_1 = len(math.atleast_3d(A1).shape) - 2
-    derived_1 = len(math.atleast_1d(c1).shape[batch_dims_1:])
+    batch_dims_1 = len(A1.shape[-2:])
+    derived_1 = len(c1.shape[batch_dims_1:])
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)
 

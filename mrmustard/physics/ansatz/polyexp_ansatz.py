@@ -109,15 +109,18 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: Batch[ComplexMatrix] | None,
-        b: Batch[ComplexVector] | None,
-        c: Batch[ComplexTensor] | None,
+        A: ComplexMatrix | Batch[ComplexMatrix] | None,
+        b: ComplexVector | Batch[ComplexVector] | None,
+        c: ComplexTensor | Batch[ComplexTensor] | None,
         name: str = "",
     ):
         super().__init__()
-        self._A = math.atleast_3d(A) if A is not None else None
-        self._b = math.atleast_2d(b) if b is not None else None
-        self._c = math.atleast_1d(c) if c is not None else None
+
+        self._A = math.astensor(A) if A is not None else None
+        self._b = math.astensor(b) if b is not None else None
+        self._c = math.astensor(c) if c is not None else None
+        self._batch_shape = self._A.shape[:-2] if A is not None else ()
+
         self.name = name
         self._simplified = False
         self._fn = None
@@ -183,16 +186,17 @@ class PolyExpAnsatz(Ansatz):
 
             data = self._fn(**params)
             A, b, c = data
-            self._A = math.atleast_3d(A)
-            self._b = math.atleast_2d(b)
-            self._c = math.atleast_1d(c)
+            self._A = math.astensor(A)
+            self._b = math.astensor(b)
+            self._c = math.astensor(c)
+            self._batch_shape = self._A.shape[:-2]  # TODO: have a setter handle this?
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
         r"""
         The shape of the batch of parameters.
         """
-        return self.A.shape[:-2]
+        return self._batch_shape
 
     @property
     def batch_dims(self) -> tuple[int, ...]:
@@ -461,6 +465,7 @@ class PolyExpAnsatz(Ansatz):
         self._A = math.reshape(_A, (len(to_keep),) + (self.num_vars, self.num_vars))
         self._b = math.reshape(_b, (len(to_keep),) + (self.num_vars,))
         self._c = math.reshape(_c, (len(to_keep),) + self.shape_derived_vars)
+        self._batch_shape = (len(to_keep),)
         self._simplified = True
 
     def _find_unique_terms_sorted(self) -> list[int]:

@@ -126,6 +126,23 @@ def test_join_Abc_real():
     assert math.allclose(joined_Abc2[2], math.outer(c1, c2))
 
 
+def test_join_Abc_nonbatched():
+    """Tests the ``join_Abc`` method for non-batched inputs."""
+    A1 = np.array([[1, 2], [3, 4]])
+    b1 = np.array([5, 6])
+    c1 = np.array(7)
+
+    A2 = np.array([[8, 9], [10, 11]])
+    b2 = np.array([12, 13])
+    c2 = np.array(10)
+
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
+
+    assert np.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
+    assert np.allclose(b, np.array([5, 6, 12, 13]))
+    assert np.allclose(c, 70)
+
+
 def test_join_Abc_batched_zip():
     """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
     A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
