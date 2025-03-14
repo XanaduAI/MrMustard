@@ -31,6 +31,7 @@ from mrmustard.lab_dev import (
     Coherent,
     Dgate,
     DM,
+    Identity,
     Ket,
     Number,
     Sgate,
