@@ -34,7 +34,7 @@ class TestBtoQ:
     """
 
     def test_adjoint(self):
-        btoq = BtoQ([0], 0.5)
+        btoq = BtoQ((0,), 0.5)
         adjoint_btoq = btoq.adjoint
 
         kets = btoq.wires.ket.indices
@@ -43,7 +43,7 @@ class TestBtoQ:
         assert adjoint_btoq.parameters.phi == btoq.parameters.phi
 
     def test_dual(self):
-        btoq = BtoQ([0], 0.5)
+        btoq = BtoQ((0,), 0.5)
         dual_btoq = btoq.dual
 
         ok = dual_btoq.wires.ket.output.indices
@@ -53,16 +53,16 @@ class TestBtoQ:
         assert dual_btoq.parameters.phi == btoq.parameters.phi
 
     def test_inverse(self):
-        btoq = BtoQ([0], 0.5)
+        btoq = BtoQ((0,), 0.5)
         inv_btoq = btoq.inverse()
-        assert (btoq >> inv_btoq) == Identity([0])
+        assert (btoq >> inv_btoq) == Identity((0,))
 
     def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
         A0 = np.array([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
         b0 = np.zeros(2, dtype=np.complex128)
         c0 = 1.0 + 0j
 
-        modes = [0, 1]
+        modes = (0, 1)
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
         Ainter, binter, cinter = complex_gaussian_integral_1(
@@ -88,7 +88,7 @@ class TestBtoQ:
         b0 = np.zeros(1)
         c0 = 1.0 + 0j
 
-        modes = [0]
+        modes = (0,)
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
         Ainter, binter, cinter = complex_gaussian_integral_1(
@@ -131,7 +131,7 @@ class TestBtoQ:
         axis_angle = np.random.random()
         quad = np.random.random()
 
-        state = Coherent([0], x, y)
-        wavefunction = (state >> BtoQ([0], axis_angle)).ansatz
+        state = Coherent(0, x, y)
+        wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))

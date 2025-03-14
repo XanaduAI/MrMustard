@@ -154,7 +154,7 @@ class Sampler(ABC):
         if isinstance(self.povms, CircuitComponent):
             kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
-            return self.povms.__class__(modes=[mode], **kwargs)
+            return self.povms.__class__(mode, **kwargs)
         else:
             return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
@@ -188,7 +188,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number([0], 0, cutoff))
+        super().__init__(list(range(cutoff)), Number(0, 0, cutoff))
         self._cutoff = cutoff
         self._outcome_arg = "n"
 

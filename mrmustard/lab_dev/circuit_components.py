@@ -90,6 +90,8 @@ class CircuitComponent:
         # handle modes parameter
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
+        elif "mode" in params:
+            serializable["mode"] = tuple(self.wires.modes)[0]
         elif "modes_out" in params and "modes_in" in params:
             serializable["modes_out"] = tuple(self.wires.output.modes)
             serializable["modes_in"] = tuple(self.wires.input.modes)
@@ -166,7 +168,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return sorted(self.wires.modes)
+        return tuple(sorted(self.wires.modes))
 
     @property
     def name(self) -> str:
@@ -363,7 +365,7 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
-            >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
+            >>> cat = Coherent(mode=0, x=2.0) + Coherent(mode=0, x=-2.0)
             >>> assert isinstance(cat, Ket)
 
         Args:
@@ -402,8 +404,8 @@ class CircuitComponent:
         .. code-block:: pycon
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
-            >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
+            >>> coh = Coherent(mode=0, x=1.0)
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
@@ -425,7 +427,7 @@ class CircuitComponent:
         """
         return self._representation.fock_array(shape or self.auto_shape(), batched)
 
-    def on(self, modes: Sequence[int]) -> CircuitComponent:
+    def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""
         Creates a light copy of this component that acts on the given ``modes`` instead of the
         original modes. It only works if the component's wires are all defined on the same modes.
@@ -444,6 +446,7 @@ class CircuitComponent:
             ValueError: If the component's wires are not all defined on the same modes or if the
             length of the given modes is different from the length of the original modes.
         """
+        modes = (modes,) if isinstance(modes, int) else modes
         ob = self.wires.output.bra.modes
         ib = self.wires.input.bra.modes
         ok = self.wires.output.ket.modes
@@ -474,7 +477,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
@@ -484,7 +487,7 @@ class CircuitComponent:
         """
         rep = self._representation.to_bargmann()
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
         except TypeError:
             ret = self._from_attributes(rep, self.name)
@@ -501,7 +504,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
@@ -514,27 +517,14 @@ class CircuitComponent:
         """
         rep = self._representation.to_fock(shape or self.auto_shape())
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
+            ret._name = self.name
         except TypeError:
             ret = self._from_attributes(rep, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
-
-    def _getitem_builtin(self, modes: set[int]):
-        r"""
-        A convenience function to slice built-in circuit components (CCs).
-
-        Built-in CCs come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable CCs.
-        """
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = self.parameters[items].to_dict()
-        return self.__class__(modes=modes, **kwargs)
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
@@ -592,8 +582,8 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator
-            >>> coh = Coherent([0], 1.0)
-            >>> att = Attenuator([0], 0.5)
+            >>> coh = Coherent(0, 1.0)
+            >>> att = Attenuator(0, 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
@@ -660,8 +650,8 @@ class CircuitComponent:
             >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
-            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
+            >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
+            >>> assert isinstance(Coherent(0, 1.0) >> Coherent(0, 1.0).dual, complex)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)

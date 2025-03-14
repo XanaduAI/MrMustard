@@ -18,34 +18,29 @@ The class representing a squeezed vacuum state.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["SqueezedVacuum"]
 
 
 class SqueezedVacuum(Ket):
     r"""
-    The `N`-mode squeezed vacuum state.
-
-    If ``r`` and/or ``phi`` are ``Sequence``\s, their length must be equal to `1` or `N`. If their length is equal to `1`,
-    all the modes share the same parameters.
+    The squeezed vacuum state in Bargmann representation.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev import SqueezedVacuum, Vacuum, Sgate
 
-        >>> state = SqueezedVacuum(modes=[0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
-        >>> assert state == Vacuum([0, 1, 2]) >> Sgate([0, 1, 2], r=[0.3, 0.4, 0.5], phi=0.2)
+        >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
+        >>> assert state == Vacuum(0) >> Sgate(0, r=0.3, phi=0.2)
 
     Args:
-        modes: The modes of the squeezed vacuum state.
+        mode: The mode of the squeezed vacuum state.
         r: The squeezing magnitude.
-        phi: The squeezing angles.
+        phi: The squeezing angle.
         r_trainable: Whether `r` is trainable.
         phi_trainable: Whether `phi` is trainable.
         r_bounds: The bounds of `r`.
@@ -56,22 +51,20 @@ class SqueezedVacuum(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
+        mode: int,
+        r: float = 0.0,
+        phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="SqueezedVacuum")
-
-        rs, phis = list(reshape_params(len(modes), r=r, phi=phi))
-        self.parameters.add_parameter(make_parameter(r_trainable, rs, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phis, "phi", phi_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.squeezed_vacuum_state_Abc, r=self.parameters.r, phi=self.parameters.phi
             ),

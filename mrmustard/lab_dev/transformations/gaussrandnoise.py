@@ -15,9 +15,8 @@
 """
 The class representing a Gaussian random noise channel.
 """
-
 from __future__ import annotations
-from typing import Sequence
+
 from mrmustard import math, settings
 from mrmustard.utils.typing import RealMatrix
 from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -33,20 +32,22 @@ class GaussRandNoise(Channel):
     r"""
     The Gaussian random noise channel.
 
-    The number of modes must match half of the size of the Y matrix.
     .. code-block ::
 
         >>> import numpy as np
         >>> from mrmustard.lab_dev import GaussRandNoise
 
-        >>> channel = GaussRandNoise(modes=[1, 2], Y = .2 * np.eye(4))
-        >>> assert channel.modes == [1, 2]
-        >>> assert np.allclose(channel.parameters.Y.value, .2 * np.eye(4))
+        >>> channel = GaussRandNoise(modes=(1, 2), Y = 0.2 * np.eye(4))
+        >>> assert channel.modes == (1, 2)
+        >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
     Args:
-        modes: The modes the channel is applied to
-        Y: The Y matrix of the Gaussian random noise
-        Y_train: whether the Y matrix is a trainable variable
+        modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
+        Y: The Y matrix of the Gaussian random noise channel.
+        Y_trainable: Whether ``Y`` is trainable.
+
+    Raises:
+        ValueError: If the number of modes does not match half of the size of ``Y``.
 
     ..details::
         The Bargmann representation of the channel is computed via the formulas provided in the paper:
@@ -61,10 +62,11 @@ class GaussRandNoise(Channel):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         Y: RealMatrix,
         Y_trainable: bool = False,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "

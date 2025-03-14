@@ -51,7 +51,7 @@ def make_parameter(
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn, dtype=dtype)
 
 
-def reshape_params(n_modes: str, **kwargs) -> Generator:
+def reshape_params(n_modes: int, **kwargs) -> Generator:
     r"""
     A utility function to turn the input parameters of states and gates into
     1-dimensional tensors of length ``n_modes``.

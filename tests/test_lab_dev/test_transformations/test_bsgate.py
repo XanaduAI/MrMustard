@@ -28,24 +28,20 @@ class TestBSgate:
     Tests for the ``BSgate`` class.
     """
 
-    modes = [[0, 8], [1, 2], [7, 9]]
-    theta = [[1], 1, [1, 2]]
-    phi = [[3], [3, 4], [3, 4]]
+    modes = [(0, 8), (1, 2), (7, 9)]
+    theta = [1, 1, 2]
+    phi = [3, 4, 4]
 
     def test_init(self):
-        gate = BSgate([0, 1], 2, 3)
+        gate = BSgate((0, 1), 2, 3)
 
         assert gate.name == "BSgate"
-        assert gate.modes == [0, 1]
+        assert gate.modes == (0, 1)
         assert gate.parameters.theta.value == 2
         assert gate.parameters.phi.value == 3
 
-    def test_init_error(self):
-        with pytest.raises(ValueError, match="Expected a pair"):
-            BSgate([1, 2, 3])
-
     def test_representation(self):
-        rep1 = BSgate([0, 1], 0.1, 0.2).ansatz
+        rep1 = BSgate((0, 1), 0.1, 0.2).ansatz
         A_exp = [
             [
                 [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
@@ -58,7 +54,7 @@ class TestBSgate:
         assert math.allclose(rep1.b, np.zeros((1, 4)))
         assert math.allclose(rep1.c, [1])
 
-        rep2 = BSgate([0, 1], 0.1).ansatz
+        rep2 = BSgate((0, 1), 0.1).ansatz
         A_exp = [
             [
                 [0, 0, 9.95004165e-01, -9.98334166e-02],
@@ -72,9 +68,9 @@ class TestBSgate:
         assert math.allclose(rep2.c, [1])
 
     def test_trainable_parameters(self):
-        gate1 = BSgate([0, 1], 1, 1)
-        gate2 = BSgate([0, 1], 1, 1, theta_trainable=True, theta_bounds=(-2, 2))
-        gate3 = BSgate([0, 1], 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        gate1 = BSgate((0, 1), 1, 1)
+        gate2 = BSgate((0, 1), 1, 1, theta_trainable=True, theta_bounds=(-2, 2))
+        gate3 = BSgate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.theta.value = 3
