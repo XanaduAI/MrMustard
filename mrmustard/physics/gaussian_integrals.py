@@ -620,6 +620,12 @@ def complex_gaussian_integral_2(
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
     # vectorize the batch dimensions
     batch_shape = A.shape[:-2]
+    A_core_shape = A.shape[-2:]
+    b_core_shape = b.shape[-1:]
+    c_core_shape = c.shape[len(batch_shape) :]
+    A = math.reshape(A, (-1,) + A_core_shape)
+    b = math.reshape(b, (-1,) + b_core_shape)
+    c = math.reshape(c, (-1,) + c_core_shape) if len(c.shape) != 0 else c
 
     # offset idx2 to account for the core variables of the first triple
     batch_dims_1 = len(A1.shape[-2:])
