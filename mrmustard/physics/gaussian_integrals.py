@@ -19,7 +19,8 @@ This module contains gaussian integral functions and related helper functions.
 from typing import Sequence
 import numpy as np
 from mrmustard import math
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.physics.utils import verify_batch_triple
 
 
 def real_gaussian_integral(
@@ -212,9 +213,11 @@ def join_Abc(
     joined ``A`` and ``b``.
 
     Arguments:
-        Abc1: the first ``(A,b,c)`` triple
-        Abc2: the second ``(A,b,c)`` triple
-        batch_string: an (optional) einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled
+        Abc1: The first ``(A,b,c)`` triple
+        Abc2: The second ``(A,b,c)`` triple
+        batch_string: An (optional) einsum-like string in the format "in1,in2->out" that specifies
+            how batch dimensions should be handled. If ``None``, defaults to a kronecker product i.e.
+            "i,j->ij".
 
     Returns:
         The joined ``(A,b,c)`` triple
@@ -222,19 +225,11 @@ def join_Abc(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
+    verify_batch_triple(A1, b1, c1)
+    verify_batch_triple(A2, b2, c2)
+
     batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
     batch_dim1, batch_dim2 = len(batch1), len(batch2)
-
-    # TODO: maybe we should assume that the batch dimensions are the same in these methods and have validation higher in the stack
-    #      this allows us to avoid batch dim checks everywhere
-    if batch1 != b1.shape[:batch_dim1] or (len(c1.shape) != 0 and batch1 != c1.shape[:batch_dim1]):
-        raise ValueError(
-            f"Batch dimensions of the first triple ({batch1}, {b1.shape[:batch_dim1]}, {c1.shape[:batch_dim1]}) are inconsistent."
-        )
-    if batch2 != b2.shape[:batch_dim2] or (len(c2.shape) != 0 and batch2 != c2.shape[:batch_dim2]):
-        raise ValueError(
-            f"Batch dimensions of the second triple ({batch2}, {b2.shape[:batch_dim2]}, {c2.shape[:batch_dim2]}) are inconsistent."
-        )
 
     if batch_string is None:
         str1 = "".join([chr(i) for i in range(97, 97 + len(A1.shape[:-2]))])
@@ -505,16 +500,8 @@ def complex_gaussian_integral_1(
 
     A, b, c = Abc
 
-    batch_shape = A.shape[:-2]
-    batch_dim = len(batch_shape)
-
-    if batch_shape != b.shape[:batch_dim] or (
-        len(c.shape) != 0 and batch_shape != c.shape[:batch_dim]
-    ):
-        raise ValueError(
-            f"Batch dimensions of the triple ({batch_shape}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent."
-        )
-
+    verify_batch_triple(A, b, c)
+    batch_dim = len(A.shape[:-2])
     n_plus_N = A.shape[-1]
     if b.shape[-1] != n_plus_N:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
@@ -597,21 +584,15 @@ def complex_gaussian_integral_2(
         idx1: the tuple of indices of the :math:`z` variables of the first function to integrate over
         idx2: the tuple of indices of the :math:`z^*` variables of the second function to integrate over
         measure: the exponent of the measure (default is -1: Bargmann measure)
-        batch_string: an (optional)einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled.
-                    Default is "i,j->ij" (equivalent to the old "kron" mode). Use "i,i->i" for the old "zip" mode.
+        batch_string: an (optional) einsum-like string in the format "in1,in2->out" that specifies how batch dimensions should be handled.
 
     Returns:
         The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
-
-    Raises:
-        ValueError: If ``idx1`` and ``idx2`` have different lengths, or they indicate indices beyond ``n``, or if ``A``, ``b``, ``c`` have non-matching batch size.
     """
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
+    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
 
     # offset idx2 to account for the core variables of the first triple
+    A1, _, c1 = Abc1
     batch_dims_1 = len(A1.shape[-2:])
     derived_1 = len(c1.shape[batch_dims_1:])
     core_1 = A1.shape[-1] - derived_1
