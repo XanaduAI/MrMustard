@@ -701,7 +701,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
+        tensor of given shape in case of B is a batched vector with a batched dimension on the
         last index.
 
         Args:

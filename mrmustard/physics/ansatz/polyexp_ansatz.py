@@ -184,8 +184,7 @@ class PolyExpAnsatz(Ansatz):
                 except AttributeError:
                     params[name] = param
 
-            data = self._fn(**params)
-            A, b, c = data
+            A, b, c = self._fn(**params)
             self._A = math.astensor(A)
             self._b = math.astensor(b)
             self._c = math.astensor(c)
@@ -210,21 +209,23 @@ class PolyExpAnsatz(Ansatz):
         r"""
         A view of self.A with the batch dimension flattened.
         """
-        return math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+        return (
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+        )
 
     @cached_property
     def _b_vectorized(self) -> Batch[ComplexVector]:
         r"""
         A view of self.b with the batch dimension flattened.
         """
-        return math.reshape(self.b, (-1, self.num_vars))
+        return math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
 
     @cached_property
     def _c_vectorized(self) -> Batch[ComplexTensor]:
         r"""
         A view of self.c with the batch dimension flattened.
         """
-        return math.reshape(self.c, (-1, *self.shape_derived_vars))
+        return math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -383,51 +384,56 @@ class PolyExpAnsatz(Ansatz):
         derivatives is larger (the order of each derivative is the sum of all the orders of the initial derivatives).
         This decomposition is typically favourable if ``m > n`` and the sum of the elements in ``c.shape[1:]`` is not too large.
         This method will actually decompose the ansatz only if ``m > n`` and return the original ansatz otherwise.
-
-        TODO: find a way to avoid the loop over the batch dimensions
         """
         if self.num_derived_vars < self.num_CV_vars:
             return self
-        A_dec = []
-        b_dec = []
-        c_dec = []
-        for Ai, bi, ci in zip(self._A_vectorized, self._b_vectorized, self._c_vectorized):
-            A_dec_i, b_dec_i, c_dec_i = self._decompose_single(Ai, bi, ci)
-            A_dec.append(A_dec_i)
-            b_dec.append(b_dec_i)
-            c_dec.append(c_dec_i)
-        A_dec = math.reshape(
-            math.concat(A_dec, axis=0),
-            self.batch_shape + (2 * self.num_CV_vars, 2 * self.num_CV_vars),
-        )
-        b_dec = math.reshape(math.concat(b_dec, axis=0), self.batch_shape + (2 * self.num_CV_vars,))
-        c_dec = math.reshape(
-            math.concat(c_dec, axis=0),
-            self.batch_shape + (sum(self.shape_derived_vars),) * self.num_CV_vars,
-        )
-        return PolyExpAnsatz(A_dec, b_dec, c_dec, self.num_CV_vars)
-
-    def _decompose_single(self, Ai, bi, ci):
-        r"""
-        Decomposes a single batch element of the ansatz.
-        """
         n = self.num_CV_vars
-        A_core = math.block(
-            [[math.zeros((n, n), dtype=Ai.dtype), Ai[:n, n:]], [Ai[n:, :n], Ai[n:, n:]]]
-        )
-        b_core = math.concat((math.zeros((n,), dtype=bi.dtype), bi[n:]), axis=-1)
-        pulled_out_input_shape = (np.sum(self.shape_derived_vars),) * n
+        A, b, c = self.triple
+        pulled_out_input_shape = (math.sum(self.shape_derived_vars),) * n
         poly_shape = pulled_out_input_shape + self.shape_derived_vars
-        poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape).reshape(
-            pulled_out_input_shape + (-1,)
+
+        batch_shape = A.shape[:-2]
+        A_core = math.concat(
+            [
+                math.concat(
+                    [math.zeros(batch_shape + (n, n), dtype=A.dtype), A[..., :n, n:]], axis=-1
+                ),
+                math.concat([A[..., n:, :n], A[..., n:, n:]], axis=-1),
+            ],
+            axis=-2,
         )
-        c_prime = math.einsum("...i,i->...", poly_core, ci.reshape(-1))
-        block = Ai[:n, :n]
-        A_decomp = math.block(
-            [[block, math.eye_like(block)], [math.eye_like(block), math.zeros_like(block)]]
+        b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
+        # TODO: figure out a cleaner way to do this
+        if batch_shape:
+            A_core_vectorized = math.reshape(A_core, (-1,) + A_core.shape[-2:])
+            b_core_vectorized = math.reshape(b_core, (-1,) + b_core.shape[-1:])
+            poly_core = math.hermite_renormalized_batch(
+                A_core_vectorized, b_core_vectorized, complex(1), poly_shape
+            ).reshape(batch_shape + pulled_out_input_shape + (-1,))
+        else:
+            poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape).reshape(
+                pulled_out_input_shape + (-1,)
+            )
+
+        batch_str = "".join(
+            [chr(i) for i in range(97, 97 + len(batch_shape))]
+        )  # TODO: see if there is a better solution?
+        c_prime = math.einsum(
+            f"{batch_str}...k,{batch_str}...k->{batch_str}...",
+            poly_core,
+            c.reshape(batch_shape + (-1,)),
         )
-        b_decomp = math.concat((bi[:n], math.zeros((n,), dtype=bi.dtype)), axis=-1)
-        return A_decomp, b_decomp, c_prime
+        block = A[..., :n, :n]
+        I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
+        A_decomp = math.concat(
+            [
+                math.concat([block, I_matrix], axis=-1),
+                math.concat([I_matrix, math.zeros_like(block)], axis=-1),
+            ],
+            axis=-2,
+        )
+        b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
+        return PolyExpAnsatz(A_decomp, b_decomp, c_prime)
 
     def reorder(self, order: Sequence[int]):
         r"""
@@ -445,6 +451,7 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c)
 
+    # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
     def simplify(self) -> None:
         r"""
         Simplifies an ansatz by combining terms that have the same exponential part, i.e. two components
@@ -455,7 +462,7 @@ class PolyExpAnsatz(Ansatz):
 
         TODO: consider returning a new ansatz rather than mutating this one
         """
-        if self._simplified:
+        if self._simplified or not self.batch_shape:
             return
 
         to_keep = self._find_unique_terms_sorted()
@@ -521,10 +528,17 @@ class PolyExpAnsatz(Ansatz):
             _c, self.batch_shape + self.shape_derived_vars + self.shape_derived_vars
         )
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]):
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1.0):
         r"""
         Computes the trace of the ansatz across the specified pairs of CV variables.
-        TODO: make the measure kw available
+
+        Args:
+            idx_z: The indices indicating which CV variables to integrate over.
+            idx_zconj: The indices indicating which conjugate CV variables to integrate over.
+            measure: The measure to use in the complex Gaussian integral.
+
+        Returns:
+            A new ansatz with the specified indices traced out.
         """
         if len(idx_z) != len(idx_zconj):
             raise ValueError("idx_z and idx_zconj must have the same length.")
@@ -538,7 +552,7 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"All indices must be between 0 and {self.num_CV_vars-1}. Got {idx_z} and {idx_zconj}."
             )
-        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=-1.0)
+        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=measure)
         return PolyExpAnsatz(A, b, c)
 
     def eval(
