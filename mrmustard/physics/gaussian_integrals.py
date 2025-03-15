@@ -420,17 +420,20 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     Returns:
         The post-integration parameters
     """
+    batch_shape = M.shape[:-2]
+    batch_dim = len(batch_shape)
+
     inv_M = math.inv(M)
     M_bM = math.solve(M, bM)
 
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
         -0.5 * math.sum(bM * M_bM, axis=-1)
     )
-    c_reshaped = math.reshape(c_factor, c.shape[:1] + (1,) * (len(c.shape) - 1))
+    c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
     c_post = c * c_reshaped
 
-    A_post = R - math.einsum("bij,bjk,blk->bil", D, inv_M, D)
-    b_post = bR - math.einsum("bij,bj->bi", D, M_bM)
+    A_post = R - math.einsum("...ij,...jk,...lk->...il", D, inv_M, D)
+    b_post = bR - math.einsum("...ij,...j->...i", D, M_bM)
     return (
         math.cast(A_post, "complex128"),
         math.cast(b_post, "complex128"),
@@ -502,13 +505,6 @@ def complex_gaussian_integral_1(
 
     A, b, c = Abc
 
-    batched = A.shape[:-2] != ()
-
-    if not batched:
-        A = math.atleast_3d(A)
-        b = math.atleast_2d(b)
-        c = math.atleast_1d(c)
-
     batch_shape = A.shape[:-2]
     batch_dim = len(batch_shape)
 
@@ -520,7 +516,7 @@ def complex_gaussian_integral_1(
         )
 
     n_plus_N = A.shape[-1]
-    if b.shape[-1] != A.shape[-1]:
+    if b.shape[-1] != n_plus_N:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
     N = len(c.shape[batch_dim:])  # number of beta variables
     n = n_plus_N - N  # number of z variables
@@ -532,8 +528,6 @@ def complex_gaussian_integral_1(
         )
 
     if len(idx) == 0:
-        if not batched:
-            return A[0], b[0], c[0]
         return A, b, c
 
     not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx], dtype=math.int64)
@@ -567,8 +561,6 @@ def complex_gaussian_integral_1(
         R,
         bR,
     )
-    if not batched:
-        return A_post[0], b_post[0], c_post[0]
     return A_post, b_post, c_post
 
 
@@ -618,14 +610,6 @@ def complex_gaussian_integral_2(
     A2, b2, c2 = Abc2
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
-    # vectorize the batch dimensions
-    batch_shape = A.shape[:-2]
-    A_core_shape = A.shape[-2:]
-    b_core_shape = b.shape[-1:]
-    c_core_shape = c.shape[len(batch_shape) :]
-    A = math.reshape(A, (-1,) + A_core_shape)
-    b = math.reshape(b, (-1,) + b_core_shape)
-    c = math.reshape(c, (-1,) + c_core_shape) if len(c.shape) != 0 else c
 
     # offset idx2 to account for the core variables of the first triple
     batch_dims_1 = len(A1.shape[-2:])
@@ -633,9 +617,4 @@ def complex_gaussian_integral_2(
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)
 
-    # compute the integral and reshape the output batch dimensions
-    A_out, b_out, c_out = complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
-    A_out = math.reshape(A_out, batch_shape + (A_out.shape[-2], A_out.shape[-1]))
-    b_out = math.reshape(b_out, batch_shape + (b_out.shape[-1],))
-    c_out = math.reshape(c_out, batch_shape + c_out.shape[len(batch_shape) :])
-    return A_out, b_out, c_out
+    return complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
