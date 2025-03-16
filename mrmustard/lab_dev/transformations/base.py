@@ -129,7 +129,7 @@ class Transformation(CircuitComponent):
         BB = QtoB_in >> QQ >> QtoB_out
         return cls.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
-    def inverse(self) -> Transformation:
+    def inverse(self) -> Transformation:  # TODO: revisit this
         r"""
         Returns the mathematical inverse of the transformation, if it exists.
         Note that it can be unphysical, for example when the original is not unitary.
@@ -146,20 +146,21 @@ class Transformation(CircuitComponent):
             )
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise NotImplementedError("Only Bargmann representation is supported.")
-        if self.ansatz.batch_size > 1:
-            raise NotImplementedError("Batched transformations are not supported.")
 
-        # compute the inverse
-        A = math.conj(self.ansatz._A_vectorized[0])
-        b = math.conj(self.ansatz._b_vectorized[0])
+        A = math.conj(self.ansatz.A)
+        b = math.conj(self.ansatz.b)
         almost_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 + 0j),
+                PolyExpAnsatz(
+                    math.inv(A),
+                    -math.inv(A) @ b,
+                    math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                ),
                 self.wires.copy(new_ids=True),
             )
         )
         almost_identity = self.contract(almost_inverse)
-        invert_this_c = almost_identity.ansatz._c_vectorized[0]
+        invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
                 PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 / invert_this_c),
