@@ -350,6 +350,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("atleast_nd", (array, n, dtype))
 
+    def batched_transpose(self, a: Tensor, batch_dims: int = 0) -> Tensor:
+        r"""
+        Transposes the array ``a`` with shape ``(batch_dims, ..., n, m)`` to shape ``(batch_dims, ..., m, n)``.
+
+        Args:
+            a: The array to transpose
+            batch_dims: The number of batch dimensions
+
+        Returns:
+            The transposed array.
+        """
+        return self._apply("batched_transpose", (a, batch_dims))
+
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
 

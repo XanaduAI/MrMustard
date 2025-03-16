@@ -106,7 +106,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state01 = (Coherent(0, 1) >> Coherent(1, 1)).dm()
         state01 = state01.to_fock(2)
         with pytest.raises(ValueError):
-            DM.from_fock((0,), state01.fock_array(5), "my_dm", True)
+            DM.from_fock((0,), state01.fock_array(5), "my_dm")
 
     def test_bargmann_triple_error(self):
         fock = Number(0, n=10).dm()

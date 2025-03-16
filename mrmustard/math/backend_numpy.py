@@ -96,6 +96,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
 
+    def batched_transpose(self, a: np.ndarray, batch_dims: int = 0) -> np.ndarray | None:
+        if a is None:
+            return None  # TODO: remove and address None inputs where tranpose is used
+        perm = tuple(range(len(a.shape)))
+        perm = perm[:batch_dims] + perm[batch_dims:][::-1]
+        return np.transpose(a, axes=perm)
+
     def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])

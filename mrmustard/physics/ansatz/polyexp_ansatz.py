@@ -393,14 +393,11 @@ class PolyExpAnsatz(Ansatz):
         poly_shape = pulled_out_input_shape + self.shape_derived_vars
 
         batch_shape = A.shape[:-2]
-        A_core = math.concat(
+        A_core = math.block(
             [
-                math.concat(
-                    [math.zeros(batch_shape + (n, n), dtype=A.dtype), A[..., :n, n:]], axis=-1
-                ),
-                math.concat([A[..., n:, :n], A[..., n:, n:]], axis=-1),
-            ],
-            axis=-2,
+                [math.zeros(batch_shape + (n, n), dtype=A.dtype), A[..., :n, n:]],
+                [A[..., n:, :n], A[..., n:, n:]],
+            ]
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
         # TODO: figure out a cleaner way to do this
@@ -425,13 +422,7 @@ class PolyExpAnsatz(Ansatz):
         )
         block = A[..., :n, :n]
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
-        A_decomp = math.concat(
-            [
-                math.concat([block, I_matrix], axis=-1),
-                math.concat([I_matrix, math.zeros_like(block)], axis=-1),
-            ],
-            axis=-2,
-        )
+        A_decomp = math.block([[block, I_matrix], [I_matrix, math.zeros_like(block)]])
         b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
         return PolyExpAnsatz(A_decomp, b_decomp, c_prime)
 

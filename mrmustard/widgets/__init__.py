@@ -22,7 +22,6 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
 from .css import FOCK, WIRES, TABLE, STATE
 
-
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
 IN_INTERACTIVE_SHELL = isinstance(get_ipython(), TerminalInteractiveShell)
 
@@ -85,14 +84,14 @@ def fock(rep):
     )
 
 
-def bargmann(rep, batch_idx=None):
+def bargmann(rep, batch_idx: int | None = None):
     """Create a widget to display a Bargmann representation."""
-    if batch_idx is None:
+    if batch_idx is None and rep.batch_shape:
         return _batch_widget(rep, rep._A_vectorized.shape[0], bargmann)
 
-    A = rep._A_vectorized[batch_idx]
-    b = rep._b_vectorized[batch_idx]
-    c = rep._c_vectorized[batch_idx]
+    A = rep._A_vectorized[batch_idx] if batch_idx is not None else rep._A_vectorized
+    b = rep._b_vectorized[batch_idx] if batch_idx is not None else rep._b_vectorized
+    c = rep._c_vectorized[batch_idx] if batch_idx is not None else rep._c_vectorized
 
     def get_abc_str(A, b, c, round_val):
         if round_val >= 0:

@@ -210,10 +210,7 @@ class Unitary(Operation):
         r"""
         Returns the symplectic matrix that corresponds to this unitary
         """
-        batch_size = self.ansatz.batch_size
-        return math.astensor(
-            [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
-        )
+        return au2Symplectic(self.ansatz.A)
 
     @classmethod
     def from_ansatz(
@@ -242,11 +239,12 @@ class Unitary(Operation):
         S: the symplectic representation (in XXPP order)
         """
         m = len(modes)
+        batch_shape = S.shape[:-2]
         A = symplectic2Au(S)
-        b = math.zeros(2 * m, dtype="complex128")
-        A_inin = math.atleast_2d(A[m:, m:])
+        b = math.zeros(batch_shape + (2 * m,), dtype="complex128")
+        A_inin = A[..., m:, m:]
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
-        return Unitary.from_bargmann(modes, modes, [A, b, c])
+        return Unitary.from_bargmann(modes, modes, (A, b, c))
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Unitary:
@@ -368,7 +366,7 @@ class Channel(Map):
         r"""
         Returns the X and Y matrix corresponding to the channel.
         """
-        return XY_of_channel(self.ansatz.A[0])
+        return XY_of_channel(self.ansatz.A)
 
     @classmethod
     def from_ansatz(
