@@ -55,14 +55,14 @@ class TestCoherent:
 
     def test_representation(self):
         rep1 = Coherent(mode=0, x=0.1, y=0.2).ansatz
-        assert math.allclose(rep1.A, np.zeros((1, 1, 1)))
-        assert math.allclose(rep1.b, [[0.1 + 0.2j]])
-        assert math.allclose(rep1.c, [0.97530991])
+        assert math.allclose(rep1.A, math.zeros((1, 1)))
+        assert math.allclose(rep1.b, [0.1 + 0.2j])
+        assert math.allclose(rep1.c, 0.97530991)
 
         rep3 = Coherent(mode=1, x=0.1).ansatz
-        assert math.allclose(rep3.A, np.zeros((1, 1, 1)))
-        assert math.allclose(rep3.b, [[0.1]])
-        assert math.allclose(rep3.c, [0.9950124791926823])
+        assert math.allclose(rep3.A, math.zeros((1, 1)))
+        assert math.allclose(rep3.b, [0.1])
+        assert math.allclose(rep3.c, 0.9950124791926823)
 
     def test_linear_combinations(self):
         state1 = Coherent(0, x=1, y=2)

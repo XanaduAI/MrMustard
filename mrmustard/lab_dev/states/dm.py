@@ -193,7 +193,7 @@ class DM(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    ) -> tuple[int, ...]:  # TODO: revisit
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -208,13 +208,17 @@ class DM(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.ansatz.batch_size == 1 and self.ansatz.batch_shape:
+        if self.ansatz.batch_size <= 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
