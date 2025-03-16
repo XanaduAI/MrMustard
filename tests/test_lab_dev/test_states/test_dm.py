@@ -133,7 +133,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = DM.from_fock((modes,), array_in, "my_dm", False)
+        state_out = DM.from_fock((modes,), array_in, "my_dm")
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):
