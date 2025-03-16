@@ -55,22 +55,17 @@ class ArrayAnsatz(Ansatz):
     def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
         super().__init__()
         self.batch_dims = batch_dims
-        self._batch_shape = array.shape[:batch_dims] if array is not None else None
-        self._core_shape = array.shape[batch_dims:] if array is not None else None
+        self._batch_shape = array.shape[:batch_dims] if array is not None else ()
         self._array = array
         self._original_abc_data = None
 
     @property
     def batch_shape(self) -> tuple[int, ...] | None:
-        if self._batch_shape is None:
-            self._batch_shape = self.array.shape[: self.batch_dims]
         return self._batch_shape
 
     @property
     def core_shape(self) -> tuple[int, ...] | None:
-        if self._core_shape is None:
-            self._core_shape = self.array.shape[self.batch_dims :]
-        return self._core_shape
+        return self.array.shape[self.batch_dims :]
 
     @property
     def core_dims(self) -> int:
@@ -89,7 +84,6 @@ class ArrayAnsatz(Ansatz):
         if not math.from_backend(value):
             value = math.astensor(value)
         self._batch_shape = value.shape[: self.batch_dims]
-        self._core_shape = value.shape[self.batch_dims :]
         self._array = value
 
     def _generate_ansatz(self):
@@ -123,6 +117,10 @@ class ArrayAnsatz(Ansatz):
     @property
     def data(self) -> Batch[Tensor]:
         return self.array
+
+    @property
+    def num_vars(self) -> int:
+        return len(self.array.shape) - self.batch_dims
 
     @property
     def scalar(self) -> Scalar | ArrayLike:
@@ -254,16 +252,6 @@ class ArrayAnsatz(Ansatz):
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
         return ArrayAnsatz(math.transpose(self.array, order), self.batch_dims)
-
-    def sum_batch(self) -> ArrayAnsatz:
-        r"""
-        Sums over the batch dimension of the array.
-        Turns an array with any batch size to just the core shape.
-
-        Returns:
-            The collapsed ArrayAnsatz object.
-        """
-        return ArrayAnsatz(math.sum(self.array, axis=list(range(self.batch_dims))), self.batch_dims)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data, "batch_dims": self.batch_dims}

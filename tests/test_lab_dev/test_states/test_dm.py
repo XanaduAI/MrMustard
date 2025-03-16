@@ -129,11 +129,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_fock(self, modes):
         state_in = Coherent(modes, x=1, y=2) >> Attenuator(modes, 0.8)
         state_in_fock = state_in.to_fock(5)
-        array_in = state_in.fock_array(5, batched=True)
+        array_in = state_in.fock_array(5)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = DM.from_fock((modes,), array_in, "my_dm", True)
+        state_out = DM.from_fock((modes,), array_in, "my_dm", False)
         assert state_in_fock == state_out
 
     def test_to_from_phase_space(self):

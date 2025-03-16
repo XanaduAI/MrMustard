@@ -160,12 +160,6 @@ class TestArrayAnsatz:
         assert np.allclose(fock1_add_fock2.array[0], self.array2578[0] - self.array2578[0])
         assert np.allclose(fock1_add_fock2.array[1], self.array2578[1] - self.array2578[1])
 
-    def test_sum_batch(self):
-        fock = ArrayAnsatz(self.array2578, batch_dims=1)
-        fock_collapsed = fock.sum_batch()
-        assert fock_collapsed.array.shape == (5, 7, 8)
-        assert np.allclose(fock_collapsed.array, np.sum(self.array2578, axis=0))
-
     def test_to_from_dict(self):
         array1 = math.astensor(np.random.random((2, 5, 5, 1)))
         fock1 = ArrayAnsatz(array1, batch_dims=1)

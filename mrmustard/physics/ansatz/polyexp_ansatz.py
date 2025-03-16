@@ -263,7 +263,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape))
+        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
     def conj(self):
@@ -634,7 +634,7 @@ class PolyExpAnsatz(Ansatz):
         z_vectorized = math.reshape(z, (int(np.prod(z_batch_shape)), z_dim))  # (k, num_CV_vars)
         exp_sum = self._compute_exp_part(z_vectorized)  # shape (batch_size, k)
         if self.num_derived_vars == 0:  # purely gaussian
-            ret = math.einsum("ik,i...->ik...", exp_sum, self._c_vectorized)
+            ret = math.einsum("...k,...->k...", exp_sum, self._c_vectorized)
         else:
             poly = self._compute_polynomial_part(
                 z_vectorized
@@ -653,18 +653,18 @@ class PolyExpAnsatz(Ansatz):
         that correspond to the vector of given CV variables.
         """
         n = self.num_CV_vars
-        A_part = math.einsum("ka,kb,iab->ik", z, z, self._A_vectorized[:, :n, :n])
-        b_part = math.einsum("ka,ia->ik", z, self._b_vectorized[:, :n])
+        A_part = math.einsum("ka,kb, ...ab->...k", z, z, self._A_vectorized[..., :n, :n])
+        b_part = math.einsum("ka,...a->...k", z, self._b_vectorized[..., :n])
         return math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, k)
 
     def _compute_polynomial_part(self, z: Batch[Vector]) -> Batch[Scalar]:
         r"""Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``."""
         n = self.num_CV_vars
         b_poly = (
-            math.einsum("iab,ka->ikb", self._A_vectorized[:, :n, n:], z)
-            + self._b_vectorized[:, None, n:]
+            math.einsum("iab,ka->ikb", self._A_vectorized[..., :n, n:], z)
+            + self._b_vectorized[..., None, n:]
         )
-        A_poly = self._A_vectorized[:, n:, n:]  # shape (batch_size,derived_vars,derived_vars)
+        A_poly = self._A_vectorized[..., n:, n:]  # shape (batch_size,derived_vars,derived_vars)
         result = []
         for Ai, bi in zip(A_poly, b_poly):
             result.append(
