@@ -322,7 +322,7 @@ class Channel(Map):
     short_name = "Ch"
 
     @property
-    def is_CP(self) -> bool:
+    def is_CP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is completely positive (CP).
         """
@@ -331,9 +331,9 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[0, :m, m:]
+        gamma_A = A[:m, m:]
 
         if (
             math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
@@ -343,14 +343,19 @@ class Channel(Map):
         return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
-    def is_TP(self) -> bool:
+    def is_TP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is trace preserving (TP).
         """
-        A = self.ansatz.A
+        batch_dim = self.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[0, :m, m:]
-        lambda_A = A[0, m:, m:]
+        gamma_A = A[:m, m:]
+        lambda_A = A[m:, m:]
         temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
         return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
 

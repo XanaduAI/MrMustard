@@ -62,9 +62,7 @@ class Ket(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-
-        A = self.ansatz.A[0]
-
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
