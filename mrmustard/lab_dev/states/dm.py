@@ -208,7 +208,7 @@ class DM(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.ansatz.batch_size == 1:
+        if self.ansatz.batch_size == 1 and self.ansatz.batch_shape:
             try:  # fock
                 shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
