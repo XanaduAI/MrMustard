@@ -27,7 +27,9 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 #  ~~~~~~~~~
 
 
-def verify_batch_triple(A: ComplexMatrix, b: ComplexVector, c: ComplexTensor) -> None:
+def verify_batch_triple(
+    A: ComplexMatrix | None, b: ComplexVector | None, c: ComplexTensor | None
+) -> None:
     r"""
     Verify that the batch dimensions of the (A, b, c) triple are consistent.
 
@@ -39,6 +41,8 @@ def verify_batch_triple(A: ComplexMatrix, b: ComplexVector, c: ComplexTensor) ->
     Raises:
         ValueError: If the batch dimensions of the (A, b, c) triple are inconsistent.
     """
+    if A is None and b is None and c is None:
+        return
     batch = A.shape[:-2]
     batch_dim = len(batch)
 

@@ -208,14 +208,14 @@ class TestCircuitComponent:
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
-        c = np.random.random((1, 5)) + 0.0j
+        c = np.random.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
-        assert np.allclose(fock_cc.ansatz.data, np.einsum("ijk,k", poly, c[0]))
+        assert math.allclose(fock_cc.ansatz.data, math.einsum("ijk,k", poly, c))
 
     def test_add(self):
         d1 = Dgate(1, x=0.1, y=0.1)
@@ -396,13 +396,13 @@ class TestCircuitComponent:
             r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
             # fock >> bargmann
-            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n1 > n2
+            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n1 >> n2
 
             # bargmann >> fock >> bargmann
             r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n1 >> n2
 
-            assert np.allclose(r1, r2)
-            assert np.allclose(r1, r3)
+            assert math.allclose(r1, r2)
+            assert math.allclose(r1, r3)
 
     def test_rshift_error(self):
         vac012 = Vacuum((0, 1, 2))

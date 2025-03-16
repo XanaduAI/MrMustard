@@ -593,7 +593,7 @@ def complex_gaussian_integral_2(
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1
-    batch_dims_1 = len(A1.shape[-2:])
+    batch_dims_1 = len(A1.shape[:-2])
     derived_1 = len(c1.shape[batch_dims_1:])
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)

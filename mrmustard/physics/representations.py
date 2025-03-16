@@ -179,7 +179,7 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=len(self.ansatz.batch_shape))
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=self.ansatz.batch_dims)
         try:
             if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple
