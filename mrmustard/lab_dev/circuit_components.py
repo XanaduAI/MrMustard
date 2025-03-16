@@ -396,7 +396,7 @@ class CircuitComponent:
         return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
     def bargmann_triple(
-        self, batched: bool = False
+        self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The Bargmann parametrization of this component, if available.
@@ -413,7 +413,7 @@ class CircuitComponent:
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
-        return self._representation.bargmann_triple(batched)
+        return self._representation.bargmann_triple()
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""

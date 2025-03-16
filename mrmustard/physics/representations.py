@@ -91,22 +91,15 @@ class Representation:
         return self._wires
 
     def bargmann_triple(
-        self, batched: bool = False
+        self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
         :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right).
-
-        If batched is ``True``, the elements of the triple are ensured to have at least one batch dimension.
         """
         try:
-            A, b, c = self.ansatz.triple
-            if batched:
-                A = math.atleast_3d(A)
-                b = math.atleast_2d(b)
-                c = math.atleast_1d(c)
-            return A, b, c
+            return self.ansatz.triple
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 

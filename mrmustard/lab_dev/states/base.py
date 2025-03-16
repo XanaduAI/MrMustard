@@ -339,9 +339,7 @@ class State(CircuitComponent):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         new_state = self >> BtoPS(self.modes, s=s)
-        return bargmann_Abc_to_phasespace_cov_means(
-            *new_state.bargmann_triple(batched=False), batched=False
-        )
+        return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     def visualize_2d(
         self,
