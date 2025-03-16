@@ -129,16 +129,17 @@ class Transformation(CircuitComponent):
         BB = QtoB_in >> QQ >> QtoB_out
         return cls.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
-    def inverse(self) -> Transformation:  # TODO: revisit this
+    def inverse(self) -> Transformation:
         r"""
         Returns the mathematical inverse of the transformation, if it exists.
         Note that it can be unphysical, for example when the original is not unitary.
 
         Returns:
-            Transformation: the inverse of the transformation.
+            The inverse of the transformation.
 
         Raises:
-            NotImplementedError: if the inverse of this transformation is not supported.
+            NotImplementedError: If the input and output wires have different lengths.
+            NotImplementedError: If the transformation is not in the Bargmann representation.
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
@@ -147,8 +148,7 @@ class Transformation(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise NotImplementedError("Only Bargmann representation is supported.")
 
-        A = math.conj(self.ansatz.A)
-        b = math.conj(self.ansatz.b)
+        A, b, _ = self.dual.ansatz.conj.triple
         almost_inverse = self._from_attributes(
             Representation(
                 PolyExpAnsatz(
