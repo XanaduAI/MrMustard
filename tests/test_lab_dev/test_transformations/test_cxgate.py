@@ -41,4 +41,4 @@ class TestCXgate:
         psi = Coherent(0, 1) >> Vacuum(1) >> CXgate((0, 1), s)
         _, d, _ = psi.phase_space(s=0)
         d_by_hand = math.astensor([math.sqrt(complex(2)), s * math.sqrt(complex(2)), 0, 0])
-        assert math.allclose(d[0], d_by_hand)
+        assert math.allclose(d, d_by_hand)

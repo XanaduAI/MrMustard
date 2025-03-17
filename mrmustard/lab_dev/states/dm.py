@@ -58,9 +58,9 @@ class DM(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A[0]
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[..., :m, m:]
 
         if (
             math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL

@@ -140,8 +140,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state0 = Coherent(0, x=1, y=2) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)  # batch = 1
         assert math.allclose(coeff, math.atleast_1d(1.0))
-        assert math.allclose(cov[0], math.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means[0], math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
+        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
+        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
 
         # test error
         with pytest.raises(ValueError):
@@ -156,15 +156,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         modes = (0,)
         A0 = np.array([[0, 0], [0, 0]])
         b0 = np.array([0.1 - 0.2j, 0.1 + 0.2j])
-        c0 = 0.951229424500714  # z, z^*
+        c0 = math.astensor(0.951229424500714)  # z, z^*
 
         state0 = DM.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature_triple()
-        state1 = DM.from_quadrature(modes, (Atest[0], btest[0], ctest[0]))
+        state1 = DM.from_quadrature(modes, (Atest, btest, ctest))
         Atest2, btest2, ctest2 = state1.bargmann_triple()
-        assert np.allclose(Atest2, A0)
-        assert np.allclose(btest2, b0)
-        assert np.allclose(ctest2, c0)
+        assert math.allclose(Atest2, A0)
+        assert math.allclose(btest2, b0)
+        assert math.allclose(ctest2, c0)
 
     def test_L2_norms(self):
         state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()  # incoherent
@@ -196,16 +196,17 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
-    def test_quadrature_single_mode_dm(self):
+    def test_quadrature_single_mode_dm(self):  # TODO: fix partial eval
         x, y = 1, 2
         state = Coherent(mode=0, x=x, y=y).dm()
         q = np.linspace(-10, 10, 100)
-        quad = math.transpose(math.astensor([q, q + 1]))
+        quad0 = q
+        quad1 = q + 1
         ket = coherent_state_quad(q + 1, x, y)
-        bra = np.conj(coherent_state_quad(q, x, y))
-        assert math.allclose(state.quadrature(quad), bra * ket)
+        bra = math.conj(coherent_state_quad(q, x, y))
+        assert math.allclose(state.quadrature(quad0, quad1), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
+        assert math.allclose(state.to_fock(40).quadrature(quad0, quad1), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_quadrature_multimode_dm(self):
@@ -265,7 +266,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(dm.expectation(k0), res_k0)
         assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c[0])
+        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
 
     def test_expectation_bargmann_dm(self):
         dm0 = Coherent(0, x=1, y=2).dm()
@@ -373,9 +374,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_random(self, modes):
         m = len(modes)
         dm = DM.random(modes)
-        A = dm.ansatz.A[0]
-        Gamma = A[:m, m:]
-        Lambda = A[m:, m:]
+        A = dm.ansatz.A
+        Gamma = A[..., :m, m:]
+        Lambda = A[..., m:, m:]
         Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda
         assert np.all(
             np.linalg.eigvals(Gamma) >= 0
@@ -400,7 +401,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert not rho.is_physical
         assert Ket.random(modes).dm().is_physical
 
-    def test_fock_array_ordering(self):
+    def test_fock_array_ordering(self):  # TODO: linear superpositions
         rho = Number(0, 0) + 1j * Number(0, 1)
         rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
         rho_fock = rho.fock_array(standard_order=True)

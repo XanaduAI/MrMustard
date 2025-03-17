@@ -324,7 +324,7 @@ class CircuitComponent:
         """
         return self.to_quadrature(phi=phi).ansatz.triple
 
-    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
+    def quadrature(self, *quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
         This method considers the same basis in all the wires. For more fine-grained control,
@@ -351,7 +351,7 @@ class CircuitComponent:
                 ]
             )
             return quad_basis
-        return self.to_quadrature(phi=phi).ansatz.eval(*quad)
+        return self.to_quadrature(phi=phi).ansatz.eval(quad)
 
     @classmethod
     def _from_attributes(

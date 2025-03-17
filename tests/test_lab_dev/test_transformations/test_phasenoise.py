@@ -64,9 +64,9 @@ class TestPhaseNoise:
         r"""
         A numeric example
         """
-        psi = Number(0, 0) + Number(0, 1)
+        psi = Number(0, 0) + Number(0, 1)  # TODO: fix linear superposition
         phi = psi >> PhaseNoise(0, sigma)
-        assert np.isclose(phi.fock_array(2)[0, 1], math.exp(-(complex(sigma) ** 2) / 2))
+        assert math.allclose(phi.fock_array(2)[0, 1], math.exp(-(complex(sigma) ** 2) / 2))
 
     def test_check_adding_adjoint(self):
         r"""

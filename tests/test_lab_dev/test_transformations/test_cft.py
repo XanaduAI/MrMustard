@@ -41,7 +41,7 @@ class TestCFT:
 
         state = Ket.random((0,)) >> Dgate(0, x=1.0, y=0.1)
 
-        dm = math.sum(state.to_fock(100).dm().ansatz.array, axis=0)
+        dm = state.to_fock(100).dm().ansatz.array
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 

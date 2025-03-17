@@ -627,7 +627,7 @@ class PolyExpAnsatz(Ansatz):
         z_vectorized = math.reshape(z, (int(np.prod(z_batch_shape)), z_dim))  # (k, num_CV_vars)
         exp_sum = self._compute_exp_part(z_vectorized)  # shape (batch_size, k)
         if self.num_derived_vars == 0:  # purely gaussian
-            ret = math.einsum("...k,...->k...", exp_sum, self._c_vectorized)
+            ret = math.einsum("...k,...->...k", exp_sum, self._c_vectorized)
         else:
             poly = self._compute_polynomial_part(
                 z_vectorized

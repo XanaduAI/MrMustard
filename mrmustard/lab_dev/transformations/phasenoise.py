@@ -63,6 +63,7 @@ class PhaseNoise(Channel):
             modes_in=(mode,), modes_out=(mode,), ansatz=None
         ).representation
 
+    # TODO: work w batch dims
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.
@@ -77,6 +78,8 @@ class PhaseNoise(Channel):
         if not other.wires.bra or not other.wires.ket:
             other = other.contract(other.adjoint)
         array = math.asnumpy(other.fock_array())
+        print("array", array.shape)
+        print("batch", other.ansatz.batch_shape)
         mode_indices = np.indices(array.shape)
         for mode in self.modes:
             phase_factors = math.exp(
