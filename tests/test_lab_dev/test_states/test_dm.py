@@ -414,7 +414,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         sigma, phi = rho.stellar_decomposition([0])
 
         assert sigma.modes == (0, 1)
-        assert phi.modes == (0)
+        assert phi.modes == (0,)
 
         # testing the validness of contraction equality
         test_A, test_b, test_c = (sigma >> phi).ansatz.triple
