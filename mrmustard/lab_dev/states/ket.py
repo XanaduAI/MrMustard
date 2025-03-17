@@ -441,7 +441,7 @@ class Ket(State):
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0,1])
-            >>> core, t = psi.stellar_decomposition([0])
+            >>> core, t = psi.formal_stellar_decomposition([0])
             >>> A_core, _, _ = core.ansatz.triple
 
             >>> assert A_core[-1][0,0] == 0
