@@ -311,7 +311,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert math.allclose(ket.expectation(dm0), res_dm0)
         assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01[0])
+        assert math.allclose(ket.expectation(dm01), res_dm01)
 
         u0 = Dgate(1, x=0.1)
         u1 = Dgate(0, x=0.2)
@@ -321,9 +321,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
         res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
 
-        assert math.allclose(ket.expectation(u0), res_u0[0])
-        assert math.allclose(ket.expectation(u1), res_u1[0])
-        assert math.allclose(ket.expectation(u01), res_u01[0])
+        assert math.allclose(ket.expectation(u0), res_u0)
+        assert math.allclose(ket.expectation(u1), res_u1)
+        assert math.allclose(ket.expectation(u01), res_u01)
 
     def test_expectation_error(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
