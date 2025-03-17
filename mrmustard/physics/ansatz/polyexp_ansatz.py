@@ -339,7 +339,7 @@ class PolyExpAnsatz(Ansatz):
         other: PolyExpAnsatz,
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str = "",
+        batch_str: str | None = None,
     ) -> PolyExpAnsatz:
         r"""
         Contracts two ansatze across the specified CV variables and batch dimensions.
@@ -348,15 +348,14 @@ class PolyExpAnsatz(Ansatz):
 
         Args:
             other: The other PolyExpAnsatz to contract with.
-            batch_str: The batch dimensions to contract over with the same syntax as in ``np.einsum``.
-                If not indicated, the batch dimensions are taken in outer product
             idx1: The CV variables of the first ansatz to contract.
             idx2: The CV variables of the second ansatz to contract.
-
+            batch_str: The batch dimensions to contract over with the same syntax as in ``np.einsum``.
+                If not indicated, the batch dimensions are taken in outer product
         Returns:
             The contracted ansatz.
         """
-        if batch_str == "":
+        if batch_str is None:
             batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2

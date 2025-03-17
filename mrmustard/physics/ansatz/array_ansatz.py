@@ -155,7 +155,7 @@ class ArrayAnsatz(Ansatz):
         other: ArrayAnsatz,
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str = "",
+        batch_str: str | None = None,  # TODO: fix
     ) -> ArrayAnsatz:
         r"""
         Contracts two ansatze across the specified variables and batch dimensions.
@@ -164,16 +164,15 @@ class ArrayAnsatz(Ansatz):
 
         Args:
             other: The other ArrayAnsatz to contract with.
-            batch_str: The batch dimensions to contract over with the same syntax as in ``np.einsum``.
-                If not indicated, the batch dimensions are taken in outer product.
             idx1: The variables of the first ansatz to contract.
             idx2: The variables of the second ansatz to contract.
+            batch_str: The (optional) batch dimensions to contract over with the
+                same syntax as in ``np.einsum``. If not indicated, the batch dimensions
+                are taken in outer product.
 
         Returns:
             The contracted ansatz.
         """
-        if batch_str == "":
-            batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
 
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
@@ -183,7 +182,8 @@ class ArrayAnsatz(Ansatz):
             if j >= other.core_dims:
                 raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
 
-        # Parse batch string
+        if batch_str is None:
+            batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
         input_str, output_str = batch_str.split("->")
         input_parts = input_str.split(",")
         if len(input_parts) != 2:
