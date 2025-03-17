@@ -204,7 +204,6 @@ class ArrayAnsatz(Ansatz):
             f"{input_parts[1]}{''.join(var_idx2)}->"
             f"{output_str}{''.join([i for i in var_idx1 + var_idx2 if i not in set(var_idx1) & set(var_idx2)])}"
         )
-        print(einsum_str)
         result = math.einsum(einsum_str, self.array, other.array)
         return ArrayAnsatz(result, batch_dims=len(output_str))
 
