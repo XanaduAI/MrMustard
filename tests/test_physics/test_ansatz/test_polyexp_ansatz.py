@@ -144,36 +144,32 @@ class TestPolyExpAnsatz:
         assert np.allclose(ans(np.array([0.1 + 0.0j])), 0.1**9 / np.sqrt(nine_factorial))
 
     def test_partial_eval(self):
-        A1, b1, _ = Abc_triple(4)
-        A2, b2, _ = Abc_triple(4)
-        A3, b3, _ = Abc_triple(4)
-
         batch = 3
+        A, b, _ = Abc_triple(4, (batch,))
+
         c = np.random.random(size=(batch, 5, 5)) / 1000 + 0.0j
 
-        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
+        obj = PolyExpAnsatz(A, b, c)
         z0 = [None, 2.0 + 0.0j]
         z1 = [1.0 + 0.0j]
         z2 = [1.0 + 0.0j, 2.0 + 0.0j]
         val_full = obj(*z2)
         partial = obj(*z0)
         val_partial = partial(*z1)
-        assert np.allclose(val_partial, val_full)
-
-        A1, b1, _ = Abc_triple(4)
-        A2, b2, _ = Abc_triple(4)
+        assert math.allclose(val_partial, val_full)
 
         batch = 2
+        A, b, _ = Abc_triple(4, (batch,))
         c = np.random.random(size=(2, 5)) / 1000 + 0.0j
 
-        obj = PolyExpAnsatz([A1, A2], [b1, b2], c)
+        obj = PolyExpAnsatz(A, b, c)
         z0 = [None, 2.0 + 0.0j, None]
         z1 = [1.0 + 0.0j, 3.0 + 0.0j]
         z2 = [1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j]
         val_full = obj(*z2)
         partial = obj(*z0)
         val_partial = partial(*z1)
-        assert np.allclose(val_partial, val_full)
+        assert math.allclose(val_partial, val_full)
 
     @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_conj(self, triple):

@@ -334,7 +334,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.ones(array.shape, dtype=array.dtype)
 
     def infinity_like(self, array: np.ndarray) -> np.ndarray:
-        return np.full_like(array.shape, np.inf, dtype=array.dtype)
+        return np.full_like(array, np.inf)
 
     def conditional(
         self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args

@@ -340,9 +340,7 @@ class CircuitComponent:
         """
 
         if isinstance(self.ansatz, ArrayAnsatz):
-            fock_arrays = (
-                self.ansatz.array
-            )  # TODO: this is assumed to have a single batch dimension
+            fock_arrays = self.ansatz.array  # TODO: revisit
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             quad_basis = math.astensor(
                 [
@@ -351,7 +349,7 @@ class CircuitComponent:
                 ]
             )
             return quad_basis
-        return self.to_quadrature(phi=phi).ansatz.eval(quad)
+        return self.to_quadrature(phi=phi).ansatz.eval(*quad)
 
     @classmethod
     def _from_attributes(

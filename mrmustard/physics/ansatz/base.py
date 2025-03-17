@@ -105,6 +105,7 @@ class Ansatz(ABC):
         other: Ansatz,
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
+        batch_str: str = "",
     ) -> Ansatz:
         r"""
         Contract two ansatz together.
