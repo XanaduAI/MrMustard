@@ -156,7 +156,7 @@ class Representation:
             else:
                 A, b, _ = identity_Abc(len(self.wires.quantum))
                 c = self.ansatz.data
-            bargmann = PolyExpAnsatz(A, b, c, len(c.shape[self.ansatz.batch_dims :]))
+            bargmann = PolyExpAnsatz(A, b, c)
             for w in self.wires.quantum:
                 w.repr = ReprEnum.BARGMANN
             return Representation(bargmann, self.wires)
