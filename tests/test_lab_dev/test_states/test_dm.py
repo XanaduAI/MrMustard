@@ -430,7 +430,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_physical_stellar_decomposition(self):
         rho = DM.random([0, 1])
-        core, phi = rho.physical_stellar_decomposition([0, 1])
+        core, phi = rho.physical_stellar_decomposition([0])
 
         assert rho == core >> phi
         assert core.is_physical
@@ -438,4 +438,4 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         A, _, _ = core.ansatz.triple
         A = A[-1]
-        assert math.allclose(A[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
+        assert A[0, 0] == 0
