@@ -126,25 +126,23 @@ class Representation:
         if len(shape) != num_vars:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
-            # TODO: revisit this
             As = self.ansatz._A_vectorized
             bs = self.ansatz._b_vectorized
             cs = self.ansatz._c_vectorized
-            arrays = []
+            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape else ()
             if self.ansatz.batch_shape:
-                for A, b, c in zip(As, bs, cs):
-                    G = math.hermite_renormalized(A, b, 1, shape=shape + c.shape)
-                    G = math.reshape(G, shape + (-1,))
-                    c = math.reshape(c, (-1,))
-                    arrays.append(math.einsum("...i,i->...", G, c))
+                G = math.hermite_renormalized_batch(As, bs, 1, shape=shape + cs.shape[1:])
             else:
                 G = math.hermite_renormalized(As, bs, 1, shape=shape + cs.shape)
-                G = math.reshape(G, shape + (-1,))
-                cs = math.reshape(cs, (-1,))
-                arrays.append(math.einsum("...i,i->...", G, cs))
+            G = math.reshape(G, batch + shape + (-1,))
+            cs = math.reshape(cs, batch + (-1,))
+            core_str = "".join(
+                [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
+            )
+            ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
         except AttributeError:
-            arrays = self.ansatz.reduce(shape).array
-        return math.reshape(arrays, self.ansatz.batch_shape + shape)
+            ret = self.ansatz.reduce(shape).array
+        return math.reshape(ret, self.ansatz.batch_shape + shape)
 
     def to_bargmann(self) -> Representation:
         r"""

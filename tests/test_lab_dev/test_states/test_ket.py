@@ -284,7 +284,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(u1), res_u1)
         assert math.allclose(ket.expectation(u01), res_u01)
 
-    def test_expectation_fock(self):
+    def test_expectation_fock(self):  # TODO: fix ArrayAnsatz contract
         ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
         assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
