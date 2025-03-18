@@ -319,7 +319,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
         res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
 
-        assert math.allclose(ket.expectation(u0), res_u0)
+        assert math.allclose(ket.expectation(u0), res_u0)  # TODO: fix scalar
         assert math.allclose(ket.expectation(u1), res_u1)
         assert math.allclose(ket.expectation(u01), res_u01)
 

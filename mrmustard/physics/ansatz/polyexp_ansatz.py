@@ -259,7 +259,8 @@ class PolyExpAnsatz(Ansatz):
         The scalar part of the ansatz, i.e. F(0)
         """
         if self.num_CV_vars == 0:
-            return self.c
+            assert False
+            return self.c  # TODO: fix this
         else:
             return self.eval(*math.zeros_like(self.b))
 
