@@ -134,4 +134,4 @@ class TestBtoPS:
         assert math.allclose(c1, c2)
 
         psi = Ket.random([0])
-        assert math.allclose((psi >> BtoPS(0, 1)).ansatz([0, 0]), [1.0])
+        assert math.allclose((psi >> BtoPS(0, 1)).ansatz(0, 0), 1.0)

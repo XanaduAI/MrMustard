@@ -24,7 +24,7 @@ from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
 
 
 def bargmann_Abc_to_phasespace_cov_means(
-    A: Matrix, b: Vector, c: Scalar, batched: bool = False
+    A: Matrix, b: Vector, c: Scalar
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
@@ -44,28 +44,15 @@ def bargmann_Abc_to_phasespace_cov_means(
 
     Args:
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
-        batched: if false, the function will squeeze the batch dimensions from the output.
-
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """
-    A = math.atleast_3d(A)
-    b = math.atleast_2d(b)
-    c = math.atleast_1d(c)
     num_modes = A.shape[-1] // 2
     Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
     W = math.transpose(math.conj(math.rotmat(num_modes)))
-    coeff = c
-    cov = [
-        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
-    ]
-    mean = [
-        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
-        for bvec in b
-    ]
-    if not batched:
-        return math.squeeze(cov, 0), math.squeeze(mean, 0), math.squeeze(coeff, 0)
-    return math.astensor(cov), math.astensor(mean), coeff
+    cov = -Omega @ W @ A @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR
+    mean = 1j * math.matvec(Omega @ W, b) * math.sqrt(settings.HBAR, dtype=math.complex128)
+    return cov, mean, c
 
 
 def cayley(X, c):

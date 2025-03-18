@@ -352,8 +352,17 @@ class State(CircuitComponent):
         Returns:
             The quadrature distribution.
         """
-        ret = math.abs(self.quadrature(*quad, phi=phi))
-        return ret**2 if self.wires.ket and not self.wires.bra else ret
+        if len(quad) != 1 and len(quad) != self.n_modes:
+            raise ValueError(
+                f"Expected {self.n_modes} or ``1`` quadrature vectors, got {len(quad)}."
+            )
+        if len(quad) == 1:
+            quad = quad * self.n_modes
+        # TODO: we need to fix the multi-mode case and the DM case
+        if self.wires.ket and not self.wires.bra:
+            return math.abs(self.quadrature(*quad, phi=phi)) ** 2
+        else:
+            return math.abs(self.quadrature(*(quad * 2), phi=phi))
 
     def visualize_2d(
         self,

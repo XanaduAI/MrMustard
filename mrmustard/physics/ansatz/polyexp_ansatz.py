@@ -261,7 +261,7 @@ class PolyExpAnsatz(Ansatz):
         if self.num_CV_vars == 0:
             return self.c
         else:
-            return self.eval(math.zeros_like(self.b))
+            return self.eval(*math.zeros_like(self.b))
 
     @property
     def batch_size(self) -> int:
