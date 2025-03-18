@@ -401,10 +401,9 @@ class PolyExpAnsatz(Ansatz):
             ]
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
-        # TODO: figure out a cleaner way to do this
         if batch_shape:
-            A_core_vectorized = self._A_vectorized
-            b_core_vectorized = self._b_vectorized
+            A_core_vectorized = math.reshape(A_core, (-1,) + A_core.shape[-2:])
+            b_core_vectorized = math.reshape(b_core, (-1,) + b_core.shape[-1:])
             poly_core = math.hermite_renormalized_batch(
                 A_core_vectorized, b_core_vectorized, complex(1), poly_shape
             ).reshape(batch_shape + pulled_out_input_shape + (-1,))
