@@ -43,7 +43,8 @@ class TestPNRSampler:
 
         coh_state = Coherent(0, x=0.5) >> Coherent(1, x=1)
         exp_probs = [
-            (coh_state >> Number(0, n0).dual >> Number(1, n1).dual) ** 2
+            (coh_state >> Number(0, n0).dual >> Number(1, n1).dual)
+            ** 2  # TODO: ArrayAnsatz contract
             for n0 in range(10)
             for n1 in range(10)
         ]
@@ -97,7 +98,8 @@ class TestHomodyneSampler:
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
         exp_probs = (
-            state.quadrature_distribution(sampler2.meas_outcomes, sampler2._phi) * sampler2._step
+            state.quadrature_distribution(sampler2.meas_outcomes, phi=sampler2._phi)
+            * sampler2._step
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 

@@ -218,9 +218,9 @@ class HomodyneSampler(Sampler):
         self._phi = phi
 
     def probabilities(self, state, atol=1e-4):
-        probs = state.quadrature_distribution(self.meas_outcomes, self._phi) * self._step ** len(
-            state.modes
-        )
+        probs = state.quadrature_distribution(
+            self.meas_outcomes, phi=self._phi
+        ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
