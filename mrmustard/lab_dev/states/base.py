@@ -341,6 +341,20 @@ class State(CircuitComponent):
         new_state = self >> BtoPS(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
+    def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature distribution of the State.
+
+        Args:
+            quad: the discretized quadrature axis over which the distribution is computed.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            The quadrature distribution.
+        """
+        ret = math.abs(self.quadrature(*quad, phi=phi))
+        return ret**2 if self.wires.ket and not self.wires.bra else ret
+
     def visualize_2d(
         self,
         xbounds: tuple[int, int] = (-6, 6),

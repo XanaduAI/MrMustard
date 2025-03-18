@@ -196,7 +196,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
-    def test_quadrature_single_mode_dm(self):  # TODO: fix partial eval
+    def test_quadrature_single_mode_dm(self):
         x, y = 1, 2
         state = Coherent(mode=0, x=x, y=y).dm()
         q = np.linspace(-10, 10, 100)

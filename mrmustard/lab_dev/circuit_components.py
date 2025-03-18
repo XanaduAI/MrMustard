@@ -39,11 +39,11 @@ from mrmustard.utils.typing import (
     Vector,
     Batch,
 )
-from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
-from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 
 __all__ = ["CircuitComponent"]
 
@@ -338,17 +338,38 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-
         if isinstance(self.ansatz, ArrayAnsatz):
-            fock_arrays = self.ansatz.array  # TODO: revisit
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
-            quad_basis = math.astensor(
-                [
-                    quadrature_basis(array, math.astensor(quad), conjugates, phi)
-                    for array in fock_arrays
-                ]
+            dims = self.ansatz.core_dims
+
+            if len(quad) != dims:
+                raise ValueError(
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}."
+                )
+            # construct quadrature basis vectors
+            shapes = self.ansatz.core_shape
+            quad_basis_vecs = []
+            for dim in range(dims):
+                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
+                if not math.allclose(phi, 0.0):
+                    theta = -math.arange(shapes[dim]) * phi
+                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
+                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
+                if conjugates[dim]:
+                    q_to_n = math.conj(q_to_n)
+                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
+
+            # Convert each dimension to quadrature
+            fock_string = "".join([chr(i) for i in range(98, 98 + dims)])  #'bcd....'
+            q_string = "".join(
+                [fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"]
             )
-            return quad_basis
+
+            quad_array = math.einsum(
+                fock_string + "," + q_string + "->" + "a", self.ansatz.array, *quad_basis_vecs
+            )  # TODO: this needs to be fixed for batch dimensions
+
+            return quad_array
         return self.to_quadrature(phi=phi).ansatz.eval(*quad)
 
     @classmethod

@@ -340,31 +340,6 @@ class DM(State):
         """
         return self / self.probability
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the State.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        quad = np.array(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
-                -1, len(self.modes)
-            )
-
-        quad = math.tile(quad, (1, 2))
-        return self.quadrature(quad, phi)
-
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)

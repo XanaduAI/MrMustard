@@ -203,11 +203,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         x, y = 1, 2
         state = Coherent(mode=0, x=x, y=y)
         q = np.linspace(-10, 10, 100)
-        quad = math.transpose(math.astensor([q]))
         psi_phi = coherent_state_quad(q, x, y, phi)
-        assert math.allclose(state.quadrature(quad, phi=phi), psi_phi)
+        assert math.allclose(state.quadrature(q, phi=phi), psi_phi)
         assert math.allclose(state.quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
-        assert math.allclose(state.to_fock(40).quadrature(quad, phi=phi), psi_phi)
+        assert math.allclose(state.to_fock(40).quadrature(q, phi=phi), psi_phi)
         assert math.allclose(
             state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2
         )
@@ -216,12 +215,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         x, y = 1, 2
         state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
         q = np.linspace(-10, 10, 100)
-        quad = math.astensor(list(product(q, repeat=state.n_modes)))
-        psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
-        assert math.allclose(state.quadrature(quad), psi_q)
+        psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y)).reshape(
+            100, 100
+        )
+        assert math.allclose(state.quadrature(q, q), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
-        assert math.allclose(state.to_fock(100).quadrature(quad), psi_q)
-        assert math.allclose(state.to_fock(100).quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(100).quadrature(q, q), psi_q)
+        assert math.allclose(state.to_fock(100).quadrature_distribution(q, q), abs(psi_q) ** 2)
 
     def test_quadrature_multivariable_ket(self):
         x, y = 1, 2

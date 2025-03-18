@@ -279,19 +279,6 @@ class Ket(State):
         """
         return self / math.sqrt(self.probability)
 
-    def quadrature_distribution(self, quad: Batch[RealVector], phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the Ket.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        return math.abs(self.quadrature(quad, phi)) ** 2
-
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)
