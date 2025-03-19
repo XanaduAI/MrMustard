@@ -212,35 +212,35 @@ class TestKet:  # pylint: disable=too-many-public-methods
         )
 
     # TODO: fix quadrature
-    # def test_quadrature_multimode_ket(self):
-    #     x, y = 1, 2
-    #     state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
-    #     q = np.linspace(-10, 10, 100)
-    #     psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
-    #     assert math.allclose(state.quadrature(q, q), psi_q)
-    #     assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
-    #     assert math.allclose(state.to_fock(40).quadrature(q, q), psi_q)
-    #     assert math.allclose(state.to_fock(40).quadrature_distribution(q, q), abs(psi_q) ** 2)
+    def test_quadrature_multimode_ket(self):
+        x, y = 1, 2
+        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
+        q = np.linspace(-10, 10, 100)
+        psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
+        assert math.allclose(state.quadrature(q, q), psi_q)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(q, q), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q, q), abs(psi_q) ** 2)
 
-    # def test_quadrature_multivariable_ket(self):
-    #     x, y = 1, 2
-    #     state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
-    #     q1 = np.linspace(-10, 10, 100)
-    #     q2 = np.linspace(-10, 10, 100)
-    #     quad = np.array([[qa, qb] for qa in q1 for qb in q2])
-    #     psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
-    #     assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
+    def test_quadrature_multivariable_ket(self):
+        x, y = 1, 2
+        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
+        q1 = np.linspace(-10, 10, 100)
+        q2 = np.linspace(-10, 10, 100)
+        quad = np.array([[qa, qb] for qa in q1 for qb in q2])
+        psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
+        assert math.allclose(state.quadrature_distribution(quad).reshape(100, 100), abs(psi_q) ** 2)
 
-    # def test_quadrature_batch(self):
-    #     x1, y1, x2, y2 = 1, 2, -1, -2
-    #     state = Coherent(mode=0, x=x1, y=y1) + Coherent(mode=0, x=x2, y=y2)
-    #     q = np.linspace(-10, 10, 100)
-    #     quad = math.transpose(math.astensor([q]))
-    #     psi_q = coherent_state_quad(q, x1, y1) + coherent_state_quad(q, x2, y2)
-    #     assert math.allclose(state.quadrature(quad), psi_q)
-    #     assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
-    #     assert math.allclose(state.to_fock(40).quadrature(quad), psi_q)
-    #     assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
+    def test_quadrature_batch(self):
+        x1, y1, x2, y2 = 1, 2, -1, -2
+        state = Coherent(mode=0, x=x1, y=y1) + Coherent(mode=0, x=x2, y=y2)
+        q = np.linspace(-10, 10, 100)
+        quad = math.transpose(math.astensor([q]))
+        psi_q = coherent_state_quad(q, x1, y1) + coherent_state_quad(q, x2, y2)
+        assert math.allclose(state.quadrature(quad), psi_q)
+        assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(quad), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_expectation_bargmann(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
@@ -283,7 +283,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(u1), res_u1)
         assert math.allclose(ket.expectation(u01), res_u01)
 
-    def test_expectation_fock(self):  # TODO: fix ArrayAnsatz contract
+    def test_expectation_fock(self):
         ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
         assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
@@ -319,7 +319,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
         res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
 
-        assert math.allclose(ket.expectation(u0), res_u0)  # TODO: fix scalar
+        assert math.allclose(ket.expectation(u0), res_u0)
         assert math.allclose(ket.expectation(u1), res_u1)
         assert math.allclose(ket.expectation(u01), res_u01)
 
@@ -386,21 +386,21 @@ class TestKet:  # pylint: disable=too-many-public-methods
             A - math.transpose(A), math.zeros((2, 2))
         )  # checks if the A matrix is symmetric
 
-    # def test_ipython_repr(self): # TODO: fix visualize_2d
-    #     """
-    #     Test the widgets.state function.
-    #     Note: could not mock display because of the states.py file name conflict.
-    #     """
-    #     hbox = state_widget(Number(0, n=1), True, True)
-    #     assert isinstance(hbox, HBox)
+    def test_ipython_repr(self):  # TODO: fix visualize_2d
+        """
+        Test the widgets.state function.
+        Note: could not mock display because of the states.py file name conflict.
+        """
+        hbox = state_widget(Number(0, n=1), True, True)
+        assert isinstance(hbox, HBox)
 
-    #     [left, viz_2d] = hbox.children
-    #     assert isinstance(left, VBox)
-    #     assert isinstance(viz_2d, FigureWidget)
+        [left, viz_2d] = hbox.children
+        assert isinstance(left, VBox)
+        assert isinstance(viz_2d, FigureWidget)
 
-    #     [table, dm] = left.children
-    #     assert isinstance(table, HTML)
-    #     assert isinstance(dm, FigureWidget)
+        [table, dm] = left.children
+        assert isinstance(table, HTML)
+        assert isinstance(dm, FigureWidget)
 
     def test_ipython_repr_too_many_dims(self):
         """Test the widgets.state function when the Ket has too many dims."""
