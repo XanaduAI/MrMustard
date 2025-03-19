@@ -596,17 +596,18 @@ class PolyExpAnsatz(Ansatz):
         Evaluates the ansatz at the given batch of points. Each point can have arbitray batch dimensions,
         as long as they are broadcastable. If some of the points are not specified (None), the result
         will be a partially evaluated ansatz.
-        If the combined shape of the inputs is ``(*b, n)`` where ``n`` is the number of CV variables in the ansatz,
-        then the output will have shape ``(*b, *L)`` where ``L`` is the batch shape of the ansatz itself.
+        If the combined shape of the inputs is ``(*b, n)`` where ``n`` is the number of CV variables in the ansatz
+        and ``*b`` is the batch dimensions of the combined inputs, then the output will have shape ``(*b, *L)``
+        where ``*L`` is the batch shape of the ansatz itself.
 
         Args:
             z: A batch of points where the function is evaluated (or None).
-            The shape of each point can be arbitrary, as long as they are broadcastable.
+                The shape of each point can be arbitrary, as long as they are broadcastable.
 
         Returns:
-            The evaluated function values with shape (*b, *L) where:
+            The evaluated function with shape (*b, *L) where:
                - *b are the batch dimensions of the combined inputs.
-               - L is the batch shape of the ansatz itself.
+               - *L is the batch shape of the ansatz.
         """
         z_only = [arr for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
@@ -615,19 +616,34 @@ class PolyExpAnsatz(Ansatz):
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
-        z_batch_str = generate_batch_str(z_batch_shape)
         if z_dim != self.num_CV_vars:
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        exp_sum = self._compute_exp_part(z)  # shape (...,)
-        if self.num_derived_vars == 0:  # purely gaussian
-            return math.einsum(f"{z_batch_str}..., ...->{z_batch_str}...", exp_sum, self.c)
-        else:
-            poly = self._compute_polynomial_part(z)  # shape (..., *derived_shape)
-            return self._combine_exp_and_poly(exp_sum, poly)
+        ansatz_batch_idxs = tuple(range(self.batch_dims))
+        z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
 
-    def _compute_exp_part(self, z: Batch[Vector]) -> Batch[Scalar]:
+        # TODO: does it make sense to broadcast everything here? Is there a performance hit in comparison to
+        # making use of batch strings?
+        z = math.transpose(
+            math.broadcast_to(z, self.batch_shape + z.shape),
+            z_batch_idxs + ansatz_batch_idxs + (-1,),
+        )
+
+        A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
+        b = math.broadcast_to(self.b, z_batch_shape + self.b.shape)
+        c = math.broadcast_to(self.c, z_batch_shape + self.c.shape)
+
+        exp_sum = self._compute_exp_part(z, A, b)
+        if self.num_derived_vars == 0:  # purely gaussian
+            return math.einsum("..., ...->...", exp_sum, c)
+        else:
+            poly = self._compute_polynomial_part(z, A, b)
+            return self._combine_exp_and_poly(exp_sum, poly, c)
+
+    def _compute_exp_part(
+        self, z: Batch[Vector], A: Batch[ComplexMatrix], b: Batch[ComplexVector]
+    ) -> Batch[Scalar]:
         r"""
         Computes the exponential part of the ansatz evaluation. Needed in ``__call__``.
         The exponential part is given by:
@@ -637,35 +653,34 @@ class PolyExpAnsatz(Ansatz):
         that correspond to the vector of given CV variables.
         """
         n = self.num_CV_vars
-        batch_str = generate_batch_str(z.shape[:-1], 2)
-        A_part = math.einsum(
-            f"{batch_str}a, {batch_str}b, ...ab->{batch_str}...", z, z, self.A[..., :n, :n]
-        )
-        b_part = math.einsum(f"{batch_str}a,...a->{batch_str}...", z, self.b[..., :n])
+        A_part = math.einsum("...a, ...b, ...ab->...", z, z, A[..., :n, :n])
+        b_part = math.einsum(f"...a,...a->...", z, b[..., :n])
         return math.exp(1 / 2 * A_part + b_part)
 
-    def _compute_polynomial_part(self, z: Batch[Vector]) -> Batch[Scalar]:
-        r"""Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``."""
+    def _compute_polynomial_part(
+        self, z: Batch[Vector], A: Batch[ComplexMatrix], b: Batch[ComplexVector]
+    ) -> Batch[Scalar]:
+        r"""
+        Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``.
+        """
         n = self.num_CV_vars
-        z_batch_shape = z.shape[:-1]
-        batch_str = generate_batch_str(z_batch_shape, 2)
-        A, b, _ = self.triple
-        b_poly = math.einsum(f"...ab,{batch_str}a->{batch_str}...b", A[..., :n, n:], z) + b[..., n:]
-        A_poly = A[..., n:, n:]
-        A_poly = math.broadcast_to(A_poly, b_poly.shape[:-1] + A_poly.shape[-2:])
-        A_poly_vectorized = math.reshape(A_poly, (-1,) + A_poly.shape[-2:])
+        batch_shape = z.shape[:-1]
+        b_poly = math.einsum(f"...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
+        A_poly_vectorized = math.reshape(A[..., n:, n:], (-1,) + A[..., n:, n:].shape[-2:])
         b_poly_vectorized = math.reshape(b_poly, (-1,) + b_poly.shape[-1:])
         ret = math.hermite_renormalized_batch(
             A_poly_vectorized, b_poly_vectorized, complex(1), self.shape_derived_vars
         )
-        return math.reshape(ret, z_batch_shape + self.batch_shape + self.shape_derived_vars)
+        return math.reshape(ret, batch_shape + self.shape_derived_vars)
 
     def _combine_exp_and_poly(
-        self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor]
+        self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor], c: Batch[ComplexTensor]
     ) -> Batch[ComplexTensor]:
-        r"""Combines exponential and polynomial parts using einsum. Needed in ``__call__``."""
+        r"""
+        Combines exponential and polynomial parts using einsum. Needed in ``__call__``.
+        """
         poly_string = "".join(chr(i) for i in range(97, 97 + len(self.shape_derived_vars)))
-        return math.einsum(f"...,...{poly_string},...{poly_string}->...", exp_sum, self.c, poly)
+        return math.einsum(f"...,...{poly_string},...{poly_string}->...", exp_sum, c, poly)
 
     def _partial_eval(self, z: ArrayLike, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
