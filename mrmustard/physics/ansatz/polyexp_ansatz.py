@@ -44,7 +44,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_2,
     join_Abc,
 )
-from mrmustard.physics.utils import verify_batch_triple
+from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
 
 from mrmustard import math, widgets
 from mrmustard.math.parameters import Variable
@@ -414,9 +414,7 @@ class PolyExpAnsatz(Ansatz):
                 pulled_out_input_shape + (-1,)
             )
 
-        batch_str = "".join(
-            [chr(i) for i in range(97, 97 + len(batch_shape))]
-        )  # TODO: see if there is a better solution?
+        batch_str = generate_batch_str(batch_shape)
         c_prime = math.einsum(
             f"{batch_str}...k,{batch_str}...k->{batch_str}...",
             poly_core,

@@ -16,15 +16,25 @@
 This module contains the utility functions used by the classes in ``mrmustard.physics``.
 """
 from __future__ import annotations
-
-from mrmustard import math
-
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
-
 
 #  ~~~~~~~~~
 #  Utilities
 #  ~~~~~~~~~
+
+
+def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
+    r"""
+    Generate a string of characters to represent the batch dimensions.
+
+    Args:
+        batch_shape: The shape of the batch dimensions.
+        offset: The offset of the characters.
+
+    Returns:
+        A string of characters to represent the batch dimensions.
+    """
+    return "".join([chr(i) for i in range(97 + offset, 97 + offset + len(batch_shape))])
 
 
 def verify_batch_triple(
