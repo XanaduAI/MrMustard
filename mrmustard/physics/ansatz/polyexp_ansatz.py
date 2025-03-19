@@ -173,12 +173,6 @@ class PolyExpAnsatz(Ansatz):
         This method computes and sets the (A, b, c) triple given a function and its kwargs.
         """
         if self._should_regenerate():
-            try:
-                del self._A_vectorized
-                del self._b_vectorized
-                del self._c_vectorized
-            except AttributeError:
-                pass
             params = {}
             for name, param in self._fn_kwargs.items():
                 try:
@@ -205,29 +199,6 @@ class PolyExpAnsatz(Ansatz):
         The number of batch dimensions of the parameters.
         """
         return len(self.batch_shape)
-
-    @cached_property
-    def _A_vectorized(self) -> Batch[ComplexMatrix]:
-        r"""
-        A view of self.A with the batch dimension flattened.
-        """
-        return (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
-        )
-
-    @cached_property
-    def _b_vectorized(self) -> Batch[ComplexVector]:
-        r"""
-        A view of self.b with the batch dimension flattened.
-        """
-        return math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
-
-    @cached_property
-    def _c_vectorized(self) -> Batch[ComplexTensor]:
-        r"""
-        A view of self.c with the batch dimension flattened.
-        """
-        return math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -455,9 +426,17 @@ class PolyExpAnsatz(Ansatz):
             return
 
         to_keep = self._find_unique_terms_sorted()
-        _A = math.gather(self._A_vectorized, to_keep, axis=0)
-        _b = math.gather(self._b_vectorized, to_keep, axis=0)
-        _c = math.gather(self._c_vectorized, to_keep, axis=0)  # already added
+        A_vectorized = (
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+        )
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        c_vectorized = (
+            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+        )
+
+        _A = math.gather(A_vectorized, to_keep, axis=0)
+        _b = math.gather(b_vectorized, to_keep, axis=0)
+        _c = math.gather(c_vectorized, to_keep, axis=0)  # already added
         self._A = math.reshape(_A, (len(to_keep),) + (self.num_vars, self.num_vars))
         self._b = math.reshape(_b, (len(to_keep),) + (self.num_vars,))
         self._c = math.reshape(_c, (len(to_keep),) + self.shape_derived_vars)
@@ -473,22 +452,26 @@ class PolyExpAnsatz(Ansatz):
             List of indices to keep after simplification.
         """
         self._order_batch()
+        A_vectorized = (
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+        )
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        c_vectorized = (
+            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+        )
+
         to_keep = [d0 := 0]
-        mat, vec = self._A_vectorized[d0], self._b_vectorized[d0]
+        mat, vec = A_vectorized[d0], b_vectorized[d0]
 
         for d in range(1, self.batch_size):
-            if not (
-                np.allclose(mat, self._A_vectorized[d]) and np.allclose(vec, self._b_vectorized[d])
-            ):
+            if not (np.allclose(mat, A_vectorized[d]) and np.allclose(vec, b_vectorized[d])):
                 to_keep.append(d)
                 d0 = d
-                mat, vec = self._A_vectorized[d0], self._b_vectorized[d0]
+                mat, vec = A_vectorized[d0], b_vectorized[d0]
             else:
                 d0r = np.unravel_index(d0, self.batch_shape)
                 dr = np.unravel_index(d, self.batch_shape)
-                self._c_vectorized = math.update_add_tensor(
-                    self._c_vectorized, [d0r], [self._c_vectorized[dr]]
-                )
+                c_vectorized = math.update_add_tensor(c_vectorized, [d0r], [c_vectorized[dr]])
         return to_keep
 
     def _order_batch(self):
@@ -498,18 +481,25 @@ class PolyExpAnsatz(Ansatz):
         an ordering of the batch dimension, which is useful for simplification and for
         determining (in)equality between two PolyExp ansatz.
         """
+        A_vectorized = (
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+        )
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        c_vectorized = (
+            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+        )
         generators = [
             itertools.chain(
-                math.asnumpy(self._b_vectorized[i]).flat,
-                math.asnumpy(self._A_vectorized[i]).flat,
-                math.asnumpy(self._c_vectorized[i]).flat,
+                math.asnumpy(b_vectorized[i]).flat,
+                math.asnumpy(A_vectorized[i]).flat,
+                math.asnumpy(c_vectorized[i]).flat,
             )
             for i in range(self.batch_size)
         ]
         sorted_indices = argsort_gen(generators)
-        _A = math.gather(self._A_vectorized, sorted_indices, axis=0)
-        _b = math.gather(self._b_vectorized, sorted_indices, axis=0)
-        _c = math.gather(self._c_vectorized, sorted_indices, axis=0)
+        _A = math.gather(A_vectorized, sorted_indices, axis=0)
+        _b = math.gather(b_vectorized, sorted_indices, axis=0)
+        _c = math.gather(c_vectorized, sorted_indices, axis=0)
         self._A = math.reshape(_A, self.batch_shape + (self.num_vars, self.num_vars))
         self._b = math.reshape(_b, self.batch_shape + (self.num_vars,))
         self._c = math.reshape(
@@ -724,31 +714,39 @@ class PolyExpAnsatz(Ansatz):
         d = list(range(self.num_CV_vars, self.num_vars))
         f = len(r) + len(d)  # leftover core dimensions (CV + derived)
 
-        new_A = math.gather(math.gather(self._A_vectorized, r + d, axis=-1), r + d, axis=-2)
+        A_vectorized = (
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+        )
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        c_vectorized = (
+            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+        )
+
+        new_A = math.gather(math.gather(A_vectorized, r + d, axis=-1), r + d, axis=-2)
         new_A = math.tile(new_A, (z_batch_size, 1, 1))  # can now reshape to (*b, *L, r+d, r+d)
         new_A = math.reshape(new_A, z_batch_shape + self.batch_shape + (f, f))
-        A_er = math.gather(math.gather(self._A_vectorized, e, axis=-2), r, axis=-1)
+        A_er = math.gather(math.gather(A_vectorized, e, axis=-2), r, axis=-1)
         b_r = math.einsum("ier,be->bir", A_er, z_vectorized)  # shape (vec(b), vec(L), r)
 
         if len(d) > 0:
-            A_ed = math.gather(math.gather(self._A_vectorized, e, axis=-2), d, axis=-1)
+            A_ed = math.gather(math.gather(A_vectorized, e, axis=-2), d, axis=-1)
             b_d = math.einsum("ied,be->bid", A_ed, z_vectorized)  # shape (vec(b), vec(L), d)
-            new_b = math.gather(self._b_vectorized, r + d, axis=-1)[None, :, :] + math.concat(
+            new_b = math.gather(b_vectorized, r + d, axis=-1)[None, :, :] + math.concat(
                 (b_r, b_d), axis=-1
             )
         else:
-            new_b = math.gather(self._b_vectorized, r, axis=-1)[None, :, :] + b_r
+            new_b = math.gather(b_vectorized, r, axis=-1)[None, :, :] + b_r
 
         new_b = math.reshape(new_b, z_batch_shape + self.batch_shape + (f,))
 
         # new c of shape (batch_size * b,)
-        A_ee = math.gather(math.gather(self._A_vectorized, e, axis=-1), e, axis=-2)
+        A_ee = math.gather(math.gather(A_vectorized, e, axis=-1), e, axis=-2)
         A_part = math.einsum(
             "be,bf,ief->bi", z_vectorized, z_vectorized, A_ee
         )  # shape (vec(b), vec(L))
-        b_part = math.einsum("be,ie->bi", z_vectorized, math.gather(self._b_vectorized, e, axis=-1))
+        b_part = math.einsum("be,ie->bi", z_vectorized, math.gather(b_vectorized, e, axis=-1))
         exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (vec(b), vec(L))
-        new_c = math.einsum("bi,i...->bi...", exp_sum, self._c_vectorized)
+        new_c = math.einsum("bi,i...->bi...", exp_sum, c_vectorized)
         new_c = math.reshape(new_c, z_batch_shape + self.batch_shape + self.shape_derived_vars)
 
         return PolyExpAnsatz(

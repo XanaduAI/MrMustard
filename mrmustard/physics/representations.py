@@ -126,10 +126,18 @@ class Representation:
         if len(shape) != num_vars:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
-            As = self.ansatz._A_vectorized
-            bs = self.ansatz._b_vectorized
-            cs = self.ansatz._c_vectorized
+            A, b, c = self.ansatz.triple
+
+            As = math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape else A
+            bs = math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape else b
+            cs = (
+                math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
+                if self.ansatz.batch_shape
+                else c
+            )
+
             batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape else ()
+
             if self.ansatz.batch_shape:
                 G = math.hermite_renormalized_batch(As, bs, 1, shape=shape + cs.shape[1:])
             else:
