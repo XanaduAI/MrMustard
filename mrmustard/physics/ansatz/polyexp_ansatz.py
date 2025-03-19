@@ -259,9 +259,7 @@ class PolyExpAnsatz(Ansatz):
         The scalar part of the ansatz, i.e. F(0)
         """
         if self.num_CV_vars == 0:
-            return (
-                self.c
-            )  # TODO: fix the case where there are no CV variables and c is multi-dimensional
+            return self()
         else:
             return self.eval(*math.zeros_like(self.b))
 
@@ -477,7 +475,6 @@ class PolyExpAnsatz(Ansatz):
         self._order_batch()
         to_keep = [d0 := 0]
         mat, vec = self._A_vectorized[d0], self._b_vectorized[d0]
-        _c = math.astensor(self._c_vectorized)
 
         for d in range(1, self.batch_size):
             if not (
@@ -613,26 +610,22 @@ class PolyExpAnsatz(Ansatz):
         """
         z_only = [arr for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
-        z = math.stack(broadcasted_z, axis=-1)
+        z = math.stack(broadcasted_z, axis=-1) if broadcasted_z else math.astensor([])
         if len(z_only) < self.num_CV_vars:
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
+        z_batch_str = generate_batch_str(z_batch_shape)
         if z_dim != self.num_CV_vars:
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        z_vectorized = math.reshape(z, (int(np.prod(z_batch_shape)), z_dim))  # (k, num_CV_vars)
-        exp_sum = self._compute_exp_part(z_vectorized)  # shape (batch_size, k)
+        exp_sum = self._compute_exp_part(z)  # shape (...,)
         if self.num_derived_vars == 0:  # purely gaussian
-            ret = math.einsum("...k,...->...k", exp_sum, self._c_vectorized)
+            return math.einsum(f"{z_batch_str}..., ...->{z_batch_str}...", exp_sum, self.c)
         else:
-            poly = self._compute_polynomial_part(
-                z_vectorized
-            )  # shape (batch_size, k, *derived_shape)
-            ret = self._combine_exp_and_poly(exp_sum, poly)
-        ret = math.transpose(ret, list(range(1, len(ret.shape))) + [0])
-        return math.reshape(ret, z_batch_shape + self.batch_shape)
+            poly = self._compute_polynomial_part(z)  # shape (..., *derived_shape)
+            return self._combine_exp_and_poly(exp_sum, poly)
 
     def _compute_exp_part(self, z: Batch[Vector]) -> Batch[Scalar]:
         r"""
@@ -644,33 +637,35 @@ class PolyExpAnsatz(Ansatz):
         that correspond to the vector of given CV variables.
         """
         n = self.num_CV_vars
-        A_part = math.einsum("ka,kb, ...ab->...k", z, z, self._A_vectorized[..., :n, :n])
-        b_part = math.einsum("ka,...a->...k", z, self._b_vectorized[..., :n])
-        return math.exp(1 / 2 * A_part + b_part)  # shape (batch_size, k)
+        batch_str = generate_batch_str(z.shape[:-1], 2)
+        A_part = math.einsum(
+            f"{batch_str}a, {batch_str}b, ...ab->{batch_str}...", z, z, self.A[..., :n, :n]
+        )
+        b_part = math.einsum(f"{batch_str}a,...a->{batch_str}...", z, self.b[..., :n])
+        return math.exp(1 / 2 * A_part + b_part)
 
     def _compute_polynomial_part(self, z: Batch[Vector]) -> Batch[Scalar]:
         r"""Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``."""
         n = self.num_CV_vars
-        b_poly = (
-            math.einsum("iab,ka->ikb", self._A_vectorized[..., :n, n:], z)
-            + self._b_vectorized[..., None, n:]
+        z_batch_shape = z.shape[:-1]
+        batch_str = generate_batch_str(z_batch_shape, 2)
+        A, b, _ = self.triple
+        b_poly = math.einsum(f"...ab,{batch_str}a->{batch_str}...b", A[..., :n, n:], z) + b[..., n:]
+        A_poly = A[..., n:, n:]
+        A_poly = math.broadcast_to(A_poly, b_poly.shape[:-1] + A_poly.shape[-2:])
+        A_poly_vectorized = math.reshape(A_poly, (-1,) + A_poly.shape[-2:])
+        b_poly_vectorized = math.reshape(b_poly, (-1,) + b_poly.shape[-1:])
+        ret = math.hermite_renormalized_batch(
+            A_poly_vectorized, b_poly_vectorized, complex(1), self.shape_derived_vars
         )
-        A_poly = self._A_vectorized[..., n:, n:]  # shape (batch_size,derived_vars,derived_vars)
-        result = []
-        for Ai, bi in zip(A_poly, b_poly):
-            result.append(
-                math.hermite_renormalized_batch(Ai, bi, complex(1), self.shape_derived_vars)
-            )
-        return math.astensor(result)
+        return math.reshape(ret, z_batch_shape + self.batch_shape + self.shape_derived_vars)
 
     def _combine_exp_and_poly(
         self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor]
     ) -> Batch[ComplexTensor]:
         r"""Combines exponential and polynomial parts using einsum. Needed in ``__call__``."""
-        d = np.prod(self.shape_derived_vars)
-        c = math.reshape(self._c_vectorized, (self.batch_size, d))
-        poly = math.reshape(poly, (self.batch_size, -1, d))
-        return math.einsum("ik,id,ikd->ik", exp_sum, c, poly)
+        poly_string = "".join(chr(i) for i in range(97, 97 + len(self.shape_derived_vars)))
+        return math.einsum(f"...,...{poly_string},...{poly_string}->...", exp_sum, self.c, poly)
 
     def _partial_eval(self, z: ArrayLike, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
