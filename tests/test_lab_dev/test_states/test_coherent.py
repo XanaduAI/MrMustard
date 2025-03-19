@@ -16,7 +16,6 @@
 
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-import numpy as np
 import pytest
 
 from mrmustard import math

@@ -16,8 +16,6 @@
 
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
-from itertools import product
-
 import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox

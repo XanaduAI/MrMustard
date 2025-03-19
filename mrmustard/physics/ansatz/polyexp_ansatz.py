@@ -22,7 +22,6 @@ from __future__ import annotations
 
 from typing import Any, Callable, Sequence
 import itertools
-from functools import cached_property
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -644,7 +643,7 @@ class PolyExpAnsatz(Ansatz):
         """
         n = self.num_CV_vars
         A_part = math.einsum("...a, ...b, ...ab->...", z, z, A[..., :n, :n])
-        b_part = math.einsum(f"...a,...a->...", z, b[..., :n])
+        b_part = math.einsum("...a,...a->...", z, b[..., :n])
         return math.exp(1 / 2 * A_part + b_part)
 
     def _compute_polynomial_part(
@@ -655,7 +654,7 @@ class PolyExpAnsatz(Ansatz):
         """
         n = self.num_CV_vars
         batch_shape = z.shape[:-1]
-        b_poly = math.einsum(f"...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
+        b_poly = math.einsum("...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
         A_poly_vectorized = math.reshape(A[..., n:, n:], (-1,) + A[..., n:, n:].shape[-2:])
         b_poly_vectorized = math.reshape(b_poly, (-1,) + b_poly.shape[-1:])
         ret = math.hermite_renormalized_batch(
