@@ -370,7 +370,7 @@ class CircuitComponent:
             )  # TODO: this needs to be fixed for batch dimensions
 
             return quad_array
-        return self.to_quadrature(phi=phi).ansatz.eval(*quad)
+        return self.to_quadrature(phi=phi).ansatz(*quad)
 
     @classmethod
     def _from_attributes(

@@ -545,7 +545,7 @@ class PolyExpAnsatz(Ansatz):
 
     def eval(
         self, *z: Vector | None, batch_string: str | None = None
-    ) -> Scalar | ArrayLike | PolyExpAnsatz:
+    ) -> Scalar | ArrayLike | PolyExpAnsatz:  # TODO: this is really REALLY slow?
         r"""
         Evaluates the ansatz at given points or returns a partially evaluated ansatz.
         This method supports passing an einsum-style batch string to specify how the batch dimensions

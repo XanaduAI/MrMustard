@@ -358,7 +358,6 @@ class State(CircuitComponent):
             )
         if len(quad) == 1:
             quad = quad * self.n_modes
-        # TODO: we need to fix the multi-mode case and the DM case
         if self.wires.ket and not self.wires.bra:
             return math.abs(self.quadrature(*quad, phi=phi)) ** 2
         else:
@@ -403,10 +402,16 @@ class State(CircuitComponent):
         """
         if self.n_modes > 1:
             raise ValueError("2D visualization not available for multi-mode states.")
+        if self.ansatz.batch_dims > 1:
+            raise NotImplementedError("2D visualization not implemented for batched states.")
+
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape))
-        state = state.dm()
-        dm = math.sum(state.ansatz.array, axis=0)
+        state = self.to_fock(tuple(shape)).dm()
+        dm = (
+            math.sum(state.ansatz.array, axis=0)
+            if state.ansatz.batch_dims == 1
+            else state.ansatz.array
+        )
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -519,10 +524,15 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("3D visualization not available for multi-mode states.")
+        if self.ansatz.batch_dims > 1:
+            raise NotImplementedError("3D visualization not implemented for batched states.")
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape))
-        state = state.dm()
-        dm = math.sum(state.ansatz.array, axis=0)
+        state = self.to_fock(tuple(shape)).dm()
+        dm = (
+            math.sum(state.ansatz.array, axis=0)
+            if state.ansatz.batch_dims == 1
+            else state.ansatz.array
+        )
 
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
@@ -594,9 +604,14 @@ class State(CircuitComponent):
         """
         if self.n_modes != 1:
             raise ValueError("DM visualization not available for multi-mode states.")
-        state = self.to_fock(cutoff)
-        state = state.dm()
-        dm = math.sum(state.ansatz.array, axis=0)
+        if self.ansatz.batch_dims > 1:
+            raise NotImplementedError("DM visualization not implemented for batched states.")
+        state = self.to_fock(cutoff).dm()
+        dm = (
+            math.sum(state.ansatz.array, axis=0)
+            if state.ansatz.batch_dims == 1
+            else state.ansatz.array
+        )
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)

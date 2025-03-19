@@ -27,7 +27,7 @@ from IPython.display import display
 
 from mrmustard import math, widgets
 from mrmustard.math.parameters import Variable
-from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
 

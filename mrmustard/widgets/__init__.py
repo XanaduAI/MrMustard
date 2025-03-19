@@ -58,15 +58,16 @@ def fock_2d(array):
 
 def fock(rep):
     """Create a widget to display a Fock representation."""
-    shape = rep.array.shape
-    if shape[0] != 1:  # pragma: no cover
+    if rep.batch_size > 1:  # pragma: no cover
         # the batch dimension should be trivial for Fock representations
         return None
 
-    if len(shape) == 2:
-        plot_widget = fock_1d(rep.array[0])
-    elif len(shape) == 3:
-        plot_widget = fock_2d(rep.array[0])
+    shape = rep.core_shape
+    rep_array = rep.array[0] if rep.batch_shape else rep.array
+    if len(shape) == 1:
+        plot_widget = fock_1d(rep_array)
+    elif len(shape) == 2:
+        plot_widget = fock_2d(rep_array)
     else:  # TODO: add multi-dimensional visualization
         return None
 

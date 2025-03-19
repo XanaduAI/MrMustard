@@ -38,7 +38,6 @@ class TestCFT:
         Tests that the characteristic function is converted to the Wigner function
         for a single-mode squeezed state.
         """
-
         state = Ket.random((0,)) >> Dgate(0, x=1.0, y=0.1)
 
         dm = state.to_fock(100).dm().ansatz.array
@@ -49,7 +48,6 @@ class TestCFT:
         X, Y = np.meshgrid(
             vec * np.sqrt(2 / settings.HBAR), vec * np.sqrt(2 / settings.HBAR)
         )  # scaling to take care of HBAR
-        Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
-        wig = math.real(2 / (2 * np.pi * settings.HBAR) * Wigner.eval(Z)[0])
+        wig = math.real(2 / (2 * np.pi * settings.HBAR) * Wigner(X - 1j * Y, X + 1j * Y))
         expected = np.real(wigner.T)
         assert math.allclose(wig, expected, atol=1e-6)
