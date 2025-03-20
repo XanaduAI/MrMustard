@@ -614,55 +614,46 @@ class PolyExpAnsatz(Ansatz):
                 "The number of variables and indices must not exceed the number of CV "
                 f"variables {self.num_CV_vars}. Use the eval() or __call__() method instead."
             )
-        z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
-        z_batch_size = int(np.prod(z_batch_shape))
-        z_vectorized = math.reshape(z, (z_batch_size, z_dim))
+        z_batch_shape = z.shape[:-1]
 
         # evaluated, remaining and derived indices
         e = indices
         r = [i for i in range(self.num_CV_vars) if i not in indices]
         d = list(range(self.num_CV_vars, self.num_vars))
-        f = len(r) + len(d)  # leftover core dimensions (CV + derived)
 
-        A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
-        )
-        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
-        c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+        # TODO: does it make sense to broadcast everything here? Is there a performance hit in comparison to
+        # making use of batch strings?
+        ansatz_batch_idxs = tuple(range(self.batch_dims))
+        z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
+        z = math.transpose(
+            math.broadcast_to(z, self.batch_shape + z.shape),
+            z_batch_idxs + ansatz_batch_idxs + (-1,),
         )
 
-        new_A = math.gather(math.gather(A_vectorized, r + d, axis=-1), r + d, axis=-2)
-        new_A = math.tile(new_A, (z_batch_size, 1, 1))  # can now reshape to (*b, *L, r+d, r+d)
-        new_A = math.reshape(new_A, z_batch_shape + self.batch_shape + (f, f))
-        A_er = math.gather(math.gather(A_vectorized, e, axis=-2), r, axis=-1)
-        b_r = math.einsum("ier,be->bir", A_er, z_vectorized)  # shape (vec(b), vec(L), r)
+        A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
+        b = math.broadcast_to(self.b, z_batch_shape + self.b.shape)
+        c = math.broadcast_to(self.c, z_batch_shape + self.c.shape)
+
+        new_A = math.gather(math.gather(A, r + d, axis=-1), r + d, axis=-2)
+        A_er = math.gather(math.gather(A, e, axis=-2), r, axis=-1)
+        b_r = math.einsum("...er,...e->...r", A_er, z)
 
         if len(d) > 0:
-            A_ed = math.gather(math.gather(A_vectorized, e, axis=-2), d, axis=-1)
-            b_d = math.einsum("ied,be->bid", A_ed, z_vectorized)  # shape (vec(b), vec(L), d)
-            new_b = math.gather(b_vectorized, r + d, axis=-1)[None, :, :] + math.concat(
-                (b_r, b_d), axis=-1
-            )
+            A_ed = math.gather(math.gather(A, e, axis=-2), d, axis=-1)
+            b_d = math.einsum("...ed,...e->...d", A_ed, z)
+            new_b = math.gather(b, r + d, axis=-1) + math.concat((b_r, b_d), axis=-1)
         else:
-            new_b = math.gather(b_vectorized, r, axis=-1)[None, :, :] + b_r
-
-        new_b = math.reshape(new_b, z_batch_shape + self.batch_shape + (f,))
-
-        # new c of shape (batch_size * b,)
-        A_ee = math.gather(math.gather(A_vectorized, e, axis=-1), e, axis=-2)
-        A_part = math.einsum(
-            "be,bf,ief->bi", z_vectorized, z_vectorized, A_ee
-        )  # shape (vec(b), vec(L))
-        b_part = math.einsum("be,ie->bi", z_vectorized, math.gather(b_vectorized, e, axis=-1))
-        exp_sum = math.exp(1 / 2 * A_part + b_part)  # shape (vec(b), vec(L))
-        new_c = math.einsum("bi,i...->bi...", exp_sum, c_vectorized)
-        new_c = math.reshape(new_c, z_batch_shape + self.batch_shape + self.shape_derived_vars)
-
+            new_b = math.gather(b, r, axis=-1) + b_r
+        A_ee = math.gather(math.gather(A, e, axis=-2), e, axis=-1)
+        A_part = math.einsum("...e,...f,...ef->...", z, z, A_ee)
+        b_part = math.einsum("...e,...e->...", z, math.gather(b, e, axis=-1))
+        exp_sum = math.exp(1 / 2 * A_part + b_part)
+        poly_string = "".join(chr(i) for i in range(97, 97 + len(self.shape_derived_vars)))
+        new_c2 = math.einsum(f"...,...{poly_string}->...{poly_string}", exp_sum, c)
         return PolyExpAnsatz(
             new_A,
             new_b,
-            new_c,
+            new_c2,
         )
 
     def _should_regenerate(self):
@@ -779,11 +770,11 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
-        ansatz_batch_idxs = tuple(range(self.batch_dims))
-        z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
 
         # TODO: does it make sense to broadcast everything here? Is there a performance hit in comparison to
         # making use of batch strings?
+        ansatz_batch_idxs = tuple(range(self.batch_dims))
+        z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
             math.broadcast_to(z, self.batch_shape + z.shape),
             z_batch_idxs + ansatz_batch_idxs + (-1,),

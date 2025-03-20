@@ -236,9 +236,7 @@ class HomodyneSampler(Sampler):
         ret = []
         for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
             # Use partial_eval to evaluate the ansatz at the first mode only
-            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz.partial_eval(
-                np.array([[unique_sample]]), (0,)
-            )
+            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(unique_sample)
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
