@@ -389,7 +389,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         A = np.zeros((4, 4))
         A[0, -1] = 1.0
         rho = DM.from_bargmann(
-            (2, 9), [A, [complex(0)] * 4, [complex(1)]]
+            (2, 9), [A, [complex(0)] * 4, complex(1)]
         )  # this test fails at the hermitian check
         assert not rho.is_positive
 

@@ -434,6 +434,30 @@ class CircuitComponent:
         """
         return self._representation.bargmann_triple()
 
+    def contract(
+        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
+    ) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` without adding adjoints.
+        It allows for contracting components exactly as specified.
+
+        For example, a coherent state can be input to an attenuator, but
+        the attenuator has two inputs: on the ket and the bra side.
+        The ``>>`` operator would automatically add the adjoint of the coherent
+        state on the bra side of the input of the attenuator, but the ``@`` operator
+        instead does not:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Attenuator
+            >>> coh = Coherent(0, 1.0)
+            >>> att = Attenuator(0, 0.5)
+            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
+        """
+        if isinstance(other, (numbers.Number, np.ndarray)):
+            return self * other
+        result = self._representation.contract(other._representation, mode=mode)
+        return CircuitComponent(result, None)
+
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
@@ -589,30 +613,6 @@ class CircuitComponent:
         if isinstance(other, CircuitComponent):
             return self._representation == other._representation
         return False
-
-    def contract(
-        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
-    ) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` without adding adjoints.
-        It allows for contracting components exactly as specified.
-
-        For example, a coherent state can be input to an attenuator, but
-        the attenuator has two inputs: on the ket and the bra side.
-        The ``>>`` operator would automatically add the adjoint of the coherent
-        state on the bra side of the input of the attenuator, but the ``@`` operator
-        instead does not:
-
-        .. code-block::
-            >>> from mrmustard.lab_dev import Coherent, Attenuator
-            >>> coh = Coherent(0, 1.0)
-            >>> att = Attenuator(0, 0.5)
-            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
-        """
-        if isinstance(other, (numbers.Number, np.ndarray)):
-            return self * other
-        result = self._representation.contract(other._representation, mode=mode)
-        return CircuitComponent(result, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
