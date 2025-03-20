@@ -808,10 +808,10 @@ def bargmann_to_wigner_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar
         / (s - 1)
         * math.block(
             [
-                [On, In, In, On],
-                [In, On, On, (s + 1) / 2 * In],
-                [In, On, On, In],
-                [On, (s + 1) / 2 * In, In, On],
+                [On, -In, In, On],
+                [-In, On, On, (s + 1) / 2 * In],
+                [In, On, On, -In],
+                [On, (s + 1) / 2 * In, -In, On],
             ]
         )
     )

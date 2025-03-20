@@ -49,7 +49,7 @@ class TestBtoW:
 
         Wigner = (state >> BtoW([0], s=0)).ansatz
         X, Y = np.meshgrid(vec / np.sqrt(2), vec / np.sqrt(2))
-        Z = np.array([-X + 1j * Y, -X - 1j * Y]).transpose((1, 2, 0))
+        Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
             np.real(Wigner(Z)) / 2,
             np.real(wigner.T),
