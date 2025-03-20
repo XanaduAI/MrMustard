@@ -799,7 +799,6 @@ def bargmann_to_wigner_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar
     r"""
     The Abc triple of the Bargmann to Wigner/Husimi transformation.
     """
-    from numpy import pi as pi
 
     On = math.zeros((n_modes, n_modes), dtype=math.complex128)
     In = math.eye(n_modes, dtype=math.complex128)
@@ -817,7 +816,7 @@ def bargmann_to_wigner_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar
         )
     )
     b = math.zeros(4 * n_modes, dtype=math.complex128)
-    c = (2 / (math.abs(s - 1) * pi)) ** (n_modes)
+    c = (2 / (math.abs(s - 1) * np.pi)) ** (n_modes)
     return A, b, c
 
 
