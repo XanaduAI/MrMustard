@@ -795,6 +795,32 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     return math.astensor(A), b, c
 
 
+def bargmann_to_wigner_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
+    r"""
+    The Abc triple of the Bargmann to Wigner/Husimi transformation.
+    """
+    from numpy import pi as pi
+
+    On = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    In = math.eye(n_modes, dtype=math.complex128)
+
+    A = (
+        2
+        / (s - 1)
+        * math.block(
+            [
+                [On, In, In, On],
+                [In, On, On, (s + 1) / 2 * In],
+                [In, On, On, In],
+                [On, (s + 1) / 2 * In, In, On],
+            ]
+        )
+    )
+    b = math.zeros(4 * n_modes, dtype=math.complex128)
+    c = (2 / (math.abs(s - 1) * pi)) ** (n_modes)
+    return A, b, c
+
+
 def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
