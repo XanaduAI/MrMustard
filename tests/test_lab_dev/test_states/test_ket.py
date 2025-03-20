@@ -31,6 +31,7 @@ from mrmustard.lab_dev import (
     Coherent,
     Dgate,
     DM,
+    Identity,
     Ket,
     Number,
     Sgate,
@@ -417,3 +418,44 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_is_physical(self):
         assert Ket.random((0, 1)).is_physical
+
+    def test_physical_stellar_decomposition(self):
+        r"""
+        Tests the physical stellar decomposition.
+        """
+        # two-mode example:
+        psi = Ket.random([0, 1])
+        core, U = psi.physical_stellar_decomposition([0])
+        assert psi == core >> U
+
+        A_c, _, _ = core.ansatz.triple
+        assert A_c[-1][0, 0] == 0
+
+        assert U >> U.dual == Identity([0])
+
+        # many-mode example:
+        phi = Ket.random(list(range(5)))
+        core, U = phi.physical_stellar_decomposition([0, 2])
+        assert phi == core >> U
+
+        A_c, _, _ = core.ansatz.triple
+        A_c = A_c[-1]
+        A_c_reordered = A_c[[0, 2], :]
+        A_c_reordered = A_c_reordered[:, [0, 2]]
+        assert math.allclose(A_c_reordered, math.zeros((2, 2)))
+
+    def test_formal_stellar_decomposition(self):
+        psi = Ket.random((0, 1, 2))
+        core1, phi1 = psi.formal_stellar_decomposition([1])
+        core12, phi12 = psi.formal_stellar_decomposition([1, 2])
+
+        A1, _, _ = phi1.ansatz.triple
+        A1 = A1[-1]
+        assert math.allclose(A1[1, 1], 0.0)
+
+        A12, _, _ = phi12.ansatz.triple
+        A12 = A12[-1]
+        assert math.allclose(A1[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
+
+        assert psi == core1 >> phi1
+        assert psi == core12 >> phi12
