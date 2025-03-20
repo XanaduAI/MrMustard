@@ -178,10 +178,26 @@ class ArrayAnsatz(Ansatz):
         if len(input_parts) != 2:
             raise ValueError("Batch string must have exactly two input parts")
 
+        # reshape the arrays to match
+        shape_s = self.core_shape
+        shape_o = other.core_shape
+
+        new_shape_s = list(shape_s)
+        new_shape_o = list(shape_o)
+        for s, o in zip(idx1, idx2):
+            new_shape_s[s] = min(shape_s[s], shape_o[o])
+            new_shape_o[o] = min(shape_s[s], shape_o[o])
+
+        reduced_self = self.reduce(new_shape_s)
+        reduced_other = other.reduce(new_shape_o)
+
         # Start variable indices after batch indices
         start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
-        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(self.core_dims)]
-        var_idx2 = [chr(i + ord("a") + start_idx + self.core_dims) for i in range(other.core_dims)]
+        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(reduced_self.core_dims)]
+        var_idx2 = [
+            chr(i + ord("a") + start_idx + reduced_self.core_dims)
+            for i in range(reduced_other.core_dims)
+        ]
 
         # Replace contracted indices in second array with corresponding indices from first
         for i, j in zip(idx1, idx2):
@@ -193,7 +209,7 @@ class ArrayAnsatz(Ansatz):
             f"{input_parts[1]}{''.join(var_idx2)}->"
             f"{output_str}{''.join([i for i in var_idx1 + var_idx2 if i not in set(var_idx1) & set(var_idx2)])}"
         )
-        result = math.einsum(einsum_str, self.array, other.array)
+        result = math.einsum(einsum_str, reduced_self.array, reduced_other.array)
         return ArrayAnsatz(result, batch_dims=len(output_str))
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
