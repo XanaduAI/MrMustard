@@ -191,9 +191,6 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def num_vars(self):
-        r"""
-        The total number of continuous variables of this ansatz before the polynomial of derivatives is applied.
-        """
         return self.A.shape[-1]
 
     @property
