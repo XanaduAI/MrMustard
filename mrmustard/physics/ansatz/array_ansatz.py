@@ -54,22 +54,10 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
         super().__init__()
-        self.batch_dims = batch_dims
+        self._batch_dims = batch_dims
         self._batch_shape = array.shape[:batch_dims] if array is not None else ()
         self._array = array
         self._original_abc_data = None
-
-    @property
-    def batch_shape(self) -> tuple[int, ...] | None:
-        return self._batch_shape
-
-    @property
-    def core_shape(self) -> tuple[int, ...] | None:
-        return self.array.shape[self.batch_dims :]
-
-    @property
-    def core_dims(self) -> int:
-        return len(self.core_shape)
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -86,33 +74,35 @@ class ArrayAnsatz(Ansatz):
         self._batch_shape = value.shape[: self.batch_dims]
         self._array = value
 
-    def _generate_ansatz(self):
-        r"""
-        Computes and sets the array given a function and its kwargs.
-        """
-        if self._should_regenerate():
-            params = {}
-            for name, param in self._kwargs.items():
-                try:
-                    params[name] = param.value
-                except AttributeError:
-                    params[name] = param
-            self.array = self._fn(**params)
+    @property
+    def batch_dims(self) -> int:
+        return self._batch_dims
 
-    def _should_regenerate(self):
-        r"""
-        Determines if the ansatz needs to be regenerated based on its current state
-        and parameter types.
-        """
-        return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
+    @property
+    def batch_shape(self) -> tuple[int, ...]:
+        return self._batch_shape
 
     @property
     def batch_size(self):
-        return int(np.prod(self.batch_shape))
+        return int(np.prod(self.batch_shape)) if self.batch_shape else 0
+
+    @property
+    def core_dims(self) -> int:
+        r"""
+        The number of core dimensions of this ansatz.
+        """
+        return len(self.core_shape)
 
     @property
     def conj(self):
         return ArrayAnsatz(math.conj(self.array), self.batch_dims)
+
+    @property
+    def core_shape(self) -> tuple[int, ...] | None:
+        r"""
+        The core dimensions of this ansatz.
+        """
+        return self.array.shape[self.batch_dims :]
 
     @property
     def data(self) -> Batch[Tensor]:
@@ -269,11 +259,31 @@ class ArrayAnsatz(Ansatz):
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
+    def _generate_ansatz(self):
+        r"""
+        Computes and sets the array given a function and its kwargs.
+        """
+        if self._should_regenerate():
+            params = {}
+            for name, param in self._kwargs.items():
+                try:
+                    params[name] = param.value
+                except AttributeError:
+                    params[name] = param
+            self.array = self._fn(**params)
+
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
             print(self)
             return
         display(w)
+
+    def _should_regenerate(self):
+        r"""
+        Determines if the ansatz needs to be regenerated based on its current state
+        and parameter types.
+        """
+        return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""

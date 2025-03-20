@@ -48,6 +48,20 @@ class Ansatz(ABC):
 
     @property
     @abstractmethod
+    def batch_dims(self) -> tuple[int, ...]:
+        r"""
+        The number of batch dimensions of the ansatz.
+        """
+
+    @property
+    @abstractmethod
+    def batch_shape(self) -> tuple[int, ...]:
+        r"""
+        The batch shape of the ansatz.
+        """
+
+    @property
+    @abstractmethod
     def batch_size(self) -> int:
         r"""
         The batch size of the ansatz.
