@@ -104,7 +104,7 @@ class Dgate(Unitary):
 
     def fock_array(
         self, shape: int | Sequence[int] = None, batched=False
-    ) -> ComplexTensor:  # TODO: fix
+    ) -> ComplexTensor:  # TODO: fix for batch
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is

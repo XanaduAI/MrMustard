@@ -332,6 +332,8 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
         A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]
@@ -353,6 +355,8 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
         A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[:m, m:]

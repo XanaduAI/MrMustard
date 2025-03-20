@@ -63,7 +63,6 @@ class PhaseNoise(Channel):
             modes_in=(mode,), modes_out=(mode,), ansatz=None
         ).representation
 
-    # TODO: work w batch dims
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.

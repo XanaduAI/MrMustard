@@ -49,7 +49,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:
+    def is_positive(self) -> bool:  # TODO: revisit this
         r"""
         Whether this DM is a positive operator.
         """
@@ -58,6 +58,8 @@ class DM(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
         A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[..., :m, m:]
