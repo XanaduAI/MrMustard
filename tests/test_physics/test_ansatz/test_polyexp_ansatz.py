@@ -140,7 +140,7 @@ class TestPolyExpAnsatz:
         ans = PolyExpAnsatz(A, b, c)
 
         nine_factorial = math.prod(np.arange(1, 9))
-        assert math.allclose(ans([0.1 + 0.0j]), 0.1**9 / np.sqrt(nine_factorial))
+        assert math.allclose(ans(0.1 + 0.0j), 0.1**9 / np.sqrt(nine_factorial))
 
     def test_partial_eval(self):
         batch = 3
