@@ -219,7 +219,7 @@ class HomodyneSampler(Sampler):
 
     def probabilities(self, state, atol=1e-4):
         probs = state.quadrature_distribution(
-            self.meas_outcomes, phi=self._phi
+            math.astensor(self.meas_outcomes), phi=self._phi  # TODO: revisit meas_outcomes
         ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
 

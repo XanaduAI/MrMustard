@@ -289,7 +289,9 @@ class PolyExpAnsatz(Ansatz):
             return self
         n = self.num_CV_vars
         A, b, c = self.triple
-        pulled_out_input_shape = (math.sum(self.shape_derived_vars),) * n
+        pulled_out_input_shape = (
+            int(math.sum(self.shape_derived_vars)),
+        ) * n  # cast to int for jax
         poly_shape = pulled_out_input_shape + self.shape_derived_vars
 
         batch_shape = A.shape[:-2]
@@ -301,21 +303,24 @@ class PolyExpAnsatz(Ansatz):
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
         if batch_shape:
-            A_core_vectorized = math.reshape(A_core, (-1,) + A_core.shape[-2:])
-            b_core_vectorized = math.reshape(b_core, (-1,) + b_core.shape[-1:])
+            batch_size = math.prod(A_core.shape[:-2])
+            A_core_vectorized = math.reshape(A_core, (batch_size,) + A_core.shape[-2:])
+            b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
             poly_core = math.hermite_renormalized_batch(
                 A_core_vectorized, b_core_vectorized, complex(1), poly_shape
-            ).reshape(batch_shape + pulled_out_input_shape + (-1,))
-        else:
-            poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape).reshape(
-                pulled_out_input_shape + (-1,)
             )
+        else:
+            poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
 
+        derived_vars_size = int(math.prod(self.shape_derived_vars))
+        poly_core = math.reshape(
+            poly_core, batch_shape + pulled_out_input_shape + (derived_vars_size,)
+        )
         batch_str = generate_batch_str(batch_shape)
         c_prime = math.einsum(
             f"{batch_str}...k,{batch_str}...k->{batch_str}...",
             poly_core,
-            c.reshape(batch_shape + (-1,)),
+            c.reshape(batch_shape + (derived_vars_size,)),
         )
         block = A[..., :n, :n]
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
@@ -481,9 +486,10 @@ class PolyExpAnsatz(Ansatz):
         """
         n = self.num_CV_vars
         batch_shape = z.shape[:-1]
+        batch_size = int(math.prod(A.shape[:-2]))  # for tensorflow and jax
         b_poly = math.einsum("...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
-        A_poly_vectorized = math.reshape(A[..., n:, n:], (-1,) + A[..., n:, n:].shape[-2:])
-        b_poly_vectorized = math.reshape(b_poly, (-1,) + b_poly.shape[-1:])
+        A_poly_vectorized = math.reshape(A[..., n:, n:], (batch_size,) + A[..., n:, n:].shape[-2:])
+        b_poly_vectorized = math.reshape(b_poly, (batch_size,) + b_poly.shape[-1:])
         ret = math.hermite_renormalized_batch(
             A_poly_vectorized, b_poly_vectorized, complex(1), self.shape_derived_vars
         )

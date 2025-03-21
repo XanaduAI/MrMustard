@@ -150,7 +150,9 @@ def test_vanilla_stable_batched():
     settings.STABLE_FOCK_CONVERSION = True
     A, b, c = mmld.Ket.random((0, 1)).bargmann_triple()
     A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)  # for tf backend
-    batched = vanilla_stable_batch((4, 4), A, math.atleast_2d(b), c)
+    batched = vanilla_stable_batch(
+        (4, 4), math.atleast_3d(A), math.atleast_2d(b), math.atleast_1d(c)
+    )
     non_batched = vanilla_stable((4, 4), A, b, c)
 
     assert np.allclose(batched[0], non_batched)

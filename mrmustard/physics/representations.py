@@ -139,9 +139,9 @@ class Representation:
             batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape else ()
 
             if self.ansatz.batch_shape:
-                G = math.hermite_renormalized_batch(As, bs, 1, shape=shape + cs.shape[1:])
+                G = math.hermite_renormalized_batch(As, bs, complex(1), shape=shape + cs.shape[1:])
             else:
-                G = math.hermite_renormalized(As, bs, 1, shape=shape + cs.shape)
+                G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
             G = math.reshape(G, batch + shape + (-1,))
             cs = math.reshape(cs, batch + (-1,))
             core_str = "".join(

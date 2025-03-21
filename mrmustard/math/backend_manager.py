@@ -361,7 +361,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array.
         """
-        return self._apply("batched_transpose", (a, batch_dims))
+        if a is None:
+            return None
+        perm = tuple(range(len(a.shape)))
+        perm = perm[:batch_dims] + perm[batch_dims:][::-1]
+        return self._apply("transpose", (a, perm))
 
     def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
         r"""Returns a block diagonal matrix from the given matrices.
@@ -683,6 +687,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
+        array = self.astensor(array)
+        indices = self.astensor(indices, dtype=self.int64)
         return self._apply(
             "gather",
             (
@@ -1048,6 +1054,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The product of the elements in ``array``.
         """
+        array = self.astensor(array)
         return self._apply("prod", (array, axis))
 
     def real(self, array: Tensor) -> Tensor:
@@ -1205,6 +1212,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The sum of array
         """
+        array = self.astensor(array)
         if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
