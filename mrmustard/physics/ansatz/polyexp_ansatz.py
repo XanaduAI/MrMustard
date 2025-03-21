@@ -153,7 +153,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
+        return int(math.prod(self.batch_shape)) if self.batch_shape != () else 0  # tensorflow
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -401,16 +401,22 @@ class PolyExpAnsatz(Ansatz):
 
         Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
         """
-        if self._simplified or not self.batch_shape:
+        if self._simplified or self.batch_shape == ():  # tensorflow
             return
 
         to_keep = self._find_unique_terms_sorted()
         A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+            if self.batch_shape != ()
+            else self.A  # tensorflow
         )
-        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        b_vectorized = (
+            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
+        )  # tensorflow
         c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+            math.reshape(self.c, (-1, *self.shape_derived_vars))
+            if self.batch_shape != ()
+            else self.c  # tensorflow
         )
 
         _A = math.gather(A_vectorized, to_keep, axis=0)
@@ -510,11 +516,17 @@ class PolyExpAnsatz(Ansatz):
         """
         self._order_batch()
         A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+            if self.batch_shape != ()
+            else self.A  # tensorflow
         )
-        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        b_vectorized = (
+            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
+        )  # tensorflow
         c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+            math.reshape(self.c, (-1, *self.shape_derived_vars))
+            if self.batch_shape != ()
+            else self.c  # tensorflow
         )
 
         to_keep = [d0 := 0]
@@ -564,11 +576,17 @@ class PolyExpAnsatz(Ansatz):
         determining (in)equality between two PolyExp ansatz.
         """
         A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars)) if self.batch_shape else self.A
+            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+            if self.batch_shape != ()
+            else self.A  # tensorflow
         )
-        b_vectorized = math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape else self.b
+        b_vectorized = (
+            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
+        )  # tensorflow
         c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars)) if self.batch_shape else self.c
+            math.reshape(self.c, (-1, *self.shape_derived_vars))
+            if self.batch_shape != ()
+            else self.c  # tensorflow
         )
         generators = [
             itertools.chain(
@@ -767,7 +785,11 @@ class PolyExpAnsatz(Ansatz):
         """
         z_only = [arr for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
-        z = math.stack(broadcasted_z, axis=-1) if broadcasted_z else math.astensor([])
+        z = (
+            math.cast(math.stack(broadcasted_z, axis=-1), dtype=math.complex128)
+            if broadcasted_z
+            else math.astensor([], dtype=math.complex128)
+        )  # tensorflow
         if len(z_only) < self.num_CV_vars:
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)

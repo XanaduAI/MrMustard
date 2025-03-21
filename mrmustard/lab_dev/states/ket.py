@@ -189,7 +189,7 @@ class Ket(State):
                     ansatz = self.ansatz.conj & self.ansatz
                     A, b, c = (
                         (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_size
+                        if ansatz.batch_shape != ()  # tensorflow
                         else ansatz.triple
                     )
                     ansatz = ansatz / self.probability

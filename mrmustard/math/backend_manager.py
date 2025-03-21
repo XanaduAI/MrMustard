@@ -416,16 +416,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("broadcast_arrays", arrays)
 
-    def broadcast_to(self, array: Tensor, shape: tuple[int]) -> Tensor:
+    def broadcast_to(self, array: Tensor, shape: tuple[int, ...], dtype=None) -> Tensor:
         r"""Broadcasts an array to a new shape.
 
         Args:
             array: The array to broadcast.
             shape: The shape to broadcast to.
-
+            dtype: The dtype to broadcast to.
         Returns:
             The broadcasted array.
         """
+        array = self.astensor(array, dtype=dtype)
         return self._apply("broadcast_to", (array, shape))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:

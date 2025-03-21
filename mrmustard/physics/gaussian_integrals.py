@@ -336,19 +336,21 @@ def join_Abc(
     c2_broadcast_shape = output_batch_shape + (c2_flat.shape[-1],)
 
     # Step 2: Broadcast tensors to the output shape
-    A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape)
-    A2_broadcasted = math.broadcast_to(A2_reshaped, A2_broadcast_shape)
-    b1_broadcasted = math.broadcast_to(b1_reshaped, b1_broadcast_shape)
-    b2_broadcasted = math.broadcast_to(b2_reshaped, b2_broadcast_shape)
-    c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape)
-    c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape)
+    A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape, dtype=math.complex128)
+    A2_broadcasted = math.broadcast_to(A2_reshaped, A2_broadcast_shape, dtype=math.complex128)
+    b1_broadcasted = math.broadcast_to(b1_reshaped, b1_broadcast_shape, dtype=math.complex128)
+    b2_broadcasted = math.broadcast_to(b2_reshaped, b2_broadcast_shape, dtype=math.complex128)
+    c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape, dtype=math.complex128)
+    c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape, dtype=math.complex128)
 
     # Step 3: Join A1 and A2
     A1Z = math.concat(
-        [A1_broadcasted, math.zeros(output_batch_shape + (nA1, nA2), dtype=A1.dtype)], axis=-1
+        [A1_broadcasted, math.zeros(output_batch_shape + (nA1, nA2), dtype=math.complex128)],
+        axis=-1,
     )
     ZA2 = math.concat(
-        [math.zeros(output_batch_shape + (nA2, nA1), dtype=A2.dtype), A2_broadcasted], axis=-1
+        [math.zeros(output_batch_shape + (nA2, nA1), dtype=math.complex128), A2_broadcasted],
+        axis=-1,
     )
 
     A = math.concat([A1Z, ZA2], axis=-2)

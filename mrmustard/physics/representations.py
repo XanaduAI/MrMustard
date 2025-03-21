@@ -128,17 +128,21 @@ class Representation:
         try:
             A, b, c = self.ansatz.triple
 
-            As = math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape else A
-            bs = math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape else b
+            As = (
+                math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape != () else A
+            )  # tensorflow
+            bs = (
+                math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape != () else b
+            )  # tensorflow
             cs = (
                 math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
-                if self.ansatz.batch_shape
+                if self.ansatz.batch_shape != ()  # tensorflow
                 else c
             )
 
-            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape else ()
+            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape != () else ()  # tensorflow
 
-            if self.ansatz.batch_shape:
+            if self.ansatz.batch_shape != ():  # tensorflow
                 G = math.hermite_renormalized_batch(As, bs, complex(1), shape=shape + cs.shape[1:])
             else:
                 G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)

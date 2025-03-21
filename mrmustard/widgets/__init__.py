@@ -65,7 +65,7 @@ def fock(rep):
         return None
 
     shape = rep.core_shape
-    rep_array = rep.array[0] if rep.batch_shape else rep.array
+    rep_array = rep.array[0] if rep.batch_shape != () else rep.array  # tensorflow
     if len(shape) == 1:
         plot_widget = fock_1d(rep_array)
     elif len(shape) == 2:
@@ -89,10 +89,10 @@ def fock(rep):
 
 def bargmann(rep, batch_idx: int | None = None):
     """Create a widget to display a Bargmann representation."""
-    if batch_idx is None and rep.batch_shape:
+    if batch_idx is None and rep.batch_shape != ():  # tensorflow
         return _batch_widget(rep, rep.batch_size, bargmann)
 
-    if rep.batch_shape:
+    if rep.batch_shape != ():  # tensorflow
         A = math.reshape(rep.A, (-1, *rep.A.shape[-2:]))[batch_idx]
         b = math.reshape(rep.b, (-1, *rep.b.shape[-1:]))[batch_idx]
         c = math.reshape(rep.c, (-1, *rep.c.shape[rep.batch_dims :]))[batch_idx]

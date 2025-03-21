@@ -292,7 +292,7 @@ class TestOptimizer:
             >> BSgate((1, 2), settings.rng.normal(scale=0.01))
             >> BSgate((0, 3), settings.rng.normal(scale=0.01))
         )
-        X = perturbed.symplectic[0]
+        X = perturbed.symplectic
         perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
         state_in = Vacuum((0, 1, 2, 3))
@@ -337,7 +337,7 @@ class TestOptimizer:
             >> BSgate((1, 2), settings.rng.normal(scale=0.01))
             >> BSgate((0, 3), settings.rng.normal(scale=0.01))
         )
-        perturbed_O = pertubed.symplectic[0][:4, :4]
+        perturbed_O = pertubed.symplectic[:4, :4]
 
         state_in = Vacuum((0, 1, 2, 3))
         s_gate0 = Sgate(
@@ -464,8 +464,8 @@ class TestOptimizer:
             state0 = state[0]
             state1 = state[1]
 
-            cov0, mean0, _ = [x[0] for x in state0.phase_space(s=0)]
-            cov1, mean1, _ = [x[0] for x in state1.phase_space(s=0)]
+            cov0, mean0, _ = [x for x in state0.phase_space(s=0)]
+            cov1, mean1, _ = [x for x in state1.phase_space(s=0)]
 
             num_mean0 = number_means(cov0, mean0)[0]
             num_mean1 = number_means(cov1, mean1)[0]
@@ -495,7 +495,7 @@ class TestOptimizer:
         # angle of rotation gate
         r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
         # trainable squeezing
-        S = Sgate(0, r=0.1, phi=0, r_trainable=True, phi_trainable=False)
+        S = Sgate(0, r=0.1, r_trainable=True)
 
         def cost_fn_sympl():
             state_out = Vacuum(0) >> S >> Rgate(0, theta=r_angle)
