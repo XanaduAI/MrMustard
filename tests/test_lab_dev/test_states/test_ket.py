@@ -237,8 +237,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         psi_q = math.astensor([coherent_state_quad(q, x1, y1), coherent_state_quad(q, x2, y2)]).T
         assert math.allclose(state.quadrature(q), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
-        #assert math.allclose(state.to_fock(40).quadrature(q), psi_q)
-        #assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(q), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_expectation_bargmann(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)

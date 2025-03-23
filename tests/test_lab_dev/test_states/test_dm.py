@@ -249,8 +249,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(state.quadrature(q,q), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        #assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
-        #assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(q,q), bra * ket)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
