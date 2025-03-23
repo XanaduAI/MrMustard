@@ -338,6 +338,7 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
+        # TODO: this needs to be fixed for batch dimensions
         if isinstance(self.ansatz, ArrayAnsatz):
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             dims = self.ansatz.core_dims
@@ -360,18 +361,15 @@ class CircuitComponent:
                 quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
             # Convert each dimension to quadrature
-            fock_string = "".join([chr(i) for i in range(98, 98 + dims)])  #'bcd....'
-            q_string = "".join(
-                [fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"]
-            )
-
+            fock_string = "".join([chr(97+ self.n_modes + dim) for dim in range(dims)])
+            q_string = "".join([f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)])[:-1]
+            out_string = "".join([chr(97 + mode) for mode in self.modes])
             quad_array = math.einsum(
-                fock_string + "," + q_string + "->" + "a", self.ansatz.array, *quad_basis_vecs
-            )  # TODO: this needs to be fixed for batch dimensions
+                fock_string + "," + q_string + "->" + out_string, self.ansatz.array, *quad_basis_vecs
+            )
+            return quad_array.reshape(-1)
 
-            return quad_array
-
-        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(a) for a in range(97, 97+self.n_modes)])  # TODO: this needs to be fixed for batch dimensions
+        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(97 + mode) for mode in self.modes])  # TODO: this needs to be fixed for batch dimensions
         return self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string= batch_str).reshape(-1)
 
     @classmethod

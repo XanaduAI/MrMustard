@@ -216,8 +216,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         assert math.allclose(state.quadrature(q, q), psi_q)
         assert math.allclose(state.quadrature_distribution(q), abs(psi_q) ** 2)
-        # assert math.allclose(state.to_fock(40).quadrature(q, q), psi_q)
-        # assert math.allclose(state.to_fock(40).quadrature_distribution(q, q), abs(psi_q) ** 2)
+        assert math.allclose(state.to_fock(40).quadrature(q, q), psi_q)
+        assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
     def test_quadrature_multivariable_ket(self):
         x, y = 1, 2
