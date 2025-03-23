@@ -338,7 +338,6 @@ class CircuitComponent:
         Returns:
             A circuit component with the given quadrature representation.
         """
-        # TODO: this needs to be fixed for batch dimensions
         if isinstance(self.ansatz, ArrayAnsatz):
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
             dims = self.ansatz.core_dims
