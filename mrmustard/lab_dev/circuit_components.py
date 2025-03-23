@@ -370,7 +370,9 @@ class CircuitComponent:
             )  # TODO: this needs to be fixed for batch dimensions
 
             return quad_array
-        return self.to_quadrature(phi=phi).ansatz(*quad)
+
+        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(a) for a in range(97, 97+self.n_modes)])  # TODO: this needs to be fixed for batch dimensions
+        return self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string= batch_str).reshape(-1)
 
     @classmethod
     def _from_attributes(
