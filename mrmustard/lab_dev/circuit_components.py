@@ -365,22 +365,21 @@ class CircuitComponent:
                 [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
-            quad_array = math.einsum(
+            ret = math.einsum(
                 "..." + fock_string + "," + q_string + "->" + out_string + "...",
                 self.ansatz.array,
                 *quad_basis_vecs,
             )
-            return quad_array.reshape((-1,) + self.ansatz.batch_shape)
         batch_str = (
             "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
             + "->"
             + "".join([chr(97 + mode) for mode in self.modes])
         )
-        return (
-            self.to_quadrature(phi=phi)
-            .ansatz.eval(*quad, batch_string=batch_str)
-            .reshape((-1,) + self.ansatz.batch_shape)
-        )
+        ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
+        size = int(math.prod(ret.shape[:-self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape)) #tensorflow
+        return math.reshape(ret, (size,) + self.ansatz.batch_shape)
+    
+
 
     @classmethod
     def _from_attributes(
