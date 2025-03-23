@@ -376,10 +376,12 @@ class CircuitComponent:
             + "".join([chr(97 + mode) for mode in self.modes])
         )
         ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        size = int(math.prod(ret.shape[:-self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape)) #tensorflow
+        size = int(
+            math.prod(
+                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape
+            )
+        )  # tensorflow
         return math.reshape(ret, (size,) + self.ansatz.batch_shape)
-    
-
 
     @classmethod
     def _from_attributes(
