@@ -56,7 +56,7 @@ class ArrayAnsatz(Ansatz):
         super().__init__()
         self._array = math.astensor(array)
         self._batch_dims = batch_dims
-        self._batch_shape = array.shape[:batch_dims] if array is not None else ()
+        self._batch_shape = self._array.shape[:batch_dims] if array is not None else ()
         self._original_abc_data = None
 
     @property
