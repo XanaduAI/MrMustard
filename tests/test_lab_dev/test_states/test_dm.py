@@ -15,9 +15,6 @@
 """Tests for the density matrix."""
 
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
-from itertools import product
-
 import numpy as np
 import pytest
 
@@ -35,6 +32,7 @@ from mrmustard.lab_dev import (
 )
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 
 
@@ -238,17 +236,21 @@ class TestDM:  # pylint:disable=too-many-public-methods
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2)
 
-    # def test_quadrature_batch(self):
-    #     x1, y1, x2, y2 = 1, 2, -1, -2
-    #     state = (Coherent(mode=0, x=x1, y=y1) + Coherent(mode=0, x=x2, y=y2)).dm()
-    #     q = np.linspace(-10, 10, 100)
-    #     quad = math.transpose(math.astensor([q, q + 1]))
-    #     ket = coherent_state_quad(q + 1, x1, y1) + coherent_state_quad(q + 1, x2, y2)
-    #     bra = np.conj(coherent_state_quad(q, x1, y1) + coherent_state_quad(q, x2, y2))
-    #     assert math.allclose(state.quadrature(quad), bra * ket)
-    #     assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-    #     assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
-    #     assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
+    def test_quadrature_batch(self):
+        x1, y1, x2, y2 = 1, 2, -1, -2
+        A1,b1,c1 = coherent_state_Abc(x1,y1)
+        A2,b2,c2 = coherent_state_Abc(x2,y2)
+        A,b,c = math.astensor([A1,A2]), math.astensor([b1, b2]), math.astensor([c1,c2])
+        state = Ket.from_bargmann((0,), (A,b,c)).dm()
+        q = np.linspace(-10, 10, 100)
+
+        ket = math.astensor([coherent_state_quad(q, x1, y1), coherent_state_quad(q, x2, y2)]).T
+        bra = math.astensor([np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))]).T
+
+        assert math.allclose(state.quadrature(q,q), bra * ket)
+        assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
+        #assert math.allclose(state.to_fock(40).quadrature(quad), bra * ket)
+        #assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)

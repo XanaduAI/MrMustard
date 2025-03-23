@@ -36,7 +36,7 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     ComplexMatrix,
     ComplexVector,
-    Vector,
+    RealVector,
     Batch,
 )
 from mrmustard.math.parameter_set import ParameterSet
@@ -324,7 +324,7 @@ class CircuitComponent:
         """
         return self.to_quadrature(phi=phi).ansatz.triple
 
-    def quadrature(self, *quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
+    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
         This method considers the same basis in all the wires. For more fine-grained control,
@@ -367,10 +367,9 @@ class CircuitComponent:
             quad_array = math.einsum(
                 fock_string + "," + q_string + "->" + out_string, self.ansatz.array, *quad_basis_vecs
             )
-            return quad_array.reshape(-1)
-
-        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(97 + mode) for mode in self.modes])  # TODO: this needs to be fixed for batch dimensions
-        return self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string= batch_str).reshape(-1)
+            return quad_array.reshape((-1,) + self.ansatz.batch_shape)
+        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(97 + mode) for mode in self.modes])
+        return self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string= batch_str).reshape((-1,) + self.ansatz.batch_shape)
 
     @classmethod
     def _from_attributes(

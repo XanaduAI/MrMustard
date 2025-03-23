@@ -213,7 +213,7 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        repr = self.representation.contract(self.adjoint.representation)
+        repr = self.representation.contract(self.adjoint.representation, mode="zip")
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
