@@ -220,13 +220,17 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         # quad_slice = math.transpose(math.astensor([q, q, q + 1, q + 1]))
         # q_slice = math.transpose(math.astensor([q] * state.n_modes))
-        # ket_slice = math.kron(coherent_state_quad(q + 1, x, y), coherent_state_quad(q + 1, x, y))
-        # bra_slice = math.kron(np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y)))
+        ket_slice = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q + 1, x, y))
+        bra_slice = math.kron(
+            np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q + 1, x, y))
+        )
 
-        #assert math.allclose(state.to_fock(40).quadrature(q, q, q + 1, q + 1), bra_slice * ket_slice)
-        #assert math.allclose(
+        assert math.allclose(
+            state.to_fock(40).quadrature(q, q, q + 1, q + 1), bra_slice * ket_slice
+        )
+        # assert math.allclose(
         #    state.to_fock(40).quadrature_distribution(q), math.abs(bra_slice) ** 2
-        #)
+        # )
 
     def test_quadrature_multivariable_dm(self):
         x, y = 1, 2
@@ -234,22 +238,26 @@ class TestDM:  # pylint:disable=too-many-public-methods
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
-        assert math.allclose(state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2)
+        assert math.allclose(
+            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+        )
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        A1,b1,c1 = coherent_state_Abc(x1,y1)
-        A2,b2,c2 = coherent_state_Abc(x2,y2)
-        A,b,c = math.astensor([A1,A2]), math.astensor([b1, b2]), math.astensor([c1,c2])
-        state = Ket.from_bargmann((0,), (A,b,c)).dm()
+        A1, b1, c1 = coherent_state_Abc(x1, y1)
+        A2, b2, c2 = coherent_state_Abc(x2, y2)
+        A, b, c = math.astensor([A1, A2]), math.astensor([b1, b2]), math.astensor([c1, c2])
+        state = Ket.from_bargmann((0,), (A, b, c)).dm()
         q = np.linspace(-10, 10, 100)
 
         ket = math.astensor([coherent_state_quad(q, x1, y1), coherent_state_quad(q, x2, y2)]).T
-        bra = math.astensor([np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))]).T
+        bra = math.astensor(
+            [np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))]
+        ).T
 
-        assert math.allclose(state.quadrature(q,q), bra * ket)
+        assert math.allclose(state.quadrature(q, q), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
-        assert math.allclose(state.to_fock(40).quadrature(q,q), bra * ket)
+        assert math.allclose(state.to_fock(40).quadrature(q, q), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):

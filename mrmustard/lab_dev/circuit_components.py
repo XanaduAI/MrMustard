@@ -361,15 +361,27 @@ class CircuitComponent:
                 quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
             # Convert each dimension to quadrature
-            fock_string = "".join([chr(97+ self.n_modes + dim) for dim in range(dims)])
-            q_string = "".join([f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)])[:-1]
+            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
+            q_string = "".join(
+                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
+            )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
             quad_array = math.einsum(
-                "..." + fock_string + "," + q_string + "->" + out_string + "...", self.ansatz.array, *quad_basis_vecs
+                "..." + fock_string + "," + q_string + "->" + out_string + "...",
+                self.ansatz.array,
+                *quad_basis_vecs,
             )
             return quad_array.reshape((-1,) + self.ansatz.batch_shape)
-        batch_str = "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1] + "->" + "".join([chr(97 + mode) for mode in self.modes])
-        return self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string= batch_str).reshape((-1,) + self.ansatz.batch_shape)
+        batch_str = (
+            "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
+            + "->"
+            + "".join([chr(97 + mode) for mode in self.modes])
+        )
+        return (
+            self.to_quadrature(phi=phi)
+            .ansatz.eval(*quad, batch_string=batch_str)
+            .reshape((-1,) + self.ansatz.batch_shape)
+        )
 
     @classmethod
     def _from_attributes(
