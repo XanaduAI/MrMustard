@@ -218,10 +218,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.quadrature(q, q, q, q), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
 
-        quad_slice = math.transpose(math.astensor([q, q, q + 1, q + 1]))
-        q_slice = math.transpose(math.astensor([q] * state.n_modes))
-        ket_slice = math.kron(coherent_state_quad(q + 1, x, y), coherent_state_quad(q + 1, x, y))
-        bra_slice = math.kron(np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y)))
+        # quad_slice = math.transpose(math.astensor([q, q, q + 1, q + 1]))
+        # q_slice = math.transpose(math.astensor([q] * state.n_modes))
+        # ket_slice = math.kron(coherent_state_quad(q + 1, x, y), coherent_state_quad(q + 1, x, y))
+        # bra_slice = math.kron(np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y)))
 
         #assert math.allclose(state.to_fock(40).quadrature(q, q, q + 1, q + 1), bra_slice * ket_slice)
         #assert math.allclose(

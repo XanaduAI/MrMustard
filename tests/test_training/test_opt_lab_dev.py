@@ -464,8 +464,8 @@ class TestOptimizer:
             state0 = state[0]
             state1 = state[1]
 
-            cov0, mean0, _ = [x for x in state0.phase_space(s=0)]
-            cov1, mean1, _ = [x for x in state1.phase_space(s=0)]
+            cov0, mean0, _ = state0.phase_space(s=0)
+            cov1, mean1, _ = state1.phase_space(s=0)
 
             num_mean0 = number_means(cov0, mean0)[0]
             num_mean1 = number_means(cov1, mean1)[0]
