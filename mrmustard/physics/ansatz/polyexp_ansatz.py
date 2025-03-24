@@ -198,10 +198,12 @@ class PolyExpAnsatz(Ansatz):
         r"""
         The scalar part of the ansatz, i.e. F(0)
         """
-        if self.num_CV_vars == 0:
+        if self.num_CV_vars == 0 and self.num_derived_vars == 0:
+            return self.c
+        elif self.num_CV_vars == 0:
             return self()
         else:
-            return self.eval(*math.zeros_like(self.b))
+            return self(*math.zeros_like(self.b))
 
     @property
     def shape_derived_vars(self) -> tuple[int, ...]:
@@ -815,6 +817,8 @@ class PolyExpAnsatz(Ansatz):
         A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
         b = math.broadcast_to(self.b, z_batch_shape + self.b.shape)
         c = math.broadcast_to(self.c, z_batch_shape + self.c.shape)
+
+        print("A", self.A.shape, "b", self.b.shape, "c", self.c.shape)
 
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
