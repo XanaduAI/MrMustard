@@ -36,7 +36,7 @@ class BtoW(Map):
 
     Args:
         modes: The modes of this channel.
-        s: The `s` parameter of this channel. The case `s=-1`  corresponds to Hussimi, `s=0` to Wigner, and `s=1` to Glauber P function.
+        s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
     """
 
     def __init__(
