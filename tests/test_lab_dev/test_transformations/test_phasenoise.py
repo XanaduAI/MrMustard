@@ -59,14 +59,14 @@ class TestPhaseNoise:
         assert isinstance(rho, DM)
         assert rho.purity < 1
 
-    # @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])
-    # def test_numeric(self, sigma):
-    #     r"""
-    #     A numeric example
-    #     """
-    #     psi = Number(0, 0) + Number(0, 1)  # TODO: fix linear superposition
-    #     phi = psi >> PhaseNoise(0, sigma)
-    #     assert math.allclose(phi.fock_array(2)[0, 1], math.exp(-(complex(sigma) ** 2) / 2))
+    @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])
+    def test_numeric(self, sigma):
+        r"""
+        A numeric example
+        """
+        psi = Number(0, 0) + Number(0, 1)  # TODO: fix linear superposition
+        phi = psi >> PhaseNoise(0, sigma)
+        assert math.allclose(phi.fock_array(2)[0, 1], math.exp(-(complex(sigma) ** 2) / 2))
 
     def test_check_adding_adjoint(self):
         r"""

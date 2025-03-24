@@ -29,7 +29,7 @@ class TestSauron:
         assert state.name == "Sauron-1"
         assert math.allclose(state.probability, 1.0)
 
-    def test_equals_number_state(self):  # TODO: fix ArrayAnsatz contract
+    def test_equals_number_state(self):
         """Test that the Sauron state is equal to the corresponding number state."""
         assert math.allclose(Sauron(0, n=1, epsilon=0.1) >> Number(0, n=1).dual, 1.0)
         assert math.allclose(Sauron(0, n=2, epsilon=0.1) >> Number(0, n=2).dual, 1.0)

@@ -386,7 +386,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
             A - math.transpose(A), math.zeros((2, 2))
         )  # checks if the A matrix is symmetric
 
-    def test_ipython_repr(self):  # TODO: fix visualize_2d
+    def test_ipython_repr(self):
         """
         Test the widgets.state function.
         Note: could not mock display because of the states.py file name conflict.
