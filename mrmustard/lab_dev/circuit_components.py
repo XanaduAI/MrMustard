@@ -365,17 +365,19 @@ class CircuitComponent:
                 [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
-            ret = math.einsum(
+            ret = np.einsum(
                 "..." + fock_string + "," + q_string + "->" + out_string + "...",
                 self.ansatz.array,
                 *quad_basis_vecs,
+                optimize=True,
             )
-        batch_str = (
-            "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
-            + "->"
-            + "".join([chr(97 + mode) for mode in self.modes])
-        )
-        ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
+        else:
+            batch_str = (
+                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
+                + "->"
+                + "".join([chr(97 + mode) for mode in self.modes])
+            )
+            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
         size = int(
             math.prod(
                 ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape
