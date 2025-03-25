@@ -26,7 +26,7 @@ def test_fast_diagonal_2modes():
     A, b, c = (
         DM.random([0, 1]) >> Dgate(0, x=0.4, y=0.6) >> Dgate(1, x=0.4, y=0.6)
     ).bargmann_triple()
-    fd = math.hermite_renormalized_1leftoverMode(A, b, c, (5, 10))
+    fd = math.hermite_renormalized_1leftoverMode(A, b, c, 5, (10,))
     control = math.hermite_renormalized(A, b, c, (6, 11, 6, 11))
     control = control[:, np.arange(11), :, np.arange(11)]  # shape (11,)+(6,6)
     assert np.allclose(fd, np.transpose(control, (1, 2, 0)))

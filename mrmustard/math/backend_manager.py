@@ -719,12 +719,25 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
     ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        r"""Compute the conditional density matrix of mode 0, with all the other modes
+        detected with PNR detectors up to the given photon numbers.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            output_cutoff: upper boundary of photon numbers in mode 0
+            pnr_cutoffs: upper boundary of photon numbers in the other modes
+
+        Returns:
+            The conditional density matrix of mode 0. The final shape is
+            (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)
         """
-        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
+        return self._apply(
+            "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
+        )
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.

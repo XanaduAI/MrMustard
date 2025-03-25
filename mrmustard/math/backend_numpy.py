@@ -652,21 +652,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> np.ndarray:
-        r"""Compute the conditional density matrix of mode 0, with all the other modes
-        detected with PNR detectors up to the given photon number.
-
-        Args:
-            A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The conditional density matrix of mode 0.
-        """
-        output_cutoff, pnr_cutoffs = cutoffs[0], cutoffs[1:]
         return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )

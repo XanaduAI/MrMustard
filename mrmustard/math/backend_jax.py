@@ -717,9 +717,10 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_1leftoverMode_reorderedAB
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_1leftoverMode(self, A, B, C, cutoffs):
+    @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
+    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
+        cutoffs = (output_cutoff + 1,) + tuple([p + 1 for p in pnr_cutoffs])
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     # ~~~~~~~~~~~~~~~~~
