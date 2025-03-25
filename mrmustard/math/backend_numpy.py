@@ -654,7 +654,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_1leftoverMode(
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, cutoffs: tuple[int]
     ) -> np.ndarray:
-        r"""Compute the conditional density matrix of mode 0, where all other modes are PNR detected.
+        r"""Compute the conditional density matrix of mode 0, with all the other modes
+        detected with PNR detectors up to the given photon number.
 
         Args:
             A: The A matrix.
