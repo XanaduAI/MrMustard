@@ -264,17 +264,6 @@ class Ket(State):
 
         return result
 
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
-        Args:
-            cutoff: The photon cutoff.
-        Returns:
-            The Fock distribution.
-        """
-        fock_array = self.fock_array(cutoff)
-        return math.reshape(math.abs(fock_array) ** 2, (-1,))
-
     def normalize(self) -> Ket:
         r"""
         Returns a rescaled version of the state such that its probability is 1

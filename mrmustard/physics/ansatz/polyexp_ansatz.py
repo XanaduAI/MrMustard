@@ -310,7 +310,7 @@ class PolyExpAnsatz(Ansatz):
             b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
             poly_core = math.hermite_renormalized_batch(
                 A_core_vectorized, b_core_vectorized, complex(1), poly_shape
-            )
+            )  # TODO: hermite_renormalized_batch
         else:
             poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
 
@@ -500,7 +500,7 @@ class PolyExpAnsatz(Ansatz):
         b_poly_vectorized = math.reshape(b_poly, (batch_size,) + b_poly.shape[-1:])
         ret = math.hermite_renormalized_batch(
             A_poly_vectorized, b_poly_vectorized, complex(1), self.shape_derived_vars
-        )
+        )  # TODO: hermite_renormalized_batch
         return math.reshape(ret, batch_shape + self.shape_derived_vars)
 
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:

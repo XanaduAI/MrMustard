@@ -322,6 +322,23 @@ class State(CircuitComponent):
         Q = cls.from_ansatz(modes, PolyExpAnsatz(*triple))
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
+    def fock_distribution(self, cutoff: int) -> ComplexTensor:
+        r"""
+        Returns the Fock distribution of the state up to some cutoff.
+
+        Args:
+            cutoff: The photon cutoff.
+
+        Returns:
+            The Fock distribution.
+        """
+        if self.wires.ket and not self.wires.bra:
+            fock_array = self.fock_array(cutoff)
+            return math.reshape(math.abs(fock_array) ** 2, (-1,))
+        else:
+            fock_array = math.diag_part(self.fock_array(cutoff))
+            return math.reshape(fock_array, (-1,))
+
     def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.
