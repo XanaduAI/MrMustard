@@ -46,8 +46,8 @@ def fast_diagonal(
     output_shape = (output_cutoff + 1, output_cutoff + 1)
     L = len(pnr_cutoffs) + 1  # total number of modes
     perm = [i for m in range(L) for i in (m, m + L)]
-    A = np.array(A[perm, :][:, perm])
-    b = np.array(b[perm])
+    A = np.array(A)[perm, :][:, perm]
+    b = np.array(b)[perm]
     c = np.array(c)
     output = np.zeros(tuple(p + 1 for p in pnr_cutoffs) + output_shape, dtype=np.complex128)
     output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
