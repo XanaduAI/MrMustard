@@ -27,8 +27,6 @@ import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
-jax.config.update("jax_enable_x64", True)
-
 from ..utils.settings import settings  # pragma: no cover
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
@@ -45,6 +43,7 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
     hermite_multidimensional_diagonal_batch,
 )
 
+jax.config.update("jax_enable_x64", True)
 
 # pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):  # pragma: no cover
@@ -720,7 +719,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
-        cutoffs = (output_cutoff + 1,) + tuple([p + 1 for p in pnr_cutoffs])
+        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     # ~~~~~~~~~~~~~~~~~
