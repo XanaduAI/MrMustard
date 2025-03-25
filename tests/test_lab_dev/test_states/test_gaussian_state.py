@@ -29,9 +29,9 @@ class TestGKet:
 
     def test_init(self):
         "Tests initialization"
-        gket = GKet([0, 1])
+        gket = GKet((0, 1))
 
-        assert gket.modes == [0, 1]
+        assert gket.modes == (0, 1)
         assert gket.parameters.symplectic.value.shape == (4, 4)
         assert gket.name == "GKet"
         assert math.allclose(gket.probability, 1.0)
@@ -39,18 +39,18 @@ class TestGKet:
     def test_correctness(self):
         "Tests is the attributes are consistent"
 
-        g = GKet([0])
+        g = GKet(0)
         sym = g.parameters.symplectic.value
-        u = Unitary.from_symplectic([0], sym)
-        assert g == Vacuum([0]) >> u
+        u = Unitary.from_symplectic((0,), sym)
+        assert g == Vacuum(0) >> u
 
     def test_getitem(self):
         "Tests the getitem of the GKet"
 
-        psi = GKet([0])
+        psi = GKet(0)
         assert psi == psi[0]
 
-        phi = GKet([0, 1])
+        phi = GKet((0, 1))
         assert isinstance(phi[0], DM)
 
 
@@ -62,9 +62,9 @@ class TestGDM:
     def test_init(self):
         "Tests the initialization"
 
-        rho = GDM([0, 1], [0.2, 0.3])
+        rho = GDM((0, 1), [0.2, 0.3])
 
-        assert rho.modes == [0, 1]
+        assert rho.modes == (0, 1)
         assert rho.name == "GDM"
         assert math.allclose(rho.parameters.beta.value, math.astensor([0.2, 0.3]))
         assert rho.parameters.symplectic.value.shape == (4, 4)
@@ -73,8 +73,8 @@ class TestGDM:
     def test_getitem(self):
         "Tests the getitem of GDM"
 
-        rho = GDM([0], 0.2)
+        rho = GDM(0, 0.2)
         assert rho == rho[0]
 
-        sigma = GDM([0, 1], [0.5, 0.4])
+        sigma = GDM((0, 1), [0.5, 0.4])
         assert isinstance(sigma[0], DM)

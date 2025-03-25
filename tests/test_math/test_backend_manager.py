@@ -89,10 +89,10 @@ class TestBackendManager:
         arr1 = math.astensor([1, 2, 3])
         arr2 = math.astensor([[1, 2], [1, 2]])
 
-        if math.backend_name != "jax":
-            with pytest.raises(ValueError, match="Cannot compare"):
+        if math.backend_name == "numpy":
+            with pytest.raises(ValueError, match="could not be broadcast"):
                 math.allclose(arr1, arr2)
-        else:
+        elif math.backend_name == "jax":
             with pytest.raises(ValueError, match="Incompatible shapes"):
                 math.allclose(arr2, arr1)
 
@@ -261,6 +261,14 @@ class TestBackendManager:
         R = math.block_diag(I, 1j * I)
         assert R.shape == (8, 8)
         assert math.allclose(math.block([[I, O], [O, 1j * I]]), R)
+
+    def test_broadcast_to(self):
+        r"""
+        Tests the ``broadcast_to`` method.
+        """
+        arr = math.astensor([1, 2, 3])
+        res = math.broadcast_to(arr, (3, 3))
+        assert math.allclose(res, math.astensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
 
     @pytest.mark.parametrize("t", types)
     def test_cast(self, t):
@@ -673,6 +681,16 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sqrtm(arr))
         assert math.allclose(res, 2 * np.eye(3))
+
+    def test_stack(self):
+        r"""
+        Tests the ``stack`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.stack([arr1, arr2], axis=0))
+        exp = np.stack([arr1, arr2], axis=0)
+        assert np.allclose(res, exp)
 
     def test_sum(self):
         r"""

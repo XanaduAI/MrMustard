@@ -32,18 +32,18 @@ class TestGRN:
         "Tests the GaussRandNoise initialization."
 
         a = np.random.random((2, 2))
-        grn = GaussRandNoise([0], a @ a.T)
+        grn = GaussRandNoise((0,), a @ a.T)
         assert grn.name == "GRN~"
-        assert grn.modes == [0]
+        assert grn.modes == (0,)
 
     def test_grn(self):
         "Tests if the A matrix of GaussRandNoise is computed correctly."
         a = np.random.random((4, 4))
         Y = a @ a.T
-        phi = GaussRandNoise([0, 1], Y)
+        phi = GaussRandNoise((0, 1), Y)
 
         _, Y_ans = phi.XY
 
         assert math.allclose(Y_ans, Y)
         assert phi.is_physical
-        assert math.allclose((DM.random([0, 1]) >> phi).probability, 1.0)
+        assert math.allclose((DM.random((0, 1)) >> phi).probability, 1.0)

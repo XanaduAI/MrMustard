@@ -18,36 +18,32 @@ The class representing a number state.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.wires import ReprEnum
 from mrmustard.physics.fock_utils import fock_state
 from .ket import Ket
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Number"]
 
 
 class Number(Ket):
     r"""
-    The `N`-mode number state.
+    The number state in Fock representation.
 
     .. code-block::
 
         >>> from mrmustard.lab_dev import Number
         >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-        >>> state = Number(modes=[0, 1], n=[10, 20])
+        >>> state = Number(mode=0, n=10)
         >>> assert isinstance(state.ansatz, ArrayAnsatz)
 
     Args:
-        modes: The modes of the number state.
-        n: The number of photons in each mode.
-        cutoffs: The cutoffs for the various modes. If ``cutoffs`` is given as
-            an ``int``, it is broadcasted to all the states. If ``None``, it
-            defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
-            of the ``i``th mode.
+        mode: The mode of the number state.
+        n: The number of photons.
+        cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
+            defaults to ``n+1``.
 
     .. details::
 
@@ -64,25 +60,25 @@ class Number(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        n: int | Sequence[int],
-        cutoffs: int | Sequence[int] | None = None,
+        mode: int,
+        n: int,
+        cutoff: int | None = None,
     ) -> None:
+        cutoff = n if cutoff is None else cutoff
         super().__init__(name="N")
-
-        ns, cs = list(reshape_params(len(modes), n=n, cutoffs=n if cutoffs is None else cutoffs))
-        self.parameters.add_parameter(make_parameter(False, ns, "n", (None, None), dtype="int64"))
-        self.parameters.add_parameter(make_parameter(False, cs, "cutoffs", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
+        self.parameters.add_parameter(
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64")
+        )
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=ArrayAnsatz.from_function(
-                fock_state, n=self.parameters.n, cutoffs=self.parameters.cutoffs
+                fock_state, n=self.parameters.n, cutoffs=self.parameters.cutoff
             ),
         ).representation
-        self.short_name = [str(int(n)) for n in self.parameters.n.value]
-        for i, cutoff in enumerate(self.parameters.cutoffs.value):
-            self.manual_shape[i] = int(cutoff) + 1
+        self.short_name = str(int(n))
+        self.manual_shape[0] = cutoff + 1
 
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params_func = lambda w=w: [int(self.parameters.n.value[w.index])]
+            w.repr_params_func = lambda w=w: [int(self.parameters.n.value)]

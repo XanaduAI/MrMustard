@@ -21,13 +21,15 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard import math
+
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from mrmustard.utils.typing import RealMatrix
-from mrmustard.lab_dev.circuit_components_utils import TraceOut
+
 from .ket import Ket
 from .dm import DM
+from ..circuit_components_utils import TraceOut
 from ..utils import make_parameter, reshape_params
 
 __all__ = ["GKet", "GDM"]
@@ -45,11 +47,9 @@ class GKet(Ket):
 
     Args:
         modes: the modes over which the state is defined.
-
         symplectic: the symplectic representation of the unitary that acts on
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
     """
@@ -58,15 +58,13 @@ class GKet(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         symplectic: RealMatrix = None,
         symplectic_trainable: bool = False,
     ) -> None:
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="GKet")
-        m = len(modes)
-
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
-
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
                 symplectic_trainable,
@@ -76,7 +74,6 @@ class GKet(Ket):
                 update_symplectic,
             )
         )
-
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
@@ -84,14 +81,21 @@ class GKet(Ket):
             ),
         ).representation
 
-    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+    def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
-        The slicing method for a GDM state.
+        Override the default __getitem__ method to handle symplectic slicing.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new GKet with the modes indexed by `idx`.
         """
-
-        remaining_modes = [mode for mode in self.modes if mode not in modes]
-
-        return self >> TraceOut(remaining_modes)
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(self.modes):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
+        return self >> TraceOut(trace_out_modes)
 
 
 class GDM(DM):
@@ -107,32 +111,30 @@ class GDM(DM):
         where rho_t are thermal states with temperatures determined by beta.
 
     Args:
-        modes: the modes over which the state is defined.
-
+        modes: The modes over which the state is defined.
         beta: the set of temperatures determining the thermal states. If only a
-        float is provided for a multi-modes, the same temperature is considered
+        float is provided for a multi-mode state, the same temperature is considered
         across all modes.
-
-        symplectic: the symplectic representation of the unitary that acts on
+        symplectic: The symplectic representation of the unitary that acts on a
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-
-        symplectic_trainable: determines if the symplectic matrix can be trained.
+        beta_trainable: Whether `beta` is trainable.
+        symplectic_trainable: Whether `symplectic` is trainable.
     """
 
     short_name = "Gd"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         beta: float | Sequence[float],
         symplectic: RealMatrix = None,
-        symplectic_trainable: bool = False,
         beta_trainable: bool = False,
+        symplectic_trainable: bool = False,
     ) -> None:
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="GDM")
-        m = len(modes)
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(m)
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         (betas,) = list(reshape_params(len(modes), betas=beta))
         self.parameters.add_parameter(
             make_parameter(
@@ -160,10 +162,18 @@ class GDM(DM):
             ),
         ).representation
 
-    def _getitem_builtin(self, modes: set[int] | Sequence[int]):
+    def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""
-        The slicing method for a GDM state.
-        """
-        remaining_modes = [mode for mode in self.modes if mode not in modes]
+        Override the default __getitem__ method to handle symplectic slicing.
 
-        return self >> TraceOut(remaining_modes)
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new GDM with the modes indexed by `idx`.
+        """
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
+        return self >> TraceOut(trace_out_modes)

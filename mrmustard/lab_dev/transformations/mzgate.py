@@ -18,7 +18,6 @@ The class representing a Mach-Zehnder gate.
 
 from __future__ import annotations
 
-from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -29,30 +28,29 @@ __all__ = ["MZgate"]
 
 
 class MZgate(Unitary):
-    r"""Mach-Zehnder gate.
+    r"""
+    Mach-Zehnder gate.
 
     It supports two conventions:
-        1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
+        1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm.
         2. if ``internal = False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
 
-    One can optionally set bounds for each parameter, which the optimizer will respect.
-
     Args:
-        modes (optional, List[int]): the list of modes this gate is applied to
-        phi_a (float): the phase in the upper arm of the MZ interferometer
-        phi_a_bounds (float, float): bounds for phi_a
-        phi_a_trainable (bool): whether phi_a is a trainable variable
-        phi_b (float): the phase in the lower arm or external of the MZ interferometer
-        phi_b_bounds (float, float): bounds for phi_b
-        phi_b_trainable (bool): whether phi_b is a trainable variable
-        internal (bool): whether phases are both in the internal arms (default is False)
+        modes: The pair of modes of the MZ gate.
+        phi_a: The phase in the upper arm of the MZ interferometer.
+        phi_b: The phase in the lower arm or external of the MZ interferometer.
+        phi_a_trainable: Whether ``phi_a`` is trainable.
+        phi_b_trainable: Whether ``phi_b`` is trainable.
+        phi_a_bounds: The bounds for ``phi_a``.
+        phi_b_bounds: The bounds for ``phi_b``.
+        internal: Whether phases are both in the internal arms.
     """
 
     short_name = "MZ"
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         phi_a: float = 0.0,
         phi_b: float = 0.0,
         phi_a_trainable: bool = False,
