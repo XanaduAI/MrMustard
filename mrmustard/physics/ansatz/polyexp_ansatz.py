@@ -818,8 +818,6 @@ class PolyExpAnsatz(Ansatz):
         b = math.broadcast_to(self.b, z_batch_shape + self.b.shape)
         c = math.broadcast_to(self.c, z_batch_shape + self.c.shape)
 
-        print("A", self.A.shape, "b", self.b.shape, "c", self.c.shape)
-
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
             return math.einsum("..., ...->...", exp_sum, c)
