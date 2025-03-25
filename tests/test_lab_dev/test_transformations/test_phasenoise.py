@@ -64,7 +64,7 @@ class TestPhaseNoise:
         r"""
         A numeric example
         """
-        psi = Number(0, 0) + Number(0, 1)  # TODO: fix linear superposition
+        psi = Number(0, 0) + Number(0, 1)
         phi = psi >> PhaseNoise(0, sigma)
         assert math.allclose(phi.fock_array(2)[0, 1], math.exp(-(complex(sigma) ** 2) / 2))
 

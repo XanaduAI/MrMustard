@@ -303,15 +303,23 @@ class ArrayAnsatz(Ansatz):
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""
-        Adds two ArrayAnsatze together. In order to use the __add__ method, the ansatze must have
+        Adds two ArrayAnsatz together. In order to use the __add__ method, the ansatze must have
         the same batch dimensions. The shape of the core arrays must be such that one can be reduced
         to the other. Other will be reduced to the shape of self. If you want the opposite use other + self.
         """
         if self.batch_dims != other.batch_dims:
             raise ValueError("Batch dimensions must match.")
         if self.core_shape != other.core_shape:
-            other = other.reduce(self.core_shape)
-        return ArrayAnsatz(array=self.array + other.array, batch_dims=self.batch_dims)
+            if self.core_shape > other.core_shape:
+                self_array = self.array
+                other_array = other.reduce(self.core_shape).array
+            else:
+                self_array = self.reduce(other.core_shape).array
+                other_array = other.array
+        else:
+            self_array = self.array
+            other_array = other.array
+        return ArrayAnsatz(array=self_array + other_array, batch_dims=self.batch_dims)
 
     def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         if self.batch_shape != other.batch_shape:

@@ -36,7 +36,7 @@ class TestVisualization:
 
     def test_visualize_2d(self):
         with settings(HBAR=2.0):
-            st = Coherent(0, y=1) + Coherent(0, y=-1)  # TODO: linear superposition
+            st = Coherent(0, y=1) + Coherent(0, y=-1)
             fig = st.visualize_2d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
@@ -56,7 +56,7 @@ class TestVisualization:
 
     def test_visualize_3d(self):
         with settings(HBAR=2.0):
-            st = Coherent(0, y=1) + Coherent(0, y=-1)  # TODO: linear superposition
+            st = Coherent(0, y=1) + Coherent(0, y=-1)
             fig = st.visualize_3d(resolution=20, xbounds=(-3, 3), pbounds=(-4, 4), return_fig=True)
         data = fig.to_dict()
 
@@ -71,7 +71,7 @@ class TestVisualization:
         assert math.allclose(data["data"][0]["z"], ref_data["data"][0]["z"])
 
     def test_visualize_dm(self):
-        st = Coherent(0, y=1) + Coherent(0, y=-1)  # TODO: linear superposition
+        st = Coherent(0, y=1) + Coherent(0, y=-1)
         st.manual_shape[0] = 20
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
