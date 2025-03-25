@@ -647,8 +647,6 @@ class PolyExpAnsatz(Ansatz):
         r = [i for i in range(self.num_CV_vars) if i not in indices]
         d = list(range(self.num_CV_vars, self.num_vars))
 
-        # TODO: does it make sense to broadcast everything here? Is there a performance hit in comparison to
-        # making use of batch strings?
         ansatz_batch_idxs = tuple(range(self.batch_dims))
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
@@ -803,8 +801,6 @@ class PolyExpAnsatz(Ansatz):
                 f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
             )
 
-        # TODO: does it make sense to broadcast everything here? Is there a performance hit in comparison to
-        # making use of batch strings?
         ansatz_batch_idxs = tuple(range(self.batch_dims))
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
@@ -845,7 +841,7 @@ class PolyExpAnsatz(Ansatz):
     def __neg__(self) -> PolyExpAnsatz:
         return PolyExpAnsatz(self.A, self.b, -self.c)
 
-    def __repr__(self) -> str:  # TODO: update to show batch shape
+    def __repr__(self) -> str:
         r"""Returns a string representation of the PolyExpAnsatz object."""
         self._generate_ansatz()  # Ensure parameters are generated if needed
 
