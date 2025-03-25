@@ -310,7 +310,7 @@ class ArrayAnsatz(Ansatz):
         if self.batch_dims != other.batch_dims:
             raise ValueError("Batch dimensions must match.")
         if self.core_shape != other.core_shape:
-            if self.core_shape > other.core_shape:
+            if math.prod(self.core_shape) > math.prod(other.core_shape):
                 self_array = self.array
                 other_array = other.reduce(self.core_shape).array
             else:
