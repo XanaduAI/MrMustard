@@ -641,7 +641,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     ) -> tf.Tensor:
         A, b = self.reorder_AB_bargmann(A, b)
         cutoffs = (output_cutoff + 1,) + tuple([p + 1 for p in pnr_cutoffs])
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, b, c, cutoffs)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, b, c, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
