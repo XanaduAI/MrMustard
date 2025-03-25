@@ -27,6 +27,8 @@ import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
+jax.config.update("jax_enable_x64", True)
+
 from ..utils.settings import settings  # pragma: no cover
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
@@ -748,7 +750,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         function = partial(hermite_multidimensional_1leftoverMode, cutoffs=tuple(cutoffs))
         poly0 = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
-            jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+            jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
             A,
             B,
             C,
