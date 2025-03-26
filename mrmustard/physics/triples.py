@@ -436,31 +436,31 @@ def displacement_gate_Abc(
 
 
 def squeezing_gate_Abc(
-    r: float | Iterable[float], delta: float | Iterable[float] = 0
+    r: float | Iterable[float], phi: float | Iterable[float] = 0
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     The ``(A, b, c)`` triple of a squeezing gate.
 
     Args:
         r: The squeezing magnitudes.
-        delta: The squeezing angles.
+        phi: The squeezing angles.
 
     Returns:
         The ``(A, b, c)`` triple of the squeezing gate.
     """
-    batch_size, batch_dim = compute_batch_size(r, delta)
+    batch_size, batch_dim = compute_batch_size(r, phi)
     batch_shape = batch_size or (1,)
 
     r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
-    delta = math.broadcast_to(delta, batch_shape, dtype=math.complex128)
+    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     tanhr = math.sinh(r) / math.cosh(r)
     sechr = 1 / math.cosh(r)
 
     A = math.stack(
         [
-            math.stack([-math.exp(1j * delta) * tanhr, sechr], batch_dim),
-            math.stack([sechr, math.exp(-1j * delta) * tanhr], batch_dim),
+            math.stack([-math.exp(1j * phi) * tanhr, sechr], batch_dim),
+            math.stack([sechr, math.exp(-1j * phi) * tanhr], batch_dim),
         ],
         batch_dim,
     )
@@ -550,10 +550,7 @@ def twomode_squeezing_gate_Abc(
         [math.stack([sechr, O_matrix], batch_dim), math.stack([O_matrix, sechr], batch_dim)],
         batch_dim,
     )
-
-    A = math.concat(
-        [math.concat([A_block1, A_block3], -1), math.concat([A_block3, A_block2], -1)], -2
-    )
+    A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
     b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
@@ -816,31 +813,12 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     batch_shape = batch_size or (1,)
 
     s = math.broadcast_to(s, batch_shape, dtype=math.complex128)
-
-    A = math.concat(
-        [
-            np.concat(
-                [
-                    (s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes),
-                    math.broadcast_to(
-                        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
-                    ),
-                ],
-                -1,
-            ),
-            np.concat(
-                [
-                    math.broadcast_to(
-                        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
-                    ),
-                    math.broadcast_to(
-                        math.Xmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
-                    ),
-                ],
-                -1,
-            ),
-        ],
-        -2,
+    Zmat = math.broadcast_to(
+        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
+    )
+    Xmat = math.broadcast_to(math.Xmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes))
+    A = math.block(
+        [[(s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes), Zmat], [Zmat, Xmat]]
     )
     order_list = math.arange(4 * n_modes)  # [0,3,1,2]
     order_list = list(

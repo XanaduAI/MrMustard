@@ -219,9 +219,9 @@ def test_complex_gaussian_integral_2_not_batched():
 def test_complex_gaussian_integral_2_batched():
     """tests that the ``complex_gaussian_integral_2`` method works for batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, delta=0.3)
-    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, delta=0.4)
-    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, delta=0.5)
+    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, phi=0.3)
+    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, phi=0.4)
+    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, phi=0.5)
     A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
     A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
     A3c, b3c, c3c = triples.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
@@ -266,9 +266,9 @@ def test_complex_gaussian_integral_1_not_batched():
 def test_complex_gaussian_integral_1_batched():
     """tests that the ``complex_gaussian_integral_2`` method works for batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, delta=0.3)
-    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, delta=0.4)
-    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, delta=0.5)
+    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, phi=0.3)
+    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, phi=0.4)
+    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, phi=0.5)
     A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
     A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
     A3c, b3c, c3c = triples.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)

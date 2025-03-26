@@ -94,6 +94,6 @@ class Sgate(Unitary):
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.squeezing_gate_Abc,
                 r=self.parameters.r,
-                delta=self.parameters.phi,
+                phi=self.parameters.phi,
             ),
         ).representation
