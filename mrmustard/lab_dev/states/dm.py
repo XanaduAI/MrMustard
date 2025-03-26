@@ -390,12 +390,12 @@ class DM(State):
 
             >>> rho = DM.random([0,1])
             >>> core, phi = rho.stellar_decomposition([0])
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
             >>> assert rho == core >> phi
         """
-        A, b, c = self.ansatz.triple
-        A = A[-1]
-        b = b[-1]
-        if c.shape != (1,):
+        A, b, c = self.bargmann_triple()
+
+        if c.shape != ():
             raise ValueError(
                 f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
             )
@@ -431,7 +431,7 @@ class DM(State):
         b_core = math.block([math.zeros(core_size, dtype=math.complex128), bn], axes=(0, 0))
         c_core = c
 
-        inverse_order = [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
+        inverse_order = np.argsort(new_order)
 
         temp = math.astensor(inverse_order)
         A_core = A_core[temp, :]
