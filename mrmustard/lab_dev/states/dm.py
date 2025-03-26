@@ -399,14 +399,14 @@ class DM(State):
             raise ValueError(
                 f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
             )
-
+        other_modes = [m for m in self.modes if m not in core_modes]
         core_indices = self.wires[core_modes].indices
         other_indices = self.wires[other_modes].indices
         new_order = core_indices + other_indices
-        A, b, c = self.ansatz.reorder(new_order).triple[-1]
+        A, b, c = self.ansatz.reorder(new_order).triple
 
         A = A[tuple(-1 for _ in range(A.ndim - 2))]  # handling arbitrary batch
-        b = b[tuple(-1 for _ in range(b.ndim - 2))]
+        b = b[tuple(-1 for _ in range(b.ndim - 1))]
 
         M = len(core_modes)
 
