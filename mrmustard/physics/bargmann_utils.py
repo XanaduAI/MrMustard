@@ -169,16 +169,15 @@ def au2Symplectic(A):
     """
     # A represents the A matrix corresponding to unitary U
     A = A * (1.0 + 0.0 * 1j)
-    m = A.shape[-1]
-    m = m // 2
-    batch_dim = len(A.shape[:-2])
+    m = A.shape[-1] // 2
     # identifying blocks of A_u
     u_2 = A[..., :m, m:]
     u_3 = A[..., m:, m:]
 
+    transposed_u_2 = math.einsum("...ij->...ji", u_2)
     # The formula to apply comes here
-    S_1 = math.conj(math.inv(math.batched_transpose(u_2, batch_dim)))
-    S_2 = -math.conj(math.solve(math.batched_transpose(u_2, batch_dim), u_3))
+    S_1 = math.conj(math.inv(transposed_u_2))
+    S_2 = -math.conj(math.solve(transposed_u_2, u_3))
     S_3 = math.conj(S_2)
     S_4 = math.conj(S_1)
 
@@ -221,10 +220,12 @@ def symplectic2Au(S):
     S_1 = S[..., :m, :m]
     S_2 = S[..., :m, m:]
 
+    S_1_transposed = math.einsum("...ij->...ji", S_1)
+
     # the formula to apply comes here
     A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-    A_2 = math.conj(math.inv(math.batched_transpose(S_1, batch_dim)))
-    A_3 = math.batched_transpose(A_2, batch_dim)
+    A_2 = math.conj(math.inv(S_1_transposed))
+    A_3 = math.einsum("...ij->...ji", A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
     A = math.block([[A_1, A_2], [A_3, A_4]])
@@ -282,7 +283,8 @@ def XY_of_channel(A: ComplexMatrix):
         math.block([[math.real(N + M), math.imag(N + M)], [math.imag(M - N), math.real(N - M)]])
         - math.eye(n) / 2
     )
-    Y = sigma - X @ math.batched_transpose(X, batch_dim) / 2
+    X_transposed = math.einsum("...ij->...ji", X)
+    Y = sigma - X @ X_transposed / 2
     math.error_if(
         X,
         math.norm(math.imag(X)) > settings.ATOL,
