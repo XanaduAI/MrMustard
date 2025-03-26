@@ -209,9 +209,7 @@ def symplectic2Au(S):
 
     S: symplectic in XXPP order
     """
-    m = S.shape[-1]
-    m = m // 2
-    batch_dim = len(S.shape[:-2])
+    m = S.shape[-1] // 2
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     R = math.rotmat(m)
@@ -243,7 +241,6 @@ def XY_of_channel(A: ComplexMatrix):
     """
     n = A.shape[-1] // 2
     m = n // 2
-    batch_dim = len(A.shape[:-2])
 
     # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
     A_out = math.block(
