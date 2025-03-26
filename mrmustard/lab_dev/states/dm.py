@@ -393,42 +393,31 @@ class DM(State):
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
             >>> assert rho == core >> phi
         """
-        A, b, c = self.bargmann_triple()
+        _, _, c = self.bargmann_triple()
 
         if c.shape != ():
             raise ValueError(
                 f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
             )
 
-        m_modes = A.shape[-1] // 2
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
+        A, b, c = self.ansatz.reorder(new_order).triple[-1]
 
-        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
-        core_bra_indices = [
-            (i - m_modes) if i >= m_modes else i for i in (mode_to_idx[j] for j in core_modes)
-        ]
-        core_ket_indices = [(i + m_modes) for i in core_bra_indices]
-        core_indices = core_bra_indices + core_ket_indices
-        remaining_indices = [i for i in range(2 * m_modes) if i not in core_indices]
-        new_order = math.astensor(core_indices + remaining_indices)
+        A = A[tuple(-1 for _ in range(A.ndim - 2))]  # handling arbitrary batch
+        b = b[tuple(-1 for _ in range(b.ndim - 2))]
 
-        A_reordered = A[new_order, :]
-        A_reordered = A_reordered[
-            :, new_order
-        ]  # reordering indices of A so that it has the standard form.
-        b_reordered = b[new_order]
+        M = len(core_modes)
 
-        core_size = 2 * len(core_modes)
-        Am = A_reordered[:core_size, :core_size]
-        An = A_reordered[core_size:, core_size:]
-        R = A_reordered[:core_size, core_size:]
-        bm = b_reordered[:core_size]
-        bn = b[core_size:]
+        Am = A[: 2 * M, : 2 * M]
+        An = A[2 * M :, 2 * M :]
+        R = A[: 2 * M, 2 * M :]
+        bm = b[: 2 * M]
+        bn = b[2 * M :]
 
-        # core state's Abc
-        A_core = math.block(
-            [[math.zeros((core_size, core_size), dtype=math.complex128), R], [R.T, An]]
-        )
-        b_core = math.block([math.zeros(core_size, dtype=math.complex128), bn], axes=(0, 0))
+        A_core = math.block([[math.zeros((2 * M, 2 * M), dtype=math.complex128), R], [R.T, An]])
+        b_core = math.block([math.zeros(2 * M, dtype=math.complex128), bn], axes=(0, 0))
         c_core = c
 
         inverse_order = np.argsort(new_order)
@@ -443,35 +432,35 @@ class DM(State):
         A_T = math.block(
             [
                 [
-                    Am[: core_size // 2, : core_size // 2],
-                    math.eye(core_size // 2, dtype=math.complex128),
-                    Am[: core_size // 2, core_size // 2 :],
-                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
+                    Am[:M, :M],
+                    math.eye(M, dtype=math.complex128),
+                    Am[:M, M:],
+                    math.zeros((M, M), dtype=math.complex128),
                 ],
                 [
-                    math.eye(core_size // 2, dtype=math.complex128),
-                    math.zeros((core_size // 2, 3 * core_size // 2), dtype=math.complex128),
+                    math.eye(M, dtype=math.complex128),
+                    math.zeros((M, 3 * M), dtype=math.complex128),
                 ],
                 [
-                    Am[core_size // 2 :, : core_size // 2],
-                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
-                    Am[core_size // 2 :, core_size // 2 :],
-                    math.eye(core_size // 2, dtype=math.complex128),
+                    Am[M:, :M],
+                    math.zeros((M, M), dtype=math.complex128),
+                    Am[M:, M:],
+                    math.eye(M, dtype=math.complex128),
                 ],
                 [
-                    math.zeros((core_size // 2, core_size), dtype=math.complex128),
-                    math.eye(core_size // 2, dtype=math.complex128),
-                    math.zeros((core_size // 2, core_size // 2), dtype=math.complex128),
+                    math.zeros((M, 2 * M), dtype=math.complex128),
+                    math.eye(M, dtype=math.complex128),
+                    math.zeros((M, M), dtype=math.complex128),
                 ],
             ]
         )
 
         b_T = math.block(
             [
-                bm[: core_size // 2],
-                math.zeros(core_size // 2, dtype=math.complex128),
-                bm[core_size // 2 :],
-                math.zeros(core_size // 2, dtype=math.complex128),
+                bm[:M],
+                math.zeros(M, dtype=math.complex128),
+                bm[M:],
+                math.zeros(M, dtype=math.complex128),
             ],
             axes=(0, 0, 0, 0),
         )
